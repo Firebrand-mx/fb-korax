@@ -30,7 +30,7 @@
 #define CLF_ACTION		0x1		// The control is an action (+/- in front).
 #define CLF_REPEAT		0x2		// Bind down + repeat.
 
-#define NUM_INFO_PAGES	3
+#define NUM_INFO_PAGES	5
 
 // TYPES -------------------------------------------------------------------
 
@@ -298,7 +298,7 @@ static Control_t controls[] =
 };
 
 static char *InfoPages[NUM_INFO_PAGES+1] = {
-	"TITLE", "HELP1", "HELP2", "CREDIT"
+	"TITLE", "HELP1", "HELP2", "HELP3", "HELP4", "CREDIT"
 };
 static Control_t *grabbing = NULL;
 static float bgAlpha=0, outFade=0;
@@ -3163,6 +3163,8 @@ boolean MN_Responder(event_t *event)
 	if(!FileMenuKeySteal)
 	{
 		int firstVI = CurrentMenu->firstItem, lastVI = firstVI + CurrentMenu->numVisItems-1;
+		if (lastVI > CurrentMenu->itemCount-1)
+			lastVI = CurrentMenu->itemCount-1;
 		item = &CurrentMenu->items[CurrentItPos];
 		switch(key)
 		{
