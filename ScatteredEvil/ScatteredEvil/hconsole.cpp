@@ -298,7 +298,7 @@ DEFCC(CCmdHexenFont)
 	cfont.sizeY = 2;
 	cfont.TextOut = MN_DrTextA_CS;
 	cfont.Width = MN_TextAWidth;
-	cfont.Filter = MN_TextFilter;
+	cfont.Filter = NULL;
 	gi.SetConsoleFont(&cfont);
 	return true;
 }
