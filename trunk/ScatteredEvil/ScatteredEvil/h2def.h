@@ -181,8 +181,8 @@ extern	doomdata_t		*netbuffer;		// points inside doomcom
 
 #define	BT_ATTACK		1
 #define	BT_USE			2
-#define	BT_CHANGE		4			// if true, the next 3 bits hold weapon num
-#define	BT_WEAPONMASK	(8+16+32)
+#define	BT_CHANGE		4			// if true, the next 4 bits hold weapon num
+#define	BT_WEAPONMASK	(8+16+32+64)
 #define	BT_WEAPONSHIFT	3
 
 #define BT_SPECIAL		128			// game events, not really buttons
@@ -193,7 +193,7 @@ extern	doomdata_t		*netbuffer;		// points inside doomcom
 #define	BTS_SAVEGAME	2			// save the game at each console
 // savegame slot numbers occupy the second byte of buttons
 
-// The top 3 bits of the artifact field in the ticcmd_t struct are used
+// The top 2 bits of the artifact field in the ticcmd_t struct are used
 // 		as additional flags 
 #define AFLAG_MASK			0x3F
 #define AFLAG_SUICIDE		0x40
@@ -255,58 +255,6 @@ struct thinker_t
 
 struct player_t;
 struct subsector_t;
-
-#pragma pack(1)
-struct savemobj_t
-{
-	thinker_t		thinker;			// thinker node
-
-// info for drawing
-	fixed_t			x,y,z;
-	mobj_t			*snext, *sprev;		// links in sector (if needed)
-	angle_t			angle;
-	spritenum_t		sprite;				// used to find patch_t and flip value
-	int				frame;				// might be ord with FF_FULLBRIGHT
-
-// interaction info
-	mobj_t			*bnext, *bprev;		// links in blocks (if needed)
-	subsector_t		*subsector;
-	fixed_t			floorz, ceilingz;	// closest together of contacted secs
-	fixed_t			floorpic;			// contacted sec floorpic
-	fixed_t			radius, height;		// for movement checking
-	fixed_t			momx, momy, momz;	// momentums
-	int				validcount;			// if == validcount, already checked
-	mobjtype_t		type;
-	mobjinfo_t		*info;				// &mobjinfo[mobj->type]
-	int				tics;				// state tic counter
-	state_t			*state;
-	int				damage;			// For missiles
-	int				flags;
-	int				flags2;			// Heretic flags
-	int				flags3;			// Remi: New flags
-	int				special1;		// Special info
-	int				special2;		// Special info
-	int				health;
-	int				movedir;		// 0-7
-	int				movecount;		// when 0, select a new dir
-	mobj_t			*target;		// thing being chased/attacked (or NULL)
-									// also the originator for missiles
-	int				reactiontime;	// if non 0, don't attack yet
-									// used by player to freeze a bit after
-									// teleporting
-	int				threshold;		// if > 0, the target will be chased
-									// no matter what (even if shot)
-	player_t		*player;		// only valid if type == MT_PLAYER
-	int				lastlook;		// player number last looked for
-	fixed_t			floorclip;		// value to use for floor clipping
-	int				archiveNum;		// Identity during archive
-	short			tid;			// thing identifier
-	byte			special;		// special
-	byte			args[5];		// special arguments
-	unsigned int             experience;      // experience for RPG element
-};
-#pragma pack()
-
 
 struct mobj_t
 {
@@ -725,90 +673,6 @@ typedef struct
 =
 ================
 */
-
-#pragma pack(1)
-typedef struct saveplayer_s
-{
-	mobj_t *mo;
-	playerstate_t playerstate;
-	ticcmd_t cmd;
-
-	pclass_t	pclass;					// player pclass type
-	
-	fixed_t		viewz;					// focal origin above r.z
-	fixed_t		viewheight;				// base height above floor for viewz
-	fixed_t		deltaviewheight;		// squat speed
-	fixed_t		bob;					// bounded/scaled total momentum
-
-	int			flyheight;
-	float		lookdir;				// It's now a float, for mlook. -jk
-	boolean		centering;
-	int			health;					// only used between levels, mo->health
-										// is used during levels
-	int	armorpoints[NUMARMOR];
-
-	inventory_t	inventory[NUMINVENTORYSLOTS];
-	artitype_t	readyArtifact;
-	int			artifactCount;
-	int 		inventorySlotNum;
-	int			powers[NUMPOWERS];
-	int			keys;
-	int			pieces;					// Fourth Weapon pieces
-	int			frags[MAXPLAYERS];		// kills of other players
-	newweapontype_t	readyweapon;
-	newweapontype_t	pendingweapon;		// wp_nochange if not changing
-	boolean		weaponowned[NUMWEAPONS];
-	int			mana[NUMMANA];
-	int			attackdown, usedown;	// true if button down last tic
-	int			cheats;					// bit flags
-
-	int			refire;					// refired shots are less accurate
-
-	int			killcount, itemcount, secretcount;		// for intermission
-	char		message[80];			// hint messages
-	char        message2[80];			// Remi: yup, that's right, *two* messages now!
-	int			messageTics;			// counter for showing messages
-	int			messageTics2;
-	short		ultimateMessage;
-	short		yellowMessage;
-	short		yellowMessage2;
-	int			damagecount, bonuscount;// for screen flashing
-	int			poisoncount;			// screen flash for poison damage
-	mobj_t		*poisoner;				// NULL for non-player mobjs
-	mobj_t		*attacker;				// who did damage (NULL for floors)
-	int			extralight;				// so gun flashes light up areas
-	int			fixedcolormap;			// can be set to REDCOLORMAP, etc
-	int			colormap;				// 0-3 for which color to draw player
-	pspdef_t	psprites[NUMPSPRITES];	// view sprites (gun, etc)
-	int			morphTics;				// player is a pig if > 0
-	int			berserkTics;			// The berserker "spell" for the Fighter
-	
-	//Remi: Preberserk stats
-	unsigned int preberserk_health;
-	int preberserk_speed;
-	unsigned int preberserk_strength;
-	
-	uint		jumpTics;				// delay the next jump for a moment
-	unsigned int worldTimer;			// total time the player's been playing
-	unsigned int experience;
-	unsigned int money;
-	int misc_viewheight;
-	unsigned int hunger;
-	unsigned int stamina;
-	unsigned int strength;
-	unsigned int agility;
-	int maxhealth;
-	int maxhealth_old;
-	unsigned int exp_level;
-	unsigned int prev_level;
-	unsigned int next_level;
-	unsigned int av_points;
-	unsigned int maxsp_power;
-	unsigned int sp_power;
-	unsigned int sp_power_old;
-	int speed;
-} saveplayer_t;
-#pragma pack()
 
 // Extended player information.
 struct player_t
