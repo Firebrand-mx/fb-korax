@@ -823,6 +823,39 @@ void MinotaurSlam(Actor source)
 
 //==========================================================================
 //
+//  TouchWhirlwind
+//
+//==========================================================================
+
+void TouchWhirlwind(Actor Other)
+{
+	float randVal;
+
+	Other.Angles.yaw = AngleMod360(Other.Angles.yaw +
+		(Random() - Random()) * 45.0 / 2.0);
+	Other.Velocity.x += (Random() - Random()) * 4.0 * 35.0;
+	Other.Velocity.y += (Random() - Random()) * 4.0 * 35.0;
+	if (level->tictime & 16 && !Other.bBoss)
+	{
+		randVal = Random() * 4.0;
+		if (randVal > 2.5)
+		{
+			randVal = 2.5;
+		}
+		Other.Velocity.z += randVal * 35.0;
+		if (Other.Velocity.z > 12.0 * 35.0)
+		{
+			Other.Velocity.z = 12.0 * 35.0;
+		}
+	}
+	if (!(level->tictime & 7))
+	{
+		Other.Damage(none, Instigator, 3);
+	}
+}
+
+//==========================================================================
+//
 //  MorphPlayer
 //
 //  Returns true if the player gets turned into a pig
@@ -1112,6 +1145,9 @@ void Damage(Actor inflictor, Actor source, int damage)
 				return;
 			}
 			break;
+		case MageWhirlWind:
+			inflictor.TouchWhirlwind(self);
+			return;
 		case Minotaur:
 			if (inflictor.bSkullFly)
 			{
@@ -1325,9 +1361,9 @@ void Damage(Actor inflictor, Actor source, int damage)
 			}
 		}
 		if (source && (source.bIsPlayer) &&
-			(source.Player.ReadyWeapon == WP_FOURTH))
+			(source.Player.ReadyWeapon == WP_EIGHTH))
 		{
-			// Always extreme death from fourth weapon
+			// Always extreme death from eighth weapon
 			Health = -5000;
 		}
 		Died(source);
@@ -3874,6 +3910,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2005/02/10 14:58:14  firebrand_kh
+//  Fixed the mage whirlwind deaths to give experience to the player
+//
 //  Revision 1.6  2005/02/03 01:05:06  firebrand_kh
 //  Fixed Doom Guy weapon bug with the new effects
 //
