@@ -125,12 +125,12 @@ int joyControls[NUM_JOYCONTROLS];*/
 
 int chooseAndUse;
 
-int usemlook;		// Mouse look (mouse Y => viewpitch)
-int usejlook;		// Joy look (joy Y => viewpitch)
-int alwaysRun;		// Always run.
-int noAutoAim;		// No auto-aiming?
-int mlookInverseY;	// Inverse mlook Y axis.
-int jlookInverseY;	// Inverse jlook Y axis.
+int usemlook = true;	// Mouse look (mouse Y => viewpitch)
+int usejlook;			// Joy look (joy Y => viewpitch)
+int alwaysRun = true;	// Always run.
+int noAutoAim;			// No auto-aiming?
+int mlookInverseY;		// Inverse mlook Y axis.
+int jlookInverseY;		// Inverse jlook Y axis.
 int showFPS, lookSpring;
 int translucentIceCorpse=0;
 int mouseSensitivityX=8, mouseSensitivityY=8;
@@ -288,12 +288,21 @@ static int findWeapon(player_t *plr, boolean forward)
 {
 	int	i, c;
 
+#if 1
 	for(i=plr->readyweapon + (forward? 1 : -1), c=0; c<NUMWEAPONS; c++, forward? i++ : i--)
 	{
 		if(i > NUMWEAPONS-1) i = 0;
 		if(i < 0) i = NUMWEAPONS-1;
 		if(plr->weaponowned[i]) return i;
 	}
+#else
+	for(i=plr->readyweapon + (forward? 1 : -1), c=0; c<NUMACTUALWEAPONS; c++, forward? i++ : i--)
+	{
+		if(i > NUMACTUALWEAPONS-1) i = 0;
+		if(i < 0) i = NUMACTUALWEAPONS-1;
+		if(plr->weaponowned[i]) return i;
+	}
+#endif
 	return plr->readyweapon;
 }
 
