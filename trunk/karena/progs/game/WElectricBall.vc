@@ -1,0 +1,125 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WElectricBall:Effect;
+
+int time;
+int BobIndex;
+
+//============================================================================
+//
+//	InitME
+//
+//============================================================================
+
+void InitMe(Actor InstigatedBy)
+{
+	time = 24 + (P_Random() & 7);
+	BobIndex = 0;
+	Instigator = InstigatedBy;
+	Radius = 30.0;
+	Height = 30.0;
+	bColideWithThings = true;
+	bColideWithWorld = true;
+}
+
+//============================================================================
+//
+//	Init
+//
+//============================================================================
+
+void Init(Actor InstigatedBy)
+{
+	InitMe(InstigatedBy);
+	Velocity.x = 0.00001;	// missile objects must move to impact other objects
+}
+
+//============================================================================
+//
+//  A_Damage
+//
+//============================================================================
+
+void A_Damage(void)
+{
+	P_RadiusAttack(self, Instigator, 4, 40.0, false);
+	Origin.z += FloatBobOffsets[BobIndex] / 16.0;
+	BobIndex = (BobIndex + 1) & 63;
+}
+
+//============================================================================
+//
+//  A_Ticker
+//
+//============================================================================
+
+void A_Ticker(void)
+{
+	if (!--time)
+	{
+		SetState(DeathState);
+	}
+}
+
+__states__
+{
+	S_ELECTRIC_BALL_FX1_1('WELH', 0 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_2) { A_Damage(); }
+	S_ELECTRIC_BALL_FX1_2('WELH', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_3) { A_Damage(); }
+	S_ELECTRIC_BALL_FX1_3('WELH', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_4) { A_Damage(); }
+	S_ELECTRIC_BALL_FX1_4('WELH', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_5) { A_Damage(); }
+	S_ELECTRIC_BALL_FX1_5('WELH', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_6) { A_Damage(); }
+	S_ELECTRIC_BALL_FX1_6('WELH', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_1) { A_Ticker(); }
+	S_ELECTRIC_BALL_FX1_X1('WELH', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_X2) { }
+	S_ELECTRIC_BALL_FX1_X2('WELH', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_X3) { }
+	S_ELECTRIC_BALL_FX1_X3('WELH', 8 | FF_FULLBRIGHT, 4.0 / 35.0, S_ELECTRIC_BALL_FX1_X4) { A_Explode(); }
+	S_ELECTRIC_BALL_FX1_X4('WELH', 9 | FF_FULLBRIGHT, 3.0 / 35.0, S_NULL) { }
+}
+
+defaultproperties
+{
+	Radius = 30.0;
+	Height = 30.0;
+	Health = 200;
+	PainChance = 0.234375;
+	Mass = 99999.0;
+	bDropOff = true;
+	bColideWithWorld = false;
+	bColideWithThings = false;
+	//bNoDamageThrust = true;
+	bShootable = true;
+	bReflective = true;
+	IdleState = S_ELECTRIC_BALL_FX1_1;
+	DeathState = S_ELECTRIC_BALL_FX1_X1;
+	DeathSound = 'DragonFireballExplode';
+	Effects = EF_DL_BLUE;
+}
+
+//**************************************************************************
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
