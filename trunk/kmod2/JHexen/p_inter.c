@@ -2500,8 +2500,24 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 	int count;
 	int normalCount;
 	int normalSlot=0;
+	int normalAmount;
 	int superCount;
 	int superSlot=0;
+	int superAmount;
+
+	switch (player->class)
+	{
+	case PCLASS_FIGHTER: 
+		normalAmount=25+player->exp_level;
+		break;
+	case PCLASS_CLERIC: 
+		normalAmount=15+player->exp_level;
+		break;
+	case PCLASS_MAGE: 
+		normalAmount=8+player->exp_level;
+		break;
+	}
+	superAmount = player->maxhealth;;
 
 	normalCount = superCount = 0;
 	for(i = 0; i < player->inventorySlotNum; i++)
@@ -2517,38 +2533,38 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 			superCount = player->inventory[i].count;
 		}
 	}
-	if((gameskill == sk_baby) && (normalCount*25 >= saveHealth))
+	if((gameskill == sk_baby) && (normalCount*normalAmount >= saveHealth))
 	{ // Use quartz flasks
-		count = (saveHealth+24)/25;
+		count = (saveHealth+normalAmount-1)/normalAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 25;
+			player->health += normalAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
 	}
-	else if(superCount*100 >= saveHealth)
+	else if(superCount*superAmount >= saveHealth)
 	{ // Use mystic urns
-		count = (saveHealth+99)/100;
+		count = (saveHealth+superAmount-1)/superAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 100;
+			player->health += superAmount;
 			P_PlayerRemoveArtifact(player, superSlot);
 		}
 	}
 	else if((gameskill == sk_baby)
-		&& (superCount*100+normalCount*25 >= saveHealth))
+		&& (superCount*superAmount+normalCount*normalAmount >= saveHealth))
 	{ // Use mystic urns and quartz flasks
-		count = (saveHealth+24)/25;
-		saveHealth -= count*25;
+		count = (saveHealth+normalAmount-1)/normalAmount;
+		saveHealth -= count*normalAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 25;
+			player->health += normalAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
-		count = (saveHealth+99)/100;
+		count = (saveHealth+superAmount-1)/superAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 100;
+			player->health += superAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
 	}

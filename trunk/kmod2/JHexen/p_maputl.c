@@ -949,6 +949,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 					link = link->bnext;
 					continue;
 				}
+				if (link->flags3 & MF3_FRIENDLY)
+				{
+					link = link->bnext;
+					continue;
+				}
 				if ((link->type == MT_MINOTAUR) &&
 					(((mobj_t *)link->special1) == mo))
 				{
@@ -983,6 +988,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 					link = link->bnext;
 					continue;
 				}
+				if (link->flags3 & MF3_FRIENDLY)
+				{
+					link = link->bnext;
+					continue;
+				}
 				if ((link->type == MT_MINOTAUR) &&
 					(link->special1 == mo->special1))
 				{
@@ -1008,6 +1018,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 				&& !(link->flags2&MF2_DORMANT))
 			{
 				if (!(link->flags&MF_SHOOTABLE))
+				{
+					link = link->bnext;
+					continue;
+				}
+				if (link->flags3 & MF3_FRIENDLY)
 				{
 					link = link->bnext;
 					continue;
@@ -1038,6 +1053,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 				&& !(link->flags2&MF2_DORMANT))
 			{
 				if (!(link->flags&MF_SHOOTABLE))
+				{
+					link = link->bnext;
+					continue;
+				}
+				if (link->flags3 & MF3_FRIENDLY)
 				{
 					link = link->bnext;
 					continue;

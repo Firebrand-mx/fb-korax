@@ -2703,7 +2703,8 @@ void A_BishopAttack2(mobj_t *actor)
 {
 	mobj_t *mo;
 
-	if(!actor->target || !actor->special1)
+	if(!actor->target || !actor->special1 ||
+		(actor->flags3 & MF3_FRIENDLY && actor->target->player))	// Don't attack player
 	{
 		actor->special1 = 0;
 		P_SetMobjState(actor, S_BISHOP_WALK1);
