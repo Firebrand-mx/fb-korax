@@ -141,7 +141,13 @@ void KButtonWindow::SetTextColors(FColor normal,
 void KButtonWindow::PressButton(int key)
 {
 	guard(KButtonWindow::PressButton);
-	GetParent()->ButtonActivated(this);
+	for (KWindow *Win = GetParent(); Win; Win = Win->GetParent())
+	{
+		if (Win->ButtonActivated(this))
+		{
+			break;
+		}
+	}
 	unguard;
 }
 
