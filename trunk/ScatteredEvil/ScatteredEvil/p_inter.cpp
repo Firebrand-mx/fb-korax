@@ -2330,7 +2330,7 @@ void P_UndoPossessMonster(mobj_t *actor, player_t *player)
 		mo->health = health;
 		mo->reactiontime = 0;
 		mo->target = player->plr->mo; //Payback time, target the player who possessed you
-		P_SetMobjState(mo, mobjinfo[mo->type].painstate);
+		P_SetMobjState(mo, P_GetPainState(mo));
 		// -JL- Restore special and TID
 		mo->special = special;
 		memcpy(mo->args, args, 5);
@@ -2492,8 +2492,24 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 	int count;
 	int normalCount;
 	int normalSlot=0;
+	int normalAmount;
 	int superCount;
 	int superSlot=0;
+	int superAmount;
+
+	switch (player->pclass)
+	{
+	case PCLASS_FIGHTER: 
+		normalAmount=25+player->exp_level;
+		break;
+	case PCLASS_CLERIC: 
+		normalAmount=15+player->exp_level;
+		break;
+	case PCLASS_MAGE: 
+		normalAmount=8+player->exp_level;
+		break;
+	}
+	superAmount = player->maxhealth;;
 
 	normalCount = superCount = 0;
 	for(i = 0; i < player->inventorySlotNum; i++)
@@ -2509,38 +2525,38 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 			superCount = player->inventory[i].count;
 		}
 	}
-	if((gameskill == sk_baby) && (normalCount*25 >= saveHealth))
+	if((gameskill == sk_baby) && (normalCount*normalAmount >= saveHealth))
 	{ // Use quartz flasks
-		count = (saveHealth+24)/25;
+		count = (saveHealth+normalAmount-1)/normalAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 25;
+			player->health += normalAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
 	}
-	else if(superCount*100 >= saveHealth)
+	else if(superCount*superAmount >= saveHealth)
 	{ // Use mystic urns
-		count = (saveHealth+99)/100;
+		count = (saveHealth+superAmount-1)/superAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 100;
+			player->health += superAmount;
 			P_PlayerRemoveArtifact(player, superSlot);
 		}
 	}
 	else if((gameskill == sk_baby)
-		&& (superCount*100+normalCount*25 >= saveHealth))
+		&& (superCount*superAmount+normalCount*normalAmount >= saveHealth))
 	{ // Use mystic urns and quartz flasks
-		count = (saveHealth+24)/25;
-		saveHealth -= count*25;
+		count = (saveHealth+normalAmount-1)/normalAmount;
+		saveHealth -= count*normalAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 25;
+			player->health += normalAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
-		count = (saveHealth+99)/100;
+		count = (saveHealth+superAmount-1)/superAmount;
 		for(i = 0; i < count; i++)
 		{
-			player->health += 100;
+			player->health += superAmount;
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
 	}
@@ -2966,7 +2982,8 @@ void P_DamageMobj
 		P_KillMobj(source, target);
 		return;
 	}
-	if((P_Random() < target->info->painchance)
+	if((P_Random() < target->info->painchance ||
+		target->info->painstate != P_GetPainState(target))
 		&& !(target->flags&MF_SKULLFLY))
 	{
 		if(inflictor && (inflictor->type >= MT_LIGHTNING_FLOOR
@@ -2975,7 +2992,7 @@ void P_DamageMobj
 			if(P_Random() < 96)
 			{
 				target->flags |= MF_JUSTHIT; // fight back!
-				P_SetMobjState(target, target->info->painstate);
+				P_SetMobjState(target, P_GetPainState(target));
 			}
 			else
 			{ // "electrocute" the target
@@ -2995,7 +3012,7 @@ void P_DamageMobj
 		else
 		{
 			target->flags |= MF_JUSTHIT; // fight back!
-			P_SetMobjState(target, target->info->painstate);	
+			P_SetMobjState(target, P_GetPainState(target));	
 			if(inflictor && inflictor->type == MT_POISONCLOUD)
 			{
 				if(target->flags&MF_COUNTKILL && P_Random() < 128
@@ -3025,10 +3042,10 @@ void P_DamageMobj
 		}
 		target->target = source;
 		target->threshold = BASETHRESHOLD;
-		if(target->state == &states[target->info->spawnstate]
+		if(target->state == &states[P_GetIdleState(target)]
 			&& target->info->seestate != S_NULL)
 		{
-			P_SetMobjState(target, target->info->seestate);
+			P_SetMobjState(target, P_GetSeeState(target));
 		}
 	}
 }

@@ -944,6 +944,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 					link = link->bnext;
 					continue;
 				}
+				if (link->flags3 & MF3_FRIENDLY)
+				{
+					link = link->bnext;
+					continue;
+				}
 				if (link->flags2&MF2_DORMANT)
 				{
 					link = link->bnext;
@@ -974,6 +979,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 				(link->player && (link != master)))
 			{
 				if (!(link->flags&MF_SHOOTABLE))
+				{
+					link = link->bnext;
+					continue;
+				}
+				if (link->flags3 & MF3_FRIENDLY)
 				{
 					link = link->bnext;
 					continue;
@@ -1012,6 +1022,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 					link = link->bnext;
 					continue;
 				}
+				if (link->flags3 & MF3_FRIENDLY)
+				{
+					link = link->bnext;
+					continue;
+				}
 				if(netgame && !deathmatch && link->player)
 				{
 					link = link->bnext;
@@ -1038,6 +1053,11 @@ static mobj_t *RoughBlockCheck(mobj_t *mo, int index)
 				&& !(link->flags2&MF2_DORMANT))
 			{
 				if (!(link->flags&MF_SHOOTABLE))
+				{
+					link = link->bnext;
+					continue;
+				}
+				if (link->flags3 & MF3_FRIENDLY)
 				{
 					link = link->bnext;
 					continue;

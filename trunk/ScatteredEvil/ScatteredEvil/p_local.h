@@ -140,6 +140,13 @@ enum
 extern mobjtype_t PuffType;
 extern mobj_t *MissileMobj;
 
+// -JL- For hurted sprites
+int P_GetIdleState(mobj_t *actor);
+int P_GetSeeState(mobj_t *actor);
+int P_GetMeleeState(mobj_t *actor);
+int P_GetMissileState(mobj_t *actor);
+int P_GetPainState(mobj_t *actor);
+
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 void P_RemoveMobj(mobj_t *th);
 //boolean P_SetMobjState(mobj_t *mobj, statenum_t state);

@@ -718,7 +718,7 @@ seeyou:
 			S_StartSound(actor, sound);
 		}
 	}
-	P_SetMobjState(actor, actor->info->seestate);
+	P_SetMobjState(actor, P_GetSeeState(actor));
 }
 
 
@@ -784,7 +784,7 @@ void A_Chase(mobj_t *actor)
 		{ // got a new target
 			return;
 		}
-		P_SetMobjState(actor, actor->info->spawnstate);
+		P_SetMobjState(actor, P_GetIdleState(actor));
 		return;
 	}
 
@@ -809,7 +809,7 @@ void A_Chase(mobj_t *actor)
 		{
 			S_StartSound (actor, actor->info->attacksound);
 		}
-		P_SetMobjState (actor, actor->info->meleestate);
+		P_SetMobjState (actor, P_GetMeleeState(actor));
 		return;
 	}
 
@@ -823,7 +823,7 @@ void A_Chase(mobj_t *actor)
 			goto nomissile;
 		if (!P_CheckMissileRange (actor))
 			goto nomissile;
-		P_SetMobjState (actor, actor->info->missilestate);
+		P_SetMobjState (actor, P_GetMissileState(actor));
 		actor->flags |= MF_JUSTATTACKED;
 		return;
 	}
@@ -1320,14 +1320,14 @@ void A_MinotaurChase(mobj_t *actor)
 		{
 			S_StartSound (actor, actor->info->attacksound);
 		}
-		P_SetMobjState (actor, actor->info->meleestate);
+		P_SetMobjState (actor, P_GetMeleeState(actor));
 		return;
 	}
 
 	// Missile attack
 	if (actor->info->missilestate && P_CheckMissileRange(actor))
 	{
-		P_SetMobjState (actor, actor->info->missilestate);
+		P_SetMobjState (actor, P_GetMissileState(actor));
 		return;
 	}
 
@@ -1435,7 +1435,7 @@ void A_MinotaurCharge(mobj_t *actor)
 	else
 	{
 		actor->flags &= ~MF_SKULLFLY;
-		P_SetMobjState(actor, actor->info->seestate);
+		P_SetMobjState(actor, P_GetSeeState(actor));
 	}
 }
 
@@ -2135,7 +2135,7 @@ void A_SerpentChase(mobj_t *actor)
 		{ // got a new target
 			return;
 		}
-		P_SetMobjState(actor, actor->info->spawnstate);
+		P_SetMobjState(actor, P_GetIdleState(actor));
 		return;
 	}
 
@@ -2160,7 +2160,7 @@ void A_SerpentChase(mobj_t *actor)
 		{
 			S_StartSound (actor, actor->info->attacksound);
 		}
-		P_SetMobjState (actor, actor->info->meleestate);
+		P_SetMobjState (actor, P_GetMeleeState(actor));
 		return;
 	}
 
@@ -2338,7 +2338,7 @@ void A_SerpentWalk(mobj_t *actor)
 		{ // got a new target
 			return;
 		}
-		P_SetMobjState(actor, actor->info->spawnstate);
+		P_SetMobjState(actor, P_GetIdleState(actor));
 		return;
 	}
 
@@ -2667,7 +2667,7 @@ void A_CentaurDefend(mobj_t *actor)
 	if(P_CheckMeleeRange(actor) && P_Random() < 32)
 	{
 		A_UnSetInvulnerable(actor);
-		P_SetMobjState(actor, actor->info->meleestate);
+		P_SetMobjState(actor, P_GetMeleeState(actor));
 	}
 }
 
@@ -3032,7 +3032,7 @@ void A_DragonInitFlight(mobj_t *actor)
 		actor->special1 = (int)P_FindMobjFromTID(actor->tid, &search);
 		if(search == -1)
 		{
-			P_SetMobjState(actor, actor->info->spawnstate);
+			P_SetMobjState(actor, P_GetIdleState(actor));
 			return;
 		}
 	} while(actor->special1 == (int)actor);
@@ -3151,7 +3151,7 @@ void A_DragonFlight(mobj_t *actor)
 		}
 		else
 		{
-			P_SetMobjState(actor, actor->info->missilestate);
+			P_SetMobjState(actor, P_GetMissileState(actor));
 			S_StartSound(actor, SFX_DRAGON_ATTACK);
 			actor->flags |= MF_JUSTATTACKED;
 			return;
@@ -3925,7 +3925,7 @@ void A_FiredChase(mobj_t *actor)
 	{
 		if (P_CheckMissileRange(actor) && (P_Random()<20))
 		{
-			P_SetMobjState (actor, actor->info->missilestate);
+			P_SetMobjState (actor, P_GetMissileState(actor));
 			actor->flags |= MF_JUSTATTACKED;
 			return;
 		}
@@ -4837,7 +4837,7 @@ void A_FastChase(mobj_t *actor)
 		{ // got a new target
 			return;
 		}
-		P_SetMobjState(actor, actor->info->spawnstate);
+		P_SetMobjState(actor, P_GetIdleState(actor));
 		return;
 	}
 
@@ -4891,7 +4891,7 @@ void A_FastChase(mobj_t *actor)
 			goto nomissile;
 		if (!P_CheckMissileRange (actor))
 			goto nomissile;
-		P_SetMobjState (actor, actor->info->missilestate);
+		P_SetMobjState (actor, P_GetMissileState(actor));
 		actor->flags |= MF_JUSTATTACKED;
 		return;
 	}
@@ -5171,7 +5171,7 @@ void A_KoraxChase(mobj_t *actor)
 	if (!actor->target) return;
 	if (P_Random()<30)
 	{
-		P_SetMobjState(actor, actor->info->missilestate);
+		P_SetMobjState(actor, P_GetMissileState(actor));
 	}
 	else if (P_Random()<30)
 	{

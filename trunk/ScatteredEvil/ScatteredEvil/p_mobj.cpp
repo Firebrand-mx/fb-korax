@@ -81,6 +81,99 @@ static mobj_t *TIDMobj[MAX_TID_COUNT];
 
 //==========================================================================
 //
+//	P_GetIdleState
+//
+//==========================================================================
+
+int P_GetIdleState(mobj_t *actor)
+{
+	if (actor->health < actor->info->spawnhealth / 2)
+	{
+		switch (actor->type)
+		{
+		case MT_ETTIN:
+			return S_ETTIN_HURTED_LOOK1;
+		}
+	}
+	return actor->info->spawnstate;
+}
+
+//==========================================================================
+//
+//	P_GetSeeState
+//
+//==========================================================================
+
+int P_GetSeeState(mobj_t *actor)
+{
+	if (actor->health < actor->info->spawnhealth / 2)
+	{
+		switch (actor->type)
+		{
+		case MT_ETTIN:
+			return S_ETTIN_HURTED_CHASE1;
+		}
+	}
+	return actor->info->seestate;
+}
+
+//==========================================================================
+//
+//	P_GetMeleeState
+//
+//==========================================================================
+
+int P_GetMeleeState(mobj_t *actor)
+{
+	if (actor->health < actor->info->spawnhealth / 2)
+	{
+		switch (actor->type)
+		{
+		case MT_ETTIN:
+			return S_ETTIN_HURTED_ATK1_1;
+		}
+	}
+	return actor->info->meleestate;
+}
+
+//==========================================================================
+//
+//	P_GetMissileState
+//
+//==========================================================================
+
+int P_GetMissileState(mobj_t *actor)
+{
+/*	if (actor->health < actor->info->spawnhealth / 2)
+	{
+		switch (actor->type)
+		{
+		}
+	}*/
+	return actor->info->missilestate;
+}
+
+//==========================================================================
+//
+//	P_GetPainState
+//
+//==========================================================================
+
+int P_GetPainState(mobj_t *actor)
+{
+	if (actor->health < actor->info->spawnhealth / 2)
+	{
+		switch (actor->type)
+		{
+		case MT_ETTIN:
+			return S_ETTIN_HURTED_PAIN1;
+		}
+	}
+	return actor->info->painstate;
+}
+
+//==========================================================================
+//
 // P_SetMobjState
 //
 // Returns true if the mobj is still present.
@@ -390,7 +483,7 @@ void P_XYMovement(mobj_t *mo)
 		{ // A flying mobj slammed into something
 			mo->flags &= ~MF_SKULLFLY;
 			mo->momx = mo->momy = mo->momz = 0;
-			P_SetMobjState(mo, mo->info->seestate);
+			P_SetMobjState(mo, P_GetSeeState(mo));
 		}
 		return;
 	}
