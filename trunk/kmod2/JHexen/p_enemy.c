@@ -4172,6 +4172,10 @@ void A_SorcSpinBalls(mobj_t *actor)
 	mobj_t *mo;
 	fixed_t z;
 
+	if (actor->flags3 & MF3_BALLSSPAWNED)
+		return;	// Already spawned
+	actor->flags3 |= MF3_BALLSSPAWNED;
+
 	A_SlowBalls(actor);
 	actor->args[0] = 0;									// Currently no defense
 	actor->args[3] = SORC_NORMAL;
