@@ -1785,21 +1785,11 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 			if(target == source)
 			{ // Self-frag
 				target->player->plr->frags[target->player-players]--;
-				
-				if(cmdfrag && netgame && source->player == &players[consoleplayer])
-				{ // Send out a frag count packet
-					//gi.SendFrags(source->player->plr);
-				}
 			}
 			else
 			{
 				source->player->plr->frags[target->player-players]++;
 				source->player->experience+=1000;
-				
-				if(cmdfrag && netgame && source->player == &players[consoleplayer])
-				{ // Send out a frag count packet
-					//gi.SendFrags(source->player->plr);
-				}
 			}
 		}
 	}
@@ -1808,11 +1798,6 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 		if(!source)
 		{ // Self-frag
 			target->player->plr->frags[target->player-players]--;
-			
-			if(cmdfrag && netgame && target->player == &players[consoleplayer])
-			{ // Send out a frag count packet
-				//gi.SendFrags(target->player->plr);
-			}
 		}
 		target->flags &= ~MF_SOLID;
 		target->flags2 &= ~MF2_FLY;

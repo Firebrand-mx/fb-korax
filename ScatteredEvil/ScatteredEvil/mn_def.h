@@ -57,16 +57,6 @@ typedef enum
 	MENU_FILES,
 	MENU_LOAD,
 	MENU_SAVE,
-	MENU_MULTIPLAYER,
-	MENU_PROTOCOL,
-	MENU_HOSTGAME,
-	MENU_JOINGAME,
-	MENU_GAMESETUP,
-	MENU_PLAYERSETUP,
-	MENU_NETGAME,
-	MENU_TCPIP,
-	MENU_SERIAL,
-	MENU_MODEM,
 	MENU_NONE
 } MenuType_t;
 
@@ -120,30 +110,6 @@ public:
 	}
 };
 
-
-extern int MenuTime;
 extern boolean shiftdown;
-extern Menu_t *CurrentMenu;
-extern int CurrentItPos;
-
-void SetMenu(MenuType_t menu);
-
-// Multiplayer menus.
-extern Menu_t MultiplayerMenu;
-extern Menu_t ProtocolMenu;
-extern Menu_t HostMenu;
-extern Menu_t JoinMenu;
-extern Menu_t GameSetupMenu;
-extern Menu_t PlayerSetupMenu;
-extern Menu_t NetGameMenu;
-extern Menu_t TCPIPMenu;
-extern Menu_t SerialMenu;
-extern Menu_t ModemMenu;
-
-void SCEnterMultiplayerMenu(int option);
-void MN_TickerEx(void);	// The extended ticker.
-
-// Edit field routines.
-boolean Ed_Responder(event_t *event);
 
 #endif // __MENU_DEFS_H_

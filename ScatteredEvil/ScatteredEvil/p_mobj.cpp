@@ -414,29 +414,22 @@ void P_XYMovement(mobj_t *mo)
 		}
 	}
 	player = mo->player;
-/*#ifdef DEMOCAM
-	if(!(mo->flags & MF_NOMAXMOVE))
+	if(mo->momx > MAXMOVE)
 	{
-#endif*/
-		if(mo->momx > MAXMOVE)
-		{
-			mo->momx = MAXMOVE;
-		}
-		else if(mo->momx < -MAXMOVE)
-		{
-			mo->momx = -MAXMOVE;
-		}
-		if(mo->momy > MAXMOVE)
-		{
-			mo->momy = MAXMOVE;
-		}
-		else if(mo->momy < -MAXMOVE)
-		{
-			mo->momy = -MAXMOVE;
-		}
-/*#ifdef DEMOCAM
+		mo->momx = MAXMOVE;
 	}
-#endif*/
+	else if(mo->momx < -MAXMOVE)
+	{
+		mo->momx = -MAXMOVE;
+	}
+	if(mo->momy > MAXMOVE)
+	{
+		mo->momy = MAXMOVE;
+	}
+	else if(mo->momy < -MAXMOVE)
+	{
+		mo->momy = -MAXMOVE;
+	}
 	xmove = mo->momx;
 	ymove = mo->momy;
 	do

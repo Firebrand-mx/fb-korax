@@ -18,7 +18,6 @@
 #include "p_local.h"
 #include "r_local.h"
 #include "soundst.h"
-#include "g_demo.h"
 #include "h2_actn.h"
 #include "mn_def.h"
 #include "Settings.h"
@@ -30,7 +29,7 @@
 #define CLF_ACTION		0x1		// The control is an action (+/- in front).
 #define CLF_REPEAT		0x2		// Bind down + repeat.
 
-#define USE_JOURNAL_MOUSE
+//#define USE_JOURNAL_MOUSE
 
 // TYPES -------------------------------------------------------------------
 
@@ -51,8 +50,6 @@ typedef struct
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 boolean G_CheckDemoStatus(void);
-float MN_GL_SetupState(float time, float offset);
-void MN_GL_RestoreState();
 boolean F_Responder(event_t *ev);
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
@@ -74,7 +71,6 @@ static void SCInverseY(int option);
 static void SCJoyLook(int option);
 static void SCPOVLook(int option);
 static void SCInverseJoyLook(int option);
-static void SCFullscreenMana(int option);
 static void SCLookSpring(int option);
 static void SCAutoAim(int option);
 static void SCSkyDetail(int option);
@@ -88,7 +84,6 @@ static void SCSfxVolume(int option);
 static void SCMusicVolume(int option);
 static void SCCDVolume(int option);
 static void SCScreenSize(int option);
-static void SCStatusBarSize(int option);
 static void SCMusicDevice(int option);
 static boolean SCNetCheck(int option);
 static void SCNetCheck2(int option);
@@ -311,7 +306,6 @@ static int quickload;
 static MenuItem_t MainItems[] =
 {
 	{ ITT_SETMENU, "NEW GAME", SCNetCheck2, 1, MENU_CLASS },
-	{ ITT_EFUNC, "MULTIPLAYER", SCEnterMultiplayerMenu, 0, MENU_NONE },
 	{ ITT_SETMENU, "OPTIONS", NULL, 0, MENU_OPTIONS },
 	{ ITT_SETMENU, "GAME FILES", NULL, 0, MENU_FILES },
 	{ ITT_EFUNC, "INFO", SCInfo, 0, MENU_NONE },
@@ -321,11 +315,11 @@ static MenuItem_t MainItems[] =
 static Menu_t MainMenu(
 	110, 56,
 	DrawMainMenu,
-	6, MainItems,
+	5, MainItems,
 	0,
 	MENU_NONE,
 	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 6, 0
+	0, 5, 0
 );
 
 static MenuItem_t ClassItems[] =
@@ -499,27 +493,21 @@ static MenuItem_t GameplayItems[] =
 	{ ITT_EFUNC, "ALWAYS RUN :", SCAlwaysRun, 0, MENU_NONE },
 	{ ITT_EFUNC, "LOOKSPRING :", SCLookSpring, 0, MENU_NONE },
 	{ ITT_EFUNC, "NO AUTOAIM :", SCAutoAim, 0, MENU_NONE },
-	{ ITT_EFUNC, "FULLSCREEN MANA :", SCFullscreenMana, 0, MENU_NONE },
 	{ ITT_LRFUNC, "CROSSHAIR :", SCCrosshair, 0, MENU_NONE },
 	{ ITT_LRFUNC, "CROSSHAIR SIZE :", SCCrosshairSize, 0, MENU_NONE },
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
 	{ ITT_LRFUNC, "SCREEN SIZE", SCScreenSize, 0, MENU_NONE },
-	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
-	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
-	{ ITT_LRFUNC, "STATUS BAR SIZE", SCStatusBarSize, 0, MENU_NONE},
-	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
-	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE }
 };
 
 static Menu_t GameplayMenu(
 	64, 25,
 	DrawGameplayMenu,
-	15, GameplayItems,
+	9, GameplayItems,
 	0,
 	MENU_OPTIONS,
 	MN_DrTextA_CS, 10,
-	0, 15, 0
+	0, 9, 0
 );
 
 static MenuItem_t GraphicsItems[] = 
@@ -749,16 +737,6 @@ static Menu_t *Menus[] =
 	&FilesMenu,
 	&LoadMenu,
 	&SaveMenu,
-	&MultiplayerMenu,
-	&ProtocolMenu,
-	&HostMenu,
-	&JoinMenu,
-	&GameSetupMenu,
-	&PlayerSetupMenu,
-	&NetGameMenu,
-	&TCPIPMenu,
-	&SerialMenu,
-	&ModemMenu
 };
 
 static char *GammaText[] = 
@@ -827,7 +805,6 @@ void MN_Init(void)
 
 	// If the game is running in a window you can only change the default
 	// resolution.
-	/*if(nofullscreen) */
 	selRes = findRes(gi.Get(DD_DEFAULT_RES_X), gi.Get(DD_DEFAULT_RES_Y));
 }
 
@@ -1053,9 +1030,6 @@ void MN_Ticker(void)
 		return;
 	}
 	MenuTime++;
-
-	// The extended ticker handles multiplayer menu stuff.
-	MN_TickerEx();
 }
 
 //==========================================================================
@@ -1102,38 +1076,6 @@ static void DrawMessage(void)
 	}
 }
 
-//==========================================================================
-//
-// DrawPossWeaponry
-//
-//==========================================================================
-
-static void DrawPossWeaponry(void)
-{
-	player_t *player;
-	int i;
-	int j;
-	char name[16];
-
-	j = 190;
-	player = &players[consoleplayer];
-
-	if (player->pclass < PCLASS_ETTIN)
-		return; //Not possessing a monster
-
-	for(i = NUMACTUALWEAPONS; i > 0; i--)
-	{
-		if (NewWeaponInfo[i].classtype != player->pclass) continue;				
-		sprintf(name, "%d: %s",NewWeaponInfo[i].bindkey+1,NewWeaponInfo[i].name);
-		if (i == player->readyweapon && player->pendingweapon == WP_NOCHANGE)
-			MN_DrTextAYellow(name,230,j);
-		else MN_DrTextA(name,230,j);
-		j -= 10;
-	}
-
-}
-
-
 char *QuitEndMsg[] =
 {
 	"ARE YOU SURE YOU WANT TO QUIT?",
@@ -1144,27 +1086,40 @@ char *QuitEndMsg[] =
 };
 
 
-#define BETA_FLASH_TEXT "BETA"
-
 float MN_GL_SetupState(float time, float offset)
 {
 	float alpha;
 
+#ifdef USE640
+	GCanvas->SetOrigin(160, 120);
+#endif
 	gl.MatrixMode(DGL_MODELVIEW);
 	gl.PushMatrix();
 	if(time > 1 && time <= 2)
 	{
 		time = 2-time;
+#ifdef USE640
+		gl.Translatef(320, 240, 0);
+		gl.Scalef(.9f+time*.1f, .9f+time*.1f, 1);
+		gl.Translatef(-320, -240, 0);
+#else
 		gl.Translatef(160, 100, 0);
 		gl.Scalef(.9f+time*.1f, .9f+time*.1f, 1);
 		gl.Translatef(-160, -100, 0);
+#endif
 		gl.Color4f(1, 1, 1, alpha = time);
 	}
 	else
 	{
+#ifdef USE640
+		gl.Translatef(320, 240, 0);
+		gl.Scalef(2-time, 2-time, 1);
+		gl.Translatef(-320, -240, 0);
+#else
 		gl.Translatef(160, 100, 0);
 		gl.Scalef(2-time, 2-time, 1);
 		gl.Translatef(-160, -100, 0);
+#endif
 		gl.Color4f(1, 1, 1, alpha = time*time);
 	}
 	gl.Translatef(0, -offset, 0);
@@ -1175,6 +1130,9 @@ void MN_GL_RestoreState()
 {
 	gl.MatrixMode(DGL_MODELVIEW);
 	gl.PopMatrix();
+#ifdef USE640
+	GCanvas->SetOrigin(0, 0);
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1191,46 +1149,44 @@ void MN_Drawer(void)
 	MenuItem_t *item;
 	char *selName;
 	
+#ifdef USE640
+	GCanvas->SetOrigin(160, 0);
+#endif
 	DrawMessage();
-	DrawPossWeaponry(); //Remi
+#ifdef USE640
+	GCanvas->SetOrigin(0, 0);
+#endif
 
 	// FPS.
 	if(showFPS)
 	{
 		char fpsbuff[80];
 		sprintf(fpsbuff, "%d FPS", gi.FrameRate());
+#ifdef USE640
+		MN_DrTextA(fpsbuff, 640-MN_TextAWidth(fpsbuff), 0);
+#else
 		MN_DrTextA(fpsbuff, 320-MN_TextAWidth(fpsbuff), 0);
+#endif
 		gi.Update(DDUF_TOP);
 	}
 	
-/*#ifdef USEA3D
-	{
-		char tbuff[80];
-		extern int numBuffers, snd_Channels;
-		sprintf(tbuff, "CH:%d / BF:%d", snd_Channels, numBuffers);
-		MN_DrTextA(tbuff, 210, 9);
-	}
-#endif*/
-
-#ifdef TIMEBOMB
-	// Beta blinker ***
-	if(leveltime&16)
-	{
-		MN_DrTextA( BETA_FLASH_TEXT,
-				160-(MN_TextAWidth(BETA_FLASH_TEXT)>>1), 12);
-	}
-#endif // TIMEBOMB
-
 	if(MenuActive == false)
 	{
 		if(bgAlpha > 0)
 		{
 			gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
 			gi.GL_SetNoTexture();
-			gi.GL_DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
+#ifdef USE640
+			GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, bgAlpha);
+#else
+			GCanvas->DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
+#endif
 		}
 		if(askforquit)  //Draw questioning
 		{
+#ifdef USE640
+			GCanvas->SetOrigin(160, 120);
+#endif
 			MN_DrTextA(QuitEndMsg[typeofask-1], 160-
 				MN_TextAWidth(QuitEndMsg[typeofask-1])/2, 80);
 			if(typeofask == 3)
@@ -1248,6 +1204,9 @@ void MN_Drawer(void)
 					MN_TextAWidth(SlotText[quicksave-1])/2, 90);
 			}
 			gi.Update(DDUF_FULLSCREEN);
+#ifdef USE640
+			GCanvas->SetOrigin(0, 0);
+#endif
 		}
 	}
 	if(MenuActive || fadingOut || JournalActive || SpellsActive || UpdatingActive)
@@ -1266,7 +1225,11 @@ void MN_Drawer(void)
 	
 			// Draw a dark background. It makes it easier to read the menus.
 			gi.GL_SetNoTexture();
-			gi.GL_DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
+#ifdef USE640
+			GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, bgAlpha);
+#else
+			GCanvas->DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
+#endif
 		}
 		else temp = outFade+1;
 
@@ -1618,13 +1581,10 @@ static void DrawGameplayMenu(void)
 		menu->x+MN_TextAWidth("LOOKSPRING : "), menu->y + menu->itemHeight*2);
 	MN_DrTextA_CS((noAutoAim)? "YES" : "NO", 
 		menu->x+MN_TextAWidth("NO AUTOAIM : "), menu->y + menu->itemHeight*3);
-	MN_DrTextA_CS((showFullscreenMana)? "YES" : "NO", 
-		menu->x+MN_TextAWidth("FULLSCREEN MANA : "), menu->y + menu->itemHeight*4);
 	MN_DrTextA_CS(xhairnames[xhair], 
-		menu->x+MN_TextAWidth("CROSSHAIR : "), menu->y + menu->itemHeight*5);
-	DrawSlider(menu, 7, 9, xhairSize);
-	DrawSlider(menu, 10, 9, screenblocks-3);
-	DrawSlider(menu, 13, 20, sbarscale-1);
+		menu->x+MN_TextAWidth("CROSSHAIR : "), menu->y + menu->itemHeight*4);
+	DrawSlider(menu, 6, 9, xhairSize);
+	DrawSlider(menu, 9, 9, screenblocks-3);
 }
 
 static void DrawGraphicsMenu(void)
@@ -1744,20 +1704,6 @@ static void SCLookSpring(int option)
 static void SCAutoAim(int option)
 {
 	P_SetMessage(&players[consoleplayer], (noAutoAim^=1)? "NO AUTOAIM" : "AUTOAIM ON", true);
-	S_StartSound(NULL, SFX_CHAT);
-}
-
-static void SCFullscreenMana(int option)
-{
-	showFullscreenMana = !showFullscreenMana;
-	if(showFullscreenMana)
-	{
-		P_SetMessage(&players[consoleplayer], "MANA SHOWN IN FULLSCREEN VIEW", true);
-	}
-	else
-	{
-		P_SetMessage(&players[consoleplayer], "NO MANA IN FULLSCREEN VIEW", true);
-	}
 	S_StartSound(NULL, SFX_CHAT);
 }
 
@@ -2646,25 +2592,7 @@ static void SCScreenSize(int option)
 	{
 		screenblocks--;
 	}
-	R_SetViewSize(screenblocks, 0);//detailLevel);
-}
-
-//---------------------------------------------------------------------------
-//
-// PROC SCStatusBarSize
-//
-//---------------------------------------------------------------------------
-
-static void SCStatusBarSize(int option)
-{
-	if(option == RIGHT_DIR)
-	{
-		if(sbarscale < 20) sbarscale++;
-	}
-	else 
-		if(sbarscale > 1) sbarscale--;
-
-	R_SetViewSize(screenblocks, 0);//detailLevel);
+	R_SetViewSize(screenblocks);
 }
 
 //---------------------------------------------------------------------------
@@ -2832,8 +2760,6 @@ boolean MN_Responder(event_t *event)
 	{
 		shiftdown = (event->type == ev_keydown);
 	}
-	// Edit field responder. In Mn_mplr.c.
-	if(Ed_Responder(event)) return true;
 
 	if(event->type != ev_keydown && event->type != ev_keyrepeat)
 	{
@@ -2995,14 +2921,7 @@ boolean MN_Responder(event_t *event)
 
 	if(InfoType)
 	{
-		if(shareware)
-		{
-			InfoType = (InfoType+1)%5;
-		}
-		else
-		{
-			InfoType = (InfoType+1)%4;
-		}
+		InfoType = (InfoType+1)%4;
 		if(key == DDKEY_ESCAPE)
 		{
 			InfoType = 0;
@@ -3042,8 +2961,6 @@ boolean MN_Responder(event_t *event)
 							typeofask = 0;
 							askforquit = false;
 							paused = false;
-							//I_SetPalette(W_CacheLumpName("PLAYPAL", PU_CACHE));
-							//OGL_SetFilter(0);
 							gi.GL_SetFilter(0);
 							H2_StartTitle(); // go to intro/demo mode.
 							break;
@@ -3129,7 +3046,7 @@ boolean MN_Responder(event_t *event)
 
 	if(MenuActive == false)
 	{
-		if(key == DDKEY_ESCAPE || gamestate == GS_DEMOSCREEN || (demoplayback && !democam.mode)) 
+		if(key == DDKEY_ESCAPE || gamestate == GS_DEMOSCREEN || demoplayback)
 		{
 			MN_ActivateMenu();
 			return(false); // allow bindings (like demostop)
@@ -3500,9 +3417,6 @@ int CCmdMenuAction(int argc, char **argv)
 		{
 			gamma = 0;
 		}
-		//SB_PaletteFlash(true); // force change
-		// Reset the textures.
-		//gi.GL_ClearTextureMem();
 		sprintf(cmd, "setgamma %d", gamma);
 		gi.Execute(cmd, true);
 		P_SetMessage(&players[consoleplayer], GammaText[gamma],
@@ -3606,13 +3520,16 @@ static void DrawSlider(Menu_t *menu, int item, int width, int slot)
 {
 	int		x;
 	int		y;
+	int		i;
 
 	x = menu->x+24;
 	y = menu->y+2+(item*menu->itemHeight);
 
-	// It seems M_SLDMD1 and M_SLDM2 are pretty much identical?
-	gi.GL_SetPatch(gi.W_GetNumForName("M_SLDMD1"));
-	gi.GL_DrawRectTiled(x-1, y+1, width*8+2, 13, 8, 13);
+	for (i = 0; i < width; i++)
+	{
+		GCanvas->DrawPatch(x + i * 8, y, 
+			gi.W_GetNumForName(i & 1 ?  "M_SLDMD2" : "M_SLDMD1"));
+	}
 
 	GCanvas->DrawPatch(x-32, y, gi.W_GetNumForName("M_SLDLT"));
 	GCanvas->DrawPatch(x + width*8, y, gi.W_GetNumForName("M_SLDRT"));

@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include "h2def.h"
 #include "p_local.h"
+#include "KCanvas.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -75,14 +76,13 @@ static int			numTexTypes = 0;
 */
 
 boolean	setsizeneeded;
-int		setblocks/*, setdetail*/;
+int		setblocks;
 
-void R_SetViewSize (int blocks, int detail)
+void R_SetViewSize(int blocks)
 {
 	setsizeneeded = true;
 	setblocks = blocks;
 	gi.Update(DDUF_BORDER);
-	//setdetail = detail;
 }
 
 void R_HandleSectorSpecials()
@@ -150,8 +150,8 @@ void G_Drawer(void)
 		else
 		{
 			int w = setblocks*32;
-			int h = setblocks*(200-SBARHEIGHT*sbarscale/20)/10;
-			gi.ViewWindow(160-(w>>1), (200-SBARHEIGHT*sbarscale/20-h)>>1, w, h);
+			int h = setblocks*(200-SBARHEIGHT)/10;
+			gi.ViewWindow(160-(w>>1), (200-SBARHEIGHT-h)>>1, w, h);
 		}
 	}
 
@@ -216,11 +216,19 @@ void G_Drawer(void)
 	{
 		if(!netgame)
 		{
-			gi.GL_DrawPatch(160, gi.Get(DD_VIEWWINDOW_Y)+5, gi.W_GetNumForName("PAUSED"));
+#ifdef USE640
+			GCanvas->DrawPatch1(320, gi.Get(DD_VIEWWINDOW_Y)*480/200+5, gi.W_GetNumForName("PAUSED"));
+#else
+			GCanvas->DrawPatch1(160, gi.Get(DD_VIEWWINDOW_Y)+5, gi.W_GetNumForName("PAUSED"));
+#endif
 		}
 		else
 		{
-			gi.GL_DrawPatch(160, 70, gi.W_GetNumForName("PAUSED"));
+#ifdef USE640
+			GCanvas->DrawPatch1(320, 70, gi.W_GetNumForName("PAUSED"));
+#else
+			GCanvas->DrawPatch1(160, 70, gi.W_GetNumForName("PAUSED"));
+#endif
 		}
 	}
 }
@@ -233,11 +241,29 @@ void G_Drawer(void)
 
 static void PageDrawer(void)
 {
-	gi.GL_DrawRawScreen(gi.W_GetNumForName(pagename));
+	GCanvas->DrawRawScreen(gi.W_GetNumForName(pagename));
 	if(demosequence == 1)
 	{
-		gi.GL_DrawPatch(4, 160, gi.W_GetNumForName("ADVISOR"));
+#ifdef USE640
+		GCanvas->DrawPatch1(4, 440, gi.W_GetNumForName("ADVISOR"));
+#else
+		GCanvas->DrawPatch1(4, 160, gi.W_GetNumForName("ADVISOR"));
+#endif
 	}
+/*
+	gl.MatrixMode(DGL_PROJECTION);
+	gl.PushMatrix();
+	gl.LoadIdentity();
+	gl.Ortho(0, 0, 768, 512, -1, 1);
+	GCanvas->DrawPatch1(0, 0, gi.W_GetNumForName("TITLEA"));
+	GCanvas->DrawPatch1(256, 0, gi.W_GetNumForName("TITLEB"));
+	GCanvas->DrawPatch1(512, 0, gi.W_GetNumForName("TITLEC"));
+	GCanvas->DrawPatch1(0, 256, gi.W_GetNumForName("TITLED"));
+	GCanvas->DrawPatch1(256, 256, gi.W_GetNumForName("TITLEE"));
+	GCanvas->DrawPatch1(512, 256, gi.W_GetNumForName("TITLEF"));
+	gl.MatrixMode(DGL_PROJECTION);
+	gl.PopMatrix();
+*/
 	gi.Update(DDUF_FULLSCREEN);
 }
 
@@ -434,14 +460,12 @@ void R_DrawPSprite (pspdef_t *psp)
 	if(gi.Get(DD_VIEWWINDOW_HEIGHT) == SCREENHEIGHT 
 		|| players[consoleplayer].pclass >= PCLASS_ETTIN) //Possessed always big screen
 	{
-		//y += PSpriteSY[viewplayer->pclass][players[consoleplayer].readyweapon] >> FRACBITS;
 		y += NewWeaponInfo[players[consoleplayer].readyweapon].PSpriteSY >> FRACBITS;
 	}
-	else 
-	{
-		y -= (39*sbarscale)/40;
-		y += (NewWeaponInfo[players[consoleplayer].readyweapon].PSpriteSY >> FRACBITS) * (20-sbarscale)/20.0f;
-	}
+//	else 
+//	{
+//		y -= 19;
+//	}
 	light += .1f;	// Add some extra light.
 	gi.GL_SetColorAndAlpha(light, light, light, alpha);
 	gi.GL_DrawPSprite(x1, y, 1, sprinfo.flip, sprinfo.lump);
@@ -465,85 +489,3 @@ void R_DrawPlayerSprites(ddplayer_t *viewplr)
 		if (psp->state)
 			R_DrawPSprite (psp);
 }
-
-//==========================================================================
-// Texture types
-
-#if 0
-
-static void readline(char *buffer, int len, FILE *file)
-{
-	int		p;
-
-	fgets(buffer, len, file);
-	p = strlen(buffer)-1;
-	if(buffer[p] == '\n') buffer[p] = 0;
-}
-
-static char *firstchar(char *buffer)
-{
-	int		i = 0;
-
-	while(isspace(buffer[i]) && buffer[i]) i++;
-	return buffer + i;
-}
-
-void R_LoadTextureTypes()
-{
-	FILE	*file;
-	char	buff[256], *ptr;
-	int		curtype = TEXTYPE_UNKNOWN;
-	textype_t *tt;
-
-	if((file=fopen("textypes.txt", "rt")) == NULL)
-		return;
-
-	for(readline(buff, 255, file); !feof(file); readline(buff, 255, file))
-	{
-		ptr = firstchar(buff);
-		if(*ptr == '#') continue; // A comment.
-		if(*ptr == '*')
-		{
-			ptr = firstchar(ptr+1);
-			if(!stricmp(ptr, "metal"))
-				curtype = TEXTYPE_METAL;
-			else if(!stricmp(ptr, "rock"))
-				curtype = TEXTYPE_ROCK;
-			else if(!stricmp(ptr, "wood"))
-				curtype = TEXTYPE_WOOD;
-			else if(!stricmp(ptr, "cloth"))
-				curtype = TEXTYPE_CLOTH;
-			continue;
-		}
-		// Allocate a new textype entry.
-		texTypes = realloc(texTypes, sizeof(textype_t) * ++numTexTypes);
-		// -JL- Paranoia
-		if (!texTypes)
-			gi.Error("R_LoadTextureTypes: realloc failed");
-		tt = texTypes + numTexTypes-1;
-		memset(tt, 0, sizeof(*tt));
-		strncpy(tt->name, ptr, 8);
-		tt->type = curtype;
-	}
-	gi.Message( "%d texture types loaded.\n", numTexTypes);
-	fclose(file);
-}
-
-void R_FreeTextypeTypes()
-{
-	free(texTypes);
-	texTypes = 0;
-	numTexTypes = 0;
-}
-
-int R_TextureTypeForName(char *name)
-{
-	int		i;
-
-	for(i=0; i<numTexTypes; i++)
-		if(!strnicmp(name, texTypes[i].name, 8))
-			return texTypes[i].type;
-	return TEXTYPE_UNKNOWN;
-}
-
-#endif
