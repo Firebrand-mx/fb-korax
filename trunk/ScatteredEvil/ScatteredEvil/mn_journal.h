@@ -1,43 +1,5 @@
 //==========================================================================
 //
-//	KJournalPageTitleWindow
-//
-//==========================================================================
-
-class KJournalPageTitleWindow:public KWindow
-{
-	DECLARE_CLASS(KJournalPageTitleWindow, KWindow, 0);
-
-	char *TitleText;
-
-	KJournalPageTitleWindow(void)
-	{
-		Font = KCanvas::YellowFont;
-	}
-
-	void InitWindow(void)
-	{
-		Super::InitWindow();
-		Disable();
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		if (TitleText)
-		{
-			gc->DrawText((Width - gc->TextWidth(TitleText)) / 2, 0, TitleText);
-		}
-	}
-
-	void SetText(char *NewText)
-	{
-		TitleText = NewText;
-	}
-};
-IMPLEMENT_CLASS(KJournalPageTitleWindow);
-
-//==========================================================================
-//
 //	KJournalImageDisplayWindow
 //
 //==========================================================================
@@ -165,7 +127,7 @@ class KJournalStatsPage:public KJournalPageBaseWindow
 	DECLARE_CLASS(KJournalStatsPage, KJournalPageBaseWindow, 0);
 	NO_DEFAULT_CONSTRUCTOR(KJournalStatsPage);
 
-	KJournalPageTitleWindow *winTitle;
+	KTextWindow *winTitle;
 
 	void InitWindow(void)
 	{
@@ -175,10 +137,12 @@ class KJournalStatsPage:public KJournalPageBaseWindow
 
 	void CreateTitle(void)
 	{
-		winTitle = NewWindow(KJournalPageTitleWindow, this);
+		winTitle = NewWindow(KTextWindow, this);
 		winTitle->SetPos(0, 18);
 		winTitle->SetSize(240, 12);
 		winTitle->SetText("YOUR STATISTICS");
+		winTitle->SetFont(KCanvas::YellowFont);
+		winTitle->SetTextAlignments(HALIGN_Center, VALIGN_Center);
 	}
 
 	void DrawWindow(KGC *gc)
@@ -260,7 +224,7 @@ class KJournalEnemiesPage:public KJournalPageBaseWindow
 		char *SideDescription;
 	};
 
-	KJournalPageTitleWindow *winTitle;
+	KTextWindow *winTitle;
 	KJournalImageDisplayWindow *winIcon;
 	KJournalDescriptionWindow *winDesc;
 	KJournalDescriptionWindow *winSideDesc;
@@ -282,9 +246,11 @@ class KJournalEnemiesPage:public KJournalPageBaseWindow
 
 	void CreateTitle(void)
 	{
-		winTitle = NewWindow(KJournalPageTitleWindow, this);
+		winTitle = NewWindow(KTextWindow, this);
 		winTitle->SetPos(0, 18);
 		winTitle->SetSize(240, 12);
+		winTitle->SetFont(KCanvas::YellowFont);
+		winTitle->SetTextAlignments(HALIGN_Center, VALIGN_Center);
 	}
 
 	void CreateIconDisplay(void)
@@ -402,7 +368,7 @@ class KJournalItemsPage:public KJournalPageBaseWindow
 		char *Description;
 	};
 
-	KJournalPageTitleWindow *winTitle;
+	KTextWindow *winTitle;
 	KJournalImageDisplayWindow *winIcon;
 	KJournalDescriptionWindow *winDesc;
 
@@ -422,9 +388,11 @@ class KJournalItemsPage:public KJournalPageBaseWindow
 
 	void CreateTitle(void)
 	{
-		winTitle = NewWindow(KJournalPageTitleWindow, this);
+		winTitle = NewWindow(KTextWindow, this);
 		winTitle->SetPos(0, 18);
 		winTitle->SetSize(240, 12);
+		winTitle->SetFont(KCanvas::YellowFont);
+		winTitle->SetTextAlignments(HALIGN_Center, VALIGN_Center);
 	}
 
 	void CreateIconDisplay(void)

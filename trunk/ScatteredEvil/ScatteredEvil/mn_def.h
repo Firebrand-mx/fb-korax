@@ -18,4 +18,6 @@ class KRootWindow;
 #include "KModalWindow.h"
 #include "KRootWindow.h"
 
+#include "KTextWindow.h"
+
 #endif // __MENU_DEFS_H_
