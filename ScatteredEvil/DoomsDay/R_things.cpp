@@ -361,6 +361,11 @@ void R_ProjectSprite (mobj_t *thing)
 	{ // Never make a vissprite when MF2_DONTDRAW is flagged.
 		return;
 	}
+	// Don't draw self
+	if (thing == viewplayer->mo && !viewplayer->ThirdPersonView)
+	{
+		return;
+	}
 
 //
 // transform the origin point

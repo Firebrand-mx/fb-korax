@@ -99,6 +99,7 @@ void SetGameImports(game_import_t *imp)
 
 	imp->Message = ST_Message;
 	imp->Error = I_Error;
+	imp->CoreDump = DD_CoreDump;
 
 	imp->conprintf = CON_Printf;
 	imp->flconprintf = CON_FPrintf;
@@ -293,6 +294,7 @@ void SetDGLImports(gl_import_t *imp)
 	imp->apiSize = sizeof(*imp);
 	imp->Message = ST_Message;
 	imp->Error = I_Error;
+	imp->CoreDump = DD_CoreDump;
 	imp->CheckParm = M_CheckParm;
 	imp->Argc = Argc;
 	imp->Argv = Argv;

@@ -769,17 +769,20 @@ typedef struct
 
 struct mobj_s;
 
-typedef struct ddplayer_s
+struct ddplayer_t
 {
 	struct mobj_s *mo;					// pointer to a (game specific) mobj
 	fixed_t		viewz;					// focal origin above r.z
 	float		lookdir;				// It's now a float, for mlook. -jk
 	int			fixedcolormap;			// can be set to REDCOLORMAP, etc
 	int			extralight;				// so gun flashes light up areas
-	signed int	frags[DDMAXPLAYERS];	// kills of other players
+	boolean		ThirdPersonView;		// Third person view?
+	fixed_t		ThirdPersonOrigin[3];	// View origin in third person view
+	angle_t		ThirdPersonAngle;		// Angle of the third person view
+	float		ThirdPersonPitch;		// Pitch of the third person view
 	int			ingame;					// is this player in game?
 	void		*extradata;				// Pointer to any game-specific data.
-} ddplayer_t;
+};
 
 // Actions.
 typedef struct

@@ -255,10 +255,11 @@ static void GL_ModelViewMatrix()
 	vy = FIX2FLT(viewz);
 	vz = FIX2FLT(viewy);
 	vang = viewangle / (float)ANGLE_MAX * 360 - 90;
+	vpitch = viewpitch;
 
 	gl.MatrixMode(DGL_MODELVIEW);
 	gl.LoadIdentity();
-	gl.Rotatef(vpitch=viewpitch*85.0/110.0, 1, 0, 0);
+	gl.Rotatef(vpitch, 1, 0, 0);
 	gl.Rotatef(vang, 0, 1, 0);
 	gl.Scalef(1, 1.2f, 1);	// This is the aspect correction.
 	gl.Translatef(-vx,-vy,-vz);

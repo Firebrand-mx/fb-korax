@@ -124,6 +124,8 @@ static execOpt_t ExecOptions[] =
 	{ NULL, NULL, 0, 0 } // Terminator
 };
 
+static char *error_string;
+
 // CODE --------------------------------------------------------------------
 
 //==========================================================================
@@ -160,6 +162,7 @@ void DD_SetConfigFile(char *filename)
 
 void DD_Main(void)
 {
+	guard(DD_Main);
 	int p;
 	char buff[10];
 
@@ -285,6 +288,7 @@ void DD_Main(void)
 	M_ParseCommands("autoexec.cfg", false);
 
 	DD_GameLoop(); // Never returns
+	unguard;
 }
 
 //==========================================================================
@@ -295,6 +299,7 @@ void DD_Main(void)
 
 static void HandleArgs(int state)
 {
+	guard(HandleArgs);
 	int p;
 	execOpt_t *opt;
 
@@ -315,6 +320,7 @@ static void HandleArgs(int state)
 			opt->func(&myargv[p], opt->tag);
 		}
 	}
+	unguard;
 }
 
 
@@ -394,6 +400,7 @@ static void ExecOptionMAXZONE(char **args, int tag)
 
 void DD_GameLoop(void)
 {
+	guard(DD_GameLoop);
 	MSG msg;
 
 	// Now we've surely finished startup.
@@ -452,6 +459,7 @@ void DD_GameLoop(void)
 
 		DrawAndBlit();
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -464,6 +472,7 @@ void DD_GameLoop(void)
 
 void DD_ProcessEvents(void)
 {
+	guard(DD_ProcessEvents);
 	event_t *ev;
 
 	for(; eventtail != eventhead; eventtail = (++eventtail)&(MAXEVENTS-1))
@@ -485,6 +494,7 @@ void DD_ProcessEvents(void)
 		// The bindings responder.
 		B_Responder(ev);
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -497,8 +507,10 @@ void DD_ProcessEvents(void)
 
 void DD_PostEvent(event_t *ev)
 {
+	guard(DD_PostEvent);
 	events[eventhead] = *ev;
 	eventhead = (++eventhead)&(MAXEVENTS-1);
+	unguard;
 }
 
 //==========================================================================
@@ -509,6 +521,7 @@ void DD_PostEvent(event_t *ev)
 
 static void DrawAndBlit(void)
 {
+	guard(DrawAndBlit);
 	// Draw the game graphics.
 	gx.G_Drawer();
 	// The colored filter. 
@@ -523,6 +536,7 @@ static void DrawAndBlit(void)
 
 	// Flush buffered stuff to screen (blits everything).
 	I_Update();
+	unguard;
 }
 
 //==========================================================================
@@ -533,6 +547,7 @@ static void DrawAndBlit(void)
 
 void AddWADFile(char *file)
 {
+	guard(AddWADFile);
 	int i;
 	char *newwad;
 
@@ -545,6 +560,7 @@ void AddWADFile(char *file)
 		I_Error("AddWADFile: malloc failed");
 	strcpy(newwad, file);
 	wadfiles[i] = newwad;
+	unguard;
 }
 
 //==========================================================================
@@ -564,6 +580,7 @@ void AddWADFile(char *file)
 
 void DD_GameUpdate(int flags)
 {
+	guardSlow(DD_GameUpdate);
 	if(flags & DDUF_BORDER) BorderNeedRefresh = true;
 	if(flags & DDUF_TOP) BorderTopRefresh = true;
 	if(flags & DDUF_FULLVIEW) UpdateState |= I_FULLVIEW;
@@ -572,11 +589,13 @@ void DD_GameUpdate(int flags)
 	if(flags & DDUF_FULLSCREEN) UpdateState |= I_FULLSCRN;
 
 	if(flags & DDUF_UPDATE) I_Update();
+	unguardSlow;
 }
 
 // Queries are a way to extend the API without adding new functions.
 void DD_CheckQuery(int query, int parm)
 {
+	guard(DD_CheckQuery);
 	int					i;
 	jtnetserver_t		*buf;
 	serverdataquery_t	*sdq;
@@ -682,6 +701,7 @@ void DD_CheckQuery(int query, int parm)
 	default:
 		break;
 	}
+	unguard;
 }
 
 ddvalue_t ddValues[DD_LAST_VALUE-DD_FIRST_VALUE-1] =
@@ -733,6 +753,7 @@ ddvalue_t ddValues[DD_LAST_VALUE-DD_FIRST_VALUE-1] =
 
 int DD_GetInteger(int ddvalue)
 {
+	guard(DD_GetInteger);
 	if(ddvalue <= DD_FIRST_VALUE || ddvalue >= DD_LAST_VALUE) 
 	{
 		// How about some specials?
@@ -748,10 +769,12 @@ int DD_GetInteger(int ddvalue)
 	}
 	if(ddValues[ddvalue].readPtr == NULL) return 0;
 	return *ddValues[ddvalue].readPtr;
+	unguard;
 }
 
 void DD_SetInteger(int ddvalue, int parm)
 {
+	guard(DD_SetInteger);
 	if(ddvalue <= DD_FIRST_VALUE || ddvalue >= DD_LAST_VALUE) 
 	{
 		DD_CheckQuery(ddvalue, parm);
@@ -800,9 +823,52 @@ void DD_SetInteger(int ddvalue, int parm)
 	}
 	if(ddValues[ddvalue].writePtr)
 		*ddValues[ddvalue].writePtr = parm;
+	unguard;
 }
 
 ddplayer_t *DD_GetPlayer(int number)
 {
-	return (ddplayer_t*) &players[number];
+	return &players[number];
+}
+
+//==========================================================================
+//
+//	DD_CoreDump
+//
+//==========================================================================
+
+void DD_CoreDump(const char *fmt, ...)
+{
+	static bool first = true;
+
+	if (!error_string)
+	{
+		error_string = new char[32];
+		strcpy(error_string, "Stack trace: ");
+		first = true;
+	}
+
+	va_list argptr;
+	char string[1024];
+	
+	va_start(argptr, fmt);
+	vsprintf(string, fmt, argptr);
+	va_end(argptr);
+
+	printf("- %s\n", string);
+
+	char *new_string = new char[strlen(error_string) + strlen(string) + 6];
+	strcpy(new_string, error_string);
+	if (first)
+		first = false;
+	else
+		strcat(new_string, " <- ");
+	strcat(new_string, string);
+	delete error_string;
+	error_string = new_string;
+}
+
+const char *DD_GetCoreDump(void)
+{
+	return error_string ? error_string : "";
 }

@@ -77,7 +77,7 @@ int             nodeforplayer[MAXPLAYERS];
 
 boolean			map_rendered = false;
 boolean			allow_net_traffic = true;	// Should net traffic be allowed?
-player_t		players[MAXPLAYERS];
+ddplayer_t		players[MAXPLAYERS];
 int				netgame; // only true if >1 player
 int				server;		// true if this computer is an open server.
 int				limbo;		// true if the server is in limbo mode.
@@ -113,12 +113,15 @@ doomdata_t              reboundstore;
 
 int NetbufferSize (void)
 {
+	guardSlow(NetbufferSize);
 	//return (int)&(((doomdata_t *)0)->cmds[netbuffer->numtics]);
 	return (int)&(((doomdata_t *)0)->ticcmds[TICCMD_IDX(netbuffer->numtics)]);
+	unguardSlow;
 }
 
 unsigned NetbufferChecksum (void)
 {
+	guardSlow(NetbufferChecksum);
 	unsigned                c;
 	int             i,l;
 
@@ -133,10 +136,12 @@ unsigned NetbufferChecksum (void)
 		c += ((unsigned *)&netbuffer->retransmitfrom)[i] * (i+1);
 
 	return c & NCMD_CHECKSUM;
+	unguardSlow;
 }
 
 int ExpandTics (int low)
 {
+	guardSlow(ExpandTics);
 	int     delta;
 
 	delta = low - (maketic&0xff);
@@ -150,6 +155,7 @@ int ExpandTics (int low)
 
 	I_Error ("ExpandTics: strange value %i at maketic %i",low,maketic);
 	return 0;
+	unguardSlow;
 }
 
 
@@ -165,6 +171,7 @@ int ExpandTics (int low)
 
 void HSendPacket (int node, int flags)
 {
+	guard(HSendPacket);
 	netbuffer->checksum = NetbufferChecksum () | flags;
 
 	if (!node)
@@ -200,41 +207,8 @@ if (debugfile)
 }
 
 	I_NetCmd ();
+	unguard;
 }
-
-//==========================================================================
-//
-// NET_SendFrags
-//
-//==========================================================================
-
-/*void NET_SendFrags(player_t *player)
-{
-	int i;
-	int frags;
-
-	netbuffer->checksum = NetbufferChecksum();
-
-	if (!allow_net_traffic)
-	{
-		return;
-	}
-	if (!netgame)
-	{
-		I_Error ("Tried to transmit to another node");
-	}
-
-	frags = 0;
-	for(i = 0; i < MAXPLAYERS; i++)
-	{
-		frags += player->frags[i];
-	}
-	doomcom->command = CMD_FRAG;
-	doomcom->remotenode = frags;
-	doomcom->datalength = NetbufferSize ();
-
-	I_NetCmd ();
-}*/
 
 /*
 ==============
@@ -248,6 +222,7 @@ if (debugfile)
 
 boolean HGetPacket (void)
 {
+	guard(HGetPacket);
 	if (reboundpacket)
 	{
 		*netbuffer = reboundstore;
@@ -301,11 +276,13 @@ if (debugfile)
 	}
 }
 	return true;
+	unguard;
 }
 
 // Type is either NE_CUSTOM or NE_CHAT.
 void D_SendPacket(unsigned int playermask, int type, void *data, int length)
 {
+	guard(D_SendPacket);
 	// If the type is wrong, no packet is sent.
 	if(type != NE_CUSTOM && type != NE_CHAT) return;
 
@@ -357,12 +334,15 @@ void D_SendPacket(unsigned int playermask, int type, void *data, int length)
 				}
 		}
 	}
+	unguard;
 }
 
 // This is for the Doomsday API. Sends a NE_CUSTOM packet.
 void D_SendCustomPacket(unsigned int playermask, void *data, int length)
 {
+	guard(D_SendCustomPacket);
 	D_SendPacket(playermask, NE_CUSTOM, data, length);
+	unguard;
 }
 
 // Sends a chat message to everybody.
@@ -447,16 +427,19 @@ void D_SendCustomPacket(unsigned int playermask, void *data, int length)
 // Prints the message in the console.
 void ShowChatMessage()
 {
+	guard(ShowChatMessage);
 	// The current packet in the netbuffer is a chat message,
 	// let's unwrap and show it.
 	CON_FPrintf(CBLF_GREEN, "%s: %s\n", 
 		I_NetGetPlayerName(netbuffer->player),
 		netbuffer->ticcmds+2);
+	unguard;
 }
 
 // All arguments are sent out as a chat message.
 int CCmdChat(int argc, char **argv)
 {
+	guard(CCmdChat);
 	char	buffer[100];
 	int		i, mode = !stricmp(argv[0], "chat")? 0 : !stricmp(argv[0], "chatNum")? 1 : 2;
 	unsigned int mask = 0;
@@ -514,10 +497,12 @@ int CCmdChat(int argc, char **argv)
 		gx.NetPlayerEvent(netbuffer->player, DDPE_CHAT_MESSAGE,
 			netbuffer->ticcmds+2);
 	return true;
+	unguard;
 }
 
 static void HandlePacket()
 {
+	guard(HandlePacket);
 	int type = netbuffer->starttic;
 
 	// A custom broadcast?
@@ -535,6 +520,7 @@ static void HandlePacket()
 			gx.NetPlayerEvent(netbuffer->player, DDPE_CHAT_MESSAGE,
 				netbuffer->ticcmds+2);
 	}
+	unguard;
 }
 
 /*
@@ -549,6 +535,7 @@ char    exitmsg[80];
 
 void GetPackets (void)
 {
+	guard(GetPackets);
 	int             netconsole;
 	int             netnode;
 	byte			*src, *dest;
@@ -790,6 +777,7 @@ void GetPackets (void)
 			src += TICCMD_SIZE;
 		}
 	}
+	unguard;
 }
 
 /*
@@ -805,6 +793,7 @@ void GetPackets (void)
 
 void NetUpdate (void)
 {
+	guard(NetUpdate);
 	int nowtime;
 	int newtics;
 	int	i,j;
@@ -1035,6 +1024,7 @@ void NetUpdate (void)
 listen:
 
 	GetPackets ();
+	unguard;
 }
 
 
@@ -1048,6 +1038,7 @@ listen:
 
 void CheckAbort (void)
 {
+	guardSlow(CheckAbort);
 	event_t *ev;
 	int             stoptic;
 
@@ -1063,16 +1054,19 @@ void CheckAbort (void)
 		if (ev->type == ev_keydown && ev->data1 == DDKEY_ESCAPE)
 			I_Error ("Network game synchronization aborted.");
 	}
+	unguardSlow;
 }
 
 // Called from I_InitNetwork to initialize the ticcmd arrays.
 void D_AllocNetArrays()
 {
+	guardSlow(D_AllocNetArrays);
 	int		i;
 
 	localticcmds = (byte *)calloc(BACKUPTICS, TICCMD_SIZE);
 	for(i=0; i<MAXPLAYERS; i++)
 		netticcmds[i] = (byte *)calloc(BACKUPTICS, TICCMD_SIZE);
+	unguardSlow;
 }
 
 
@@ -1093,6 +1087,7 @@ void D_AllocNetArrays()
 //
 void D_CheckNetGame (void)
 {
+	guard(D_CheckNetGame);
 	int             i, j;
 //	int pClass;
 
@@ -1129,11 +1124,13 @@ void D_CheckNetGame (void)
 		nodeingame[i] = true;
 
 //ST_Message ("player %i of %i (%i nodes)\n", consoleplayer+1, doomcom->numplayers, doomcom->numnodes);
+	unguard;
 
 }
 
 void D_StartNetGame()
 {
+	guard(D_StartNetGame);
 	int		i, j;
 
 	// Reset all the counters and other data.
@@ -1185,10 +1182,12 @@ void D_StartNetGame()
 		netbuffer->starttic = NE_START_GAME;	
 		HSendPacket(-1, NCMD_SETUP);
 	}
+	unguard;
 }
 
 void D_SyncNetStart()
 {
+	guard(D_SyncNetStart);
 	int		i;
 	int		lastTime = 0;		// Make first update immediately.
 	int		startTime = I_GetTime(), maxTime = 35 * 10;	// Timeout in 10 seconds.
@@ -1302,10 +1301,12 @@ if(debugfile) fprintf(debugfile, "sending the server a packet\n");
 		}
 if(debugfile) fprintf(debugfile, "* sync done\n");
 	}
+	unguard;
 }
 
 void D_StopNetGame(boolean closing)
 {
+	guard(D_StopNetGame);
 	int		i;
 
 	if(server)
@@ -1337,6 +1338,7 @@ void D_StopNetGame(boolean closing)
 	for(i=0; i<MAXPLAYERS; i++)
 		if(i != consoleplayer)
 			players[i].ingame = false;
+	unguard;
 }
 
 /*
@@ -1352,6 +1354,7 @@ void D_StopNetGame(boolean closing)
 
 void D_QuitNetGame (void)
 {
+	guard(D_QuitNetGame);
 	int             i;
 
 	if (debugfile)
@@ -1384,12 +1387,15 @@ void D_QuitNetGame (void)
 		HSendPacket(-1, NCMD_EXIT);	// Broadcast.
 		I_WaitVBL (1);
 	}
+	unguard;
 }
 
 
 void D_GetTicCmd(void *cmd, int player)
 {
+	guard(D_GetTicCmd);
 	memcpy(cmd, &netticcmds[player][TICCMD_IDX((gametic/ticdup)%BACKUPTICS)], TICCMD_SIZE);
+	unguard;
 }
 
 
@@ -1406,6 +1412,7 @@ extern  boolean advancedemo;
 
 void TryRunTics (void)
 {
+	guard(TryRunTics);
 	int 			i;
 	int 			lowtic;
 	int 			entertic;
@@ -1559,6 +1566,7 @@ if (debugfile)
 		}
 		NetUpdate ();                                   // check for new console commands
 	}
+	unguard;
 }
 
 

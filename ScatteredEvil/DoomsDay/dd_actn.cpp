@@ -33,14 +33,18 @@ action_t *actions = NULL;		// Pointer to the actions list.
 
 void DD_DefineActions(action_t *acts)
 {
+	guard(DD_DefineActions);
 	// Store a pointer to the list of actions.
 	actions = acts;
+	unguard;
 }
 
 void DD_ClearActions(void)
 {
+	guard(DD_ClearActions);
 	action_t *act;
 	for(act=actions; act->name[0]; act++) act->on = false;
+	unguard;
 }
 
 // The command begins with a '+' or a '-'.
@@ -48,6 +52,7 @@ void DD_ClearActions(void)
 // If has_prefix is false, the state of the action is negated.
 int DD_ActionCommand(char *cmd, boolean has_prefix)
 {
+	guard(DD_ActionCommand);
 	char		prefix = cmd[0];
 	int			v1, v2;
 	char		name8[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -73,15 +78,18 @@ int DD_ActionCommand(char *cmd, boolean has_prefix)
 		}
 	}
 	return false;
+	unguard;
 }
 
 int CCmdListActs(int argc, char **argv)
 {
+	guard(CCmdListActs);
 	action_t	*act;
 
 	ST_Message( "Actions commands registered by the game DLL:\n");
 	for(act=actions; act->name[0]; act++)
 		ST_Message("  %s\n", act->name);
 	return true;
+	unguard;
 }
 
