@@ -1404,7 +1404,7 @@ void AM_DrawDeathmatchStats(void)
 			{
 				if(players[i].plr->ingame)
 				{
-					fragCount[i] += players[i].plr->frags[j];
+					fragCount[i] += players[i].frags[j];
 				}
 			}
 			for(k = 0; k < MAXPLAYERS; k++)

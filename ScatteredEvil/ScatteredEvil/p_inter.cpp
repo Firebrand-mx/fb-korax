@@ -1788,11 +1788,11 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 		{
 			if(target == source)
 			{ // Self-frag
-				target->player->plr->frags[target->player-players]--;
+				target->player->frags[target->player-players]--;
 			}
 			else
 			{
-				source->player->plr->frags[target->player-players]++;
+				source->player->frags[target->player-players]++;
 				source->player->experience+=1000;
 			}
 		}
@@ -1801,7 +1801,7 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 	{ // Player death
 		if(!source)
 		{ // Self-frag
-			target->player->plr->frags[target->player-players]--;
+			target->player->frags[target->player-players]--;
 		}
 		target->flags &= ~MF_SOLID;
 		target->flags2 &= ~MF2_FLY;
@@ -1891,7 +1891,7 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 		if(netgame && !deathmatch && source && source->player && source->player->plr &&
 			!(target->flags3&MF3_FRIENDLY) && (target->flags & MF_COUNTKILL)) 
 		{
-            source->player->plr->frags[0]++;
+            source->player->frags[0]++;
         }
     }
         

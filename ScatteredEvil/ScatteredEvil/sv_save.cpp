@@ -390,7 +390,7 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 		memcpy(saveplr->powers, plr->powers, sizeof(plr->powers));
 		saveplr->keys = plr->keys;
 		saveplr->pieces = plr->pieces;
-		memcpy(saveplr->frags, plr->plr->frags, sizeof(plr->plr->frags));
+		memcpy(saveplr->frags, plr->frags, sizeof(plr->frags));
 		saveplr->readyweapon = plr->readyweapon;
 		memcpy(saveplr->weaponowned, plr->weaponowned, sizeof(plr->weaponowned));
 		memcpy(saveplr->mana, plr->mana, sizeof(plr->mana));
@@ -464,7 +464,7 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 		memcpy(plr->powers, saveplr->powers, sizeof(plr->powers));
 		plr->keys = saveplr->keys;
 		plr->pieces = saveplr->pieces;
-		memcpy(plr->plr->frags, saveplr->frags, sizeof(plr->plr->frags));
+		memcpy(plr->frags, saveplr->frags, sizeof(plr->frags));
 		plr->readyweapon = saveplr->readyweapon;
 		plr->pendingweapon = WP_NOCHANGE; //Remi: Keep the same weapon when loading game
 		memcpy(plr->weaponowned, saveplr->weaponowned, sizeof(plr->weaponowned));
@@ -821,7 +821,7 @@ void SV_MapTeleport(int map, int position)
 		playerWasReborn = (players[i].playerstate == PST_REBORN);
 		if(deathmatch)
 		{
-			memset(players[i].plr->frags, 0, sizeof(players[i].plr->frags));
+			memset(players[i].frags, 0, sizeof(players[i].frags));
 			mobj = P_SpawnMobj(playerstarts[0][i].x<<16,
 				playerstarts[0][i].y<<16, 0, MT_PLAYER_FIGHTER);
 			players[i].plr->mo = mobj;
