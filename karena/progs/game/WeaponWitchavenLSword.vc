@@ -1,0 +1,388 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponWitchavenLSword : Weapon;
+
+int NoMoreManaState;
+float LongSwordRange;
+bool bThrowFireball;
+
+//==========================================================================
+//
+//  A_WLSwordAttack
+//
+//==========================================================================
+
+void A_WLSwordAttack(void)
+{
+	Actor Owner = Player.MO;
+	float power;
+	int damage;
+	int i;
+	int useMana;
+	TAVec angles;
+	TVec vforward;
+
+	damage = 40 + (P_Random() & 15) + (P_Random() & 7);
+	if (str_mod)
+	{
+		damage=damage*Player.strength/10;
+	}
+	power = 0.0;
+	if (IsWeaponManaUsable())
+	{
+		damage <<= 1;
+		power = 6.0;
+		PuffType = AxePuff;
+		useMana = 1;
+	}
+	else
+	{
+		PuffType = AxePuff;
+		useMana = 0;
+	}
+	for (i = 0; i < 16; i++)
+	{
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, LongSwordRange);
+		if (linetarget)
+		{
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, LongSwordRange, damage))
+			{
+				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			useMana++;
+			break;
+		}
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, LongSwordRange);
+		if (linetarget)
+		{
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, LongSwordRange, damage))
+			{
+				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			useMana++;
+			break;
+		}
+	}
+	if (i == 16)
+	{
+		// didn't find any creatures, so try to strike any walls
+		angles = Owner.Angles;
+		AimLineAttack(Owner, &angles, MELEERANGE);
+		AngleVector(&angles, &vforward);
+		PuffType = HammerPuff;
+		if (LineAttack(Owner, vforward, MELEERANGE, damage))
+		{
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+	}
+
+	if (useMana == 10)
+	{
+		UseWeaponMana();
+		if (!IsWeaponManaUsable())
+		{
+			SetState(NoMoreManaState);
+		}
+	}
+	bThrowFireball = true;
+}
+
+//============================================================================
+//
+//  A_WElectricBall
+//
+//============================================================================
+
+void A_WElectricBall(void)
+{
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+	PlayerPawn pmo;
+
+	pmo = PlayerPawn(Player.MO);
+
+	angles = pmo.Angles;
+	AimLineAttack(pmo, &angles, 16.0 * 64.0);
+	if (!linetarget)
+	{
+		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
+		AimLineAttack(pmo, &angles, 16.0 * 64.0);
+		if (!linetarget)
+		{
+			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
+			AimLineAttack(pmo, &angles, 16.0 * 64.0);
+			if (!linetarget)
+			{
+				angles.yaw = pmo.Angles.yaw;
+			}
+		}
+	}
+	org = pmo.Origin;
+	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
+	org.z -= pmo.FloorClip;
+	
+	Actor mo = Spawn(WElectricBall, org);
+	mo.Instigator = pmo;
+	mo.Angles = angles;
+	AngleVector(&angles, &vforward);
+
+	mo.Speed = 50.0;
+	mo.bMissile = true;
+	mo.bRip = true;
+	vforward.z = 0.0;
+
+	mo.Velocity = vforward * mo.Speed;
+	mo.Origin += mo.Velocity;
+	mo.TryMove(mo.Origin);
+
+	WElectricBall eb = WElectricBall(mo);
+	eb.InitMe(pmo);
+	
+	UseWeaponMana();
+}
+
+__states__
+{
+	S_WLSWORDREADY('WDHS', 0, 1.0 / 35.0, S_WLSWORDREADY) { A_WeaponReady(); }
+	S_WLSWORDDOWN('WDHS', 0, 1.0 / 35.0, S_WLSWORDDOWN) { A_Lower(); }
+	S_WLSWORDUP('WDHS', 0, 1.0 / 35.0, S_WLSWORDUP) { A_Raise(); }
+	S_WLSWORDATK_1('WDHS', 1, 3.0 / 35.0, S_WLSWORDATK_2) { }
+	S_WLSWORDATK_2('WDHS', 2, 3.0 / 35.0, S_WLSWORDATK_3) { }
+	S_WLSWORDATK_3('WDHS', 3, 2.0 / 35.0, S_WLSWORDATK_4) { }
+	S_WLSWORDATK_4('WDHS', 4, 2.0 / 35.0, S_WLSWORDATK_5) { A_WLSwordAttack(); }
+	S_WLSWORDATK_5('WDHS', 5, 1.0 / 35.0, S_WLSWORDATK_6) { }
+	S_WLSWORDATK_6('WDHS', 6, 1.0 / 35.0, S_WLSWORDATK_7) { }
+	S_WLSWORDATK_7('WDHS', 7, 1.0 / 35.0, S_WLSWORDATK_8) { }
+	S_WLSWORDATK_8('WDHS', 8, 1.0 / 35.0, S_WLSWORDATK_9) { }
+	S_WLSWORDATK_9('WDHS', 0, 2.0 / 35.0, S_WLSWORDATK_10) { /*A_ReFire();*/ }
+	S_WLSWORDATK_10('WDHS', 0, 1.0 / 35.0, S_WLSWORDATK_11) { SY = 52.0; }
+	S_WLSWORDATK_11('WDHS', 0, 1.0 / 35.0, S_WLSWORDATK_12) { SY = 44.0; }
+	S_WLSWORDATK_12('WDHS', 0, 1.0 / 35.0, S_WLSWORDATK_13) { SY = 36.0; }
+	S_WLSWORDATK_13('WDHS', 0, 1.0 / 35.0, S_WLSWORDREADY) { }
+	// SECOND STRIKE (NO MANA)
+	S_WLSWORDATK2_1('WDHS', 9, 3.0 / 35.0, S_WLSWORDATK2_2) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_2('WDHS', 9, 3.0 / 35.0, S_WLSWORDATK2_3) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_3('WDHS', 10, 2.0 / 35.0, S_WLSWORDATK2_4) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_4('WDHS', 10, 2.0 / 35.0, S_WLSWORDATK2_5) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_5('WDHS', 11, 1.0 / 35.0, S_WLSWORDATK2_6) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_6('WDHS', 11, 1.0 / 35.0, S_WLSWORDATK2_7) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_7('WDHS', 12, 2.0 / 35.0, S_WLSWORDATK2_8) { A_WLSwordAttack(); }
+	S_WLSWORDATK2_8('WDHS', 12, 2.0 / 35.0, S_WLSWORDATK2_9) { }
+	S_WLSWORDATK2_9('WDHS', 13, 1.0 / 35.0, S_WLSWORDATK2_10) { }
+	S_WLSWORDATK2_10('WDHS', 13, 1.0 / 35.0, S_WLSWORDATK2_11) { }
+	S_WLSWORDATK2_11('WDHS', 14, 1.0 / 35.0, S_WLSWORDATK2_12) { }
+	S_WLSWORDATK2_12('WDHS', 14, 1.0 / 35.0, S_WLSWORDATK2_13) { }
+	S_WLSWORDATK2_13('WDHS', 15, 1.0 / 35.0, S_WLSWORDATK2_14) { }
+	S_WLSWORDATK2_14('WDHS', 15, 1.0 / 35.0, S_WLSWORDATK2_15) { }
+	S_WLSWORDATK2_15('WDHS', 16, 1.0 / 35.0, S_WLSWORDATK2_16) { }
+	S_WLSWORDATK2_16('WDHS', 16, 1.0 / 35.0, S_WLSWORDATK_1) { A_ReFire(); }
+	// MANA STATES
+	S_WLSWORDREADY_G('WDHP', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_WeaponReady(); }
+	S_WLSWORDREADY_G1('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_WeaponReady(); }
+	S_WLSWORDREADY_G2('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_WeaponReady(); }
+	S_WLSWORDREADY_G3('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_WeaponReady(); }
+	S_WLSWORDREADY_G4('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_WeaponReady(); }
+	S_WLSWORDREADY_G5('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_WeaponReady(); }
+	S_WLSWORDREADY_G6('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_WeaponReady(); }
+	S_WLSWORDREADY_G7('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_WeaponReady(); }
+	S_WLSWORDREADY_G8('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_WeaponReady(); }
+	S_WLSWORDDOWN_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDDOWN_G) { A_Lower(); }
+	S_WLSWORDUP_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDUP_G) { A_Raise(); }
+	S_WLSWORDATK_G1('WDHP', 5, 3.0 / 35.0, S_WLSWORDATK_G2) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G2('WDHP', 5, 3.0 / 35.0, S_WLSWORDATK_G3) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G3('WDHP', 6, 2.0 / 35.0, S_WLSWORDATK_G4) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G4('WDHP', 6, 2.0 / 35.0, S_WLSWORDATK_G5) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G5('WDHP', 7, 1.0 / 35.0, S_WLSWORDATK_G6) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G6('WDHP', 7, 1.0 / 35.0, S_WLSWORDATK_G7) { /*SX = 0.0;*/ }
+	S_WLSWORDATK_G7('WDHP', 8, 1.0 / 35.0, S_WLSWORDATK_G8) { A_WLSwordAttack(); }
+	S_WLSWORDATK_G8('WDHP', 8, 1.0 / 35.0, S_WLSWORDATK_G9) { /*SX = -5.0;*/ }
+	S_WLSWORDATK_G9('WDHP', 9, 1.0 / 35.0, S_WLSWORDATK_G10) { }
+	S_WLSWORDATK_G10('WDHP', 9, 1.0 / 35.0, S_WLSWORDATK_G11) { /*SX = -10.0;*/ }
+	S_WLSWORDATK_G11('WDHP', 10, 1.0 / 35.0, S_WLSWORDATK_G12) { }
+	S_WLSWORDATK_G12('WDHP', 10, 1.0 / 35.0, S_WLSWORDATK_G13) { /*SX = -15.0;*/ }
+	S_WLSWORDATK_G13('WDHP', 11, 1.0 / 35.0, S_WLSWORDATK_G14) { }
+	S_WLSWORDATK_G14('WDHP', 11, 1.0 / 35.0, S_WLSWORDATK_G15) { /*SX = -20.0;*/ }
+	S_WLSWORDATK_G15('WDHP', 12, 1.0 / 35.0, S_WLSWORDATK_G16) { }
+	S_WLSWORDATK_G16('WDHP', 12, 1.0 / 35.0, S_WLSWORDATK_G17) { /*SX = -25.0;*/ }
+	S_WLSWORDATK_G17('WDHP', 13, 1.0 / 35.0, S_WLSWORDATK_G18) { }
+	S_WLSWORDATK_G18('WDHP', 13, 2.0 / 35.0, S_WLSWORDATK_G19) { /*SX = -30.0;*/ A_ReFire(); }
+	S_WLSWORDATK_G19('WDHP', 0, 1.0 / 35.0, S_WLSWORDATK_G20) { SY = 60.0; }
+	S_WLSWORDATK_G20('WDHP', 1, 1.0 / 35.0, S_WLSWORDATK_G21) { SY = 52.0; }
+	S_WLSWORDATK_G21('WDHP', 2, 1.0 / 35.0, S_WLSWORDATK_G22) { SY = 44.0; }
+	S_WLSWORDATK_G22('WDHP', 3, 1.0 / 35.0, S_WLSWORDATK_G23) { SY = 36.0; }
+	S_WLSWORDATK_G23('WDHP', 4, 1.0 / 35.0, S_WLSWORDREADY_G) { }
+	// SECOND STRIKE (MANA CHARGED)
+	S_WLSWORDATK2_G1('WDHP', 14, 3.0 / 35.0, S_WLSWORDATK2_G2) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G2('WDHP', 14, 3.0 / 35.0, S_WLSWORDATK2_G3) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G3('WDHP', 15, 2.0 / 35.0, S_WLSWORDATK2_G4) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G4('WDHP', 15, 2.0 / 35.0, S_WLSWORDATK2_G5) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G5('WDHP', 16, 1.0 / 35.0, S_WLSWORDATK2_G6) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G6('WDHP', 16, 1.0 / 35.0, S_WLSWORDATK2_G7) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G7('WDHP', 17, 1.0 / 35.0, S_WLSWORDATK2_G8) { A_WLSwordAttack(); }
+	S_WLSWORDATK2_G8('WDHP', 17, 1.0 / 35.0, S_WLSWORDATK2_G9) { /*SX = -20.0;*/ A_WElectricBall(); }
+	S_WLSWORDATK2_G9('WDHP', 18, 1.0 / 35.0, S_WLSWORDATK2_G10) { }
+	S_WLSWORDATK2_G10('WDHP', 18, 1.0 / 35.0, S_WLSWORDATK2_G11) { /*SX = -15.0;*/ }
+	S_WLSWORDATK2_G11('WDHP', 19, 1.0 / 35.0, S_WLSWORDATK2_G12) { }
+	S_WLSWORDATK2_G12('WDHP', 19, 1.0 / 35.0, S_WLSWORDATK2_G13) { /*SX = -10.0;*/ }
+	S_WLSWORDATK2_G13('WDHP', 20, 1.0 / 35.0, S_WLSWORDATK2_G14) { }
+	S_WLSWORDATK2_G14('WDHP', 20, 1.0 / 35.0, S_WLSWORDATK2_G15) { /*SX = -5.0;*/ }
+	S_WLSWORDATK2_G15('WDHP', 21, 2.0 / 35.0, S_WLSWORDATK2_G16) { }
+	S_WLSWORDATK2_G16('WDHP', 21, 2.0 / 35.0, S_WLSWORDATK_G1) { /*SX = 0.0;*/ }
+}
+
+//==========================================================================
+//
+//	GetUpState
+//
+//==========================================================================
+
+int GetUpState(void)
+{
+	if (IsWeaponManaUsable())
+	{
+		return S_WLSWORDUP_G;
+	}
+	else
+	{
+		return UpState;
+	}
+}
+
+//==========================================================================
+//
+//	GetDownState
+//
+//==========================================================================
+
+int GetDownState(void)
+{
+	if (IsWeaponManaUsable())
+	{
+		return S_WLSWORDDOWN_G;
+	}
+	else
+	{
+		return DownState;
+	}
+}
+
+//==========================================================================
+//
+//	GetReadyState
+//
+//==========================================================================
+
+int GetReadyState(void)
+{
+	if (IsWeaponManaUsable())
+	{
+		return S_WLSWORDREADY_G;
+	}
+	else
+	{
+		return ReadyState;
+	}
+}
+
+//==========================================================================
+//
+//	GetAttackState
+//
+//==========================================================================
+
+int GetAttackState(void)
+{
+	if (IsWeaponManaUsable())
+	{
+		// Fire Sword
+		return S_WLSWORDATK2_G1;
+	}
+	else
+	{
+		return Player.Refire ? HoldAttackState : AttackState;
+	}
+}
+
+//==========================================================================
+//
+//	GotMana
+//
+//==========================================================================
+
+void GotMana(int InMana)
+{
+	if (InMana == MANA_1 && IsWeaponManaUsable())
+	{
+		SetState(S_WLSWORDREADY_G);
+	}
+}
+
+/*FIFTH*/
+defaultproperties
+{
+	Mana = MANA_1;
+	manause = 10;
+	//needsnomana = true;
+	UpState = S_WLSWORDUP;
+	DownState = S_WLSWORDDOWN;
+	ReadyState = S_WLSWORDREADY;
+	AttackState = S_WLSWORDATK2_1;
+	HoldAttackState = S_WLSWORDATK2_1;
+	NoMoreManaState = S_WLSWORDATK_1;
+	LongSwordRange = 3.0 * MELEERANGE / 2.0;
+	wis_mod = true;
+	int_mod = false;
+	dex_mod = true;
+	str_mod = true;
+	PickUpMessage = "LONG SWORD";
+}
+
+//**************************************************************************
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
