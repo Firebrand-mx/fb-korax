@@ -381,7 +381,71 @@ SOURCE=.\m_bams.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\mn_char.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_class.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_controls.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\mn_def.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_effects.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_gameplay.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_gfx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_info.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_joy.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_load.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_main.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_mouse.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_options.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_resolution.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_save.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_skill.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_sound.h
 # End Source File
 # Begin Source File
 

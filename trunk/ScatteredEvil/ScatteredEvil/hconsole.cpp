@@ -165,8 +165,6 @@ ccmd_t gameCCmds[] =
 	"soundMenu",	CCmdMenuAction,			"Open the sound menu.",
 	"suicide",		CCmdMenuAction,			"Kill yourself. What did you think?",
 	"quickSave",	CCmdMenuAction,			"Quicksave the game.",
-	"endGame",		CCmdMenuAction,			"End the current game.",
-	"toggleMsgs",	CCmdMenuAction,			"Toggle messages on/off (cvar messages).",
 	"quickLoad",	CCmdMenuAction,			"Load the last quicksaved game.",
 	"quit",			CCmdMenuAction,			"Quit Scattered Evil.",
 	"toggleGamma",	CCmdMenuAction,			"Change the gamma correction level.",
