@@ -140,6 +140,18 @@ SOURCE=.\info.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\KCanvas.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\KGC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\KWindow.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\m_bams.cpp
 # End Source File
 # Begin Source File
@@ -201,6 +213,10 @@ SOURCE=.\p_maputl.cpp
 # Begin Source File
 
 SOURCE=.\p_mobj.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\p_npc.cpp
 # End Source File
 # Begin Source File
 
@@ -333,6 +349,18 @@ SOURCE=.\info.h
 # Begin Source File
 
 SOURCE=.\journal.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KCanvas.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KGC.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KWindow.h
 # End Source File
 # Begin Source File
 
