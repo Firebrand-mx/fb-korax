@@ -49,6 +49,17 @@ typedef struct
 	int count;			// How many times has been repeated?
 } repeater_t;
 
+class DoomsdayError
+{
+public:
+	char Message[1024];
+
+	DoomsdayError(const char *InMessage)
+	{
+		strcpy(Message, InMessage);
+	}
+};
+
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
@@ -299,25 +310,12 @@ void I_Error (char *error, ...)
 	char	buff[200];
 	va_list argptr;
 
-	D_QuitNetGame ();
-	I_Shutdown ();
-	B_Shutdown();
-	CON_Shutdown();
-	ChangeDisplaySettings(0, 0); // Restore original mode, just in case.
-
 	va_start (argptr,error);
 	vsprintf (buff, error, argptr);
 	va_end (argptr);
 	printf ("%s\n", buff);
 
-	// Be a bit more graphic.
-	ShowCursor(TRUE);
-	MessageBox(hWndMain, buff, "Korax "DOOMSDAY_VERSION_TEXT, MB_OK|MB_ICONERROR);
-
-	DD_Shutdown();
-
-	// Get outta here.
-	exit (1);
+	throw DoomsdayError(buff);
 }
 
 
@@ -1032,6 +1030,27 @@ void main(int argc, char **argv)
 		myargv = argv;
 		DD_Main();
 	}
+	catch (DoomsdayError &e)
+	{
+		D_QuitNetGame ();
+		I_Shutdown ();
+		B_Shutdown();
+		CON_Shutdown();
+		ChangeDisplaySettings(0, 0); // Restore original mode, just in case.
+
+		// Be a bit more graphic.
+		ShowCursor(TRUE);
+
+		char *tmp_msg = new char[strlen(e.Message) + strlen(DD_GetCoreDump()) + 4];
+		sprintf(tmp_msg, "%s\n\n%s", e.Message, DD_GetCoreDump());
+		MessageBox(hWndMain, tmp_msg, "Korax "DOOMSDAY_VERSION_TEXT, MB_OK|MB_ICONERROR);
+		delete tmp_msg;
+
+		DD_Shutdown();
+
+		// Get outta here.
+		exit (1);
+	}
 	catch (...)
 	{
 		D_QuitNetGame ();
@@ -1044,7 +1063,10 @@ void main(int argc, char **argv)
 
 		// Be a bit more graphic.
 		ShowCursor(TRUE);
-		MessageBox(hWndMain, "Received external exception", "Korax "DOOMSDAY_VERSION_TEXT, MB_OK|MB_ICONERROR);
+		char *tmp_msg = new char[strlen(DD_GetCoreDump()) + 32];
+		sprintf(tmp_msg, "Received external exception\n\n%s", DD_GetCoreDump());
+		MessageBox(hWndMain, tmp_msg, "Korax "DOOMSDAY_VERSION_TEXT, MB_OK|MB_ICONERROR);
+		delete tmp_msg;
 
 		DD_Shutdown();
 

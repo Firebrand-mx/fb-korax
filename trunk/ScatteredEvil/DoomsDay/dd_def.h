@@ -28,10 +28,13 @@
 extern gl_export_t		gl;
 extern game_export_t	gx;
 
+#define DO_GUARD
+
 // if rangecheck is undefined, most parameter validation debugging code
 // will not be compiled
 #ifndef NORANGECHECKING
 #define RANGECHECK
+#define DO_GUARD_SLOW
 #endif
 
 // Past distributions
@@ -135,8 +138,6 @@ extern	doomdata_t		*netbuffer;		// points inside doomcom
 
 enum { BLEFT, BTOP, BRIGHT, BBOTTOM };
 
-//void NET_SendFrags(player_t *player);
-
 // Networking models.
 enum
 {
@@ -157,6 +158,32 @@ extern int haloMode;
 
 extern int myargc;
 extern char **myargv;
+
+//==========================================================================
+//
+//	Guard macros
+//
+//==========================================================================
+
+#ifdef DO_GUARD
+#define guard(name)		static const char *__FUNC_NAME__ = #name; try {
+#define unguard			} catch (...) { DD_CoreDump(__FUNC_NAME__); throw; }
+#define unguardf(msg)	} catch (...) { DD_CoreDump(__FUNC_NAME__); DD_CoreDump msg; throw; }
+#else
+#define guard(name)		static const char *__FUNC_NAME__ = #name; {
+#define unguard			}
+#define unguardf(msg)	}
+#endif
+
+#ifdef DO_GUARD_SLOW
+#define guardSlow(name)		guard(name)
+#define unguardSlow			unguard
+#define unguardfSlow(msg)	unguardf(msg)
+#else
+#define guardSlow(name)		{
+#define unguardSlow			}
+#define unguardfSlow(msg)	}
+#endif
 
 #include "dd_net.h"
 
@@ -192,6 +219,8 @@ void DD_SetConfigFile(char *filename);
 int DD_GetInteger(int ddvalue);
 void DD_SetInteger(int ddvalue, int parm);
 ddplayer_t *DD_GetPlayer(int number);
+void DD_CoreDump(const char *fmt, ...);
+const char *DD_GetCoreDump(void);
 
 
 //========================================================================
@@ -330,7 +359,7 @@ extern int		gametic, maketic;
 extern int		ticdup, server, limbo;
 extern boolean	allow_net_traffic;	// Should net traffic be allowed?
 extern boolean	map_rendered;		// Has the map been already rendered?
-extern player_t	players[MAXPLAYERS];
+extern ddplayer_t	players[MAXPLAYERS];
 extern byte		*netticcmds[MAXPLAYERS];
 
 void D_GetTicCmd(void *cmd, int player);
@@ -357,7 +386,7 @@ extern int		Sky1Texture, Sky2Texture;
 
 void R_Init (void);
 void R_Update (void);
-void R_RenderPlayerView (player_t *player);
+void R_RenderPlayerView (ddplayer_t *player);
 void R_SetViewSize(int x, int y, int w, int h);
 angle_t R_PointToAngle2 (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
 subsector_t *R_PointInSubsector (fixed_t x, fixed_t y);

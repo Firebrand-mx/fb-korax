@@ -32,7 +32,7 @@ fixed_t		viewxOffset=0, viewyOffset=0, viewzOffset=0;
 angle_t		viewangle;
 float		viewpitch;			// player->lookdir, global version
 fixed_t		viewcos, viewsin;
-player_t	*viewplayer;
+ddplayer_t	*viewplayer;
 
 int			detailshift;		// 0 = high, 1 = low
 
@@ -629,17 +629,28 @@ subsector_t *R_PointInSubsector (fixed_t x, fixed_t y)
 //
 //----------------------------------------------------------------------------
 
-void R_SetupFrame(player_t *player)
+void R_SetupFrame(ddplayer_t *player)
 {
 	int tableAngle;
 	extern int BorderRefreshCount;
 
 	viewplayer = player;
-	viewangle = player->mo->angle + viewangleoffset;
-	viewpitch = player->lookdir;
-	viewx = player->mo->x + viewxOffset;
-	viewy = player->mo->y + viewyOffset;
-	viewz = player->viewz + viewzOffset;
+	if (player->ThirdPersonView)
+	{
+		viewangle = player->ThirdPersonAngle;
+		viewpitch = player->ThirdPersonPitch;
+		viewx = player->ThirdPersonOrigin[0];
+		viewy = player->ThirdPersonOrigin[1];
+		viewz = player->ThirdPersonOrigin[2];
+	}
+	else
+	{
+		viewangle = player->mo->angle + viewangleoffset;
+		viewpitch = player->lookdir * 85.0 / 110.0;
+		viewx = player->mo->x + viewxOffset;
+		viewy = player->mo->y + viewyOffset;
+		viewz = player->viewz + viewzOffset;
+	}
 	extralight = player->extralight;
 	tableAngle = viewangle>>ANGLETOFINESHIFT;
 	viewsin = finesine[tableAngle];
@@ -672,7 +683,7 @@ void R_SetupFrame(player_t *player)
 ==============
 */
 
-void R_RenderPlayerView (player_t *player)
+void R_RenderPlayerView (ddplayer_t *player)
 {
 	map_rendered = true;
 
@@ -701,9 +712,12 @@ void R_RenderPlayerView (player_t *player)
 		return;	
 	}
 
-	// Orthogonal projection to the view window.
-	GL_Restore2DState(1); 
-	gx.DrawPlayerSprites( (ddplayer_t*) viewplayer);
+	if (!player->ThirdPersonView)
+	{
+		// Orthogonal projection to the view window.
+		GL_Restore2DState(1); 
+		gx.DrawPlayerSprites(viewplayer);
+	}
 
 	// Fullscreen viewport.
 	GL_Restore2DState(2); 

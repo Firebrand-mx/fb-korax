@@ -161,19 +161,6 @@ typedef struct
 	unsigned short  children[2];            // if NF_SUBSECTOR its a subsector
 } node_t;
 
-// If you modify this, remember to change ddplayer_t, too.
-typedef struct player_s
-{
-	mobj_t		*mo;
-	fixed_t		viewz;					// focal origin above r.z
-	float		lookdir;				// It's now a float, for mlook. -jk
-	int			fixedcolormap;			// can be set to REDCOLORMAP, etc
-	int			extralight;				// so gun flashes light up areas
-	signed int	frags[MAXPLAYERS];		// kills of other players
-	int			ingame;					// is this player in game?
-	void		*extradata;				// Pointer to any game-specific data.
-} player_t;
-
 
 /*
 ==============================================================================
@@ -338,7 +325,7 @@ extern  fixed_t         viewx, viewy, viewz;
 extern  fixed_t			viewxOffset, viewyOffset, viewzOffset;
 extern  angle_t         viewangle;
 extern	float			viewpitch;
-extern  player_t        *viewplayer;
+extern  ddplayer_t      *viewplayer;
 
 
 extern  angle_t         clipangle;

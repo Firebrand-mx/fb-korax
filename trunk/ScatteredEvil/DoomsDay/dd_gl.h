@@ -247,6 +247,7 @@ typedef struct
 
 	void	(*Message)(char *msg, ...);
 	void	(*Error)(char *error, ...);
+	void	(*CoreDump)(const char *fmt, ...);
 } gl_import_t;
 
 

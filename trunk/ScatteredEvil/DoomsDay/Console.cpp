@@ -331,6 +331,7 @@ static char shiftTable[96] =	// Contains characters 32 to 127.
 
 void CvarSetString(cvar_t *cvar, char *text)
 {
+	guard(CvarSetString);
 	if(cvar->type == CVT_CHARPTR)
 	{
 		// Free the old string, if one exists.
@@ -346,10 +347,12 @@ void CvarSetString(cvar_t *cvar, char *text)
 	}
 	else 
 		I_Error("CvarSetString: cvar is not of type char*.\n");
+	unguard;
 }
 
 cvar_t *CvarGet(char *name)
 {
+	guardSlow(CvarGet);
 	int		i;
 
 	for(i=0; i<numCVars; i++)
@@ -357,6 +360,7 @@ cvar_t *CvarGet(char *name)
 			return cvars+i;
 	// No match...
 	return NULL;
+	unguardSlow;
 }
 
 //--------------------------------------------------------------------------
@@ -364,11 +368,14 @@ cvar_t *CvarGet(char *name)
 
 static int wordListSorter(const void *e1, const void *e2)
 {
+	guardSlow(wordListSorter);
 	return stricmp(*(char**)e1, *(char**)e2);
+	unguardSlow;
 }
 
 void CON_Init()
 {
+	guard(CON_Init);
 	int		i;
 
 	ConsoleActive = false;
@@ -407,10 +414,12 @@ void CON_Init()
 	// Register the engine commands and variables.
 	for(i=0; engineCCmds[i].name; i++) CON_AddCommand(engineCCmds + i);
 	for(i=0; engineCVars[i].name; i++) CON_AddVariable(engineCVars + i);
+	unguard;
 }
 
 void CON_UpdateKnownWords()
 {
+	guard(CON_UpdateKnownWords);
 	int		i, c;
 
 	// Fill the known words table.
@@ -427,10 +436,12 @@ void CON_UpdateKnownWords()
 	for(i=0; i<numCAliases; i++, c++)
 		knownWords[c] = caliases[i].name;
 	qsort(knownWords, numKnownWords, sizeof(char*), wordListSorter);
+	unguard;
 }
 
 void CON_AddCommand(ccmd_t *cmd)
 {
+	guard(CON_AddCommand);
 	numCCmds++;
 	ccmds = (ccmd_t *)realloc(ccmds, sizeof(ccmd_t) * numCCmds);
 	// -JL- Paranoia
@@ -444,10 +455,12 @@ void CON_AddCommand(ccmd_t *cmd)
 	// Update the list of known words.
 	// This must be done right away because ccmds' address can change.
 	CON_UpdateKnownWords();
+	unguard;
 }
 
 void CON_AddVariable(cvar_t *var)
 {
+	guard(CON_AddVariable);
 	numCVars++;
 	cvars = (cvar_t *)realloc(cvars, sizeof(cvar_t) * numCVars);
 	// -JL- Paranoia
@@ -461,11 +474,13 @@ void CON_AddVariable(cvar_t *var)
 	// Update the list of known words.
 	// This must be done right away because ccmds' address can change.
 	CON_UpdateKnownWords();
+	unguard;
 }
 
 // Returns NULL if the specified alias can't be found.
 calias_t *CON_GetAlias(char *name)
 {
+	guardSlow(CON_GetAlias);
 	int			i;
 
 	// Try to find the alias.
@@ -473,10 +488,12 @@ calias_t *CON_GetAlias(char *name)
 		if(!stricmp(caliases[i].name, name))
 			return caliases+i;
 	return NULL;
+	unguardSlow;
 }
 
 void CON_Alias(char *aName, char *command)
 {
+	guard(CON_Alias);
 	calias_t	*cal = CON_GetAlias(aName);
 	boolean		remove = false;
 
@@ -533,10 +550,12 @@ void CON_Alias(char *aName, char *command)
 	qsort(caliases, numCAliases, sizeof(calias_t), wordListSorter);
 
 	CON_UpdateKnownWords();
+	unguard;
 }
 
 void CON_ClearBuffer()
 {
+	guardSlow(CON_ClearBuffer);
 	int		i;
 
 	// Free the buffer.
@@ -547,17 +566,21 @@ void CON_ClearBuffer()
 	bPos = 0;
 	bFirst = 0;
 	bLineOff = 0;
+	unguardSlow;
 }
 
 static void ClearExecBuffer()
 {
+	guardSlow(ClearExecBuffer);
 	free(exBuff);
 	exBuff = NULL;
 	exBuffSize = 0;
+	unguardSlow;
 }
 
 static void QueueCmd(char *singleCmd, int at_tic)
 {
+	guard(QueueCmd);
 	execbuff_t	*ptr = NULL;
 	int			i;
 
@@ -581,10 +604,12 @@ static void QueueCmd(char *singleCmd, int at_tic)
 	ptr->used = true;
 	strcpy(ptr->subcmd, singleCmd);
 	ptr->marker = at_tic;
+	unguard;
 }
 
 void CON_Shutdown()
 {	
+	guard(CON_Shutdown);
 	int		i;
 
 	// Free the buffer.
@@ -623,11 +648,13 @@ void CON_Shutdown()
 	numCAliases = 0;
 
 	ClearExecBuffer();
+	unguard;
 }
 
 // Returns false if an executed command fails.
 static boolean CheckExecBuffer()
 {
+	guard(CheckExecBuffer);
 	boolean alldone;
 	boolean	ret = true;
 	int		i, count = 0;
@@ -658,10 +685,12 @@ static boolean CheckExecBuffer()
 	}
 	while(!alldone);
 	return ret;
+	unguard;
 }
 
 void CON_Ticker(void)
 {
+	guard(CON_Ticker);
 	CheckExecBuffer();
 
 	if(ConsoleY == 0) openingOrClosing = true;
@@ -689,10 +718,12 @@ void CON_Ticker(void)
 	if(!ConsoleActive) return;	// We have nothing further to do here.
 
 	ConsoleTime++;	// Increase the ticker.
+	unguard;
 }
 
 cbline_t *CON_GetBufferLine(int num)
 {
+	guard(CON_GetBufferLine);
 	int i, newLines;
 
 	if(num < 0) return 0;	// This is unacceptable!
@@ -711,10 +742,12 @@ cbline_t *CON_GetBufferLine(int num)
 		memset(line, 0, sizeof(cbline_t));
 	}
 	return cbuffer + num;
+	unguard;
 }
 
 static void addLineText(cbline_t *line, char *txt)
 {
+	guard(addLineText);
 	int newLen = line->len + strlen(txt);
 
 	if(newLen > maxLineLen)
@@ -730,18 +763,22 @@ static void addLineText(cbline_t *line, char *txt)
 	strcpy(line->text+line->len, txt);
 	// Update the length of the line.
 	line->len = newLen;
+	unguard;
 }
 
 static void setLineFlags(int num, int fl)
 {
+	guardSlow(setLineFlags);
 	cbline_t *line = CON_GetBufferLine(num);
 
 	if(!line) return;
 	line->flags = fl;
+	unguardSlow;
 }
 
 static void addOldCmd(const char *txt)
 {
+	guard(addOldCmd);
 	cbline_t *line;
 
 	if(!strcmp(txt, "")) return; // Don't add empty commands.
@@ -760,10 +797,12 @@ static void addOldCmd(const char *txt)
 	if (!line->text)
 		I_Error("addOldCmd: malloc failed\n");
 	strcpy(line->text, txt);
+	unguard;
 }
 
 static void printcvar(cvar_t *var, char *prefix)
 {
+	guardSlow(printcvar);
 	char equals = '=';
 	
 	if(var->flags & CVF_PROTECTED) equals = ':';
@@ -791,11 +830,13 @@ static void printcvar(cvar_t *var, char *prefix)
 		break;
 	}
 	CON_Printf( "\n");
+	unguardSlow;
 }
 
 // expcommand gets reallocated in the expansion process.
 static void expandWithArguments(char **expcommand, cmdargs_t *args)
 {
+	guard(expandWithArguments);
 	char *text = *expcommand;
 	int size = strlen(text)+1;
 	int	i, off;
@@ -829,11 +870,13 @@ static void expandWithArguments(char **expcommand, cmdargs_t *args)
 			i += off-1;
 		}
 	}
+	unguard;
 }
 
 // The command is executed forthwith!!
 static int executeSubCmd(char *subcmd)
 {
+	guard(executeSubCmd);
 	int			i;
 	char		prefix;
 	cmdargs_t	args;
@@ -966,12 +1009,14 @@ static int executeSubCmd(char *subcmd)
 	// What *is* that?
 	CON_Printf( "%s: no such command or cvar.\n", args.argv[0]);
 	return false;
+	unguard;
 }
 
 // Splits the command into subcommands and queues them into the 
 // execution buffer.
 static void SplitIntoSubCommands(char *command, int markerOffset)
 {
+	guard(SplitIntoSubCommands);
 	int			gpos = 0, scpos = 0;
 	char		subcmd[256];
 	int			nextsub = false;
@@ -1012,11 +1057,13 @@ static void SplitIntoSubCommands(char *command, int markerOffset)
 		
 		scpos = 0;
 	}
+	unguard;
 }
 
 // Returns false if a command fails.
 int CON_Execute(char *command, int silent)
 {
+	guard(CON_Execute);
 	//int			gpos = 0, scpos = 0;
 	//char		subcmd[256];
 	//int			nextsub = false;
@@ -1073,10 +1120,12 @@ outta_here:*/
 
 	if(silent) ConsoleSilent = false;
 	return ret;
+	unguard;
 }
 
 static void processCmd()
 {
+	guardSlow(processCmd);
 	I_ClearKeyRepeaters();
 
 	// Add the command line to the oldCmds buffer.
@@ -1084,22 +1133,26 @@ static void processCmd()
 	ocPos = numOldCmds;
 
 	CON_Execute(cmdLine, false);
+	unguardSlow;
 }
 
 static void updateCmdLine()
 {
+	guardSlow(updateCmdLine);
 	if(ocPos == numOldCmds)
 		strcpy(cmdLine, "");
 	else
 		strcpy(cmdLine, oldCmds[ocPos].text);
 	complPos = strlen(cmdLine);
 	lastCompletion = -1;
+	unguardSlow;
 }
 
 // Look at the last word and try to complete it. If there are
 // several possibilities, print them.
 static void completeWord()
 {
+	guard(completeWord);
 	int		pass, i, c, cp = strlen(cmdLine)-1;
 	int		numcomp = 0;
 	char	word[100], *wordBegin;
@@ -1153,11 +1206,13 @@ static void completeWord()
 		strcpy(wordBegin, completion);
 		//strupr(wordBegin);
 	}
+	unguard;
 }
 
 // Returns true if the event is eaten.
 boolean CON_Responder(event_t *event)
 {
+	guard(CON_Responder);
 	int pos;
 	char ch;
 
@@ -1293,6 +1348,7 @@ boolean CON_Responder(event_t *event)
 	}
 	// The console is very hungry for keys...
 	return true;
+	unguard;
 }
 
 /*static int FindPrevBufferLineStart(int numlines)
@@ -1309,6 +1365,7 @@ boolean CON_Responder(event_t *event)
 
 static void consoleSetColor(int fl, float alpha)
 {
+	guardSlow(consoleSetColor);
 	float	r=0, g=0, b=0;
 	int		count=0;
 
@@ -1372,16 +1429,20 @@ static void consoleSetColor(int fl, float alpha)
 		b += (1-b)/2;
 	}
 	gl.Color4f(r, g, b, alpha);
+	unguardSlow;
 }
 
 void CON_SetFont(ddfont_t *cfont)
 {
+	guard(CON_SetFont);
 	Cfont = *cfont;
+	unguard;
 }
 
 // Slightly messy...
 void CON_Drawer(void)
 {
+	guard(CON_Drawer);
 //	int fontALump = W_GetNumForName("FONTA_S")+1;
 	int i;	// Line count and buffer cursor.
 	float y;
@@ -1527,10 +1588,12 @@ void CON_Drawer(void)
 
 	gl.MatrixMode(DGL_PROJECTION);
 	gl.PopMatrix();
+	unguard;
 }
 
 void conPrintf(int flags, char *format, va_list args)
 {
+	guard(conPrintf);
 	unsigned int i;
 	int			lbc; // line buffer cursor
 	char		prbuff[PRBUFF_LEN], *lbuf = (char *)malloc(maxLineLen+1);
@@ -1593,11 +1656,13 @@ void conPrintf(int flags, char *format, va_list args)
 		// Move the current position.
 		bPos -= rev;
 	}
+	unguard;
 }
 
 // Print into the buffer.
 void CON_Printf(char *format, ...)
 {
+	guard(CON_Printf);
 	va_list		args;
 
 	if(ConsoleSilent) return;
@@ -1605,10 +1670,12 @@ void CON_Printf(char *format, ...)
 	va_start(args, format);	
 	conPrintf(CBLF_WHITE, format, args);
 	va_end(args);
+	unguard;
 }
 
 void CON_FPrintf(int flags, char *format, ...) // Flagged printf
 {
+	guard(CON_FPrintf);
 	va_list		args;
 	
 	if(ConsoleSilent) return;
@@ -1616,11 +1683,13 @@ void CON_FPrintf(int flags, char *format, ...) // Flagged printf
 	va_start(args, format);
 	conPrintf(flags, format, args);
 	va_end(args);
+	unguard;
 }
 
 // As you can see, several commands can be handled inside one command function.
 int CCmdConsole(int argc, char **argv)
 {
+	guard(CCmdConsole);
 	if(!stricmp(argv[0], "help"))
 	{
 		if(argc == 2)
@@ -1662,10 +1731,12 @@ int CCmdConsole(int argc, char **argv)
 		CON_ClearBuffer();
 	}
 	return true;	
+	unguard;
 }
 
 int CCmdListCmds(int argc, char **argv)
 {
+	guard(CCmdListCmds);
 	int		i;
 
 	CON_Printf( "Console commands:\n");
@@ -1677,10 +1748,12 @@ int CCmdListCmds(int argc, char **argv)
 		CON_Printf( "  %s\n", ccmds[i].name);
 	}
 	return true;
+	unguard;
 }
 
 int CCmdListVars(int argc, char **argv)
 {
+	guard(CCmdListVars);
 	int		i;
 
 	CON_Printf( "Console variables:\n");
@@ -1692,10 +1765,12 @@ int CCmdListVars(int argc, char **argv)
 		printcvar(cvars+i, "  ");
 	}
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdListAliases)
 {
+	guard(CCmdListAliases);
 	int		i;
 
 	CON_Printf( "Aliases:\n");
@@ -1707,20 +1782,24 @@ DEFCC(CCmdListAliases)
 		CON_Printf( "  %s == %s\n", caliases[i].name, caliases[i].command);
 	}
 	return true;
+	unguard;
 }
 
 int CCmdVersion(int argc, char **argv)
 {
+	guard(CCmdVersion);
 	CON_Printf( "Korax Engine %s ("__TIME__")\n", DOOMSDAY_VERSIONTEXT);
 	CON_Printf( "%s\n", gl.GetString(DGL_VERSION));
 	CON_Printf( "%s\n", jtNetGetString(JTNET_VERSION));
 //	CON_Printf( "Compiler: Microsoft Visual C++ 6.0 (SP3)\n");
 	CON_Printf( "Game DLL: %s\n", gx.GetString(DD_VERSION_LONG));
 	return true;
+	unguard;
 }
 
 int CCmdQuit(int argc, char **argv)
 {
+	guard(CCmdQuit);
 	// No questions asked.
 	I_Quit();
 
@@ -1733,10 +1812,12 @@ int CCmdQuit(int argc, char **argv)
 	if(!netgame && !demoplayback)
 		paused = true;*/
 	return true;
+	unguard;
 }
 
 void CON_Open(int yes)
 {
+	guard(CON_Open);
 	// Clear all action keys, keyup events won't go 
 	// to bindings processing when the console is open.
 	DD_ClearActions();
@@ -1752,6 +1833,7 @@ void CON_Open(int yes)
 		ConsoleActive = false;
 		ConsoleDestY = 0;
 	}
+	unguard;
 }
 
 /*int CCmdPlayerInfo(int argc, char **argv)
@@ -1772,6 +1854,7 @@ void CON_Open(int yes)
 
 void UpdateEngineState()
 {
+	guard(UpdateEngineState);
 	// Update refresh.
 	ST_Message( "Updating state");
 
@@ -1788,10 +1871,12 @@ void UpdateEngineState()
 	S_InitScript();
 	SN_InitSequenceScript();*/
 	ST_Message( "\n");
+	unguard;
 }
 
 int CCmdLoadFile(int argc, char **argv)
 {
+	guard(CCmdLoadFile);
 	//extern int RegisteredSong;
 	int		i, succeeded = false;	
 	
@@ -1821,10 +1906,12 @@ int CCmdLoadFile(int argc, char **argv)
 		UpdateEngineState();
 	}
 	return true;
+	unguard;
 }
 
 int CCmdUnloadFile(int argc, char **argv)
 {
+	guard(CCmdUnloadFile);
 	//extern int RegisteredSong;
 	int		i, succeeded = false;	
 
@@ -1859,10 +1946,12 @@ int CCmdUnloadFile(int argc, char **argv)
 	//I_ResumeSong();
 	//I_RestoreTime();
 	return true;
+	unguard;
 }
 
 int CCmdListFiles(int argc, char **argv)
 {
+	guard(CCmdListFiles);
 	extern int numrecords;
 	extern filerecord_t *records;
 	int		i;
@@ -1876,10 +1965,12 @@ int CCmdListFiles(int argc, char **argv)
 
 	CON_Printf("Total: %d lumps in %d files.\n", numlumps, numrecords);
 	return true;
+	unguard;
 }
 
 int CCmdResetLumps(int argc, char **argv)
 {
+	guard(CCmdResetLumps);
 	//extern int RegisteredSong;
 
 	// This game ends here.
@@ -1907,10 +1998,12 @@ int CCmdResetLumps(int argc, char **argv)
 //	I_StartupTimer();
 	//I_ResumeSong();
 	return true;
+	unguard;
 }
 
 int CCmdBackgroundTurn(int argc, char **argv)
 {
+	guard(CCmdBackgroundTurn);
 	if(argc != 2)
 	{
 		CON_Printf( "Usage: bgturn (speed)\n");
@@ -1921,6 +2014,7 @@ int CCmdBackgroundTurn(int argc, char **argv)
 	consoleTurn = atoi(argv[1]);
 	if(!consoleTurn) funnyAng = 0;
 	return true;
+	unguard;
 }
 
 /*int CCmdTest(int argc, char **argv)
@@ -1932,6 +2026,7 @@ int CCmdBackgroundTurn(int argc, char **argv)
 
 int CCmdDump(int argc, char **argv)
 {
+	guard(CCmdDump);
 	char fname[100];
 	FILE *file;
 	int lump;
@@ -1965,18 +2060,22 @@ int CCmdDump(int argc, char **argv)
 
 	CON_Printf( "%s dumped to %s.\n", argv[1], fname);
 	return true;
+	unguard;
 }
 
 
 int CCmdResetTextures(int argc, char **argv)
 {
+	guard(CCmdResetTextures);
 	GL_ClearTextureMemory();
 	CON_Printf( "All DGL textures deleted.\n");
 	return true;
+	unguard;
 }
 
 int CCmdMipMap(int argc, char **argv)
 {
+	guard(CCmdMipMap);
 	if(argc != 2)
 	{
 		CON_Printf( "Usage: %s (0-5)\n", argv[0]);
@@ -1990,10 +2089,12 @@ int CCmdMipMap(int argc, char **argv)
 	}
 	GL_UpdateTexParams(strtol(argv[1], NULL, 0));
 	return true;
+	unguard;
 }
 
 int CCmdSmoothRaw(int argc, char **argv)
 {
+	guard(CCmdSmoothRaw);
 	if(argc != 2)
 	{
 		CON_Printf( "Usage: %s (0-1)\n", argv[0]);
@@ -2004,10 +2105,12 @@ int CCmdSmoothRaw(int argc, char **argv)
 	}
 	GL_UpdateRawScreenParams(strtol(argv[1], NULL, 0));	
 	return true;
+	unguard;
 }
 
 int CCmdSkyDetail(int argc, char **argv)
 {
+	guard(CCmdSkyDetail);
 	if(!stricmp(argv[0], "skydetail"))
 	{
 		if(argc != 2)
@@ -2029,10 +2132,12 @@ int CCmdSkyDetail(int argc, char **argv)
 		R_SkyDetail(skyDetail, strtol(argv[1], NULL, 0));
 	}
 	return true;
+	unguard;
 }
 
 int CCmdSetMusicDevice(int argc, char **argv)
 {
+	guard(CCmdSetMusicDevice);
 	int		musdev;
 
 	if(argc != 2)
@@ -2046,10 +2151,12 @@ int CCmdSetMusicDevice(int argc, char **argv)
 	if(!stricmp(argv[1], "cd")) musdev = 2;
 	I_SetMusicDevice(musdev);
 	return true;
+	unguard;
 }
 
 int CCmdSetMIDIVolume(int argc, char **argv)
 {
+	guard(CCmdSetMIDIVolume);
 	if(argc != 2)
 	{
 		CON_Printf( "Usage: %s (0-255)\n", argv[0]);
@@ -2057,10 +2164,12 @@ int CCmdSetMIDIVolume(int argc, char **argv)
 	}
 	I_SetMusicVolume(strtol(argv[1], NULL, 0));
 	return true;
+	unguard;
 }
 
 int CCmdSetCDVolume(int argc, char **argv)
 {
+	guard(CCmdSetCDVolume);
 	if(argc != 2)
 	{
 		CON_Printf( "Usage: %s (0-255)\n", argv[0]);
@@ -2068,10 +2177,12 @@ int CCmdSetCDVolume(int argc, char **argv)
 	}
 	I_CDMusSetVolume(strtol(argv[1], NULL, 0));
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdFont)
 {
+	guard(CCmdFont);
 	if(argc == 1 || argc > 3)
 	{
 		CON_Printf( "Usage: %s (cmd) (args)\n", argv[0]);
@@ -2100,10 +2211,12 @@ DEFCC(CCmdFont)
 		if(Cfont.sizeY <= 0) Cfont.sizeY = 1;
 	}
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdAlias)
 {
+	guard(CCmdAlias);
 	if(argc != 3 && argc != 2)
 	{
 		CON_Printf( "Usage: %s (alias) (cmd)\n", argv[0]);
@@ -2117,10 +2230,12 @@ DEFCC(CCmdAlias)
 	//else
 		CON_Printf( "Alias '%s' deleted.\n", argv[1]);
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdSetGamma)
 {
+	guard(CCmdSetGamma);
 	int	newlevel;
 
 	if(argc != 2)
@@ -2142,10 +2257,12 @@ DEFCC(CCmdSetGamma)
 	else
 		CON_Printf( "Gamma correction already set to %d.\n", usegamma);
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdParse)
 {
+	guard(CCmdParse);
 	int		i;
 
 	if(argc == 1)
@@ -2159,10 +2276,12 @@ DEFCC(CCmdParse)
 		M_ParseCommands(argv[i], false);
 	}
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdDeleteBind)
 {
+	guard(CCmdDeleteBind);
 	int		i;
 
 	if(argc == 1)
@@ -2172,16 +2291,20 @@ DEFCC(CCmdDeleteBind)
 	}
 	for(i=1; i<argc; i++) B_ClearBinding(argv[i]);
 	return true;
+	unguard;
 }	
 
 DEFCC(CCmdLowRes)
 {
+	guard(CCmdLowRes);
 	GL_LowRes();
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdWait)
 {
+	guard(CCmdWait);
 /*	int	 mode = !stricmp(argv[0], "wait")? 0 : 1;
 
 	if(!stricmp(argv[0], "waitlist"))
@@ -2255,12 +2378,15 @@ DEFCC(CCmdWait)
 		SplitIntoSubCommands(argv[2], off);
 	//}
 	return true;
+	unguard;
 }
 
 DEFCC(CCmdEcho)
 {
+	guard(CCmdEcho);
 	int		i;
 
 	for(i=1; i<argc; i++) CON_Printf( "%s\n", argv[i]);
 	return true;
+	unguard;
 }

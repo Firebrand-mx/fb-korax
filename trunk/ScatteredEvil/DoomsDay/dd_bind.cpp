@@ -135,6 +135,7 @@ static boolean B_EventMatch(event_t *ev, event_t *bev)
 
 boolean B_Responder(event_t *ev)
 {
+	guard(B_Responder);
 	binding_t	*bnd;
 	int			i;
 
@@ -157,11 +158,13 @@ boolean B_Responder(event_t *ev)
 		}
 	}
 	return false;
+	unguard;
 }
 
 // Returns a binding_t for the given event.
 binding_t *B_GetBinding(event_t *event, boolean create_new)
 {
+	guard(B_GetBinding);
 	int			i;
 	binding_t	*newb;
 	
@@ -182,10 +185,12 @@ binding_t *B_GetBinding(event_t *event, boolean create_new)
 	// Copy the event data.
 	memcpy(&newb->event, event, sizeof(*event));
 	return newb;
+	unguard;
 }
 
 void B_DeleteBindingIdx(int index)
 {
+	guard(B_DeleteBindingIdx);
 	if(index < 0 || index > numBinds-1) return;	// What?
 
 	free(binds[index].command);
@@ -195,6 +200,7 @@ void B_DeleteBindingIdx(int index)
 	// -JL- Paranoia
 	if (!binds)
 		I_Error("B_DeleteBindingIdx: realloc failed");
+	unguard;
 }
 
 // Binds the given event to the command.
@@ -202,6 +208,7 @@ void B_DeleteBindingIdx(int index)
 // Binding to NULL will delete the binding.
 void B_Bind(event_t *event, char *command)
 {
+	guard(B_Bind);
 	binding_t *bnd = B_GetBinding(event, true);
 
 	if(!command)		// No string given?
@@ -217,26 +224,31 @@ void B_Bind(event_t *event, char *command)
 	strcpy(bnd->command, command);
 
 //	CON_Printf( "B_Bind: evtype:%d data:%d cmd:%s\n", bnd->event.type, bnd->event.data1, bnd->command);
+	unguard;
 }
 
 void B_ClearBinding(char *command)
 {
+	guard(B_ClearBinding);
 	int		i;
 
 	for(i=0; i<numBinds; i++)
 		if(!stricmp(binds[i].command, command))
 			B_DeleteBindingIdx(i--);
+	unguard;
 }
 
 // Deallocates the memory for the commands and bindings.
 void B_Shutdown()
 {
+	guard(B_Shutdown);
 	int		i;
 
 	for(i=0; i<numBinds; i++) free(binds[i].command);
 	free(binds);
 	binds = NULL;
 	numBinds = 0;
+	unguard;
 }
 
 // If buff is "" upon returning, the key is not valid for controls.
@@ -271,6 +283,7 @@ static int buttonNumber(int flags)
 // Buff and event must be valid sources and destinations.
 void B_EventConverter(char *buff, event_t *ev, boolean to_event)
 {
+	guard(B_EventConverter);
 	char	prefix;
 	char	*begin;
 	int		key;
@@ -370,10 +383,12 @@ void B_EventConverter(char *buff, event_t *ev, boolean to_event)
 			I_Error("B_EventConverter (->text): bad event type (%d).\n", ev->type);
 		}
 	}
+	unguard;
 }
 
 int CCmdBind(int argc, char **argv)
 {
+	guard(CCmdBind);
 	boolean prefixGiven = true;
 	char validEventName[16], buff[80];
 	char prefix = '+', *begin;
@@ -457,17 +472,21 @@ int CCmdBind(int argc, char **argv)
 		B_Bind(&event, argc==2? NULL : argv[2]);
 	}
 	return true;
+	unguard;
 }
 
 int CCmdClearBindings(int argc, char **argv)
 {
+	guard(CCmdClearBindings);
 	B_Shutdown();
 	CON_Printf( "All bindings cleared.\n");
 	return true;
+	unguard;
 }
 
 int CCmdListBindings(int argc, char **argv)
 {
+	guard(CCmdListBindings);
 	int		i;
 	char	buffer[20];
 
@@ -483,10 +502,12 @@ int CCmdListBindings(int argc, char **argv)
 	}
 	CON_Printf( "There are %d bindings.\n", numBinds);
 	return true;
+	unguard;
 }
 
 void B_WriteToFile(FILE *file)
 {
+	guard(B_WriteToFile);
 	int		i;
 	char	buffer[20];
 
@@ -497,12 +518,14 @@ void B_WriteToFile(FILE *file)
 		M_WriteTextEsc(file, binds[i].command);
 		fprintf(file, "\"\n");
 	}
+	unguard;
 }
 
 // Returns the number of bindings. The buffer will be filled with the
 // names of the events.
 int B_BindingsForCommand(char *command, char *buffer)
 {
+	guard(B_BindingsForCommand);
 	int		i, count = 0;
 	char	bindname[20];
 	
@@ -519,4 +542,5 @@ int B_BindingsForCommand(char *command, char *buffer)
 		}
 	}
 	return count;
+	unguard;
 }

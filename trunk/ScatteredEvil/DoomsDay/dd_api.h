@@ -22,6 +22,7 @@ typedef struct
 	// Messages.
 	void		(*Message)(char *msg, ...);
 	void		(*Error)(char *error, ...);
+	void		(*CoreDump)(const char *fmt, ...);
 
 	// Console.
 	void		(*conprintf)(char *format, ...);

@@ -33,6 +33,7 @@ static int			numTexTypes = 0;
 // Assumes sectors are always closed.
 void DD_SectorBoundingBox(sector_t *sec, float *bbox)
 {
+	guardSlow(DD_SectorBoundingBox);
 	float	x, y;
 	int		i;
 	line_t	*li;
@@ -49,11 +50,13 @@ void DD_SectorBoundingBox(sector_t *sec, float *bbox)
 		if(y < bbox[BTOP]) bbox[BTOP] = y;
 		if(y > bbox[BBOTTOM]) bbox[BBOTTOM] = y;
 	}
+	unguardSlow;
 }
 
 // Calculate the reverb settings for each sector.
 void S_CalcSectorReverbs()
 {
+	guard(S_CalcSectorReverbs);
 	int			i, c, type, k;
 	subsector_t	*sub;
 	sector_t	*sec;
@@ -245,6 +248,7 @@ void S_CalcSectorReverbs()
 	Z_Free(sub_reverb);
 		
 	//gi.Message( "P_CalcSectorReverbs: end at %i\n", gi.GetTime());
+	unguard;
 }
 
 
@@ -271,6 +275,7 @@ char *firstchar(char *buffer)
 
 void S_LoadTextureTypes()
 {
+	guard(S_LoadTextureTypes);
 	FILE	*file;
 	char	buff[256], *ptr;
 	int		curtype = TEXTYPE_UNKNOWN;
@@ -311,21 +316,26 @@ void S_LoadTextureTypes()
 	}
 	ST_Message( "%d texture types loaded.\n", numTexTypes);
 	fclose(file);
+	unguard;
 }
 
 void S_FreeTextureTypes()
 {
+	guard(S_FreeTextureTypes);
 	free(texTypes);
 	texTypes = 0;
 	numTexTypes = 0;
+	unguard;
 }
 
 int S_TextureTypeForName(char *name)
 {
+	guard(S_TextureTypeForName);
 	int		i;
 
 	for(i=0; i<numTexTypes; i++)
 		if(!strnicmp(name, texTypes[i].name, 8))
 			return texTypes[i].type;
 	return TEXTYPE_UNKNOWN;
+	unguard;
 }
