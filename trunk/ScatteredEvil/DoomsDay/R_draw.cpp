@@ -141,38 +141,56 @@ void R_DrawViewBorder (void)
 
 	if(viewwidth == 320 && viewheight == 200) return;
 
+#ifdef USE640
+	int x = viewwindowx * 2;
+	int y = viewwindowy * 480 / 200;
+	int w = viewwidth * 2;
+	int h = viewheight * 480 / 200;
+
+	// View background.
+	GL_SetColorAndAlpha(1,1,1,1);
+	GL_SetFlat(R_FlatNumForName(borderGfx[BG_BACKGROUND]));
+	GL_DrawCutRectTiled(0, 0, 640, 480, 64, 64,
+		x-bwidth, y-bwidth, w+2*bwidth, h+2*bwidth);
+#else
+	int x = viewwindowx;
+	int y = viewwindowy;
+	int w = viewwidth;
+	int h = viewheight;
+
 	// View background.
 	GL_SetColorAndAlpha(1,1,1,1);
 	GL_SetFlat(R_FlatNumForName(borderGfx[BG_BACKGROUND]));
 	GL_DrawCutRectTiled(0, 0, 320, 200, 64, 64,
 		viewwindowx-bwidth, viewwindowy-bwidth, viewwidth+2*bwidth, viewheight+2*bwidth);
+#endif
 
 	// The border top.
 	GL_SetPatch(lump=W_GetNumForName(borderGfx[BG_TOP]));
-	GL_DrawRectTiled(viewwindowx, viewwindowy-bwidth, viewwidth, 
+	GL_DrawRectTiled(x, y-bwidth, w, 
 		lumptexsizes[lump].h, 16, lumptexsizes[lump].h);
 	// Border bottom.
 	GL_SetPatch(lump=W_GetNumForName(borderGfx[BG_BOTTOM]));
-	GL_DrawRectTiled(viewwindowx, viewwindowy+viewheight, viewwidth, 
+	GL_DrawRectTiled(x, y+h, w, 
 		lumptexsizes[lump].h, 16, lumptexsizes[lump].h);
 
 	// Left view border.
 	GL_SetPatch(lump=W_GetNumForName(borderGfx[BG_LEFT]));
-	GL_DrawRectTiled(viewwindowx-bwidth, viewwindowy, lumptexsizes[lump].w,
-		viewheight, lumptexsizes[lump].w, 16);
+	GL_DrawRectTiled(x-bwidth, y, lumptexsizes[lump].w, h, 
+		lumptexsizes[lump].w, 16);
 	// Right view border.
 	GL_SetPatch(lump=W_GetNumForName(borderGfx[BG_RIGHT]));
-	GL_DrawRectTiled(viewwindowx+viewwidth, viewwindowy, lumptexsizes[lump].w,
-		viewheight, lumptexsizes[lump].w, 16);
+	GL_DrawRectTiled(x+w, y, lumptexsizes[lump].w, h, 
+		lumptexsizes[lump].w, 16);
 
 	GL_UsePatchOffset(false);
-	GL_DrawPatch(viewwindowx-bwidth, viewwindowy-bwidth, 
+	GL_DrawPatch(x-bwidth, y-bwidth, 
 		W_GetNumForName(borderGfx[BG_TOPLEFT]));
-	GL_DrawPatch(viewwindowx+viewwidth, viewwindowy-bwidth, 
+	GL_DrawPatch(x+w, y-bwidth, 
 		W_GetNumForName(borderGfx[BG_TOPRIGHT]));
-	GL_DrawPatch(viewwindowx+viewwidth, viewwindowy+viewheight, 
+	GL_DrawPatch(x+w, y+h, 
 		W_GetNumForName(borderGfx[BG_BOTTOMRIGHT]));
-	GL_DrawPatch(viewwindowx-bwidth, viewwindowy+viewheight, 
+	GL_DrawPatch(x-bwidth, y+h, 
 		W_GetNumForName(borderGfx[BG_BOTTOMLEFT]));
 	GL_UsePatchOffset(true);
 }
@@ -196,22 +214,36 @@ void R_DrawTopBorder (void)
 	GL_SetColorAndAlpha(1,1,1,1);
 	GL_SetFlat(R_FlatNumForName(borderGfx[BG_BACKGROUND]));
 	
+#ifdef USE640
+	int x = viewwindowx * 2;
+	int y = viewwindowy * 480 / 200;
+	int w = viewwidth * 2;
+	int h = viewheight * 480 / 200;
+
+	GL_DrawRectTiled(0, 0, 640, 64, 64, 64);
+#else
+	int x = viewwindowx;
+	int y = viewwindowy;
+	int w = viewwidth;
+	int h = viewheight;
+
 	GL_DrawRectTiled(0, 0, 320, 64, 64, 64);
+#endif
 	if(viewwindowy < 65)
 	{
 		int lump;
 		GL_SetPatch(lump=W_GetNumForName(borderGfx[BG_TOP]));
-		GL_DrawRectTiled(viewwindowx, viewwindowy-bwidth, viewwidth, 
+		GL_DrawRectTiled(x, y-bwidth, w, 
 			lumptexsizes[lump].h, 16, lumptexsizes[lump].h);
 
 		GL_UsePatchOffset(false);
-		GL_DrawPatch(viewwindowx-bwidth, viewwindowy, W_GetNumForName(borderGfx[BG_LEFT]));
-		GL_DrawPatch(viewwindowx+viewwidth, viewwindowy, W_GetNumForName(borderGfx[BG_RIGHT]));
-		GL_DrawPatch(viewwindowx-bwidth, viewwindowy+16, W_GetNumForName(borderGfx[BG_LEFT]));
-		GL_DrawPatch(viewwindowx+viewwidth, viewwindowy+16, W_GetNumForName(borderGfx[BG_RIGHT]));
+		GL_DrawPatch(x-bwidth, y, W_GetNumForName(borderGfx[BG_LEFT]));
+		GL_DrawPatch(x+viewwidth, y, W_GetNumForName(borderGfx[BG_RIGHT]));
+		GL_DrawPatch(x-bwidth, y+16, W_GetNumForName(borderGfx[BG_LEFT]));
+		GL_DrawPatch(x+viewwidth, y+16, W_GetNumForName(borderGfx[BG_RIGHT]));
 
-		GL_DrawPatch(viewwindowx-bwidth, viewwindowy-bwidth, W_GetNumForName(borderGfx[BG_TOPLEFT]));
-		GL_DrawPatch(viewwindowx+viewwidth, viewwindowy-bwidth, W_GetNumForName(borderGfx[BG_TOPRIGHT]));
+		GL_DrawPatch(x-bwidth, y-bwidth, W_GetNumForName(borderGfx[BG_TOPLEFT]));
+		GL_DrawPatch(x+viewwidth, y-bwidth, W_GetNumForName(borderGfx[BG_TOPRIGHT]));
 		GL_UsePatchOffset(true);
 	}
 }
