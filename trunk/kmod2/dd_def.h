@@ -39,9 +39,9 @@ extern game_export_t	gx;
 #define DOOMSDAY_VER_ID "DGL"
 #endif
 #ifdef RANGECHECK
-#define DOOMSDAY_VERSIONTEXT "Version 0.6 +R "__DATE__" ("DOOMSDAY_VER_ID")"
+#define DOOMSDAY_VERSIONTEXT "Version 0.7 +R "__DATE__" ("DOOMSDAY_VER_ID")"
 #else
-#define DOOMSDAY_VERSIONTEXT "Version 0.6 "__DATE__" ("DOOMSDAY_VER_ID")"
+#define DOOMSDAY_VERSIONTEXT "Version 0.7 "__DATE__" ("DOOMSDAY_VER_ID")"
 #endif
 
 // Ticcmd
