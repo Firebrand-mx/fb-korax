@@ -1,0 +1,349 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+// MACROS ------------------------------------------------------------------
+
+#define LIGHT_SEQUENCE_START    2
+#define LIGHT_SEQUENCE          3
+#define LIGHT_SEQUENCE_ALT      4
+
+// CONSTANTS ---------------------------------------------------------------
+
+enum
+{
+	LITE_RAISEBYVALUE,
+	LITE_LOWERBYVALUE,
+	LITE_CHANGETOVALUE,
+	LITE_FADE,
+	LITE_GLOW,
+	LITE_FLICKER,
+	LITE_STROBE
+};
+
+// TYPES -------------------------------------------------------------------
+
+// FUNCTION PROTOTYPES -----------------------------------------------------
+
+// DATA DECLARATIONS -------------------------------------------------------
+
+int PhaseTable[64] = {
+	128, 112, 96, 80, 64, 48, 32, 32,
+	16, 16, 16, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 16, 16, 16,
+	32, 32, 48, 64, 80, 96, 112, 128
+};
+
+// CODE --------------------------------------------------------------------
+
+//============================================================================
+//
+//  EV_SpawnLight
+//
+//============================================================================
+
+bool EV_SpawnLight(line_t * line, int *arg, int type)
+{
+	LightEffect Light;
+	sector_t *sec;
+	int secNum;
+	int arg1, arg2, arg3, arg4;
+	bool think;
+	bool rtn;
+
+	arg1 = arg[1];
+	arg2 = arg[2];
+	arg3 = arg[3];
+	arg4 = arg[4];
+
+	rtn = false;
+	think = false;
+	for (secNum = FindSectorFromTag(arg[0], -1); secNum >= 0;
+		secNum = FindSectorFromTag(arg[0], secNum))
+	{
+		think = false;
+		sec = &GLevel.Sectors[secNum];
+
+		Light = NewSpecialThinker(LightEffect);
+		Light.type = type;
+		Light.sector = sec;
+		Light.time = 0.0;
+		rtn = true;
+		switch (type)
+		{
+		case LITE_RAISEBYVALUE:
+			sec->params.lightlevel += arg1;
+			if (sec->params.lightlevel > 255)
+			{
+				sec->params.lightlevel = 255;
+			}
+			break;
+		case LITE_LOWERBYVALUE:
+			sec->params.lightlevel -= arg1;
+			if (sec->params.lightlevel < 0)
+			{
+				sec->params.lightlevel = 0;
+			}
+			break;
+		case LITE_CHANGETOVALUE:
+			sec->params.lightlevel = arg1;
+			if (sec->params.lightlevel < 0)
+			{
+				sec->params.lightlevel = 0;
+			}
+			else if (sec->params.lightlevel > 255)
+			{
+				sec->params.lightlevel = 255;
+			}
+			break;
+		case LITE_FADE:
+			think = true;
+			Light.value1 = arg1;	// destination lightlevel
+			Light.delta = itof((arg1 - sec->params.lightlevel) / arg2) * 32.0;	// delta lightlevel
+			if (sec->params.lightlevel <= arg1)
+			{
+				Light.direction = 1;	// get brighter
+			}
+			else
+			{
+				Light.direction = -1;
+			}
+			break;
+		case LITE_GLOW:
+			think = true;
+			Light.value1 = arg1;	// upper lightlevel
+			Light.value2 = arg2;	// lower lightlevel
+			Light.delta = itof((arg1 - sec->params.lightlevel) / arg3) * 32.0;	// lightlevel delta
+			if (sec->params.lightlevel <= arg1)
+			{
+				Light.direction = 1;	// get brighter
+			}
+			else
+			{
+				Light.direction = -1;
+			}
+			break;
+		case LITE_FLICKER:
+			think = true;
+			Light.value1 = arg1;	// upper lightlevel
+			Light.value2 = arg2;	// lower lightlevel
+			sec->params.lightlevel = Light.value1;
+			Light.time = itof((P_Random() & 64) + 1) / 32.0;
+			break;
+		case LITE_STROBE:
+			think = true;
+			Light.value1 = arg1;	// upper lightlevel
+			Light.value2 = arg2;	// lower lightlevel
+			Light.time1 = itof(arg3) / 35.0;	// upper tics
+			Light.time2 = itof(arg4) / 35.0;	// lower tics
+			Light.time = itof(arg3) / 35.0;
+			sec->params.lightlevel = Light.value1;
+			break;
+		default:
+			rtn = false;
+			break;
+		}
+		if (!think)
+		{
+			RemoveSpecialThinker(Light);
+		}
+	}
+	return rtn;
+}
+
+//==========================================================================
+//
+// P_SpawnPhasedLight
+//
+//==========================================================================
+
+void P_SpawnPhasedLight(sector_t * sector, int base, int index)
+{
+	PhasedLight Phase;
+
+	Phase = NewSpecialThinker(PhasedLight);
+	Phase.sector = sector;
+	if (index == -1)
+	{
+		// sector->lightlevel as the index
+		Phase.index = itof(sector->params.lightlevel) / 32.0;
+	}
+	else
+	{
+		Phase.index = itof(index) / 32.0;
+	}
+	Phase.base = base & 255;
+	sector->params.lightlevel = Phase.base +
+		PhaseTable[ftoi(Phase.index * 32.0) & 63];
+
+	sector->special = 0;
+}
+
+//==========================================================================
+//
+// P_SpawnLightSequence
+//
+//==========================================================================
+
+void P_SpawnLightSequence(sector_t * sector, float indexStep)
+{
+	sector_t *sec;
+	sector_t *nextSec;
+	sector_t *tempSec;
+	int seqSpecial;
+	int i;
+	float count;
+	float index;
+	float indexDelta;
+	int base;
+
+	seqSpecial = LIGHT_SEQUENCE;	// look for Light_Sequence, first
+	sec = sector;
+	count = 1.0;
+	do
+	{
+		nextSec = NULL;
+		sec->special = LIGHT_SEQUENCE_START;	// make sure that the search doesn't back up.
+		for (i = 0; i < sec->linecount; i++)
+		{
+			tempSec = getNextSector(sec->lines[i], sec);
+			if (!tempSec)
+			{
+				continue;
+			}
+			if (tempSec->special == seqSpecial)
+			{
+				if (seqSpecial == LIGHT_SEQUENCE)
+				{
+					seqSpecial = LIGHT_SEQUENCE_ALT;
+				}
+				else
+				{
+					seqSpecial = LIGHT_SEQUENCE;
+				}
+				nextSec = tempSec;
+				count += 1.0;
+			}
+		}
+		sec = nextSec;
+	}
+	while (sec);
+
+	sec = sector;
+	count *= indexStep;
+	index = 0.0;
+	indexDelta = 64.0 / count;
+	base = sector->params.lightlevel;
+	do
+	{
+		nextSec = NULL;
+		if (sec->params.lightlevel)
+		{
+			base = sec->params.lightlevel;
+		}
+		P_SpawnPhasedLight(sec, base, ftoi(index));
+		index += indexDelta;
+		for (i = 0; i < sec->linecount; i++)
+		{
+			tempSec = getNextSector(sec->lines[i], sec);
+			if (!tempSec)
+			{
+				continue;
+			}
+			if (tempSec->special == LIGHT_SEQUENCE_START)
+			{
+				nextSec = tempSec;
+			}
+		}
+		sec = nextSec;
+	}
+	while (sec);
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:23  dj_jl
+//  Initial import.
+//
+//  Revision 1.19  2002/11/02 08:24:10  dj_jl
+//  New style classes.
+//
+//  Revision 1.18  2002/09/07 16:28:26  dj_jl
+//  Added Level class.
+//
+//  Revision 1.17  2002/08/28 16:36:39  dj_jl
+//  Merged MapObject with Entity, some natives, beautification.
+//
+//  Revision 1.16  2002/06/29 15:55:42  dj_jl
+//  Fixed static lights, beautification.
+//
+//  Revision 1.15  2002/04/11 16:48:10  dj_jl
+//  New base classes for sector thinkers, Tick function.
+//
+//  Revision 1.14  2002/03/28 18:32:51  dj_jl
+//  Little renaming, some bug fixes.
+//
+//  Revision 1.13  2002/03/09 17:57:02  dj_jl
+//  Got rid of function pointers, made most of the physics functions native.
+//
+//  Revision 1.12  2002/03/02 18:00:15  dj_jl
+//  Some smaller changes, beautification.
+//
+//  Revision 1.11  2002/01/28 18:50:18  dj_jl
+//  Made some functions Actor members.
+//  Replaced some pointers with references.
+//
+//  Revision 1.10  2002/01/17 18:15:54  dj_jl
+//  Renamed all map object classes
+//
+//  Revision 1.9  2002/01/15 08:12:26  dj_jl
+//  Replaced some pointers with references
+//
+//  Revision 1.8  2002/01/07 12:25:57  dj_jl
+//  Changed copyright year
+//
+//  Revision 1.7  2001/10/22 17:23:13  dj_jl
+//  Floatification of angles
+//
+//  Revision 1.6  2001/10/18 17:39:34  dj_jl
+//  A lots of changes for Alpha 2
+//
+//  Revision 1.5  2001/10/09 17:33:29  dj_jl
+//  Moved static light sources into games
+//
+//  Revision 1.4  2001/09/24 17:17:17  dj_jl
+//  Created thinker classes
+//
+//  Revision 1.3  2001/09/20 16:20:00  dj_jl
+//  Start using object-oriented stuff, beautification
+//  
+//  Revision 1.2  2001/07/27 14:27:52  dj_jl
+//  Update with Id-s and Log-s, some fixes
+//
+//**************************************************************************

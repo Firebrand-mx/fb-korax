@@ -1,0 +1,791 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+// MACROS ------------------------------------------------------------------
+
+#define MAX_TAGGED_LINES	64
+
+// Keys
+
+#define	TXT_KEY_STEEL		"STEEL KEY"
+#define	TXT_KEY_CAVE		"CAVE KEY"
+#define	TXT_KEY_AXE			"AXE KEY"
+#define	TXT_KEY_FIRE		"FIRE KEY"
+#define	TXT_KEY_EMERALD		"EMERALD KEY"
+#define	TXT_KEY_DUNGEON		"DUNGEON KEY"
+#define	TXT_KEY_SILVER		"SILVER KEY"
+#define	TXT_KEY_RUSTED		"RUSTED KEY"
+#define	TXT_KEY_HORN		"HORN KEY"
+#define	TXT_KEY_SWAMP		"SWAMP KEY"
+#define TXT_KEY_CASTLE		"CASTLE KEY"
+
+// TYPES -------------------------------------------------------------------
+
+struct tagged_line_t
+{
+	line_t *line;
+	int lineTag;
+};
+
+// DATA DECLARATIONS -------------------------------------------------------
+
+tagged_line_t TaggedLines[MAX_TAGGED_LINES];
+int TaggedLineCount;
+
+string TextKeyMessages[] = {
+	TXT_KEY_STEEL,
+	TXT_KEY_CAVE,
+	TXT_KEY_AXE,
+	TXT_KEY_FIRE,
+	TXT_KEY_EMERALD,
+	TXT_KEY_DUNGEON,
+	TXT_KEY_SILVER,
+	TXT_KEY_RUSTED,
+	TXT_KEY_HORN,
+	TXT_KEY_SWAMP,
+	TXT_KEY_CASTLE
+};
+
+// CODE --------------------------------------------------------------------
+
+//============================================================================
+//
+//	CheckedLockedDoor
+//
+//============================================================================
+
+bool CheckedLockedDoor(Actor A, int lock)
+{
+	if (!A.bIsPlayer)
+	{
+		return false;
+	}
+	if (!lock)
+	{
+		return true;
+	}
+	if (!(A.Player.Keys & (1 << (lock - 1))))
+	{
+		centerprint(A.Player, "YOU NEED THE %s", TextKeyMessages[lock - 1]);
+		A.PlaySound('DoorLocked', CHAN_ITEM);
+		return false;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  StartLockedACS
+//
+//==========================================================================
+
+bool StartLockedACS(line_t * line, int *args, Actor A, int side)
+{
+	int i;
+	int newArgs[5];
+
+	if (!CheckedLockedDoor(A, args[4]))
+	{
+		return false;
+	}
+	for (i = 0; i < 4; i++)
+	{
+		newArgs[i] = args[i];
+	}
+	newArgs[4] = 0;
+	return StartACS(newArgs[0], newArgs[1], &newArgs[2], A, line, side);
+}
+
+//=========================================================================
+//
+// EV_SectorSoundChange
+//
+//=========================================================================
+
+bool EV_SectorSoundChange(int *args)
+{
+	int secNum;
+	bool rtn;
+
+	if (!args[0])
+	{
+		return false;
+	}
+	secNum = -1;
+	rtn = false;
+	for (secNum = FindSectorFromTag(args[0], -1); secNum >= 0;
+		secNum = FindSectorFromTag(args[0], secNum))
+	{
+		GLevel.Sectors[secNum].seqType = args[1];
+		rtn = true;
+	}
+	return rtn;
+}
+
+//==========================================================================
+//
+//  ExecuteLineSpecial
+//
+//==========================================================================
+
+bool ExecuteLineSpecial(int special, int *args, line_t * line, int side,
+	Actor A)
+{
+	bool buttonSuccess;
+
+	buttonSuccess = false;
+	switch (special)
+	{
+	case 1:	// Poly Start Line
+		break;
+	case 2:	// Poly Rotate Left
+		buttonSuccess = EV_RotatePoly(line, args, 1, false);
+		break;
+	case 3:	// Poly Rotate Right
+		buttonSuccess = EV_RotatePoly(line, args, -1, false);
+		break;
+	case 4:	// Poly Move
+		buttonSuccess = EV_MovePoly(line, args, false, false);
+		break;
+	case 5:	// Poly Explicit Line:  Only used in initialization
+		break;
+	case 6:	// Poly Move Times 8
+		buttonSuccess = EV_MovePoly(line, args, true, false);
+		break;
+	case 7:	// Poly Door Swing
+		buttonSuccess = EV_OpenPolyDoor(line, args, PODOOR_SWING);
+		break;
+	case 8:	// Poly Door Slide
+		buttonSuccess = EV_OpenPolyDoor(line, args, PODOOR_SLIDE);
+		break;
+	case 10:	// Door Close
+		buttonSuccess = EV_DoDoor(line, args, DREV_CLOSE);
+		break;
+	case 11:	// Door Open
+		if (!args[0])
+		{
+			buttonSuccess = EV_VerticalDoor(line);
+		}
+		else
+		{
+			buttonSuccess = EV_DoDoor(line, args, DREV_OPEN);
+		}
+		break;
+	case 12:	// Door Raise
+		if (!args[0])
+		{
+			buttonSuccess = EV_VerticalDoor(line);
+		}
+		else
+		{
+			buttonSuccess = EV_DoDoor(line, args, DREV_NORMAL);
+		}
+		break;
+	case 13:	// Door Locked_Raise
+		if (CheckedLockedDoor(A, args[3]))
+		{
+			if (!args[0])
+			{
+				buttonSuccess = EV_VerticalDoor(line);
+			}
+			else
+			{
+				buttonSuccess = EV_DoDoor(line, args, DREV_NORMAL);
+			}
+		}
+		break;
+	case 20:	// Floor Lower by Value
+		buttonSuccess = EV_DoFloor(line, args, FLEV_LOWERFLOORBYVALUE);
+		break;
+	case 21:	// Floor Lower to Lowest
+		buttonSuccess = EV_DoFloor(line, args, FLEV_LOWERFLOORTOLOWEST);
+		break;
+	case 22:	// Floor Lower to Nearest
+		buttonSuccess = EV_DoFloor(line, args, FLEV_LOWERFLOOR);
+		break;
+	case 23:	// Floor Raise by Value
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISEFLOORBYVALUE);
+		break;
+	case 24:	// Floor Raise to Highest
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISEFLOOR);
+		break;
+	case 25:	// Floor Raise to Nearest
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISEFLOORTONEAREST);
+		break;
+	case 26:	// Stairs Build Down Normal
+		buttonSuccess = EV_BuildStairs(line, args, -1, STAIRS_NORMAL);
+		break;
+	case 27:	// Build Stairs Up Normal
+		buttonSuccess = EV_BuildStairs(line, args, 1, STAIRS_NORMAL);
+		break;
+	case 28:	// Floor Raise and Crush
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISEFLOORCRUSH);
+		break;
+	case 29:	// Build Pillar (no crushing)
+		buttonSuccess = EV_BuildPillar(line, args, false);
+		break;
+	case 30:	// Open Pillar
+		buttonSuccess = EV_OpenPillar(line, args);
+		break;
+	case 31:	// Stairs Build Down Sync
+		buttonSuccess = EV_BuildStairs(line, args, -1, STAIRS_SYNC);
+		break;
+	case 32:	// Build Stairs Up Sync
+		buttonSuccess = EV_BuildStairs(line, args, 1, STAIRS_SYNC);
+		break;
+	case 35:	// Raise Floor by Value Times 8
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISEBYVALUETIMES8);
+		break;
+	case 36:	// Lower Floor by Value Times 8
+		buttonSuccess = EV_DoFloor(line, args, FLEV_LOWERBYVALUETIMES8);
+		break;
+	case 40:	// Ceiling Lower by Value
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_LOWERBYVALUE);
+		break;
+	case 41:	// Ceiling Raise by Value
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_RAISEBYVALUE);
+		break;
+	case 42:	// Ceiling Crush and Raise
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_CRUSHANDRAISE);
+		break;
+	case 43:	// Ceiling Lower and Crush
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_LOWERANDCRUSH);
+		break;
+	case 44:	// Ceiling Crush Stop
+		buttonSuccess = EV_CeilingCrushStop(line, args);
+		break;
+	case 45:	// Ceiling Crush Raise and Stay
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_CRUSHRAISEANDSTAY);
+		break;
+	case 46:	// Floor Crush Stop
+		buttonSuccess = EV_FloorCrushStop(line, args);
+		break;
+	case 60:	// Plat Perpetual Raise
+		buttonSuccess = EV_DoPlat(line, args, PLAT_PERPETUALRAISE);
+		break;
+	case 61:	// Plat Stop
+		EV_StopPlat(line, args);
+		break;
+	case 62:	// Plat Down-Wait-Up-Stay
+		buttonSuccess = EV_DoPlat(line, args, PLAT_DOWNWAITUPSTAY);
+		break;
+	case 63:	// Plat Down-by-Value*8-Wait-Up-Stay
+		buttonSuccess = EV_DoPlat(line, args, PLAT_DOWNBYVALUEWAITUPSTAY);
+		break;
+	case 64:	// Plat Up-Wait-Down-Stay
+		buttonSuccess = EV_DoPlat(line, args, PLAT_UPWAITDOWNSTAY);
+		break;
+	case 65:	// Plat Up-by-Value*8-Wait-Down-Stay
+		buttonSuccess = EV_DoPlat(line, args, PLAT_UPBYVALUEWAITDOWNSTAY);
+		break;
+	case 66:	// Floor Lower Instant * 8
+		buttonSuccess = EV_DoFloor(line, args, FLEV_LOWERTIMES8INSTANT);
+		break;
+	case 67:	// Floor Raise Instant * 8
+		buttonSuccess = EV_DoFloor(line, args, FLEV_RAISETIMES8INSTANT);
+		break;
+	case 68:	// Floor Move to Value * 8
+		buttonSuccess = EV_DoFloor(line, args, FLEV_MOVETOVALUETIMES8);
+		break;
+	case 69:	// Ceiling Move to Value * 8
+		buttonSuccess = EV_DoCeiling(line, args, CLEV_MOVETOVALUETIMES8);
+		break;
+	case 70:	// Teleport
+		if (side == 0)
+		{	// Only teleport when crossing the front side of a line
+			buttonSuccess = EV_Teleport(args[0], A, true);
+		}
+		break;
+	case 71:	// Teleport, no fog
+		if (side == 0)
+		{	// Only teleport when crossing the front side of a line
+			buttonSuccess = EV_Teleport(args[0], A, false);
+		}
+		break;
+	case 72:	// Thrust Mobj
+		if (!side)	// Only thrust on side 0
+		{
+			A.Thrust(itof(args[0]) * (90.0 / 64.0), itof(args[1]));
+			buttonSuccess = 1;
+		}
+		break;
+	case 73:	// Damage Mobj
+		if (args[0])
+		{
+			A.Damage(none, none, args[0]);
+		}
+		else
+		{	// If arg1 is zero, then guarantee a kill
+			A.Damage(none, none, 10000);
+		}
+		buttonSuccess = 1;
+		break;
+	case 74:	// Teleport_NewMap
+		if (side == 0)
+		{	// Only teleport when crossing the front side of a line
+			if (!(A && A.bIsPlayer && A.Player.PlayerState == PST_DEAD))	// Players must be alive to teleport
+			{
+				G_Completed(args[0], args[1]);
+				buttonSuccess = true;
+			}
+		}
+		break;
+	case 75:	// Teleport_EndGame
+		if (side == 0)
+		{	// Only teleport when crossing the front side of a line
+			if (!(A && A.bIsPlayer && A.Player.PlayerState == PST_DEAD))	// Players must be alive to teleport
+			{
+				buttonSuccess = true;
+				if (deathmatch)
+				{	// Winning in deathmatch just goes back to map 1
+					G_Completed(1, 0);
+				}
+				else
+				{	// Passing -1, -1 to G_Completed() starts the Finale
+					G_Completed(-1, -1);
+				}
+			}
+		}
+		break;
+	case 80:	// ACS_Execute
+		buttonSuccess = StartACS(args[0], args[1], &args[2], A, line, side);
+		break;
+	case 81:	// ACS_Suspend
+		buttonSuccess = SuspendACS(args[0], args[1]);
+		break;
+	case 82:	// ACS_Terminate
+		buttonSuccess = TerminateACS(args[0], args[1]);
+		break;
+	case 83:	// ACS_LockedExecute
+		buttonSuccess = StartLockedACS(line, args, A, side);
+		break;
+	case 90:	// Poly Rotate Left Override
+		buttonSuccess = EV_RotatePoly(line, args, 1, true);
+		break;
+	case 91:	// Poly Rotate Right Override
+		buttonSuccess = EV_RotatePoly(line, args, -1, true);
+		break;
+	case 92:	// Poly Move Override
+		buttonSuccess = EV_MovePoly(line, args, false, true);
+		break;
+	case 93:	// Poly Move Times 8 Override
+		buttonSuccess = EV_MovePoly(line, args, true, true);
+		break;
+	case 94:	// Build Pillar Crush 
+		buttonSuccess = EV_BuildPillar(line, args, true);
+		break;
+	case 95:	// Lower Floor and Ceiling
+		buttonSuccess = EV_DoFloorAndCeiling(line, args, false);
+		break;
+	case 96:	// Raise Floor and Ceiling
+		buttonSuccess = EV_DoFloorAndCeiling(line, args, true);
+		break;
+	case 109:	// Force Lightning
+		buttonSuccess = true;
+		P_ForceLightning();
+		break;
+	case 110:	// Light Raise by Value
+		buttonSuccess = EV_SpawnLight(line, args, LITE_RAISEBYVALUE);
+		break;
+	case 111:	// Light Lower by Value
+		buttonSuccess = EV_SpawnLight(line, args, LITE_LOWERBYVALUE);
+		break;
+	case 112:	// Light Change to Value
+		buttonSuccess = EV_SpawnLight(line, args, LITE_CHANGETOVALUE);
+		break;
+	case 113:	// Light Fade
+		buttonSuccess = EV_SpawnLight(line, args, LITE_FADE);
+		break;
+	case 114:	// Light Glow
+		buttonSuccess = EV_SpawnLight(line, args, LITE_GLOW);
+		break;
+	case 115:	// Light Flicker
+		buttonSuccess = EV_SpawnLight(line, args, LITE_FLICKER);
+		break;
+	case 116:	// Light Strobe
+		buttonSuccess = EV_SpawnLight(line, args, LITE_STROBE);
+		break;
+	case 120:	// Quake Tremor
+		buttonSuccess = A_LocalQuake(args);
+		break;
+	case 129:	// UsePuzzleItem
+		buttonSuccess = EV_LineSearchForPuzzleItem(line, args, A);
+		break;
+	case 130:	// Thing_Activate
+		buttonSuccess = EV_ThingActivate(args[0]);
+		break;
+	case 131:	// Thing_Deactivate
+		buttonSuccess = EV_ThingDeactivate(args[0]);
+		break;
+	case 132:	// Thing_Remove
+		buttonSuccess = EV_ThingRemove(args[0]);
+		break;
+	case 133:	// Thing_Destroy
+		buttonSuccess = EV_ThingDestroy(args[0]);
+		break;
+	case 134:	// Thing_Projectile
+		buttonSuccess = EV_ThingProjectile(args, 0);
+		break;
+	case 135:	// Thing_Spawn
+		buttonSuccess = EV_ThingSpawn(args, 1);
+		break;
+	case 136:	// Thing_ProjectileGravity
+		buttonSuccess = EV_ThingProjectile(args, 1);
+		break;
+	case 137:	// Thing_SpawnNoFog
+		buttonSuccess = EV_ThingSpawn(args, 0);
+		break;
+	case 138:	// Floor_Waggle
+		buttonSuccess = EV_StartFloorWaggle(args[0], args[1],
+			args[2], args[3], args[4]);
+		break;
+	case 140:	// Sector_SoundChange
+		buttonSuccess = EV_SectorSoundChange(args);
+		break;
+	case 215:	// Teleport_Line
+		buttonSuccess = EV_SilentLineTeleport(line, side, A, args[1], args[2]);
+		break;
+
+		// Line specials only processed during level initialization
+		// 100: Scroll_Texture_Left
+		// 101: Scroll_Texture_Right
+		// 102: Scroll_Texture_Up
+		// 103: Scroll_Texture_Down
+		// 121: Line_SetIdentification
+
+		// Inert Line specials
+	default:
+		break;
+	}
+	return buttonSuccess;
+}
+
+//============================================================================
+//
+//  P_ActivateLine
+//
+//============================================================================
+
+bool P_ActivateLine(line_t * line, Actor A, int side, int activationType)
+{
+	int lineActivation;
+	bool repeat;
+	bool buttonSuccess;
+
+	lineActivation = GET_SPAC(line->flags);
+	if (lineActivation != activationType)
+	{
+		return false;
+	}
+	if (!A.bIsPlayer && !A.bMissile)
+	{
+		if (lineActivation != SPAC_MCROSS)
+		{
+			// currently, monsters can only activate the MCROSS activation type
+			return false;
+		}
+		if (line->flags & ML_SECRET)
+			return false;	// never open secret doors
+	}
+	repeat = line->flags & ML_REPEAT_SPECIAL;
+	buttonSuccess = false;
+
+	buttonSuccess = ExecuteLineSpecial(line->special, &line->arg1, line,
+		side, A);
+	if (!repeat && buttonSuccess)
+	{
+		// clear the special on non-retriggerable lines
+		line->special = 0;
+	}
+	if ((lineActivation == SPAC_USE || lineActivation == SPAC_IMPACT)
+		&& buttonSuccess)
+	{
+		P_ChangeSwitchTexture(line, repeat);
+	}
+	return true;
+}
+
+//============================================================================
+//
+//  P_SpawnSpecials
+//
+//============================================================================
+
+void P_SpawnSpecials(bool spawn_thinkers)
+{
+	sector_t *sector;
+	int i;
+	int j;
+
+	if (spawn_thinkers)
+	{
+		InitLava();
+
+		//
+		//      Init special SECTORs
+		//
+		for (i = 0; i < GLevel.NumSectors; i++)
+		{
+			sector = &GLevel.Sectors[i];
+			if (!sector->special)
+				continue;
+			switch (sector->special)
+			{
+			case 1:	// Phased light
+				// Hardcoded base, use sector->lightlevel as the index
+				P_SpawnPhasedLight(sector, 80, -1);
+				break;
+			case 2:	// Phased light sequence start
+				P_SpawnLightSequence(sector, 1.0);
+				break;
+				// Specials 3 & 4 are used by the phased light sequences
+			case 201:
+			case 202:
+			case 203:	// Scroll_North_xxx
+				SpawnScrollingFloor(sector, 0, 1, sector->special - 201);
+				break;
+			case 204:
+			case 205:
+			case 206:	// Scroll_East_xxx
+				SpawnScrollingFloor(sector, -1, 0, sector->special - 204);
+				break;
+			case 207:
+			case 208:
+			case 209:	// Scroll_South_xxx
+				SpawnScrollingFloor(sector, 0, -1, sector->special - 207);
+				break;
+			case 210:
+			case 211:
+			case 212:	// Scroll_West_xxx
+				SpawnScrollingFloor(sector, 1, 0, sector->special - 210);
+				break;
+			case 213:
+			case 214:
+			case 215:	// Scroll_NorthWest_xxx
+				SpawnScrollingFloor(sector, 1, 1, sector->special - 213);
+				break;
+			case 216:
+			case 217:
+			case 218:	// Scroll_NorthEast_xxx
+				SpawnScrollingFloor(sector, -1, 1, sector->special - 216);
+				break;
+			case 219:
+			case 220:
+			case 221:	// Scroll_SouthEast_xxx
+				SpawnScrollingFloor(sector, -1, -1, sector->special - 219);
+				break;
+			case 222:
+			case 223:
+			case 224:	// Scroll_SouthWest_xxx
+				SpawnScrollingFloor(sector, 1, -1, sector->special - 222);
+				break;
+			}
+		}
+
+		//
+		//      Init line EFFECTs
+		//
+		for (i = 0; i < GLevel.NumLines; i++)
+		{
+			switch (GLevel.Lines[i].special)
+			{
+			case 100:	// Scroll_Texture_Left
+				SpawnWallScroller(&GLevel.Lines[i], 1, 0);
+				break;
+			case 101:	// Scroll_Texture_Right
+				SpawnWallScroller(&GLevel.Lines[i], -1, 0);
+				break;
+			case 102:	// Scroll_Texture_Up
+				SpawnWallScroller(&GLevel.Lines[i], 0, 1);
+				break;
+			case 103:	// Scroll_Texture_Down
+				SpawnWallScroller(&GLevel.Lines[i], 0, -1);
+				break;
+			}
+		}
+	}
+
+	TaggedLineCount = 0;
+	for (i = 0; i < GLevel.NumLines; i++)
+	{
+		switch (GLevel.Lines[i].special)
+		{
+		case 121:	// Line_SetIdentification
+		case 208:	// TranslucentLine
+		case 215:	// Teleport_Line
+			if (GLevel.Lines[i].arg1)
+			{
+				if (TaggedLineCount == MAX_TAGGED_LINES)
+				{
+					Error("P_SpawnSpecials: MAX_TAGGED_LINES exceeded.");
+				}
+				TaggedLines[TaggedLineCount].line = &GLevel.Lines[i];
+				TaggedLines[TaggedLineCount++].lineTag = GLevel.Lines[i].arg1;
+			}
+			if (GLevel.Lines[i].special == 121)
+			{
+				GLevel.Lines[i].special = 0;
+			}
+			break;
+		}
+	}
+
+	//	Process translucent lines
+	for (i = 0; i < GLevel.NumLines; i++)
+	{
+		if (GLevel.Lines[i].special != 208)
+		{
+			continue;
+		}
+
+		int trans = (255 - GLevel.Lines[i].arg2) * 100 / 255;
+		if (GLevel.Lines[i].arg1)
+		{
+			for (j = 0; j < TaggedLineCount; j++)
+			{
+				if (TaggedLines[j].lineTag == GLevel.Lines[i].arg1)
+				{
+					SetLineTransluc(TaggedLines[j].line, trans);
+				}
+			}
+		}
+		else
+		{
+			SetLineTransluc(&GLevel.Lines[i], trans);
+		}
+		GLevel.Lines[i].special = 0;
+	}
+}
+
+//==========================================================================
+//
+//  P_UpdateSpecials
+//
+//==========================================================================
+
+void P_UpdateSpecials(void)
+{
+}
+
+//==========================================================================
+//
+//  P_FindLine
+//
+//==========================================================================
+
+line_t *P_FindLine(int lineTag, int *searchPosition)
+{
+	int i;
+
+	for (i = *searchPosition + 1; i < TaggedLineCount; i++)
+	{
+		if (TaggedLines[i].lineTag == lineTag)
+		{
+			*searchPosition = i;
+			return TaggedLines[i].line;
+		}
+	}
+	*searchPosition = -1;
+	return NULL;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:23  dj_jl
+//  Initial import.
+//
+//  Revision 1.24  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.23  2002/11/02 08:24:11  dj_jl
+//  New style classes.
+//
+//  Revision 1.22  2002/09/07 16:28:26  dj_jl
+//  Added Level class.
+//
+//  Revision 1.21  2002/03/16 17:47:47  dj_jl
+//  Got rid of mobj_t and some other legacy.
+//
+//  Revision 1.20  2002/03/09 17:57:02  dj_jl
+//  Got rid of function pointers, made most of the physics functions native.
+//
+//  Revision 1.19  2002/03/02 18:00:16  dj_jl
+//  Some smaller changes, beautification.
+//
+//  Revision 1.18  2002/02/26 17:49:49  dj_jl
+//  no message
+//
+//  Revision 1.17  2002/02/22 18:00:23  dj_jl
+//  A lots of the renaming, beautification.
+//
+//  Revision 1.16  2002/02/16 16:23:46  dj_jl
+//  Added line teleporters and translucent lines
+//
+//  Revision 1.15  2002/02/14 19:20:59  dj_jl
+//  Renamed Entity properties to new naming style
+//
+//  Revision 1.14  2002/02/06 17:28:53  dj_jl
+//  Replaced Actor flags with boolean variables.
+//
+//  Revision 1.13  2002/01/28 18:50:19  dj_jl
+//  Made some functions Actor members.
+//  Replaced some pointers with references.
+//
+//  Revision 1.12  2002/01/25 18:04:35  dj_jl
+//  Many global functions made Actor functions
+//
+//  Revision 1.11  2002/01/24 18:19:27  dj_jl
+//  Split common class Entity, made SetMobjState an Entity function
+//
+//  Revision 1.10  2002/01/15 18:27:00  dj_jl
+//  Some property names with logical words starting with capital letter.
+//  Moved everything from Entity class into Actor class.
+//
+//  Revision 1.9  2002/01/11 18:19:42  dj_jl
+//  Started to use names in progs
+//
+//  Revision 1.8  2002/01/07 12:25:58  dj_jl
+//  Changed copyright year
+//
+//  Revision 1.7  2001/11/02 18:42:08  dj_jl
+//  Damage method
+//
+//  Revision 1.6  2001/10/22 17:23:13  dj_jl
+//  Floatification of angles
+//
+//  Revision 1.5  2001/09/27 17:09:51  dj_jl
+//  Changed LavaInflictor to pointer
+//
+//  Revision 1.4  2001/09/24 17:18:15  dj_jl
+//  Created thinker classes
+//
+//  Revision 1.3  2001/08/29 17:42:13  dj_jl
+//  Added sound channel
+//  
+//  Revision 1.2  2001/07/27 14:27:52  dj_jl
+//  Update with Id-s and Log-s, some fixes
+//
+//**************************************************************************

@@ -1,0 +1,87 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponMageWandGrey : Weapon;
+
+//==========================================================================
+//
+//  A_MWandAttack
+//
+//==========================================================================
+
+void A_MWandAttack(void)
+{
+	Actor mo;
+	mo = Player.SpawnPlayerMissile(MageWandGreyMissile);
+	if (mo && int_mod)
+	{
+		mo.MissileDamage = mo.MissileDamage *Player.intelligence/10;
+	}
+	Player.MO.PlaySound('MageWandFire', CHAN_WEAPON);
+	UseWeaponMana();
+}
+
+__states__
+{
+	S_MWANDGREYREADY('MWN2', 0, 1.0 / 35.0, S_MWANDGREYREADY) { A_WeaponReady(); }
+	S_MWANDGREYDOWN('MWN2', 0, 1.0 / 35.0, S_MWANDGREYDOWN) { A_Lower(); }
+	S_MWANDGREYUP('MWN2', 0, 1.0 / 35.0, S_MWANDGREYUP) { A_Raise(); }
+	S_MWANDGREYATK_1('MWN2', 0, 6.0 / 35.0, S_MWANDGREYATK_2) { }
+	S_MWANDGREYATK_2('MWN2', 1 | FF_FULLBRIGHT, 6.0 / 35.0, S_MWANDGREYATK_3) { SY = 48.0; A_MWandAttack(); }
+	S_MWANDGREYATK_3('MWN2', 0, 3.0 / 35.0, S_MWANDGREYATK_4) { SY = 40.0; }
+	S_MWANDGREYATK_4('MWN2', 0, 3.0 / 35.0, S_MWANDGREYREADY) { SY = 36.0; A_ReFire(); }
+}
+
+/*SECOND*/
+defaultproperties
+{
+	Mana = MANA_1;
+	manause = 3;
+	UpState = S_MWANDGREYUP;
+	DownState = S_MWANDGREYDOWN;
+	ReadyState = S_MWANDGREYREADY;
+	AttackState = S_MWANDGREYATK_1;
+	HoldAttackState = S_MWANDGREYATK_1;
+	PSpriteSY = 9.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "GREY WAND";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

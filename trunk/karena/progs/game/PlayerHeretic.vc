@@ -1,0 +1,114 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerHeretic : PlayerPawn;
+
+//============================================================================
+//
+//  FireDeath
+//
+//============================================================================
+
+bool FireDeath(void)
+{
+	PlaySound('PlayerClericBurnDeath', CHAN_VOICE);
+	SetState(S_PLAY_H_FDTH1);
+	return true;
+}
+
+__states__
+{
+	S_COPLAY('PLHR', 0, -1.0, S_NULL) { }
+	S_COPLAY_RUN1('PLHR', 0, 4.0 / 35.0, S_COPLAY_RUN2) { }
+	S_COPLAY_RUN2('PLHR', 1, 4.0 / 35.0, S_COPLAY_RUN3) { }
+	S_COPLAY_RUN3('PLHR', 2, 4.0 / 35.0, S_COPLAY_RUN4) { }
+	S_COPLAY_RUN4('PLHR', 3, 4.0 / 35.0, S_COPLAY_RUN1) { }
+	S_COPLAY_ATK1('PLHR', 4, 8.0 / 35.0, S_COPLAY_ATK2) { }
+	S_COPLAY_ATK2('PLHR', 5 | FF_FULLBRIGHT, 8.0 / 35.0, S_COPLAY) { }
+	S_COPLAY_PAIN('PLHR', 6, 4.0 / 35.0, S_COPLAY_PAIN2) { }
+	S_COPLAY_PAIN2('PLHR', 6, 4.0 / 35.0, S_COPLAY) { A_Pain(); }
+	S_COPLAY_DIE1('PLHR', 7, 6.0 / 35.0, S_COPLAY_DIE2) { } //H
+	S_COPLAY_DIE2('PLHR', 8, 6.0 / 35.0, S_COPLAY_DIE3) { A_Scream(); } //I
+	S_COPLAY_DIE3('PLHR', 9, 6.0 / 35.0, S_COPLAY_DIE4) { } //J
+	S_COPLAY_DIE4('PLHR', 10, 6.0 / 35.0, S_COPLAY_DIE5) { } //K
+	S_COPLAY_DIE5('PLHR', 11, 6.0 / 35.0, S_COPLAY_DIE6) { A_NoBlocking(); } //L
+	S_COPLAY_DIE6('PLHR', 12, 6.0 / 35.0, S_COPLAY_DIE7) { } //M
+	S_COPLAY_DIE7('PLHR', 13+2, -1.0, S_NULL) { A_AddPlayerCorpse(); } //P
+	S_COPLAY_XDIE1('PLHR', 14+2, 5.0 / 35.0, S_COPLAY_XDIE2) { A_Scream(); }//Q
+	S_COPLAY_XDIE2('PLHR', 15+2, 5.0 / 35.0, S_COPLAY_XDIE3) { }//R
+	S_COPLAY_XDIE3('PLHR', 17+1, 5.0 / 35.0, S_COPLAY_XDIE4) { A_NoBlocking(); }//S
+	S_COPLAY_XDIE4('PLHR', 18+1, 5.0 / 35.0, S_COPLAY_XDIE5) { }//T
+	S_COPLAY_XDIE5('PLHR', 19+1, 5.0 / 35.0, S_COPLAY_XDIE6) { }//U
+	S_COPLAY_XDIE6('PLHR', 20+1, 5.0 / 35.0, S_COPLAY_XDIE7) { }//V
+	S_COPLAY_XDIE7('PLHR', 21+1, 5.0 / 35.0, S_COPLAY_XDIE8) { }//W
+	S_COPLAY_XDIE8('PLHR', 22+1, 5.0 / 35.0, S_COPLAY_XDIE9) { }//X
+	S_COPLAY_XDIE9('PLHR', 23+1, -1.0, S_NULL) { A_AddPlayerCorpse(); }//Y
+	S_COPLAY_ICE('PLHR', 24+1, 5.0 / 35.0, S_COPLAY_ICE2) { A_FreezeDeath(); }
+	S_COPLAY_ICE2('PLHR', 24+1, 1.0 / 35.0, S_COPLAY_ICE2) { A_FreezeDeathChunks(); }
+}
+
+defaultproperties
+{
+	Health = 100;
+	GibsHealth = -50;
+	Radius = 16.0;
+	Height = 64.0;
+	Mass = 100.0;
+	PainChance = 1.0;
+	bPickUp = true;
+	IdleState = S_COPLAY;
+	SeeState = S_COPLAY_RUN1;
+	MissileState = S_COPLAY_ATK1;
+	AttackEndState = S_COPLAY_ATK2;
+	PainState = S_COPLAY_PAIN;
+	DeathState = S_COPLAY_DIE1;
+	GibsDeathState = S_COPLAY_XDIE1;
+	IceDeathState = S_COPLAY_ICE;
+	PainSound = 'HPlayerPain';
+	GruntSound = 'HPlayerLand';
+	NormalDeathSound = 'HPlayerDeath';
+	CrazyDeathSound = 'HPlayerCrazyDeath';
+	Extreme1DeathSound = 'HPlayerExtremeDeath';
+	Extreme2DeathSound = 'HPlayerWimpyDeath';
+	Extreme3DeathSound = 'HPlayerExtremeDeath';
+	FailedUseSound = 'PlayerClericFailedUse';
+	PuzzleFailSound = 'PuzzleFailCleric';
+	InitialStrength = 10;
+	InitialWisdom = 10;
+	InitialDexterity = 10;
+	InitialConstitution = 10;
+	InitialIntelligence = 10;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

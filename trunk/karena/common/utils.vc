@@ -1,0 +1,666 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+#define MobjCenter(mobj)\
+	(mobj.Origin + vector(0.0, 0.0, mobj.Height * 0.5 - mobj.FloorClip))
+
+#define FOREACH(type, var) \
+	for (var = type(NextThinker(none, type)); var; \
+		var = type(NextThinker(var, type)))
+
+//==========================================================================
+//
+//  abs
+//
+//==========================================================================
+
+int abs(int val)
+{
+	return (val < 0) ? -val : val;
+}
+
+//==========================================================================
+//
+//  fabs
+//
+//==========================================================================
+
+float fabs(float val)
+{
+	return (val < 0.0) ? -val : val;
+}
+
+//==========================================================================
+//
+//  HITDICE
+//
+//  Most damage in HERETIC and HEXEN defined using HITDICE
+//
+//==========================================================================
+
+int HITDICE(int a)
+{
+	return (1 + (P_Random() & 7)) * a;
+}
+
+//==========================================================================
+//
+//  MobjDist
+//
+//==========================================================================
+
+float MobjDist(Entity mo1, Entity mo2)
+{
+	return Length(MobjCenter(mo2) - MobjCenter(mo1));
+}
+
+//==========================================================================
+//
+//  MobjDist2
+//
+//==========================================================================
+
+float MobjDist2(Entity mo1, Entity mo2)
+{
+	TVec dir;
+
+	dir = mo2.Origin - mo1.Origin;
+	dir.z = 0.0;
+	return Length(dir);
+}
+
+//==========================================================================
+//
+//  GetPlanePointZ
+//
+//  Get z of point with given x and y coords
+// Don't try to use it on a vertical plane
+//
+//==========================================================================
+
+float GetPlanePointZ(TPlane * plane, TVec point)
+{
+	return (plane->dist - plane->normal.x * point.x -
+		plane->normal.y * point.y) / plane->normal.z;
+}
+
+//==========================================================================
+//
+//  PointOnPlaneSide
+//
+//  Returns side 0 (front) or 1 (back).
+//
+//==========================================================================
+
+int PointOnPlaneSide(TVec point, TPlane * plane)
+{
+	return DotProduct(point, plane->normal) - plane->dist < 0.0;
+}
+
+//==========================================================================
+//
+//	RotateVector
+//
+//==========================================================================
+
+TVec RotateVector(TVec vec, TAVec rot)
+{
+	TVec v_forward;
+	TVec v_right;
+	TVec v_up;
+	TVec out;
+
+	AngleVectors(&rot, &v_forward, &v_right, &v_up);
+	out.x = DotProduct(vec, v_forward);
+	out.y = -DotProduct(vec, v_right);
+	out.z = DotProduct(vec, v_up);
+	return out;
+}
+
+//==========================================================================
+//
+//	RotateDirectionVector
+//
+//==========================================================================
+
+TVec RotateDirectionVector(TVec vec, TAVec rot)
+{
+	TAVec angles;
+	TVec out;
+
+	VectorAngles(&vec, &angles);
+	angles += rot;
+	AngleVector(&angles, &out);
+	return out;
+}
+
+//==========================================================================
+//
+//  VectorRotateAroundZ
+//
+//==========================================================================
+
+void VectorRotateAroundZ(TVec * vec, float angle)
+{
+	float dstx = vec->x * cos(angle) - vec->y * sin(angle);
+	float dsty = vec->x * sin(angle) + vec->y * cos(angle);
+
+	vec->x = dstx;
+	vec->y = dsty;
+}
+
+//**************************************************************************
+//
+//  TRACE A LINE
+//
+//**************************************************************************
+
+TVec trace_start;
+TVec trace_end;
+TVec trace_plane_normal;
+
+TVec linestart;
+TVec lineend;
+
+//==========================================================================
+//
+//  TraceHitPlane
+//
+//==========================================================================
+
+bool TraceHitPlane(sec_plane_t * plane)
+{
+	float org_dist;
+	float hit_dist;
+
+	if (plane->flags & SPF_NOBLOCKING)
+	{
+		//  Doesn't block
+		return true;
+	}
+	org_dist = DotProduct(linestart, plane->normal) - plane->dist;
+	if (org_dist < 0.0)
+	{
+		//  Back side
+		return true;
+	}
+	hit_dist = DotProduct(lineend, plane->normal) - plane->dist;
+	if (hit_dist >= 0.0)
+	{
+		//  Didn't hit plane
+		return true;
+	}
+
+	//  Hit plane
+	lineend -= (lineend - linestart) * hit_dist / (hit_dist - org_dist);
+	trace_plane_normal = plane->normal;
+
+	// don't go any farther
+	return false;
+}
+
+//==========================================================================
+//
+//  TraceCheckPlanes
+//
+//==========================================================================
+
+bool TraceCheckPlanes(sector_t * sec)
+{
+	sec_region_t *reg;
+	sec_region_t *startreg;
+
+	startreg = PointInRegion(sec, linestart);
+	for (reg = startreg; reg; reg = reg->next)
+	{
+		if (!TraceHitPlane(reg->floor))
+		{
+			//  Hit floor
+			return false;
+		}
+		if (!TraceHitPlane(reg->ceiling))
+		{
+			//  Hit ceiling
+			return false;
+		}
+	}
+	for (reg = startreg->prev; reg; reg = reg->prev)
+	{
+		if (!TraceHitPlane(reg->floor))
+		{
+			//  Hit floor
+			return false;
+		}
+		if (!TraceHitPlane(reg->ceiling))
+		{
+			//  Hit ceiling
+			return false;
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  TraceTraverse
+//
+//==========================================================================
+
+bool TraceTraverse(intercept_t * in)
+{
+	TVec hit_point;
+	line_t *li;
+	sector_t *sec;
+
+	if (!in->bIsALine)
+	{
+		Error("TraceLine: Not a line?");
+	}
+
+	li = in->line;
+	hit_point = trace_start + in->frac * (trace_end - trace_start);
+	if (li->flags & ML_TWOSIDED && PointOnPlaneSide(trace_start, li))
+	{
+		sec = li->backsector;
+	}
+	else
+	{
+		sec = li->frontsector;
+	}
+
+	lineend = hit_point;
+	if (!TraceCheckPlanes(sec))
+	{
+		return false;
+	}
+	linestart = lineend;
+
+	if (li->flags & ML_TWOSIDED)
+	{
+		// crosses a two sided line
+		opening_t *open;
+
+		open = LineOpenings(li, hit_point);
+		while (open)
+		{
+			if (open->bottom <= hit_point.z && open->top >= hit_point.z)
+			{
+				return true;
+			}
+			open = open->next;
+		}
+	}
+	//  Hit line
+	if (PointOnPlaneSide(trace_start, li))
+	{
+		trace_plane_normal = -li->normal;
+	}
+	else
+	{
+		trace_plane_normal = li->normal;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  TraceLine
+//
+//==========================================================================
+
+bool TraceLine(TVec start, TVec end)
+{
+	trace_start = start;
+	trace_end = end;
+
+	linestart = trace_start;
+	if (P_PathTraverse(start.x, start.y, end.x, end.y, PT_ADDLINES,
+			'TraceTraverse'))
+	{
+		lineend = end;
+		return TraceCheckPlanes(GLevel.PointInSector(end));
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  AddStaticLight
+//
+//==========================================================================
+
+void AddStaticLight(TVec origin, float radius)
+{
+	MSG_Select(MSG_SV_SIGNON);
+	MSG_WriteByte(svc_static_light);
+	MSG_WriteShort(ftoi(origin.x));
+	MSG_WriteShort(ftoi(origin.y));
+	MSG_WriteShort(ftoi(origin.z));
+	MSG_WriteByte(ftoi(radius / 8.0));
+}
+
+//==========================================================================
+//
+//  AddStaticLightRGB
+//
+//==========================================================================
+
+void AddStaticLightRGB(TVec origin, float radius, int color)
+{
+	MSG_Select(MSG_SV_SIGNON);
+	MSG_WriteByte(svc_static_light_rgb);
+	MSG_WriteShort(ftoi(origin.x));
+	MSG_WriteShort(ftoi(origin.y));
+	MSG_WriteShort(ftoi(origin.z));
+	MSG_WriteByte(ftoi(radius / 8.0));
+	MSG_WriteLong(color);
+}
+
+//==========================================================================
+//
+//  ArchiveThinker
+//
+//==========================================================================
+
+void ArchiveThinker(Thinker th)
+{
+	th.Archive();
+}
+
+//==========================================================================
+//
+//  UnarchiveThinker
+//
+//==========================================================================
+
+void UnarchiveThinker(Thinker th)
+{
+	th.Unarchive();
+}
+
+//==========================================================================
+//
+//  PutClientIntoServer
+//
+//==========================================================================
+
+void PutClientIntoServer(Player player)
+{
+	player.PutClientIntoServer();
+}
+
+//==========================================================================
+//
+//  SpawnClient
+//
+//==========================================================================
+
+void SpawnClient(int i)
+{
+	svvars->Players[i].SpawnClient();
+}
+
+//==========================================================================
+//
+//  NetGameReborn
+//
+//==========================================================================
+
+void NetGameReborn(int playernum)
+{
+	svvars->Players[playernum].NetGameReborn();
+}
+
+//==========================================================================
+//
+//  DisconnectClient
+//
+//==========================================================================
+
+void DisconnectClient(Player player)
+{
+	player.DisconnectClient();
+}
+
+//==========================================================================
+//
+//  UserinfoChanged
+//
+//==========================================================================
+
+void UserinfoChanged(Player player)
+{
+	player.UserinfoChanged();
+}
+
+//==========================================================================
+//
+//  G_PlayerExitMap
+//
+//  Call when a player completes a level.
+//
+//==========================================================================
+
+void G_PlayerExitMap(int player, bool clusterChange)
+{
+	svvars->Players[player].PlayerExitMap(clusterChange);
+}
+
+//==========================================================================
+//
+//  PlayerThink
+//
+//==========================================================================
+
+void PlayerThink(BasePlayer player)
+{
+	player.PlayerTick(frametime);
+}
+
+//==========================================================================
+//
+//  SetViewPos
+//
+//==========================================================================
+
+void SetViewPos(BasePlayer player)
+{
+	player.SetViewPos();
+}
+
+//==========================================================================
+//
+//	CreateTIDList
+//
+//==========================================================================
+
+void CreateTIDList()
+{
+	int i;
+	Entity mobj;
+
+	i = 0;
+	FOREACH(Entity, mobj)
+	{
+		if (mobj.TID != 0)
+		{
+			//	Add to list
+			if (i == MAX_TID_COUNT)
+			{
+				Error("P_CreateTIDList: MAX_TID_COUNT exceeded.");
+			}
+			TIDList[i] = mobj.TID;
+			TIDMobj[i++] = mobj;
+		}
+	}
+	//	Add termination marker
+	TIDList[i] = 0;
+}
+
+//==========================================================================
+//
+//	FindMobjFromTID
+//
+//==========================================================================
+
+Entity FindMobjFromTID(int tid, int *searchPosition)
+{
+	int i;
+
+	for (i = *searchPosition + 1; TIDList[i] != 0; i++)
+	{
+		if (TIDList[i] == tid)
+		{
+			*searchPosition = i;
+			return TIDMobj[i];
+		}
+	}
+	*searchPosition = -1;
+	return none;
+}
+
+//==========================================================================
+//
+//	FindState
+//
+//==========================================================================
+
+int FindState(name StateName)
+{
+	int i;
+
+	for (i = 0; i < num_states; i++)
+	{
+		if (states[i].statename == StateName)
+		{
+			return i;
+		}
+	}
+	Error("Can't find state %n", StateName);
+	return 0;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:18  dj_jl
+//  Initial import.
+//
+//  Revision 1.32  2004/11/01 07:38:21  dj_jl
+//  Almost all Hexen line specials are available in all games.
+//
+//  Revision 1.31  2004/08/28 12:35:19  dj_jl
+//  Move general client functions to player class.
+//
+//  Revision 1.30  2003/03/08 12:16:08  dj_jl
+//  Removing class pointers.
+//
+//  Revision 1.29  2002/10/26 16:32:15  dj_jl
+//  New style of defining classes.
+//
+//  Revision 1.28  2002/09/07 16:28:22  dj_jl
+//  Added Level class.
+//
+//  Revision 1.27  2002/08/28 16:36:36  dj_jl
+//  Merged MapObject with Entity, some natives, beautification.
+//
+//  Revision 1.26  2002/06/14 15:44:44  dj_jl
+//  Added state names to the states.
+//
+//  Revision 1.25  2002/04/11 16:48:10  dj_jl
+//  New base classes for sector thinkers, Tick function.
+//
+//  Revision 1.24  2002/03/16 17:51:16  dj_jl
+//  Added function Remove to the Entity class.
+//
+//  Revision 1.23  2002/03/09 17:57:01  dj_jl
+//  Got rid of function pointers, made most of the physics functions native.
+//
+//  Revision 1.22  2002/02/14 19:20:54  dj_jl
+//  Renamed Entity properties to new naming style
+//
+//  Revision 1.21  2002/02/02 19:17:25  dj_jl
+//  Replacing pointers with references, beautification.
+//
+//  Revision 1.20  2002/01/28 18:50:17  dj_jl
+//  Made some functions Actor members.
+//  Replaced some pointers with references.
+//
+//  Revision 1.19  2002/01/15 18:26:58  dj_jl
+//  Some property names with logical words starting with capital letter.
+//  Moved everything from Entity class into Actor class.
+//
+//  Revision 1.18  2002/01/15 08:12:25  dj_jl
+//  Replaced some pointers with references
+//
+//  Revision 1.17  2002/01/12 18:02:47  dj_jl
+//  Replaced some C style casts with dynamic casts
+//
+//  Revision 1.16  2002/01/07 12:19:56  dj_jl
+//  Changed copyright year
+//
+//  Revision 1.15  2001/12/18 18:31:01  dj_jl
+//  Added class SectorThinker
+//
+//  Revision 1.14  2001/12/12 19:15:27  dj_jl
+//  Some little changes for state methods
+//
+//  Revision 1.13  2001/12/01 18:10:10  dj_jl
+//  Started to use class references
+//
+//  Revision 1.12  2001/10/27 07:42:00  dj_jl
+//  Made MapBlock a builtin
+//
+//  Revision 1.11  2001/10/22 17:23:08  dj_jl
+//  Floatification of angles
+//
+//  Revision 1.10  2001/10/18 17:39:33  dj_jl
+//  A lots of changes for Alpha 2
+//
+//  Revision 1.9  2001/10/09 17:38:36  dj_jl
+//  Got rid of mobj addfields
+//
+//  Revision 1.8  2001/10/02 17:42:37  dj_jl
+//  Possibility to declare function's code inside class declaration
+//
+//  Revision 1.7  2001/09/27 17:08:19  dj_jl
+//  Removed spawn functions, added mobj classes
+//
+//  Revision 1.6  2001/09/25 17:13:50  dj_jl
+//  Beautification
+//
+//  Revision 1.5  2001/09/24 17:11:23  dj_jl
+//  Created thinker classes
+//
+//  Revision 1.4  2001/09/20 16:19:59  dj_jl
+//  Start using object-oriented stuff, beautification
+//  
+//  Revision 1.3  2001/08/31 17:17:23  dj_jl
+//  Removed vector macros
+//  
+//  Revision 1.2  2001/07/27 14:27:51  dj_jl
+//  Update with Id-s and Log-s, some fixes
+//
+//**************************************************************************

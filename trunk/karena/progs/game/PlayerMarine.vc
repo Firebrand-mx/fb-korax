@@ -1,0 +1,114 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerMarine : PlayerPawn;
+
+//============================================================================
+//
+//  FireDeath
+//
+//============================================================================
+
+bool FireDeath(void)
+{
+	PlaySound('PlayerFighterBurnDeath', CHAN_VOICE);
+	SetState(S_PLAY_D_FDTH1);
+	return true;
+}
+
+__states__
+{
+	S_MARPLAY('PLDM', 0, -1.0, S_NULL) { }
+	S_MARPLAY_RUN1('PLDM', 0, 4.0 / 35.0, S_MARPLAY_RUN2) { }
+	S_MARPLAY_RUN2('PLDM', 1, 4.0 / 35.0, S_MARPLAY_RUN3) { }
+	S_MARPLAY_RUN3('PLDM', 2, 4.0 / 35.0, S_MARPLAY_RUN4) { }
+	S_MARPLAY_RUN4('PLDM', 3, 4.0 / 35.0, S_MARPLAY_RUN1) { }
+	S_MARPLAY_ATK1('PLDM', 4, 8.0 / 35.0, S_MARPLAY_ATK2) { }
+	S_MARPLAY_ATK2('PLDM', 5 | FF_FULLBRIGHT, 8.0 / 35.0, S_MARPLAY) { }
+	S_MARPLAY_PAIN('PLDM', 6, 4.0 / 35.0, S_MARPLAY_PAIN2) { }
+	S_MARPLAY_PAIN2('PLDM', 6, 4.0 / 35.0, S_MARPLAY) { A_Pain(); }
+	S_MARPLAY_DIE1('PLDM', 7, 6.0 / 35.0, S_MARPLAY_DIE2) { } //H
+	S_MARPLAY_DIE2('PLDM', 8, 6.0 / 35.0, S_MARPLAY_DIE3) { A_Scream(); } //I
+	S_MARPLAY_DIE3('PLDM', 9, 6.0 / 35.0, S_MARPLAY_DIE4) { } //J
+	S_MARPLAY_DIE4('PLDM', 10, 6.0 / 35.0, S_MARPLAY_DIE5) { } //K
+	S_MARPLAY_DIE5('PLDM', 11, 6.0 / 35.0, S_MARPLAY_DIE6) { A_NoBlocking(); } //L
+	S_MARPLAY_DIE6('PLDM', 12, 6.0 / 35.0, S_MARPLAY_DIE7) { } //M
+	S_MARPLAY_DIE7('PLDM', 13, -1.0, S_NULL) { A_AddPlayerCorpse(); } //N
+	S_MARPLAY_XDIE1('PLDM', 14, 5.0 / 35.0, S_MARPLAY_XDIE2) { A_Scream(); }//O
+	S_MARPLAY_XDIE2('PLDM', 15, 5.0 / 35.0, S_MARPLAY_XDIE3) { }//P
+	S_MARPLAY_XDIE3('PLDM', 17-1, 5.0 / 35.0, S_MARPLAY_XDIE4) { A_NoBlocking(); }//Q
+	S_MARPLAY_XDIE4('PLDM', 18-1, 5.0 / 35.0, S_MARPLAY_XDIE5) { }//R
+	S_MARPLAY_XDIE5('PLDM', 19-1, 5.0 / 35.0, S_MARPLAY_XDIE6) { }//S
+	S_MARPLAY_XDIE6('PLDM', 20-1, 5.0 / 35.0, S_MARPLAY_XDIE7) { }//T
+	S_MARPLAY_XDIE7('PLDM', 21-1, 5.0 / 35.0, S_MARPLAY_XDIE8) { }//U
+	S_MARPLAY_XDIE8('PLDM', 22-1, 5.0 / 35.0, S_MARPLAY_XDIE9) { }//V
+	S_MARPLAY_XDIE9('PLDM', 23-1, -1.0, S_NULL) { A_AddPlayerCorpse(); }//W
+	S_MARPLAY_ICE('PLDM', 24-1, 5.0 / 35.0, S_MARPLAY_ICE2) { A_FreezeDeath(); }//X
+	S_MARPLAY_ICE2('PLDM', 24-1, 1.0 / 35.0, S_MARPLAY_ICE2) { A_FreezeDeathChunks(); }//X
+}
+
+defaultproperties
+{
+	Health = 100;
+	GibsHealth = -50;
+	Radius = 16.0;
+	Height = 64.0;
+	Mass = 100.0;
+	PainChance = 1.0;
+	bPickUp = true;
+	IdleState = S_MARPLAY;
+	SeeState = S_MARPLAY_RUN1;
+	MissileState = S_MARPLAY_ATK1;
+	AttackEndState = S_MARPLAY_ATK2;
+	PainState = S_MARPLAY_PAIN;
+	DeathState = S_MARPLAY_DIE1;
+	GibsDeathState = S_MARPLAY_XDIE1;
+	IceDeathState = S_MARPLAY_ICE;
+	PainSound = 'DPlayerPain';
+	GruntSound = 'DPlayerLand';
+	NormalDeathSound = 'DPlayerDeath';
+	CrazyDeathSound = 'DPlayerDeath';
+	Extreme1DeathSound = 'DPlayerExtremeDeath';
+	Extreme2DeathSound = 'DPlayerExtremeDeath';
+	Extreme3DeathSound = 'DPlayerExtremeDeath';
+	FailedUseSound = 'DBlocked';
+	PuzzleFailSound = 'DBlocked';
+	InitialStrength = 10;
+	InitialWisdom = 10;
+	InitialDexterity = 10;
+	InitialConstitution = 10;
+	InitialIntelligence = 10;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

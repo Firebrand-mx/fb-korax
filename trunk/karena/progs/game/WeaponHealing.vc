@@ -1,0 +1,106 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHealing : Weapon;
+
+//============================================================================
+//
+//  A_HealingFire
+//
+//============================================================================
+
+void A_HealingFire(void)
+{
+	int damage;
+	damage = 5;
+	if (int_mod)
+	{
+		damage = damage *Player.intelligence/10;
+	}
+
+	if (Player.GiveBody(damage))
+	{
+		Player.MO.PlaySound('MysticIncant', CHAN_ITEM);
+		UseWeaponMana();
+	}
+}
+
+__states__
+{
+	S_HCFLAMEREADY1('CFLM', 0, 1.0 / 35.0, S_HCFLAMEREADY2) { A_WeaponReady(); }
+	S_HCFLAMEREADY2('CFLM', 0, 1.0 / 35.0, S_HCFLAMEREADY3) { A_WeaponReady(); }
+	S_HCFLAMEREADY3('CFLM', 0, 1.0 / 35.0, S_HCFLAMEREADY4) { A_WeaponReady(); }
+	S_HCFLAMEREADY4('CFLM', 0, 1.0 / 35.0, S_HCFLAMEREADY5) { A_WeaponReady(); }
+	S_HCFLAMEREADY5('CFLM', 1, 1.0 / 35.0, S_HCFLAMEREADY6) { A_WeaponReady(); }
+	S_HCFLAMEREADY6('CFLM', 1, 1.0 / 35.0, S_HCFLAMEREADY7) { A_WeaponReady(); }
+	S_HCFLAMEREADY7('CFLM', 1, 1.0 / 35.0, S_HCFLAMEREADY8) { A_WeaponReady(); }
+	S_HCFLAMEREADY8('CFLM', 1, 1.0 / 35.0, S_HCFLAMEREADY9) { A_WeaponReady(); }
+	S_HCFLAMEREADY9('CFLM', 2, 1.0 / 35.0, S_HCFLAMEREADY10) { A_WeaponReady(); }
+	S_HCFLAMEREADY10('CFLM', 2, 1.0 / 35.0, S_HCFLAMEREADY11) { A_WeaponReady(); }
+	S_HCFLAMEREADY11('CFLM', 2, 1.0 / 35.0, S_HCFLAMEREADY12) { A_WeaponReady(); }
+	S_HCFLAMEREADY12('CFLM', 2, 1.0 / 35.0, S_HCFLAMEREADY1) { A_WeaponReady(); }
+	S_HCFLAMEDOWN('CFLM', 0, 1.0 / 35.0, S_HCFLAMEDOWN) { A_Lower(); }
+	S_HCFLAMEUP('CFLM', 0, 1.0 / 35.0, S_HCFLAMEUP) { A_Raise(); }
+	S_HCFLAMEATK_1('CFLM', 0, 2.0 / 35.0, S_HCFLAMEATK_2) { SY = 40.0; }
+	S_HCFLAMEATK_2('CFLM', 3, 2.0 / 35.0, S_HCFLAMEATK_3) { SY = 50.0; }
+	S_HCFLAMEATK_3('CFLM', 3, 2.0 / 35.0, S_HCFLAMEATK_4) { SY = 36.0; }
+	S_HCFLAMEATK_4('CFLM', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_HCFLAMEATK_5) { }
+	S_HCFLAMEATK_5('CFLM', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_HCFLAMEATK_6) { A_HealingFire(); }
+	S_HCFLAMEATK_6('CFLM', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_HCFLAMEATK_7) { }
+	S_HCFLAMEATK_7('CFLM', 6, 2.0 / 35.0, S_HCFLAMEATK_8) { SY = 40.0; }
+	S_HCFLAMEATK_8('CFLM', 6, 2.0 / 35.0, S_HCFLAMEREADY1) { }
+}
+
+/*THIRD*/
+defaultproperties
+{
+	Mana = MANA_2;
+	manause = 5;
+	UpState = S_HCFLAMEUP;
+	DownState = S_HCFLAMEDOWN;
+	ReadyState = S_HCFLAMEREADY1;
+	AttackState = S_HCFLAMEATK_1;
+	HoldAttackState = S_HCFLAMEATK_1;
+	PSpriteSY = 10.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "HEALING";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

@@ -1,0 +1,121 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponCrossbow : Weapon;
+
+//===========================================================================
+//
+//  A_FireCrossbowPL1
+//
+//===========================================================================
+
+void A_FireCrossbowPL1(void)
+{
+	Actor A;
+	A = Player.SpawnPlayerMissile(CrossbowFX1);
+	if (A && int_mod)
+	{
+		A.MissileDamage = A.MissileDamage *Player.intelligence/10;
+	}
+	A = Player.SpawnPlayerMissileAngle(CrossbowFX3,
+		AngleMod360(Player.MO.Angles.yaw - (45.0 / 10.0)));
+	if (A && int_mod)
+	{
+		A.MissileDamage = A.MissileDamage *Player.intelligence/10;
+	}
+	A = Player.SpawnPlayerMissileAngle(CrossbowFX3,
+		AngleMod360(Player.MO.Angles.yaw + (45.0 / 10.0)));
+	if (A && int_mod)
+	{
+		A.MissileDamage = A.MissileDamage *Player.intelligence/10;
+	}
+	Player.MO.PlaySound('BowFire', CHAN_WEAPON);
+	UseWeaponMana();
+}
+
+
+__states__
+{
+	S_CRBOW1('CBOW', 0, 1.0 / 35.0, S_CRBOW2) { A_WeaponReady(); }
+	S_CRBOW2('CBOW', 0, 1.0 / 35.0, S_CRBOW3) { A_WeaponReady(); }
+	S_CRBOW3('CBOW', 0, 1.0 / 35.0, S_CRBOW4) { A_WeaponReady(); }
+	S_CRBOW4('CBOW', 0, 1.0 / 35.0, S_CRBOW5) { A_WeaponReady(); }
+	S_CRBOW5('CBOW', 0, 1.0 / 35.0, S_CRBOW6) { A_WeaponReady(); }
+	S_CRBOW6('CBOW', 0, 1.0 / 35.0, S_CRBOW7) { A_WeaponReady(); }
+	S_CRBOW7('CBOW', 1, 1.0 / 35.0, S_CRBOW8) { A_WeaponReady(); }
+	S_CRBOW8('CBOW', 1, 1.0 / 35.0, S_CRBOW9) { A_WeaponReady(); }
+	S_CRBOW9('CBOW', 1, 1.0 / 35.0, S_CRBOW10) { A_WeaponReady(); }
+	S_CRBOW10('CBOW', 1, 1.0 / 35.0, S_CRBOW11) { A_WeaponReady(); }
+	S_CRBOW11('CBOW', 1, 1.0 / 35.0, S_CRBOW12) { A_WeaponReady(); }
+	S_CRBOW12('CBOW', 1, 1.0 / 35.0, S_CRBOW13) { A_WeaponReady(); }
+	S_CRBOW13('CBOW', 2, 1.0 / 35.0, S_CRBOW14) { A_WeaponReady(); }
+	S_CRBOW14('CBOW', 2, 1.0 / 35.0, S_CRBOW15) { A_WeaponReady(); }
+	S_CRBOW15('CBOW', 2, 1.0 / 35.0, S_CRBOW16) { A_WeaponReady(); }
+	S_CRBOW16('CBOW', 2, 1.0 / 35.0, S_CRBOW17) { A_WeaponReady(); }
+	S_CRBOW17('CBOW', 2, 1.0 / 35.0, S_CRBOW18) { A_WeaponReady(); }
+	S_CRBOW18('CBOW', 2, 1.0 / 35.0, S_CRBOW1) { A_WeaponReady(); }
+	S_CRBOWDOWN('CBOW', 0, 1.0 / 35.0, S_CRBOWDOWN) { A_Lower(); }
+	S_CRBOWUP('CBOW', 0, 1.0 / 35.0, S_CRBOWUP) { A_Raise(); }
+	S_CRBOWATK1_1('CBOW', 3, 6.0 / 35.0, S_CRBOWATK1_2) { A_FireCrossbowPL1(); }
+	S_CRBOWATK1_2('CBOW', 4, 3.0 / 35.0, S_CRBOWATK1_3) { }
+	S_CRBOWATK1_3('CBOW', 5, 3.0 / 35.0, S_CRBOWATK1_4) { }
+	S_CRBOWATK1_4('CBOW', 6, 3.0 / 35.0, S_CRBOWATK1_5) { }
+	S_CRBOWATK1_5('CBOW', 7, 3.0 / 35.0, S_CRBOWATK1_6) { }
+	S_CRBOWATK1_6('CBOW', 0, 4.0 / 35.0, S_CRBOWATK1_7) { }
+	S_CRBOWATK1_7('CBOW', 1, 4.0 / 35.0, S_CRBOWATK1_8) { }
+	S_CRBOWATK1_8('CBOW', 2, 5.0 / 35.0, S_CRBOW1) { A_ReFire(); }
+}
+
+/*THIRD*/
+defaultproperties
+{
+	Mana = MANA_2;
+	manause = 5;
+	UpState = S_CRBOWUP;
+	DownState = S_CRBOWDOWN;
+	ReadyState = S_CRBOW1;
+	AttackState = S_CRBOWATK1_1;
+	HoldAttackState = S_CRBOWATK1_1;
+	PSpriteSY = 15.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "CROSSBOW";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:49:44  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:23  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

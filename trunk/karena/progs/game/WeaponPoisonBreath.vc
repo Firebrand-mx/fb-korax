@@ -1,0 +1,140 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponPoisonBreath : Weapon;
+
+//============================================================================
+//
+//  A_PoisonBreathFire
+//
+//============================================================================
+
+void A_PoisonBreathFire(void)
+{
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+	PlayerPawn pmo;
+
+	pmo = PlayerPawn(Player.MO);
+
+	angles = pmo.Angles;
+	AimLineAttack(pmo, &angles, 16.0 * 64.0);
+	if (!linetarget)
+	{
+		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
+		AimLineAttack(pmo, &angles, 16.0 * 64.0);
+		if (!linetarget)
+		{
+			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
+			AimLineAttack(pmo, &angles, 16.0 * 64.0);
+			if (!linetarget)
+			{
+				angles.yaw = pmo.Angles.yaw;
+			}
+		}
+	}
+	org = pmo.Origin;
+	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
+	org.z -= pmo.FloorClip;
+	
+	Actor mo = Spawn(PoisonCloud, org);
+	mo.Instigator = pmo;
+	mo.Angles = angles;
+	AngleVector(&angles, &vforward);
+
+	mo.Speed = 50.0;
+	mo.bMissile = true;
+	mo.bRip = true;
+	vforward.z = 0.0;
+
+	mo.Velocity = vforward * mo.Speed;
+	mo.Origin += mo.Velocity;
+	mo.TryMove(mo.Origin);
+
+	PoisonCloud pc = PoisonCloud(mo);
+	pc.InitMeCloud(pmo);
+
+	
+	UseWeaponMana();
+}
+
+__states__
+{
+	S_PCFLAMEREADY1('CFLM', 0, 1.0 / 35.0, S_PCFLAMEREADY2) { A_WeaponReady(); }
+	S_PCFLAMEREADY2('CFLM', 0, 1.0 / 35.0, S_PCFLAMEREADY3) { A_WeaponReady(); }
+	S_PCFLAMEREADY3('CFLM', 0, 1.0 / 35.0, S_PCFLAMEREADY4) { A_WeaponReady(); }
+	S_PCFLAMEREADY4('CFLM', 0, 1.0 / 35.0, S_PCFLAMEREADY5) { A_WeaponReady(); }
+	S_PCFLAMEREADY5('CFLM', 1, 1.0 / 35.0, S_PCFLAMEREADY6) { A_WeaponReady(); }
+	S_PCFLAMEREADY6('CFLM', 1, 1.0 / 35.0, S_PCFLAMEREADY7) { A_WeaponReady(); }
+	S_PCFLAMEREADY7('CFLM', 1, 1.0 / 35.0, S_PCFLAMEREADY8) { A_WeaponReady(); }
+	S_PCFLAMEREADY8('CFLM', 1, 1.0 / 35.0, S_PCFLAMEREADY9) { A_WeaponReady(); }
+	S_PCFLAMEREADY9('CFLM', 2, 1.0 / 35.0, S_PCFLAMEREADY10) { A_WeaponReady(); }
+	S_PCFLAMEREADY10('CFLM', 2, 1.0 / 35.0, S_PCFLAMEREADY11) { A_WeaponReady(); }
+	S_PCFLAMEREADY11('CFLM', 2, 1.0 / 35.0, S_PCFLAMEREADY12) { A_WeaponReady(); }
+	S_PCFLAMEREADY12('CFLM', 2, 1.0 / 35.0, S_PCFLAMEREADY1) { A_WeaponReady(); }
+	S_PCFLAMEDOWN('CFLM', 0, 1.0 / 35.0, S_PCFLAMEDOWN) { A_Lower(); }
+	S_PCFLAMEUP('CFLM', 0, 1.0 / 35.0, S_PCFLAMEUP) { A_Raise(); }
+	S_PCFLAMEATK_1('CFLM', 0, 2.0 / 35.0, S_PCFLAMEATK_2) { SY = 40.0; }
+	S_PCFLAMEATK_2('CFLM', 3, 2.0 / 35.0, S_PCFLAMEATK_3) { SY = 50.0; }
+	S_PCFLAMEATK_3('CFLM', 3, 2.0 / 35.0, S_PCFLAMEATK_4) { SY = 36.0; }
+	S_PCFLAMEATK_4('CFLM', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCFLAMEATK_5) { }
+	S_PCFLAMEATK_5('CFLM', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCFLAMEATK_6) { A_PoisonBreathFire(); }
+	S_PCFLAMEATK_6('CFLM', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCFLAMEATK_7) { }
+	S_PCFLAMEATK_7('CFLM', 6, 2.0 / 35.0, S_PCFLAMEATK_8) { SY = 40.0; }
+	S_PCFLAMEATK_8('CFLM', 6, 2.0 / 35.0, S_PCFLAMEREADY1) { }
+}
+
+/*SIXTH*/
+defaultproperties
+{
+	Mana = MANA_2;
+	manause = 10;
+	UpState = S_PCFLAMEUP;
+	DownState = S_PCFLAMEDOWN;
+	ReadyState = S_PCFLAMEREADY1;
+	AttackState = S_PCFLAMEATK_1;
+	HoldAttackState = S_PCFLAMEATK_1;
+	PSpriteSY = 10.0;
+	wis_mod = true;
+	int_mod = false;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "POISON BREATH";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

@@ -1,0 +1,134 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponBlaster : Weapon;
+
+//===========================================================================
+//
+//  A_FireBlasterPL1
+//
+//===========================================================================
+
+void A_FireBlasterPL1(void)
+{
+	int damage;
+	float bulletslope;
+	TVec dir;
+	TAVec angles;
+
+	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
+	UseWeaponMana();
+//	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
+	angles = Player.MO.Angles;
+	AimLineAttack(Player.MO, &angles, 3.0 * MELEERANGE / 2.0);
+	damage = 30 + (P_Random() & 25);
+	if (int_mod)
+	{
+		damage=damage*Player.intelligence/10;
+	}
+	AngleVector(&angles, &dir);
+	if (Player.Refire)
+	{
+		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
+	}
+	PuffType = BlasterPuff1;
+	LineAttack(Player.MO, dir, MISSILERANGE, damage);
+	Player.MO.PlaySound('BlasterFire', CHAN_WEAPON);
+}
+
+//===========================================================================
+//
+//  A_FireBlasterPL2
+//
+//===========================================================================
+
+void A_FireBlasterPL2(void)
+{
+	Actor A;
+
+	UseWeaponMana();
+	A = Player.SpawnPlayerMissile(BlasterFX1);
+	if (A)
+	{
+		A.bBlaster = true;
+		if (int_mod)
+		{
+			A.MissileDamage = A.MissileDamage *Player.intelligence/10;
+		}
+	}
+	Player.MO.PlaySound('BlasterFire', CHAN_WEAPON);
+}
+
+__states__
+{
+	S_BLASTERREADY('BLSR', 0, 1.0 / 35.0, S_BLASTERREADY) { A_WeaponReady(); }
+	S_BLASTERDOWN('BLSR', 0, 1.0 / 35.0, S_BLASTERDOWN) { A_Lower(); }
+	S_BLASTERUP('BLSR', 0, 1.0 / 35.0, S_BLASTERUP) { A_Raise(); }
+	S_BLASTERATK1_1('BLSR', 1, 3.0 / 35.0, S_BLASTERATK1_2) { }
+	S_BLASTERATK1_2('BLSR', 2, 3.0 / 35.0, S_BLASTERATK1_3) { }
+	S_BLASTERATK1_3('BLSR', 3, 2.0 / 35.0, S_BLASTERATK1_4) { A_FireBlasterPL1(); }
+	S_BLASTERATK1_4('BLSR', 2, 2.0 / 35.0, S_BLASTERATK1_5) { }
+	S_BLASTERATK1_5('BLSR', 1, 2.0 / 35.0, S_BLASTERATK1_6) { }
+	S_BLASTERATK1_6('BLSR', 0, 0.0 / 35.0, S_BLASTERREADY) { A_ReFire(); }
+	S_BLASTERATK2_1('BLSR', 1, 0.0 / 35.0, S_BLASTERATK2_2) { }
+	S_BLASTERATK2_2('BLSR', 2, 0.0 / 35.0, S_BLASTERATK2_3) { }
+	S_BLASTERATK2_3('BLSR', 3, 3.0 / 35.0, S_BLASTERATK2_4) { A_FireBlasterPL2(); }
+	S_BLASTERATK2_4('BLSR', 2, 4.0 / 35.0, S_BLASTERATK2_5) { }
+	S_BLASTERATK2_5('BLSR', 1, 4.0 / 35.0, S_BLASTERATK2_6) { }
+	S_BLASTERATK2_6('BLSR', 0, 0.0 / 35.0, S_BLASTERREADY) { A_ReFire(); }
+}
+
+/*FOURTH*/
+defaultproperties
+{
+	Mana = MANA_3;
+	manause = 7;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+
+	UpState = S_BLASTERUP;
+	DownState = S_BLASTERDOWN;
+	ReadyState = S_BLASTERREADY;
+	AttackState = S_BLASTERATK1_1;
+	HoldAttackState = S_BLASTERATK1_3;
+	PSpriteSY = 15.0;
+	PickUpMessage = "DRAGON'S CLAW";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:49:44  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:23  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

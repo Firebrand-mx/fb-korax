@@ -1,0 +1,155 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponFighterSwordMelee : Weapon;
+
+float SwordRange;
+
+//==========================================================================
+//
+//  A_FSwordMeleeAttack
+//
+//==========================================================================
+
+void A_FSwordMeleeAttack(void)
+{
+	Actor Owner = Player.MO;
+	float power;
+	int damage;
+	int i;
+	TAVec angles;
+	TVec vforward;
+
+	damage = 100 + (P_Random() & 30) + (P_Random() & 15);
+	if (str_mod)
+	{
+		damage=damage*Player.strength/10;
+	}
+	power = 0.0;
+	PuffType = AxePuff;
+	for (i = 0; i < 16; i++)
+	{
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, SwordRange);
+		if (linetarget)
+		{
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, SwordRange, damage))
+			{
+				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			UseWeaponMana();
+			break;
+		}
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, SwordRange);
+		if (linetarget)
+		{
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, SwordRange, damage))
+			{
+				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			UseWeaponMana();
+			break;
+		}
+	}
+	if (i == 16)
+	{
+		// didn't find any creatures, so try to strike any walls
+		angles = Owner.Angles;
+		AimLineAttack(Owner, &angles, MELEERANGE);
+		AngleVector(&angles, &vforward);
+		if (LineAttack(Owner, vforward, MELEERANGE, damage))
+		{
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+	}
+}
+
+__states__
+{
+	S_FSWORDMELEEREADY('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEREADY) { A_WeaponReady(); }
+	S_FSWORDMELEEDOWN('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEDOWN) { A_Lower(); }
+	S_FSWORDMELEEUP('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEUP) { A_Raise(); }
+	S_FSWORDMELEEATK_1('FSD2', 1, 4.0 / 35.0, S_FSWORDMELEEATK_2) { SX = 15.0; SY = 32.0; }
+	S_FSWORDMELEEATK_2('FSD2', 2, 3.0 / 35.0, S_FSWORDMELEEATK_3) { SX = 15.0; SY = 32.0; }
+	S_FSWORDMELEEATK_3('FSD2', 3, 2.0 / 35.0, S_FSWORDMELEEATK_4) { SX = 15.0; SY = 32.0; }
+	S_FSWORDMELEEATK_4('FSD2', 3, 1.0 / 35.0, S_FSWORDMELEEATK_5) { SX = -5.0; SY = 70.0; A_FSwordMeleeAttack(); }
+	S_FSWORDMELEEATK_5('FSD2', 3, 2.0 / 35.0, S_FSWORDMELEEATK_6) { SX = -25.0; SY = 90.0; }
+	S_FSWORDMELEEATK_6('FSD2', 4, 1.0 / 35.0, S_FSWORDMELEEATK_7) { SX = 15.0; SY = 32.0; }
+	S_FSWORDMELEEATK_7('FSD2', 4, 2.0 / 35.0, S_FSWORDMELEEATK_8) { SX = 10.0; SY = 54.0; }
+	S_FSWORDMELEEATK_8('FSD2', 4, 7.0 / 35.0, S_FSWORDMELEEATK_9) { SX = 10.0; SY = 150.0; }
+	S_FSWORDMELEEATK_9('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEATK_10) { SY = 60.0; A_ReFire(); }
+	S_FSWORDMELEEATK_10('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEATK_11) { SY = 52.0; }
+	S_FSWORDMELEEATK_11('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEATK_12) { SY = 44.0; }
+	S_FSWORDMELEEATK_12('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEATK_13) { SY = 36.0; }
+	S_FSWORDMELEEATK_13('FSD2', 0, 1.0 / 35.0, S_FSWORDMELEEREADY) { }
+}
+
+/*SEVENTH*/
+defaultproperties
+{
+	Mana = MANA_3;
+	manause = 15;
+	UpState = S_FSWORDMELEEUP;
+	DownState = S_FSWORDMELEEDOWN;
+	ReadyState = S_FSWORDMELEEREADY;
+	AttackState = S_FSWORDMELEEATK_1;
+	HoldAttackState = S_FSWORDMELEEATK_1;
+	PSpriteSY = -12.0;
+	SwordRange = MELEERANGE + MELEERANGE/* / 2.0;*/;
+	wis_mod = true;
+	int_mod = false;
+	dex_mod = true;
+	str_mod = true;
+	PickUpMessage = "HALF QUIETUS";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
