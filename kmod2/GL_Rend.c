@@ -44,7 +44,7 @@ extern int			dlMaxRad;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-int l_down=-110,l_up=110;
+int l_down=-60,l_up=60;
 int time_mod=200;
 
 
