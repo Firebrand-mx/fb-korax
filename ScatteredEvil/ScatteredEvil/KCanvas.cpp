@@ -13,7 +13,7 @@
 
 KCanvas *GCanvas;
 
-KTexture *KCanvas::Textures;
+KTexture **KCanvas::Textures;
 int KCanvas::NumTextures;
 
 KFont *KCanvas::SmallFont;
@@ -32,6 +32,7 @@ KFont::KFont(char *Name, int InSpaceWidth, int InSpaceHeight)
 	: SpaceWidth(InSpaceWidth)
 	, SpaceHeight(InSpaceHeight)
 {
+	guard(KFont::KFont);
 	int		i;
 	char   	buffer[12];
 
@@ -60,6 +61,7 @@ KFont::KFont(char *Name, int InSpaceWidth, int InSpaceHeight)
 	{
 		Chars['\\' - 32] = Chars['/' - 32];
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -70,6 +72,7 @@ KFont::KFont(char *Name, int InSpaceWidth, int InSpaceHeight)
 
 int KFont::TextWidth(const char *Text)
 {
+	guard(KFont::TextWidth);
 	int		c;
 	int		w;
 	int		i;
@@ -91,6 +94,7 @@ int KFont::TextWidth(const char *Text)
 		w += Chars[c]->Width - 1;
 	}
 	return w;
+	unguard;
 }
 
 //==========================================================================
@@ -125,14 +129,16 @@ void KCanvas::StaticInit(void)
 
 KTexture *KCanvas::FindTexture(char *Name)
 {
+	guard(KCanvas::FindTexture);
 	for (int i = 0; i < NumTextures; i++)
 	{
-		if (!stricmp(Name, Textures[i].Name))
-			return &Textures[i];
+		if (!stricmp(Name, Textures[i]->Name))
+			return Textures[i];
 	}
 	NumTextures++;
-	Textures = (KTexture *)realloc(Textures, NumTextures * sizeof(KTexture));
-	KTexture &T = Textures[NumTextures - 1];
+	Textures = (KTexture **)realloc(Textures, NumTextures * 4);
+	Textures[NumTextures - 1] = new KTexture;
+	KTexture &T = *Textures[NumTextures - 1];
 	strcpy(T.Name, Name);
 	T.LumpNum = gi.W_GetNumForName(Name);
 	patch_t *patch = (patch_t *)gi.W_CacheLumpNum(T.LumpNum, PU_CACHE);
@@ -140,7 +146,8 @@ KTexture *KCanvas::FindTexture(char *Name)
 	T.Height = SHORT(patch->height);
 	T.XOffset = SHORT(patch->leftoffset);
 	T.YOffset = SHORT(patch->topoffset);
-	return &Textures[NumTextures - 1];
+	return Textures[NumTextures - 1];
+	unguard;
 }
 
 //==========================================================================
@@ -153,6 +160,7 @@ void KCanvas::DrawTile(KTexture *Texture,
 	float x1, float y1, float x2, float y2,
 	float s1, float t1, float s2, float t2)
 {
+	guard(KCanvas::DrawTile);
 	gi.GL_SetPatch(Texture->LumpNum);
 
 	x1 += OrgX;
@@ -174,6 +182,7 @@ void KCanvas::DrawTile(KTexture *Texture,
 	gl.TexCoord2f(s1, t2);
 	gl.Vertex2f(x1, y2);
 	gl.End();
+	unguard;
 }
 
 //==========================================================================
@@ -184,6 +193,7 @@ void KCanvas::DrawTile(KTexture *Texture,
 
 void KCanvas::DrawText(int x, int y, const char *Text)
 {
+	guard(KCanvas::DrawText);
 	int		c;
 	int		i;
 		
@@ -202,6 +212,7 @@ void KCanvas::DrawText(int x, int y, const char *Text)
 		DrawIcon(x, y, Font->Chars[c]);
 		x += Font->Chars[c]->Width - 1;
 	}
+	unguard;
 }
 
 //==========================================================================

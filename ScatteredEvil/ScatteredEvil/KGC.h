@@ -153,15 +153,15 @@ private:
 
 	KClipRect	ClipRect;
 
-	//FColor    tileColor;
+	FColor		TileColor;
 
-	//FColor    textColor;
+	FColor		TextColor;
 	KFont		*Font;
 /*		
-		FLOAT     textVSpacing;
-		BYTE      hAlign;
-		BYTE      vAlign;
-		BITFIELD  bWordWrap:1;
+		FLOAT     textVSpacing;*/
+	EHAlign		HAlign;
+	EVAlign		VAlign;
+/*		BITFIELD  bWordWrap:1;
 
 		BITFIELD  bFree:1;
 		int       gcCount;
@@ -178,8 +178,23 @@ public:
 		float ClipWidth, float ClipHeight);
 	KClipRect GetClipRect(void) { return ClipRect; }
 
-	void SetFont(KFont *NewFont) { if (NewFont) Font = NewFont; }
+	void SetTileColor(FColor newTileColor);
+	FColor GetTileColor(void) { return TileColor; }
+
+	void SetTextColor(FColor newTextColor);
+	FColor GetTextColor(void) { return TextColor; }
+
+	void SetFont(KFont *NewFont);
 	KFont *GetFont(void) { return Font; }
+
+	void SetHorizontalAlignment(EHAlign newHAlign);
+	EHAlign GetHorizontalAlignment(void) { return HAlign; }
+
+	void SetVerticalAlignment(EVAlign newVAlign);
+	EVAlign GetVerticalAlignment(void) { return VAlign; }
+
+	void SetAlignments(EHAlign newHAlign, EVAlign newVAlign);
+	void GetAlignments(EHAlign *pHAlign = NULL, EVAlign *pVAlign = NULL);
 
 	void DrawIcon(float x, float y, KTexture *Texture, bool UseOffsets = true);
 	void DrawIconStretch(float x, float y, float width, float height, KTexture *Tex);

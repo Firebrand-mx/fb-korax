@@ -21,8 +21,11 @@ IMPLEMENT_CLASS(KWindow);
 
 KWindow::KWindow()
 {
+	WindowType = WIN_Normal;
 	bIsVisible = true;
 	bIsSensitive = true;
+	TileColor = FColor(255, 255, 255, 255);
+	TextColor = FColor(255, 255, 255, 255);
 	Font = KCanvas::SmallFont;
 }
 
@@ -34,7 +37,7 @@ KWindow::KWindow()
 
 void KWindow::Init(KWindow *AParent)
 {
-	WindowType = WIN_Normal;
+	guard(KWindow::Init);
 	Parent = AParent;
 	if (Parent)
 	{
@@ -42,8 +45,11 @@ void KWindow::Init(KWindow *AParent)
 	}
 	WinGC = Spawn<KGC>();
 	ClipTree();
+	if (bIsSelectable)
+		GetModalWindow()->AddWindowToTables(this);
 	InitWindow();
 	bIsInitialized = true;
+	unguard;
 }
 
 //==========================================================================
@@ -54,6 +60,8 @@ void KWindow::Init(KWindow *AParent)
 
 void KWindow::CleanUp(void)
 {
+	if (bIsSelectable)
+		GetModalWindow()->RemoveWindowFromTables(this);
 }
 
 //==========================================================================
@@ -64,8 +72,10 @@ void KWindow::CleanUp(void)
 
 void KWindow::Destroy()
 {
+	guard(KWindow::Destroy);
 	bBeingDestroyed = true;
 	KillAllChildren();
+	CleanUp();
 	if (Parent)
 	{
 		Parent->RemoveChild(this);
@@ -73,6 +83,7 @@ void KWindow::Destroy()
 	if (WinGC)
 		WinGC->Destroy();
 	Super::Destroy();
+	unguard;
 }
 
 //==========================================================================
@@ -83,12 +94,14 @@ void KWindow::Destroy()
 
 KRootWindow *KWindow::GetRootWindow(void)
 {
+	guard(KWindow::GetRootWindow);
 	KWindow *win = this;
 	while (win->WindowType < WIN_Root)
 	{
 		win = win->Parent;
 	}
 	return (KRootWindow *)win;
+	unguard;
 }
 
 //==========================================================================
@@ -99,12 +112,14 @@ KRootWindow *KWindow::GetRootWindow(void)
 
 KModalWindow *KWindow::GetModalWindow(void)
 {
+	guard(KWindow::GetModalWindow);
 	KWindow *win = this;
 	while (win->WindowType < WIN_Modal)
 	{
 		win = win->Parent;
 	}
 	return (KModalWindow *)win;
+	unguard;
 }
 
 //==========================================================================
@@ -126,6 +141,7 @@ KWindow *KWindow::GetParent(void)
 
 KWindow *KWindow::GetBottomChild(bool bVisibleOnly)
 {
+	guard(KWindow::GetBottomChild);
 	KWindow *win = FirstChild;
 	if (bVisibleOnly)
 	{
@@ -135,6 +151,7 @@ KWindow *KWindow::GetBottomChild(bool bVisibleOnly)
 		}
 	}
 	return win;
+	unguard;
 }
 
 //==========================================================================
@@ -145,6 +162,7 @@ KWindow *KWindow::GetBottomChild(bool bVisibleOnly)
 
 KWindow *KWindow::GetTopChild(bool bVisibleOnly)
 {
+	guard(KWindow::GetTopChild);
 	KWindow *win = LastChild;
 	if (bVisibleOnly)
 	{
@@ -154,6 +172,7 @@ KWindow *KWindow::GetTopChild(bool bVisibleOnly)
 		}
 	}
 	return win;
+	unguard;
 }
 
 //==========================================================================
@@ -164,6 +183,7 @@ KWindow *KWindow::GetTopChild(bool bVisibleOnly)
 
 KWindow *KWindow::GetLowerSibling(bool bVisibleOnly)
 {
+	guard(KWindow::GetLowerSibling);
 	KWindow *win = PrevSibling;
 	if (bVisibleOnly)
 	{
@@ -173,6 +193,7 @@ KWindow *KWindow::GetLowerSibling(bool bVisibleOnly)
 		}
 	}
 	return win;
+	unguard;
 }
 
 //==========================================================================
@@ -183,6 +204,7 @@ KWindow *KWindow::GetLowerSibling(bool bVisibleOnly)
 
 KWindow *KWindow::GetHigherSibling(bool bVisibleOnly)
 {
+	guard(KWindow::GetHigherSibling);
 	KWindow *win = NextSibling;
 	if (bVisibleOnly)
 	{
@@ -192,6 +214,7 @@ KWindow *KWindow::GetHigherSibling(bool bVisibleOnly)
 		}
 	}
 	return win;
+	unguard;
 }
 
 //==========================================================================
@@ -202,6 +225,7 @@ KWindow *KWindow::GetHigherSibling(bool bVisibleOnly)
 
 void KWindow::Raise(void)
 {
+	guard(KWindow::Raise);
 	if (!Parent)
 	{
 		gi.Error("Can't raise root window");
@@ -226,6 +250,7 @@ void KWindow::Raise(void)
 	NextSibling = NULL;
 	Parent->LastChild->NextSibling = this;
 	Parent->LastChild = this;
+	unguard;
 }
 
 //==========================================================================
@@ -236,6 +261,7 @@ void KWindow::Raise(void)
 
 void KWindow::Lower(void)
 {
+	guard(KWindow::Lower);
 	if (!Parent)
 	{
 		gi.Error("Can't lower root window");
@@ -260,6 +286,7 @@ void KWindow::Lower(void)
 	NextSibling = Parent->FirstChild;
 	Parent->FirstChild->PrevSibling = this;
 	Parent->FirstChild = this;
+	unguard;
 }
 
 //==========================================================================
@@ -270,11 +297,13 @@ void KWindow::Lower(void)
 
 void KWindow::SetVisibility(bool NewVisibility)
 {
+	guard(KWindow::SetVisibility);
 	if (bIsVisible != NewVisibility)
 	{
 		bIsVisible = NewVisibility;
 		VisibilityChanged(NewVisibility);
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -285,11 +314,72 @@ void KWindow::SetVisibility(bool NewVisibility)
 
 void KWindow::SetSensitivity(bool NewSensitivity)
 {
+	guard(KWindow::SetSensitivity);
 	if (bIsSensitive != NewSensitivity)
 	{
 		bIsSensitive = NewSensitivity;
 		SensitivityChanged(NewSensitivity);
 	}
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::SetSelectability
+//
+//==========================================================================
+
+void KWindow::SetSelectability(bool NewSelectability)
+{
+	guard(KWindow::SetSelectability);
+	if (bIsSelectable != NewSelectability)
+	{
+		bIsSelectable = NewSelectability;
+		if (bIsSelectable)
+			GetModalWindow()->AddWindowToTables(this);
+		else
+			GetModalWindow()->RemoveWindowFromTables(this);
+	}
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::IsFocusWindow
+//
+//==========================================================================
+
+bool KWindow::IsFocusWindow(void)
+{
+	guard(KWindow::IsFocusWindow);
+	return GetRootWindow()->FocusWindow == this;
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::SetTextColor
+//
+//==========================================================================
+
+void KWindow::SetTextColor(FColor newColor)
+{
+	guard(KWindow::SetTextColor);
+	TextColor = newColor;
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::GetTextColor
+//
+//==========================================================================
+
+FColor KWindow::GetTextColor(void)
+{
+	guard(KWindow::GetTextColor);
+	return TextColor;
+	unguard;
 }
 
 //==========================================================================
@@ -300,10 +390,38 @@ void KWindow::SetSensitivity(bool NewSensitivity)
 
 void KWindow::SetFont(KFont *NewFont)
 {
+	guard(KWindow::SetFont);
 	if (NewFont)
 	{
 		Font = NewFont;
 	}
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::SetTileColor
+//
+//==========================================================================
+
+void KWindow::SetTileColor(FColor newColor)
+{
+	guard(KWindow::SetTileColor);
+	TileColor = newColor;
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::GetTileColor
+//
+//==========================================================================
+
+FColor KWindow::GetTileColor(void)
+{
+	guard(KWindow::GetTileColor);
+	return TileColor;
+	unguard;
 }
 
 //==========================================================================
@@ -314,9 +432,12 @@ void KWindow::SetFont(KFont *NewFont)
 
 void KWindow::Move(float NewX, float NewY)
 {
+	guard(KWindow::Move);
 	X = NewX;
 	Y = NewY;
 	ClipTree();
+	GetModalWindow()->ResortWindowTables();
+	unguard;
 }
 
 //==========================================================================
@@ -327,9 +448,11 @@ void KWindow::Move(float NewX, float NewY)
 
 void KWindow::Resize(float NewWidth, float NewHeight)
 {
+	guard(KWindow::Resize);
 	Width = NewWidth;
 	Height = NewHeight;
 	ClipTree();
+	unguard;
 }
 
 //==========================================================================
@@ -340,6 +463,7 @@ void KWindow::Resize(float NewWidth, float NewHeight)
 
 void KWindow::AddChild(KWindow *NewChild)
 {
+	guard(KWindow::AddChild);
 	NewChild->PrevSibling = LastChild;
 	NewChild->NextSibling = NULL;
 	if (LastChild)
@@ -356,6 +480,7 @@ void KWindow::AddChild(KWindow *NewChild)
 	{
 		w->DescendantAdded(NewChild);
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -366,6 +491,7 @@ void KWindow::AddChild(KWindow *NewChild)
 
 void KWindow::RemoveChild(KWindow *InChild)
 {
+	guard(KWindow::RemoveChild);
 	if (InChild->PrevSibling)
 	{
 		InChild->PrevSibling->NextSibling = InChild->NextSibling;
@@ -390,6 +516,7 @@ void KWindow::RemoveChild(KWindow *InChild)
 	{
 		w->DescendantRemoved(InChild);
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -400,10 +527,12 @@ void KWindow::RemoveChild(KWindow *InChild)
 
 void KWindow::KillAllChildren()
 {
+	guard(KWindow::KillAllChildren);
 	while (FirstChild)
 	{
 		FirstChild->Destroy();
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -414,6 +543,7 @@ void KWindow::KillAllChildren()
 
 void KWindow::DrawTree(KCanvas *Canvas)
 {
+	guard(KWindow::DrawTree);
 	if (!bIsVisible || !ClipRect.HasArea())
 	{
 		//	Nowhere to draw.
@@ -421,6 +551,8 @@ void KWindow::DrawTree(KCanvas *Canvas)
 	}
 	WinGC->SetCanvas(Canvas);
 	WinGC->SetClipRect(ClipRect);
+	WinGC->SetTileColor(TileColor);
+	WinGC->SetTextColor(TextColor);
 	WinGC->SetFont(Font);
 	DrawWindow(WinGC);
 	for (KWindow *c = FirstChild; c; c = c->NextSibling)
@@ -429,6 +561,7 @@ void KWindow::DrawTree(KCanvas *Canvas)
 	}
 	WinGC->SetClipRect(ClipRect);
 	PostDrawWindow(WinGC);
+	unguard;
 }
 
 //==========================================================================
@@ -439,6 +572,7 @@ void KWindow::DrawTree(KCanvas *Canvas)
 
 void KWindow::ClipTree()
 {
+	guard(KWindow::ClipTree);
 	if (Parent)
 	{
 		ClipRect = KClipRect(Parent->ClipRect.OriginX + X, 
@@ -453,6 +587,7 @@ void KWindow::ClipTree()
 	{
 		c->ClipTree();
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -463,9 +598,11 @@ void KWindow::ClipTree()
 
 KWindow *KWindow::StaticCreateWindow(KClass *InClass, KWindow *InParent)
 {
+	guard(KWindow::StaticCreateWindow);
 	KWindow *Win;
 
 	Win = (KWindow *)StaticSpawnObject(InClass);
 	Win->Init(InParent);
 	return Win;
+	unguard;
 }

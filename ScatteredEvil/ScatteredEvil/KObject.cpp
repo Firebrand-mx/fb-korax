@@ -26,6 +26,7 @@ KClass::KClass(size_t ASize, unsigned int AClassFlags,
 
 KClass *KClass::FindClass(const char *AName)
 {
+	guard(KClass::FindClass);
 	for (KClass *c = GClasses; c; c = c->NextClass)
 	{
 		if (!strcmp(c->GetName(), AName))
@@ -34,6 +35,7 @@ KClass *KClass::FindClass(const char *AName)
 		}
 	}
 	return NULL;
+	unguard;
 }
 
 //==========================================================================
@@ -104,11 +106,13 @@ KObject::~KObject(void)
 
 KObject *KObject::StaticSpawnObject(KClass *AClass)
 {
+	guard(KObject::StaticSpawnObject);
 	KObject *Obj = (KObject *)gi.Z_Malloc(AClass->ClassSize, PU_STATIC, 0);
 	memset(Obj, 0, AClass->ClassSize);
 	AClass->ClassConstructor(Obj);
 	Obj->Class = AClass;
 	return Obj;
+	unguard;
 }
 
 //==========================================================================
