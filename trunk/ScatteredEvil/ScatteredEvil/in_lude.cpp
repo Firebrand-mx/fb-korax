@@ -230,7 +230,7 @@ static void InitStats(void)
 				{
 					if(players[i].plr->ingame)
 					{
-						totalFrags[i] += players[i].plr->frags[j];
+						totalFrags[i] += players[i].frags[j];
 					}
 				}
 				posnum++;
@@ -502,11 +502,11 @@ static void DrDeathTally(void)
 			{
 				if(bold)
 				{
-					DrNumberBold(players[i].plr->frags[j], x, y, 100);
+					DrNumberBold(players[i].frags[j], x, y, 100);
 				}
 				else
 				{
-					DrNumber(players[i].plr->frags[j], x, y, 100);
+					DrNumber(players[i].frags[j], x, y, 100);
 				}
 			}
 			else

@@ -725,7 +725,7 @@ void DrawMainBar(void)
 		temp = 0;
 		for(i = 0; i < MAXPLAYERS; i++)
 		{
-			temp += CPlayer->plr->frags[i];
+			temp += CPlayer->frags[i];
 		}
 		if (PatchNumKILLS!=0) GCanvas->DrawPatch1(38, 162, PatchNumKILLS);
 			DrINumber(temp, 40, 176);
@@ -1014,7 +1014,7 @@ void DrawFullScreenStuff(void)
 		{
 			if(players[i].plr->ingame)
 			{
-				temp += CPlayer->plr->frags[i];
+				temp += CPlayer->frags[i];
 			}
 		}
 		DrINumber(temp, 45, 445);
@@ -1104,7 +1104,7 @@ static void DrawPossWeaponry(void)
 		{
 			if(players[i].plr->ingame)
 			{
-				temp += CPlayer->plr->frags[i];
+				temp += CPlayer->frags[i];
 			}
 		}
 		DrINumber(temp, 45, 445);
