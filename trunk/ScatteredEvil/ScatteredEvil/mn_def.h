@@ -3,6 +3,15 @@
 #ifndef __MENU_DEFS_H_
 #define __MENU_DEFS_H_
 
+// Forward declarations
+class KCanvas;
+class KGC;
+class	KWindow;
+
+#include "KCanvas.h"
+#include "KGC.h"
+#include "KWindow.h"
+
 // Macros
 
 #define LEFT_DIR 0
@@ -14,6 +23,12 @@
 #define ASCII_CURSOR '['
 
 // Types
+
+class KMenuWindow:public KWindow
+{
+public:
+	KMenuWindow(KWindow *InParent) : KWindow(InParent) { }
+};
 
 typedef enum
 {
@@ -64,8 +79,9 @@ typedef struct
 	MenuType_t menu;
 } MenuItem_t;
 
-typedef struct
+class Menu_t:public KMenuWindow
 {
+public:
 	int x;
 	int y;
 	void (*drawFunc)(void);
@@ -79,7 +95,30 @@ typedef struct
 	// For scrolling menus.
 	int firstItem, numVisItems;
 	float offset; // To y.
-} Menu_t;
+
+	//	Constructor
+	Menu_t(int Ax, int Ay, void (*AdrawFunc)(void),
+		int AitemCount, MenuItem_t *Aitems,
+		int AoldItPos, MenuType_t AprevMenu,
+		void (*AtextDrawer)(char*,int,int),
+		int	AitemHeight,
+		int AfirstItem, int AnumVisItems,
+		float Aoffset = 0) : KMenuWindow(NULL),
+		x(Ax), y(Ay), drawFunc(AdrawFunc), itemCount(AitemCount), items(Aitems),
+		oldItPos(AoldItPos), prevMenu(AprevMenu),
+		textDrawer(AtextDrawer), itemHeight(AitemHeight),
+		firstItem(AfirstItem), numVisItems(AnumVisItems), offset(Aoffset)
+	{
+	}
+
+	void DrawWindow(KGC *)
+	{
+		if (drawFunc)
+		{
+			drawFunc();
+		}
+	}
+};
 
 
 extern int MenuTime;

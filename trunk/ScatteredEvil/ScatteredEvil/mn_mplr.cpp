@@ -125,8 +125,7 @@ MenuItem_t MultiplayerItems[] =
 	{ ITT_EFUNC, "PLAYER SETUP", SCEnterPlayerSetupMenu, 0, MENU_NONE },
 };
 
-Menu_t MultiplayerMenu =
-{
+Menu_t MultiplayerMenu(
 	110, 40,
 	DrawMultiplayerMenu,
 	4, MultiplayerItems,
@@ -134,7 +133,7 @@ Menu_t MultiplayerMenu =
 	MENU_MAIN,
 	MN_DrTextB_CS, ITEM_HEIGHT, 
 	0, 4
-};
+);
 
 MenuItem_t ProtocolItems[] = 
 {
@@ -145,8 +144,7 @@ MenuItem_t ProtocolItems[] =
 	{ ITT_EFUNC, "NONE", SCSetProtocol, 0, MENU_NONE }
 };
 
-Menu_t ProtocolMenu =
-{
+Menu_t ProtocolMenu(
 	110, 40,
 	DrawProtocolMenu,
 	5, ProtocolItems,
@@ -154,7 +152,7 @@ Menu_t ProtocolMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5
-};
+);
 
 MenuItem_t HostItems[] =
 {
@@ -165,8 +163,7 @@ MenuItem_t HostItems[] =
 	{ ITT_EFUNC, "PROCEED...", SCEnterGameSetup, 0, MENU_NONE }
 };
 
-Menu_t HostMenu =
-{
+Menu_t HostMenu(
 	70, 40,
 	DrawHostMenu,
 	5, HostItems,
@@ -174,15 +171,14 @@ Menu_t HostMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5
-};
+);
 
 MenuItem_t JoinMenuItems[MAX_JOINITEMS] =
 {
 	{ ITT_EMPTY, "(SEARCHING...)", 0, MENU_NONE }
 };
 
-Menu_t JoinMenu = 
-{
+Menu_t JoinMenu(
 	32, 30,
 	DrawJoinMenu,
 	1, JoinMenuItems,
@@ -190,7 +186,7 @@ Menu_t JoinMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextA_CS, 9,
 	0, 16
-};
+);
 
 MenuItem_t GameSetupItems[] = 
 {
@@ -205,8 +201,7 @@ MenuItem_t GameSetupItems[] =
 	{ ITT_EFUNC, "PROCEED...", SCOpenServer, 0, MENU_NONE }
 };
 
-Menu_t GameSetupMenu =
-{
+Menu_t GameSetupMenu(
 	90, 64,
 	DrawGameSetupMenu,
 	9, GameSetupItems,
@@ -214,7 +209,7 @@ Menu_t GameSetupMenu =
 	MENU_HOSTGAME,
 	MN_DrTextA_CS, 9,
 	0, 9
-};
+);
 
 MenuItem_t PlayerSetupItems[] =
 {
@@ -226,8 +221,7 @@ MenuItem_t PlayerSetupItems[] =
 	{ ITT_EFUNC, "ACCEPT CHANGES", SCAcceptPlayer, 0, MENU_NONE }
 };
 
-Menu_t PlayerSetupMenu =
-{
+Menu_t PlayerSetupMenu(
 	70, 42,
 	DrawPlayerSetupMenu,
 	6, PlayerSetupItems,
@@ -235,7 +229,7 @@ Menu_t PlayerSetupMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 6
-};
+);
 
 MenuItem_t NetGameHostLimboItems[] =
 {
@@ -255,8 +249,7 @@ MenuItem_t NetGameClientItems[] =
 	{ ITT_EFUNC, "DISCONNECT", SCStartStopDisconnect, 0, MENU_NONE }
 };
 
-Menu_t NetGameMenu =
-{
+Menu_t NetGameMenu(
 	104, 155,
 	DrawNetGameMenu,
 	3, NetGameHostLimboItems,
@@ -264,7 +257,7 @@ Menu_t NetGameMenu =
 	MENU_MAIN,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 3
-};
+);
 
 MenuItem_t TCPIPItems[] =
 {
@@ -275,8 +268,7 @@ MenuItem_t TCPIPItems[] =
 	{ ITT_EFUNC, "PROCEED...", SCEnterJoinMenu, 0, MENU_NONE }
 };
 
-Menu_t TCPIPMenu =
-{
+Menu_t TCPIPMenu(
 	70, 40,
 	DrawTCPIPMenu,
 	5, TCPIPItems,
@@ -284,7 +276,7 @@ Menu_t TCPIPMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5
-};
+);
 
 MenuItem_t SerialItems[] =
 {
@@ -296,8 +288,7 @@ MenuItem_t SerialItems[] =
 	{ ITT_EFUNC, "PROCEED...", SCEnterJoinMenu, 0, MENU_NONE }
 };
 
-Menu_t SerialMenu =
-{	
+Menu_t SerialMenu(	
 	70, 40,
 	DrawSerialMenu,
 	6, SerialItems,
@@ -305,7 +296,7 @@ Menu_t SerialMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 6
-};
+);
 
 MenuItem_t ModemItems[] = 
 {
@@ -316,8 +307,7 @@ MenuItem_t ModemItems[] =
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE }
 };
 
-Menu_t ModemMenu =
-{
+Menu_t ModemMenu(
 	70, 40, 
 	DrawModemMenu,
 	5, ModemItems,
@@ -325,7 +315,7 @@ Menu_t ModemMenu =
 	MENU_MULTIPLAYER,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5
-};
+);
 
 
 // Code -------------------------------------------------------------------
@@ -1171,7 +1161,7 @@ void DrawEditField(Menu_t *menu, int index, EditField_t *ef)
 	int x = menu->x, y = menu->y + menu->itemHeight * index, vis;
 	char buf[MAX_EDIT_LEN+1], *text;
 
-	gi.GL_DrawPatchCS(x, y, gi.W_GetNumForName("M_FSLOT"));
+	GCanvas->DrawPatch(x, y, gi.W_GetNumForName("M_FSLOT"));
 	strcpy(buf, ef->text);
 	MN_TextFilter(buf);
 	if(ActiveEdit == ef && MenuTime & 0x8) strcat(buf, "["); // The cursor (why '['?).
