@@ -1,0 +1,184 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponWitchavenPunch : Weapon;
+
+int Attack2State;
+int PunchCount;
+
+//==========================================================================
+//
+//  A_WPunchAttack
+//
+//==========================================================================
+
+void A_WPunchAttack(void)
+{
+	Actor Owner = Player.MO;
+	int damage;
+	float power;
+	int i;
+	TAVec angles;
+	TVec vforward;
+
+	damage = 5 + (P_Random() & 15);
+	if (str_mod)
+	{
+		damage=damage*Player.strength/10;
+	}
+	power = 2.0;
+	PuffType = PunchPuff;
+	for (i = 0; i < 16; i++)
+	{
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, 2.0 * MELEERANGE);
+		if (linetarget)
+		{
+			PunchCount++;
+			if (PunchCount == 3)
+			{
+				damage <<= 1;
+				power = 6.0;
+				PuffType = HammerPuff;
+			}
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, 2.0 * MELEERANGE, damage))
+			{
+				if (PuffType == HammerPuff)
+				{
+					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				}
+				else
+				{
+					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+				}
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			break;
+		}
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
+		AimLineAttack(Owner, &angles, 2.0 * MELEERANGE);
+		if (linetarget)
+		{
+			PunchCount++;
+			if (PunchCount == 3)
+			{
+				damage <<= 1;
+				power = 6.0;
+				PuffType = HammerPuff;
+			}
+			AngleVector(&angles, &vforward);
+			if (LineAttack(Owner, vforward, 2.0 * MELEERANGE, damage))
+			{
+				if (PuffType == HammerPuff)
+				{
+					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				}
+				else
+				{
+					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+				}
+			}
+			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			{
+				linetarget.Thrust(angles.yaw, power);
+			}
+			Player.AdjustPlayerAngle();
+			break;
+		}
+	}
+	if (i == 16)
+	{
+		// didn't find any creatures, so try to strike any walls
+		PunchCount = 0;
+
+		angles = Owner.Angles;
+		AimLineAttack(Owner, &angles, MELEERANGE);
+		AngleVector(&angles, &vforward);
+		if (LineAttack(Owner, vforward, MELEERANGE, damage))
+		{
+			Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+		}
+	}
+
+	if (PunchCount == 3)
+	{
+		PunchCount = 0;
+		SetState(Attack2State);
+		//Owner.PlaySound('FighterGrunt', CHAN_VOICE);
+	}
+}
+
+__states__
+{
+	S_WPUNCHREADY('WPCH', 0, 1.0 / 35.0, S_WPUNCHREADY) { A_WeaponReady(); }
+	S_WPUNCHDOWN('WPCH', 0, 1.0 / 35.0, S_WPUNCHDOWN) { A_Lower(); }
+	S_WPUNCHUP('WPCH', 0, 1.0 / 35.0, S_WPUNCHUP) { A_Raise(); }
+	S_WPUNCHATK1_1('WPCH', 1, 5.0 / 35.0, S_WPUNCHATK1_2) { }
+	S_WPUNCHATK1_2('WPCH', 2, 4.0 / 35.0, S_WPUNCHATK1_3) { }
+	S_WPUNCHATK1_3('WPCH', 3, 4.0 / 35.0, S_WPUNCHATK1_4) { }
+	S_WPUNCHATK1_4('WPCH', 4, 4.0 / 35.0, S_WPUNCHATK1_5) { A_WPunchAttack(); }
+	S_WPUNCHATK1_5('WPCH', 5, 4.0 / 35.0, S_WPUNCHATK1_6) { }
+	S_WPUNCHATK1_6('WPCH', 2, 4.0 / 35.0, S_WPUNCHATK1_7) { }
+	S_WPUNCHATK1_7('WPCH', 1, 5.0 / 35.0, S_WPUNCHREADY) { A_ReFire(); }
+	S_WPUNCHATK1_8('WPCH', 6, 5.0 / 35.0, S_WPUNCHATK1_9) { }
+	S_WPUNCHATK1_9('WPCH', 7, 4.0 / 35.0, S_WPUNCHATK1_10) { }
+	S_WPUNCHATK1_10('WPCH', 8, 4.0 / 35.0, S_WPUNCHATK1_11) { }
+	S_WPUNCHATK1_11('WPCH', 9, 4.0 / 35.0, S_WPUNCHATK1_12) { A_WPunchAttack(); }
+	S_WPUNCHATK1_12('WPCH', 7, 4.0 / 35.0, S_WPUNCHATK1_13) { }
+	S_WPUNCHATK1_13('WPCH', 6, 5.0 / 35.0, S_WPUNCHREADY) { }
+}
+
+defaultproperties
+{
+	Mana = MANA_NONE;
+	UpState = S_WPUNCHUP;
+	DownState = S_WPUNCHDOWN;
+	ReadyState = S_WPUNCHREADY;
+	AttackState = S_WPUNCHATK1_1;
+	Attack2State = S_WPUNCHATK1_8;
+	HoldAttackState = S_WPUNCHATK1_1;
+	PSpriteSY = 0.0;
+	wis_mod = false;
+	int_mod = false;
+	dex_mod = true;
+	str_mod = true;
+}
+
+//**************************************************************************
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
