@@ -207,6 +207,10 @@ void KConPlay::SetupEvent(void)
 		NextEvent = SetupEventJump(Cast<KConEventJump>(CurrentEvent), NextLabel);
 		break;
 
+	case ET_RandomLabel:
+		NextEvent = SetupEventRandomLabel(Cast<KConEventRandomLabel>(CurrentEvent), NextLabel);
+		break;
+
 	case ET_End:
 		NextEvent = SetupEventEnd(Cast<KConEventEnd>(CurrentEvent), NextLabel);
 		break;
@@ -322,6 +326,18 @@ EEventAction KConPlay::SetupEventJump(KConEventJump *Event, char *NextLabel)
 		strcpy(NextLabel, Event->JumpLabel);
 		return EA_JumpToLabel;
 	}
+}
+
+//==========================================================================
+//
+//	KConPlay::SetupEventRandomLabel
+//
+//==========================================================================
+
+EEventAction KConPlay::SetupEventRandomLabel(KConEventRandomLabel *Event, char *NextLabel)
+{
+	strcpy(NextLabel, Event->Labels[P_Random() % Event->NumLabels]);
+	return EA_JumpToLabel;
 }
 
 //==========================================================================

@@ -9,6 +9,7 @@ IMPLEMENT_CLASS(KConversation);
 IMPLEMENT_CLASS(KConEventSpeech);
 IMPLEMENT_CLASS(KConEventChoice);
 IMPLEMENT_CLASS(KConEventJump);
+IMPLEMENT_CLASS(KConEventRandomLabel);
 IMPLEMENT_CLASS(KConEventEnd);
 IMPLEMENT_CLASS(KConversationList);
 
@@ -117,6 +118,30 @@ void KConEventJump::ParseScript(void)
 
 //==========================================================================
 //
+//	KConEventRandomLabel::ParseScript
+//
+//==========================================================================
+
+void KConEventRandomLabel::ParseScript(void)
+{
+	SC_MustGetStringName("{");
+	SC_MustGetString();
+	while (!SC_Compare("}"))
+	{
+		if (NumLabels >= 16)
+			I_Error("Too many random labels");
+		strcpy(Labels[NumLabels], sc_String);
+		NumLabels++;
+		SC_MustGetString();
+	}
+	if (!NumLabels)
+	{
+		SC_ScriptError("No labels specified");
+	}
+}
+
+//==========================================================================
+//
 //	KConEventEnd::ParseScript
 //
 //==========================================================================
@@ -180,6 +205,10 @@ void KConversation::ParseScript(void)
 		else if (SC_Compare("jump"))
 		{
 			Event = Spawn<KConEventJump>();
+		}
+		else if (SC_Compare("RandomLabel"))
+		{
+			Event = Spawn<KConEventRandomLabel>();
 		}
 		else if (SC_Compare("end"))
 		{
