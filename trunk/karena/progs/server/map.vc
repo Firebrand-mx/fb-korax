@@ -52,6 +52,7 @@ TVec useDir;
 
 bool PTR_UseTraverse(intercept_t * in)
 {
+	name sound;
 	float pheight;
 	TVec hit_point;
 	opening_t *open;
@@ -66,7 +67,25 @@ bool PTR_UseTraverse(intercept_t * in)
 		{
 			if (usething.bIsPlayer)
 			{
-				usething.PlaySound(PlayerPawn(usething).FailedUseSound, CHAN_VOICE);
+				switch (usething.Player.PClass)
+				{
+				case PCLASS_FIGHTER:
+					sound = 'PlayerFighterFailedUse';
+					break;
+				case PCLASS_CLERIC:
+					sound = 'PlayerClericFailedUse';
+					break;
+				case PCLASS_MAGE:
+					sound = 'PlayerMageFailedUse';
+					break;
+				case PCLASS_PIG:
+					sound = 'PigActive1';
+					break;
+				default:
+					sound = 'None';
+					break;
+				}
+				usething.PlaySound(sound, CHAN_VOICE);
 			}
 			return false;	// can't use through a wall
 		}
@@ -75,7 +94,25 @@ bool PTR_UseTraverse(intercept_t * in)
 			pheight = usething.Origin.z + usething.Height / 2.0;
 			if ((open->top < pheight) || (open->bottom > pheight))
 			{
-				usething.PlaySound(PlayerPawn(usething).FailedUseSound, CHAN_VOICE);
+				switch (usething.Player.PClass)
+				{
+				case PCLASS_FIGHTER:
+					sound = 'PlayerFighterFailedUse';
+					break;
+				case PCLASS_CLERIC:
+					sound = 'PlayerClericFailedUse';
+					break;
+				case PCLASS_MAGE:
+					sound = 'PlayerMageFailedUse';
+					break;
+				case PCLASS_PIG:
+					sound = 'PigActive1';
+					break;
+				default:
+					sound = 'None';
+					break;
+				}
+				usething.PlaySound(sound, CHAN_VOICE);
 			}
 		}
 		return true;	// not a special line, but keep checking
@@ -149,7 +186,25 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 			open = LineOpenings(in->line, hit_point);
 			if (!open || open->range <= 0.0)
 			{
-				PuzzleItemUser.PlaySound(PlayerPawn(PuzzleItemUser).PuzzleFailSound, CHAN_VOICE);
+				name sound;
+
+				sound = 'None';
+				if (PuzzleItemUser.bIsPlayer)
+				{
+					switch (PuzzleItemUser.Player.PClass)
+					{
+					case PCLASS_FIGHTER:
+						sound = 'PuzzleFailFighter';
+						break;
+					case PCLASS_CLERIC:
+						sound = 'PuzzleFailCleric';
+						break;
+					case PCLASS_MAGE:
+						sound = 'PuzzleFailMage';
+						break;
+					}
+				}
+				PuzzleItemUser.PlaySound(sound, CHAN_VOICE);
 				return false;	// can't use through a wall
 			}
 			return true;	// Continue searching
@@ -164,8 +219,8 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 			// Item type doesn't match
 			return false;
 		}
-		StartACS(in->line->arg2, 0, &in->line->arg3,
-			PuzzleItemUser, in->line, 0);
+		StartACS(in->line->arg2, 0, in->line->arg3, in->line->arg4,
+			in->line->arg5, PuzzleItemUser, in->line, 0, false, false);
 		in->line->special = 0;
 		PuzzleActivated = true;
 		return false;	// Stop searching
@@ -182,7 +237,8 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 		// Item type doesn't match
 		return true;
 	}
-	StartACS(mobj.Args[1], 0, &mobj.Args[2], PuzzleItemUser, NULL, 0);
+	StartACS(mobj.Args[1], 0, mobj.Args[2], mobj.Args[3], mobj.Args[4],
+		PuzzleItemUser, NULL, 0, false, false);
 	mobj.Special = 0;
 	PuzzleActivated = true;
 	return false;	// Stop searching
@@ -822,8 +878,8 @@ void PIT_ThrustSpike(Actor actor)
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.1  2004/11/16 13:33:23  dj_jl
-//  Initial import.
+//  Revision 1.2  2004/12/27 12:30:02  dj_jl
+//  Vavoom version 1.16 changes.
 //
 //  Revision 1.32  2003/11/12 16:50:47  dj_jl
 //  Changed player structure into a class
