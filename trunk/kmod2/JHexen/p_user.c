@@ -751,6 +751,18 @@ void P_UndoBerserk(player_t *player)
 	player->health = player->health/2;
 	// -JL- Decrease also mobj's health which is the actual health value
 	player->plr->mo->health = player->health;
+	// Damage flash
+	player->damagecount += player->health;
+	if (player->damagecount > 100)
+	{
+		player->damagecount = 100;
+	}
+	if (player == &players[consoleplayer])
+	{
+		SB_PaletteFlash(false);
+	}
+	// Go to the pain state
+	P_SetMobjState(player->plr->mo, player->plr->mo->info->painstate);	
 }
 
 fixed_t heights[NUMCLASSES];
