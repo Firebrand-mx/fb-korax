@@ -360,7 +360,7 @@ BOOL InitGameDLL(cmdargs_t *cargs)
 	// Was a game dll specified?
 	if(!dllName) 
 	{
-		dllName="korax.dll";//printf( "InitGameDLL: No game DLL was specified.\n");
+		dllName="ScatteredEvil.dll";//printf( "InitGameDLL: No game DLL was specified.\n");
 //		return FALSE;
 	}
 

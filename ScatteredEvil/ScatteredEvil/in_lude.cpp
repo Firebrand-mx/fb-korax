@@ -12,7 +12,7 @@
 
 #include "h2def.h"
 #include <ctype.h>
-#include "KCanvas.h"
+#include "mn_def.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -415,9 +415,7 @@ void IN_Drawer(void)
 	{
 		return;
 	}
-#ifdef USE640
 	GCanvas->SetOrigin(160, 120);
-#endif
 	//UpdateState |= I_FULLSCRN;
 	gi.Update(DDUF_FULLSCREEN);
 	GCanvas->DrawRawScreen(patchINTERPICLumpRS);
@@ -433,9 +431,7 @@ void IN_Drawer(void)
 	{
 		DrDeathTally();
 	}
-#ifdef USE640
 	GCanvas->SetOrigin(0, 0);
-#endif
 }
 
 //========================================================================

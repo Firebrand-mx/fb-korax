@@ -245,21 +245,6 @@ byte I_KeyToScan(byte key)
 
 //==========================================================================
 //
-// main
-//
-// Called by WinMain
-//
-//==========================================================================
-
-void main(int argc, char **argv)
-{
-	myargc = argc;
-	myargv = argv;
-	DD_Main();
-}
-
-//==========================================================================
-//
 // I_Init
 //
 // Initialize machine state
@@ -1030,3 +1015,41 @@ byte *I_AllocLow (int length)
 	memset (mem,0,length);
 	return mem;
 }
+
+//==========================================================================
+//
+// main
+//
+// Called by WinMain
+//
+//==========================================================================
+
+void main(int argc, char **argv)
+{
+	try
+	{
+		myargc = argc;
+		myargv = argv;
+		DD_Main();
+	}
+	catch (...)
+	{
+		D_QuitNetGame ();
+		I_Shutdown ();
+		B_Shutdown();
+		CON_Shutdown();
+		ChangeDisplaySettings(0, 0); // Restore original mode, just in case.
+
+		printf ("Received external exception\n");
+
+		// Be a bit more graphic.
+		ShowCursor(TRUE);
+		MessageBox(hWndMain, "Received external exception", "Korax "DOOMSDAY_VERSION_TEXT, MB_OK|MB_ICONERROR);
+
+		DD_Shutdown();
+
+		// Get outta here.
+		throw;
+	}
+}
+

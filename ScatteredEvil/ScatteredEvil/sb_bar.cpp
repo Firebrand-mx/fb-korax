@@ -14,7 +14,7 @@
 
 #include "h2def.h"
 #include "p_local.h"
-#include "KCanvas.h"
+#include "mn_def.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -447,9 +447,7 @@ extern boolean automapactive;
 
 void SB_Drawer(void)
 {
-#ifdef USE640
 	gi.Update(DDUF_TOP | DDUF_BORDER);
-#endif
 
 	CPlayer = &players[consoleplayer];
 	if (CPlayer->pclass >=PCLASS_ETTIN)
@@ -463,12 +461,8 @@ void SB_Drawer(void)
 	}
 	else
 	{
-#ifdef USE640
      	if (CPlayer->pclass<PCLASS_ETTIN) DrRedINumber(CPlayer->sp_power, 600 , 13);
 		GCanvas->SetOrigin(160, 280);
-#else
-     	if (CPlayer->pclass<PCLASS_ETTIN) DrRedINumber(CPlayer->sp_power, 280 , 13);
-#endif
 		GCanvas->DrawPatch1(0, 134, PatchNumH2BAR);
 		DrawCommonBar();
 		if(!inventory)
@@ -495,9 +489,7 @@ void SB_Drawer(void)
 		{
 			DrawInventoryBar();
 		}
-#ifdef USE640
 		GCanvas->SetOrigin(0, 0);
-#endif
 	}
 	SB_PaletteFlash(false);
 	DrawAnimatedIcons();
@@ -587,11 +579,7 @@ static void DrawAnimatedIcons(void)
 			|| !(CPlayer->powers[pw_minotaur]&16))
 		{
 			frame = (leveltime/3)&15;
-#ifdef USE640
 			GCanvas->DrawPatch1(600, 19, SpinMinotaurLump+frame);
-#else
-			GCanvas->DrawPatch1(300, 19, SpinMinotaurLump+frame);
-#endif
 		}
 		gi.Update(DDUF_TOP | DDUF_MESSAGES);
 	}
@@ -978,26 +966,14 @@ void DrawFullScreenStuff(void)
 	
 	if(CPlayer->plr->mo->health > 0)
 	{
-#ifdef USE640
 		DrBNumber(CPlayer->plr->mo->health, 5, 440);
-#else
-		DrBNumber(CPlayer->plr->mo->health, 5, 180);
-#endif
 	}
 	else
 	{
-#ifdef USE640
 		DrBNumber(0, 5, 440);
-#else
-		DrBNumber(0, 5, 180);
-#endif
 	}
 
-#ifdef USE640
 	DrRedINumber(CPlayer->sp_power, 600, 13);
-#else
-	DrRedINumber(CPlayer->sp_power, 280 , 13);
-#endif
 
 	if (CPlayer->pclass <PCLASS_CORVUS)
 	{
@@ -1041,17 +1017,12 @@ void DrawFullScreenStuff(void)
 				temp += CPlayer->plr->frags[i];
 			}
 		}
-#ifdef USE640
 		DrINumber(temp, 45, 445);
-#else
-		DrINumber(temp, 45, 185);
-#endif
 	}
 	if (!inventory)
 	{
 		if (CPlayer->readyArtifact > 0)
 		{
-#ifdef USE640
 			GCanvas->DrawFuzzPatch(586, 430, gi.W_GetNumForName("ARTIBOX"));
 			GCanvas->DrawPatch1(584, 429,
 				gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
@@ -1059,20 +1030,10 @@ void DrawFullScreenStuff(void)
 			{
 				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 602, 452);
 			}
-#else
-			GCanvas->DrawFuzzPatch(286, 170, gi.W_GetNumForName("ARTIBOX"));
-			GCanvas->DrawPatch1(284, 169,
-				gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
-			if(CPlayer->inventory[inv_ptr].count > 1)
-			{
-				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 302, 192);
-			}
-#endif
 		}
 	}
 	else
 	{
-#ifdef USE640
 		x = inv_ptr-curpos;
 		for(i = 0; i < 7; i++)
 		{
@@ -1100,35 +1061,6 @@ void DrawFullScreenStuff(void)
 		{
 			GCanvas->DrawPatch1(428, 427, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
 		}
-#else
-		x = inv_ptr-curpos;
-		for(i = 0; i < 7; i++)
-		{
-			GCanvas->DrawFuzzPatch(50+i*31, 168, gi.W_GetNumForName("ARTIBOX"));
-			if(CPlayer->inventorySlotNum > x+i
-				&& CPlayer->inventory[x+i].type != arti_none)
-			{
-				GCanvas->DrawPatch1(49+i*31, 167, gi.W_GetNumForName(
-					patcharti[CPlayer->inventory[x+i].type]));
-
-				if(CPlayer->inventory[x+i].count > 1)
-				{
-					DrSmallNumber(CPlayer->inventory[x+i].count, 66+i*31,
- 						188);
-				}
-			}
-		}
-		GCanvas->DrawPatch1(50+curpos*31, 167, PatchNumSELECTBOX);
-		if(x != 0)
-		{
-			GCanvas->DrawPatch1(40, 167, !(leveltime&4) ? PatchNumINVLFGEM1 :
-				PatchNumINVLFGEM2);
-		}
-		if(CPlayer->inventorySlotNum-x > 7)
-		{
-			GCanvas->DrawPatch1(268, 167, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
-		}
-#endif
 	}
 }
 
@@ -1144,42 +1076,25 @@ static void DrawPossWeaponry(void)
 	int j;
 	char name[16];
 
-#ifdef USE640
 	j = 460;
-#else
-	j = 190;
-#endif
 
 	for(i = NUMACTUALWEAPONS; i > 0; i--)
 	{
 		if (NewWeaponInfo[i].classtype != CPlayer->pclass) continue;				
 		sprintf(name, "%d: %s",NewWeaponInfo[i].bindkey+1,NewWeaponInfo[i].name);
 		if (i == CPlayer->readyweapon && CPlayer->pendingweapon == WP_NOCHANGE)
-#ifdef USE640
 			MN_DrTextAYellow(name,550,j);
 		else MN_DrTextA(name,550,j);
-#else
-			MN_DrTextAYellow(name,230,j);
-		else MN_DrTextA(name,230,j);
-#endif
 		j -= 10;
 	}
 
 	if(CPlayer->plr->mo->health > 0)
 	{
-#ifdef USE640
 		DrBNumber(CPlayer->plr->mo->health, 5, 440);
-#else
-		DrBNumber(CPlayer->plr->mo->health, 5, 180);
-#endif
 	}
 	else
 	{
-#ifdef USE640
 		DrBNumber(0, 5, 440);
-#else
-		DrBNumber(0, 5, 180);
-#endif
 	}
 
 	if(deathmatch)
@@ -1192,11 +1107,7 @@ static void DrawPossWeaponry(void)
 				temp += CPlayer->plr->frags[i];
 			}
 		}
-#ifdef USE640
 		DrINumber(temp, 45, 445);
-#else
-		DrINumber(temp, 45, 185);
-#endif
 	}
 }
 

@@ -21,8 +21,6 @@
 #include "../DoomsDay/dd_gl.h"
 #include <malloc.h>
 
-#define USE640
-
 #pragma warning (disable:4761 4244)
 
 //--- MSVC stuff. 
@@ -807,11 +805,7 @@ typedef struct player_s
 #define	CF_GODMODE		2
 #define	CF_NOMOMENTUM	4 // not really a cheat, just a debug aid
 
-#ifdef USE640
 #define	SBARHEIGHT	16			// status bar height at bottom of screen
-#else
-#define	SBARHEIGHT	39			// status bar height at bottom of screen
-#endif
 
 /*
 ===============================================================================
@@ -1240,7 +1234,6 @@ void MN_DeactivateMenu(void);
 boolean MN_Responder(event_t *event);
 void MN_Ticker(void);
 void MN_Drawer(void);
-void MN_TextFilter(char *text);
 void MN_DrTextA(char *text, int x, int y);
 void MN_DrTextAYellow(char *text, int x, int y);
 int MN_TextAWidth(char *text);
