@@ -279,6 +279,8 @@ void Shutdown(void)
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
 
+	ReleaseDC(hwnd, hdc);
+
 	// Go back to normal display settings.
 	ChangeDisplaySettings(0, 0);
 }
