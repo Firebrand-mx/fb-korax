@@ -1,0 +1,103 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponWhirlWind : Weapon;
+
+//==========================================================================
+//
+//  A_FireWhirlWind
+//
+//==========================================================================
+
+void A_FireWhirlWind()
+{
+	Actor mo;
+
+	mo = Player.SpawnPlayerMissile(MageWhirlWind);
+	if (mo)
+	{
+		//mo.Origin.z -= 32.0;
+		mo.Instigator = Player.MO;
+		mo.Enemy = Actor(mo.RoughMonsterSearch(10));
+		mo.Health = 20 * TICRATE;	// Duration
+		if (int_mod)
+		{
+			mo.MissileDamage = mo.MissileDamage * Player.intelligence/10;
+		}
+		Player.MO.PlaySound('MageShardsFire', CHAN_WEAPON);
+		mo.PlaySound('WhirlWind3', CHAN_WEAPON);
+	}
+	UseWeaponMana();
+}
+
+__states__
+{
+	S_MCONEREADY('CONE', 0, 1.0 / 35.0, S_MCONEREADY) { A_WeaponReady(); }
+	S_MCONEDOWN('CONE', 0, 1.0 / 35.0, S_MCONEDOWN) { A_Lower(); }
+	S_MCONEUP('CONE', 0, 1.0 / 35.0, S_MCONEUP) { A_Raise(); }
+	S_MCONEATK1_1('CONE', 1, 3.0 / 35.0, S_MCONEATK1_2) { }
+	S_MCONEATK1_2('CONE', 2, 4.0 / 35.0, S_MCONEATK1_3) { }
+	S_MCONEATK1_3('CONE', 3, 3.0 / 35.0, S_MCONEATK1_4) { }
+	S_MCONEATK1_4('CONE', 4, 5.0 / 35.0, S_MCONEATK1_5) { }
+	S_MCONEATK1_5('CONE', 5, 3.0 / 35.0, S_MCONEATK1_6) { A_FireWhirlWind(); }
+	S_MCONEATK1_6('CONE', 6, 3.0 / 35.0, S_MCONEATK1_7) { }
+	S_MCONEATK1_7('CONE', 0, 9.0 / 35.0, S_MCONEATK1_8) { }
+	S_MCONEATK1_8('CONE', 0, 10.0 / 35.0, S_MCONEREADY) { A_ReFire(); }
+}
+
+/*SIXTH*/
+defaultproperties
+{
+	Mana = MANA_2;
+	manause = 20;
+	UpState = S_MCONEUP;
+	DownState = S_MCONEDOWN;
+	ReadyState = S_MCONEREADY;
+	AttackState = S_MCONEATK1_1;
+	HoldAttackState = S_MCONEATK1_3;
+	PSpriteSY = 20.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "WHIRLWIND SPELL";
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2005/02/10 15:05:08  firebrand_kh
+//  Initial Import
+//
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
