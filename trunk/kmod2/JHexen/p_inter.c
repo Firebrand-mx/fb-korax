@@ -2115,7 +2115,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 			break;
 		// -JL- Added buried wraiths
 		case MT_WRAITHB:
-			if (!actor->flags & MF_SHOOTABLE)
+			if (!(actor->flags & MF_SHOOTABLE))
 			{
 				// Still buried
 				return false;
