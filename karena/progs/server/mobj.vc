@@ -23,9 +23,95 @@
 //**
 //**************************************************************************
 
+float air_control = 1.0 / 256.0;
+
+Actor GLavaInflictor;
+
+bool onground;
+
+float pushTab[3] = {
+	5.0 * 35.0 * 35.0 / 32.0,
+	10.0 * 35.0 * 35.0 / 32.0,
+	25.0 * 35.0 * 35.0 / 32.0
+};
+
 classid PuffType;
 Actor PuffSpawned;
 Actor linetarget;	// who got hit (or none)
+
+float ArmorMax[NUMCLASSES] = { 20.0, 18.0, 16.0, 16.0, 1.0 };
+
+int pieceValueTrans[] = {
+	0,	// 0: never
+	WPIECE1 | WPIECE2 | WPIECE3,	// WPIECE1 (1)
+	WPIECE2 | WPIECE3,	// WPIECE2 (2)
+	0,	// 3: never
+	WPIECE3	// WPIECE3 (4)
+};
+
+//
+//  Pickup messages
+//
+string fourthWeaponText[] = {
+	TXT_WEAPON_F4,
+	TXT_WEAPON_C4,
+	TXT_WEAPON_M4
+};
+string weaponPieceText[] = {
+	TXT_QUIETUS_PIECE,
+	TXT_WRAITHVERGE_PIECE,
+	TXT_BLOODSCOURGE_PIECE
+};
+string artifactMessages[NUMARTIFACTS] = {
+	"",
+	TXT_ARTIINVULNERABILITY,
+	TXT_ARTIHEALTH,
+	TXT_ARTISUPERHEALTH,
+	TXT_ARTIHEALINGRADIUS,
+	TXT_ARTISUMMON,
+	TXT_ARTITORCH,
+	TXT_ARTIEGG,
+	TXT_ARTIFLY,
+	TXT_ARTIBLASTRADIUS,
+	TXT_ARTIPOISONBAG,
+	TXT_ARTITELEPORTOTHER,
+	TXT_ARTISPEED,
+	TXT_ARTIBOOSTMANA,
+	TXT_ARTIBOOSTARMOR,
+	TXT_ARTITELEPORT,
+
+	TXT_ARTIPUZZSKULL,
+	TXT_ARTIPUZZGEMBIG,
+	TXT_ARTIPUZZGEMRED,
+	TXT_ARTIPUZZGEMGREEN1,
+	TXT_ARTIPUZZGEMGREEN2,
+	TXT_ARTIPUZZGEMBLUE1,
+	TXT_ARTIPUZZGEMBLUE2,
+	TXT_ARTIPUZZBOOK1,
+	TXT_ARTIPUZZBOOK2,
+	TXT_ARTIPUZZSKULL2,
+	TXT_ARTIPUZZFWEAPON,
+	TXT_ARTIPUZZCWEAPON,
+	TXT_ARTIPUZZMWEAPON,
+	TXT_ARTIPUZZGEAR,	// All gear pickups use the same text
+	TXT_ARTIPUZZGEAR,
+	TXT_ARTIPUZZGEAR,
+	TXT_ARTIPUZZGEAR
+};
+string armorText[NUMARMOR] = {
+	TXT_ARMOR1,
+	TXT_ARMOR2,
+	TXT_ARMOR3,
+	TXT_ARMOR4
+};
+string manaText[6] = {
+	TXT_MANA_1,
+	TXT_MANA_2,
+	TXT_MANA_3,
+	TXT_MANA_4,
+	TXT_MANA_5,
+	""
+};
 
 int classFlags[] = {
 	MTF_FIGHTER,
@@ -34,6 +120,27 @@ int classFlags[] = {
 };
 
 float windTab[3] = { 5.0 / 32.0, 10.0 / 32.0, 25.0 / 32.0 };
+
+int opposite[] = {
+	DI_WEST, DI_SOUTHWEST, DI_SOUTH, DI_SOUTHEAST, DI_EAST, DI_NORTHEAST,
+	DI_NORTH, DI_NORTHWEST, DI_NODIR
+};
+
+int diags[] = { DI_NORTHWEST, DI_NORTHEAST, DI_SOUTHWEST, DI_SOUTHEAST };
+
+float xspeed[8] =
+	{ 1.0, 0.7171630859, 0.0, -0.7171630859, -1.0, -0.7171630859, 0.0,
+		0.7171630859 };
+float yspeed[8] =
+	{ 0.0, 0.7171630859, 1.0, 0.7171630859, 0.0, -0.7171630859, -1.0,
+		-0.7171630859 };
+
+Actor bodyque[BODYQUESIZE];
+int bodyqueslot;
+
+// Corpse queue for monsters - this should be saved out
+Actor corpseQueue[CORPSEQUEUESIZE];
+int corpseQueueSlot;
 
 //==========================================================================
 //
@@ -341,9 +448,191 @@ void NoiseAlert(Actor target, Actor emmiter)
 	RecursiveSound(emmiter.Sector, 0);
 }
 
+//==========================================================================
+//
+// EV_LineSearchForPuzzleItem
+//
+//==========================================================================
+
+bool EV_LineSearchForPuzzleItem(line_t * line, int *args, Actor A)
+{
+	int i;
+	int type, arti;
+
+	if (!A)
+		return false;
+	if (!A.bIsPlayer)
+		return false;
+
+	// Search player's inventory for puzzle items
+	for (i = 0; i < A.Player.ArtifactCount; i++)
+	{
+		arti = A.Player.Inventory[i].type;
+		type = arti - arti_firstpuzzitem;
+		if (type < 0)
+			continue;
+		if (type == line->arg1)
+		{
+			// A puzzle item was found for the line
+			if (A.Player.UseArtifact(arti))
+			{
+				// A puzzle item was found for the line
+				A.Player.PlayerRemoveArtifact(i);
+				if (arti < arti_firstpuzzitem)
+				{
+					A.PlaySound('UseArtifact', CHAN_ITEM);
+				}
+				else
+				{
+					A.PlaySound('PuzzleSuccess', CHAN_ITEM);
+				}
+				A.Player.ArtifactFlash = 4;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  ClipVelocity
+//
+//  Slide off of the impacting object
+//
+//==========================================================================
+
+TVec ClipVelocity(TVec in, TVec normal, float overbounce)
+{
+	return in - normal * (DotProduct(in, normal) * overbounce);
+}
+
+//==========================================================================
+//
+//  InitLava
+//
+//==========================================================================
+
+void InitLava(void)
+{
+	GLavaInflictor = Actor(NewMobjThinker(LavaInflictor));
+//	GLavaInflictor->type = MT_CIRCLEFLAME;
+}
+
+//============================================================================
+//
+//  P_InitCreatureCorpseQueue
+//
+//============================================================================
+
+void P_InitCreatureCorpseQueue(int corpseScan)
+{
+	Actor mo;
+	int i;
+
+	// Initialize queue
+	corpseQueueSlot = 0;
+	for (i = 0; i < CORPSEQUEUESIZE; i++)
+	{
+		corpseQueue[i] = none;
+	}
+
+	if (!corpseScan)
+		return;
+
+	// Search mobj list for corpses and place them in this queue
+	FOREACH(Actor, mo)
+	{
+		if (!mo.bCorpse)
+			continue;	// Must be a corpse
+		if (mo.bIceCorpse)
+			continue;	// Not ice corpses
+		// Only corpses that call A_QueueCorpse from death routine
+		switch (mo.Class)
+		{
+		case Centaur:
+		case CentaurLeader:
+		case Demon:
+		case Demon2:
+		case Wraith:
+		case WraithBuried:
+		case Bishop:
+		case Ettin:
+		case Pig:
+		case CentaurShield:
+		case CentaurSword:
+		case DemonChunk1:
+		case DemonChunk2:
+		case DemonChunk3:
+		case DemonChunk4:
+		case DemonChunk5:
+		case Demon2Chunk1:
+		case Demon2Chunk2:
+		case Demon2Chunk3:
+		case Demon2Chunk4:
+		case Demon2Chunk5:
+		case FireDemonSplotch1:
+		case FireDemonSplotch2:
+			mo.A_QueueCorpse();	// Add corpse to queue
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+//===========================================================================
+// Quake variables
+//
+//      args[0]     Intensity on richter scale (2..9)
+//      args[1]     Duration in tics
+//      args[2]     Radius for damage, in tile units (64 pixels)
+//      args[3]     Radius for tremor in tile units (64 pixels)
+//      args[4]     TID of map thing for focus of quake
+//
+//===========================================================================
+
+//===========================================================================
+//
+//	A_LocalQuake
+//
+//===========================================================================
+
+bool A_LocalQuake(int *args)
+{
+	QuakeFocus focus;
+	Actor target;
+	int lastfound = 0;
+	int success = false;
+
+	// Find all quake foci
+	do
+	{
+		target = Actor(FindMobjFromTID(args[4], &lastfound));
+		if (target)
+		{
+			focus = QuakeFocus(Spawn(QuakeFocus, target.Origin));
+			if (focus)
+			{
+				focus.Richters = args[0];
+				focus.QuakeDuration = args[1] >> 1;	// decremented every 2 tics
+				focus.DamageRadius = itof(args[2]) * 64.0;
+				focus.TremorRadius = itof(args[3]) * 64.0;
+				success = true;
+			}
+		}
+	}
+	while (target);
+
+	return success;
+}
+
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2004/11/17 13:26:53  dj_jl
+//  Some more changes.
+//
 //  Revision 1.1  2004/11/16 13:33:23  dj_jl
 //  Initial import.
 //
