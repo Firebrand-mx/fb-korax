@@ -223,7 +223,6 @@ int H2_NetPlayerEvent(int plrNumber, int peType, void *data)
 			sprintf(msgbuff, "%s: %s", gi.GetPlayerName(plrNumber), data);
 		else
 			strcpy(msgbuff, (char *)data);
-		MN_TextFilter(msgbuff);
 		// The chat message is already echoed by the console.
 		echoMsg = false;
 		P_SetMessage(&players[consoleplayer], msgbuff, true);

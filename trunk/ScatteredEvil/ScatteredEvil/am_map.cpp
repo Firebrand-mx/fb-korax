@@ -1441,7 +1441,6 @@ void AM_DrawDeathmatchStats(void)
 			memset(textBuffer, 0, 80);
 			strncpy(textBuffer, gi.GetPlayerName(order[i]), 78);
 			strcat(textBuffer, ":");
-			MN_TextFilter(textBuffer);
 			MN_DrTextA_CS(textBuffer, 4, yPosition);
 			j = MN_TextAWidth(textBuffer);
 			sprintf(textBuffer, "%d", fragCount[order[i]]);
