@@ -1,0 +1,112 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerWitchaven : PlayerPawn;
+
+//============================================================================
+//
+//  FireDeath
+//
+//============================================================================
+
+bool FireDeath(void)
+{
+	PlaySound('PlayerFighterBurnDeath', CHAN_VOICE);
+	SetState(S_PLAY_FDTH3);
+	return true;
+}
+
+__states__
+{
+	S_WITPLAY('WITC', 0, -1.0, S_NULL) { }
+	S_WITPLAY_RUN1('WITC', 0, 4.0 / 35.0, S_WITPLAY_RUN2) { }
+	S_WITPLAY_RUN2('WITC', 1, 4.0 / 35.0, S_WITPLAY_RUN3) { }
+	S_WITPLAY_RUN3('WITC', 2, 4.0 / 35.0, S_WITPLAY_RUN4) { }
+	S_WITPLAY_RUN4('WITC', 3, 4.0 / 35.0, S_WITPLAY_RUN1) { }
+	S_WITPLAY_ATK1('WITC', 4, 8.0 / 35.0, S_WITPLAY_ATK2) { }
+	S_WITPLAY_ATK2('WITC', 5, 8.0 / 35.0, S_WITPLAY_ATK3) { }
+	S_WITPLAY_ATK3('WITC', 6 | FF_FULLBRIGHT, 8.0 / 35.0, S_WITPLAY) { }
+	S_WITPLAY_PAIN('WITC', 7, 4.0 / 35.0, S_WITPLAY_PAIN2) { } // TEMP. SPRITE
+	S_WITPLAY_PAIN2('WITC', 8, 4.0 / 35.0, S_WITPLAY) { A_Pain(); } // TEMP. SPRITE
+	S_WITPLAY_DIE1('WITC', 11, 6.0 / 35.0, S_WITPLAY_DIE2) { } //L
+	S_WITPLAY_DIE2('WITC', 12, 6.0 / 35.0, S_WITPLAY_DIE3) { A_Scream(); } //M
+	S_WITPLAY_DIE3('WITC', 13, 6.0 / 35.0, S_WITPLAY_DIE4) { } //N
+	S_WITPLAY_DIE4('WITC', 14, 6.0 / 35.0, S_WITPLAY_DIE5) { } //O
+	S_WITPLAY_DIE5('WITC', 15, 6.0 / 35.0, S_WITPLAY_DIE6) { A_NoBlocking(); } //P
+	S_WITPLAY_DIE6('WITC', 16, 6.0 / 35.0, S_WITPLAY_DIE7) { } //Q
+	S_WITPLAY_DIE7('WITC', 16, 6.0 / 35.0, S_WITPLAY_DIE8) { } //R
+	S_WITPLAY_DIE8('WITC', 18, -1.0, S_NULL) { A_AddPlayerCorpse(); } //S
+	S_WITPLAY_XDIE1('WITC', 11, 5.0 / 35.0, S_WITPLAY_XDIE2) { A_Scream(); }//L
+	S_WITPLAY_XDIE2('WITC', 12, 5.0 / 35.0, S_WITPLAY_XDIE3) { }//M
+	S_WITPLAY_XDIE3('WITC', 13, 5.0 / 35.0, S_WITPLAY_XDIE4) { A_NoBlocking(); }//N
+	S_WITPLAY_XDIE4('WITC', 14, 5.0 / 35.0, S_WITPLAY_XDIE5) { }//O
+	S_WITPLAY_XDIE5('WITC', 15, 5.0 / 35.0, S_WITPLAY_XDIE6) { }//P
+	S_WITPLAY_XDIE6('WITC', 16, 5.0 / 35.0, S_WITPLAY_XDIE7) { }//Q
+	S_WITPLAY_XDIE7('WITC', 17, 5.0 / 35.0, S_WITPLAY_XDIE8) { }//R
+	S_WITPLAY_XDIE8('WITC', 18, -1.0, S_NULL) { A_AddPlayerCorpse(); }//S
+	S_WITPLAY_ICE('WITC', 19, 5.0 / 35.0, S_WITPLAY_ICE2) { A_FreezeDeath(); }//T
+	S_WITPLAY_ICE2('WITC', 19, 1.0 / 35.0, S_WITPLAY_ICE2) { A_FreezeDeathChunks(); }//T
+}
+
+defaultproperties
+{
+	Health = 100;
+	GibsHealth = -50;
+	Radius = 16.0;
+	Height = 64.0;
+	Mass = 100.0;
+	PainChance = 1.0;
+	bPickUp = true;
+	IdleState = S_WITPLAY;
+	SeeState = S_WITPLAY_RUN1;
+	MissileState = S_WITPLAY_ATK1;
+	AttackEndState = S_WITPLAY_ATK2;
+	PainState = S_WITPLAY_PAIN;
+	DeathState = S_WITPLAY_DIE1;
+	GibsDeathState = S_WITPLAY_XDIE1;
+	IceDeathState = S_WITPLAY_ICE;
+	PainSound = 'DPlayerPain';
+	GruntSound = 'DPlayerLand';
+	NormalDeathSound = 'DPlayerDeath';
+	CrazyDeathSound = 'DPlayerDeath';
+	Extreme1DeathSound = 'DPlayerExtremeDeath';
+	Extreme2DeathSound = 'DPlayerExtremeDeath';
+	Extreme3DeathSound = 'DPlayerExtremeDeath';
+	FailedUseSound = 'DBlocked';
+	PuzzleFailSound = 'DBlocked';
+	InitialStrength = 10;
+	InitialWisdom = 10;
+	InitialDexterity = 10;
+	InitialConstitution = 10;
+	InitialIntelligence = 10;
+}
+
+
+//**************************************************************************
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
