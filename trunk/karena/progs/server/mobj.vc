@@ -23,25 +23,38 @@
 //**
 //**************************************************************************
 
+classid PuffType;
+Actor PuffSpawned;
+Actor linetarget;	// who got hit (or none)
+
+int classFlags[] =
+{
+	MTF_FIGHTER,
+	MTF_CLERIC,
+	MTF_MAGE
+};
+
+float windTab[3] = { 5.0 / 32.0, 10.0 / 32.0, 25.0 / 32.0 };
+
 float air_control = 1.0 / 256.0;
 
 Actor GLavaInflictor;
 
 bool onground;
 
-float pushTab[3] = {
+float pushTab[5] =
+{
 	5.0 * 35.0 * 35.0 / 32.0,
 	10.0 * 35.0 * 35.0 / 32.0,
-	25.0 * 35.0 * 35.0 / 32.0
+	25.0 * 35.0 * 35.0 / 32.0,
+	30.0 * 35.0 * 35.0 / 32.0,
+	35.0 * 35.0 * 35.0 / 32.0
 };
-
-classid PuffType;
-Actor PuffSpawned;
-Actor linetarget;	// who got hit (or none)
 
 float ArmorMax[NUMCLASSES] = { 20.0, 18.0, 16.0, 16.0, 1.0 };
 
-int pieceValueTrans[] = {
+int pieceValueTrans[] =
+{
 	0,	// 0: never
 	WPIECE1 | WPIECE2 | WPIECE3,	// WPIECE1 (1)
 	WPIECE2 | WPIECE3,	// WPIECE2 (2)
@@ -52,17 +65,20 @@ int pieceValueTrans[] = {
 //
 //  Pickup messages
 //
-string fourthWeaponText[] = {
+string fourthWeaponText[] =
+{
 	TXT_WEAPON_F4,
 	TXT_WEAPON_C4,
 	TXT_WEAPON_M4
 };
-string weaponPieceText[] = {
+string weaponPieceText[] =
+{
 	TXT_QUIETUS_PIECE,
 	TXT_WRAITHVERGE_PIECE,
 	TXT_BLOODSCOURGE_PIECE
 };
-string artifactMessages[NUMARTIFACTS] = {
+string artifactMessages[NUMARTIFACTS] =
+{
 	"",
 	TXT_ARTIINVULNERABILITY,
 	TXT_ARTIHEALTH,
@@ -98,13 +114,15 @@ string artifactMessages[NUMARTIFACTS] = {
 	TXT_ARTIPUZZGEAR,
 	TXT_ARTIPUZZGEAR
 };
-string armorText[NUMARMOR] = {
+string armorText[NUMARMOR] =
+{
 	TXT_ARMOR1,
 	TXT_ARMOR2,
 	TXT_ARMOR3,
 	TXT_ARMOR4
 };
-string manaText[6] = {
+string manaText[6] =
+{
 	TXT_MANA_1,
 	TXT_MANA_2,
 	TXT_MANA_3,
@@ -113,15 +131,8 @@ string manaText[6] = {
 	""
 };
 
-int classFlags[] = {
-	MTF_FIGHTER,
-	MTF_CLERIC,
-	MTF_MAGE
-};
-
-float windTab[3] = { 5.0 / 32.0, 10.0 / 32.0, 25.0 / 32.0 };
-
-int opposite[] = {
+int opposite[] =
+{
 	DI_WEST, DI_SOUTHWEST, DI_SOUTH, DI_SOUTHEAST, DI_EAST, DI_NORTHEAST,
 	DI_NORTH, DI_NORTHWEST, DI_NODIR
 };
@@ -496,6 +507,17 @@ bool EV_LineSearchForPuzzleItem(line_t * line, int *args, Actor A)
 
 //==========================================================================
 //
+//  InitLava
+//
+//==========================================================================
+
+void InitLava(void)
+{
+	GLavaInflictor = Actor(NewMobjThinker(LavaInflictor));
+}
+
+//==========================================================================
+//
 //  ClipVelocity
 //
 //  Slide off of the impacting object
@@ -505,18 +527,6 @@ bool EV_LineSearchForPuzzleItem(line_t * line, int *args, Actor A)
 TVec ClipVelocity(TVec in, TVec normal, float overbounce)
 {
 	return in - normal * (DotProduct(in, normal) * overbounce);
-}
-
-//==========================================================================
-//
-//  InitLava
-//
-//==========================================================================
-
-void InitLava(void)
-{
-	GLavaInflictor = Actor(NewMobjThinker(LavaInflictor));
-//	GLavaInflictor->type = MT_CIRCLEFLAME;
 }
 
 //============================================================================
@@ -630,6 +640,9 @@ bool A_LocalQuake(int *args)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2004/11/23 12:50:28  dj_jl
+//  Added support for many sector specials.
+//
 //  Revision 1.2  2004/11/17 13:26:53  dj_jl
 //  Some more changes.
 //

@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class VerticalDoor:SectorMover;
+class VerticalDoor : SectorMover;
 
 int type;
 float topheight;
@@ -111,6 +111,24 @@ void Tick(float deltaTime)
 		}
 		break;
 	}
+	case 2:
+		//  INITIAL WAIT
+		toptime -= deltaTime;
+		if (toptime <= 0.0)
+		{
+			toptime = 0.0;
+			switch (type)
+			{
+			case raiseIn5Mins:
+				direction = 1;
+				type = DREV_NORMAL;
+				SectorStartSequence(sector,
+					seq_name[SEQ_DOOR_STONE + sector->seqType]);
+				break;
+			}
+		}
+		break;
+	}
 }
 
 defaultproperties
@@ -120,6 +138,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2004/11/23 12:50:27  dj_jl
+//  Added support for many sector specials.
+//
 //  Revision 1.1  2004/11/16 13:33:22  dj_jl
 //  Initial import.
 //
