@@ -113,6 +113,7 @@ extern char *serverName, *serverInfo, *playerName;
 extern boolean paletted, r_s3tc;	// Use GL_EXT_paletted_texture
 extern boolean renderTextures;
 extern float fieldOfView;
+extern float snd_min_distance;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -210,6 +211,7 @@ cvar_t engineCVars[] =
 	"far_clip",         0,          CVT_FLOAT,	&farClip,      	1000, 99000,"Set the View distance (1000-99000)",
 	"time_mod",         0,          CVT_INT,	&time_mod,     	1, 1000,"Set the time modificator (1-1000)",
 	"act_int",          0,          CVT_INT,	&act_int,	    0,  255,"Set Light modificator (0-255)",
+	"snd_min_distance",	0,			CVT_FLOAT,	&snd_min_distance, 1, 1024, "DirectSound3D min distance",
 	NULL
 };
 
