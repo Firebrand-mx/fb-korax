@@ -226,55 +226,17 @@ class KMenuScreenEffects:public KMenuScreen
 	{
 		ChoiceStartX = 220;
 		ChoiceStartY = 155;
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_FPSCounter, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_FrozenThings, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_DynLights, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_DynLightBlend, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_LightsOnSprites, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_DynLightIntensity, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_LensFlares, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_FlareIntensity, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_FlareSize, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_SprAlign, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_SprBlend, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
+		Choices[0] = KMenuChoice_FPSCounter::StaticClass();
+		Choices[1] = KMenuChoice_FrozenThings::StaticClass();
+		Choices[2] = KMenuChoice_DynLights::StaticClass();
+		Choices[3] = KMenuChoice_DynLightBlend::StaticClass();
+		Choices[4] = KMenuChoice_LightsOnSprites::StaticClass();
+		Choices[5] = KMenuChoice_DynLightIntensity::StaticClass();
+		Choices[6] = KMenuChoice_LensFlares::StaticClass();
+		Choices[7] = KMenuChoice_FlareIntensity::StaticClass();
+		Choices[8] = KMenuChoice_FlareSize::StaticClass();
+		Choices[9] = KMenuChoice_SprAlign::StaticClass();
+		Choices[10] = KMenuChoice_SprBlend::StaticClass();
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenEffects);

@@ -112,6 +112,7 @@ class KJournalPageBaseWindow:public KWindow
 		Y = 20;
 		Width = 240;
 		Height = 200;
+		bIsSelectable = true;
 	}
 };
 IMPLEMENT_CLASS(KJournalPageBaseWindow);
@@ -148,7 +149,7 @@ class KJournalStatsPage:public KJournalPageBaseWindow
 	void DrawWindow(KGC *gc)
 	{
 		int i,temp=0;
-		int time_mod=*(int*) gi.GetCVar("time_mod")->ptr;
+		int time_mod=*(int*) CvarGet("time_mod")->ptr;
 		int months=1;
 		int days=1;
 		int hours=0;
@@ -186,7 +187,7 @@ class KJournalStatsPage:public KJournalPageBaseWindow
 		sprintf(tmp[2],"HEIGHT: %.1f FEET",height_float[player->pclass]);
 
 		sprintf(tmp[3],"HEALTH POINTS: %d OF %d", 
-			player->plr->mo->health, player->maxhealth);
+			player->mo->health, player->maxhealth);
 		sprintf(tmp[4],"STRENGTH: %d",player->strength);
 		sprintf(tmp[5],"AGILITY: %d",player->agility);
 		sprintf(tmp[6],"SPEED: %d",player->speed);
@@ -279,7 +280,7 @@ class KJournalEnemiesPage:public KJournalPageBaseWindow
 	{
 		if (NumPages >= 64)
 		{
-			gi.Error("Too many enemy pages");
+			I_Error("Too many enemy pages");
 		}
 		Pages[NumPages].Title = Title;
 		Pages[NumPages].ImageName = ImageName;
@@ -414,7 +415,7 @@ class KJournalItemsPage:public KJournalPageBaseWindow
 	{
 		if (NumPages >= 64)
 		{
-			gi.Error("Too many item pages");
+			I_Error("Too many item pages");
 		}
 		Pages[NumPages].Title = Title;
 		Pages[NumPages].ImageName = ImageName;
@@ -585,9 +586,9 @@ class KJournalScreen:public KMenuScreen
 		};
 		int i;
 
-		gi.GL_SetFilter(0);
+		GL_SetFilter(0);
 		//Draw back
-		GCanvas->DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
+		GCanvas->DrawRawScreen(W_GetNumForName("JOURNAL"));
 		//Draw Menu, and actual one
 		for (i=0;i<5;i++)
 			MN_DrTextA(journal[i],coords[i][1],coords[i][0]);
@@ -606,7 +607,7 @@ class KJournalScreen:public KMenuScreen
 			winJournalPages[currentJournal]->Hide();
 			currentJournal = currentJournal == 4 ? 0 : currentJournal + 1;
 			winJournalPages[currentJournal]->Show();
-			GetRootWindow()->SetFocus(winJournalPages[currentJournal]);
+			SetFocusWindow(winJournalPages[currentJournal]);
 			return true;
 		}
 		if (key == DDKEY_UPARROW)
@@ -614,7 +615,7 @@ class KJournalScreen:public KMenuScreen
 			winJournalPages[currentJournal]->Hide();
 			currentJournal = currentJournal == 0 ? 4 : currentJournal - 1;
 			winJournalPages[currentJournal]->Show();
-			GetRootWindow()->SetFocus(winJournalPages[currentJournal]);
+			SetFocusWindow(winJournalPages[currentJournal]);
 			return true;
 		}
 		return Super::KeyPressed(key);

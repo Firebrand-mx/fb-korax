@@ -101,17 +101,17 @@ boolean P_SightBlockLinesIterator (int x, int y )
 	{
 		if(polyLink->polyobj)
 		{ // only check non-empty links
-			if(polyLink->polyobj->validcount != Validcount)
+			if(polyLink->polyobj->validcount != validcount)
 			{
-				segList = polyLink->polyobj->Segs;
-				for(i = 0; i < polyLink->polyobj->numSegs; i++, segList++)
+				segList = polyLink->polyobj->segs;
+				for(i = 0; i < polyLink->polyobj->numsegs; i++, segList++)
 				{
 					ld = (*segList)->linedef;
-					if(ld->validcount == Validcount)
+					if(ld->validcount == validcount)
 					{
 						continue;
 					}
-					ld->validcount = Validcount;
+					ld->validcount = validcount;
 					s1 = P_PointOnDivlineSide (ld->v1->x, ld->v1->y, &trace);
 					s2 = P_PointOnDivlineSide (ld->v2->x, ld->v2->y, &trace);
 					if (s1 == s2)
@@ -130,7 +130,7 @@ boolean P_SightBlockLinesIterator (int x, int y )
 					intercept_p->d.line = ld;
 					intercept_p++;
 				}
-				polyLink->polyobj->validcount = Validcount;
+				polyLink->polyobj->validcount = validcount;
 			}
 		}
 		polyLink = polyLink->next;
@@ -141,9 +141,9 @@ boolean P_SightBlockLinesIterator (int x, int y )
 	for ( list = blockmaplump+offset ; *list != -1 ; list++)
 	{
 		ld = &lines[*list];
-		if (ld->validcount == Validcount)
+		if (ld->validcount == validcount)
 			continue;               // line has already been checked
-		ld->validcount = Validcount;
+		ld->validcount = validcount;
 
 		s1 = P_PointOnDivlineSide (ld->v1->x, ld->v1->y, &trace);
 		s2 = P_PointOnDivlineSide (ld->v2->x, ld->v2->y, &trace);
@@ -238,7 +238,7 @@ boolean P_SightPathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2)
 	int             mapx, mapy, mapxstep, mapystep;
 	int             count;
 
-	Validcount++;
+	validcount++;
 	intercept_p = intercepts;
 
 	if ( ((x1-bmaporgx)&(MAPBLOCKSIZE-1)) == 0)

@@ -19,17 +19,17 @@ class KModalWindow : public KWindow
 	KModalWindow(void);
 	void CleanUp(void);
 
+private:
 	// Sorted lists of selectable children
-	KWindow *RowMajorWindowList[64];
-	KWindow *ColMajorWindowList[64];
+	KWindow *RowMajorWindowList[256];
+	KWindow *ColMajorWindowList[256];
 	int WindowListCount;
 
+	KWindow *PreferredFocus;
+
+public:
 	// Option to enable wrapping when moving focus
 	bool bWrapFocus;
-
-	// Absolute position of first child in tab group
-	//float firstAbsX;
-	//float firstAbsY;
 
 	// KModalWindow interface
 	void AddWindowToTables(KWindow *pWindow);
@@ -48,9 +48,6 @@ class KModalWindow : public KWindow
 */
 
 /*
-private:
-	KWindow *PreferredFocus;
-
 public:
 	// KWindow interface callbacks
 	void VisibilityChanged(bool bNewVisibility);

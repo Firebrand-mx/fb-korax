@@ -15,7 +15,6 @@ class KMenuScreenClass:public KMenuScreen
 		ButtonDefaults[0] = FButtonDefault("FIGHTER", MA_Custom, MENU_NONE, 0);
 		ButtonDefaults[1] = FButtonDefault("CLERIC", MA_Custom, MENU_NONE, 1);
 		ButtonDefaults[2] = FButtonDefault("MAGE", MA_Custom, MENU_NONE, 2);
-		//ButtonDefaults[3] = FButtonDefault("CORVUS", MA_Custom, MENU_NONE, 3); //Da Corvus man
 	}
 
 	void ProcessCustomMenuAction(int Key)
@@ -32,9 +31,6 @@ class KMenuScreenClass:public KMenuScreen
 
 	void DrawWindow(KGC *gc)
 	{
-//		spriteinfo_t	sprInfo;
-//		int				w, h, alpha;
-
 		static char *boxLumpName[4] =
 		{
 			"m_fbox",
@@ -50,23 +46,14 @@ class KMenuScreenClass:public KMenuScreen
 		};
 
 		gc->DrawText(194, 164, "CHOOSE CLASS:");
-		//int pclass = Items[CursorPos]->option;
-		int pclass = CursorPos;
+		int pclass = 0;
+		if (CurrentItem == WinButtons[1])
+			pclass = 1;
+		else if (CurrentItem == WinButtons[2])
+			pclass = 2;
 		gc->DrawIcon(334, 148, FindTexture(boxLumpName[pclass]));
-		/*if (pclass == 3) //Remi: Corvus, never happens in this source state
-		{
-			gl.GetIntegerv(DGL_A, &alpha);
-			gi.GetSpriteInfo(SPR_PLAY, 0, &sprInfo);	
-			gi.Set(DD_TRANSLATED_SPRITE_TEXTURE, DD_TSPR_PARM(sprInfo.lump, pclass, 0));
-			gi.Set(DD_SPRITE_SIZE_QUERY, sprInfo.lump);
-			w = gi.Get(DD_QUERY_RESULT) >> 16;		// High word.
-			h = gi.Get(DD_QUERY_RESULT) & 0xffff;	// Low word.
-			gi.GL_DrawRect(162-(sprInfo.offset>>16), 90 - (sprInfo.topOffset>>16), w, h, 1, 1, 1, alpha/255.0f);
-			gl.Color4ub(255, 255, 255, alpha);
-		}
-		else*/
 		gc->GetCanvas()->DrawPatch(334+24, 148+12, 
-			gi.W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
+			W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenClass);

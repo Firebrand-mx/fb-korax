@@ -38,19 +38,9 @@ typedef struct
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
-void R_ExecuteSetViewSize(void);
-void G_BuildTiccmd(ticcmd_t *cmd);
-void F_Drawer(void);
-void I_HideMouse (void);
 void S_InitScript(void);
-void G_Drawer(void);
-void H2_ConsoleBg(int *width, int *height);
-void H2_EndFrame(void);
-int H2_PrivilegedResponder(event_t *event);
-void R_DrawPlayerSprites(ddplayer_t *viewplr);
 void H2_ConsoleRegistration();
 void H2_DefaultBindings();
-/*void SB_HandleCheatNotification(int fromplayer, void *data, int length);*/
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
 
@@ -80,18 +70,13 @@ extern int demosequence;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-game_export_t	gx;
-game_import_t	gi;
-gl_export_t		gl;
-
-
 boolean DevMaps;			// true = Map development mode
 char *DevMapsDir = "";		// development maps directory
 boolean nomonsters;			// checkparm of -nomonsters
 boolean respawnparm;		// checkparm of -respawn
 boolean randomclass;		// checkparm of -randclass
 boolean ravpic;				// checkparm of -ravpic
-boolean singletics;			// debug flag to cancel adaptiveness
+//boolean singletics;			// debug flag to cancel adaptiveness
 boolean artiskip;			// whether shift-enter skips an artifact
 boolean netcheat;			// allow cheating in netgames (-netcheat)
 boolean dontrender;			// don't render the player view (debug)
@@ -107,7 +92,6 @@ byte netMobHealthModifier = 1;
 
 boolean autostart;
 boolean advancedemo;
-FILE *debugfile;
 int screenblocks=10;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -146,37 +130,16 @@ char *borderLumps[] =
 	"bordbl"	// bottom left
 };
 
-#ifdef TIC_DEBUG
-FILE *rndDebugfile;
-#endif
-
 void H2_PreInit(void)
 {
-	int		i;
-
-#ifdef TIC_DEBUG	
-	rndDebugfile = fopen("rndtrace.txt", "wt");
-#endif
-
-	if(gi.version < DOOMSDAY_VERSION) 
-		gi.Error("Scattered Evil requires at least Doomsday "DOOMSDAY_VERSION_TEXT"!\n");
-
-	// Setup the players.
-	for(i=0; i<MAXPLAYERS; i++)
-	{
-		players[i].plr = gi.GetPlayer(i);
-		players[i].plr->extradata = (void*) &players[i];
-	}
-	gi.SetSpriteNameList(sprnames);
-	gi.SetConfigFile("korax.cfg");
-	gi.SetBorderGfx(borderLumps);
-	gi.DefineActions(actions);
+	R_SetSpriteNameList(sprnames);
+	R_SetBorderGfx(borderLumps);
 	// Add the JHexen cvars and ccmds to the console databases.
 	H2_ConsoleRegistration();
 
 	// The startup WADs.
-	gi.AddStartupWAD("hexen.wad");
-	gi.AddStartupWAD("scatteredevil.wad");
+	AddWADFile("hexen.wad");
+	AddWADFile("scatteredevil.wad");
 
 	startepisode = 1;
 	startskill = sk_medium;
@@ -188,23 +151,22 @@ void H2_PreInit(void)
 void H2_PostInit(void)
 {
 	int			pClass, p;
-//	ddfont_t	cfont;
 
-	gi.Message("--- Scattered Evil Init ---\n%s\n", VERSIONTEXT);
+	ST_Message("--- Scattered Evil Init ---\n%s\n", VERSIONTEXT);
 
 	H2_DefaultBindings();
 //	R_LoadTextureTypes();
 
 	// Check the -class argument.
 	pClass = PCLASS_FIGHTER;
-	if(p = gi.CheckParm("-class"))
+	if(p = M_CheckParm("-class"))
 	{
-		pClass = atoi(gi.Argv(p+1));
+		pClass = atoi(Argv(p+1));
 		if(pClass > PCLASS_CORVUS || pClass < PCLASS_FIGHTER)
 		{
-			gi.Error("Invalid player class: %d\n", pClass);
+			I_Error("Invalid player class: %d\n", pClass);
 		}
-		gi.Message("\nPlayer Class: %d\n", pClass);
+		ST_Message("\nPlayer Class: %d\n", pClass);
 	}
 	PlayerClass[consoleplayer] = (pclass_t)pClass;
 
@@ -212,38 +174,33 @@ void H2_PostInit(void)
 	R_SetViewSize(screenblocks);
 
 	// Set sprite/model replacements.
-	for(p=0; p<NUMSPRITES; p++)
+	for (p=0; p<NUMSPRITES; p++)
 	{
-		spritereplacement_t rep;
-		rep.spritenum = p;
-		rep.modelname = sprnames[p];
-		gi.Set(DD_SPRITE_REPLACEMENT, (int) &rep);
+		R_SetSpriteReplacement(p, sprnames[p]);
 	}
 
 
 	CreateSavePath();
 	
-	gi.Message("S_Init...\n");
+	ST_Message("S_Init...\n");
 	S_Init();
 
-	gi.Message("P_Init: Init Playloop state.\n");
+	ST_Message("P_Init: Init Playloop state.\n");
 	P_Init();
 	
-	gi.Message("MN_Init: Init menu system.\n");
+	ST_Message("MN_Init: Init menu system.\n");
 	MN_Init();
 
-	gi.Message("CT_Init: Init chat mode data.\n");
+	ST_Message("CT_Init: Init chat mode data.\n");
 	CT_Init();
 
 	InitMapMusicInfo();		// Init music fields in mapinfo
 
-	gi.Message("S_InitScript\n");
+	ST_Message("S_InitScript\n");
 	S_InitScript();
 
-	gi.Message("SN_InitSequenceScript: Registering sound sequences.\n");
+	ST_Message("SN_InitSequenceScript: Registering sound sequences.\n");
 	SN_InitSequenceScript();
-
-//	S_StartSongName("orb", true);
 
 	// Check for command line warping. Follows P_Init() because the
 	// MAPINFO.TXT script must be already processed.
@@ -251,48 +208,48 @@ void H2_PostInit(void)
 
 	if(autostart)
 	{
-		gi.Message("Warp to Map %d (\"%s\":%d), Skill %d\n",
+		ST_Message("Warp to Map %d (\"%s\":%d), Skill %d\n",
 			WarpMap, P_GetMapName(startmap), startmap, startskill+1);
 	}
 
-	gi.Message("SB_Init: Loading patches.\n");
+	ST_Message("SB_Init: Loading patches.\n");
 	SB_Init();
 
 	if(CheckRecordFrom()) return;
 
-	p = gi.CheckParm("-record");
-	if(p && p < gi.Argc()-1)
+	p = M_CheckParm("-record");
+	if(p && p < Argc()-1)
 	{
 		singledemo = true;	// Quit after recording.
-		G_RecordDemo(startskill, 1, startepisode, startmap, gi.Argv(p+1));
+		G_RecordDemo(startskill, 1, startepisode, startmap, Argv(p+1));
 		return;
 	}
 
-	p = gi.CheckParm("-playdemo");
-	if(p && p < gi.Argc()-1)
+	p = M_CheckParm("-playdemo");
+	if(p && p < Argc()-1)
 	{
 		singledemo = true; // Quit after one demo
-		G_DeferedPlayDemo(gi.Argv(p+1));
+		G_DeferedPlayDemo(Argv(p+1));
 		return;
 	}
 
-	p = gi.CheckParm("-timedemo");
-	if(p && p < gi.Argc()-1)
+	p = M_CheckParm("-timedemo");
+	if(p && p < Argc()-1)
 	{
 		singledemo = true; // Quit after timing
-		G_TimeDemo(gi.Argv(p+1));
+		G_TimeDemo(Argv(p+1));
 		return;
 	}
 
-	p = gi.CheckParm("-loadgame");
-	if(p && p < gi.Argc()-1)
+	p = M_CheckParm("-loadgame");
+	if(p && p < Argc()-1)
 	{
-		G_LoadGame(atoi(gi.Argv(p+1)));
+		G_LoadGame(atoi(Argv(p+1)));
 	}
 
 	if(gameaction != ga_loadgame)
 	{
-		gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
+		DD_GameUpdate(DDUF_FULLSCREEN | DDUF_BORDER);
 		if(autostart || netgame)
 		{
 			G_StartNewInit();
@@ -316,22 +273,22 @@ static void HandleArgs()
 	int p;
 	execOpt_t *opt;
 
-	nomonsters = gi.ParmExists("-nomonsters");
-	respawnparm = gi.ParmExists("-respawn");
-	randomclass = gi.ParmExists("-randclass");
-	ravpic = gi.ParmExists("-ravpic");
-	artiskip = gi.ParmExists("-artiskip");
-	netDeathmatch = gi.ParmExists("-deathmatch");
-	netcheat = gi.ParmExists("-netcheat");
-	dontrender = gi.ParmExists("-noview");
+	nomonsters = M_ParmExists("-nomonsters");
+	respawnparm = M_ParmExists("-respawn");
+	randomclass = M_ParmExists("-randclass");
+	ravpic = M_ParmExists("-ravpic");
+	artiskip = M_ParmExists("-artiskip");
+	netDeathmatch = M_ParmExists("-deathmatch");
+	netcheat = M_ParmExists("-netcheat");
+	dontrender = M_ParmExists("-noview");
 	
 	// Process command line options
 	for(opt = ExecOptions; opt->name != NULL; opt++)
 	{
-		p = gi.CheckParm(opt->name);
-		if(p && p < gi.Argc()-opt->requiredArgs)
+		p = M_CheckParm(opt->name);
+		if(p && p < Argc()-opt->requiredArgs)
 		{
-			opt->func(gi.ArgvPtr(p), opt->tag);
+			opt->func(ArgvPtr(p), opt->tag);
 		}
 	}
 }
@@ -347,15 +304,15 @@ static void WarpCheck(void)
 	int p;
 	int map;
 
-	p = gi.CheckParm("-warp");
-	if(p && p < gi.Argc()-1)
+	p = M_CheckParm("-warp");
+	if(p && p < Argc()-1)
 	{
-		WarpMap = atoi(gi.Argv(p+1));
+		WarpMap = atoi(Argv(p+1));
 		map = P_TranslateMap(WarpMap);
 		if(map == -1)
 		{ // Couldn't find real map number
 			startmap = 1;
-			gi.Message("-WARP: Invalid map number.\n");
+			ST_Message("-WARP: Invalid map number.\n");
 		}
 		else
 		{ // Found a valid startmap
@@ -398,8 +355,8 @@ static void ExecOptionPLAYDEMO(char **args, int tag)
 	char file[256];
 
 	sprintf(file, "%s.lmp", args[1]);
-	gi.AddStartupWAD(file);
-	gi.Message("Playing demo %s.lmp.\n", args[1]);
+	AddWADFile(file);
+	ST_Message("Playing demo %s.lmp.\n", args[1]);
 }
 
 //==========================================================================
@@ -423,17 +380,17 @@ static void ExecOptionSCRIPTS(char **args, int tag)
 static void ExecOptionDEVMAPS(char **args, int tag)
 {
 	DevMaps = true;
-	gi.Message("Map development mode enabled:\n");
-	gi.Message("[config    ] = %s\n", args[1]);
+	ST_Message("Map development mode enabled:\n");
+	ST_Message("[config    ] = %s\n", args[1]);
 	SC_OpenFileCLib(args[1]);
 	SC_MustGetStringName("mapsdir");
 	SC_MustGetString();
-	gi.Message("[mapsdir   ] = %s\n", sc_String);
+	ST_Message("[mapsdir   ] = %s\n", sc_String);
 	DevMapsDir = (char *)malloc(strlen(sc_String)+1);
 	strcpy(DevMapsDir, sc_String);
 	SC_MustGetStringName("scriptsdir");
 	SC_MustGetString();
-	gi.Message("[scriptsdir] = %s\n", sc_String);
+	ST_Message("[scriptsdir] = %s\n", sc_String);
 	sc_FileScripts = true;
 	sc_ScriptsDir = (char *)malloc(strlen(sc_String)+1);
 	strcpy(sc_ScriptsDir, sc_String);
@@ -442,7 +399,7 @@ static void ExecOptionDEVMAPS(char **args, int tag)
 		if(SC_Compare("file"))
 		{
 			SC_MustGetString();
-			gi.AddStartupWAD(sc_String);
+			AddWADFile(sc_String);
 		}
 		else
 		{
@@ -452,35 +409,6 @@ static void ExecOptionDEVMAPS(char **args, int tag)
 	SC_Close();
 }
 
-
-long superatol(char *s)
-{
-	long int n=0, r=10, x, mul=1;
-	char *c=s;
-
-	for (; *c; c++)
-	{
-		x = (*c & 223) - 16;
-
-		if (x == -3)
-		{
-			mul = -mul;
-		}
-		else if (x == 72 && r == 10)
-		{
-			n -= (r=n);
-			if (!r) r=16;
-			if (r<2 || r>36) return -1;
-		}
-		else
-		{
-			if (x>10) x-=39;
-			if (x >= r) return -1;
-			n = (n*r) + x;
-		}
-	}
-	return(mul*n);
-}
 
 //==========================================================================
 //
@@ -520,14 +448,14 @@ static boolean CheckRecordFrom(void)
 {
 	int p;
 
-	p = gi.CheckParm("-recordfrom");
-	if(!p || p > gi.Argc()-2)
+	p = M_CheckParm("-recordfrom");
+	if(!p || p > Argc()-2)
 	{ // Bad args
 		return false;
 	}
-	G_LoadGame(atoi(gi.Argv(p+1)));
+	G_LoadGame(atoi(Argv(p+1)));
 	G_DoLoadGame(); // Load the gameskill etc info from savegame
-	G_RecordDemo(gameskill, 1, gameepisode, gamemap, gi.Argv(p+2));
+	G_RecordDemo(gameskill, 1, gameepisode, gamemap, Argv(p+2));
 	return true;
 }
 
@@ -560,7 +488,7 @@ static void CreateSavePath(void)
 	int len;
 
 	len = strlen(SavePath);
-	if (len >= 120) gi.Error("Save path too long\n");
+	if (len >= 120) I_Error("Save path too long\n");
 	strcpy(creationPath, SavePath);
 
 	creationPath[len-1] = 0;
@@ -571,11 +499,6 @@ void H2_Ticker(void)
 {
 	if(advancedemo) H2_DoAdvanceDemo();
 	MN_Ticker();
-}
-
-void G_ModifyDupTiccmd(ticcmd_t *cmd)
-{
-	if(cmd->buttons & BT_SPECIAL) cmd->buttons = 0;
 }
 
 void H2_UpdateState(int step)
@@ -595,74 +518,8 @@ void H2_UpdateState(int step)
 	}
 }
 
-char *H2_GetString(int id)
-{
-	switch(id)
-	{
-	case DD_VERSION_SHORT:
-		return VERSION_TEXT;
-
-	case DD_VERSION_LONG:
-		return VERSIONTEXT"\nKorax is based on Hexen v1.1.";//JHexen
-	
-	default:
-		break;
-	}
-	return "";
-}
-
 
 void H2_Shutdown(void)
 {
 //	R_FreeTextypeTypes();
-}
-
-extern "C" __declspec(dllexport) game_export_t *GetGameAPI(game_import_t *imports)
-{
-	// Take a copy of the imports.
-	gi = *imports;
-	gl = *(gl_export_t*) imports->GetDGL();
-
-	memset(&gx, 0, sizeof(gx));
-
-	// Fill in the data for the exports.
-	gx.PreInit = H2_PreInit;
-	gx.PostInit = H2_PostInit;
-	gx.Shutdown = H2_Shutdown;
-	gx.BuildTiccmd = (void(*)(void*))G_BuildTiccmd;
-	gx.ModifyDupTiccmd = (void(*)(void*))G_ModifyDupTiccmd;
-	gx.G_Ticker = G_Ticker;
-	gx.G_Drawer = G_Drawer;
-	gx.MN_Ticker = H2_Ticker;
-	gx.MN_Drawer = MN_Drawer;
-	gx.PrivilegedResponder = H2_PrivilegedResponder;
-	gx.MN_Responder = MN_Responder;
-	gx.G_Responder = G_Responder;
-	gx.MobjThinker = P_MobjThinker;
-	gx.EndFrame = H2_EndFrame;
-	gx.ConsoleBackground = H2_ConsoleBg;
-	gx.UpdateState = H2_UpdateState;
-	gx.DrawPlayerSprites = R_DrawPlayerSprites;
-	gx.GetString = H2_GetString;
-
-	gx.NetServerOpen = H2_NetServerOpen;
-	gx.NetServerStart = H2_NetServerStarted;
-	gx.NetServerStop = H2_NetServerClose;
-	gx.NetServerClose = H2_NetServerClose;
-	gx.NetConnect = H2_NetConnect;
-	gx.NetDisconnect = H2_NetDisconnect;
-	gx.NetPlayerEvent = H2_NetPlayerEvent;
-/*	gx.HandlePacket = SB_HandleCheatNotification;*/
-
-	// The structure sizes.
-	gx.ticcmd_size = sizeof(ticcmd_t);
-	gx.vertex_size = sizeof(vertex_t);
-	gx.seg_size = sizeof(seg_t);
-	gx.sector_size = sizeof(sector_t);
-	gx.subsector_size = sizeof(subsector_t);
-	gx.node_size = sizeof(node_t);
-	gx.line_size = sizeof(line_t);
-	gx.side_size = sizeof(side_t);
-
-	return &gx;
 }

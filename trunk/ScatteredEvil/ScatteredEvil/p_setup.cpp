@@ -20,6 +20,7 @@
 #include "p_local.h"
 #include "soundst.h"
 #include "m_bams.h"
+#include "gl_dyn.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -46,11 +47,6 @@
 #define DEFAULT_FADE_TABLE "COLORMAP"
 
 // TYPES -------------------------------------------------------------------
-
-enum
-{
-	BLEFT, BTOP, BRIGHT, BBOTTOM
-};
 
 typedef struct mapInfo_s mapInfo_t;
 struct mapInfo_s
@@ -99,16 +95,39 @@ float AccurateDistance(fixed_t dx,fixed_t dy);
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-int MapCount;
-mapthing_t deathmatchstarts[MAXDEATHMATCHSTARTS], *deathmatch_p;
-mapthing_t playerstarts[MAX_PLAYER_STARTS][MAXPLAYERS];
-int firstGLvertex = 0;
+int numvertexes;
+vertex_t *vertexes;
+
+int numsegs;
+seg_t *segs;
+
+int numsectors;
+sector_t *sectors;
+
+int numsubsectors;
+subsector_t *subsectors;
+
+int numnodes;
+node_t *nodes;
+
+int numlines;
+line_t *lines;
+
+int	numsides;
+side_t *sides;
+
 short *blockmaplump; // offsets in blockmap are from here
 short *blockmap;
 int bmapwidth, bmapheight; // in mapblocks
 fixed_t bmaporgx, bmaporgy; // origin of block map
 mobj_t **blocklinks; // for thing chains
+
 byte *rejectmatrix; // for fast sight rejection
+
+int MapCount;
+mapthing_t deathmatchstarts[MAXDEATHMATCHSTARTS], *deathmatch_p;
+mapthing_t playerstarts[MAX_PLAYER_STARTS][MAXPLAYERS];
+int firstGLvertex = 0;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -171,17 +190,15 @@ void P_LoadVertexes (int lump, int gllump)
 	glvert2_t       *glv;
 	vertex_t        *li;
 
-	orignum = numvertexes = gi.W_LumpLength(lump) / sizeof(mapvertex_t);
+	orignum = numvertexes = W_LumpLength(lump) / sizeof(mapvertex_t);
 	// glBSP lump provided?
 	if(gllump >= 0)
 	{
 		// There are additional vertices in gllump.
-		numvertexes += gi.W_LumpLength(gllump) / sizeof(mapvertex_t);
+		numvertexes += W_LumpLength(gllump) / sizeof(mapvertex_t);
 	}
-#undef vertexes
-	*gi.vertexes = gi.Z_Malloc (numvertexes*sizeof(vertex_t),PU_LEVEL,0);
-#define vertexes		((vertex_t*)(*gi.vertexes))
-	data = (byte *)gi.W_CacheLumpNum (lump,PU_STATIC);
+	vertexes = (vertex_t *)Z_Malloc(numvertexes * sizeof(vertex_t), PU_LEVEL, 0);
+	data = (byte *)W_CacheLumpNum (lump,PU_STATIC);
 	ml = (mapvertex_t *)data;
 	li = vertexes;
 	for(i=0 ; i<orignum; i++, li++, ml++)
@@ -189,20 +206,20 @@ void P_LoadVertexes (int lump, int gllump)
 		li->x = SHORT(ml->x)<<FRACBITS;
 		li->y = SHORT(ml->y)<<FRACBITS;
 	}
-	gi.Z_Free(data);
+	Z_Free(data);
 
 	firstGLvertex = orignum;
 	// Also load the GL vertices.
 	if(gllump >= 0)
 	{
-		data = (byte *)gi.W_CacheLumpNum(gllump, PU_STATIC);
+		data = (byte *)W_CacheLumpNum(gllump, PU_STATIC);
 		ver = 1;
 		if(data[0] == 'g' && data[1] == 'N' && data[2] == 'd' && data[3] == '2')
 		{
-			gi.Message( "GL_VERT v2.0\n");
+			ST_Message( "GL_VERT v2.0\n");
 			ver = 2;
 			// -JL- Calculate new number of vertexes
-			numvertexes = orignum + (gi.W_LumpLength(gllump) - 4) / sizeof(glvert2_t);
+			numvertexes = orignum + (W_LumpLength(gllump) - 4) / sizeof(glvert2_t);
 		}
 		ml = (mapvertex_t*) data;
 		glv = (glvert2_t*) (data + 4);
@@ -219,7 +236,7 @@ void P_LoadVertexes (int lump, int gllump)
 				li->y = glv->y;
 			}
 		}
-		gi.Z_Free(data);
+		Z_Free(data);
 	}
 }
 
@@ -241,12 +258,10 @@ void P_LoadSegs (int lump)
 	line_t			*ldef;
 	int             linedef, side;
 
-	numsegs = gi.W_LumpLength (lump) / sizeof(mapseg_t);
-#undef segs
-	*gi.segs = gi.Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);
-#define segs			((seg_t*)(*gi.segs))
+	numsegs = W_LumpLength (lump) / sizeof(mapseg_t);
+	segs = (seg_t *)Z_Malloc(numsegs * sizeof(seg_t), PU_LEVEL, 0);
 	memset (segs, 0, numsegs*sizeof(seg_t));
-	data = gi.W_CacheLumpNum (lump,PU_STATIC);
+	data = W_CacheLumpNum (lump,PU_STATIC);
 
 	ml = (mapseg_t *)data;
 	li = segs;
@@ -273,7 +288,7 @@ void P_LoadSegs (int lump)
 		li->length = AccurateDistance(li->v2->x - li->v1->x, li->v2->y - li->v1->y);								
 	}
 
-	gi.Z_Free (data);
+	Z_Free (data);
 }
 
 void P_LoadSegsGL(int lump)
@@ -284,12 +299,10 @@ void P_LoadSegsGL(int lump)
 	seg_t		*li;
 	line_t		*ldef;
 
-	numsegs = gi.W_LumpLength(lump) / sizeof(glseg_t);
-#undef segs
-	*gi.segs = gi.Z_Malloc(numsegs * sizeof(seg_t), PU_LEVEL, 0);
-#define segs			((seg_t*)(*gi.segs))
+	numsegs = W_LumpLength(lump) / sizeof(glseg_t);
+	segs = (seg_t *)Z_Malloc(numsegs * sizeof(seg_t), PU_LEVEL, 0);
 	memset(segs, 0, numsegs * sizeof(seg_t));	
-	data = gi.W_CacheLumpNum(lump, PU_STATIC);
+	data = W_CacheLumpNum(lump, PU_STATIC);
 
 	gls = (glseg_t*) data;
 	li = segs;
@@ -297,7 +310,6 @@ void P_LoadSegsGL(int lump)
 	{
 		li->v1 = &vertexes[gls->v1 & 0x8000? firstGLvertex + (gls->v1 & ~0x8000) : gls->v1];
 		li->v2 = &vertexes[gls->v2 & 0x8000? firstGLvertex + (gls->v2 & ~0x8000) : gls->v2];
-		//gi.Message( "seg %i: linedef %i\n", i, gls->linedef);
 		if(gls->linedef != -1)
 		{
 			ldef = &lines[gls->linedef];
@@ -328,7 +340,7 @@ void P_LoadSegsGL(int lump)
 		li->length = AccurateDistance(li->v2->x - li->v1->x, li->v2->y - li->v1->y);								
 	}
 	
-	gi.Z_Free(data);
+	Z_Free(data);
 }
 
 //==========================================================================
@@ -360,23 +372,21 @@ void P_LoadSubsectors (int lump)
 	mapsubsector_t			*ms;
 	subsector_t             *ss;
 
-	numsubsectors = gi.W_LumpLength (lump) / sizeof(mapsubsector_t);
-#undef subsectors
-	*gi.subsectors = gi.Z_Malloc (numsubsectors*sizeof(subsector_t),PU_LEVEL,0);
-#define subsectors		((subsector_t*)(*gi.subsectors))
+	numsubsectors = W_LumpLength (lump) / sizeof(mapsubsector_t);
+	subsectors = (subsector_t *)Z_Malloc (numsubsectors*sizeof(subsector_t),PU_LEVEL,0);
 	memset(subsectors, 0, numsubsectors*sizeof(subsector_t));
-	data = gi.W_CacheLumpNum (lump,PU_STATIC);
+	data = W_CacheLumpNum (lump,PU_STATIC);
 
 	ms = (mapsubsector_t *)data;
 	memset (subsectors,0, numsubsectors*sizeof(subsector_t));
 	ss = subsectors;
 	for (i=0 ; i<numsubsectors ; i++, ss++, ms++)
 	{
-		ss->numLines = SHORT(ms->numSegs);
+		ss->numlines = SHORT(ms->numSegs);
 		ss->firstline = SHORT(ms->firstseg);
 	}
 
-	gi.Z_Free (data);
+	Z_Free (data);
 }
 
 
@@ -395,12 +405,10 @@ void P_LoadSectors (int lump)
 	mapsector_t             *ms;
 	sector_t                *ss;
 
-	numsectors = gi.W_LumpLength (lump) / sizeof(mapsector_t);
-#undef sectors
-	*gi.sectors = gi.Z_Malloc (numsectors*sizeof(sector_t),PU_LEVEL,0);
-#define	sectors			((sector_t*)(*gi.sectors))
+	numsectors = W_LumpLength (lump) / sizeof(mapsector_t);
+	sectors = (sector_t *)Z_Malloc (numsectors*sizeof(sector_t),PU_LEVEL,0);
 	memset (sectors, 0, numsectors*sizeof(sector_t));
-	data = gi.W_CacheLumpNum (lump,PU_STATIC);
+	data = W_CacheLumpNum (lump,PU_STATIC);
 
 	ms = (mapsector_t *)data;
 	ss = sectors;
@@ -412,8 +420,8 @@ void P_LoadSectors (int lump)
 	{
 		ss->floorheight = SHORT(ms->floorheight)<<FRACBITS;
 		ss->ceilingheight = SHORT(ms->ceilingheight)<<FRACBITS;
-		ss->floorpic = gi.R_FlatNumForName(ms->floorpic);
-		ss->ceilingpic = gi.R_FlatNumForName(ms->ceilingpic);
+		ss->floorpic = R_FlatNumForName(ms->floorpic);
+		ss->ceilingpic = R_FlatNumForName(ms->ceilingpic);
 		ss->lightlevel = SHORT(ms->lightlevel);
 		ss->special = SHORT(ms->special);
 		ss->tag = SHORT(ms->tag);
@@ -428,7 +436,7 @@ void P_LoadSectors (int lump)
 	{
 		W_UseAuxiliary();
 	}*/
-	gi.Z_Free(data);
+	Z_Free(data);
 }
 
 
@@ -447,11 +455,9 @@ void P_LoadNodes (int lump)
 	mapnode_t       *mn;
 	node_t          *no;
 
-	numnodes = gi.W_LumpLength (lump) / sizeof(mapnode_t);
-#undef nodes
-	*gi.nodes = gi.Z_Malloc (numnodes*sizeof(node_t),PU_LEVEL,0);
-#define nodes			((node_t*)(*gi.nodes))
-	data = gi.W_CacheLumpNum (lump,PU_STATIC);
+	numnodes = W_LumpLength (lump) / sizeof(mapnode_t);
+	nodes = (node_t *)Z_Malloc (numnodes*sizeof(node_t),PU_LEVEL,0);
+	data = W_CacheLumpNum (lump,PU_STATIC);
 
 	mn = (mapnode_t *)data;
 	no = nodes;
@@ -468,7 +474,7 @@ void P_LoadNodes (int lump)
 				no->bbox[j][k] = SHORT(mn->bbox[j][k])<<FRACBITS;
 		}
 	}
-	gi.Z_Free (data);
+	Z_Free (data);
 }
 
 //==========================================================================
@@ -486,8 +492,8 @@ void P_LoadThings(int lump)
 	int playerCount;
 	int deathSpotsCount;
 
-	data = gi.W_CacheLumpNum(lump, PU_STATIC);
-	numthings = gi.W_LumpLength(lump)/sizeof(mapthing_t);
+	data = W_CacheLumpNum(lump, PU_STATIC);
+	numthings = W_LumpLength(lump)/sizeof(mapthing_t);
 
 	mt = (mapthing_t *)data;
 	for(i = 0; i < numthings; i++, mt++)
@@ -503,7 +509,7 @@ void P_LoadThings(int lump)
 	}
 	P_CreateTIDList();
 	P_InitCreatureCorpseQueue(false); // false = do NOT scan for corpses
-	gi.Z_Free(data);
+	Z_Free(data);
 
 	if(!deathmatch)
 	{ // Don't need to check deathmatch spots
@@ -512,12 +518,12 @@ void P_LoadThings(int lump)
 	playerCount = 0;
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		playerCount += players[i].plr->ingame;
+		playerCount += players[i].ingame;
 	}
 	deathSpotsCount = deathmatch_p-deathmatchstarts;
 	if(deathSpotsCount < playerCount)
 	{
-		gi.Error("P_LoadThings: Player count (%d) exceeds deathmatch "
+		I_Error("P_LoadThings: Player count (%d) exceeds deathmatch "
 			"spots (%d)", playerCount, deathSpotsCount);
 	}
 }
@@ -538,12 +544,10 @@ void P_LoadLineDefs(int lump)
 	line_t *ld;
 	vertex_t *v1, *v2;
 
-	numlines = gi.W_LumpLength(lump)/sizeof(maplinedef_t);
-#undef lines
-	*gi.lines = gi.Z_Malloc(numlines*sizeof(line_t), PU_LEVEL, 0);
-#define lines			((line_t*)(*gi.lines))
+	numlines = W_LumpLength(lump)/sizeof(maplinedef_t);
+	lines = (line_t *)Z_Malloc(numlines*sizeof(line_t), PU_LEVEL, 0);
 	memset(lines, 0, numlines*sizeof(line_t));
-	data = gi.W_CacheLumpNum(lump, PU_STATIC);
+	data = W_CacheLumpNum(lump, PU_STATIC);
 
 	mld = (maplinedef_t *)data;
 	ld = lines;
@@ -611,7 +615,7 @@ void P_LoadLineDefs(int lump)
 			ld->backsector = 0;
 	}
 
-	gi.Z_Free (data);
+	Z_Free (data);
 }
 
 
@@ -630,12 +634,10 @@ void P_LoadSideDefs (int lump)
 	mapsidedef_t    *msd;
 	side_t                  *sd;
 
-	numsides = gi.W_LumpLength (lump) / sizeof(mapsidedef_t);
-#undef sides
-	*gi.sides = gi.Z_Malloc (numsides*sizeof(side_t),PU_LEVEL,0);
-#define sides			((side_t*)(*gi.sides))
+	numsides = W_LumpLength (lump) / sizeof(mapsidedef_t);
+	sides = (side_t *)Z_Malloc (numsides*sizeof(side_t),PU_LEVEL,0);
 	memset (sides, 0, numsides*sizeof(side_t));
-	data = gi.W_CacheLumpNum (lump,PU_STATIC);
+	data = W_CacheLumpNum (lump,PU_STATIC);
 
 	msd = (mapsidedef_t *)data;
 	sd = sides;
@@ -647,16 +649,16 @@ void P_LoadSideDefs (int lump)
 	{
 		sd->textureoffset = SHORT(msd->textureoffset)<<FRACBITS;
 		sd->rowoffset = SHORT(msd->rowoffset)<<FRACBITS;
-		sd->toptexture = gi.R_TextureNumForName(msd->toptexture);
-		sd->bottomtexture = gi.R_TextureNumForName(msd->bottomtexture);
-		sd->midtexture = gi.R_TextureNumForName(msd->midtexture);
+		sd->toptexture = R_TextureNumForName(msd->toptexture);
+		sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
+		sd->midtexture = R_TextureNumForName(msd->midtexture);
 		sd->sector = &sectors[SHORT(msd->sector)];
 	}
 /*	if(DevMaps)
 	{
 		W_UseAuxiliary();
 	}*/
-	gi.Z_Free(data);
+	Z_Free(data);
 }
 
 /*
@@ -671,9 +673,9 @@ void P_LoadBlockMap (int lump)
 {
 	int             i, count;
 
-	blockmaplump = (short *)gi.W_CacheLumpNum (lump,PU_LEVEL);
+	blockmaplump = (short *)W_CacheLumpNum (lump,PU_LEVEL);
 	blockmap = blockmaplump+4;
-	count = gi.W_LumpLength (lump)/2;
+	count = W_LumpLength (lump)/2;
 	for (i=0 ; i<count ; i++)
 		blockmaplump[i] = SHORT(blockmaplump[i]);
 
@@ -684,7 +686,7 @@ void P_LoadBlockMap (int lump)
 
 // clear out mobj chains
 	count = sizeof(*blocklinks)* bmapwidth*bmapheight;
-	blocklinks = (mobj_t **)gi.Z_Malloc (count,PU_LEVEL, 0);
+	blocklinks = (mobj_t **)Z_Malloc (count,PU_LEVEL, 0);
 	memset (blocklinks, 0, count);
 }
 
@@ -718,14 +720,14 @@ void P_GroupLines (void)
 	{
 		seg = &segs[ss->firstline];
 		ss->sector = NULL;
-		for(j=0; j<ss->numLines; j++, seg++)
+		for(j=0; j<ss->numlines; j++, seg++)
 			if(seg->sidedef)
 			{
 				ss->sector = seg->sidedef->sector;
 				break;
 			}
 		if(ss->sector == NULL)
-			gi.Error("P_GroupLines: Subsector a part of no sector.\n");
+			I_Error("P_GroupLines: Subsector a part of no sector.\n");
 	}
 
 // count number of lines in each sector
@@ -743,24 +745,24 @@ void P_GroupLines (void)
 	}
 
 // build line tables for each sector
-	linebuffer = (line_t **)gi.Z_Malloc (total*4, PU_LEVEL, 0);
+	linebuffer = (line_t **)Z_Malloc (total*4, PU_LEVEL, 0);
 	sector = sectors;
 	for (i=0 ; i<numsectors ; i++, sector++)
 	{
-		gi.ClearBox (bbox);
-		sector->Lines = linebuffer;
+		M_ClearBox(bbox);
+		sector->lines = linebuffer;
 		li = lines;
 		for (j=0 ; j<numlines ; j++, li++)
 		{
 			if (li->frontsector == sector || li->backsector == sector)
 			{
 				*linebuffer++ = li;
-				gi.AddToBox (bbox, li->v1->x, li->v1->y);
-				gi.AddToBox (bbox, li->v2->x, li->v2->y);
+				M_AddToBox(bbox, li->v1->x, li->v1->y);
+				M_AddToBox(bbox, li->v2->x, li->v2->y);
 			}
 		}
-		if (linebuffer - sector->Lines != sector->linecount)
-			gi.Error ("P_GroupLines: miscounted");
+		if (linebuffer - sector->lines != sector->linecount)
+			I_Error ("P_GroupLines: miscounted");
 
 		// set the degenmobj_t to the middle of the bounding box
 		sector->soundorg.x = (bbox[BOXRIGHT]+bbox[BOXLEFT])/2;
@@ -786,203 +788,452 @@ void P_GroupLines (void)
 
 }
 
-//=============================================================================
+//==========================================================================
+//
+// detSideFloat
+//
+// Determines on which side of dline the point is. Returns true if the
+// point is on the line or on the right side.
+//
+//==========================================================================
 
-#if 0
+#pragma optimize("g", off)
 
-// (0,1) = top left; (2,3) = bottom right
-// Assumes sectors are always closed.
-void P_SectorBoundingBox(sector_t *sec, float *bbox)
+inline int detSideFloat(fvertex_t *pnt, fdivline_t *dline)
 {
-	float	x, y;
-	int		i;
-	line_t	*li;
-	
-	bbox[BLEFT] = bbox[BRIGHT] = sec->Lines[0]->v1->x >> FRACBITS;
-	bbox[BTOP] = bbox[BBOTTOM] = sec->Lines[0]->v1->y >> FRACBITS;
-	for(i=1; i<sec->linecount; i++)
-	{
-		li = sec->Lines[i];
-		x = li->v1->x >> FRACBITS;
-		y = li->v1->y >> FRACBITS;
-		if(x < bbox[BLEFT]) bbox[BLEFT] = x;
-		if(x > bbox[BRIGHT]) bbox[BRIGHT] = x;
-		if(y < bbox[BTOP]) bbox[BTOP] = y;
-		if(y > bbox[BBOTTOM]) bbox[BBOTTOM] = y;
-	}
+/*
+            (AY-CY)(BX-AX)-(AX-CX)(BY-AY)
+        s = -----------------------------
+                        L**2
+
+    If s<0      C is left of AB (you can just check the numerator)
+    If s>0      C is right of AB
+    If s=0      C is on AB
+*/
+	// We'll return false if the point c is on the left side.
+
+	//float s = (dline->y-pnt->y)*dline->dx-(dline->x-pnt->x)*dline->dy;
+
+	return ((dline->y-pnt->y)*dline->dx-(dline->x-pnt->x)*dline->dy >= 0);// return 0;
+	//return 1;
 }
 
-// Calculate the reverb settings for each sector.
-void P_CalcSectorReverbs()
+//==========================================================================
+//
+// findIntersectionVertex
+//
+//==========================================================================
+
+// Lines start-end and fdiv must intersect.
+static float findIntersectionVertex(fvertex_t *start, fvertex_t *end, fdivline_t *fdiv, 
+							 fvertex_t *inter)
 {
-	int			i, c, type, k;
-	subsector_t	*sub;
-	sector_t	*sec;
-	seg_t		*seg;
-//	float		volume;
-	float		total, metal, rock, wood, cloth;
+	float ax = start->x, ay = start->y, bx = end->x, by = end->y;
+	float cx = fdiv->x, cy = fdiv->y, dx = cx+fdiv->dx, dy = cy+fdiv->dy;
 
-	//gi.Message( "P_CalcSectorReverbs: begin at %i\n", gi.GetTime());
+	/*
+	        (YA-YC)(XD-XC)-(XA-XC)(YD-YC)
+        r = -----------------------------  (eqn 1)
+            (XB-XA)(YD-YC)-(YB-YA)(XD-XC)
+	*/
 
-	// First determine each subsectors' individual characteristics.
-	for(c=0, sub=subsectors; c<numsubsectors; c++, sub++)
+	float r = ((ay-cy)*(dx-cx)-(ax-cx)*(dy-cy)) / ((bx-ax)*(dy-cy)-(by-ay)*(dx-cx));
+	/*
+	    XI=XA+r(XB-XA)
+        YI=YA+r(YB-YA)
+	*/
+	inter->x = ax + r*(bx-ax);
+	inter->y = ay + r*(by-ay);
+	return r;
+}
+
+#pragma optimize("", on)
+
+//==========================================================================
+//
+// edgeClipper
+//
+//==========================================================================
+
+// Returns a pointer to the list of points. It must be used.
+static fvertex_t *edgeClipper(int *numpoints, fvertex_t *points, int numclippers, fdivline_t *clippers)
+{
+	unsigned char	sidelist[MAX_POLY_SIDES];
+	int				i, k, num = *numpoints;
+
+	// We'll clip the polygon with each of the divlines. The left side of
+	// each divline is discarded.
+	for(i=0; i<numclippers; i++)
 	{
-		// Space is the rough volume of the subsector (bounding box).
-		sub->reverb[SSRD_SPACE] = ((sub->sector->ceilingheight - sub->sector->floorheight) >> FRACBITS)
-			* (sub->bbox[1].x - sub->bbox[0].x) * (sub->bbox[1].y - sub->bbox[0].y);
-		//gi.Message( "sub %i: volume %f Mu\n", c, volume/1e6);
-/*	i = (int) (volume/1e4);
-		if(i < 5) i = 5;
-		if(i > 255) i = 255;
-		sub->reverb[SSRD_SPACE] = i;*/
+		fdivline_t *curclip = clippers+i;
+
+		// First we'll determine the side of each vertex. Points are allowed
+		// to be on the line.
+		for(k=0; k<num; k++)
+		{
+			sidelist[k] = detSideFloat(points+k, curclip);
+		}
 		
-		// The other reverb properties can be found out by taking a look at the
-		// walls surrounding the subsector.
-		total = metal = rock = wood = cloth = 0;
-		for(i=0, seg=segs+sub->firstline; i<sub->numLines; i++, seg++)
+		for(k=0; k<num; k++)
 		{
-			if(!seg->linedef || !seg->sidedef->midtexture) continue;
-			total += seg->length;
-			// The texture of the seg determines its type.
-			type = R_TextureTypeForName(gi.R_TextureNameForNum(seg->sidedef->midtexture));
-			switch(type)
+			int startIdx = k, endIdx = k+1;
+
+			// Check the end index.
+			if(endIdx == num) endIdx = 0;	// Wrap-around.
+
+			// Clipping will happen when the ends are on different sides.
+			if(sidelist[startIdx] != sidelist[endIdx])
 			{
-			case TEXTYPE_METAL:
-				metal += seg->length;
-				break;
+				fvertex_t newvert;
+				// Find the intersection point of intersecting lines.
+				findIntersectionVertex(points+startIdx, points+endIdx,
+					curclip, &newvert);
 
-			case TEXTYPE_ROCK:
-				rock += seg->length;
-				break;
+				// Add the new vertex. Also modify the sidelist.
+				points = (fvertex_t*)realloc(points,(++num)*sizeof(fvertex_t));
+				// -JL- Paranoia
+				if (!points)
+					I_Error("edgeClipper: realloc failed");
+				if(num >= MAX_POLY_SIDES) I_Error("Too many points in carver.\n");
 
-			case TEXTYPE_WOOD:
-				wood += seg->length;
-				break;
+				// Make room for the new vertex.
+				memmove(points+endIdx+1, points+endIdx, 
+					(num - endIdx-1)*sizeof(fvertex_t));
+				memcpy(points+endIdx, &newvert, sizeof(newvert));
 
-			case TEXTYPE_CLOTH:
-				cloth += seg->length;
-				break;
-
-			default:
-				// The type of the texture is unknown. Assume it's wood.
-				wood += seg->length;
+				memmove(sidelist+endIdx+1, sidelist+endIdx, num-endIdx-1);
+				sidelist[endIdx] = 1;
+				
+				// Skip over the new vertex.
+				k++;
 			}
 		}
-		if(!total) continue; // Huh?
-		metal /= total;
-		rock /= total;
-		wood /= total;
-		cloth /= total;
-
-		// Volume.
-		i = (int) ( metal*255 + rock*200 + wood*80 + cloth*5 );
-		if(i < 0) i = 0;
-		if(i > 255) i = 255;
-		sub->reverb[SSRD_VOLUME] = i;
-
-		// Decay time.
-		i = (int) ( metal*255 + rock*160 + wood*50 + cloth*5 );
-		if(i < 0) i = 0;
-		if(i > 255) i = 255;
-		sub->reverb[SSRD_DECAY] = i;
-
-		// High frequency damping.
-		i = (int) ( metal*25 + rock*100 + wood*200 + cloth*255 );
-		if(i < 0) i = 0;
-		if(i > 255) i = 255;
-		sub->reverb[SSRD_DAMPING] = i;
-
-		// The floor and sky also have an effect, especially is there is 
-		// sky involved.
-/*		if(sub->sector->ceilingpic == skyflatnum)
-		{
-			sub->reverb[SSRD_VOLUME] /= 1.5;
-			sub->reverb[SSRD_DECAY] /= 2;
-		}*/
-
-/*		gi.Message( "sub %04i: vol:%3i sp:%3i dec:%3i dam:%3i\n", c, sub->reverb[SSRD_VOLUME],
-			sub->reverb[SSRD_SPACE], sub->reverb[SSRD_DECAY], sub->reverb[SSRD_DAMPING]);*/
+		
+		// Now we must discard the points that are on the wrong side.
+		for(k=0; k<num; k++)
+			if(!sidelist[k])
+			{
+				memmove(points+k, points+k+1, (num - k-1)*sizeof(fvertex_t));
+				memmove(sidelist+k, sidelist+k+1, num - k-1);
+				num--;
+				k--;
+			}
 	}
-	
-	for(c=0, sec=sectors; c<numsectors; c++, sec++)
+	// Screen out consecutive identical points.
+	for(i=0; i<num; i++)
 	{
-		float bbox[4], spaceScatter;
-		unsigned int sectorSpace;
-		P_SectorBoundingBox(sec, bbox);
-		//gi.Message( "sector %i: (%f,%f) - (%f,%f)\n", c, bbox[BLEFT], bbox[BTOP], bbox[BRIGHT], bbox[BBOTTOM]);
-
-		sectorSpace = ((sec->ceilingheight - sec->floorheight) >> FRACBITS)
-			* (bbox[BRIGHT] - bbox[BLEFT]) * (bbox[BBOTTOM] - bbox[BTOP]);
-
-		bbox[BLEFT] -= 128;
-		bbox[BRIGHT] += 128;
-		bbox[BTOP] -= 128;
-		bbox[BBOTTOM] += 128;
-
-		for(i=0, k=0, sub=subsectors; i<numsubsectors; i++, sub++)
+		int previdx = i-1;
+		if(previdx < 0) previdx = num - 1;
+		if(points[i].x == points[previdx].x 
+			&& points[i].y == points[previdx].y)
 		{
-			// Is this subsector close enough?
-			if(sub->midpoint.x > bbox[BLEFT] && sub->midpoint.x < bbox[BRIGHT] 
-				&& sub->midpoint.y > bbox[BTOP] && sub->midpoint.y < bbox[BBOTTOM])
-			{
-				//gi.Message( "- sub %i within, own:%i\n", i, sub->sector == sec);
-				k++; 
-				total = sub->reverb[SSRD_SPACE]/* / 255.0f*/;
-				sec->reverbSpace += total;
-				sec->reverbVolume += sub->reverb[SSRD_VOLUME] / 255.0f * total;
-				sec->reverbDecay += sub->reverb[SSRD_DECAY] / 255.0f * total;
-				sec->reverbDamping += sub->reverb[SSRD_DAMPING] / 255.0f * total;
-			}
+			// This point (i) must be removed.
+			memmove(points+i, points+i+1, sizeof(fvertex_t)*(num-i-1));
+			num--;
+			i--;
 		}
-		if(sec->reverbSpace)
+	}
+	*numpoints = num;
+	return points;
+}
+
+//==========================================================================
+//
+// DD_ConvexCarver
+//
+//==========================================================================
+
+static void DD_ConvexCarver(subsector_t *ssec, int num, divline_t *list)
+{
+	int			numclippers = num+ssec->numlines;
+	fdivline_t	*clippers = (fdivline_t*) Z_Malloc(numclippers*sizeof(fdivline_t), PU_STATIC, 0);
+	int			i, numedgepoints;
+	fvertex_t	*edgepoints;
+	
+	// Convert the divlines to float, in reverse order.
+	for(i=0; i<numclippers; i++)
+	{
+		if(i<num)
 		{
-			spaceScatter = sectorSpace / (float) sec->reverbSpace;
-			// These three are weighted by the space.
-			sec->reverbVolume /= sec->reverbSpace;
-			sec->reverbDecay /= sec->reverbSpace;
-			sec->reverbDamping /= sec->reverbSpace;
+			clippers[i].x = FIX2FLT(list[num-i-1].x);
+			clippers[i].y = FIX2FLT(list[num-i-1].y);
+			clippers[i].dx = FIX2FLT(list[num-i-1].dx);
+			clippers[i].dy = FIX2FLT(list[num-i-1].dy);
 		}
 		else
 		{
-			spaceScatter = 0;
-			sec->reverbVolume = .2f;
-			sec->reverbDecay = .4f;
-			sec->reverbDamping = 1;
+			seg_t *seg = segs + (ssec->firstline+i-num);
+			clippers[i].x = FIX2FLT(seg->v1->x);
+			clippers[i].y = FIX2FLT(seg->v1->y);
+			clippers[i].dx = FIX2FLT(seg->v2->x - seg->v1->x);
+			clippers[i].dy = FIX2FLT(seg->v2->y - seg->v1->y);
 		}
-		//gi.Message( "sector %i: secSp:%fM revSp:%fM scatter: %f\n", c, sectorSpace/1e6f, sec->reverbSpace/1e6f, spaceScatter);
-
-		// If the space is scattered, the reverb effect lessens.
-		sec->reverbSpace /= spaceScatter > .8? 10 : spaceScatter > .6? 4 : 1;
-
-		// Scale the reverb space to a reasonable range, so that 0 is very small and
-		// .99 is very large. 1.0 is only for open areas.
-		sec->reverbSpace /= 120e6;
-		if(sec->reverbSpace > .99) sec->reverbSpace = .99f;
-		
-		if(sec->ceilingpic == skyflatnum) // An open sector?
-		{
-			// An open sector can still be small. In that case the reverb
-			// is diminished a bit.
-			if(sec->reverbSpace > .5) 
-				sec->reverbVolume = 1; // Full volume.
-			else 
-				sec->reverbVolume = .5f; // Small sector, but still open.
-			sec->reverbSpace = 1;
-		}
-		else // A closed sector.
-		{
-			// Large spaces have automatically a bit more audible reverb.
-			sec->reverbVolume += sec->reverbSpace / 4;
-		}
-		if(sec->reverbVolume > 1) sec->reverbVolume = 1;
-/*		sec->reverbDecay /= k/2.0f;
-		sec->reverbDamping /= k;*/
 	}
 
-	//gi.Message( "P_CalcSectorReverbs: end at %i\n", gi.GetTime());
+	// Setup the 'worldwide' polygon.
+	numedgepoints = 4;
+	edgepoints = (fvertex_t*) malloc(numedgepoints*sizeof(fvertex_t));
+	// -JL- Paranoia
+	if (!edgepoints)
+		I_Error("DD_ConvexCarver: malloc failed");
+	
+	edgepoints[0].x = -32768;
+	edgepoints[0].y = 32768;
+	
+	edgepoints[1].x = 32768;
+	edgepoints[1].y = 32768;
+	
+	edgepoints[2].x = 32768;
+	edgepoints[2].y = -32768;
+	
+	edgepoints[3].x = -32768;
+	edgepoints[3].y = -32768;
+
+	// Do some clipping, <snip> <snip>
+	edgepoints = edgeClipper(&numedgepoints, edgepoints, numclippers, clippers);
+	
+	if(!numedgepoints)
+	{
+		printf( "All carved away: subsector %d\n", ssec - subsectors);
+		ssec->numedgeverts = 0;
+		ssec->edgeverts = 0;
+		ssec->origedgeverts = 0;
+		ssec->diffverts = 0;
+	}
+	else
+	{
+		// We need these with dynamic lights.
+		ssec->origedgeverts = (fvertex_t*)Z_Malloc(sizeof(fvertex_t)*numedgepoints, PU_LEVEL, 0);
+		memcpy(ssec->origedgeverts, edgepoints, sizeof(fvertex_t)*numedgepoints);
+		
+		// Find the center point. Do this by first finding the bounding box.
+		ssec->bbox[0].x = ssec->bbox[1].x = edgepoints[0].x;
+		ssec->bbox[0].y = ssec->bbox[1].y = edgepoints[0].y;
+		for(i=1; i<numedgepoints; i++)
+		{
+			if(edgepoints[i].x < ssec->bbox[0].x) ssec->bbox[0].x = edgepoints[i].x;
+			if(edgepoints[i].y < ssec->bbox[0].y) ssec->bbox[0].y = edgepoints[i].y;
+			if(edgepoints[i].x > ssec->bbox[1].x) ssec->bbox[1].x = edgepoints[i].x;
+			if(edgepoints[i].y > ssec->bbox[1].y) ssec->bbox[1].y = edgepoints[i].y;
+		}
+		ssec->midpoint.x = (ssec->bbox[1].x+ssec->bbox[0].x)/2;
+		ssec->midpoint.y = (ssec->bbox[1].y+ssec->bbox[0].y)/2;
+
+		// Allocate memory for the unit modifiers.
+		ssec->diffverts = (fvertex_t*)Z_Malloc(sizeof(fvertex_t)*numedgepoints, PU_LEVEL, 0);
+
+		// Make slight adjustments to patch up those ugly, small gaps.
+		for(i=0; i<numedgepoints; i++)
+		{
+			fvertex_t *dv = ssec->diffverts + i;
+			float dlen; // Delenn?
+			dv->x = edgepoints[i].x - ssec->midpoint.x;
+			dv->y = edgepoints[i].y - ssec->midpoint.y;
+			dlen = (float) sqrt(dv->x*dv->x + dv->y*dv->y);
+			if(dlen) // We don't want a divide-by-zero, now do we?
+			{
+				edgepoints[i].x += (dv->x /= dlen)/3;
+				edgepoints[i].y += (dv->y /= dlen)/3;
+			}
+		}
+
+		ssec->numedgeverts = numedgepoints;
+		ssec->edgeverts = (fvertex_t*)Z_Malloc(sizeof(fvertex_t)*numedgepoints, PU_LEVEL, 0);
+		memcpy(ssec->edgeverts, edgepoints, sizeof(fvertex_t)*numedgepoints);
+	}
+
+	// We're done, free the edgepoints memory.
+	free(edgepoints);
+	Z_Free(clippers);
 }
 
-#endif
+//==========================================================================
+//
+// DD_PolygonizeWithoutCarving
+//
+//==========================================================================
+
+static void DD_PolygonizeWithoutCarving()
+{
+	int			i, j;
+	subsector_t *sub;
+		
+	for(i=0; i<numsubsectors; i++)
+	{
+		sub = subsectors + i;
+		sub->origedgeverts = (fvertex_t*) Z_Malloc(sizeof(fvertex_t) * sub->numlines, PU_LEVEL, 0);
+		sub->numedgeverts = sub->numlines;
+		sub->edgeverts = (fvertex_t*) Z_Malloc(sizeof(fvertex_t) * sub->numlines, PU_LEVEL, 0);
+		for(j=0; j<sub->numlines; j++)
+		{
+			sub->origedgeverts[j].x = segs[sub->firstline + j].v1->x >> FRACBITS;
+			sub->origedgeverts[j].y = segs[sub->firstline + j].v1->y >> FRACBITS;
+			sub->edgeverts[j].x = sub->origedgeverts[j].x;
+			sub->edgeverts[j].y = sub->origedgeverts[j].y;
+		}
+
+		// Find the center point. First calculate the bounding box.
+		sub->bbox[0].x = sub->bbox[1].x = sub->origedgeverts[0].x;
+		sub->bbox[0].y = sub->bbox[1].y = sub->origedgeverts[0].y;
+		for(j=1; j<sub->numlines; j++)
+		{
+			if(sub->origedgeverts[j].x < sub->bbox[0].x) sub->bbox[0].x = sub->origedgeverts[j].x;
+			if(sub->origedgeverts[j].y < sub->bbox[0].y) sub->bbox[0].y = sub->origedgeverts[j].y;
+			if(sub->origedgeverts[j].x > sub->bbox[1].x) sub->bbox[1].x = sub->origedgeverts[j].x;
+			if(sub->origedgeverts[j].y > sub->bbox[1].y) sub->bbox[1].y = sub->origedgeverts[j].y;
+		}
+		sub->midpoint.x = (sub->bbox[1].x + sub->bbox[0].x) / 2;
+		sub->midpoint.y = (sub->bbox[1].y + sub->bbox[0].y) / 2;
+
+		// Allocate memory for the unit modifiers.
+		sub->diffverts = (fvertex_t*) Z_Malloc(sizeof(fvertex_t) * sub->numlines, PU_LEVEL, 0);
+
+		// Make slight adjustments to patch up those ugly, small gaps.
+		for(j=0; j<sub->numlines; j++)
+		{
+			fvertex_t *dv = sub->diffverts + j;
+			float dlen; 
+			dv->x = sub->edgeverts[j].x - sub->midpoint.x;
+			dv->y = sub->edgeverts[j].y - sub->midpoint.y;
+			dlen = (float) sqrt(dv->x*dv->x + dv->y*dv->y);
+			if(dlen) // We don't want a divide-by-zero, now do we?
+			{
+				sub->edgeverts[j].x += (dv->x /= dlen)/3;
+				sub->edgeverts[j].y += (dv->y /= dlen)/3;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+// DD_CreateFloorsAndCeilings
+//
+// Recursively polygonizes all ceilings and floors.
+//
+//==========================================================================
+
+static void DD_CreateFloorsAndCeilings(int bspnode, int numdivlines, divline_t *divlines)
+{
+	node_t		*nod;
+	divline_t	*childlist, *dl;
+	int			childlistsize = numdivlines+1;
+	
+	// If this is a subsector we are dealing with, begin carving with the
+	// given list.
+	if(bspnode & NF_SUBSECTOR)
+	{
+		/*if(bspnum == -1)
+			R_Subsector (0);
+		else
+			R_Subsector (bspnum&(~NF_SUBSECTOR));*/
+		
+		// We have arrived at a subsector. The divline list contains all
+		// the partition lines that carve out the subsector.
+
+		//printf( "subsector %d: %d divlines\n",bspnode&(~NF_SUBSECTOR),numdivlines);
+
+		int ssidx = bspnode & (~NF_SUBSECTOR);
+		//if(ssidx < 10)
+		DD_ConvexCarver(&subsectors[ssidx], numdivlines, divlines);
+
+		// Now we check all the previous subsectors and try to find any
+		// mergeable edgepoints. This may help us reduce cracks and holes.
+		/*for(i=0; i<ssidx; i++)
+			P_MergeSubsectorEdges(subsectors+ssidx, subsectors+i);*/
+
+		//printf( "subsector %d: %d edgeverts\n", ssidx, subsectors[ssidx].numedgeverts);
+		// This leaf is done.
+		return;
+	}
+
+	// Get a pointer to the node.
+	nod = nodes + bspnode;
+
+	// Allocate a new list for each child.
+	childlist = (divline_t*)malloc(childlistsize*sizeof(divline_t));
+	// -JL- Paranoia
+	if (!childlist)
+		I_Error("DD_CreateFloorsAndCeilings: malloc failed");
+
+	// Copy the previous lines, from the parent nodes.
+	if(divlines) memcpy(childlist,divlines,numdivlines*sizeof(divline_t));
+
+	dl = childlist + numdivlines;
+	dl->x = nod->x;
+	dl->y = nod->y;
+	// The right child gets the original line (LEFT side clipped).
+	dl->dx = nod->dx;
+	dl->dy = nod->dy;
+	DD_CreateFloorsAndCeilings(nod->children[0],childlistsize,childlist);
+
+	// The left side. We must reverse the line, otherwise the wrong
+	// side would get clipped.
+	dl->dx = -nod->dx;
+	dl->dy = -nod->dy;
+	DD_CreateFloorsAndCeilings(nod->children[1],childlistsize,childlist);
+
+	// We are finishing with this node, free the allocated list.
+	free(childlist);
+}
+
+//==========================================================================
+//
+// DD_SkyFix
+//
+// Fixing the sky means that for adjacent sky sectors the lower sky is
+// lifted to match the upper sky. The raising only affects rendering,
+// obviously.
+//
+//==========================================================================
+
+static void DD_SkyFix()
+{
+	boolean		adjusted;
+	int			i;
+
+	// We'll do this as long as we must to be sure all the sectors are fixed.
+	do 
+	{
+		adjusted = false;
+
+		// We need to check all the linedefs.
+		for(i=0; i<numlines; i++)
+		{
+			line_t *line = lines + i;
+			sector_t *front = line->frontsector, *back = line->backsector;
+			int fix = 0;
+
+			// The conditions!
+			if(!front || !back) continue;
+			
+			// Both the front and back sectors must have the sky ceiling.
+			if(front->ceilingpic != skyflatnum || back->ceilingpic != skyflatnum) 
+				continue;
+			
+			// Operate on the lower sector.
+			if(front->ceilingheight < back->ceilingheight)
+			{
+				fix = (back->ceilingheight-front->ceilingheight) >> FRACBITS;
+				if(fix > front->skyfix) 
+				{
+					front->skyfix = fix;
+					adjusted = true;
+				}
+			}
+			else if(front->ceilingheight > back->ceilingheight)
+			{
+				fix = (front->ceilingheight-back->ceilingheight) >> FRACBITS;
+				if(fix > back->skyfix) 
+				{
+					back->skyfix = fix;
+					adjusted = true;
+				}
+			}
+		}
+	}
+	while(adjusted);
+}
 
 /*
 =================
@@ -994,7 +1245,7 @@ void P_CalcSectorReverbs()
 
 void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 {
-	int i, setupflags = DDSLF_POLYGONIZE | DDSLF_FIX_SKY | DDSLF_REVERB;
+	int i;
 	int parm;
 	char lumpname[9];
 //	char auxName[128];
@@ -1002,19 +1253,20 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 	mobj_t *mobj;
 
 	// No excessss keypressesss.
-	gi.ClearKeyRepeaters();
+	I_ClearKeyRepeaters();
 	
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
 		players[i].killcount = players[i].secretcount
 			= players[i].itemcount = 0;
 	}
-	players[consoleplayer].plr->viewz = 1; // will be set by player think
+	players[consoleplayer].viewz = 1; // will be set by player think
 
-	gi.Z_FreeTags(PU_LEVEL, PU_PURGELEVEL-1);
-	gi.GL_ResetData();
+	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL-1);
+	GL_ResetData();
+	ConSys_DestroyConversations();
 
-	gi.InitThinkers();
+	P_InitThinkers();
 	leveltime = 0;
 
 /*	if(DevMaps)
@@ -1023,14 +1275,16 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 		W_OpenAuxiliary(auxName);
 	}*/
 	sprintf(lumpname, "MAP%02d", map);
-	lumpnum = gi.W_GetNumForName(lumpname);
+	lumpnum = W_GetNumForName(lumpname);
+
+	ConSys_LoadConversations(lumpname);
 
 //	gi.LoadBlockMap(lumpnum+ML_BLOCKMAP);
 	P_LoadBlockMap(lumpnum+ML_BLOCKMAP);
 
 	// Check for GL lumps.
 	sprintf(lumpname, "GL_MAP%02d", map);
-	gllumpnum = gi.W_CheckNumForName(lumpname);
+	gllumpnum = W_CheckNumForName(lumpname);
 	if(gllumpnum > lumpnum)
 	{
 		// We have GL nodes! Let's load them in.
@@ -1043,8 +1297,7 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 		P_LoadSegsGL(gllumpnum+2);
 		// Polygonize right now; evidently must be done before PO init. 
 		// I guess it mixes up the segs/subsectors somehow (?).
-		setupflags &= ~DDSLF_POLYGONIZE;
-		gi.SetupLevel(DDSLF_POLYGONIZE | DDSLF_DONT_CLIP);
+		DD_PolygonizeWithoutCarving();
 	}
 	else
 	{
@@ -1059,10 +1312,11 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 		P_LoadSubsectors(lumpnum+ML_SSECTORS);
 		P_LoadNodes(lumpnum+ML_NODES);
 		P_LoadSegs(lumpnum+ML_SEGS);
+		DD_CreateFloorsAndCeilings(numnodes-1, 0, NULL);
 	}
 
 	//gi.LoadReject(lumpnum+ML_REJECT);
-	rejectmatrix = (byte *)gi.W_CacheLumpNum(lumpnum+ML_REJECT, PU_LEVEL);
+	rejectmatrix = (byte *)W_CacheLumpNum(lumpnum+ML_REJECT, PU_LEVEL);
 	P_GroupLines();
 	bodyqueslot = 0;
 	po_NumPolyobjs = 0;
@@ -1089,19 +1343,19 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 	{
 		for (i=0 ; i<MAXPLAYERS ; i++)
 		{
-			if (players[i].plr->ingame)
+			if (players[i].ingame)
 			{   // must give a player spot before deathmatchspawn
 				mobj = P_SpawnMobj (playerstarts[0][i].x<<16,
 					playerstarts[0][i].y<<16,0, MT_PLAYER_FIGHTER);
-				players[i].plr->mo = mobj;
+				players[i].mo = mobj;
 				G_DeathMatchSpawnPlayer (i);
 				P_RemoveMobj (mobj);
 			}
 		}
-		parm = gi.CheckParm("-timer");
-		if(parm && parm < gi.Argc()-1)
+		parm = M_CheckParm("-timer");
+		if(parm && parm < Argc()-1)
 		{
-			TimerGame = atoi(gi.Argv(parm+1))*35*60;
+			TimerGame = atoi(Argv(parm+1))*35*60;
 		}
 	}
 
@@ -1113,28 +1367,31 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 
 // Load colormap and set the fullbright flag
 	i = P_GetMapFadeTable(gamemap);
-//	gi.W_ReadLump(i, colormaps);
-	if(i == gi.W_GetNumForName("COLORMAP"))
+	if(i == W_GetNumForName("COLORMAP"))
 	{
 //		LevelUseFullBright = true;
 		// We don't want fog in this case.
-		gi.GL_UseFog(false);
+		GL_UseWhiteFog(false);
 	}
 	else
 	{ // Probably fog ... don't use fullbright sprites
 //		LevelUseFullBright = false;
 		
-		if(i == gi.W_GetNumForName("FOGMAP"))
+		if(i == W_GetNumForName("FOGMAP"))
 		{
 			// Tell the renderer to turn on the fog.
-			gi.GL_UseFog(true);
+			GL_UseWhiteFog(true);
 		}
 	}
 
-	gi.SetupLevel(setupflags);
+	DD_SkyFix();
+	S_CalcSectorReverbs();
+	// Create a big enough dlBlockLinks.
+	DL_InitBlockMap();	
+	map_rendered = false;
 
 	// preload graphics
-	if(precache) gi.PrecacheLevel ();
+	if(precache) R_PrecacheLevel();
 
 	// Check if the level is a lightning level
 	P_InitLightning();
@@ -1144,9 +1401,39 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 	S_StartSong(gamemap, true);
 
 	// Print a message in the console about this level.
-	gi.Message( "Map %d (%d): %s\n", P_GetMapWarpTrans(map), map, P_GetMapName(map));
+	ST_Message( "Map %d (%d): %s\n", P_GetMapWarpTrans(map), map, P_GetMapName(map));
 }
 
+//==========================================================================
+//
+//	DD_ValidateLevel
+//
+//	Make sure all texture references in the level data are good.
+//
+//==========================================================================
+
+void DD_ValidateLevel(void)
+{
+	int		i;
+	//mobj_t	*iter;
+
+	for(i=0; i<numsectors; i++)
+	{
+		sector_t *sec = sectors + i;
+		if(sec->ceilingpic > numflats-1) sec->ceilingpic = 0;
+		if(sec->floorpic > numflats-1) sec->floorpic = 0;
+		// Update mobj floorpics.
+	/*	for(iter=sec->thinglist; iter; iter=iter->snext)
+			iter->floorpic = sec->floorpic;*/
+	}
+	for(i=0; i<numsides; i++)
+	{
+		side_t *side = sides + i;
+		if(side->toptexture > numtextures-1) side->toptexture = 0;
+		if(side->midtexture > numtextures-1) side->midtexture = 0;
+		if(side->bottomtexture > numtextures-1) side->bottomtexture = 0;
+	}
+}
 //==========================================================================
 //
 // InitMapInfo
@@ -1169,13 +1456,13 @@ static void InitMapInfo(void)
 	info->warpTrans = 0;
 	info->nextMap = 1; // Always go to map 1 if not specified
 	info->cdTrack = 1;
-	info->sky1Texture = gi.R_TextureNumForName(DEFAULT_SKY_NAME);
+	info->sky1Texture = R_TextureNumForName(DEFAULT_SKY_NAME);
 	info->sky2Texture = info->sky1Texture;
 	info->sky1ScrollDelta = 0;
 	info->sky2ScrollDelta = 0;
 	info->doubleSky = false;
 	info->lightning = false;
-	info->fadetable = gi.W_GetNumForName(DEFAULT_FADE_TABLE);
+	info->fadetable = W_GetNumForName(DEFAULT_FADE_TABLE);
 	strcpy(info->name, UNKNOWN_MAP_NAME);
 
 	for(map=0; map<99; map++) MapInfo[map].warpTrans = 0;
@@ -1242,13 +1529,13 @@ static void InitMapInfo(void)
 					break;
 				case MCMD_SKY1:
 					SC_MustGetString();
-					info->sky1Texture = gi.R_TextureNumForName(sc_String);
+					info->sky1Texture = R_TextureNumForName(sc_String);
 					SC_MustGetNumber();
 					info->sky1ScrollDelta = sc_Number<<8;
 					break;
 				case MCMD_SKY2:
 					SC_MustGetString();
-					info->sky2Texture = gi.R_TextureNumForName(sc_String);
+					info->sky2Texture = R_TextureNumForName(sc_String);
 					SC_MustGetNumber();
 					info->sky2ScrollDelta = sc_Number<<8;
 					break;
@@ -1260,7 +1547,7 @@ static void InitMapInfo(void)
 					break;
 				case MCMD_FADETABLE:
 					SC_MustGetString();
-					info->fadetable = gi.W_GetNumForName(sc_String);
+					info->fadetable = W_GetNumForName(sc_String);
 					break;
 				case MCMD_CD_STARTTRACK:
 				case MCMD_CD_END1TRACK:

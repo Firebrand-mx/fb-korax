@@ -18,12 +18,12 @@ class KMenuChoice_SkyDetail:public KMenuUIChoiceSlider
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_SKY_DETAIL));
+		SetValue(skyDetail);
 	}
 
 	void SaveSetting(void)
 	{
-		gi.SkyParams(DD_SKY, DD_COLUMNS, int(GetValue()));
+		R_SkyParams(DD_SKY, DD_COLUMNS, int(GetValue()));
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_SkyDetail);
@@ -51,12 +51,12 @@ class KMenuChoice_Mipmapping:public KMenuUIChoiceEnum
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_MIPMAPPING));
+		SetValue(mipmapping);
 	}
 
 	void SaveSetting(void)
 	{
-		gi.GL_TexFilterMode(DD_TEXTURES, GetValue());
+		GL_TextureFilterMode(DD_TEXTURES, GetValue());
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_Mipmapping);
@@ -78,12 +78,12 @@ class KMenuChoice_SmoothGfx:public KMenuChoice_OnOff
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_SMOOTH_IMAGES));
+		SetValue(linearRaw);
 	}
 
 	void SaveSetting(void)
 	{
-		gi.GL_TexFilterMode(DD_RAWSCREENS, GetValue());
+		GL_TextureFilterMode(DD_RAWSCREENS, GetValue());
 	}
 
 };
@@ -148,39 +148,19 @@ class KMenuScreenGraphics:public KMenuScreen
 	{
 		ChoiceStartX = 218;
 		ChoiceStartY = 150;
+		Choices[0] = KMenuChoice_SkyDetail::StaticClass();
+		Choices[1] = KMenuChoice_Mipmapping::StaticClass();
+		Choices[2] = KMenuChoice_SmoothGfx::StaticClass();
+		Choices[3] = KMenuChoice_UpdateBorders::StaticClass();
+		Choices[4] = KMenuChoice_TexQuality::StaticClass();
 		ButtonDefaults[0] = FButtonDefault("FORCE TEX RELOAD", MA_Custom);
 		ButtonDefaults[1] = FButtonDefault("EFFECTS...", MA_Menu, MENU_EFFECTS);
 		ButtonDefaults[2] = FButtonDefault("RESOLUTION...", MA_Menu, MENU_RESOLUTION);
 	}
 
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_SkyDetail, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_Mipmapping, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_SmoothGfx, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_UpdateBorders, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_TexQuality, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-	}
-
 	void ProcessCustomMenuAction(int Key)
 	{
-		gi.GL_ClearTextureMem();
+		GL_ClearTextureMemory();
 		P_SetMessage(&players[consoleplayer], "ALL TEXTURES DELETED", true);
 	}
 };

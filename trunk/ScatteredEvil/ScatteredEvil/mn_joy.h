@@ -87,27 +87,10 @@ class KMenuScreenJoyConfig:public KMenuScreen
 	{
 		ChoiceStartX = 240;
 		ChoiceStartY = 190;
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-	
-		Choice = NewWindow(KMenuChoice_JoySensitivity, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_JoyLook, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_InverseJoyLook, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_POVLook, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
+		Choices[0] = KMenuChoice_JoySensitivity::StaticClass();
+		Choices[1] = KMenuChoice_JoyLook::StaticClass();
+		Choices[2] = KMenuChoice_InverseJoyLook::StaticClass();
+		Choices[3] = KMenuChoice_POVLook::StaticClass();
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenJoyConfig);

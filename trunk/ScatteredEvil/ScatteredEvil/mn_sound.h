@@ -17,12 +17,12 @@ class KMenuChoice_SfxVolume:public KMenuUIChoiceSlider
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_SFX_VOLUME));
+		SetValue(snd_SfxVolume);
 	}
 
 	void SaveSetting(void)
 	{
-		gi.SetSfxVolume(int(GetValue()));
+		I_SetSfxVolume(int(GetValue()));
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_SfxVolume);
@@ -46,12 +46,12 @@ class KMenuChoice_MidiVolume:public KMenuUIChoiceSlider
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_MIDI_VOLUME));
+		SetValue(snd_MusicVolume);
 	}
 
 	void SaveSetting(void)
 	{
-		gi.SetMIDIVolume(int(GetValue()));
+		I_SetMusicVolume(int(GetValue()));
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_MidiVolume);
@@ -75,12 +75,12 @@ class KMenuChoice_CDAudioVolume:public KMenuUIChoiceSlider
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.CD(DD_GET_VOLUME, 0));
+		SetValue(I_CDControl(DD_GET_VOLUME, 0));
 	}
 
 	void SaveSetting(void)
 	{
-		gi.CD(DD_SET_VOLUME, int(GetValue()));
+		I_CDControl(DD_SET_VOLUME, int(GetValue()));
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_CDAudioVolume);
@@ -105,13 +105,13 @@ class KMenuChoice_MusicDevice:public KMenuUIChoiceEnum
 
 	void LoadSetting(void)
 	{
-		SetValue(gi.Get(DD_MUSIC_DEVICE));
+		SetValue(snd_MusicDevice);
 	}
 
 	void SaveSetting(void)
 	{
 		// Setup the music.
-		gi.SetMusicDevice(GetValue());
+		I_SetMusicDevice(GetValue());
 	
 		// Restart the song of the current map.
 		S_StartSong(gamemap, true);
@@ -186,14 +186,14 @@ class KMenuChoice_SFXFrequency:public KMenuUIChoiceEnum
 
 	void LoadSetting(void)
 	{
-		int val = *(int*) gi.GetCVar("s_resample")->ptr;
+		int val = *(int*)CvarGet("s_resample")->ptr;
 		SetValue(val < 3 ? val - 1 : val - 2);
 	}
 
 	void SaveSetting(void)
 	{
 		int val = GetValue();
-		*(int*) gi.GetCVar("s_resample")->ptr = val < 2 ? val + 1 : val + 2;
+		*(int*)CvarGet("s_resample")->ptr = val < 2 ? val + 1 : val + 2;
 	}
 
 };
@@ -231,43 +231,14 @@ class KMenuScreenSound:public KMenuScreen
 	{
 		ChoiceStartX = 230;
 		ChoiceStartY = 160;
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_SfxVolume, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_MidiVolume, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_CDAudioVolume, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_MusicDevice, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_3DSounds, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_ReverbVolume, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_SFXFrequency, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_SFX16Bit, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
+		Choices[0] = KMenuChoice_SfxVolume::StaticClass();
+		Choices[1] = KMenuChoice_MidiVolume::StaticClass();
+		Choices[2] = KMenuChoice_CDAudioVolume::StaticClass();
+		Choices[3] = KMenuChoice_MusicDevice::StaticClass();
+		Choices[4] = KMenuChoice_3DSounds::StaticClass();
+		Choices[5] = KMenuChoice_ReverbVolume::StaticClass();
+		Choices[6] = KMenuChoice_SFXFrequency::StaticClass();
+		Choices[7] = KMenuChoice_SFX16Bit::StaticClass();
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenSound);

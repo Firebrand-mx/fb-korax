@@ -18,6 +18,7 @@
 #include "r_local.h"
 #include "p_local.h"    // for P_AproxDistance
 #include "sounds.h"
+#include "settings.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -49,12 +50,14 @@ void S_StopSoundID(int sound_id);//, int priority);
 //extern void **lumpcache;
 //extern HWND hWndMain;
 
+extern	boolean		MusicPaused;
+
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-#define i_CDMusic		( gi.Get(DD_MUSIC_DEVICE)==2 )
+#define i_CDMusic		( snd_MusicDevice == 2 )
 
 int			s_CDTrack = 0;
-boolean		MusicPaused, reverbDebug = false;
+boolean		reverbDebug = false;
 
 //int snd_Channels=8;
 int			snd_3D = 0;
@@ -88,7 +91,6 @@ static	int			numChannels = 0;
 
 int					RegisteredSong = 0; //the current registered song.
 static	int			NextCleanup;
-//static	boolean		MusicPaused;
 int					Mus_Song = -1;
 static	int			Mus_LumpNum;
 static	void		*Mus_SndPtr;
@@ -104,7 +106,7 @@ extern	int			startmap;
 
 int S_GetSfxLumpNum(sfxinfo_t *sound)
 {
-	return gi.W_GetNumForName(sound->lumpname);	
+	return W_GetNumForName(sound->lumpname);	
 }
 
 //==========================================================================
@@ -140,14 +142,14 @@ void S_StartSong(int song, boolean loop)
 		{
 			track = P_GetMapCDTrack(gamemap);
 		}
-		if(track == gi.CD(DD_GET_CURRENT_TRACK,0) && gi.CD(DD_GET_TIME_LEFT,0) > 0
-			&& gi.CD(DD_STATUS,0) == DD_PLAYING)
+		if(track == I_CDControl(DD_GET_CURRENT_TRACK,0) && I_CDControl(DD_GET_TIME_LEFT,0) > 0
+			&& I_CDControl(DD_STATUS,0) == DD_PLAYING)
 		{
 			// The chosen track is already playing.
 			return;
 		}
-		if(gi.CD(loop? DD_PLAY_LOOP : DD_PLAY, track))
-			gi.conprintf( "Error starting CD play (track %d).\n", track);
+		if(I_CDControl(loop? DD_PLAY_LOOP : DD_PLAY, track))
+			CON_Printf( "Error starting CD play (track %d).\n", track);
 	}
 	else
 	{
@@ -157,14 +159,14 @@ void S_StartSong(int song, boolean loop)
 		}
 		if(RegisteredSong)
 		{
-			gi.StopSong();
+			I_StopSong();
 			if(UseSndScript)
 			{
-				gi.Z_Free(Mus_SndPtr);
+				Z_Free(Mus_SndPtr);
 			}
 			else
 			{
-				gi.W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
+				W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
 			}
 			RegisteredSong = 0;
 		}
@@ -177,14 +179,14 @@ void S_StartSong(int song, boolean loop)
 		{
 			char name[128];
 			sprintf(name, "%s%s.lmp", ArchivePath, songLump);
-			gi.ReadFile(name, (byte **)&Mus_SndPtr);
+			M_ReadFile(name, (byte **)&Mus_SndPtr);
 		}
 		else
 		{
-			Mus_LumpNum = gi.W_GetNumForName(songLump);
-			Mus_SndPtr = gi.W_CacheLumpNum(Mus_LumpNum, PU_MUSIC);
+			Mus_LumpNum = W_GetNumForName(songLump);
+			Mus_SndPtr = W_CacheLumpNum(Mus_LumpNum, PU_MUSIC);
 		}
-		RegisteredSong = gi.PlaySong(Mus_SndPtr, gi.W_LumpLength(Mus_LumpNum), loop);
+		RegisteredSong = I_PlaySong(Mus_SndPtr, W_LumpLength(Mus_LumpNum), loop);
 		Mus_Song = song;
 	}
 }
@@ -233,11 +235,11 @@ void S_StartSongName(char *songLump, boolean loop)
 			cdTrack = P_GetCDStartTrack();
 		}
 */
-		if(!cdTrack || (cdTrack == gi.CD(DD_GET_CURRENT_TRACK,0) && gi.CD(DD_GET_TIME_LEFT,0) > 0))
+		if(!cdTrack || (cdTrack == I_CDControl(DD_GET_CURRENT_TRACK,0) && I_CDControl(DD_GET_TIME_LEFT,0) > 0))
 		{
 			return;
 		}
-		if(!gi.CD(loop? DD_PLAY_LOOP : DD_PLAY, cdTrack))
+		if(!I_CDControl(loop? DD_PLAY_LOOP : DD_PLAY, cdTrack))
 		{
 			// Clear the user selection?
 			s_CDTrack = false;
@@ -248,14 +250,14 @@ void S_StartSongName(char *songLump, boolean loop)
 	{
 		if(RegisteredSong)
 		{
-			gi.StopSong();
+			I_StopSong();
 			if(UseSndScript)
 			{
-				gi.Z_Free(Mus_SndPtr);
+				Z_Free(Mus_SndPtr);
 			}
 			else
 			{
-				gi.W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
+				W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
 			}
 			RegisteredSong = 0;
 		}
@@ -263,14 +265,14 @@ void S_StartSongName(char *songLump, boolean loop)
 		{
 			char name[128];
 			sprintf(name, "%s%s.lmp", ArchivePath, songLump);
-			gi.ReadFile(name, (byte **)&Mus_SndPtr);
+			M_ReadFile(name, (byte **)&Mus_SndPtr);
 		}
 		else
 		{
-			Mus_LumpNum = gi.W_GetNumForName(songLump);
-			Mus_SndPtr = gi.W_CacheLumpNum(Mus_LumpNum, PU_MUSIC);
+			Mus_LumpNum = W_GetNumForName(songLump);
+			Mus_SndPtr = W_CacheLumpNum(Mus_LumpNum, PU_MUSIC);
 		}
-		RegisteredSong = gi.PlaySong(Mus_SndPtr, gi.W_LumpLength(Mus_LumpNum), loop);
+		RegisteredSong = I_PlaySong(Mus_SndPtr, W_LumpLength(Mus_LumpNum), loop);
 		Mus_Song = -1;
 	}
 }
@@ -310,7 +312,7 @@ void S_StopChannel(channel_t *chan)
 {
 	if(chan->handle)
 	{
-		gi.StopSound(chan->handle);
+		SND_StopSound(chan->handle);
 		if(S_sfx[chan->sound_id].usefulness > 0)
 			S_sfx[chan->sound_id].usefulness--;
 		memset(chan, 0, sizeof(*chan));
@@ -331,7 +333,7 @@ channel_t *S_GetFreeChannel(mobj_t *for_mobj)
 	for(i=0; i<numChannels; i++)
 	{
 		// Is this a free channel?
-		if(!chan && !gi.SoundIsPlaying(Channel[i].handle))
+		if(!chan && !SND_SoundIsPlaying(Channel[i].handle))
 		{
 			// This will be used if a clear channel is needed.
 			chan = Channel + i;
@@ -354,13 +356,6 @@ channel_t *S_GetFreeChannel(mobj_t *for_mobj)
 	if(chan)
 	{
 		// Make sure the sound is stopped.
-		/*gi.StopSound(chan->handle);
-		if(chan->handle)
-		{
-			if(S_sfx[chan->sound_id].usefulness > 0)
-				S_sfx[chan->sound_id].usefulness--;
-		}
-		memset(chan, 0, sizeof(*chan));*/
 		S_StopChannel(chan);
 		return chan;
 	}	
@@ -368,7 +363,7 @@ channel_t *S_GetFreeChannel(mobj_t *for_mobj)
 	Channel = (channel_t *)realloc(Channel, sizeof(channel_t) * (++numChannels));
 	// -JL- Paranoia
 	if (!Channel)
-		gi.Error("S_GetFreeChannel: realloc failed");
+		I_Error("S_GetFreeChannel: realloc failed");
 	chan = Channel + numChannels-1;
 	memset(chan, 0, sizeof(channel_t));
 	return chan;
@@ -383,7 +378,7 @@ void S_FillSound3D(mobj_t *mo, sound3d_t *desc)
 	desc->pos[VY] = mo->z;
 	desc->pos[VZ] = mo->y;
 
-	if(mo == players[displayplayer].plr->mo)
+	if(mo == players[displayplayer].mo)
 	{
 		int tableAngle = mo->angle >> ANGLETOFINESHIFT;
 		int xoff = finecosine[tableAngle] * 32, yoff = finesine[tableAngle] * 32;
@@ -437,7 +432,7 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 	int sep;
 //	int angle;
 //	int chan;
-	mobj_t *plrmo = players[displayplayer].plr->mo;
+	mobj_t *plrmo = players[displayplayer].mo;
 
 	static int sndcount = 0;
 //#endif
@@ -449,13 +444,10 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 	// We aren't playing any sounds now.
 	//return;
 
-	if(sound_id == 0 || gi.Get(DD_SFX_VOLUME) == 0)
+	if(sound_id == 0 || snd_SfxVolume == 0)
 		return;
 
 	if(volume == 0)	return;
-
-	/*gi.Message( "Play %s, origin %p, vol %i, use %i.\n", S_sfx[sound_id].tagName, origin, volume,
-		S_sfx[sound_id].usefulness);*/
 
 	// calculate the distance before other stuff so that we can throw out
 	// sounds that are beyond the hearing range.
@@ -499,7 +491,7 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 			}
 		}
 		if(dist >= maxdist) return; // Don't replace a close sound with a far one.
-		gi.StopSound(channel->handle);
+		SND_StopSound(channel->handle);
 	}
 	else
 	{
@@ -513,11 +505,11 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 			{
 				char name[128];
 				sprintf(name, "%s%s.lmp", ArchivePath, S_sfx[sound_id].lumpname);
-				gi.ReadFile(name, (byte **)&S_sfx[sound_id].snd_ptr);
+				M_ReadFile(name, (byte **)&S_sfx[sound_id].snd_ptr);
 			}
 			else
 			{
-				S_sfx[sound_id].snd_ptr = gi.W_CacheLumpNum(S_sfx[sound_id].lumpnum,PU_SOUND);
+				S_sfx[sound_id].snd_ptr = W_CacheLumpNum(S_sfx[sound_id].lumpnum,PU_SOUND);
 			}
 		}
 		if(S_sfx[sound_id].usefulness < 0)
@@ -553,9 +545,9 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 		S_FillSound3D(origin, &desc);
 
 		if(!channel->handle)
-			channel->handle = gi.Play3DSound(S_sfx[sound_id].snd_ptr, &desc);
+			channel->handle = SND_Play3DSound(S_sfx[sound_id].snd_ptr, &desc);
 		else
-			gi.Update3DSound(channel->handle, &desc);
+			SND_Update3DSound(channel->handle, &desc);
 	}
 	else // Play the sound in 2D.
 	{
@@ -567,16 +559,16 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 		else
 		{
 			vol = (SoundCurve[dist]*(15*8)*channel->volume)>>14;
-			sep = CalcSep(plrmo, origin, gi.Get(DD_VIEWANGLE));
+			sep = CalcSep(plrmo, origin, viewangle);
 		}
 		if(!channel->handle)
 		{
-			channel->handle = gi.PlaySound(S_sfx[sound_id].snd_ptr, (vol*1000)/127,
+			channel->handle = SND_PlaySound(S_sfx[sound_id].snd_ptr, (vol*1000)/127,
 				(sep*500)/128, (channel->pitch*1000)/128);
 		}
 		else
 		{
-			gi.UpdateSound(channel->handle, (vol*1000)/127, (sep*500)/128, 
+			SND_UpdateSound(channel->handle, (vol*1000)/127, (sep*500)/128, 
 				(channel->pitch*1000)/128);
 		}
 	}
@@ -593,68 +585,17 @@ void S_StartSoundAtVolume(mobj_t *origin, int sound_id, int volume)
 //
 //==========================================================================
 
-//#ifndef USEA3D
-void S_StopSoundID(int sound_id)//, int priority)
+void S_StopSoundID(int sound_id)
 {
 	int		i;
 
 	for(i=0; i<numChannels; i++)
 		if(Channel[i].sound_id == sound_id && Channel[i].mo)
 		{
-			/*gi.StopSound(Channel[i].handle);
-			if(S_sfx[Channel[i].sound_id].usefulness > 0)
-				S_sfx[Channel[i].sound_id].usefulness--;
-			Channel[i].handle = 0;
-			Channel[i].mo = NULL;
-			Channel[i].sound_id = 0;*/
 			S_StopChannel(Channel + i);
 			break;
 		}
-/*	int i;
-	int lp; //least priority
-	int found;
-
-	if(S_sfx[sound_id].numchannels == -1)
-	{
-		return(true);
-	}
-	lp = -1; //denote the argument sound_id
-	found = 0;
-	for(i=0; i<snd_Channels; i++)
-	{
-		if(Channel[i].sound_id == sound_id && Channel[i].mo)
-		{
-			found++; //found one.  Now, should we replace it??
-			if(priority >= Channel[i].priority)
-			{ // if we're gonna kill one, then this'll be it
-				lp = i;
-				priority = Channel[i].priority;
-			}
-		}
-	}
-	if(found < S_sfx[sound_id].numchannels)
-	{
-		return(true);
-	}
-	else if(lp == -1)
-	{
-		return(false); // don't replace any sounds
-	}
-	if(Channel[lp].handle)
-	{
-		if(gi.SoundIsPlaying(Channel[lp].handle))
-		{
-			gi.StopSound(Channel[lp].handle);
-		}
-		if(S_sfx[Channel[lp].sound_id].usefulness > 0)
-		{
-			S_sfx[Channel[lp].sound_id].usefulness--;
-		}
-		Channel[lp].mo = NULL;
-	}
-	return(true);*/
 }
-//#endif
 
 //==========================================================================
 //
@@ -725,13 +666,11 @@ void S_PauseSound(void)
 	S_StopAllSound();
 	if(i_CDMusic)
 	{
-		//I_CDMusStop();
-		gi.CD(DD_STOP,0);
+		I_CDControl(DD_STOP,0);
 	}
 	else
 	{
-		//I_PauseSong();
-		gi.PauseSong();
+		I_PauseSong();
 	}
 }
 
@@ -745,11 +684,11 @@ void S_ResumeSound(void)
 {
 	if(i_CDMusic)
 	{
-		gi.CD(DD_RESUME, 0);
+		I_CDControl(DD_RESUME, 0);
 	}
 	else
 	{
-		gi.ResumeSong();
+		I_ResumeSong();
 	}
 }
 
@@ -769,7 +708,7 @@ void S_UpdateSounds(mobj_t *listener)
 	int absx;
 	int absy;
 	
-	if(!listener || gi.Get(DD_SFX_VOLUME) == 0) return;
+	if(!listener || snd_SfxVolume == 0) return;
 
 	// Update the listener first.
 	if(snd_3D)
@@ -783,7 +722,7 @@ void S_UpdateSounds(mobj_t *listener)
 		lis.mov[VY] = listener->momz * 35;
 		lis.mov[VZ] = listener->momy * 35;
 		lis.yaw = -(listener->angle / (float) ANGLE_MAX * 360 - 90);
-		lis.pitch = listener->player? LOOKDIR2DEG(listener->player->plr->lookdir) : 0;
+		lis.pitch = listener->player? LOOKDIR2DEG(listener->player->lookdir) : 0;
 		// If the sector changes, so does the reverb.
 		if(listener->subsector->sector != listenerSector && snd_ReverbFactor > 0)
 		{
@@ -795,7 +734,7 @@ void S_UpdateSounds(mobj_t *listener)
 			lis.reverb.damping = listenerSector->reverb[SRD_DAMPING];
 			if(reverbDebug)
 			{
-				gi.Message( "Sec %i: s:%.2f dc:%.2f v:%.2f dm:%.2f\n", 
+				ST_Message( "Sec %i: s:%.2f dc:%.2f v:%.2f dm:%.2f\n", 
 					listenerSector-sectors, lis.reverb.space, 
 					lis.reverb.decay, lis.reverb.volume, lis.reverb.damping);
 			}
@@ -805,7 +744,7 @@ void S_UpdateSounds(mobj_t *listener)
 			listenerSector = NULL;
 			lis.flags |= DDLISTENERF_DISABLE_REVERB;
 		}
-		gi.UpdateListener(&lis);
+		SND_UpdateListener(&lis);
 	}
 	
 	// Update any Sequences
@@ -829,7 +768,7 @@ void S_UpdateSounds(mobj_t *listener)
 			{
 				if(S_sfx[i].usefulness == 0 && S_sfx[i].snd_ptr)
 				{
-					gi.W_ChangeCacheTag(S_sfx[i].lumpnum, PU_CACHE);
+					W_ChangeCacheTag(S_sfx[i].lumpnum, PU_CACHE);
 					S_sfx[i].usefulness = -1;
 					S_sfx[i].snd_ptr = NULL;
 				}
@@ -842,16 +781,8 @@ void S_UpdateSounds(mobj_t *listener)
 		if(!Channel[i].handle || !Channel[i].sound_id) continue; // Empty channel.
 
 		// Take care of stopped sounds.
-		if(!gi.SoundIsPlaying(Channel[i].handle))
+		if(!SND_SoundIsPlaying(Channel[i].handle))
 		{
-			/*if(S_sfx[Channel[i].sound_id].usefulness > 0)
-			{
-				S_sfx[Channel[i].sound_id].usefulness--;
-			}
-			gi.StopSound(Channel[i].handle); // Free it.
-			Channel[i].handle = 0;
-			Channel[i].mo = NULL;
-			Channel[i].sound_id = 0;*/
 			S_StopChannel(Channel + i);
 			continue;
 		}
@@ -875,7 +806,7 @@ void S_UpdateSounds(mobj_t *listener)
 				desc.flags = 0;
 				// Fill in position and velocity.
 				S_FillSound3D(Channel[i].mo, &desc);
-				gi.Update3DSound(Channel[i].handle, &desc);
+				SND_Update3DSound(Channel[i].handle, &desc);
 			}
 			else // 2D mode.
 			{
@@ -899,18 +830,9 @@ void S_UpdateSounds(mobj_t *listener)
 				}
 				else
 				{
-/*					angle = R_PointToAngle2(listener->x, listener->y,
-						Channel[i].mo->x, Channel[i].mo->y);
-					angle = (angle - gi.Get(DD_VIEWANGLE)) >> 24;
-
-					sep = angle*2-128;
-					if(sep < 64)
-						sep = -sep;
-					if(sep > 192)
-						sep = 512-sep;*/
-					sep = CalcSep(listener, Channel[i].mo, gi.Get(DD_VIEWANGLE));
+					sep = CalcSep(listener, Channel[i].mo, viewangle);
 				}
-				gi.UpdateSound(Channel[i].handle, (vol*1000)/127, (500*sep)/128, 
+				SND_UpdateSound(Channel[i].handle, (vol*1000)/127, (500*sep)/128, 
 					(1000*Channel[i].pitch)/128);
 
 				/*priority = S_sfx[Channel[i].sound_id].priority;
@@ -940,21 +862,10 @@ void S_UpdateSounds(mobj_t *listener)
 
 void S_Init(void)
 {
-	SoundCurve = (byte *)gi.W_CacheLumpName("SNDCURVE", PU_STATIC);
-//      SoundCurve = Z_Malloc(MAX_SND_DIST, PU_STATIC, NULL);
+	SoundCurve = (byte *)W_CacheLumpName("SNDCURVE", PU_STATIC);
 
-/*#ifndef USEA3D
-	if(snd_Channels > 16)
-	{
-		snd_Channels = 16;
-	}
-	//I_SetChannels(snd_Channels);
-#else*/
 	numChannels = 0;
 	Channel = NULL;
-//#endif
-
-	//gi.SetMIDIVolume(snd_MusicVolume*16);
 }
 
 //==========================================================================
@@ -983,8 +894,8 @@ void S_GetChannelInfo(SoundInfo_t *s)
 		c->name = S_sfx[c->id].lumpname;
 		c->mo = Channel[i].mo;
 		if(c->mo)
-			c->distance = P_AproxDistance(c->mo->x-gi.Get(DD_VIEWX), 
-			c->mo->y-gi.Get(DD_VIEWY))>>FRACBITS;
+			c->distance = P_AproxDistance(c->mo->x-viewx, 
+			c->mo->y-viewy)>>FRACBITS;
 		else
 			c->distance = -1;
 	}
@@ -1002,48 +913,10 @@ boolean S_GetSoundPlayingInfo(mobj_t *mobj, int sound_id)
 
 	for(i=0; i<numChannels; i++)
 		if(Channel[i].sound_id == sound_id && Channel[i].mo == mobj)
-			if(gi.SoundIsPlaying(Channel[i].handle))
+			if(SND_SoundIsPlaying(Channel[i].handle))
 				return true;
 	return false;
 }
-
-//==========================================================================
-//
-// S_SetMusicVolume
-//
-//==========================================================================
-
-/*void S_SetMusicVolume(int vol)
-{
-	if(i_CDMusic)
-	{
-		//I_CDMusSetVolume(snd_MusicVolume*16); // 0-255
-		gi.CD(DD_SET_VOLUME, vol);//snd_MusicVolume*16);
-	}
-	else
-	{
-		//I_SetMusicVolume(snd_MusicVolume);
-		gi.SetMIDIVolume(vol);//snd_MusicVolume);
-	}
-	if(vol == 0)
-	{
-		if(!i_CDMusic)
-		{
-			//I_PauseSong();
-			gi.PauseSong();
-		}
-		MusicPaused = true;
-	}
-	else if(MusicPaused)
-	{
-		if(!i_CDMusic)
-		{
-			//I_ResumeSong();
-			gi.ResumeSong();
-		}
-		MusicPaused = false;
-	}
-}*/
 
 //==========================================================================
 //
@@ -1076,7 +949,7 @@ void S_Reset(void)
 	int		i;
 
 	S_StopAllSound();
-	gi.Z_FreeTags(PU_SOUND, PU_SOUND);
+	Z_FreeTags(PU_SOUND, PU_SOUND);
 	for(i=0; i<NUMSFX; i++)
 	{
 		S_sfx[i].lumpnum = 0;
@@ -1085,11 +958,11 @@ void S_Reset(void)
 	// Music, too.
 	if(RegisteredSong)
 	{
-		gi.StopSong();
+		I_StopSong();
 		if(UseSndScript)
-			gi.Z_Free(Mus_SndPtr);
+			Z_Free(Mus_SndPtr);
 		else
-			gi.W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
+			W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
 		RegisteredSong = 0;
 	}
 	Mus_Song = -1;
@@ -1107,7 +980,7 @@ void S_InitScript(void)
 	int i;
 
 	strcpy(ArchivePath, DEFAULT_ARCHIVEPATH);
-	if(!(p = gi.CheckParm("-devsnd")))
+	if(!(p = M_CheckParm("-devsnd")))
 	{
 		UseSndScript = false;
 		SC_OpenLump("sndinfo");
@@ -1115,7 +988,7 @@ void S_InitScript(void)
 	else
 	{
 		UseSndScript = true;
-		SC_OpenFile(gi.Argv(p+1));
+		SC_OpenFile(Argv(p+1));
 	}
 	while(SC_GetString())
 	{
@@ -1185,38 +1058,38 @@ int CCmdCD(int argc, char **argv)
 	{
 		if(!strcmpi(argv[1], "init"))
 		{
-			if(!gi.CD(DD_INIT,0))
-				gi.conprintf( "CD init successful.\n");
+			if(!I_CDControl(DD_INIT,0))
+				CON_Printf( "CD init successful.\n");
 			else
-				gi.conprintf( "CD init failed.\n");
+				CON_Printf( "CD init failed.\n");
 		}
 		else if(!strcmpi(argv[1], "info") && argc == 2)
 		{
-			int secs = gi.CD(DD_GET_TIME_LEFT, 0);
-			gi.conprintf( "CD available: %s\n", gi.CD(DD_AVAILABLE,0)? "yes" : "no");
-			gi.conprintf( "First track: %d\n", gi.CD(DD_GET_FIRST_TRACK,0));
-			gi.conprintf( "Last track: %d\n", gi.CD(DD_GET_LAST_TRACK,0));
-			gi.conprintf( "Current track: %d\n", gi.CD(DD_GET_CURRENT_TRACK,0));
-			gi.conprintf( "Time left: %d:%02d\n", secs/60, secs%60);
-			gi.conprintf( "Play mode: ");
+			int secs = I_CDControl(DD_GET_TIME_LEFT, 0);
+			CON_Printf( "CD available: %s\n", I_CDControl(DD_AVAILABLE,0)? "yes" : "no");
+			CON_Printf( "First track: %d\n", I_CDControl(DD_GET_FIRST_TRACK,0));
+			CON_Printf( "Last track: %d\n", I_CDControl(DD_GET_LAST_TRACK,0));
+			CON_Printf( "Current track: %d\n", I_CDControl(DD_GET_CURRENT_TRACK,0));
+			CON_Printf( "Time left: %d:%02d\n", secs/60, secs%60);
+			CON_Printf( "Play mode: ");
 			if(MusicPaused)
-				gi.conprintf( "paused\n");
+				CON_Printf( "paused\n");
 			else if(s_CDTrack)
-				gi.conprintf( "looping track %d\n", s_CDTrack);
+				CON_Printf( "looping track %d\n", s_CDTrack);
 			else
-				gi.conprintf( "map track\n");
+				CON_Printf( "map track\n");
 			return true;
 		}
 		else if(!strcmpi(argv[1], "play") && argc == 3)
 		{
 			s_CDTrack = atoi(argv[2]);
-			if(!gi.CD(DD_PLAY_LOOP, s_CDTrack)) 
+			if(!I_CDControl(DD_PLAY_LOOP, s_CDTrack)) 
 			{
-				gi.conprintf( "Playing track %d.\n", s_CDTrack);
+				CON_Printf( "Playing track %d.\n", s_CDTrack);
 			}
 			else
 			{
-				gi.conprintf( "Error playing track %d.\n", s_CDTrack);
+				CON_Printf( "Error playing track %d.\n", s_CDTrack);
 				return false;
 			}
 		}
@@ -1227,33 +1100,33 @@ int CCmdCD(int argc, char **argv)
 			if(argc == 3) mapnum = atoi(argv[2]);
 			s_CDTrack = false;	// Clear the user selection.
 			track = P_GetMapCDTrack(mapnum);			
-			if(!gi.CD(DD_PLAY_LOOP, track)) // Uses s_CDTrack.
+			if(!I_CDControl(DD_PLAY_LOOP, track)) // Uses s_CDTrack.
 			{
-				gi.conprintf( "Playing track %d.\n", track);
+				CON_Printf( "Playing track %d.\n", track);
 			}
 			else
 			{
-				gi.conprintf( "Error playing track %d.\n", track);
+				CON_Printf( "Error playing track %d.\n", track);
 				return false;
 			}
 		}
 		else if(!strcmpi(argv[1], "stop") && argc == 2)
 		{
-			gi.CD(DD_STOP,0);
-			gi.conprintf( "CD stopped.\n");
+			I_CDControl(DD_STOP,0);
+			CON_Printf( "CD stopped.\n");
 		}
 		else if(!strcmpi(argv[1], "resume") && argc == 2)
 		{
-			gi.CD(DD_RESUME,0);//I_CDMusResume();
-			gi.conprintf( "CD resumed.\n");
+			I_CDControl(DD_RESUME,0);//I_CDMusResume();
+			CON_Printf( "CD resumed.\n");
 		}
 		else
-			gi.conprintf( "Bad command. Try 'cd'.\n");
+			CON_Printf( "Bad command. Try 'cd'.\n");
 	}
 	else
 	{
-		gi.conprintf( "CD player control. Usage: CD (cmd)\n");
-		gi.conprintf( "Commands are: init, info, play (track#), map, map (#), stop, resume.\n");
+		CON_Printf( "CD player control. Usage: CD (cmd)\n");
+		CON_Printf( "Commands are: init, info, play (track#), map, map (#), stop, resume.\n");
 	}
 	return true;
 }
@@ -1262,8 +1135,8 @@ int CCmdMidi(int argc, char **argv)
 {
 	if(argc == 1)
 	{
-		gi.conprintf( "Usage: midi (cmd)\n");
-		gi.conprintf( "Commands are: reset, play (name), map, map (num).\n");
+		CON_Printf( "Usage: midi (cmd)\n");
+		CON_Printf( "Commands are: reset, play (name), map, map (num).\n");
 		return true;
 	}
 	if(argc == 2)
@@ -1272,19 +1145,19 @@ int CCmdMidi(int argc, char **argv)
 		{
 			if(RegisteredSong)
 			{
-				gi.StopSong();
+				I_StopSong();
 				if(UseSndScript)
-					gi.Z_Free(Mus_SndPtr);
+					Z_Free(Mus_SndPtr);
 				else
-					gi.W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
+					W_ChangeCacheTag(Mus_LumpNum, PU_CACHE);
 				RegisteredSong = 0;
 			}
 			Mus_Song = -1;
-			gi.conprintf( "MIDI has been reset.\n");
+			CON_Printf( "MIDI has been reset.\n");
 		}
 		else if(!strcmpi(argv[1], "map")) 
 		{
-			gi.conprintf( "Playing the song of the current map (%d).\n", gamemap);
+			CON_Printf( "Playing the song of the current map (%d).\n", gamemap);
 			S_StartSong(gamemap, true);
 		}
 		else
@@ -1294,17 +1167,17 @@ int CCmdMidi(int argc, char **argv)
 	{
 		if(i_CDMusic)
 		{	
-			gi.conprintf( "MIDI is not the current music device.\n");
+			CON_Printf( "MIDI is not the current music device.\n");
 			return true;
 		}
 		if(!strcmpi(argv[1], "play"))
 		{
-			gi.conprintf( "Playing song '%s'.\n", argv[2]);
+			CON_Printf( "Playing song '%s'.\n", argv[2]);
 			S_StartSongName(argv[2], true);
 		}
 		else if(!strcmpi(argv[1], "map"))
 		{
-			gi.conprintf( "Playing song for map %d.\n", atoi(argv[2]));
+			CON_Printf( "Playing song for map %d.\n", atoi(argv[2]));
 			S_StartSong(atoi(argv[2]), true);
 		}
 		else

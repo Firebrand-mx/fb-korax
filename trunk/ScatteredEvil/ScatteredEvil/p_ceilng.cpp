@@ -127,8 +127,8 @@ int EV_DoCeiling (line_t *line, byte *arg, ceiling_e type)
 		// new door thinker
 		//
 		rtn = 1;
-		ceiling = (ceiling_t *)gi.Z_Malloc (sizeof(*ceiling), PU_LEVSPEC, 0);
-		gi.AddThinker (&ceiling->thinker);
+		ceiling = (ceiling_t *)Z_Malloc (sizeof(*ceiling), PU_LEVSPEC, 0);
+		P_AddThinker (&ceiling->thinker);
 		sec->specialdata = ceiling;
 		ceiling->thinker.function = (think_t)T_MoveCeiling;
 		ceiling->sector = sec;
@@ -235,7 +235,7 @@ void P_RemoveActiveCeiling(ceiling_t *c)
 		if (activeceilings[i] == c)
 		{
 			activeceilings[i]->sector->specialdata = NULL;
-			gi.RemoveThinker (&activeceilings[i]->thinker);
+			P_RemoveThinker (&activeceilings[i]->thinker);
 			P_TagFinished(activeceilings[i]->sector->tag);
 			activeceilings[i] = NULL;
 			break;
@@ -284,7 +284,7 @@ int EV_CeilingCrushStop(line_t *line, byte *args)
 			rtn = 1;
 			SN_StopSequence((mobj_t*)&activeceilings[i]->sector->soundorg);
 			activeceilings[i]->sector->specialdata = NULL;
-			gi.RemoveThinker (&activeceilings[i]->thinker);
+			P_RemoveThinker (&activeceilings[i]->thinker);
 			P_TagFinished(activeceilings[i]->sector->tag);
 			activeceilings[i] = NULL;
 			break;

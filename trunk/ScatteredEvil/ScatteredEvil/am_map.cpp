@@ -168,8 +168,8 @@ void AM_restoreScaleAndLoc(void)
     m_x = old_m_x;
     m_y = old_m_y;
   } else {
-    m_x = plr->plr->mo->x - m_w/2;
-    m_y = plr->plr->mo->y - m_h/2;
+    m_x = plr->mo->x - m_w/2;
+    m_y = plr->mo->y - m_h/2;
   }
   m_x2 = m_x + m_w;
   m_y2 = m_y + m_h;
@@ -286,13 +286,13 @@ void AM_initVariables(void)
   m_h = FTOM(f_h);
 
   // find player to center on initially
-  if (!players[pnum = consoleplayer].plr->ingame)
-    for (pnum=0;pnum<MAXPLAYERS;pnum++) if (players[pnum].plr->ingame) break;
+  if (!players[pnum = consoleplayer].ingame)
+    for (pnum=0;pnum<MAXPLAYERS;pnum++) if (players[pnum].ingame) break;
   plr = &players[pnum];
-  oldplr.x = plr->plr->mo->x;
-  oldplr.y = plr->plr->mo->y;
-  m_x = plr->plr->mo->x - m_w/2;
-  m_y = plr->plr->mo->y - m_h/2;
+  oldplr.x = plr->mo->x;
+  oldplr.y = plr->mo->y;
+  m_x = plr->mo->x - m_w/2;
+  m_y = plr->mo->y - m_h/2;
   AM_changeWindowLoc();
 
   // for saving & restoring
@@ -306,7 +306,7 @@ void AM_initVariables(void)
 //	memset(KeyPoints, 0, sizeof(vertex_t)*3);
 	if(gameskill == sk_baby)
 	{
-		for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+		for(think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
 			if(think->function != (think_t)P_MobjThinker)
 			{ //not a mobj
@@ -323,7 +323,7 @@ void AM_initVariables(void)
 void AM_loadPics(void)
 {
   //maplump = W_CacheLumpName("AUTOPAGE", PU_STATIC);
-	maplumpnum = gi.W_GetNumForName("AUTOPAGE");
+	maplumpnum = W_GetNumForName("AUTOPAGE");
 }
 
 
@@ -368,7 +368,7 @@ void AM_Stop (void)
 //  ST_Responder(&st_notify);
 	stopped = true;
 //	BorderNeedRefresh = true;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 }
 
 void AM_Start (void)
@@ -537,23 +537,23 @@ void AM_changeWindowScale(void)
 
 void AM_doFollowPlayer(void)
 {
-  if (f_oldloc.x != plr->plr->mo->x || f_oldloc.y != plr->plr->mo->y)
+  if (f_oldloc.x != plr->mo->x || f_oldloc.y != plr->mo->y)
   {
-//  m_x = FTOM(MTOF(plr->plr->mo->x - m_w/2));
-//  m_y = FTOM(MTOF(plr->plr->mo->y - m_h/2));
-//  m_x = plr->plr->mo->x - m_w/2;
-//  m_y = plr->plr->mo->y - m_h/2;
-    /*m_x = FTOM(MTOF(plr->plr->mo->x)) - m_w/2;
-    m_y = FTOM(MTOF(plr->plr->mo->y)) - m_h/2;*/
-    m_x = plr->plr->mo->x - m_w/2;
-    m_y = plr->plr->mo->y - m_h/2;
+//  m_x = FTOM(MTOF(plr->mo->x - m_w/2));
+//  m_y = FTOM(MTOF(plr->mo->y - m_h/2));
+//  m_x = plr->mo->x - m_w/2;
+//  m_y = plr->mo->y - m_h/2;
+    /*m_x = FTOM(MTOF(plr->mo->x)) - m_w/2;
+    m_y = FTOM(MTOF(plr->mo->y)) - m_h/2;*/
+    m_x = plr->mo->x - m_w/2;
+    m_y = plr->mo->y - m_h/2;
     m_x2 = m_x + m_w;
     m_y2 = m_y + m_h;
 
   	 // do the parallax parchment scrolling.
 /*
-	 dmapx = (MTOF(plr->plr->mo->x)-MTOF(f_oldloc.x)); //fixed point
-	 dmapy = (MTOF(f_oldloc.y)-MTOF(plr->plr->mo->y));
+	 dmapx = (MTOF(plr->mo->x)-MTOF(f_oldloc.x)); //fixed point
+	 dmapy = (MTOF(f_oldloc.y)-MTOF(plr->mo->y));
 
 	 if(f_oldloc.x == DDMAXINT) //to eliminate an error when the user first
 		dmapx=0;  //goes into the automap.
@@ -569,8 +569,8 @@ void AM_doFollowPlayer(void)
     while(mapystart < 0)
 			mapystart += finit_height;
 */
-	 f_oldloc.x = plr->plr->mo->x;
-    f_oldloc.y = plr->plr->mo->y;
+	 f_oldloc.x = plr->mo->x;
+    f_oldloc.y = plr->mo->y;
   }
 }
 
@@ -620,11 +620,11 @@ void AM_clearFB(int color)
 
 	if(followplayer)
 	{
-		dmapx = (MTOF(plr->plr->mo->x)-MTOF(oldplr.x)); //fixed point
-		dmapy = (MTOF(oldplr.y)-MTOF(plr->plr->mo->y));
+		dmapx = (MTOF(plr->mo->x)-MTOF(oldplr.x)); //fixed point
+		dmapy = (MTOF(oldplr.y)-MTOF(plr->mo->y));
 
-		oldplr.x = plr->plr->mo->x;
-		oldplr.y = plr->plr->mo->y;
+		oldplr.x = plr->mo->x;
+		oldplr.y = plr->mo->y;
 //		if(f_oldloc.x == DDMAXINT) //to eliminate an error when the user first
 //			dmapx=0;  //goes into the automap.
 		mapxstart += dmapx>>1;
@@ -654,20 +654,20 @@ void AM_clearFB(int color)
 	}
 
 	//blit the automap background to the screen.
-	gi.GL_SetColorAndAlpha(1, 1, 1, 1);
+	GL_SetColorAndAlpha(1, 1, 1, 1);
 	
-	gi.GL_SetFlat(gi.R_FlatNumForName("F_022"));
-	gi.GL_DrawCutRectTiled(0, finit_height+4, 320, 200-finit_height-4, 64, 64, 
+	GL_SetFlat(R_FlatNumForName("F_022"));
+	GL_DrawCutRectTiled(0, finit_height+4, 320, 200-finit_height-4, 64, 64, 
 		1, finit_height, 320-2, 200-finit_height);
 
-	gi.GL_SetPatch(lump=gi.W_GetNumForName("bordb"));
-	gi.GL_DrawCutRectTiled(0, finit_height, 320, 4, 
+	GL_SetPatch(lump=W_GetNumForName("bordb"));
+	GL_DrawCutRectTiled(0, finit_height, 320, 4, 
 		//lumptexsizes[lump].w, lumptexsizes[lump].h, 
 		16, 4,
 		1, finit_height, 320-2, 4);
 
-	gi.GL_SetRawImage(maplumpnum, 0);	// We only want the left portion.
-	gi.GL_DrawRectTiled(0, 0, finit_width, finit_height, 128, 100);//79);		
+	GL_SetRawImage(maplumpnum, 0);	// We only want the left portion.
+	GL_DrawRectTiled(0, 0, finit_width, finit_height, 128, 100);//79);		
 
 }
 
@@ -1019,7 +1019,7 @@ void AM_drawMline(mline_t *ml, int color)
 	/*OGL_DrawLine(FIX2FLT(CXMTOFX(ml->a.x)), FIX2FLT(CYMTOFX(ml->a.y))/1.2, 
 		FIX2FLT(CXMTOFX(ml->b.x)), FIX2FLT(CYMTOFX(ml->b.y))/1.2, 
 		r/255.0, g/255.0, b/255.0, 1);	*/
-	gi.GL_SetColor(color);
+	GL_SetColor(color);
 	gl.Vertex2f(FIX2FLT(CXMTOFX(ml->a.x)), FIX2FLT(CYMTOFX(ml->a.y))/1.2);
 	gl.Vertex2f(FIX2FLT(CXMTOFX(ml->b.x)), FIX2FLT(CYMTOFX(ml->b.y))/1.2);
 
@@ -1076,9 +1076,6 @@ void AM_drawWalls(void)
 {
 	int i;
 
-//	gi.GL_SetNoTexture();
-//	glDisable(GL_TEXTURE_2D);
-
 	gl.Begin(DGL_LINES);	// We'll draw pretty much all of them.  
 	for(i=0; i<numlines; i++)
 	{
@@ -1089,48 +1086,48 @@ void AM_drawWalls(void)
 			if (!lines[i].backsector)
 			{
 				//AM_drawMline(&l, WALLCOLORS+lightlev);
-				gi.GL_SetColor(WALLCOLORS);
+				GL_SetColor(WALLCOLORS);
 			} 
 			else 
 			{
 				if (lines[i].flags & ML_SECRET) // secret door
 				{
 					if (cheating) //AM_drawMline(&l, 0);
-						gi.GL_SetColor(0);
+						GL_SetColor(0);
 					else //AM_drawMline(&l, WALLCOLORS+lightlev);
-						gi.GL_SetColor(WALLCOLORS);
+						GL_SetColor(WALLCOLORS);
 				}
 				else if(lines[i].special == 13 || lines[i].special == 83)
 				{ // Locked door line -- all locked doors are greed
 					//AM_drawMline(&l, GREENKEY);
-					gi.GL_SetColor(GREENKEY);
+					GL_SetColor(GREENKEY);
 				}
 				else if(lines[i].special == 70 || lines[i].special == 71)
 				{ // intra-level teleports are blue
 					//AM_drawMline(&l, BLUEKEY);
-					gi.GL_SetColor(BLUEKEY);
+					GL_SetColor(BLUEKEY);
 				}
 				else if(lines[i].special == 74 || lines[i].special == 75)
 				{ // inter-level teleport/game-winning exit -- both are red
 					//AM_drawMline(&l, BLOODRED);
-					gi.GL_SetColor(BLOODRED);
+					GL_SetColor(BLOODRED);
 				}
 				else if (lines[i].backsector->floorheight 
 					!= lines[i].frontsector->floorheight) 
 				{
 					//AM_drawMline(&l, FDWALLCOLORS + lightlev); // floor level change
-					gi.GL_SetColor(FDWALLCOLORS);
+					GL_SetColor(FDWALLCOLORS);
 				} 
 				else if (lines[i].backsector->ceilingheight
 					!= lines[i].frontsector->ceilingheight) 
 				{
 					//AM_drawMline(&l, CDWALLCOLORS+lightlev); // ceiling level change
-					gi.GL_SetColor(CDWALLCOLORS);
+					GL_SetColor(CDWALLCOLORS);
 				} 
 				else if (cheating) 
 				{
 					//AM_drawMline(&l, TSWALLCOLORS+lightlev);
-					gi.GL_SetColor(TSWALLCOLORS);
+					GL_SetColor(TSWALLCOLORS);
 				}
 				else continue;
 			}
@@ -1138,7 +1135,7 @@ void AM_drawWalls(void)
 		else if (plr->powers[pw_allmap])
 		{
 			if (!(lines[i].flags & LINE_NEVERSEE)) //AM_drawMline(&l, GRAYS+3);
-				gi.GL_SetColor(16);//GRAYS+4);
+				GL_SetColor(16);//GRAYS+4);
 			else
 				continue;
 		}
@@ -1148,7 +1145,6 @@ void AM_drawWalls(void)
 		gl.Vertex2f(FIX2FLT(CXMTOFX(lines[i].v2->x)), FIX2FLT(CYMTOFX(lines[i].v2->y))/1.2);
 	}
 	gl.End();
-//	glEnable(GL_TEXTURE_2D);
 }
 
 void AM_rotate(fixed_t *x, fixed_t *y, angle_t a)
@@ -1206,8 +1202,8 @@ void AM_drawPlayers(void)
 	if(!netgame)
 	{
 		gl.Begin(DGL_LINES);
-		AM_drawLineCharacter(player_arrow, NUMPLYRLINES, 0, plr->plr->mo->angle,
-			WHITE, plr->plr->mo->x, plr->plr->mo->y);
+		AM_drawLineCharacter(player_arrow, NUMPLYRLINES, 0, plr->mo->angle,
+			WHITE, plr->mo->x, plr->mo->y);
 		gl.End();
 		return;
 	}
@@ -1221,10 +1217,10 @@ void AM_drawPlayers(void)
 		{
 			continue;
 		}
-		if (!players[i].plr->ingame) continue;
+		if (!players[i].ingame) continue;
 		//color = their_colors[their_color];
-		AM_drawLineCharacter(player_arrow, NUMPLYRLINES, 0, p->plr->mo->angle,
-								their_colors[PlayerColor[i]], p->plr->mo->x, p->plr->mo->y);
+		AM_drawLineCharacter(player_arrow, NUMPLYRLINES, 0, p->mo->angle,
+								their_colors[PlayerColor[i]], p->mo->x, p->mo->y);
 	}
 	gl.End();
 }
@@ -1299,8 +1295,8 @@ int scissorState[5];
 
 void AM_OGL_SetupState()
 {
-	int scrwidth = gi.Get(DD_SCREEN_WIDTH);
-	int scrheight = gi.Get(DD_SCREEN_HEIGHT);
+	int scrwidth = screenWidth;
+	int scrheight = screenHeight;
 	float xs = scrwidth/320.0f, ys = scrheight/200.0f;
 
 	// Let's set up a scissor box to clip the map lines and stuff.
@@ -1322,7 +1318,7 @@ void AM_Drawer (void)
 	if (!automapactive) return;
 
 	//UpdateState |= I_FULLSCRN;
-	gi.Update(DDUF_FULLSCREEN);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 
 	// Update the height.
 	finit_height = SCREENHEIGHT-SBARHEIGHT;
@@ -1394,7 +1390,7 @@ void AM_DrawDeathmatchStats(void)
 	}
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(!players[i].plr->ingame)
+		if(!players[i].ingame)
 		{
 			continue;
 		}
@@ -1402,7 +1398,7 @@ void AM_DrawDeathmatchStats(void)
 		{
 			for(j = 0; j < MAXPLAYERS; j++)
 			{
-				if(players[i].plr->ingame)
+				if(players[i].ingame)
 				{
 					fragCount[i] += players[i].frags[j];
 				}
@@ -1429,7 +1425,7 @@ void AM_DrawDeathmatchStats(void)
 	yPosition = 15;
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(!players[order[i]].plr || !players[order[i]].plr->ingame)
+		if(!players[order[i]].ingame)
 		{
 			continue;
 		}
@@ -1437,9 +1433,9 @@ void AM_DrawDeathmatchStats(void)
 		{
 			//MN_DrTextA(PlayerColorText[order[i]], 8, yPosition);
 
-			gi.GL_SetColor(their_colors[PlayerColor[order[i]]]);
+			GL_SetColor(their_colors[PlayerColor[order[i]]]);
 			memset(textBuffer, 0, 80);
-			strncpy(textBuffer, gi.GetPlayerName(order[i]), 78);
+			strncpy(textBuffer, I_NetGetPlayerName(order[i]), 78);
 			strcat(textBuffer, ":");
 			MN_DrTextA_CS(textBuffer, 4, yPosition);
 			j = MN_TextAWidth(textBuffer);
@@ -1455,7 +1451,6 @@ void AM_DrawDeathmatchStats(void)
 // DrawWorldTimer
 //
 //===========================================================================
-int ducking;
 
 static void DrawWorldTimer(void)
 {
@@ -1497,65 +1492,4 @@ static void DrawWorldTimer(void)
 			MN_DrTextA("YOU FREAK!!!", 230, 35);
 		}
 	}
-
-/*    int time_mod=*(int*) gi.GetCVar("time_mod")->ptr; //New Map Handling
-	int months=1;
-	int days=1;
-	int hours=0;
-	int minutes=0;
-	int worldTimer;
-	int plrexp=0;
-	int plrmon=0;
-	int plrlvl=0;
-	char timeBuffer[15];
-	char dayBuffer[20];
-	char ducki[14];
- 
-
-	plrexp=players[consoleplayer].experience;	
-	plrlvl=players[consoleplayer].exp_level;	
-	plrmon=players[consoleplayer].money;	
-
-	worldTimer = players[consoleplayer].worldTimer;
-
-	worldTimer /= 35;
-	worldTimer = worldTimer*60/time_mod;
-	months = worldTimer/43200;
-	worldTimer -= months*43200;
-	days = worldTimer/1440;
-	worldTimer -= days*1440;
-	hours = worldTimer/60;
-	worldTimer -= hours*60;
-	minutes = worldTimer;
-
-	sprintf(timeBuffer, "%.2d : %.2d / %.2d", hours, minutes, time_mod);
-	MN_DrTextA(timeBuffer, 240, 8);
-	
-	days=days+1;
-	months=months+1;
-
-    sprintf(dayBuffer, "%.2d/%.2d E: %d L: %d M: %d", days,months,plrexp,plrlvl,plrmon);
-	MN_DrTextA(dayBuffer, 180, 20);
-
-	sprintf(ducki,"%d",ducking);
-	MN_DrTextA(ducki, 200, 40);*/
-	
-/*	if (days)
-	{
-        
-/*		if ((days==1)&(!months))
-		{
-			sprintf(dayBuffer, "%.2d DAY", days);
-		}
-		else
-		{
-			sprintf(dayBuffer, "%.2d DAYS", days);
-		}
-		if ()
-		MN_DrTextA(dayBuffer, 240, 20);
-/*		if (days >= 5)
-		{
-			MN_DrTextA("YOU FREAK!!!", 230, 35);
-		}
-	}*/
 }

@@ -191,7 +191,7 @@ void A_PotteryCheck(mobj_t *actor)
 
 	if(!netgame)
 	{
-		pmo = players[consoleplayer].plr->mo;
+		pmo = players[consoleplayer].mo;
 		if(P_CheckSight(actor, pmo) && (abs(R_PointToAngle2(pmo->x,
 			pmo->y, actor->x, actor->y)-pmo->angle) <= ANGLE_45))
 		{ // Previous state (pottery bit waiting state)
@@ -206,11 +206,11 @@ void A_PotteryCheck(mobj_t *actor)
 	{
 		for(i = 0; i < MAXPLAYERS; i++)
 		{
-			if(!players[i].plr->ingame)
+			if(!players[i].ingame)
 			{
 				continue;
 			}
-			pmo = players[i].plr->mo;
+			pmo = players[i].mo;
 			if(P_CheckSight(actor, pmo) && (abs(R_PointToAngle2(pmo->x,
 				pmo->y, actor->x, actor->y)-pmo->angle) <= ANGLE_45))
 			{ // Previous state (pottery bit waiting state)
@@ -886,9 +886,9 @@ void A_Quake(mobj_t *actor)
 		for (playnum=0; playnum < MAXPLAYERS; playnum++)
 		{
 			player = &players[playnum];
-			if (!players[playnum].plr->ingame) continue;
+			if (!players[playnum].ingame) continue;
 
-			victim = player->plr->mo;
+			victim = player->mo;
 			dist = P_AproxDistance(actor->x - victim->x,
 						actor->y - victim->y) >> (FRACBITS+6);
 			// Tested in tile units (64 pixels)
@@ -1353,7 +1353,7 @@ void A_SummonMonster(mobj_t *origin)
 	int i;
 
 	player = origin->target->player;
-	pmo=player->plr->mo;
+	pmo=player->mo;
 	
 	i = P_Random();
 

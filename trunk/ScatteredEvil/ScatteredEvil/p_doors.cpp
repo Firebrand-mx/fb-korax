@@ -75,7 +75,7 @@ void T_VerticalDoor(vldoor_t *door)
 					case DREV_CLOSE:
 						door->sector->specialdata = NULL;
 						P_TagFinished(door->sector->tag);
-						gi.RemoveThinker(&door->thinker);  // unlink and free
+						P_RemoveThinker(&door->thinker);  // unlink and free
 						break;
 					case DREV_CLOSE30THENOPEN:
 						door->direction = 0;
@@ -113,7 +113,7 @@ void T_VerticalDoor(vldoor_t *door)
 					case DREV_OPEN:
 						door->sector->specialdata = NULL;
 						P_TagFinished(door->sector->tag);
-						gi.RemoveThinker (&door->thinker); // unlink and free
+						P_RemoveThinker (&door->thinker); // unlink and free
 						break;
 					default:
 						break;
@@ -151,8 +151,8 @@ int EV_DoDoor(line_t *line, byte *args, vldoor_e type)
 		}
 		// Add new door thinker
 		retcode = 1;
-		door = (vldoor_t *)gi.Z_Malloc(sizeof(*door), PU_LEVSPEC, 0);
-		gi.AddThinker(&door->thinker);
+		door = (vldoor_t *)Z_Malloc(sizeof(*door), PU_LEVSPEC, 0);
+		P_AddThinker(&door->thinker);
 		sec->specialdata = door;
 		door->thinker.function = (think_t)T_VerticalDoor;
 		door->sector = sec;
@@ -229,8 +229,8 @@ boolean EV_VerticalDoor(line_t *line, mobj_t *thing)
 	//
 	// new door thinker
 	//
-	door = (vldoor_t *)gi.Z_Malloc (sizeof(*door), PU_LEVSPEC, 0);
-	gi.AddThinker(&door->thinker);
+	door = (vldoor_t *)Z_Malloc (sizeof(*door), PU_LEVSPEC, 0);
+	P_AddThinker(&door->thinker);
 	sec->specialdata = door;
 	door->thinker.function = (think_t)T_VerticalDoor;
 	door->sector = sec;
@@ -274,7 +274,7 @@ void P_SpawnDoorCloseIn30(sector_t *sec)
 	vldoor_t *door;
 
 	door = Z_Malloc(sizeof(*door), PU_LEVSPEC, 0);
-	gi.AddThinker(&door->thinker);
+	P_AddThinker(&door->thinker);
 	sec->specialdata = door;
 	sec->special = 0;
 	door->thinker.function = T_VerticalDoor;
@@ -298,7 +298,7 @@ void P_SpawnDoorRaiseIn5Mins(sector_t *sec, int secnum)
 	vldoor_t *door;
 
 	door = Z_Malloc(sizeof(*door), PU_LEVSPEC, 0);
-	gi.AddThinker(&door->thinker);
+	P_AddThinker(&door->thinker);
 	sec->specialdata = door;
 	sec->special = 0;
 	door->thinker.function = T_VerticalDoor;

@@ -370,16 +370,16 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 {
 	if(saving)
 	{
-		saveplr->mo = plr->plr->mo;
+		saveplr->mo = plr->mo;
 		saveplr->playerstate = plr->playerstate;
 		saveplr->cmd = plr->cmd;
 		saveplr->pclass = plr->pclass;
-		saveplr->viewz = plr->plr->viewz;
+		saveplr->viewz = plr->viewz;
 		saveplr->viewheight = plr->viewheight;
 		saveplr->deltaviewheight = plr->deltaviewheight;
 		saveplr->bob = plr->bob;
 		saveplr->flyheight = plr->flyheight;
-		saveplr->lookdir = plr->plr->lookdir;
+		saveplr->lookdir = plr->lookdir;
 		saveplr->centering = plr->centering;
 		saveplr->health = plr->health;
 		memcpy(saveplr->armorpoints, plr->armorpoints, sizeof(plr->armorpoints));
@@ -413,8 +413,8 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 		saveplr->poisoncount = plr->poisoncount;
 		saveplr->poisoner = plr->poisoner;
 		saveplr->attacker = plr->attacker;
-		saveplr->extralight = plr->plr->extralight;
-		saveplr->fixedcolormap = plr->plr->fixedcolormap;
+		saveplr->extralight = plr->extralight;
+		saveplr->fixedcolormap = plr->fixedcolormap;
 		saveplr->colormap = plr->colormap;
 		memcpy(saveplr->psprites, plr->psprites, sizeof(plr->psprites));
 		saveplr->morphTics = plr->morphTics;
@@ -444,16 +444,16 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 	}
 	else
 	{
-		plr->plr->mo = saveplr->mo;
+		plr->mo = saveplr->mo;
 		plr->playerstate = saveplr->playerstate;
 		plr->cmd = saveplr->cmd;
 		plr->pclass = saveplr->pclass;
-		plr->plr->viewz = saveplr->viewz;
+		plr->viewz = saveplr->viewz;
 		plr->viewheight = saveplr->viewheight;
 		plr->deltaviewheight = saveplr->deltaviewheight;
 		plr->bob = saveplr->bob;
 		plr->flyheight = saveplr->flyheight;
-		plr->plr->lookdir = saveplr->lookdir;
+		plr->lookdir = saveplr->lookdir;
 		plr->centering = saveplr->centering;
 		plr->health = saveplr->health;
 		memcpy(plr->armorpoints, saveplr->armorpoints, sizeof(plr->armorpoints));
@@ -488,8 +488,8 @@ void PlayerConverter(player_t *plr, saveplayer_t *saveplr, boolean saving)
 		plr->poisoncount = saveplr->poisoncount;
 		plr->poisoner = saveplr->poisoner;
 		plr->attacker = saveplr->attacker;
-		plr->plr->extralight = saveplr->extralight;
-		plr->plr->fixedcolormap = saveplr->fixedcolormap;
+		plr->extralight = saveplr->extralight;
+		plr->fixedcolormap = saveplr->fixedcolormap;
 		plr->colormap = saveplr->colormap;
 		memcpy(plr->psprites, saveplr->psprites, sizeof(plr->psprites));
 		plr->morphTics = saveplr->morphTics;
@@ -635,7 +635,7 @@ void SV_LoadGame(int slot)
 	sprintf(fileName, "%shex6.hxs", SavePath);
 
 	// Load the file
-	gi.ReadFile(fileName, &SaveBuffer);
+	M_ReadFile(fileName, &SaveBuffer);
 
 	// Set the save pointer and skip the description field
 	SavePtr.b = SaveBuffer+HXS_DESCRIPTION_LENGTH;
@@ -664,7 +664,7 @@ void SV_LoadGame(int slot)
 
 	AssertSegment(ASEG_END);
 
-	gi.Z_Free(SaveBuffer);
+	Z_Free(SaveBuffer);
 
 	// Save player structs
 	for(i = 0; i < MAXPLAYERS; i++)
@@ -676,16 +676,16 @@ void SV_LoadGame(int slot)
 	SV_LoadMap();
 
 	// Don't need the player mobj relocation info for load game
-	gi.Z_Free(TargetPlayerAddrs);
+	Z_Free(TargetPlayerAddrs);
 
 	// Restore player structs
 	inv_ptr = 0;
 	curpos = 0;
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		mobj = players[i].plr->mo;
+		mobj = players[i].mo;
 		players[i] = playerBackup[i];
-		players[i].plr->mo = mobj;
+		players[i].mo = mobj;
 		if(i == consoleplayer)
 		{
 			players[i].readyArtifact = players[i].inventory[inv_ptr].type;
@@ -782,9 +782,9 @@ void SV_MapTeleport(int map, int position)
 		// Destroy all freshly spawned players
 		for(i = 0; i < MAXPLAYERS; i++)
 		{
-			if(players[i].plr->ingame)
+			if(players[i].ingame)
 			{
-				P_RemoveMobj(players[i].plr->mo);
+				P_RemoveMobj(players[i].mo);
 			}
 		}
 	}
@@ -793,7 +793,7 @@ void SV_MapTeleport(int map, int position)
 	targetPlayerMobj = NULL;
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(!players[i].plr->ingame)
+		if(!players[i].ingame)
 		{
 			continue;
 		}
@@ -824,7 +824,7 @@ void SV_MapTeleport(int map, int position)
 			memset(players[i].frags, 0, sizeof(players[i].frags));
 			mobj = P_SpawnMobj(playerstarts[0][i].x<<16,
 				playerstarts[0][i].y<<16, 0, MT_PLAYER_FIGHTER);
-			players[i].plr->mo = mobj;
+			players[i].mo = mobj;
 			G_DeathMatchSpawnPlayer(i);
 			P_RemoveMobj(mobj);
 		}
@@ -849,14 +849,14 @@ void SV_MapTeleport(int map, int position)
 			players[i].mana[MANA_2] = 25;
 			if(bestWeapon)
 			{ // Bring up the best weapon
-				P_NewPendingWeapon(players[i].plr->mo->player, bestWeapon); //Remi
+				P_NewPendingWeapon(players[i].mo->player, bestWeapon); //Remi
 				//players[i].pendingweapon = bestWeapon;
 			}
 		}
 
 		if(targetPlayerMobj == NULL)
 		{ // The poor sap
-			targetPlayerMobj = players[i].plr->mo;
+			targetPlayerMobj = players[i].mo;
 		}
 	}
 	randomclass = rClass;
@@ -868,16 +868,16 @@ void SV_MapTeleport(int map, int position)
 		{
 			*TargetPlayerAddrs[i] = (int)targetPlayerMobj;
 		}
-		gi.Z_Free(TargetPlayerAddrs);
+		Z_Free(TargetPlayerAddrs);
 	}
 
 	// Destroy all things touching players
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(players[i].plr->ingame)
+		if(players[i].ingame)
 		{
-			P_TeleportMove(players[i].plr->mo, players[i].plr->mo->x,
-				players[i].plr->mo->y);
+			P_TeleportMove(players[i].mo, players[i].mo->x,
+				players[i].mo->y);
 		}
 	}
 
@@ -945,7 +945,7 @@ void SV_LoadMap(void)
 	sprintf(fileName, "%shex6%02d.hxs", SavePath, gamemap);
 
 	// Load the file
-	gi.ReadFile(fileName, &SaveBuffer);
+	M_ReadFile(fileName, &SaveBuffer);
 	SavePtr.b = SaveBuffer;
 
 	AssertSegment(ASEG_MAP_HEADER);
@@ -964,8 +964,8 @@ void SV_LoadMap(void)
 	AssertSegment(ASEG_END);
 
 	// Free mobj list and save buffer
-	gi.Z_Free(MobjList);
-	gi.Z_Free(SaveBuffer);
+	Z_Free(MobjList);
+	Z_Free(SaveBuffer);
 }
 
 //==========================================================================
@@ -994,11 +994,11 @@ static void ArchivePlayers(void)
 	StreamOutLong(ASEG_PLAYERS);
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		StreamOutByte(players[i].plr->ingame);
+		StreamOutByte(players[i].ingame);
 	}
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(!players[i].plr->ingame)
+		if(!players[i].ingame)
 		{
 			continue;
 		}
@@ -1033,11 +1033,11 @@ static void UnarchivePlayers(void)
 	AssertSegment(ASEG_PLAYERS);
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		players[i].plr->ingame = GET_BYTE;
+		players[i].ingame = GET_BYTE;
 	}
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(!players[i].plr->ingame)
+		if(!players[i].ingame)
 		{
 			continue;
 		}
@@ -1049,7 +1049,7 @@ static void UnarchivePlayers(void)
 		SavePtr.b += sizeof(tempPlayer);
 		PlayerConverter(players+i, &tempPlayer, false);
 		
-		players[i].plr->mo = NULL; // Will be set when unarc thinker
+		players[i].mo = NULL; // Will be set when unarc thinker
 		P_ClearMessage(&players[i]);
 		players[i].attacker = NULL;
 		players[i].poisoner = NULL;
@@ -1195,7 +1195,7 @@ static void SetMobjArchiveNums(void)
 			mobj->archiveNum = MOBJ_NULL;
 	}
 
-	for(thinker = gi.thinkercap->next; thinker != gi.thinkercap;
+	for(thinker = thinkercap.next; thinker != &thinkercap;
 		thinker = thinker->next)
 	{
 		if(thinker->function == (think_t)P_MobjThinker)
@@ -1225,7 +1225,7 @@ static void ArchiveMobjs(void)
 	StreamOutLong(ASEG_MOBJS);
 	StreamOutLong(MobjCount);
 	count = 0;
-	for(thinker = gi.thinkercap->next; thinker != gi.thinkercap;
+	for(thinker = thinkercap.next; thinker != &thinkercap;
 		thinker = thinker->next)
 	{
 		if(thinker->function != (think_t)P_MobjThinker)
@@ -1244,7 +1244,7 @@ static void ArchiveMobjs(void)
 	}
 	if(count != MobjCount)
 	{
-		gi.Error("ArchiveMobjs: bad mobj count");
+		I_Error("ArchiveMobjs: bad mobj count");
 	}
 }
 
@@ -1266,17 +1266,17 @@ static void UnarchiveMobjs(void)
 
 	DBG(printf( "- assertion succeeded\n"));
 
-	TargetPlayerAddrs = (int **)gi.Z_Malloc(MAX_TARGET_PLAYERS*sizeof(int *),
+	TargetPlayerAddrs = (int **)Z_Malloc(MAX_TARGET_PLAYERS*sizeof(int *),
 		PU_STATIC, NULL);
 	TargetPlayerCount = 0;
 	MobjCount = GET_LONG;
 
 	DBG(printf( "- MobjCount: %d\n", MobjCount));
 
-	MobjList = (mobj_t **)gi.Z_Malloc(MobjCount*sizeof(mobj_t *), PU_STATIC, NULL);
+	MobjList = (mobj_t **)Z_Malloc(MobjCount*sizeof(mobj_t *), PU_STATIC, NULL);
 	for(i = 0; i < MobjCount; i++)
 	{
-		MobjList[i] = (mobj_t *)gi.Z_Malloc(sizeof(mobj_t), PU_LEVEL, NULL);
+		MobjList[i] = (mobj_t *)Z_Malloc(sizeof(mobj_t), PU_LEVEL, NULL);
 	}
 	DBG(printf( "- memory allocated for each mobj (sizeof = %d bytes)\n", sizeof(mobj_t)));
 	for(i = 0; i < MobjCount; i++)
@@ -1288,16 +1288,14 @@ static void UnarchiveMobjs(void)
 		//memcpy(mobj, SavePtr.b, sizeof(mobj_t));
 		memcpy(&tempMobj, SavePtr.b, sizeof(tempMobj));
 		SavePtr.b += sizeof(tempMobj);
-		//gi.Message( "loading: type %d ", tempMobj.type);
 		MobjConverter(mobj, &tempMobj, false);
-		//gi.Message( "(converted %d)\n", mobj->type);
 		
 		mobj->thinker.function = (think_t)P_MobjThinker;
 
 		DBG(printf( "   + target: %d\n", mobj->target));
 
 		RestoreMobj(mobj);
-		gi.AddThinker(&mobj->thinker);
+		P_AddThinker(&mobj->thinker);
 	}
 	P_CreateTIDList();
 	P_InitCreatureCorpseQueue(true); // true = scan for corpses
@@ -1420,7 +1418,7 @@ static void RestoreMobj(mobj_t *mobj)
 	if(mobj->player)
 	{
 		mobj->player = &players[(int)mobj->player-1];
-		mobj->player->plr->mo = mobj;
+		mobj->player->mo = mobj;
 	}
 	P_SetThingPosition(mobj);
 	mobj->info = &mobjinfo[mobj->type];
@@ -1478,7 +1476,7 @@ static void SetMobjPtr(int *archiveNum)
 	{
 		if(TargetPlayerCount == MAX_TARGET_PLAYERS)
 		{
-			gi.Error("RestoreMobj: exceeded MAX_TARGET_PLAYERS");
+			I_Error("RestoreMobj: exceeded MAX_TARGET_PLAYERS");
 		}
 		TargetPlayerAddrs[TargetPlayerCount++] = archiveNum;
 		*archiveNum = 0;
@@ -1506,7 +1504,7 @@ static void ArchiveThinkers(void)
 	byte buffer[MAX_THINKER_SIZE];
 
 	StreamOutLong(ASEG_THINKERS);
-	for(thinker = gi.thinkercap->next; thinker != gi.thinkercap;
+	for(thinker = thinkercap.next; thinker != &thinkercap;
 		thinker = thinker->next)
 	{
 		for(info = ThinkerInfo; info->tClass != TC_NULL; info++)
@@ -1547,7 +1545,7 @@ static void UnarchiveThinkers(void)
 		{
 			if(tClass == info->tClass)
 			{
-				thinker = (thinker_t *)gi.Z_Malloc(info->size, PU_LEVEL, NULL);
+				thinker = (thinker_t *)Z_Malloc(info->size, PU_LEVEL, NULL);
 				memcpy(thinker, SavePtr.b, info->size);
 				SavePtr.b += info->size;
 				thinker->function = info->thinkerFunc;
@@ -1555,13 +1553,13 @@ static void UnarchiveThinkers(void)
 				{
 					info->restoreFunc(thinker);
 				}
-				gi.AddThinker(thinker);
+				P_AddThinker(thinker);
 				break;
 			}
 		}
 		if(info->tClass == TC_NULL)
 		{
-			gi.Error("UnarchiveThinkers: Unknown tClass %d in "
+			I_Error("UnarchiveThinkers: Unknown tClass %d in "
 				"savegame", tClass);
 		}
 	}
@@ -1745,8 +1743,8 @@ static void RemoveAllThinkers(void)
 	thinker_t *thinker;
 	thinker_t *nextThinker;
 
-	thinker = gi.thinkercap->next;
-	while(thinker != gi.thinkercap)
+	thinker = thinkercap.next;
+	while(thinker != &thinkercap)
 	{
 		nextThinker = thinker->next;
 		if(thinker->function == (think_t)P_MobjThinker)
@@ -1755,11 +1753,11 @@ static void RemoveAllThinkers(void)
 		}
 		else
 		{
-			gi.Z_Free(thinker);
+			Z_Free(thinker);
 		}
 		thinker = nextThinker;
 	}
-	gi.InitThinkers();
+	P_InitThinkers();
 }
 
 //==========================================================================
@@ -1894,13 +1892,13 @@ static void UnarchivePolyobjs(void)
 	AssertSegment(ASEG_POLYOBJS);
 	if(GET_LONG != po_NumPolyobjs)
 	{
-		gi.Error("UnarchivePolyobjs: Bad polyobj count");
+		I_Error("UnarchivePolyobjs: Bad polyobj count");
 	}
 	for(i = 0; i < po_NumPolyobjs; i++)
 	{
 		if(GET_LONG != polyobjs[i].tag)
 		{
-			gi.Error("UnarchivePolyobjs: Invalid polyobj tag");
+			I_Error("UnarchivePolyobjs: Invalid polyobj tag");
 		}
 		PO_RotatePolyobj(polyobjs[i].tag, (angle_t)GET_LONG);
 		deltaX = GET_LONG-polyobjs[i].startSpot.x;
@@ -1919,7 +1917,7 @@ static void AssertSegment(gameArchiveSegment_t segType)
 {
 	if(GET_LONG != segType)
 	{
-		gi.Error("Corrupt save game: Segment [%d] failed alignment check",
+		I_Error("Corrupt save game: Segment [%d] failed alignment check",
 			segType);
 	}
 }
@@ -1988,9 +1986,9 @@ static void CopyFile(char *sourceName, char *destName)
 	int length;
 	byte *buffer;
 
-	length = gi.ReadFile(sourceName, &buffer);
-	gi.WriteFile(destName, buffer, length);
-	gi.Z_Free(buffer);
+	length = M_ReadFile(sourceName, &buffer);
+	M_WriteFile(destName, buffer, length);
+	Z_Free(buffer);
 }
 
 //==========================================================================

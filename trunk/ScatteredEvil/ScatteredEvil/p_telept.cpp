@@ -70,15 +70,15 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, angle_t angle,
 			{
 				thing->z = thing->ceilingz-thing->height;
 			}
-			player->plr->viewz = thing->z+player->viewheight;
+			player->viewz = thing->z+player->viewheight;
 		}
 		else
 		{
 			thing->z = thing->floorz;
-			player->plr->viewz = thing->z+player->viewheight;
+			player->viewz = thing->z+player->viewheight;
 			if(useFog)
 			{
-				player->plr->lookdir = 0;
+				player->lookdir = 0;
 			}
 		}
 	}
@@ -172,6 +172,6 @@ boolean EV_Teleport(int tid, mobj_t *thing, boolean fog)
 	{
 		mo = P_FindMobjFromTID(tid, &searcher);
 	}
-	if (!mo) gi.Error("Can't find teleport mapspot\n");
+	if (!mo) I_Error("Can't find teleport mapspot\n");
 	return P_Teleport(thing, mo->x, mo->y, mo->angle, fog);
 }

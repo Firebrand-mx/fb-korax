@@ -122,8 +122,7 @@ class KMenuScreenSaveGame:public KMenuScreen
 		{
 			KMenuSaveGameSlot *Slot = NewWindow(KMenuSaveGameSlot, this);
 			Slot->PrepareSlot(i);
-			Slot->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-			Items[NumItems++] = Slot;
+			Slot->SetPos(ChoiceStartX, ChoiceStartY + i * itemHeight);
 		}
 	}
 

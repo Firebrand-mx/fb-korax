@@ -259,7 +259,7 @@ void T_MoveFloor(floormove_t *floor)
 			floor->sector->floorpic -= floor->textureChange;
 		}
 		P_TagFinished(floor->sector->tag);
-		gi.RemoveThinker(&floor->thinker);
+		P_RemoveThinker(&floor->thinker);
 	}
 }
 
@@ -289,9 +289,9 @@ int EV_DoFloor(line_t *line, byte *args, floor_e floortype)
 		//      new floor thinker
 		//
 		rtn = 1;
-		floor = (floormove_t *)gi.Z_Malloc (sizeof(*floor), PU_LEVSPEC, 0);
+		floor = (floormove_t *)Z_Malloc (sizeof(*floor), PU_LEVSPEC, 0);
 		memset(floor, 0, sizeof(*floor));
-		gi.AddThinker (&floor->thinker);
+		P_AddThinker (&floor->thinker);
 		sec->specialdata = floor;
 		floor->thinker.function = (think_t)T_MoveFloor;
 		floor->type = floortype;
@@ -466,7 +466,7 @@ static void QueueStairSector(sector_t *sec, int type, int height)
 {
 	if((QueueTail+1)%STAIR_QUEUE_SIZE == QueueHead)
 	{
-		gi.Error("BuildStairs:  Too many branches located.\n");
+		I_Error("BuildStairs:  Too many branches located.\n");
 	}
 	StairQueue[QueueTail].sector = sec;
 	StairQueue[QueueTail].type = type;
@@ -514,9 +514,9 @@ static void ProcessStairSector(sector_t *sec, int type, int height,
 	// new floor thinker
 	//
 	height += StepDelta;
-	floor = (floormove_t *)gi.Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0);
+	floor = (floormove_t *)Z_Malloc(sizeof(*floor), PU_LEVSPEC, 0);
 	memset(floor, 0, sizeof(*floor));
-	gi.AddThinker(&floor->thinker);
+	P_AddThinker(&floor->thinker);
 	sec->specialdata = floor;
 	floor->thinker.function = (think_t)T_MoveFloor;
 	floor->type = FLEV_RAISEBUILDSTEP;
@@ -564,24 +564,24 @@ static void ProcessStairSector(sector_t *sec, int type, int height,
 	//
 	for (i = 0; i < sec->linecount; i++)
 	{
-		if(!((sec->Lines[i])->flags&ML_TWOSIDED))
+		if(!((sec->lines[i])->flags&ML_TWOSIDED))
 		{
 			continue;
 		}
-		tsec = (sec->Lines[i])->frontsector;
+		tsec = sec->lines[i]->frontsector;
 		if(tsec->special == type+STAIR_SECTOR_TYPE && !tsec->specialdata
-			&& tsec->floorpic == Texture && tsec->validcount != Validcount)
+			&& tsec->floorpic == Texture && tsec->validcount != validcount)
 		{
 			QueueStairSector(tsec, type^1, height);
-			tsec->validcount = Validcount;
+			tsec->validcount = validcount;
 			//tsec->special = 0;
 		}
-		tsec = (sec->Lines[i])->backsector;
+		tsec = sec->lines[i]->backsector;
 		if(tsec->special == type+STAIR_SECTOR_TYPE && !tsec->specialdata
-			&& tsec->floorpic == Texture && tsec->validcount != Validcount)
+			&& tsec->floorpic == Texture && tsec->validcount != validcount)
 		{
 			QueueStairSector(tsec, type^1, height);
-			tsec->validcount = Validcount;
+			tsec->validcount = validcount;
 			//tsec->special = 0;
 		}
 	}
@@ -624,7 +624,7 @@ int EV_BuildStairs(line_t *line, byte *args, int direction,
 
 	secnum = -1;
 
-	Validcount++; 
+	validcount++; 
 	while ((secnum = P_FindSectorFromTag(args[0], secnum)) >= 0)
 	{
 		sec = &sectors[secnum];
@@ -668,7 +668,7 @@ void T_BuildPillar(pillar_t *pillar)
 		pillar->sector->specialdata = NULL;
 		SN_StopSequence((mobj_t *)&pillar->sector->soundorg);
 		P_TagFinished(pillar->sector->tag);
-		gi.RemoveThinker(&pillar->thinker);
+		P_RemoveThinker(&pillar->thinker);
 	}
 }
 
@@ -708,9 +708,9 @@ int EV_BuildPillar(line_t *line, byte *args, boolean crush)
 			newHeight = sec->floorheight+(args[2]<<FRACBITS);
 		}
 
-		pillar = (pillar_t *)gi.Z_Malloc(sizeof(*pillar), PU_LEVSPEC, 0);
+		pillar = (pillar_t *)Z_Malloc(sizeof(*pillar), PU_LEVSPEC, 0);
 		sec->specialdata = pillar;
-		gi.AddThinker(&pillar->thinker);
+		P_AddThinker(&pillar->thinker);
 		pillar->thinker.function = (think_t)T_BuildPillar;
 		pillar->sector = sec;
 		if(!args[2])
@@ -764,9 +764,9 @@ int EV_OpenPillar(line_t *line, byte *args)
 			continue;
 		}
 		rtn = 1;
-		pillar = (pillar_t *)gi.Z_Malloc(sizeof(*pillar), PU_LEVSPEC, 0);
+		pillar = (pillar_t *)Z_Malloc(sizeof(*pillar), PU_LEVSPEC, 0);
 		sec->specialdata = pillar;
-		gi.AddThinker(&pillar->thinker);
+		P_AddThinker(&pillar->thinker);
 		pillar->thinker.function = (think_t)T_BuildPillar;
 		pillar->sector = sec;
 		if(!args[2])
@@ -820,7 +820,7 @@ int EV_FloorCrushStop(line_t *line, byte *args)
 	boolean rtn;
 
 	rtn = 0;
-	for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+	for(think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
 		if(think->function != (think_t)T_MoveFloor)
 		{
@@ -835,7 +835,7 @@ int EV_FloorCrushStop(line_t *line, byte *args)
 		SN_StopSequence((mobj_t *)&floor->sector->soundorg);
 		floor->sector->specialdata = NULL;
 		P_TagFinished(floor->sector->tag);
-		gi.RemoveThinker(&floor->thinker);
+		P_RemoveThinker(&floor->thinker);
 		rtn = 1;
 	}	
 	return rtn;
@@ -870,7 +870,7 @@ void T_FloorWaggle(floorWaggle_t *waggle)
 				P_ChangeSector(waggle->sector, true);
 				waggle->sector->specialdata = NULL;
 				P_TagFinished(waggle->sector->tag);
-				gi.RemoveThinker(&waggle->thinker);
+				P_RemoveThinker(&waggle->thinker);
 				return;
 			}
 			break;
@@ -915,7 +915,7 @@ boolean EV_StartFloorWaggle(int tag, int height, int speed, int offset,
 			continue;
 		}
 		retCode = true;
-		waggle = (floorWaggle_t *)gi.Z_Malloc(sizeof(*waggle), PU_LEVSPEC, 0);
+		waggle = (floorWaggle_t *)Z_Malloc(sizeof(*waggle), PU_LEVSPEC, 0);
 		sector->specialdata = waggle;
 		waggle->thinker.function = (think_t)T_FloorWaggle;
 		waggle->sector = sector;
@@ -928,7 +928,7 @@ boolean EV_StartFloorWaggle(int tag, int height, int speed, int offset,
 			/(35+((3*35)*height)/255);
 		waggle->ticker = timer ? timer*35 : -1;
 		waggle->state = WGLSTATE_EXPAND;
-		gi.AddThinker(&waggle->thinker);
+		P_AddThinker(&waggle->thinker);
 	}
 	return retCode;
 }

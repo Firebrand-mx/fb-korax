@@ -36,13 +36,13 @@ void T_Light(light_t *light)
 				if(light->sector->lightlevel >= light->value1)
 				{
 					light->sector->lightlevel = light->value1;
-					gi.RemoveThinker(&light->thinker);
+					P_RemoveThinker(&light->thinker);
 				}
 			}
 			else if(light->sector->lightlevel <= light->value1)
 			{
 				light->sector->lightlevel = light->value1;
-				gi.RemoveThinker(&light->thinker);
+				P_RemoveThinker(&light->thinker);
 			}
 			break;
 		case LITE_GLOW:
@@ -125,7 +125,7 @@ boolean EV_SpawnLight(line_t *line, byte *arg, lighttype_t type)
 		think = false;
 		sec = &sectors[secNum];
 
-		light = (light_t *)gi.Z_Malloc(sizeof(light_t), PU_LEVSPEC, 0);
+		light = (light_t *)Z_Malloc(sizeof(light_t), PU_LEVSPEC, 0);
 		light->type = type;
 		light->sector = sec;
 		light->count = 0;
@@ -208,12 +208,12 @@ boolean EV_SpawnLight(line_t *line, byte *arg, lighttype_t type)
 		}
 		if(think)
 		{
-			gi.AddThinker(&light->thinker);
+			P_AddThinker(&light->thinker);
 			light->thinker.function = (think_t)T_Light;
 		}
 		else
 		{
-			gi.Z_Free(light);
+			Z_Free(light);
 		}
 	}
 	return rtn;
@@ -253,8 +253,8 @@ void P_SpawnPhasedLight(sector_t *sector, int base, int index)
 {
 	phase_t	*phase;
 
-	phase = (phase_t *)gi.Z_Malloc(sizeof(*phase), PU_LEVSPEC, 0);
-	gi.AddThinker(&phase->thinker);
+	phase = (phase_t *)Z_Malloc(sizeof(*phase), PU_LEVSPEC, 0);
+	P_AddThinker(&phase->thinker);
 	phase->sector = sector;
 	if(index == -1)
 	{ // sector->lightlevel as the index
@@ -298,7 +298,7 @@ void P_SpawnLightSequence(sector_t *sector, int indexStep)
 		sec->special = LIGHT_SEQUENCE_START; // make sure that the search doesn't back up.
 		for(i = 0; i < sec->linecount; i++)
 		{
-			tempSec = getNextSector(sec->Lines[i], sec);
+			tempSec = getNextSector(sec->lines[i], sec);
 			if(!tempSec)
 			{
 				continue;
@@ -336,7 +336,7 @@ void P_SpawnLightSequence(sector_t *sector, int indexStep)
 		index += indexDelta;
 		for(i = 0; i < sec->linecount; i++)
 		{
-			tempSec = getNextSector(sec->Lines[i], sec);
+			tempSec = getNextSector(sec->lines[i], sec);
 			if(!tempSec)
 			{
 				continue;

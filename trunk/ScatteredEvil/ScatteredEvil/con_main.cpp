@@ -3,18 +3,71 @@
 #include "con_local.h"
 
 KConPlay *ConPlay;
+KConversationList *ConList;
 
 //==========================================================================
 //
-//	CON_StartConversation
+//	ConSys_LoadConversations
 //
 //==========================================================================
 
-boolean CON_StartConversation(mobj_t *User, mobj_t *Target)
+void ConSys_LoadConversations(char *MapName)
 {
-	if (Target->type == MT_CMAGE)
+	//	Destroy previous conversations, if they still exist
+	if (ConList)
+	{
+		ConList->Destroy();
+		ConList = NULL;
+	}
+	//	And player too
+	if (ConPlay)
+	{
+		ConPlay->Destroy();
+		ConPlay = NULL;
+	}
+
+	//	Spawn list object
+	ConList = Spawn<KConversationList>();
+
+	//	Read script
+	ConList->ParseScript(MapName);
+}
+
+//==========================================================================
+//
+//	ConSys_DestroyConversations
+//
+//==========================================================================
+
+void ConSys_DestroyConversations(void)
+{
+	if (ConList)
+	{
+		ConList->Destroy();
+		ConList = NULL;
+	}
+	if (ConPlay)
+	{
+		ConPlay->Destroy();
+		ConPlay = NULL;
+	}
+}
+
+//==========================================================================
+//
+//	ConSys_StartConversation
+//
+//==========================================================================
+
+boolean ConSys_StartConversation(mobj_t *User, mobj_t *Target)
+{
+	if (!ConList)
+		return false;
+	KConversation *Con = ConList->GetActiveConversation(User, Target);
+	if (Con)
 	{
 		ConPlay = Spawn<KConPlay>();
+		ConPlay->SetConversation(Con);
 		if (!ConPlay->StartConversation(User, Target))
 		{
 			ConPlay->Destroy();
@@ -28,11 +81,11 @@ boolean CON_StartConversation(mobj_t *User, mobj_t *Target)
 
 //==========================================================================
 //
-//	CON_Ticker
+//	ConSys_Ticker
 //
 //==========================================================================
 
-void CON_Ticker(void)
+void ConSys_Ticker(void)
 {
 	if (ConPlay)
 	{

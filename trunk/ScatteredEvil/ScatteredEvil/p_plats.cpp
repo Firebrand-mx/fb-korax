@@ -127,8 +127,8 @@ int EV_DoPlat(line_t *line, byte *args, plattype_e type, int amount)
 		// Find lowest & highest floors around sector
 		//
 		rtn = 1;
-		plat = (plat_t *)gi.Z_Malloc( sizeof(*plat), PU_LEVSPEC, 0);
-		gi.AddThinker(&plat->thinker);
+		plat = (plat_t *)Z_Malloc( sizeof(*plat), PU_LEVSPEC, 0);
+		P_AddThinker(&plat->thinker);
 
 		plat->type = type;
 		plat->sector = sec;
@@ -214,7 +214,7 @@ void EV_StopPlat(line_t *line, byte *args)
 		{
 			(activeplats[i])->sector->specialdata = NULL;
 			P_TagFinished((activeplats[i])->sector->tag);
-			gi.RemoveThinker(&(activeplats[i])->thinker);
+			P_RemoveThinker(&(activeplats[i])->thinker);
 			activeplats[i] = NULL;
 
 			return;
@@ -247,7 +247,7 @@ void P_AddActivePlat(plat_t *plat)
 			activeplats[i] = plat;
 			return;
 		}
-	gi.Error ("P_AddActivePlat: no more plats!");
+	I_Error ("P_AddActivePlat: no more plats!");
 }
 
 void P_RemoveActivePlat(plat_t *plat)
@@ -258,9 +258,9 @@ void P_RemoveActivePlat(plat_t *plat)
 		{
 			(activeplats[i])->sector->specialdata = NULL;
 			P_TagFinished(plat->sector->tag);
-			gi.RemoveThinker(&(activeplats[i])->thinker);
+			P_RemoveThinker(&(activeplats[i])->thinker);
 			activeplats[i] = NULL;
 			return;
 		}
-	gi.Error ("P_RemoveActivePlat: can't find plat!");
+	I_Error ("P_RemoveActivePlat: can't find plat!");
 }

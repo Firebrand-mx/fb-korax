@@ -91,7 +91,7 @@ void T_RotatePoly(polyevent_t *pe)
 			}
 			SN_StopSequence((mobj_t *)&poly->startSpot);
 			P_PolyobjFinished(poly->tag);
-			gi.RemoveThinker(&pe->thinker);
+			P_RemoveThinker(&pe->thinker);
 		}
 		if(pe->dist < absSpeed)
 		{
@@ -124,10 +124,10 @@ boolean EV_RotatePoly(line_t *line, byte *args, int direction, boolean
 	}
 	else
 	{
-		gi.Error("EV_RotatePoly:  Invalid polyobj num: %d\n", polyNum);
+		I_Error("EV_RotatePoly:  Invalid polyobj num: %d\n", polyNum);
 	}
-	pe = (polyevent_t *)gi.Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
-	gi.AddThinker(&pe->thinker);
+	pe = (polyevent_t *)Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
+	P_AddThinker(&pe->thinker);
 	pe->thinker.function = (think_t)T_RotatePoly;
 	pe->polyobj = polyNum;
 	if(args[2])
@@ -157,8 +157,8 @@ boolean EV_RotatePoly(line_t *line, byte *args, int direction, boolean
 		{ // mirroring poly is already in motion
 			break;
 		}
-		pe = (polyevent_t *)gi.Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
-		gi.AddThinker(&pe->thinker);
+		pe = (polyevent_t *)Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
+		P_AddThinker(&pe->thinker);
 		pe->thinker.function = (think_t)T_RotatePoly;
 		poly->specialdata = pe;
 		pe->polyobj = mirror;
@@ -183,7 +183,7 @@ boolean EV_RotatePoly(line_t *line, byte *args, int direction, boolean
 		}
 		else
 		{
-			gi.Error("EV_RotatePoly:  Invalid polyobj num: %d\n", polyNum);
+			I_Error("EV_RotatePoly:  Invalid polyobj num: %d\n", polyNum);
 		}
 		direction = -direction;
 		pe->speed = (args[1]*direction*(ANGLE_90/64))>>3;
@@ -218,7 +218,7 @@ void T_MovePoly(polyevent_t *pe)
 			}
 			SN_StopSequence((mobj_t *)&poly->startSpot);
 			P_PolyobjFinished(poly->tag);
-			gi.RemoveThinker(&pe->thinker);
+			P_RemoveThinker(&pe->thinker);
 		}
 		if(pe->dist < absSpeed)
 		{
@@ -254,10 +254,10 @@ boolean EV_MovePoly(line_t *line, byte *args, boolean timesEight, boolean
 	}
 	else
 	{
-		gi.Error("EV_MovePoly:  Invalid polyobj num: %d\n", polyNum);
+		I_Error("EV_MovePoly:  Invalid polyobj num: %d\n", polyNum);
 	}
-	pe = (polyevent_t *)gi.Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
-	gi.AddThinker(&pe->thinker);
+	pe = (polyevent_t *)Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
+	P_AddThinker(&pe->thinker);
 	pe->thinker.function = (think_t)T_MovePoly;
 	pe->polyobj = polyNum;
 	if(timesEight)
@@ -286,8 +286,8 @@ boolean EV_MovePoly(line_t *line, byte *args, boolean timesEight, boolean
 		{ // mirroring poly is already in motion
 			break;
 		}
-		pe = (polyevent_t *)gi.Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
-		gi.AddThinker(&pe->thinker);
+		pe = (polyevent_t *)Z_Malloc(sizeof(polyevent_t), PU_LEVSPEC, 0);
+		P_AddThinker(&pe->thinker);
 		pe->thinker.function = (think_t)T_MovePoly;
 		pe->polyobj = mirror;
 		poly->specialdata = pe;
@@ -360,7 +360,7 @@ void T_PolyDoor(polydoor_t *pd)
 							poly->specialdata = NULL;
 						}
 						P_PolyobjFinished(poly->tag);
-						gi.RemoveThinker(&pd->thinker);
+						P_RemoveThinker(&pd->thinker);
 					}
 				}
 			}
@@ -411,7 +411,7 @@ void T_PolyDoor(polydoor_t *pd)
 							poly->specialdata = NULL;
 						}
 						P_PolyobjFinished(poly->tag);
-						gi.RemoveThinker(&pd->thinker);
+						P_RemoveThinker(&pd->thinker);
 					}
 				}
 			}
@@ -461,11 +461,11 @@ boolean EV_OpenPolyDoor(line_t *line, byte *args, podoortype_t type)
 	}
 	else
 	{
-		gi.Error("EV_OpenPolyDoor:  Invalid polyobj num: %d\n", polyNum);
+		I_Error("EV_OpenPolyDoor:  Invalid polyobj num: %d\n", polyNum);
 	}
-	pd = (polydoor_t *)gi.Z_Malloc(sizeof(polydoor_t), PU_LEVSPEC, 0);
+	pd = (polydoor_t *)Z_Malloc(sizeof(polydoor_t), PU_LEVSPEC, 0);
 	memset(pd, 0, sizeof(polydoor_t));
-	gi.AddThinker(&pd->thinker);
+	P_AddThinker(&pd->thinker);
 	pd->thinker.function = (think_t)T_PolyDoor;
 	pd->type = type;
 	pd->polyobj = polyNum;
@@ -502,9 +502,9 @@ boolean EV_OpenPolyDoor(line_t *line, byte *args, podoortype_t type)
 		{ // mirroring poly is already in motion
 			break;
 		}
-		pd = (polydoor_t *)gi.Z_Malloc(sizeof(polydoor_t), PU_LEVSPEC, 0);
+		pd = (polydoor_t *)Z_Malloc(sizeof(polydoor_t), PU_LEVSPEC, 0);
 		memset(pd, 0, sizeof(polydoor_t));
-		gi.AddThinker(&pd->thinker);
+		P_AddThinker(&pd->thinker);
 		pd->thinker.function = (think_t)T_PolyDoor;
 		pd->polyobj = mirror;
 		pd->type = type;
@@ -573,7 +573,7 @@ static int GetPolyobjMirror(int poly)
 	{
 		if(polyobjs[i].tag == poly)
 		{
-			return((*polyobjs[i].Segs)->linedef->arg2);
+			return((*polyobjs[i].segs)->linedef->arg2);
 		}
 	}
 	return 0;
@@ -712,27 +712,27 @@ boolean PO_MovePolyobj(int num, int x, int y)
 
 	if(!(po = GetPolyobj(num)))
 	{
-		gi.Error("PO_MovePolyobj:  Invalid polyobj number: %d\n", num);
+		I_Error("PO_MovePolyobj:  Invalid polyobj number: %d\n", num);
 	}
 
 	UnLinkPolyobj(po);
 
-	segList = po->Segs;
+	segList = po->segs;
 	prevPts = po->prevPts;
 	blocked = false;
 
-	Validcount++;
-	for(count = po->numSegs; count; count--, segList++, prevPts++)
+	validcount++;
+	for(count = po->numsegs; count; count--, segList++, prevPts++)
 	{
-		if((*segList)->linedef->validcount != Validcount)
+		if((*segList)->linedef->validcount != validcount)
 		{
 			(*segList)->linedef->bbox[BOXTOP] += y;
 			(*segList)->linedef->bbox[BOXBOTTOM] += y;
 			(*segList)->linedef->bbox[BOXLEFT] += x;
 			(*segList)->linedef->bbox[BOXRIGHT] += x;
-			(*segList)->linedef->validcount = Validcount;
+			(*segList)->linedef->validcount = validcount;
 		}
-		for(veryTempSeg = po->Segs; veryTempSeg != segList;
+		for(veryTempSeg = po->segs; veryTempSeg != segList;
 			veryTempSeg++)
 		{
 			if((*veryTempSeg)->v1 == (*segList)->v1)
@@ -748,8 +748,8 @@ boolean PO_MovePolyobj(int num, int x, int y)
 		(*prevPts).x += x; // previous points are unique for each seg
 		(*prevPts).y += y;
 	}
-	segList = po->Segs;
-	for(count = po->numSegs; count; count--, segList++)
+	segList = po->segs;
+	for(count = po->numsegs; count; count--, segList++)
 	{
 		if(CheckMobjBlocking(*segList, po))
 		{
@@ -758,21 +758,21 @@ boolean PO_MovePolyobj(int num, int x, int y)
 	}
 	if(blocked)
 	{
-		count = po->numSegs;
-		segList = po->Segs;
+		count = po->numsegs;
+		segList = po->segs;
 		prevPts = po->prevPts;
-		Validcount++;
+		validcount++;
 		while(count--)
 		{
-			if((*segList)->linedef->validcount != Validcount)
+			if((*segList)->linedef->validcount != validcount)
 			{
 				(*segList)->linedef->bbox[BOXTOP] -= y;
 				(*segList)->linedef->bbox[BOXBOTTOM] -= y;
 				(*segList)->linedef->bbox[BOXLEFT] -= x;
 				(*segList)->linedef->bbox[BOXRIGHT] -= x;
-				(*segList)->linedef->validcount = Validcount;
+				(*segList)->linedef->validcount = validcount;
 			}
-			for(veryTempSeg = po->Segs; veryTempSeg != segList;
+			for(veryTempSeg = po->segs; veryTempSeg != segList;
 				veryTempSeg++)
 			{
 				if((*veryTempSeg)->v1 == (*segList)->v1)
@@ -840,17 +840,17 @@ boolean PO_RotatePolyobj(int num, angle_t angle)
 
 	if(!(po = GetPolyobj(num)))
 	{
-		gi.Error("PO_RotatePolyobj:  Invalid polyobj number: %d\n", num);
+		I_Error("PO_RotatePolyobj:  Invalid polyobj number: %d\n", num);
 	}
 	an = (po->angle+angle)>>ANGLETOFINESHIFT;
 
 	UnLinkPolyobj(po);
 
-	segList = po->Segs;
+	segList = po->segs;
 	originalPts = po->originalPts;
 	prevPts = po->prevPts;
 
-	for(count = po->numSegs; count; count--, segList++, originalPts++,
+	for(count = po->numsegs; count; count--, segList++, originalPts++,
 		prevPts++)
 	{
 		prevPts->x = (*segList)->v1->x;
@@ -860,39 +860,39 @@ boolean PO_RotatePolyobj(int num, angle_t angle)
 		RotatePt(an, &(*segList)->v1->x, &(*segList)->v1->y, po->startSpot.x,
 			po->startSpot.y);
 	}
-	segList = po->Segs;
+	segList = po->segs;
 	blocked = false;
-	Validcount++;
-	for(count = po->numSegs; count; count--, segList++)
+	validcount++;
+	for(count = po->numsegs; count; count--, segList++)
 	{
 		if(CheckMobjBlocking(*segList, po))
 		{
 			blocked = true;
 		}
-		if((*segList)->linedef->validcount != Validcount)
+		if((*segList)->linedef->validcount != validcount)
 		{
 			UpdateSegBBox(*segList);
-			(*segList)->linedef->validcount = Validcount;
+			(*segList)->linedef->validcount = validcount;
 		}
 		(*segList)->angle += angle;
 	}
 	if(blocked)
 	{
-		segList = po->Segs;
+		segList = po->segs;
 		prevPts = po->prevPts;
-		for(count = po->numSegs; count; count--, segList++, prevPts++)
+		for(count = po->numsegs; count; count--, segList++, prevPts++)
 		{
 			(*segList)->v1->x = prevPts->x;
 			(*segList)->v1->y = prevPts->y;
 		}
-		segList = po->Segs;
-		Validcount++;
-		for(count = po->numSegs; count; count--, segList++, prevPts++)
+		segList = po->segs;
+		validcount++;
+		for(count = po->numsegs; count; count--, segList++, prevPts++)
 		{
-			if((*segList)->linedef->validcount != Validcount)
+			if((*segList)->linedef->validcount != validcount)
 			{
 				UpdateSegBBox(*segList);
-				(*segList)->linedef->validcount = Validcount;
+				(*segList)->linedef->validcount = validcount;
 			}
 			(*segList)->angle -= angle;
 		}
@@ -955,11 +955,11 @@ static void LinkPolyobj(polyobj_t *po)
 	int i, j;
 
 	// calculate the polyobj bbox
-	tempSeg = po->Segs;
+	tempSeg = po->segs;
 	rightX = leftX = (*tempSeg)->v1->x;
 	topY = bottomY = (*tempSeg)->v1->y;
 
-	for(i = 0; i < po->numSegs; i++, tempSeg++)
+	for(i = 0; i < po->numsegs; i++, tempSeg++)
 	{
 		if((*tempSeg)->v1->x > rightX)
 		{
@@ -993,7 +993,7 @@ static void LinkPolyobj(polyobj_t *po)
 				link = &PolyBlockMap[j+i];
 				if(!(*link))
 				{ // Create a new link at the current block cell
-					*link = (polyblock_t *)gi.Z_Malloc(sizeof(polyblock_t), PU_LEVEL, 0);
+					*link = (polyblock_t *)Z_Malloc(sizeof(polyblock_t), PU_LEVEL, 0);
 					(*link)->next = NULL;
 					(*link)->prev = NULL;
 					(*link)->polyobj = po;
@@ -1014,7 +1014,7 @@ static void LinkPolyobj(polyobj_t *po)
 				}
 				else
 				{
-					tempLink->next = (polyblock_t *)gi.Z_Malloc(sizeof(polyblock_t), 
+					tempLink->next = (polyblock_t *)Z_Malloc(sizeof(polyblock_t), 
 						PU_LEVEL, 0);
 					tempLink->next->next = NULL;
 					tempLink->next->prev = tempLink;
@@ -1110,7 +1110,7 @@ static void InitBlockMap(void)
 	int leftX, rightX;
 	int topY, bottomY;
 
-	PolyBlockMap = (polyblock_t **)gi.Z_Malloc(bmapwidth*bmapheight*sizeof(polyblock_t *),
+	PolyBlockMap = (polyblock_t **)Z_Malloc(bmapwidth*bmapheight*sizeof(polyblock_t *),
 		PU_LEVEL, 0);
 	memset(PolyBlockMap, 0, bmapwidth*bmapheight*sizeof(polyblock_t *));
 
@@ -1120,10 +1120,10 @@ static void InitBlockMap(void)
 
 		// calculate a rough area
 		// right now, working like shit...gotta fix this...
-		segList = polyobjs[i].Segs;
+		segList = polyobjs[i].segs;
 		leftX = rightX = (*segList)->v1->x;
 		topY = bottomY = (*segList)->v1->y;
-		for(j = 0; j < polyobjs[i].numSegs; j++, segList++)
+		for(j = 0; j < polyobjs[i].numsegs; j++, segList++)
 		{
 			if((*segList)->v1->x < leftX)
 			{
@@ -1185,7 +1185,7 @@ static void IterFindPolySegs(int x, int y, seg_t **segList)
 			return;
 		}
 	}
-	gi.Error("IterFindPolySegs:  Non-closed Polyobj located.\n");
+	I_Error("IterFindPolySegs:  Non-closed Polyobj located.\n");
 }
 
 
@@ -1209,9 +1209,9 @@ static void SpawnPolyobj(int index, int tag, boolean crush)
 		if(segs[i].linedef->special == PO_LINE_START &&
 			segs[i].linedef->arg1 == tag)
 		{
-			if(polyobjs[index].Segs)
+			if(polyobjs[index].segs)
 			{
-				gi.Error("SpawnPolyobj:  Polyobj %d already spawned.\n", tag);
+				I_Error("SpawnPolyobj:  Polyobj %d already spawned.\n", tag);
 			}
 			segs[i].linedef->special = 0;
 			segs[i].linedef->arg1 = 0;
@@ -1219,12 +1219,12 @@ static void SpawnPolyobj(int index, int tag, boolean crush)
 			PolyStartX = segs[i].v1->x;
 			PolyStartY = segs[i].v1->y;
 			IterFindPolySegs(segs[i].v2->x, segs[i].v2->y, NULL);
-			polyobjs[index].numSegs = PolySegCount;
-			polyobjs[index].Segs = (seg_t **)gi.Z_Malloc(PolySegCount*sizeof(seg_t *),
+			polyobjs[index].numsegs = PolySegCount;
+			polyobjs[index].segs = (seg_t **)Z_Malloc(PolySegCount*sizeof(seg_t *),
 				PU_LEVEL, 0);
-			*(polyobjs[index].Segs) = &segs[i]; // insert the first seg
+			*(polyobjs[index].segs) = &segs[i]; // insert the first seg
 			IterFindPolySegs(segs[i].v2->x, segs[i].v2->y,
-				polyobjs[index].Segs+1);
+				polyobjs[index].segs+1);
 			polyobjs[index].crush = crush;
 			polyobjs[index].tag = tag;
 			polyobjs[index].seqType = segs[i].linedef->arg3;
@@ -1236,10 +1236,10 @@ static void SpawnPolyobj(int index, int tag, boolean crush)
 			break;
 		}
 	}
-	if(!polyobjs[index].Segs)
+	if(!polyobjs[index].segs)
 	{ // didn't find a polyobj through PO_LINE_START
 		psIndex = 0;
-		polyobjs[index].numSegs = 0;
+		polyobjs[index].numsegs = 0;
 		for(j = 1; j < PO_MAXPOLYSEGS; j++)
 		{
 			psIndexOld = psIndex;
@@ -1251,17 +1251,17 @@ static void SpawnPolyobj(int index, int tag, boolean crush)
 				{
 					if(!segs[i].linedef->arg2)
 					{
-						gi.Error("SpawnPolyobj:  Explicit line missing order number (probably %d) in poly %d.\n",
+						I_Error("SpawnPolyobj:  Explicit line missing order number (probably %d) in poly %d.\n",
 							j+1, tag);
 					}
 					if(segs[i].linedef->arg2 == j)
 					{
 						polySegList[psIndex] = &segs[i];
-						polyobjs[index].numSegs++;
+						polyobjs[index].numsegs++;
 						psIndex++;
 						if(psIndex > PO_MAXPOLYSEGS)
 						{
-							gi.Error("SpawnPolyobj:  psIndex > PO_MAXPOLYSEGS\n");
+							I_Error("SpawnPolyobj:  psIndex > PO_MAXPOLYSEGS\n");
 						}
 					}
 				}
@@ -1289,29 +1289,29 @@ static void SpawnPolyobj(int index, int tag, boolean crush)
 					if(segs[i].linedef->special == PO_LINE_EXPLICIT &&
 						segs[i].linedef->arg1 == tag)
 					{
-						gi.Error("SpawnPolyobj:  Missing explicit line %d for poly %d\n",
+						I_Error("SpawnPolyobj:  Missing explicit line %d for poly %d\n",
 							j, tag);
 					}
 				}
 			}
 		}
-		if(polyobjs[index].numSegs)
+		if(polyobjs[index].numsegs)
 		{
-			PolySegCount = polyobjs[index].numSegs; // PolySegCount used globally
+			PolySegCount = polyobjs[index].numsegs; // PolySegCount used globally
 			polyobjs[index].crush = crush;
 			polyobjs[index].tag = tag;
-			polyobjs[index].Segs = (seg_t **)gi.Z_Malloc(polyobjs[index].numSegs
+			polyobjs[index].segs = (seg_t **)Z_Malloc(polyobjs[index].numsegs
 				*sizeof(seg_t *), PU_LEVEL, 0);
-			for(i = 0; i < polyobjs[index].numSegs; i++)
+			for(i = 0; i < polyobjs[index].numsegs; i++)
 			{
-				polyobjs[index].Segs[i] = polySegList[i];
+				polyobjs[index].segs[i] = polySegList[i];
 			}
-			polyobjs[index].seqType = (*polyobjs[index].Segs)->linedef->arg4;
+			polyobjs[index].seqType = (*polyobjs[index].segs)->linedef->arg4;
 		}
 		// Next, change the polyobjs first line to point to a mirror
 		//		if it exists
-		(*polyobjs[index].Segs)->linedef->arg2 =
-			(*polyobjs[index].Segs)->linedef->arg3;
+		(*polyobjs[index].segs)->linedef->arg2 =
+			(*polyobjs[index].segs)->linedef->arg3;
 	}
 }
 
@@ -1344,35 +1344,35 @@ static void TranslateToStartSpot(int tag, int originX, int originY)
 	}
 	if(!po)
 	{ // didn't match the tag with a polyobj tag
-		gi.Error("TranslateToStartSpot:  Unable to match polyobj tag: %d\n",
+		I_Error("TranslateToStartSpot:  Unable to match polyobj tag: %d\n",
 			tag);
 	}
-	if(po->Segs == NULL)
+	if(po->segs == NULL)
 	{
-		gi.Error("TranslateToStartSpot:  Anchor point located without a StartSpot point: %d\n", tag);
+		I_Error("TranslateToStartSpot:  Anchor point located without a StartSpot point: %d\n", tag);
 	}
-	po->originalPts = (vertex_t *)gi.Z_Malloc(po->numSegs*sizeof(vertex_t), PU_LEVEL, 0);
-	po->prevPts = (vertex_t *)gi.Z_Malloc(po->numSegs*sizeof(vertex_t), PU_LEVEL, 0);
+	po->originalPts = (vertex_t *)Z_Malloc(po->numsegs*sizeof(vertex_t), PU_LEVEL, 0);
+	po->prevPts = (vertex_t *)Z_Malloc(po->numsegs*sizeof(vertex_t), PU_LEVEL, 0);
 	deltaX = originX-po->startSpot.x;
 	deltaY = originY-po->startSpot.y;
 
-	tempSeg = po->Segs;
+	tempSeg = po->segs;
 	tempPt = po->originalPts;
 	avg.x = 0;
 	avg.y = 0;
 
-	Validcount++;
-	for(i = 0; i < po->numSegs; i++, tempSeg++, tempPt++)
+	validcount++;
+	for(i = 0; i < po->numsegs; i++, tempSeg++, tempPt++)
 	{
-		if((*tempSeg)->linedef->validcount != Validcount)
+		if((*tempSeg)->linedef->validcount != validcount)
 		{
 			(*tempSeg)->linedef->bbox[BOXTOP] -= deltaY;
 			(*tempSeg)->linedef->bbox[BOXBOTTOM] -= deltaY;
 			(*tempSeg)->linedef->bbox[BOXLEFT] -= deltaX;
 			(*tempSeg)->linedef->bbox[BOXRIGHT] -= deltaX;
-			(*tempSeg)->linedef->validcount = Validcount;
+			(*tempSeg)->linedef->validcount = validcount;
 		}
-		for(veryTempSeg = po->Segs; veryTempSeg != tempSeg; veryTempSeg++)
+		for(veryTempSeg = po->segs; veryTempSeg != tempSeg; veryTempSeg++)
 		{
 			if((*veryTempSeg)->v1 == (*tempSeg)->v1)
 			{
@@ -1391,12 +1391,12 @@ static void TranslateToStartSpot(int tag, int originX, int originY)
 		tempPt->x = (*tempSeg)->v1->x-po->startSpot.x;
 		tempPt->y = (*tempSeg)->v1->y-po->startSpot.y;
 	}
-	avg.x /= po->numSegs;
-	avg.y /= po->numSegs;
+	avg.x /= po->numsegs;
+	avg.y /= po->numsegs;
 	sub = R_PointInSubsector(avg.x<<FRACBITS, avg.y<<FRACBITS);
 	if(sub->poly != NULL)
 	{
-		gi.Error("PO_TranslateToStartSpot:  Multiple polyobjs in a single subsector.\n");
+		I_Error("PO_TranslateToStartSpot:  Multiple polyobjs in a single subsector.\n");
 	}
 	sub->poly = po;
 }
@@ -1415,15 +1415,13 @@ void PO_Init(int lump)
 	int 					numthings;
 	int polyIndex;
 
-	polyobjs = (polyobj_t *)gi.Z_Malloc(po_NumPolyobjs*sizeof(polyobj_t), PU_LEVEL, 0);
+	polyobjs = (polyobj_t *)Z_Malloc(po_NumPolyobjs*sizeof(polyobj_t), PU_LEVEL, 0);
 	memset(polyobjs, 0, po_NumPolyobjs*sizeof(polyobj_t));
 
-	data = (byte *)gi.W_CacheLumpNum(lump, PU_STATIC);
-	numthings = gi.W_LumpLength(lump)/sizeof(mapthing_t);
+	data = (byte *)W_CacheLumpNum(lump, PU_STATIC);
+	numthings = W_LumpLength(lump)/sizeof(mapthing_t);
 	mt = (mapthing_t *)data;
 	polyIndex = 0; // index polyobj number
-
-	//gi.Message( "Find startSpot points.\n");
 
 	// Find the startSpot points, and spawn each polyobj
 	for (i = 0; i < numthings; i++, mt++)
@@ -1455,20 +1453,18 @@ void PO_Init(int lump)
 			TranslateToStartSpot(mt->angle, mt->x<<FRACBITS, mt->y<<FRACBITS);
 		}
 	}
-	gi.Z_Free (data);
+	Z_Free (data);
 
 	// check for a startspot without an anchor point
 	for(i = 0; i < po_NumPolyobjs; i++)
 	{
 		if(!polyobjs[i].originalPts)
 		{
-			gi.Error("PO_Init:  StartSpot located without an Anchor point: %d\n",
+			I_Error("PO_Init:  StartSpot located without an Anchor point: %d\n",
 				polyobjs[i].tag);
 		}
 	}
-	//gi.Message("Startspots checked, initializing blockmap.\n");
 	InitBlockMap();
-	//gi.Message( "Done.\n");
 }
 
 //==========================================================================

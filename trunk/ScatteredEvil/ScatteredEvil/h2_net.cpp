@@ -8,10 +8,10 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include "H2def.h"
-#include "P_local.h"
-#include "Settings.h"
-#include "H2_net.h"
+#include "h2def.h"
+#include "p_local.h"
+#include "settings.h"
+#include "h2_net.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -66,11 +66,11 @@ void UpdateServerData(int set)
 		svd.slot = netSlot;
         svd.nmdamage = netMobDamageModifier;
         svd.nmhealth = netMobHealthModifier;
-		gi.NetSetServerData(&svd, sizeof(svd));
+		I_NetSetServerData(&svd, sizeof(svd));
 	}
 	else
 	{
-		gi.NetGetServerData(&svd, sizeof(svd));
+		I_NetGetServerData(&svd, sizeof(svd));
 		// Unpack the data.
 		netDeathmatch = svd.deathmatch;
 		netMap = svd.map;
@@ -91,7 +91,7 @@ int H2_NetServerOpen(int before)
 	else
 	{
 		plrdata_t pd = { netClass, netColor };
-		gi.NetSetPlayerData(&pd, sizeof(pd));
+		I_NetSetPlayerData(&pd, sizeof(pd));
 	}
 	return true;
 }
@@ -112,7 +112,7 @@ int H2_NetServerClose(int before)
 
 int H2_NetServerStarted(int before)
 {
-	int			i, server = gi.Get(DD_SERVER);
+	int			i;
 	plrdata_t	pd;
 
 	if(before)
@@ -123,7 +123,7 @@ int H2_NetServerStarted(int before)
 		// Update our player data, for the last time.
 		pd.pclass = netClass;
 		pd.color = netColor;
-		gi.NetSetPlayerData(&pd, sizeof(pd));
+		I_NetSetPlayerData(&pd, sizeof(pd));
 		return true;
 	}
 	// For clients: read the final server data.
@@ -132,9 +132,9 @@ int H2_NetServerStarted(int before)
 	// Let's read the data of each player.
 	for(i=0; i<MAXPLAYERS; i++)
 	{
-		if(players[i].plr->ingame)
+		if(players[i].ingame)
 		{
-			gi.NetGetPlayerData(i, &pd, sizeof(pd));
+			I_NetGetPlayerData(i, &pd, sizeof(pd));
 			PlayerClass[i] = (pclass_t)(pd.pclass);
 			PlayerColor[i] = pd.color;
 		}
@@ -176,10 +176,10 @@ int H2_NetConnect(int before)
 	UpdateServerData(false);
 
 	// Set the player data.
-	gi.NetSetPlayerData(&pd, sizeof(pd));
+	I_NetSetPlayerData(&pd, sizeof(pd));
 
 	// Some diagnostics.
-	gi.Message("Netgame: map%i, skill%i, dm%i, rs%i, rnd%i, !mnst%i, slot%i,\nnmDamage%i, nmHealth%i\n",
+	ST_Message("Netgame: map%i, skill%i, dm%i, rs%i, rnd%i, !mnst%i, slot%i,\nnmDamage%i, nmHealth%i\n",
 		netMap, netSkill, netDeathmatch, netRespawn, netRandomclass, netNomonsters, 
 		netSlot, netMobDamageModifier, netMobHealthModifier);
 	return true;
@@ -200,7 +200,7 @@ int H2_NetPlayerEvent(int plrNumber, int peType, void *data)
 	char	msgbuff[256];
 
 	// If this isn't a netgame, we won't react.
-	if(!gi.Get(DD_NETGAME)) return true;
+	if(!netgame) return true;
 
 	if(peType == DDPE_EXIT)
 	{
@@ -216,11 +216,11 @@ int H2_NetPlayerEvent(int plrNumber, int peType, void *data)
 		int i, num, oldecho = echoMsg;
 		// Count the number of players.
 		for(i=num=0; i<MAXPLAYERS; i++)
-			if(players[i].plr->ingame) num++;
+			if(players[i].ingame) num++;
 		// If there are more than two players, include the name of
 		// the player who sent this.
 		if(num > 2)
-			sprintf(msgbuff, "%s: %s", gi.GetPlayerName(plrNumber), data);
+			sprintf(msgbuff, "%s: %s", I_NetGetPlayerName(plrNumber), data);
 		else
 			strcpy(msgbuff, (char *)data);
 		// The chat message is already echoed by the console.

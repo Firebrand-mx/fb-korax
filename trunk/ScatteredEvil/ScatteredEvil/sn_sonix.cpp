@@ -115,7 +115,7 @@ static void VerifySequencePtr(int *base, int *ptr)
 {
 	if(ptr-base > SS_TEMPBUFFER_SIZE)
 	{
-		gi.Error("VerifySequencePtr:  tempPtr >= %d\n", SS_TEMPBUFFER_SIZE);
+		I_Error("VerifySequencePtr:  tempPtr >= %d\n", SS_TEMPBUFFER_SIZE);
 	}
 }
 
@@ -168,7 +168,7 @@ void SN_InitSequenceScript(void)
 			{
 				SC_ScriptError("SN_InitSequenceScript:  Nested Script Error");
 			}
-			tempDataStart = (int *)gi.Z_Malloc(SS_TEMPBUFFER_SIZE, 
+			tempDataStart = (int *)Z_Malloc(SS_TEMPBUFFER_SIZE, 
 				PU_STATIC, NULL);
 			memset(tempDataStart, 0, SS_TEMPBUFFER_SIZE);
 			tempDataPtr = tempDataStart;
@@ -181,7 +181,7 @@ void SN_InitSequenceScript(void)
 			}
 			if(i == SS_MAX_SCRIPTS)
 			{
-				gi.Error("Number of SS Scripts >= SS_MAX_SCRIPTS");
+				I_Error("Number of SS Scripts >= SS_MAX_SCRIPTS");
 			}
 			for(j = 0; j < SEQ_NUMSEQ; j++)
 			{
@@ -259,10 +259,10 @@ void SN_InitSequenceScript(void)
 
 			*tempDataPtr++ = SS_CMD_END;
 			dataSize = (tempDataPtr-tempDataStart)*sizeof(int);
-			SequenceData[i] = (int *)gi.Z_Malloc(dataSize, PU_STATIC,
+			SequenceData[i] = (int *)Z_Malloc(dataSize, PU_STATIC,
 				NULL);
 			memcpy(SequenceData[i], tempDataStart, dataSize);
-			gi.Z_Free(tempDataStart);
+			Z_Free(tempDataStart);
 			inSequence = -1;
 		}
 		else if(SC_Compare(SS_STRING_STOPSOUND))
@@ -290,7 +290,7 @@ void SN_StartSequence(mobj_t *mobj, int sequence)
 	seqnode_t *node;
 	
 	SN_StopSequence(mobj); // Stop any previous sequence
-	node = (seqnode_t *)gi.Z_Malloc(sizeof(seqnode_t), PU_STATIC, NULL);
+	node = (seqnode_t *)Z_Malloc(sizeof(seqnode_t), PU_STATIC, NULL);
 	node->sequencePtr = SequenceData[SequenceTranslate[sequence].scriptNum];
 	node->sequence = sequence;
 	node->mobj = mobj;
@@ -365,7 +365,7 @@ void SN_StopSequence(mobj_t *mobj)
 			{
 				node->next->prev = node->prev;
 			}
-			gi.Z_Free(node);
+			Z_Free(node);
 			ActiveSequences--;
 		}
 	}
@@ -400,8 +400,6 @@ void SN_UpdateActiveSequences(void)
 				if(!sndPlaying)
 				{
 					node->currentSoundID = *(node->sequencePtr+1);
-					/*gi.Message( "%s: %p\n", SequenceTranslate[node->sequence].name,
-						node->mobj);*/
 					S_StartSoundAtVolume(node->mobj, node->currentSoundID,
 						node->volume);
 				}

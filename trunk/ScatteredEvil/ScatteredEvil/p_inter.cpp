@@ -103,11 +103,10 @@ void P_SetMessage(player_t *player, char *message, boolean ultmsg)
 	}
 	if(player == &players[consoleplayer])
 	{
-		//BorderTopRefresh = true;
-		gi.Update(DDUF_TOP);
+		DD_GameUpdate(DDUF_TOP);
 	}
 	// Also show the message in the console.
-	if(echoMsg) gi.flconprintf(CBLF_CYAN, "%s\n", message);
+	if(echoMsg) CON_FPrintf(CBLF_CYAN, "%s\n", message);
 }
 
 //==========================================================================
@@ -152,11 +151,10 @@ void P_SetYellowMessage(player_t *player, char *message, boolean ultmsg)
 	}
 	if(player == &players[consoleplayer])
 	{
-		//BorderTopRefresh = true;
-		gi.Update(DDUF_TOP);
+		DD_GameUpdate(DDUF_TOP);
 	}
 	// Also show the message in the console.
-	if(echoMsg) gi.flconprintf(CBLF_CYAN, "%s\n", message);
+	if(echoMsg) CON_FPrintf(CBLF_CYAN, "%s\n", message);
 }
 
 //==========================================================================
@@ -171,8 +169,7 @@ void P_ClearMessage(player_t *player)
 	player->messageTics2 = 0;
 	if(player == &players[consoleplayer])
 	{
-		//BorderTopRefresh = true;
-		gi.Update(DDUF_TOP);
+		DD_GameUpdate(DDUF_TOP);
 	}
 }
 
@@ -209,7 +206,7 @@ boolean P_GiveMana(player_t *player, manatype_t mana, int count)
 	}
 	if(mana < 0 || mana > NUMMANA)
 	{
-		gi.Error("P_GiveMana: bad type %i", mana);
+		I_Error("P_GiveMana: bad type %i", mana);
 	}
 	if ((player->exp_level<3)&&(player->pclass==1))
 	{
@@ -343,7 +340,7 @@ static void TryPickupWeapon(player_t *player,
 	if(weapon->special)
 	{
 		P_ExecuteLineSpecial(weapon->special, weapon->args,
-			NULL, 0, player->plr->mo);
+			NULL, 0, player->mo);
 		weapon->special = 0;
 	}
 
@@ -467,7 +464,7 @@ boolean P_GiveWeaponPiece(player_t *player, pclass_t pclass, int piece)
 	if(player->pieces == 7)
 	{ // player has built the fourth weapon!
 		P_GiveWeapon(player, pclass, WP_FOURTH);
-		S_StartSound(player->plr->mo, SFX_WEAPON_BUILD);
+		S_StartSound(player->mo, SFX_WEAPON_BUILD);
 	}
 	return true;
 }
@@ -568,7 +565,7 @@ static void TryPickupWeaponPiece(player_t *player, pclass_t matchClass,
 	if(pieceMobj->special)
 	{
 		P_ExecuteLineSpecial(pieceMobj->special, pieceMobj->args,
-			NULL, 0, player->plr->mo);
+			NULL, 0, player->mo);
 		pieceMobj->special = 0;
 	}
 	if(remove)
@@ -687,7 +684,7 @@ boolean P_GiveBody(player_t *player, int num)
 	}
 	if (player->pclass >= PCLASS_ETTIN)
 	{
-		max = player->plr->mo->info->spawnhealth;
+		max = player->mo->info->spawnhealth;
 	}
 	if(player->health >= max && player->sp_power==o_sp)
 	{
@@ -702,7 +699,7 @@ boolean P_GiveBody(player_t *player, int num)
 	{
 		player->health = max;
 	}
-	player->plr->mo->health = player->health;
+	player->mo->health = player->health;
 	return(true);
 }
 
@@ -787,10 +784,10 @@ boolean P_GivePower(player_t *player, powertype_t power)
 			return(false);
 		}
 		player->powers[power] = INVULNTICS;
-		player->plr->mo->flags2 |= MF2_INVULNERABLE;
+		player->mo->flags2 |= MF2_INVULNERABLE;
 		if(player->pclass == PCLASS_MAGE)
 		{
-			player->plr->mo->flags2 |= MF2_REFLECTIVE;
+			player->mo->flags2 |= MF2_REFLECTIVE;
 		}
 		return(true);
 	}
@@ -801,9 +798,9 @@ boolean P_GivePower(player_t *player, powertype_t power)
 			return(false);
 		}
 		player->powers[power] = FLIGHTTICS;
-		player->plr->mo->flags2 |= MF2_FLY;
-		player->plr->mo->flags |= MF_NOGRAVITY;
-		if(player->plr->mo->z <= player->plr->mo->floorz)
+		player->mo->flags2 |= MF2_FLY;
+		player->mo->flags |= MF_NOGRAVITY;
+		if(player->mo->z <= player->mo->floorz)
 		{
 			player->flyheight = 10; // thrust the player in the air a bit
 		}
@@ -1493,7 +1490,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher)
 			P_SetMessage(player, "GOLD", false);
 			break;
 		default:
-			gi.Error("P_SpecialThing: Unknown gettable thing");
+			I_Error("P_SpecialThing: Unknown gettable thing");
 	}
 	if(special->special)
 	{
@@ -1525,7 +1522,7 @@ mobj_t *ActiveMinotaur(player_t *master)
 	thinker_t *think;
 	unsigned int *starttime;
 
-	for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+	for(think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
 		if(think->function != (think_t)P_MobjThinker) continue;
 		mo = (mobj_t *)think;
@@ -1548,7 +1545,7 @@ mobj_t *ActivePlayerDummy(player_t *master)
 	player_t *plr;
 	thinker_t *think;
 
-	for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+	for(think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
 		if(think->function != (think_t)P_MobjThinker) continue;
 		mo = (mobj_t *)think;
@@ -1603,7 +1600,7 @@ void Give_Level(player_t *player,unsigned int level)
 			player->sp_power_old=(player->sp_power_old!=player->sp_power?player->sp_power_old:player->sp_power);
 			player->maxsp_power+=(sppower_table[cl][gameskill]*level);
 			player->sp_power=player->maxsp_power;
-			player->plr->mo->health = player->health = (int)((double)player->maxhealth*asphealt);
+			player->mo->health = player->health = (int)((double)player->maxhealth*asphealt);
 			sprintf(tmpString,TXT_NEXTLEVEL,lvl);
 			P_SetYellowMessage(player, tmpString, false);
 			S_StartSound(NULL, SFX_CHAT);
@@ -1648,7 +1645,7 @@ void Give_Experience(player_t *player,int experience)
 			player->sp_power_old=(player->sp_power_old!=player->sp_power?player->sp_power_old:player->sp_power);
 			player->maxsp_power+=sppower_table[cl][gameskill];
 			player->sp_power=player->maxsp_power;
-			player->plr->mo->health = player->health = (int)((double)player->maxhealth*asphealt);
+			player->mo->health = player->health = (int)((double)player->maxhealth*asphealt);
 			sprintf(tmpString,TXT_NEXTLEVEL,lvl);
 			P_SetYellowMessage(player, tmpString, false);
 
@@ -1860,9 +1857,9 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 			{
 				int i,numPl=0;
 				for (i=0; i<MAXPLAYERS; i++)
-					if (players[i].plr->ingame) numPl++;
+					if (players[i].ingame) numPl++;
 				for (i=0; i<MAXPLAYERS; i++)
-					if (players[i].plr->ingame)
+					if (players[i].ingame)
 						// -JL- must use P_Random in gameplay code
 						Give_Experience(&players[i],(target->experience*((90+(double)P_Random()/255*21)/100)*(gameskill<2?125:(gameskill<3?100:80))/100)/numPl);
 			} 
@@ -1888,7 +1885,7 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 		}
         // mobj death, record as player's kill in netgame + coop
 		// -JL- There is a flag MF_COUNTKILL indicating a monster
-		if(netgame && !deathmatch && source && source->player && source->player->plr &&
+		if(netgame && !deathmatch && source && source->player &&
 			!(target->flags3&MF3_FRIENDLY) && (target->flags & MF_COUNTKILL)) 
 		{
             source->player->frags[0]++;
@@ -2133,7 +2130,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 	y = oldMonster.y;
 	z = oldMonster.z;
 
-	pmo = player->plr->mo; //The old player actor    
+	pmo = player->mo; //The old player actor    
 
 	P_RemoveMobjFromTIDList(actor);
 	P_SetMobjState(actor, S_FREETARGMOBJ);
@@ -2168,7 +2165,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 			beastMo = P_SpawnMobj(x, y, z, MT_POSS_BISHOP);
 			break;
 		default: //Should never happen
-			gi.Error("P_PossessMonster: Unknown possessed monster class type %d\n",player->pclass);
+			I_Error("P_PossessMonster: Unknown possessed monster class type %d\n",player->pclass);
 	}	
 
 	health = pmo->health;
@@ -2198,7 +2195,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 	beastMo->angle = oldMonster.angle;
 	beastMo->player = player;
 	player->health = beastMo->health = oldMonster.health;
-	player->plr->mo = beastMo;
+	player->mo = beastMo;
 	// -JL- Must also remember special and TID
 	beastMo->special = oldMonster.special;
 	beastMo->args[0] = oldMonster.args[0];
@@ -2216,7 +2213,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 	player->damagecount += 50; //As graphical effect
 	setsizeneeded = true; //Possessed monsters turn big screen
 	sprintf(cmd, "r_FOV %d", 20);
-	gi.Execute(cmd, true);
+	CON_Execute(cmd, true);
 	player->possTics = 10; //FOV effect
 	P_GiveArtifact(player, arti_summon, NULL); //Just so the possessed monster always has one item
 	return(true);
@@ -2272,7 +2269,7 @@ void P_UndoPossessMonster(mobj_t *actor, player_t *player)
 			mo = P_SpawnMobj(x, y, z, MT_PLAYER_MAGE);
 			break;
 		default:
-			gi.Error("P_UndoPossessMonster:  Unknown player class %d\n", 
+			I_Error("P_UndoPossessMonster:  Unknown player class %d\n", 
 				player->pclass);
 	}
 
@@ -2281,7 +2278,7 @@ void P_UndoPossessMonster(mobj_t *actor, player_t *player)
 	actor->player = NULL; //Monster no player anymore
 	mo->reactiontime = 18;
 	player->health = mo->health = health;	
-	player->plr->mo = mo;
+	player->mo = mo;
 	player->pclass = PlayerClass[playerNum];
 	angle >>= ANGLETOFINESHIFT;
 		
@@ -2330,12 +2327,12 @@ void P_UndoPossessMonster(mobj_t *actor, player_t *player)
 			mo = P_SpawnMobj(x, y, z, MT_BISHOP);
 			break;
 		default: //Should never happen
-			gi.Error("P_UndoPossessMonster: Unknown possessed monster type %d\n",moType);
+			I_Error("P_UndoPossessMonster: Unknown possessed monster type %d\n",moType);
 		}
 		mo->angle = angle;
 		mo->health = health;
 		mo->reactiontime = 0;
-		mo->target = player->plr->mo; //Payback time, target the player who possessed you
+		mo->target = player->mo; //Payback time, target the player who possessed you
 		P_SetMobjState(mo, P_GetPainState(mo));
 		// -JL- Restore special and TID
 		mo->special = special;
@@ -2346,7 +2343,7 @@ void P_UndoPossessMonster(mobj_t *actor, player_t *player)
 		UnpossessedMobj = mo;
 	}
 	sprintf(cmd, "r_FOV %d", 160);
-	gi.Execute(cmd, true);
+	CON_Execute(cmd, true);
 	player->possTics = 10; //FOV effect
 	setsizeneeded = true; //Possessed monsters turn from big screen
 	player->damagecount += 50;
@@ -2395,7 +2392,7 @@ boolean P_MorphPlayer(player_t *player)
 		P_UndoBerserk(player);
 	}
 	
-	pmo = player->plr->mo;
+	pmo = player->mo;
 	x = pmo->x;
 	y = pmo->y;
 	z = pmo->z;
@@ -2409,7 +2406,7 @@ boolean P_MorphPlayer(player_t *player)
 	beastMo->angle = angle;
 	beastMo->player = player;
 	player->health = beastMo->health = MAXMORPHHEALTH;
-	player->plr->mo = beastMo;
+	player->mo = beastMo;
 	memset(&player->armorpoints[0], 0, NUMARMOR*sizeof(int));
 	player->pclass = PCLASS_PIG;
 	if(oldFlags2&MF2_FLY)
@@ -2566,7 +2563,7 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 			P_PlayerRemoveArtifact(player, normalSlot);
 		}
 	}
-	player->plr->mo->health = player->health;
+	player->mo->health = player->health;
 }
 
 /*
@@ -2972,7 +2969,7 @@ void P_DamageMobj
 		{ // Minotaur's kills go to his master
 			master = (mobj_t *)(source->special1);
 			// Make sure still alive and not a pointer to fighter head
-			if (master->player && (master->player->plr->mo == master))
+			if (master->player && (master->player->mo == master))
 			{
 				source = master;
 			}
@@ -3070,22 +3067,22 @@ void P_FallingDamage(player_t *player)
 	int mom;
 	int dist;
 
-	mom = abs(player->plr->mo->momz);	
+	mom = abs(player->mo->momz);	
 	dist = FixedMul(mom, 16*FRACUNIT/23);
 
 	if(mom >= 63*FRACUNIT)
 	{ // automatic death
-		P_DamageMobj(player->plr->mo, NULL, NULL, 10000);
+		P_DamageMobj(player->mo, NULL, NULL, 10000);
 		return;
 	}
 	damage = ((FixedMul(dist, dist)/10)>>FRACBITS)-24;
-	if(player->plr->mo->momz > -39*FRACUNIT && damage > player->plr->mo->health
-		&& player->plr->mo->health != 1)
+	if(player->mo->momz > -39*FRACUNIT && damage > player->mo->health
+		&& player->mo->health != 1)
 	{ // No-death threshold
-		damage = player->plr->mo->health-1;
+		damage = player->mo->health-1;
 	}
-	S_StartSound(player->plr->mo, SFX_PLAYER_LAND);
-	P_DamageMobj(player->plr->mo, NULL, NULL, damage);
+	S_StartSound(player->mo, SFX_PLAYER_LAND);
+	P_DamageMobj(player->mo, NULL, NULL, damage);
 }
 
 //==========================================================================
@@ -3120,7 +3117,7 @@ void P_PoisonDamage(player_t *player, mobj_t *source, int damage,
 	mobj_t *target;
 	mobj_t *inflictor;
 
-	target = player->plr->mo;
+	target = player->mo;
 	inflictor = source;
 	if(target->health <= 0)
 	{

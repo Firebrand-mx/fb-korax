@@ -61,8 +61,8 @@ void P_InitSwitchList(void)
 			switchlist[index] = -1;
 			break;
 		}
-		switchlist[index++] = gi.R_TextureNumForName(alphSwitchList[i].name1);
-		switchlist[index++] = gi.R_TextureNumForName(alphSwitchList[i].name2);
+		switchlist[index++] = R_TextureNumForName(alphSwitchList[i].name1);
+		switchlist[index++] = R_TextureNumForName(alphSwitchList[i].name2);
 	}
 }
 
@@ -87,7 +87,7 @@ void P_StartButton(line_t *line,bwhere_e w,int texture,int time)
 			return;
 		}
 	}
-	gi.Error("P_StartButton: no button slots left!");
+	I_Error("P_StartButton: no button slots left!");
 }
 
 //==================================================================

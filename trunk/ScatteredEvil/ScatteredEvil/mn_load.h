@@ -48,8 +48,7 @@ class KMenuScreenLoadGame:public KMenuScreen
 		{
 			KMenuLoadGameSlot *It = NewWindow(KMenuLoadGameSlot, this);
 			It->PrepareSlot(i);
-			It->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-			Items[NumItems++] = It;
+			It->SetPos(ChoiceStartX, ChoiceStartY + i * itemHeight);
 		}
 	}
 

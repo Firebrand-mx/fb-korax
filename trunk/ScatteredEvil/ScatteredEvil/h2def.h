@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../DoomsDay/dd_share.h"
-#include "../DoomsDay/dd_api.h"
-#include "../DoomsDay/dd_gl.h"
+#include "dd_share.h"
+#include "dd_api.h"
+#include "dd_gl.h"
 #include <malloc.h>
 
 #pragma warning (disable:4761 4244)
@@ -68,9 +68,6 @@
 #define NUM_XHAIRS		6
 #define BACKUPTICS		12
 
-extern game_import_t	gi;
-extern gl_export_t		gl;
-
 //==========================================================================
 //
 //	Guard macros
@@ -79,8 +76,8 @@ extern gl_export_t		gl;
 
 #ifdef DO_GUARD
 #define guard(name)		static const char *__FUNC_NAME__ = #name; try {
-#define unguard			} catch (...) { gi.CoreDump(__FUNC_NAME__); throw; }
-#define unguardf(msg)	} catch (...) { gi.CoreDump(__FUNC_NAME__); gi.CoreDump msg; throw; }
+#define unguard			} catch (...) { DD_CoreDump(__FUNC_NAME__); throw; }
+#define unguardf(msg)	} catch (...) { DD_CoreDump(__FUNC_NAME__); DD_CoreDump msg; throw; }
 #else
 #define guard(name)		static const char *__FUNC_NAME__ = #name; {
 #define unguard			}
@@ -114,7 +111,7 @@ typedef enum
 	sk_nightmare
 } skill_t;
 
-typedef struct
+struct ticcmd_t
 {
 	char		forwardmove;		// *2048 for move
 	char		sidemove;			// *2048 for move
@@ -126,7 +123,61 @@ typedef struct
 	byte		lookfly;			// look/fly up/down/centering
 	byte		arti;				// artitype_t to use
 	byte        speccmd;
-} ticcmd_t;
+};
+
+#define	BACKUPTICS				12
+
+struct doomdata_t
+{
+	unsigned	checksum;					// high bit is retransmit request
+	byte		retransmitfrom;				// only valid if NCMD_RETRANSMIT
+	byte		starttic;
+	byte		player : 4;				// from which player?
+	byte		targetplayer : 4;		// the player for which this packet is meant to
+	byte		numtics;
+	ticcmd_t	cmds[BACKUPTICS];
+};
+
+struct doomcom_t
+{
+	long	id;
+	short	intnum;			// DOOM executes an int to execute commands
+
+// communication between DOOM and the driver
+	short	command;		// CMD_SEND or CMD_GET
+	short	remotenode;		// dest for send, set by get (-1 = no packet)
+	short	datalength;		// bytes in doomdata to be sent
+
+// info common to all nodes
+	short	numnodes;		// console is allways node 0
+	short	ticdup;			// 1 = no duplication, 2-5 = dup for slow nets
+	short	extratics;		// 1 = send a backup tic in every packet
+	short	deathmatch;		// 1 = deathmatch
+	short	savegame;		// -1 = new game, 0-5 = load savegame
+	short	episode;		// 1-3
+	short	map;			// 1-9
+	short	skill;			// 1-5
+
+// info specific to this node
+	short	consoleplayer;
+	short	numplayers;
+	short	angleoffset;	// 1 = left, 0 = center, -1 = right
+	short	drone;			// 1 = drone
+
+// packet data to be sent
+	doomdata_t	data;
+};
+
+#define	DOOMCOM_ID		0x12345678l
+
+extern	doomcom_t		*doomcom;
+extern	doomdata_t		*netbuffer;		// points inside doomcom
+
+#define	MAXNETNODES		16			// max computers in a game
+
+#define	CMD_SEND	1
+#define	CMD_GET		2
+#define CMD_FRAG	3
 
 #define	BT_ATTACK		1
 #define	BT_USE			2
@@ -192,23 +243,34 @@ typedef enum
 ===============================================================================
 */
 
-struct player_s;
+// think_t is a function pointer to a routine to handle an actor
+typedef void (*think_t) (struct thinker_t *th);
+
+struct thinker_t
+{
+	thinker_t	*prev, *next;
+	think_t		function;
+};
+
+
+struct player_t;
+struct subsector_t;
 
 #pragma pack(1)
-typedef struct savemobj_s
+struct savemobj_t
 {
 	thinker_t		thinker;			// thinker node
 
 // info for drawing
 	fixed_t			x,y,z;
-	struct	mobj_s	*snext, *sprev;		// links in sector (if needed)
+	mobj_t			*snext, *sprev;		// links in sector (if needed)
 	angle_t			angle;
 	spritenum_t		sprite;				// used to find patch_t and flip value
 	int				frame;				// might be ord with FF_FULLBRIGHT
 
 // interaction info
-	struct mobj_s	*bnext, *bprev;		// links in blocks (if needed)
-	struct subsector_s	*subsector;
+	mobj_t			*bnext, *bprev;		// links in blocks (if needed)
+	subsector_t		*subsector;
 	fixed_t			floorz, ceilingz;	// closest together of contacted secs
 	fixed_t			floorpic;			// contacted sec floorpic
 	fixed_t			radius, height;		// for movement checking
@@ -227,14 +289,14 @@ typedef struct savemobj_s
 	int				health;
 	int				movedir;		// 0-7
 	int				movecount;		// when 0, select a new dir
-	struct mobj_s	*target;		// thing being chased/attacked (or NULL)
+	mobj_t			*target;		// thing being chased/attacked (or NULL)
 									// also the originator for missiles
 	int				reactiontime;	// if non 0, don't attack yet
 									// used by player to freeze a bit after
 									// teleporting
 	int				threshold;		// if > 0, the target will be chased
 									// no matter what (even if shot)
-	struct player_s	*player;		// only valid if type == MT_PLAYER
+	player_t		*player;		// only valid if type == MT_PLAYER
 	int				lastlook;		// player number last looked for
 	fixed_t			floorclip;		// value to use for floor clipping
 	int				archiveNum;		// Identity during archive
@@ -242,27 +304,27 @@ typedef struct savemobj_s
 	byte			special;		// special
 	byte			args[5];		// special arguments
 	unsigned int             experience;      // experience for RPG element
-} savemobj_t;
+};
 #pragma pack()
 
 
-typedef struct mobj_s
+struct mobj_t
 {
 // The data needed by the Doomsday Engine must be first, in this order!
 	thinker_t		thinker;			// thinker node
 	fixed_t			x,y,z;
-	struct mobj_s	*snext, *sprev;		// links in sector (if needed)
+	mobj_t			*snext, *sprev;		// links in sector (if needed)
 	angle_t			angle;
 	spritenum_t		sprite;				// used to find patch_t and flip value
 	int				frame;				// might be ord with FF_FULLBRIGHT
 	fixed_t			radius;
 	int				ddflags;			// Doomday mobj flags (DDMF_*)
-	struct subsector_s *subsector;
+	subsector_t		*subsector;
 	fixed_t			floorclip;		// value to use for floor clipping
 
 // Hexen-specific data:
-	struct player_s	*player;		// only valid if type == MT_PLAYER
-	struct mobj_s	*bnext, *bprev;		// links in blocks (if needed)
+	player_t		*player;		// only valid if type == MT_PLAYER
+	mobj_t			*bnext, *bprev;		// links in blocks (if needed)
 	fixed_t			floorz, ceilingz;	// closest together of contacted secs
 	fixed_t			floorpic;			// contacted sec floorpic
 	fixed_t			height;		// for movement checking
@@ -281,7 +343,7 @@ typedef struct mobj_s
 	int				health;
 	int				movedir;		// 0-7
 	int				movecount;		// when 0, select a new dir
-	struct mobj_s	*target;		// thing being chased/attacked (or NULL)
+	mobj_t			*target;		// thing being chased/attacked (or NULL)
 									// also the originator for missiles
 	int				reactiontime;	// if non 0, don't attack yet
 									// used by player to freeze a bit after
@@ -294,14 +356,14 @@ typedef struct mobj_s
 	byte			special;		// special
 	byte			args[5];		// special arguments
 	unsigned int             experience;      // experience for RPG element
-} mobj_t;
+};
 
 // each sector has a degenmobj_t in it's center for sound origin purposes
-typedef struct
+struct degenmobj_t
 {
 	thinker_t		thinker;		// not used for anything
 	fixed_t			x,y,z;
-} degenmobj_t;
+};
 
 // Most damage defined using HITDICE
 #define HITDICE(a) ((1+(P_Random()&7))*a)
@@ -401,6 +463,7 @@ typedef struct
 
 #define MF3_FRIENDLY		0x00000001	// alternate gravity setting
 #define MF3_BALLSSPAWNED	0x00000002	// Heresiarch balls already spawned
+#define MF3_SPEAKING		0x00000004	// actor is currently speaking
 
 //=============================================================================
 
@@ -678,7 +741,6 @@ typedef struct saveplayer_s
 	fixed_t		bob;					// bounded/scaled total momentum
 
 	int			flyheight;
-	//int			lookdir;
 	float		lookdir;				// It's now a float, for mlook. -jk
 	boolean		centering;
 	int			health;					// only used between levels, mo->health
@@ -748,21 +810,29 @@ typedef struct saveplayer_s
 } saveplayer_t;
 #pragma pack()
 
-// Extended player information, Hexen specific.
-typedef struct player_s
+// Extended player information.
+struct player_t
 {
-	ddplayer_t	*plr;					// Pointer to the engine's player data.
+	int			ingame;					// is this player in game?
+
+	mobj_t		*mo;					// pointer to a mobj
 	playerstate_t playerstate;
 	ticcmd_t	cmd;
 
 	pclass_t	pclass;					// player pclass type
 	
+	fixed_t		viewz;					// focal origin above r.z
 	fixed_t		viewheight;				// base height above floor for viewz
 	fixed_t		deltaviewheight;		// squat speed
 	fixed_t		bob;					// bounded/scaled total momentum
 
+	boolean		ThirdPersonView;		// Third person view?
+	fixed_t		ThirdPersonOrigin[3];	// View origin in third person view
+	angle_t		ThirdPersonAngle;		// Angle of the third person view
+	float		ThirdPersonPitch;		// Pitch of the third person view
+
 	int			flyheight;
-	//int			lookdir;
+	float		lookdir;				// It's now a float, for mlook. -jk
 	boolean		centering;
 	int			health;					// only used between levels, mo->health
 										// is used during levels
@@ -797,6 +867,8 @@ typedef struct player_s
 	int			poisoncount;			// screen flash for poison damage
 	mobj_t		*poisoner;				// NULL for non-player mobjs
 	mobj_t		*attacker;				// who did damage (NULL for floors)
+	int			extralight;				// so gun flashes light up areas
+	int			fixedcolormap;			// can be set to REDCOLORMAP, etc
 	int			colormap;				// 0-3 for which color to draw player
 	pspdef_t	psprites[NUMPSPRITES];	// view sprites (gun, etc)
 	int			morphTics;				// player is a pig if > 0
@@ -830,7 +902,7 @@ typedef struct player_s
 
 	// -JL- Added to player struct
 	int boringmessage; //Remi: "YOU NEED TO BE LEVEL whatever TO USE MANA" boring message timer
-} player_t;
+};
 
 #define CF_NOCLIP		1
 #define	CF_GODMODE		2
@@ -845,6 +917,8 @@ typedef struct player_s
 
 ===============================================================================
 */
+
+extern gl_export_t		gl;
 
 #define TELEFOGHEIGHT (32*FRACUNIT)
 
@@ -876,24 +950,19 @@ extern boolean deathmatch; // only if started as net death
 
 extern boolean netcheat; // allow cheating during netgames
 
-#define netgame	 gi.Get(DD_NETGAME)	// only true if >1 player
+extern int		netgame; // only true if >1 player
 
 extern player_t players[MAXPLAYERS];
 extern pclass_t PlayerClass[MAXPLAYERS];
 extern byte PlayerColor[MAXPLAYERS];
 
-//extern int consoleplayer; // player taking events and displaying
-#define consoleplayer gi.Get(DD_CONSOLEPLAYER)
+extern int consoleplayer; // player taking events and displaying
 
-//extern int displayplayer;
-#define displayplayer gi.Get(DD_DISPLAYPLAYER)
+extern int displayplayer;
 
 extern	boolean		singletics;			// debug flag to cancel adaptiveness
 
 extern boolean demoplayback;
-
-extern int Sky1Texture;
-extern int Sky2Texture;
 
 extern	gamestate_t	gamestate;
 extern	skill_t		gameskill;
@@ -903,9 +972,8 @@ extern 	int 		prevmap;
 extern	int			levelstarttic;		// gametic at level start
 extern	int			leveltime;			// tics in game play for par
 
-#define gametic		gi.Get(DD_GAMETIC)
-#define maketic		gi.Get(DD_MAKETIC)
-#define ticdup		gi.Get(DD_TICDUP)
+extern int			gametic, maketic;
+extern int			ticdup, server, limbo;
 
 #define MAXDEATHMATCHSTARTS 16
 extern mapthing_t *deathmatch_p;
@@ -934,6 +1002,15 @@ extern boolean autostart;
 extern byte netMap, netClass, netColor, netSkill, netSlot;
 extern byte netDeathmatch, netNomonsters, netRandomclass, netRespawn;
 
+// ScreenBits is currently unused.
+extern int screenWidth, screenHeight, screenBits;
+extern int viewph, viewpw, viewpx, viewpy;
+extern int defResX, defResY, simpleSky;
+
+extern int snd_SfxVolume, snd_MusicVolume, snd_CDVolume;
+
+extern int act_int;
+
 
 /*
 ===============================================================================
@@ -943,6 +1020,9 @@ extern byte netDeathmatch, netNomonsters, netRandomclass, netRespawn;
 ===============================================================================
 */
 
+
+#include "z_zone.h"
+#include "w_wad.h"
 
 //----------
 //BASE LEVEL
@@ -1081,20 +1161,7 @@ int M_Random (void);
 extern unsigned char rndtable[256];
 extern int prndindex;
 
-#ifndef TIC_DEBUG
-
 #define P_Random() rndtable[(++prndindex)&0xff]
-
-#else // TIC_DEBUG defined
-
-extern FILE *rndDebugfile;
-#define P_Random() \
-	((rndDebugfile && netgame)? (fprintf(rndDebugfile, "%i:"__FILE__", %i\n", gametic, __LINE__), \
-	rndtable[(++prndindex)&0xff]) : rndtable[(++prndindex)&0xff])
-#define FUNTAG(fun) { if(rndDebugfile) fprintf(rndDebugfile, "%i: %s\n", gametic, fun); }
-
-#endif // TIC_DEBUG
-
 // as M_Random, but used only by the play simulation
 
 void M_ClearRandom (void);
@@ -1103,6 +1170,22 @@ void P_SaveRandom(void);
 void P_RestoreRandom(void);
 
 void M_ScreenShot (void);
+
+int				Argc(void);
+char *			Argv(int i);
+char **			ArgvPtr(int i);
+int				M_CheckParm(char *check);
+boolean			M_ParmExists(char *check);
+void			M_SaveDefaults();
+int				M_ParseCommands(char *fileName, int setdefault);
+fixed_t			M_AproxDistance (fixed_t dx, fixed_t dy);
+int				M_ReadFile(char const *name, byte **buffer);
+int				M_ReadFileCLib(char const *name, byte **buffer);
+boolean			M_WriteFile (char const *name, void *source, int length);
+void			M_ExtractFileBase(char *path, char *dest);
+void			M_ClearBox (fixed_t *box);
+void			M_AddToBox (fixed_t *box, fixed_t x, fixed_t y);
+void			M_WriteTextEsc(FILE *file, char *text);
 
 //------------------------------
 // SC_man.c
@@ -1276,13 +1359,222 @@ void MN_DrTextA_CS(char *text, int x, int y);
 void MN_DrTextAYellow_CS(char *text, int x, int y);
 void MN_DrTextB_CS(char *text, int x, int y);
 
+//========================================================================
+//
+// r_model.c
+//
+void R_SetSpriteReplacement(int sprite, char *modelname);
+
+
+//========================================================================
+//
+// v_video.c
+//
+extern byte gammatable[5][256];
+extern int usegamma;
+
+//========================================================================
+//
+// dd_winit.c
+//
+void DD_Shutdown();
+
+
+//========================================================================
+//
+// dd_main.c
+//
+extern int maxzone;	
+extern boolean debugmode;		// checkparm of -debug
+extern boolean nofullscreen;	// checkparm of -nofullscreen
+extern boolean singletics;		// debug flag to cancel adaptiveness
+extern FILE *debugfile;
+extern event_t events[MAXEVENTS];
+extern int eventhead;
+extern int eventtail;
+
+void DD_Main();
+void DD_PostEvent(event_t *ev);
+void DD_ProcessEvents(void);
+void DD_GameLoop(void);
+void DD_GameUpdate(int flags);
+void AddWADFile(char *file);
+void DD_CoreDump(const char *fmt, ...);
+const char *DD_GetCoreDump(void);
+
+
+//========================================================================
+//
+// dd_setup.c
+//
+void DD_ValidateLevel(void);
+
+//========================================================================
+//
+// dd_bind.c
+//
+void B_Bind(event_t *event, char *command);
+void B_EventConverter(char *buff, event_t *ev, boolean to_event);
+int B_BindingsForCommand(char *command, char *buffer);
+void B_ClearBinding(char *command);
+boolean B_Responder(event_t *ev);
+void B_WriteToFile(FILE *file);
+void B_Shutdown();
+
+
+//========================================================================
+//
+// dd_actn.c
+//
+void DD_ClearActions(void);
+// The command begins with a '+' or a '-'.
+// Returns true if the action was changed successfully.
+int DD_ActionCommand(char *cmd, boolean has_prefix);
+
+
+//========================================================================
+//
+// dd_3dsnd.c
+//
+void readline(char *buffer, int len, FILE *file);
+char *firstchar(char *buffer);
+void S_LoadTextureTypes();
+void S_FreeTextureTypes();
+int S_TextureTypeForName(char *name);
+void S_CalcSectorReverbs();
+
+
+//========================================================================
+//
+// d_net.c
+//
+extern int		netModel;		// The networking model.
+extern int		limboplayer;
+extern boolean	allow_net_traffic;	// Should net traffic be allowed?
+extern boolean	map_rendered;		// Has the map been already rendered?
+extern ticcmd_t	netcmds[MAXPLAYERS][BACKUPTICS];
+
+void D_GetTicCmd(void *cmd, int player);
+void D_StartNetGame();
+void D_StopNetGame(boolean closing);
+void D_SyncNetStart();
+void NetUpdate();
+void TryRunTics();
+
+
+//========================================================================
+//
+// r_main.c
+//
+extern boolean	setsizeneeded;
+extern int		framecount;
+
+void R_Init (void);
+void R_Update (void);
+void R_RenderPlayerView (player_t *player);
+void R_SetViewSize(int x, int y, int w, int h);
+angle_t R_PointToAngle2 (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
+subsector_t *R_PointInSubsector (fixed_t x, fixed_t y);
+
+
+//========================================================================
+//
+// r_data.c
+//
+int	R_FlatNumForName (char *name);
+int	R_CheckTextureNumForName (char *name);
+int	R_TextureNumForName (char *name);
+char* R_TextureNameForNum(int num);
+int R_SetFlatTranslation(int flat, int translateTo);
+int R_SetTextureTranslation(int tex, int translateTo);
+
+
+//========================================================================
+//
+// r_things.c
+//
+extern char	**spritenamelist;
+
+void R_SetSpriteNameList(char **namelist);
+void R_GetSpriteInfo(int sprite, int frame, spriteinfo_t *sprinfo);
+
+
+//========================================================================
+//
+// r_draw.c
+//
+extern boolean BorderNeedRefresh;
+extern boolean BorderTopRefresh;
+
+void R_InitViewBorder();
+void R_SetBorderGfx(char *gfx[9]);
+void R_DrawViewBorder (void);
+void R_DrawTopBorder (void);
+
+
+//========================================================================
+//
+// r_model.c
+//
+extern boolean	useModels;
+
+void R_InitModels(void);
+
+
+
+//========================================================================
+//
+// tables.c
+//
+extern fixed_t finesine[5*FINEANGLES/4];
+extern fixed_t *finecosine;
+
+
+//========================================================================
+//
+// i_sound.c
+//
+extern boolean			use_jtSound;
+
+void I_SetMusicDevice(int musdev);
+int I_CDControl(int cmd, int parm);
+
+
 // A macro to determine whether it's OK to be backwards incompatible.
 #define INCOMPAT_OK		(!demorecording && !demoplayback && !netgame)
 
 void strcatQuoted(char *dest, char *src);
 
-extern boolean handleZ;
-extern int ducking;
+#define MINIMUM_HEAP_SIZE	0x800000		//  8 meg
+#define MAXIMUM_HEAP_SIZE	0x2000000		// 32 meg
+
+enum { BLEFT, BTOP, BRIGHT, BBOTTOM };
+
+// Networking models.
+enum
+{
+	// Everybody communicates directly with each other.
+	NETM_PEER_TO_PEER,		
+
+	// All data goes through the server, otherwise the same as peer-to-peer.
+	NETM_PURE_MULTICAST,	
+
+	// Server knows all; answers retransmits. Clients send single packets to
+	// the server, which sends them onwards to all other clients.
+	NETM_MULTICAST			
+};
+
+extern int UpdateState;
+extern int haloMode;
+
+
+extern int myargc;
+extern char **myargv;
+
+#include "st_start.h"
+
+#include "dd_net.h"
+
 
 #include "sounds.h"
 

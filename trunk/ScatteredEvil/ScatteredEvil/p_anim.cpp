@@ -63,7 +63,6 @@ static void P_LightningFlash(void);
 
 extern fixed_t Sky1ColumnOffset;
 extern fixed_t Sky2ColumnOffset;
-extern int Sky1Texture;
 extern boolean DoubleSky;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
@@ -123,13 +122,11 @@ void P_AnimateSurfaces(void)
 			}
 			if(ad->type == ANIM_FLAT)
 			{
-				//flattranslation[ad->index] = FrameDefs[ad->currentFrameDef].index;
-				gi.SetFlatTranslation(ad->index, FrameDefs[ad->currentFrameDef].index);
+				R_SetFlatTranslation(ad->index, FrameDefs[ad->currentFrameDef].index);
 			}
 			else
 			{ // Texture
-				//texturetranslation[ad->index] = FrameDefs[ad->currentFrameDef].index;
-				gi.SetTextureTranslation(ad->index, FrameDefs[ad->currentFrameDef].index);
+				R_SetTextureTranslation(ad->index, FrameDefs[ad->currentFrameDef].index);
 			}
 		}
 	}
@@ -158,8 +155,8 @@ void P_AnimateSurfaces(void)
 	// Update sky column offsets
 	Sky1ColumnOffset += Sky1ScrollDelta;
 	Sky2ColumnOffset += Sky2ScrollDelta;
-	gi.SkyParams(1, DD_OFFSET, FIX2FLT(Sky1ColumnOffset));
-	gi.SkyParams(0, DD_OFFSET, FIX2FLT(Sky2ColumnOffset));
+	R_SkyParams(1, DD_OFFSET, FIX2FLT(Sky1ColumnOffset));
+	R_SkyParams(0, DD_OFFSET, FIX2FLT(Sky2ColumnOffset));
 
 	if(LevelHasLightning)
 	{
@@ -223,8 +220,8 @@ static void P_LightningFlash(void)
 					tempLight++;
 				}
 			}
-			gi.SkyParams(1, DD_DISABLE, 0);
-			gi.SkyParams(0, DD_ENABLE, 0);
+			R_SkyParams(1, DD_DISABLE, 0);
+			R_SkyParams(0, DD_ENABLE, 0);
 			//Sky1Texture = P_GetMapSky1Texture(gamemap);		
 		}
 		return;
@@ -271,11 +268,11 @@ static void P_LightningFlash(void)
 	}
 	if(foundSec)
 	{
-		mobj_t *plrmo = players[displayplayer].plr->mo;
+		mobj_t *plrmo = players[displayplayer].mo;
 		mobj_t *crashorigin = NULL;
 		// Set the alternate (lightning) sky.
-		gi.SkyParams(0, DD_DISABLE, 0);
-		gi.SkyParams(1, DD_ENABLE, 0);
+		R_SkyParams(0, DD_DISABLE, 0);
+		R_SkyParams(1, DD_ENABLE, 0);
 		// If 3D sounds are active, position the clap somewhere above
 		// the player.
 		if(snd_3D && plrmo)
@@ -361,7 +358,7 @@ void P_InitLightning(void)
 		LevelHasLightning = false;
 		return;
 	}
-	LightningLightLevels = (int *)gi.Z_Malloc(secCount*sizeof(int), PU_LEVEL,
+	LightningLightLevels = (int *)Z_Malloc(secCount*sizeof(int), PU_LEVEL,
 		NULL);
 	NextLightningFlash = ((P_Random()&15)+5)*35; // don't flash at level start
 }
@@ -391,7 +388,7 @@ void P_InitFTAnims(void)
 	{
 		if(AnimDefCount == MAX_ANIM_DEFS)
 		{
-			gi.Error("P_InitFTAnims: too many AnimDefs.");
+			I_Error("P_InitFTAnims: too many AnimDefs.");
 		}
 		if(SC_Compare(SCI_FLAT))
 		{
@@ -409,24 +406,24 @@ void P_InitFTAnims(void)
 		ignore = false;
 		if(ad->type == ANIM_FLAT)
 		{
-			if(gi.W_CheckNumForName(sc_String) == -1)
+			if(W_CheckNumForName(sc_String) == -1)
 			{
 				ignore = true;
 			}
 			else
 			{
-				ad->index = gi.R_FlatNumForName(sc_String);
+				ad->index = R_FlatNumForName(sc_String);
 			}
 		}
 		else
 		{ // Texture
-			if(gi.R_CheckTextureNumForName(sc_String) == -1)
+			if(R_CheckTextureNumForName(sc_String) == -1)
 			{
 				ignore = true;
 			}
 			else
 			{
-				ad->index = gi.R_TextureNumForName(sc_String);
+				ad->index = R_TextureNumForName(sc_String);
 			}
 		}
 		ad->startFrameDef = fd;
@@ -439,7 +436,7 @@ void P_InitFTAnims(void)
 				{
 					if(fd == MAX_FRAME_DEFS)
 					{
-						gi.Error("P_InitFTAnims: too many FrameDefs.");
+						I_Error("P_InitFTAnims: too many FrameDefs.");
 					}
 					SC_MustGetNumber();
 					if(ignore == false)
@@ -486,7 +483,7 @@ void P_InitFTAnims(void)
 		}
 		if((ignore == false) && (fd-ad->startFrameDef < 2))
 		{
-			gi.Error("P_InitFTAnims: AnimDef has framecount < 2.");
+			I_Error("P_InitFTAnims: AnimDef has framecount < 2.");
 		}
 		if(ignore == false)
 		{
@@ -514,29 +511,29 @@ void P_InitSky(int map)
 	DoubleSky = P_GetMapDoubleSky(map);
 
 	// First disable all sky layers.
-	gi.SkyParams(DD_SKY, DD_DISABLE, 0);				
+	R_SkyParams(DD_SKY, DD_DISABLE, 0);				
 
 	// Sky2 is layer zero and Sky1 is layer one.
-	gi.SkyParams(0, DD_OFFSET, 0);
-	gi.SkyParams(1, DD_OFFSET, 0);
+	R_SkyParams(0, DD_OFFSET, 0);
+	R_SkyParams(1, DD_OFFSET, 0);
 	if(DoubleSky)
 	{
-		gi.SkyParams(0, DD_ENABLE, 0);
-		gi.SkyParams(0, DD_MASK, DD_NO);
-		gi.SkyParams(0, DD_TEXTURE, Sky2Texture);
+		R_SkyParams(0, DD_ENABLE, 0);
+		R_SkyParams(0, DD_MASK, DD_NO);
+		R_SkyParams(0, DD_TEXTURE, Sky2Texture);
 		
-		gi.SkyParams(1, DD_ENABLE, 0);
-		gi.SkyParams(1, DD_MASK, DD_YES);
-		gi.SkyParams(1, DD_TEXTURE, Sky1Texture);
+		R_SkyParams(1, DD_ENABLE, 0);
+		R_SkyParams(1, DD_MASK, DD_YES);
+		R_SkyParams(1, DD_TEXTURE, Sky1Texture);
 	}
 	else
 	{
-		gi.SkyParams(0, DD_ENABLE, 0);
-		gi.SkyParams(0, DD_MASK, DD_NO);
-		gi.SkyParams(0, DD_TEXTURE, Sky1Texture);
+		R_SkyParams(0, DD_ENABLE, 0);
+		R_SkyParams(0, DD_MASK, DD_NO);
+		R_SkyParams(0, DD_TEXTURE, Sky1Texture);
 		
-		gi.SkyParams(1, DD_DISABLE, 0);
-		gi.SkyParams(1, DD_MASK, DD_NO);
-		gi.SkyParams(1, DD_TEXTURE, Sky2Texture);
+		R_SkyParams(1, DD_DISABLE, 0);
+		R_SkyParams(1, DD_MASK, DD_NO);
+		R_SkyParams(1, DD_TEXTURE, Sky2Texture);
 	}
 }

@@ -8,6 +8,8 @@ class KMenuScreenMain:public KMenuScreen
 {
 	DECLARE_CLASS(KMenuScreenMain, KMenuScreen, 0);
 
+	int MauloBaseLump;
+
 	KMenuScreenMain(void)
 	{
 		ChoiceStartX = 270;
@@ -18,6 +20,7 @@ class KMenuScreenMain:public KMenuScreen
 		ButtonDefaults[3] = FButtonDefault("OPTIONS", MA_Menu, MENU_OPTIONS);
 		ButtonDefaults[4] = FButtonDefault("INFO", MA_Menu, MENU_INFO);
 		ButtonDefaults[5] = FButtonDefault("QUIT GAME", MA_Quit);
+		MauloBaseLump = W_GetNumForName("FBULA0");
 	}
 
 	void DrawWindow(KGC *gc)

@@ -14,8 +14,6 @@
 
 // MACROS ------------------------------------------------------------------
 
-#define DEFCC(x)	int x(int argc, char **argv)
-
 // TYPES -------------------------------------------------------------------
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
@@ -39,9 +37,8 @@ int CCmdViewSize(int argc, char **argv);
 int CCmdInventory(int argc, char **argv);
 int CCmdScreenShot(int argc, char **argv);
 
-DEFCC(CCmdHexenFont);
-DEFCC(CCmdMenuAction);
-DEFCC(CCmdCycleSpy);
+int CCmdMenuAction(int argc, char **argv);
+int CCmdCycleSpy(int argc, char **argv);
 
 // The cheats.
 int CCmdCheatGod(int argc, char **argv);
@@ -144,7 +141,6 @@ ccmd_t gameCCmds[] =
 	"mad",		    CCmdCheatMassacre,		"Kill all the monsters on the level.",
 	"shopping",		CCmdCheatArtifactAll,	"Get max Artifacts",
 	"armload",		CCmdCheatWeapons,		"Get all weapons",
-	"hexenfont",	CCmdHexenFont,			"Use the Hexen font.",
 	"invleft",		CCmdInventory,			"Move inventory cursor to the left.",
 	"invright",		CCmdInventory,			"Move inventory cursor to the right.",
 	"midi",			CCmdMidi,				"MIDI music control.",
@@ -181,8 +177,8 @@ void H2_ConsoleRegistration()
 {
 	int		i;
 	
-	for(i=0; gameCVars[i].name; i++) gi.AddVariable(gameCVars+i);
-	for(i=0; gameCCmds[i].name; i++) gi.AddCommand(gameCCmds+i);
+	for(i=0; gameCVars[i].name; i++) CON_AddVariable(gameCVars+i);
+	for(i=0; gameCCmds[i].name; i++) CON_AddCommand(gameCCmds+i);
 }
 
 char playDemoName[9];
@@ -191,12 +187,12 @@ int CCmdPlayDemo(int argc, char **argv)
 {	
 	if(argc != 2)
 	{
-		gi.conprintf( "Usage: playdemo (name)\n");
+		CON_Printf( "Usage: playdemo (name)\n");
 		return true;
 	}
-	if(gi.W_CheckNumForName(argv[1]) == -1)
+	if(W_CheckNumForName(argv[1]) == -1)
 	{
-		gi.conprintf( "There is a no lump named '%s'.\n", argv[1]);
+		CON_Printf( "There is a no lump named '%s'.\n", argv[1]);
 		return false;
 	}
 	// Use the name in lumpinfo because it has to last.
@@ -211,14 +207,14 @@ int CCmdRecordDemo(int argc, char **argv)
 
 	if(demorecording)
 	{
-		gi.conprintf( "A demo is already being recorded!\n");
+		CON_Printf( "A demo is already being recorded!\n");
 		return false;
 	}
 	if(argc == 1 || argc > 3)
 	{
-		gi.conprintf( "Usage: recorddemo (name) (map)\n");
-		gi.conprintf( "The demo will be saved in a file named (name).lmp.\n");
-		gi.conprintf( "If you don't specify a map the current one is used.\n");
+		CON_Printf( "Usage: recorddemo (name) (map)\n");
+		CON_Printf( "The demo will be saved in a file named (name).lmp.\n");
+		CON_Printf( "If you don't specify a map the current one is used.\n");
 		return true;
 	}
 	if(argc == 3) map = atoi(argv[2]);
@@ -230,7 +226,7 @@ int CCmdStopDemo(int argc, char **argv)
 {
 	if(!demoplayback && !demorecording)
 	{
-		gi.conprintf( "No demo being played or recorded.\n");
+		CON_Printf( "No demo being played or recorded.\n");
 		return false;
 	}
 	G_CheckDemoStatus();
@@ -242,12 +238,12 @@ int CCmdTimeDemo(int argc, char **argv)
 {
 	if(argc != 2)
 	{
-		gi.conprintf( "Usage: timedemo (name)\n");
+		CON_Printf( "Usage: timedemo (name)\n");
 		return true;
 	}
-	if(gi.W_CheckNumForName(argv[1]) == -1)
+	if(W_CheckNumForName(argv[1]) == -1)
 	{
-		gi.conprintf( "There is a no lump named '%s'.\n", argv[1]);
+		CON_Printf( "There is a no lump named '%s'.\n", argv[1]);
 		return false;
 	}
 	G_TimeDemo(argv[1]);
@@ -260,8 +256,8 @@ int CCmdViewSize(int argc, char **argv)
 
 	if(argc != 2)
 	{
-		gi.conprintf( "Usage: %s (size)\n", argv[0]);
-		gi.conprintf( "Size can be: +, -, (num).\n");
+		CON_Printf( "Usage: %s (size)\n", argv[0]);
+		CON_Printf( "Size can be: +, -, (num).\n");
 		return true;
 	}
 	if(!stricmp(argv[1], "+"))
@@ -284,19 +280,3 @@ int CCmdScreenShot(int argc, char **argv)
 	G_ScreenShot();
 	return true;
 }
-
-DEFCC(CCmdHexenFont)
-{
-	ddfont_t	cfont;
-
-	cfont.flags = DDFONT_WHITE;
-	cfont.height = 9;
-	cfont.sizeX = 1.2f;
-	cfont.sizeY = 2;
-	cfont.TextOut = MN_DrTextA_CS;
-	cfont.Width = MN_TextAWidth;
-	cfont.Filter = NULL;
-	gi.SetConsoleFont(&cfont);
-	return true;
-}
-

@@ -19,8 +19,8 @@ class KMenuScreenInfo:public KMenuScreen
 	{
 		static char *InfoPages[] = { "HELP1", "HELP2", "CREDIT" };
 
-		gi.GL_SetFilter(0);
-		gc->GetCanvas()->DrawRawScreen(gi.W_GetNumForName(InfoPages[InfoType]));
+		GL_SetFilter(0);
+		gc->GetCanvas()->DrawRawScreen(W_GetNumForName(InfoPages[InfoType]));
 	}
 
 	bool KeyPressed(int key)
@@ -35,7 +35,7 @@ class KMenuScreenInfo:public KMenuScreen
 			MN_DeactivateMenu();
 			SB_state = -1; //refresh the statbar
 			//BorderNeedRefresh = true;
-			gi.Update(DDUF_BORDER);
+			DD_GameUpdate(DDUF_BORDER);
 		}
 		else
 		{
