@@ -32,10 +32,13 @@
 #define VERSION 199
 #define VERSION_TEXT "ScatteredEvil v1.0"
 
+#define DO_GUARD
+
 // if rangecheck is undefined, most parameter validation debugging code
 // will not be compiled
 #ifndef NORANGECHECKING
 #define RANGECHECK
+#define DO_GUARD_SLOW
 #endif
 
 // Past distributions
@@ -67,6 +70,32 @@
 
 extern game_import_t	gi;
 extern gl_export_t		gl;
+
+//==========================================================================
+//
+//	Guard macros
+//
+//==========================================================================
+
+#ifdef DO_GUARD
+#define guard(name)		static const char *__FUNC_NAME__ = #name; try {
+#define unguard			} catch (...) { gi.CoreDump(__FUNC_NAME__); throw; }
+#define unguardf(msg)	} catch (...) { gi.CoreDump(__FUNC_NAME__); gi.CoreDump msg; throw; }
+#else
+#define guard(name)		static const char *__FUNC_NAME__ = #name; {
+#define unguard			}
+#define unguardf(msg)	}
+#endif
+
+#ifdef DO_GUARD_SLOW
+#define guardSlow(name)		guard(name)
+#define unguardSlow			unguard
+#define unguardfSlow(msg)	unguardf(msg)
+#else
+#define guardSlow(name)		{
+#define unguardSlow			}
+#define unguardfSlow(msg)	}
+#endif
 
 /*
 ===============================================================================
@@ -663,7 +692,7 @@ typedef struct saveplayer_s
 	int			powers[NUMPOWERS];
 	int			keys;
 	int			pieces;					// Fourth Weapon pieces
-	signed int			frags[MAXPLAYERS];		// kills of other players
+	int			frags[MAXPLAYERS];		// kills of other players
 	newweapontype_t	readyweapon;
 	newweapontype_t	pendingweapon;		// wp_nochange if not changing
 	boolean		weaponowned[NUMWEAPONS];
@@ -746,6 +775,7 @@ typedef struct player_s
 	int			powers[NUMPOWERS];
 	int			keys;
 	int			pieces;					// Fourth Weapon pieces
+	int			frags[MAXPLAYERS];		// kills of other players
 	newweapontype_t	readyweapon;
 	newweapontype_t	pendingweapon;		// wp_nochange if not changing
 	boolean		weaponowned[NUMWEAPONS];
