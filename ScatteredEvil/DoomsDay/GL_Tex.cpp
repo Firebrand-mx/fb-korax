@@ -13,6 +13,7 @@
 #include "dd_def.h"
 #include "i_win32.h"
 #include "gl_def.h"
+#include "console.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -1420,6 +1421,71 @@ void GL_SetRawImage(int lump, int part)
 	curtex = 0;
 }
 
+struct vpic_t
+{
+	char magic[4];
+	short width;
+	short height;
+	byte bpp;
+	byte reserved[7];
+};
+
+void GL_SetVPic(int lump, void *data)
+{
+	if(lump > numlumps-1) return;
+	if(!lumptexnames[lump])
+	{
+		vpic_t *pic = (vpic_t *)data;
+		if (pic->bpp != 15)
+			I_Error("Only 15 bit vpics supported");
+
+		//	Unpack data
+		int		numpels = pic->width * pic->height;
+		byte	*buffer = (byte *)Z_Malloc(4 * numpels, PU_STATIC, 0);
+		unsigned short *pData = (unsigned short *)(pic + 1);
+		byte *pDst = buffer;
+		for (int i = 0; i < numpels; i++, pData++, pDst += 4)
+		{
+			if (*pData & 0x8000)
+			{
+				pDst[0] = 0;
+				pDst[1] = 0;
+				pDst[2] = 0;
+				pDst[3] = 0;
+			}
+			else
+			{
+				pDst[0] = (*pData >> 7) & 0xf8;
+				pDst[1] = (*pData >> 2) & 0xf8;
+				pDst[2] = (*pData << 3) & 0xf8;
+				pDst[3] = 255;
+			}
+		}
+
+		// Generate a texture.
+		lumptexnames[lump] = UploadTexture(buffer, pic->width, pic->height, 
+			true, false, true);
+		gl.TexParameter(DGL_MIN_FILTER, DGL_NEAREST);
+		gl.TexParameter(DGL_MAG_FILTER, DGL_LINEAR);
+		gl.TexParameter(DGL_WRAP_S, DGL_CLAMP);
+		gl.TexParameter(DGL_WRAP_T, DGL_CLAMP);
+
+		//	Fill in info
+		lumptexsizes[lump].w = pic->width;
+		lumptexsizes[lump].h = pic->height;
+		lumptexsizes[lump].w2 = 0;
+		lumptexsizes[lump].offx = 0;
+		lumptexsizes[lump].offy = 0;
+
+		Z_Free(buffer);
+	}
+	else
+	{
+		GL_BindTexture(lumptexnames[lump]);
+	}
+	curtex = lumptexnames[lump];
+}
+
 // No mipmaps are generated for regular patches.
 void GL_SetPatch(int lump)	
 {
@@ -1428,6 +1494,14 @@ void GL_SetPatch(int lump)
 	{
 		// Load the patch.
 		patch_t	*patch = (patch_t *)W_CacheLumpNum(lump, PU_CACHE);
+
+		// -JL- HACK! HACK! HACK! Check for VPIC
+		if (!memcmp(patch, "VPIC", 4))
+		{
+			GL_SetVPic(lump, patch);
+			return;
+		}
+
 		int		numpels = patch->width * patch->height;
 		byte	*buffer = (byte *)Z_Malloc(2 * numpels, PU_STATIC, 0);
 		int		alphaChannel;

@@ -144,8 +144,11 @@ void GL_InitRenderer()	// Initializes the renderer to 2D state.
 	// The projection matrix.
 	gl.MatrixMode(DGL_PROJECTION);
 	gl.LoadIdentity();
-	//gluOrtho2D(0, 320, 200, 0);
+#ifdef USE640
+	gl.Ortho(0, 0, 640, 480, -1, 1);
+#else
 	gl.Ortho(0, 0, 320, 200, -1, 1);
+#endif
 
 	// Default state for the white fog is off.
 	whitefog = false;
