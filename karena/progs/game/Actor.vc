@@ -620,8 +620,6 @@ Actor ActiveMinotaur(void)
 
 void Died(Actor source)
 {
-	int dummy[5];
-
 	bShootable = false;
 	bNoGravity = false;
 	bFloat = false;
@@ -635,12 +633,7 @@ void Died(Actor source)
 		// Initiate monster death actions
 		if (Class == Sorcerer)
 		{
-			dummy[0] = 0;
-			dummy[1] = 0;
-			dummy[2] = 0;
-			dummy[3] = 0;
-			dummy[4] = 0;
-			StartACS(Special, 0, &dummy[0], self, NULL, 0);
+			StartACS(Special, 0, 0, 0, 0, self, NULL, 0, false, false);
 		}
 		else
 		{
@@ -689,6 +682,8 @@ void Died(Actor source)
 			}
 		}
 	}
+	if (bCountKill)
+		level->currentkills++;
 	if (bIsPlayer)
 	{
 		// Player death
@@ -1198,7 +1193,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		float thrust;
 
 		thrust = itof(damage) / Mass * 656.25;
-		dir = Normalize(MobjCenter(self) - MobjCenter(inflictor));
+		dir = Normalise(MobjCenter(self) - MobjCenter(inflictor));
 		Velocity += dir * thrust;
 	}
 
@@ -3879,6 +3874,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2004/12/27 12:30:01  dj_jl
+//  Vavoom version 1.16 changes.
+//
 //  Revision 1.3  2004/12/09 00:07:08  firebrand_kh
 //  Added code for the Witchaven player class
 //
