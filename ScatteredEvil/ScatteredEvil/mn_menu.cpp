@@ -260,12 +260,14 @@ static char* sp_wording[NUMCLASSES]=
 
 void MN_Init(void)
 {
+	guard(MN_Init);
 	KCanvas::StaticInit();
 	MenuActive = false;
 	MauloBaseLump = gi.W_GetNumForName("FBULA0"); // ("M_SKL00");
 
 	GRootWindow = Spawn<KRootWindow>();
 	GRootWindow->Init();
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -276,6 +278,7 @@ void MN_Init(void)
 
 void KMenuScreen::InitWindow(void)
 {
+	guard(KMenuScreen::InitWindow);
 	Super::InitWindow();
 	CreateChoices();
 	CreateButtons();
@@ -287,6 +290,7 @@ void KMenuScreen::InitWindow(void)
 	{
 		GRootWindow->SetFocus(this);
 	}
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -409,6 +413,7 @@ void MN_Ticker(void)
 
 static void DrawMessage(void)
 {
+	guard(DrawMessage);
 	player_t *player;
 	int i;
 
@@ -443,6 +448,7 @@ static void DrawMessage(void)
 			MN_DrTextA(player->message, 160-MN_TextAWidth(player->message)/2, i);
 		}
 	}
+	unguard;
 }
 
 char *QuitEndMsg[] =
@@ -462,6 +468,7 @@ char *QuitEndMsg[] =
 
 void MN_Drawer(void)
 {
+	guard(MN_Drawer);
 	GCanvas->SetOrigin(160, 0);
 	DrawMessage();
 	GCanvas->SetOrigin(0, 0);
@@ -508,9 +515,9 @@ void MN_Drawer(void)
 		gi.GL_SetNoTexture();
 		GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, 0.5);
 		gl.Color4f(1, 1, 1, 1);
-
-		GRootWindow->PaintWindows(GCanvas);
 	}
+	GRootWindow->PaintWindows(GCanvas);
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -770,6 +777,7 @@ chr_val Reroll(int Sclass)
 
 int H2_PrivilegedResponder(event_t *event)
 {
+	guard(H2_PrivilegedResponder);
 	if (MenuActive && CurrentMenu->RawInputEvent(event))
 	{
 		return true;
@@ -783,6 +791,7 @@ int H2_PrivilegedResponder(event_t *event)
 		return true;
 	}
 	return false;
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -793,6 +802,7 @@ int H2_PrivilegedResponder(event_t *event)
 
 boolean MN_Responder(event_t *event)
 {
+	guard(MN_Responder);
 	int key;
 	extern boolean automapactive;
 	extern void H2_StartTitle(void);
@@ -920,6 +930,7 @@ boolean MN_Responder(event_t *event)
 		return(false);
 	}
 	return false;
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -1695,6 +1706,7 @@ void SetMenu(MenuType_t menu)
 
 void MN_ActivateMenu(void)
 {
+	guard(MN_ActivateMenu);
 	if (MenuActive)
 	{
 		return;
@@ -1704,6 +1716,7 @@ void MN_ActivateMenu(void)
 		S_ResumeSound();
 	}
 	StartMenu(MENU_MAIN);
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -1714,11 +1727,13 @@ void MN_ActivateMenu(void)
 
 void MN_DeactivateMenu(void)
 {
+	guard(MN_DeactivateMenu);
 	if(!CurrentMenu) return;
 
 	ForceMenuOff();
 	S_StartSound(NULL, SFX_PLATFORM_STOP);
 	P_ClearMessage(&players[consoleplayer]);
+	unguard;
 }
 
 //---------------------------------------------------------------------------
@@ -1729,6 +1744,7 @@ void MN_DeactivateMenu(void)
 
 int CCmdMenuAction(int argc, char **argv)
 {
+	guard(CCmdMenuAction);
 	// Can we get out of here early?
 	if(/*MenuActive == true || */chatmodeon) return true;
 
@@ -1847,6 +1863,7 @@ int CCmdMenuAction(int argc, char **argv)
 				return true;
 */	
 	return true;
+	unguard;
 }
 
 //==========================================================================
