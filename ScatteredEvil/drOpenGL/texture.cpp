@@ -8,6 +8,8 @@
 #include "drOpenGL.h"
 #include "../DoomsDay/tga.h"
 
+#define GL_SHARED_TEXTURE_PALETTE_EXT		0x81fb
+
 rgba_t	palette[256];
 int		usePalTex = DGL_FALSE;
 int		dumpTextures = DGL_FALSE;
@@ -18,6 +20,7 @@ PFNGLCOLORTABLEEXTPROC glColorTableEXT = NULL;
 
 void loadPalette()
 {
+	guard(loadPalette);
 	byte	paldata[256*3];
 	int		i;
 
@@ -29,20 +32,22 @@ void loadPalette()
 	{
 		memcpy(paldata + i*3, palette[i].color, 3);
 	}
-//	glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB, GL_UNSIGNED_BYTE, 
-//		paldata);
+	glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB, GL_UNSIGNED_BYTE, 
+		paldata);
+	unguard;
 }
 
 
 int enablePalTexExt(int enable)
 {
+	guard(enablePalTexExt);
 	if(!paltexExtAvailable) return DGL_FALSE;
 	if(enable && usePalTex || !enable && !usePalTex) return DGL_TRUE;
 
 	if(!enable && usePalTex)
 	{
 		usePalTex = DGL_FALSE;
-//		glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
+		glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
 		glColorTableEXT = NULL;
 		return DGL_TRUE;
 	}	
@@ -55,10 +60,12 @@ int enablePalTexExt(int enable)
 		return DGL_FALSE;
 	}
 
-//	glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
+	glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
 	usePalTex = DGL_TRUE;
 	loadPalette();
+	gim.Message("Paletted texture extension enabled.\n");
 	return DGL_TRUE;
+	unguard;
 }	
 
 
@@ -72,18 +79,21 @@ int Power2(int num)
 
 DGLuint NewTexture(void)
 {
+	guard(NewTexture);
 	DGLuint texName;
 
 	// Generate a new texture name and bind it.
 	glGenTextures(1, &texName);
 	glBindTexture(GL_TEXTURE_2D, currentTex = texName);
 	return texName;
+	unguard;
 }
 
 
 // Width and height must be powers of two.
 int LoadTexture(int format, int width, int height, int mipmap, void *data)
 {
+	guard(LoadTexture);
 	byte *bdata = (byte *)data;
 
 	// Can't operate on the null texture.
@@ -156,11 +166,13 @@ int LoadTexture(int format, int width, int height, int mipmap, void *data)
 		if(needFree) free(buffer);
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 void DeleteTextures(int num, DGLuint *names)
 {
+	guard(DeleteTextures);
 	int		i;
 
 	if(!num || !names) return;
@@ -171,11 +183,13 @@ void DeleteTextures(int num, DGLuint *names)
 			break;		
 		}
 	glDeleteTextures(num, names);
+	unguard;
 }
 
 	
 void TexParam(int pname, int param)
 {
+	guard(TexParam);
 	GLenum mlevs[] = { GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST,
 		GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR,
 		GL_LINEAR_MIPMAP_LINEAR };
@@ -188,11 +202,13 @@ void TexParam(int pname, int param)
 		(param>=DGL_NEAREST && param<=DGL_LINEAR_MIPMAP_LINEAR)? mlevs[param-DGL_NEAREST]
 		: param==DGL_CLAMP? GL_CLAMP
 		: GL_REPEAT);
+	unguard;
 }
 
 
 void GetTexParameterv(int level, int pname, int *v)
 {
+	guard(GetTexParameterv);
 	switch(pname)
 	{
 	case DGL_WIDTH:
@@ -203,11 +219,13 @@ void GetTexParameterv(int level, int pname, int *v)
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_HEIGHT, v);
 		break;
 	}
+	unguard;
 }
 
 
 void Palette(int format, void *data)
 {
+	guard(Palette);
 	unsigned char	*ptr = (byte *)data;
 	int				i, size = (format==DGL_RGBA? 4 : 3);
 
@@ -219,15 +237,18 @@ void Palette(int format, void *data)
 		palette[i].color[CA] = format==DGL_RGBA? ptr[CA] : 0xff;
 	}
 	loadPalette();
+	unguard;
 }
 
 
 int	Bind(DGLuint texture)
 {
+	guard(Bind);
 	DGLuint	oldtex = currentTex;
 
 	// Do we need to change it?
 	if(texture != currentTex)
 		glBindTexture(GL_TEXTURE_2D, currentTex = texture);
 	return oldtex;
+	unguard;
 }

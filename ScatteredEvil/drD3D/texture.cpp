@@ -54,6 +54,7 @@ int			numTextures = 0;
 
 void loadPalette()
 {
+	guard(loadPalette);
 	int		i;
 	D3DCOLOR paldata[256];
 
@@ -64,11 +65,13 @@ void loadPalette()
 	for(i=0; i<256; i++)
 		paldata[i] = palette[i].color[CR] + (palette[i].color[CG]<<8) + (palette[i].color[CB]<<16);
 	IDirectDrawPalette_SetEntries(ddPal, 0, 0, 256, (LPPALETTEENTRY) paldata);
+	unguard;
 }
 
 
 int enablePalTexExt(int enable)
 {
+	guard(enablePalTexExt);
 	if(!palTexAvailable) return DGL_FALSE;
 	if(enable && usePalTex || !enable && !usePalTex) return DGL_TRUE;
 
@@ -90,27 +93,33 @@ int enablePalTexExt(int enable)
 	}
 	loadPalette();
 	return DGL_TRUE;
+	unguard;
 }	
 
 
 void defaultTexParams(texture_t *tex)
 {
+	guardSlow(defaultTexParams);
 	tex->minFilter = D3DFILTER_NEAREST;
 	tex->magFilter = D3DFILTER_LINEAR;
 	tex->sAddr = D3DTADDRESS_WRAP;
 	tex->tAddr = D3DTADDRESS_WRAP;
+	unguardSlow;
 }
 
 texture_t *getCurTexture()
 {
+	guardSlow(getCurTexture);
 	if(!currentTexName) return NULL;
 	return textures + NAME_TO_IDX(currentTexName);
+	unguard;
 }
 
 
 // Return a texture index, which is marked as 'in use'.
 texindex_t getNewTexture()
 {
+	guard(getNewTexture);
 	texindex_t	i;
 
 	// See if there is a free texture in the texture list.
@@ -130,11 +139,13 @@ texindex_t getNewTexture()
 	textures[i].flags |= TXF_IN_USE;
 	defaultTexParams(textures+i);
 	return i;
+	unguard;
 }
 
 
 void delTexture(texindex_t idx)
 {
+	guard(delTexture);
 	texture_t	*tex;
 
 	if(idx < 0 || idx > numTextures-1) return;
@@ -147,11 +158,13 @@ void delTexture(texindex_t idx)
 	if(tex->d3dTex) IDirect3DTexture2_Release(tex->d3dTex);
 	if(tex->surface) IDirectDrawSurface4_Release(tex->surface);
 	memset(tex, 0, sizeof(*tex));
+	unguard;
 }
 
 
 void deleteAllTextures(int unalloc)
 {
+	guard(deleteAllTextures);
 	int		i;
 
 	for(i=0; i<numTextures; i++) delTexture(i);
@@ -161,11 +174,13 @@ void deleteAllTextures(int unalloc)
 		textures = 0;
 		numTextures = 0;
 	}
+	unguard;
 }
 
 
 void createMipmapSurfaces(int mipmap, texture_t *tex, int width, int height, DDPIXELFORMAT *pf)
 {
+	guard(createMipmapSurfaces);
 	DDSURFACEDESC2	sd;
 
 	if(mipmap) return;
@@ -196,11 +211,13 @@ void createMipmapSurfaces(int mipmap, texture_t *tex, int width, int height, DDP
 		gim.Error("drD3D.createSurfaces: Failed to get the D3DTexture2 interface.\n");
 
 	IDirect3DDevice3_SetTexture(d3dDevice, 0, tex->d3dTex);
+	unguard;
 }
 
 
 void unpackMask(DWORD mask, int *offset, int *bits)
 {
+	guardSlow(unpackMask);
 	int		i;
 
 	*offset = 0;
@@ -217,11 +234,13 @@ void unpackMask(DWORD mask, int *offset, int *bits)
 		if(mask & (1<<i)) 
 			(*bits)++; 
 		else break;
+	unguardSlow;
 }
 
 
 void copyImage32(DDSURFACEDESC2 *dsd, byte *rgba)
 {
+	guard(copyImage32);
 	int		offsets[4], bits[4], i;
 	int		size = dsd->ddpfPixelFormat.dwRGBBitCount/8;
 	unsigned x, y, temp;
@@ -255,23 +274,27 @@ void copyImage32(DDSURFACEDESC2 *dsd, byte *rgba)
 			rgba += 4;
 		}
 	}
+	unguard;
 }
 
 
 void copyImage8(DDSURFACEDESC2 *dsd, byte *data)
 {
+	guard(copyImage8);
 	byte	*line = (byte *)dsd->lpSurface;
 	unsigned y;
 
 	// Copy line by line.
 	for(y=0; y<dsd->dwHeight; y++, line += dsd->lPitch, data += dsd->dwWidth)
 		memcpy(line, data, dsd->dwWidth);
+	unguard;
 }
 
 
 void uploadImage(texture_t *tex, int mipmap, int width, int height, 
 				   int comps, byte *rgbaBuffer)
 {
+	guard(uploadImage);
 	LPDIRECTDRAWSURFACE4 sLevel, sNext;
 	DDSURFACEDESC2 dsd;
 	DDSCAPS2 caps;
@@ -331,6 +354,7 @@ void uploadImage(texture_t *tex, int mipmap, int width, int height,
 		IDirectDrawSurface4_SetPalette(sLevel, ddPal);
 
 	if(mipmap) IDirectDrawSurface4_Release(sLevel);
+	unguard;
 }
 
 
@@ -346,15 +370,18 @@ int Power2(int num)
 
 DGLuint NewTexture(void)
 {
+	guard(NewTexture);
 	DGLuint texName = IDX_TO_NAME(getNewTexture());
 	currentTexName = texName;
 	return texName;
+	unguard;
 }
 
 
 // Width and height must be powers of two.
 int LoadTexture(int format, int width, int height, int mipmap, void *data)
 {
+	guard(LoadTexture);
 	byte		*bdata = (byte *)data;
 	texture_t	*tex = getCurTexture();
 	int			alphachannel = (format==DGL_RGBA) || (format==DGL_COLOR_INDEX_8_PLUS_A8);
@@ -435,11 +462,13 @@ int LoadTexture(int format, int width, int height, int mipmap, void *data)
 		if(needFree) free(buffer);
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 void DeleteTextures(int num, DGLuint *names)
 {
+	guard(DeleteTextures);
 	int		i;
 
 	if(!num) return;
@@ -454,11 +483,13 @@ void DeleteTextures(int num, DGLuint *names)
 	// Remove each texture on the list.
 	for(i=0; i<num; i++)
 		delTexture(NAME_TO_IDX(names[i]));
+	unguard;
 }
 
 	
 void TexParam(int pname, int param)
 {
+	guard(TexParam);
 	texture_t *tex = getCurTexture();
 	D3DTEXTUREFILTER d3dFilter[] =
 	{
@@ -492,6 +523,7 @@ void TexParam(int pname, int param)
 		tex->tAddr = param==DGL_CLAMP? D3DTADDRESS_CLAMP : D3DTADDRESS_WRAP;
 		break;
 	}
+	unguard;
 }
 
 
@@ -503,6 +535,7 @@ void GetTexParameterv(int level, int pname, int *v)
 
 void Palette(int format, void *data)
 {
+	guard(Palette);
 	unsigned char	*ptr = (byte *)data;
 	int				i, size = (format==DGL_RGBA? 4 : 3);
 
@@ -514,11 +547,13 @@ void Palette(int format, void *data)
 		palette[i].color[CA] = format==DGL_RGBA? ptr[CA] : 0xff;
 	}
 	loadPalette();
+	unguard;
 }
 
 
 int	Bind(DGLuint texture)
 {
+	guard(Bind);
 	DGLuint		oldtex = currentTexName;
 	texindex_t	idx = NAME_TO_IDX(texture);
 	texture_t	*tex;
@@ -533,55 +568,53 @@ int	Bind(DGLuint texture)
 	if(idx < 0 || idx > numTextures-1) return oldtex;
 	tex = textures + idx;
 	currentTexName = texture;
-	IDirect3DDevice3_SetTexture(d3dDevice, 0, texturesEnabled? tex->d3dTex : NULL);
-	if(texturesEnabled)
+	IDirect3DDevice3_SetTexture(d3dDevice, 0, tex->d3dTex);
+	// Set the appropriate texture rendering state.
+	// First choose the appropriate mode to choose the mipmap.
+	switch(tex->minFilter)
 	{
-		// Set the appropriate texture rendering state.
-		// First choose the appropriate mode to choose the mipmap.
-		switch(tex->minFilter)
-		{
-		case D3DFILTER_NEAREST:
-		case D3DFILTER_LINEAR:
-			mipMode = BTM_NONE;
-			break;
+	case D3DFILTER_NEAREST:
+	case D3DFILTER_LINEAR:
+		mipMode = BTM_NONE;
+		break;
 
-		case D3DFILTER_MIPNEAREST:
-		case D3DFILTER_MIPLINEAR:
-			mipMode = BTM_NEAREST;
-			break;
+	case D3DFILTER_MIPNEAREST:
+	case D3DFILTER_MIPLINEAR:
+		mipMode = BTM_NEAREST;
+		break;
 
-		case D3DFILTER_LINEARMIPNEAREST:
-		case D3DFILTER_LINEARMIPLINEAR:
-			mipMode = BTM_LINEAR;
-			break;
-		}
-		// Then choose the min filter.
-		switch(tex->minFilter)
-		{
-		case D3DFILTER_NEAREST:
-		case D3DFILTER_MIPNEAREST:
-		case D3DFILTER_LINEARMIPNEAREST:
-			pixMode = BTM_NEAREST;
-			break;
-		
-		case D3DFILTER_LINEAR:
-		case D3DFILTER_MIPLINEAR:
-		case D3DFILTER_LINEARMIPLINEAR:
-			pixMode = BTM_LINEAR;
-			break;
-		}
-		
-		// Set the mipmapping mode.
-		SetTSS(0, D3DTSS_MIPFILTER, mipMode==BTM_NONE? D3DTFP_NONE
-			: mipMode==BTM_NEAREST? D3DTFP_POINT
-			: D3DTFP_LINEAR);
-		// Set the min filter mode.				
-		SetTSS(0, D3DTSS_MINFILTER, pixMode==BTM_NEAREST? D3DTFN_POINT : D3DTFN_LINEAR);
-
-		// The other modes.
-		IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_MAGFILTER, tex->magFilter);
-		IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_ADDRESSU, tex->sAddr);
-		IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_ADDRESSV, tex->tAddr);
+	case D3DFILTER_LINEARMIPNEAREST:
+	case D3DFILTER_LINEARMIPLINEAR:
+		mipMode = BTM_LINEAR;
+		break;
 	}
+	// Then choose the min filter.
+	switch(tex->minFilter)
+	{
+	case D3DFILTER_NEAREST:
+	case D3DFILTER_MIPNEAREST:
+	case D3DFILTER_LINEARMIPNEAREST:
+		pixMode = BTM_NEAREST;
+		break;
+		
+	case D3DFILTER_LINEAR:
+	case D3DFILTER_MIPLINEAR:
+	case D3DFILTER_LINEARMIPLINEAR:
+		pixMode = BTM_LINEAR;
+		break;
+	}
+		
+	// Set the mipmapping mode.
+	SetTSS(0, D3DTSS_MIPFILTER, mipMode==BTM_NONE? D3DTFP_NONE
+		: mipMode==BTM_NEAREST? D3DTFP_POINT
+		: D3DTFP_LINEAR);
+	// Set the min filter mode.				
+	SetTSS(0, D3DTSS_MINFILTER, pixMode==BTM_NEAREST? D3DTFN_POINT : D3DTFN_LINEAR);
+
+	// The other modes.
+	IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_MAGFILTER, tex->magFilter);
+	IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_ADDRESSU, tex->sAddr);
+	IDirect3DDevice3_SetTextureStageState(d3dDevice, 0, D3DTSS_ADDRESSV, tex->tAddr);
 	return oldtex;
+	unguard;
 }

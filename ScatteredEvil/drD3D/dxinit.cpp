@@ -54,15 +54,18 @@ int						numDrivers;
 BOOL WINAPI ConfigDlgDriverEnum(GUID FAR *lpGUID, LPSTR lpDriverDescription, 
 							 LPSTR lpDriverName, void *lpContext, HMONITOR hm)
 {
+	guard(ConfigDlgDriverEnum);
 	strcpy(driverInfo[numDrivers++].driverName, lpDriverName);
 	SendMessage( (HWND) lpContext, LB_ADDSTRING, 0, (LPARAM) 
 		lpDriverDescription);
 	return DDENUMRET_OK;
+	unguard;
 }
 
 BOOL CALLBACK ConfigDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 							   LPARAM lParam)
 {
+	guard(ConfigDialogProc);
 	int i;
 	HWND it;
 
@@ -137,10 +140,12 @@ BOOL CALLBACK ConfigDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam,
 		}
 	}
 	return FALSE;
+	unguard;
 }
  
 int ConfigDialog(void)
 {	
+	guard(ConfigDialog);
 	int ret;
 
 	ShowCursor(TRUE);
@@ -148,10 +153,12 @@ int ConfigDialog(void)
 		ConfigDialogProc);
 	ShowCursor(FALSE);
 	return ret;
+	unguard;
 }
 
 void ReadConfig(void)
 {
+	guard(ReadConfig);
 	static int first_time = DGL_TRUE;
 	int showconf = DGL_FALSE;
 
@@ -188,12 +195,14 @@ void ReadConfig(void)
 			WritePrivateProfileString("drD3D", "ZBuffer", buf, "drD3D.ini");
 		}		
 	}
+	unguard;
 }
 
 // -------------------------------------------------------------------------
 
 int GetDirectDraw4(GUID *guid)
 {
+	guard(GetDirectDraw4);
 	// Destroy the previously created stuff.
 	dxShutdown();
 
@@ -206,12 +215,14 @@ int GetDirectDraw4(GUID *guid)
 		return DGL_ERROR;
 
 	return DGL_OK;
+	unguard;
 }
 
 
 BOOL WINAPI DDEnumCallbackEx(GUID FAR *lpGUID, LPSTR lpDriverDescription, 
 							 LPSTR lpDriverName, void *lpContext, HMONITOR hm)
 {
+	guard(DDEnumCallbackEx);
 	DDCAPS	caps;
 
 	gim.Message( "%s: %s\n", lpDriverName, lpDriverDescription);
@@ -253,11 +264,13 @@ BOOL WINAPI DDEnumCallbackEx(GUID FAR *lpGUID, LPSTR lpDriverDescription,
 	devGUID = lpGUID;
 	*(int *)lpContext = DGL_TRUE;
 	return FALSE; 
+	unguard;
 }
  
 
 HRESULT CALLBACK EnumZBuffersCallback(LPDDPIXELFORMAT lpDDPixFmt, void *lpContext)
 {
+	guard(EnumZBuffersCallback);
 	if(lpDDPixFmt->dwFlags & DDPF_ZBUFFER)
 	{
 		gim.Message( "ZDepth: %i\n", lpDDPixFmt->dwZBufferBitDepth);
@@ -270,12 +283,14 @@ HRESULT CALLBACK EnumZBuffersCallback(LPDDPIXELFORMAT lpDDPixFmt, void *lpContex
 			return FALSE;
 		}
 	}
-	return TRUE;	
+	return TRUE;
+	unguard
 }
 
 
 void printPixFormat(DDPIXELFORMAT *pf)
 {
+	guard(printPixFormat);
 	gim.Message( "flags: (");
 	if(pf->dwFlags & DDPF_RGB) gim.Message( "Rgb");
 	if(pf->dwFlags & DDPF_ALPHAPIXELS) gim.Message( "Alpha");
@@ -286,11 +301,13 @@ void printPixFormat(DDPIXELFORMAT *pf)
 	if(pf->dwFlags & DDPF_ALPHAPIXELS)
 		gim.Message("A:%x", pf->dwRGBAlphaBitMask);
 	gim.Message( "\n");
+	unguard;
 }
 
 
 HRESULT CALLBACK EnumTexFormatsCallback(LPDDPIXELFORMAT lpDDPixFmt, void *lpFound)
 {
+	guard(EnumTexFormatsCallback);
 	/*if((*lpFound & TXFOUND_EVERYTHING) == TXFOUND_EVERYTHING)
 		return D3DENUMRET_CANCEL;	// We can stop, everything has been found.*/
 
@@ -342,12 +359,14 @@ HRESULT CALLBACK EnumTexFormatsCallback(LPDDPIXELFORMAT lpDDPixFmt, void *lpFoun
 		//}
 	}
 	return D3DENUMRET_OK;
+	unguard;
 }
  
 
 // Creates the system objects, surfaces, devices, etc.
 int dxInit(int firstTime)
 {
+	guard(dxInit);
 	DDSURFACEDESC2	sd;
 	int				found = DGL_FALSE;
 	int				i;
@@ -586,21 +605,25 @@ int dxInit(int firstTime)
 
 	// All right!
 	return DGL_OK;
+	unguard;
 }
 
 void dxDestroySurfaces()
 {
+	guard(dxDestroySurfaces);
 	if(sDepth) IDirectDrawSurface4_Release(sDepth);
 	if(sBack) IDirectDrawSurface4_Release(sBack);
 	if(sPrimary) IDirectDrawSurface4_Release(sPrimary);
 	sDepth = NULL;
 	sBack = NULL;
 	sPrimary = NULL;
+	unguard;
 }
 
 // Destroys all system objects, surfaces, devices, etc.
 int dxShutdown()
 {
+	guard(dxShutdown);
 	enablePalTexExt(DGL_FALSE);
 
 	if(d3dScissor) IDirect3DViewport3_Release(d3dScissor);
@@ -619,10 +642,12 @@ int dxShutdown()
 	d3dVp = NULL;
 	d3dScissor = NULL;
 	return DGL_OK;
+	unguard;
 }
 
 int dxRestoreSurfaces()
 {
+	guard(dxRestoreSurfaces);
 	if(sPrimary) 
 		if(FAILED(IDirectDrawSurface4_IsLost(sPrimary)))
 		{
@@ -639,10 +664,12 @@ int dxRestoreSurfaces()
 			IDirectDrawSurface4_Restore(sDepth);
 		}
 	return DGL_OK;
+	unguard;
 }
 
 int dxRecreateSurfaces()
 {
+	guard(dxRecreateSurfaces);
 	DDSURFACEDESC2	sd;
 /*	LPDIRECTDRAWSURFACE4	oldPrimary = sPrimary;
 	LPDIRECTDRAWSURFACE4	oldDepth = sDepth, oldBack = sBack;*/
@@ -741,4 +768,5 @@ int dxRecreateSurfaces()
 	if(oldPrimary) IDirectDrawSurface4_Release(oldPrimary);*/
 	
 	return DGL_OK;
+	unguard;
 }

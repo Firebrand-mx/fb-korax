@@ -8,6 +8,7 @@
 
 int Grab(int x, int y, int width, int height, int format, void *buffer)
 {
+	guard(Grab);
 	int				outx, outy, i;
 	int				offsets[3], bits[3], masks[3];
 	unsigned int	temp;
@@ -60,12 +61,14 @@ int Grab(int x, int y, int width, int height, int format, void *buffer)
 
 	IDirectDrawSurface4_Unlock(sBack, &rect);
 	return DGL_OK;
+	unguard;
 }
 
 
 // Clipping will be performed.
 int Project(int num, gl_fc3vertex_t *inVertices, gl_fc3vertex_t *outVertices)
 {
+	guard(Project);
 	D3DLVERTEX			*d3dInVerts, *d3dOutVerts;
 	D3DHVERTEX			*d3dHVerts;
 	D3DTRANSFORMDATA	trd;
@@ -123,11 +126,13 @@ int Project(int num, gl_fc3vertex_t *inVertices, gl_fc3vertex_t *outVertices)
 	free(d3dHVerts);
 
 	return outPtr - outVertices;
+	unguard;
 }
 
 
 int ReadPixels(int *inData, int format, void *pixels)
 {
+	guard(ReadPixels);
 	int		type = inData[0], num, *coords, i;
 	float	*fv = (float *)pixels;
 	int		returnValue = DGL_OK;
@@ -187,11 +192,13 @@ int ReadPixels(int *inData, int format, void *pixels)
 	
 	IDirectDrawSurface4_Unlock(sDepth, NULL);
 	return returnValue;
+	unguard;
 }
 
 
 int Gamma(int set, DGLubyte *data)
 {
+	guard(Gamma);
 	int			i;
 	DDGAMMARAMP ramp;
 
@@ -209,4 +216,5 @@ int Gamma(int set, DGLubyte *data)
 		return DGL_ERROR;
 	}
 	return DGL_OK;
+	unguard;
 }

@@ -12,15 +12,18 @@ rendlist_t *readlist;
 
 void setupZBias(GLfloat *mat, int level)
 {
+	guard(setupZBias);
 	float sc = .99f - level*.01f;
 
 	glGetFloatv(GL_PROJECTION_MATRIX, mat);
 	glMatrixMode(GL_PROJECTION);
 	glScalef(sc, sc, sc);
+	unguard;
 }
 
 static void drawWall(rendpoly_t *cq, byte tex, byte col)
 {
+	guard(drawWall);
 	float tcleft, tcright, tctop, tcbottom;
 	
 	// Calculate relative texture coordinates.
@@ -44,10 +47,12 @@ static void drawWall(rendpoly_t *cq, byte tex, byte col)
 	
 	if(tex) glTexCoord2f(tcright, tcbottom);
 	glVertex3f(cq->vertices[1].pos[VX], cq->bottom, cq->vertices[1].pos[VY]);
+	unguard;
 }
 
 static void drawFlat(rendpoly_t *cq, byte tex, byte col)
 {
+	guard(drawWall);
 	if(cq->flags & RPF_MISSING_WALL)
 	{
 		float tcleft = 0, tctop = 0;
@@ -134,12 +139,15 @@ static void drawFlat(rendpoly_t *cq, byte tex, byte col)
 			FLATVTX(vtx);
 		}*/
 	}
+	unguard;
 }
 
 void initForReading(rendlist_t *li)
 {
+	guard(initForReading);
 	readlist = li;
 	readlist->cursor = readlist->data;
+	unguard;
 }
 
 INLINE byte readByte()
@@ -167,6 +175,7 @@ INLINE float readFloat()
 
 int readPoly(rendpoly_t *poly)
 {
+	guard(readPoly);
 	int i, c, temp;
 	rendpoly_vertex_t *vtx;
 	
@@ -207,11 +216,13 @@ int readPoly(rendpoly_t *poly)
 		}
 	}
 	return DGL_TRUE;
+	unguard;
 }
 
 // This is only for solid, non-masked primitives.
 void renderList(rendlist_t *rl)
 {
+	guard(renderList);
 	rendpoly_t	cq;
 	char		dlight = DGL_FALSE;
 	char		flats;
@@ -278,11 +289,13 @@ void renderList(rendlist_t *rl)
 
 	// Enable alpha blending once more.
 	glEnable(GL_BLEND);
+	unguard;
 }
 
 // Masked lists only include quads.
 void renderMaskedList(rendlist_t *mrl)
 {
+	guard(renderMaskedList);
 //	int			i;
 //	float		tcleft, tcright, tctop, tcbottom;
 	rendpoly_t	cq;
@@ -333,10 +346,12 @@ void renderMaskedList(rendlist_t *mrl)
 		drawWall(&cq, DGL_TRUE, DGL_TRUE);
 	}
 	if(currentTex) glEnd();	// If something was drawn, finish with it.
+	unguard;
 }
 
 void renderSkyMaskLists(rendlist_t *smrl, rendlist_t *skyw)
 {
+	guard(renderSkyMaskLists);
 //	int			i;
 	rendpoly_t	cq;
 
@@ -387,10 +402,12 @@ void renderSkyMaskLists(rendlist_t *smrl, rendlist_t *skyw)
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
+	unguard;
 }
 
 void renderDynLightLists(rendlist_t *frl, rendlist_t *wrl)
 {
+	guard(renderDynLightLists);
 //	int			i;
 	rendpoly_t	cq;
 	GLfloat		projmat[16];
@@ -484,10 +501,12 @@ void renderDynLightLists(rendlist_t *frl, rendlist_t *wrl)
 	glDepthMask(GL_TRUE); 
 	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	unguard;
 }
 
 void renderDLitPass(rendlist_t *rl, int num)
 {
+	guard(renderDLitPass);
 	int			k;//, i;
 //	GLfloat		fogColor[4];
 	rendpoly_t	cq;
@@ -553,4 +572,5 @@ void renderDLitPass(rendlist_t *rl, int num)
 	glDepthMask(GL_TRUE); 
 	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	unguard;
 }

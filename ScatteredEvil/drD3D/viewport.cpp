@@ -19,16 +19,19 @@ void enableScissor(int enable)
 
 void Viewport(int x, int y, int width, int height)
 {
+	guard(Viewport);
 	vpData.dwX = x;
 	vpData.dwY = y;
 	vpData.dwWidth = width;
 	vpData.dwHeight = height;
 	IDirect3DViewport3_SetViewport2(d3dVp, &vpData);
+	unguard;
 }
 
 
 void Scissor(int x, int y, int width, int height)
 {
+	guard(Scissor);
 	float sx, sy, sw, sh;	// The relative coordinates of the scissor box.
 
 	// The scissor box is always smaller than the viewport. Otherwise, 
@@ -55,4 +58,5 @@ void Scissor(int x, int y, int width, int height)
 
 	// Update the viewport.
 	IDirect3DViewport3_SetViewport2(d3dScissor, &scissorData);
+	unguard;
 }
