@@ -171,8 +171,6 @@ void G_Drawer(void)
 			{
 				R_HandleSectorSpecials();
 				P_SetDDFlags();
-				// The display player cannot be seen.
-				players[displayplayer].plr->mo->ddflags |= DDMF_DONTDRAW;
 				// How about a bit of quake?
 				if(localQuakeHappening[displayplayer] && !paused)
 				{
@@ -181,7 +179,6 @@ void G_Drawer(void)
 							-(intensity<<1))<<FRACBITS);
 					gi.Set(DD_VIEWY_OFFSET, ((M_Random() % (intensity<<2))
 							-(intensity<<1))<<FRACBITS);
-					players[consoleplayer].plr->mo->ddflags |= DDMF_DONTDRAW;
 				}
 				else
 				{
@@ -193,13 +190,17 @@ void G_Drawer(void)
 				// Render the view.
 				if(!dontrender)
 					gi.RenderPlayerView(players[displayplayer].plr);
-				X_Drawer(); // Draw the crosshair.
+				if (!players[displayplayer].plr->ThirdPersonView)
+					X_Drawer(); // Draw the crosshair.
 			}
 			gi.Update(DDUF_FULLVIEW);
-			SB_Drawer();
-			// We'll draw the chat text *after* the status bar to
-			// be a bit clearer.
-			CT_Drawer();
+			if (!players[displayplayer].plr->ThirdPersonView)
+			{
+				SB_Drawer();
+				// We'll draw the chat text *after* the status bar to
+				// be a bit clearer.
+				CT_Drawer();
+			}
 			break;
 		case GS_INTERMISSION:
 			IN_Drawer();
@@ -212,9 +213,10 @@ void G_Drawer(void)
 			break;
 	}
 
-	if(paused && !MenuActive && !askforquit)
+	if (paused && !MenuActive && !askforquit && 
+		!players[displayplayer].plr->ThirdPersonView)
 	{
-		if(!netgame)
+		if (!netgame)
 		{
 			GCanvas->DrawPatch1(320, gi.Get(DD_VIEWWINDOW_Y)*480/200+5, gi.W_GetNumForName("PAUSED"));
 		}

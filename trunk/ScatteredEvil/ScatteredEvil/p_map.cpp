@@ -1948,16 +1948,10 @@ void P_LineAttack (mobj_t *t1, angle_t angle, fixed_t distance, fixed_t slope, i
 ==============================================================================
 */
 #define USE_SIT_DOWN_SPECIAL 143
-#define USE_TALK_SPECIAL 142
 
 extern boolean EV_SitDown(byte *args, mobj_t *mo);
-//extern boolean EV_BuySomething(byte *args, mobj_t *mo);
-extern boolean EV_TalkSomeBody(byte *args, mobj_t *mo, mobj_t *mobj);
-
 
 mobj_t          *usething;
-
-boolean CON_StartConversation(mobj_t *User, mobj_t *Target);
 
 boolean         PTR_UseTraverse (intercept_t *in)
 {
@@ -1979,15 +1973,14 @@ boolean         PTR_UseTraverse (intercept_t *in)
 			return true;	//	Don't use self.
 		}
 
+		if (CON_StartConversation(usething, mobj))
+		{
+			return true;
+		}
 		if (mobj->special == USE_SIT_DOWN_SPECIAL)
-		{ 
+		{
 			// Wrong special
 			EV_SitDown(mobj->args, usething);
-			return false; // Stop searching
-		}
-		else if (mobj->special == USE_TALK_SPECIAL)
-		{
-			EV_TalkSomeBody(mobj->args, usething, mobj);
 			return false; // Stop searching
 		}
 		return true;
