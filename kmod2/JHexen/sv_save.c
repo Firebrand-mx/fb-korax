@@ -741,6 +741,19 @@ void SV_MapTeleport(int map, int position)
 	int oldPieces;
 	int bestWeapon;
 	
+	unsigned int experience;
+	unsigned int strength;
+	unsigned int agility;
+	unsigned int speed;
+	int maxhealth;
+	int maxhealth_old;
+	unsigned int exp_level;
+	unsigned int prev_level;
+	unsigned int next_level;
+	unsigned int maxsp_power;
+	unsigned int sp_power_old;
+	unsigned int money;
+
 	if(!deathmatch)
 	{
 		if(P_GetMapCluster(gamemap) == P_GetMapCluster(map))
@@ -816,6 +829,18 @@ void SV_MapTeleport(int map, int position)
 				{
 					oldWeaponowned[j] = players[i].weaponowned[j];
 				}
+				experience = players[i].experience;
+				strength = players[i].strength;
+				agility = players[i].agility;
+				speed = players[i].speed;
+				exp_level = players[i].exp_level;
+				next_level = players[i].next_level;
+				prev_level = players[i].prev_level;
+				maxhealth = players[i].maxhealth;
+				maxhealth_old = players[i].maxhealth_old;
+				maxsp_power = players[i].maxsp_power;
+				sp_power_old = players[i].sp_power_old;
+				money = players[i].money;
 			}
 		}
 		playerWasReborn = (players[i].playerstate == PST_REBORN);
@@ -845,6 +870,18 @@ void SV_MapTeleport(int map, int position)
 					players[i].weaponowned[j] = true;
 				}
 			}
+			players[i].experience = experience;
+			players[i].strength = strength;
+			players[i].agility = agility;
+			players[i].speed = speed;
+			players[i].exp_level = exp_level;
+			players[i].next_level = next_level;
+			players[i].prev_level = prev_level;
+			players[i].maxhealth = players[i].health = players[i].plr->mo->health = maxhealth;
+			players[i].maxhealth_old = maxhealth_old;
+			players[i].maxsp_power = players[i].sp_power = maxsp_power;
+			players[i].sp_power_old = sp_power_old;
+			players[i].money = money;
 			players[i].mana[MANA_1] = 25;
 			players[i].mana[MANA_2] = 25;
 			if(bestWeapon)
