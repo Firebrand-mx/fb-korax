@@ -1688,7 +1688,7 @@ void TeleportToPlayerStarts(void)
 	destX = level->playerstarts[i].x;
 	destY = level->playerstarts[i].y;
 	destAngle = itof(45 * (level->playerstarts[i].angle / 45));
-	Teleport(vector(destX, destY, ONFLOORZ), destAngle, true);
+	Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true, false);
 }
 
 //==========================================================================
@@ -1710,7 +1710,8 @@ void TeleportToDeathmatchStarts(void)
 		destX = level->deathmatchstarts[i].x;
 		destY = level->deathmatchstarts[i].y;
 		destAngle = itof(45 * (level->deathmatchstarts[i].angle / 45));
-		Teleport(vector(destX, destY, ONFLOORZ), destAngle, true);
+		Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true,
+			false);
 	}
 	else
 	{
@@ -1948,7 +1949,8 @@ void CheckForPushSpecial(line_t * line, int side)
 		}
 		else if (bActivateImpact)
 		{
-			P_ActivateLine(line, self, side, SPAC_IMPACT);
+			P_ActivateLine(line, bMissile ? Instigator : self, side,
+				SPAC_IMPACT);
 		}
 	}
 }
@@ -2084,7 +2086,7 @@ void ApplyFriction(void)
 		if (Velocity.x > 0.25 * 35.0 || Velocity.x < -0.25 * 35.0 ||
 			Velocity.y > 0.25 * 35.0 || Velocity.y < -0.25 * 35.0)
 		{
-			if (FloorZ != Sector->floorheight)
+			if (FloorZ != GetPlanePointZ(&Sector->floor, Origin))
 			{
 				return;
 			}
@@ -2110,24 +2112,36 @@ void ApplyFriction(void)
 	}
 	else
 	{
-		if (WaterLevel >= 2)
-		{
-			Velocity -= Velocity * FRICTION_WATER * frametime;
-		}
-		else if (bFly && !(Origin.z <= FloorZ) && !bOnMobj)
-		{
-			Velocity -= Velocity * FRICTION_FLY * frametime;
-		}
-		else if (GetFloorType() == FLOOR_ICE ||
-			(Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow)
-		{
-			Velocity -= Velocity * FRICTION_LOW * frametime;
-		}
-		else
-		{
-			Velocity -= Velocity * FRICTION_NORMAL * frametime;
-		}
+		Velocity -= Velocity * (GetFriction() * frametime);
 	}
+}
+
+//==========================================================================
+//
+//	GetFriction
+//
+//==========================================================================
+
+float GetFriction()
+{
+	if (WaterLevel >= 2)
+	{
+		return FRICTION_WATER;
+	}
+	if (bFly && !(Origin.z <= FloorZ) && !bOnMobj)
+	{
+		return FRICTION_FLY;
+	}
+	if (GetFloorType() == FLOOR_ICE ||
+		(Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow)
+	{
+		return FRICTION_LOW;
+	}
+	if (Sector->special & SECSPEC_FRICTION_MASK)
+	{
+		return Sector->Friction;
+	}
+	return FRICTION_NORMAL;
 }
 
 //==========================================================================
@@ -3067,10 +3081,12 @@ bool TeleportMove(TVec pos)
 	// the move is ok,
 	// so link the thing into its new position
 	UnlinkFromWorld();
-
 	Origin = pos;
-
 	LinkToWorld();
+	if (pos.z == ONFLOORZ)
+	{
+		Origin.z = FloorZ;
+	}
 
 	return true;
 }
@@ -3081,7 +3097,7 @@ bool TeleportMove(TVec pos)
 //
 //==========================================================================
 
-bool Teleport(TVec pos, float angle, bool useFog)
+bool Teleport(TVec pos, float angle, bool DstFog, bool SrcFog, bool KeepDir)
 {
 	TVec oldOrg;
 	float aboveFloor;
@@ -3090,7 +3106,6 @@ bool Teleport(TVec pos, float angle, bool useFog)
 
 	oldOrg = Origin;
 	aboveFloor = Origin.z - FloorZ;
-	pos.z = ONFLOORZ;
 	if (!TeleportMove(pos))
 	{
 		return false;
@@ -3099,7 +3114,7 @@ bool Teleport(TVec pos, float angle, bool useFog)
 	{
 		if (Player.Powers[pw_flight] && aboveFloor)
 		{
-			Origin.z = FloorZ + aboveFloor;
+			Origin.z = Origin.z + aboveFloor;
 			if (Origin.z + Height > CeilingZ)
 			{
 				Origin.z = CeilingZ - Height;
@@ -3108,35 +3123,36 @@ bool Teleport(TVec pos, float angle, bool useFog)
 		}
 		else
 		{
-			Origin.z = FloorZ;
 			Player.ViewOrg.z = Origin.z + Player.ViewHeight;
-			if (useFog)
+			if (!KeepDir)
 			{
 				Angles.pitch = 0.0;
 			}
 		}
 	}
-	else if (bMissile || bNoGravity)
+	else if (bMissile)
 	{
-		Origin.z = FloorZ + aboveFloor;
+		Origin.z = Origin.z + aboveFloor;
 		if (Origin.z + Height > CeilingZ)
 		{
 			Origin.z = CeilingZ - Height;
 		}
 	}
-	else
-	{
-		Origin.z = FloorZ;
-	}
 	// Spawn teleport fog at source and destination
-	if (useFog)
+	fogDelta = bMissile ? 0.0 : TELEFOGHEIGHT;
+	if (SrcFog)
 	{
-		fogDelta = bMissile ? 0.0 : TELEFOGHEIGHT;
 		fog = Spawn(TeleportFog, oldOrg + vector(0.0, 0.0, fogDelta));
 		fog.PlaySound('Teleport', CHAN_VOICE);
+	}
+	if (DstFog)
+	{
 		fog = Spawn(TeleportFog, Origin + vector(20.0 * cos(angle),
 			20.0 * sin(angle), fogDelta));
 		fog.PlaySound('Teleport', CHAN_VOICE);
+	}
+	if (!KeepDir)
+	{
 		if (bIsPlayer && !Player.Powers[pw_speed])
 		{
 			// Freeze player for about .5 sec
@@ -3162,7 +3178,7 @@ bool Teleport(TVec pos, float angle, bool useFog)
 		Velocity.x = Speed * cos(angle);
 		Velocity.y = Speed * sin(angle);
 	}
-	else if (useFog)	// no fog doesn't alter the player's momentums
+	else if (KeepDir)	// no fog doesn't alter the player's momentums
 	{
 		Velocity = vector(0.0, 0.0, 0.0);
 	}
@@ -3924,6 +3940,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2005/03/28 07:58:56  dj_jl
+//  Latest Vavoom updates.
+//
 //  Revision 1.8  2005/03/09 18:26:19  firebrand_kh
 //  Fixed Doom Guy's rocket explosion effect
 //
