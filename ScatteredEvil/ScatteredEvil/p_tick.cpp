@@ -49,6 +49,7 @@ void P_Ticker(void)
 {
 	int i;
 
+	CON_Ticker();
 	if(paused)
 	{
 		return;

@@ -140,7 +140,7 @@ enum
 extern mobjtype_t PuffType;
 extern mobj_t *MissileMobj;
 
-// -JL- For hurted sprites
+// -JL- For hurt skins
 int P_GetIdleState(mobj_t *actor);
 int P_GetSeeState(mobj_t *actor);
 int P_GetMeleeState(mobj_t *actor);
@@ -415,6 +415,11 @@ boolean PO_MovePolyobj(int num, int x, int y);
 boolean PO_RotatePolyobj(int num, angle_t angle);
 void PO_Init(int lump);
 boolean PO_Busy(int polyobj);
+
+//================ Conversation system ====================
+
+boolean CON_StartConversation(mobj_t *User, mobj_t *Target);
+void CON_Ticker(void);
 
 #include "p_spec.h"
 

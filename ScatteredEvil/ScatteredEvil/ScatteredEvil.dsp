@@ -104,6 +104,14 @@ SOURCE=.\con_main.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\con_play.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\con_ui.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ct_chat.cpp
 # End Source File
 # Begin Source File
@@ -170,6 +178,10 @@ SOURCE=.\KObject.cpp
 # Begin Source File
 
 SOURCE=.\KRootWindow.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\KTextWindow.cpp
 # End Source File
 # Begin Source File
 
@@ -333,11 +345,11 @@ SOURCE=.\am_map.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ct_chat.h
+SOURCE=.\con_local.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\drcoord.h
+SOURCE=.\ct_chat.h
 # End Source File
 # Begin Source File
 
@@ -378,6 +390,10 @@ SOURCE=.\KObject.h
 # Begin Source File
 
 SOURCE=.\KRootWindow.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KTextWindow.h
 # End Source File
 # Begin Source File
 
@@ -494,6 +510,10 @@ SOURCE=.\soundst.h
 # Begin Source File
 
 SOURCE=.\textdefs.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vector.h
 # End Source File
 # Begin Source File
 

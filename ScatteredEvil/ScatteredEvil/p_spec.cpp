@@ -498,30 +498,12 @@ boolean EV_LineShop(byte *args, mobj_t *mo)
 	return true;
 }
 
-boolean EV_TalkSomeBody(byte *args, mobj_t *mo, mobj_t *mobj)
-{
-	return true;
-}
-
 boolean EV_SitDown(byte *args, mobj_t *mo)
 {
-	extern boolean JournalActive;
 	player_t *player;
 	if (!mo) return false;
 	player = mo->player;
 	if (!player) return false;
-	/*if(player->morphTics)
-	{
-		player->plr->mo->momz = -6*FRACUNIT;
-	}
-	else 
-	{
-		player->plr->mo->momz = -9*FRACUNIT;
-	}*/
-/*	player->plr->mo->flags2 &= ~MF2_ONMOBJ;
-	player->jumpTics = 18; */
-/*	JournalActive=true;
-	paused=true;*/
 	return true;
 }
 
@@ -529,11 +511,9 @@ boolean EV_BuySomething(byte *args, mobj_t *mo)
 {
 	player_t *player;
 	boolean res;
-	//char string[80];
 	if (!mo) return false;
 	player = mo->player;
 	if (!player) return false;
-	//sprintf(string,"Testing: %d %d %d %d %d",args[0],args[1],args[2],player->money,(unsigned int)(args[2]+(args[1]*10)));
 
 	switch(player->pclass)
 	{
@@ -590,7 +570,6 @@ void Give_Level(player_t *player,unsigned int level);
 boolean EV_GivePoints(byte *args, mobj_t *mo)
 {
 	player_t *player;
-	//char string[80];
 	if (!mo) return false;
 	player = mo->player;
 	if (!player) return false;
@@ -961,9 +940,6 @@ boolean P_ExecuteLineSpecial(int special, byte *args, line_t *line, int side,
 		case 141:
 			buttonSuccess = EV_LineShop(args, mo);
 			break;
-/*		case 142:
-			buttonSuccess = EV_LineTalk(args, mo);
-			break;*/
 
 		case 144:
 			buttonSuccess = EV_BuySomething(args, mo);
@@ -1215,40 +1191,6 @@ void P_SpawnSpecials (void)
 				P_SpawnLightSequence(sector, 1);
 				break;
 			// Specials 3 & 4 are used by the phased light sequences
-
-			/*
-			case 1:         // FLICKERING LIGHTS
-				P_SpawnLightFlash (sector);
-				break;
-			case 2:         // STROBE FAST
-				P_SpawnStrobeFlash(sector,FASTDARK,0);
-				break;
-			case 3:         // STROBE SLOW
-				P_SpawnStrobeFlash(sector,SLOWDARK,0);
-				break;
-			case 4:         // STROBE FAST/DEATH SLIME
-				P_SpawnStrobeFlash(sector,FASTDARK,0);
-				sector->special = 4;
-				break;
-			case 8:         // GLOWING LIGHT
-				P_SpawnGlowingLight(sector);
-				break;
-			case 9:         // SECRET SECTOR
-				totalsecret++;
-				break;
-			case 10:        // DOOR CLOSE IN 30 SECONDS
-				P_SpawnDoorCloseIn30 (sector);
-				break;
-			case 12:        // SYNC STROBE SLOW
-				P_SpawnStrobeFlash (sector, SLOWDARK, 1);
-				break;
-			case 13:        // SYNC STROBE FAST
-				P_SpawnStrobeFlash (sector, FASTDARK, 1);
-				break;
-			case 14:        // DOOR RAISE IN 5 MINUTES
-				P_SpawnDoorRaiseIn5Mins (sector, i);
-				break;
-			*/
 		}
 	}
 
