@@ -371,6 +371,7 @@ typedef struct
 // --- mobj.flags2 ---
 
 #define MF3_FRIENDLY		0x00000001	// alternate gravity setting
+#define MF3_BALLSSPAWNED	0x00000002	// Heresiarch balls already spawned
 
 //=============================================================================
 
