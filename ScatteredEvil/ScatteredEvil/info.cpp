@@ -41,6 +41,8 @@ char *sprnames[NUMSPRITES+1] = {
 //Remi
 "FSD2","MWN2","MWN3","MWN4","CSTF","CGAU","CWND","CMAC","CBOW","SILV",
 "GOLD",
+// -JL-
+"CMAG",
 
 NULL
 };
@@ -295,6 +297,9 @@ void A_FireCrossbowPL2(player_t *player, pspdef_t *psp);
 void A_BoltSpark(mobj_t *);
 void A_PossProjSpawn(mobj_t *);
 void A_SummonMonster(mobj_t *);
+// -JL-
+void A_NPCStand(mobj_t *actor);
+void A_NPCWalk(mobj_t *actor);
 
 state_t	states[NUMSTATES] = {
 {SPR_MAN1,0,-1,NULL,S_NULL,0,0},	// S_NULL
@@ -3608,6 +3613,12 @@ state_t	states[NUMSTATES] = {
 {SPR_SILV,0,	-1,NULL,S_NULL,0,0},	// S_SILVER
 {SPR_GOLD,0,	-1,NULL,S_NULL,0,0},	// S_GOLD
 
+// City mage
+{SPR_CMAG,0,4,A_NPCStand,S_CMAGE,0,0},	// S_CMAGE
+{SPR_CMAG,0,4,A_NPCWalk,S_CMAGE_WALK2,0,0},	// S_CMAGE_WALK1
+{SPR_CMAG,1,4,A_NPCWalk,S_CMAGE_WALK3,0,0},	// S_CMAGE_WALK2
+{SPR_CMAG,2,4,A_NPCWalk,S_CMAGE_WALK4,0,0},	// S_CMAGE_WALK3
+{SPR_CMAG,3,4,A_NPCWalk,S_CMAGE_WALK1,0,0},	// S_CMAGE_WALK4
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] = {
@@ -16511,5 +16522,31 @@ MF_SPECIAL,		// flags
 0		// flags2
 },
 
+{		// MT_CMAGE
+11000,		// doomednum
+S_CMAGE,		// spawnstate
+100,		// spawnhealth
+S_CMAGE_WALK1,		// seestate
+SFX_NONE,		// seesound
+0,		// reactiontime
+SFX_NONE,		// attacksound
+S_MPLAY_PAIN,		// painstate
+255,		// painchance
+SFX_PLAYER_MAGE_PAIN,		// painsound
+S_NULL,		// meleestate
+S_NULL,		// missilestate
+S_NULL,		// crashstate
+S_MPLAY_DIE1,		// deathstate
+S_MPLAY_XDIE1,		// xdeathstate
+SFX_NONE,		// deathsound
+10,		// speed
+16*FRACUNIT,		// radius
+64*FRACUNIT,		// height
+100,		// mass
+0,		// damage
+SFX_NONE,		// activesound
+MF_SOLID|MF_COUNTKILL,		// flags
+MF2_FLOORCLIP|MF2_PASSMOBJ|MF2_PUSHWALL|MF2_MCROSS|MF2_TELESTOMP		// flags2
+ },
 
 };
