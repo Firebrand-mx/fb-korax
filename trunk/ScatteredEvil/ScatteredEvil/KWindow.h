@@ -13,10 +13,9 @@
 
 enum EWinType
 {
-	WIN_Normal   = 0,
-	WIN_TabGroup = 1,
-	WIN_Modal    = 2,
-	WIN_Root     = 3
+	WIN_Normal,
+	WIN_Modal,
+	WIN_Root
 };
 
 // ----------------------------------------------------------------------
@@ -43,6 +42,10 @@ private:
 
 	KGC *WinGC;
 
+	// Traversal positions (used only when bIsSelectable is True)
+	int RowMajorIndex;			// Index into tab group's row-major sorted list
+	int ColMajorIndex;			// Index into tab group's column-major sorted list
+
 	// Relatives
 	KWindow *Parent;			// Parent window; NULL if this is root
 	KWindow *FirstChild;		// "Lowest" child (first one drawn)
@@ -56,12 +59,15 @@ public:
 	float Width;
 	float Height;
 
-	bool bIsVisible;
-	bool bIsSensitive;
-	bool bIsInitialized;
-	bool bBeingDestroyed;
+	bool bIsVisible;			// True if the window is visible1
+	bool bIsSensitive;			// True if the window can take input
+	bool bIsSelectable;			// True if the window can have keyboard focus
+	bool bIsInitialized;		// True if the window has been initialized
+	bool bBeingDestroyed;		// True if this window is going bye-bye
 
+	FColor TextColor;
 	KFont *Font;
+	FColor TileColor;
 
 	//
 	// KWindow interface
@@ -132,7 +138,22 @@ public:
 			return bIsSensitive;
 	}
 
+	// Selectability routines
+	void SetSelectability(bool NewSelectability);
+	bool IsSelectable(void) { return bIsSelectable; }
+	//bool IsTraversable(bool bCheckModal = true);
+	bool IsFocusWindow(void);
+
+	// Default font color calls
+	void SetTextColor(FColor newColor);
+	FColor GetTextColor(void);
+
+	// Routines to set the default font
 	void SetFont(KFont *NewFont);
+
+	// Tile color calls
+	void SetTileColor(FColor newColor);
+	FColor GetTileColor(void);
 
 	void Move(float NewX, float NewY);
 	void SetPos(float NewX, float NewY)
@@ -144,6 +165,9 @@ public:
 	{
 		Resize(NewWidth, NewHeight);
 	}
+
+	// Slayer of innocent children
+	void DestroyAllChildren(void) { KillAllChildren(); }
 
 	//
 	//	Event callbacks
@@ -187,6 +211,7 @@ public:
 	static KWindow *StaticCreateWindow(KClass *InClass, KWindow *InParent);
 
 protected:
+	// Anybody who kills children can't be all bad...
 	void KillAllChildren();
 
 private:

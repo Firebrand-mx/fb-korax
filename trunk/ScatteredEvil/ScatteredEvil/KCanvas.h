@@ -8,6 +8,36 @@
 //**
 //**************************************************************************
 
+enum EHAlign
+{
+	HALIGN_Left,
+	HALIGN_Center,
+	HALIGN_Right,
+	HALIGN_Full
+};
+
+enum EVAlign
+{
+	VALIGN_Top,
+	VALIGN_Center,
+	VALIGN_Bottom,
+	VALIGN_Full
+};
+
+struct FColor
+{
+	byte r;
+	byte g;
+	byte b;
+	byte a;
+
+	FColor()
+	{ }
+	FColor(byte InR, byte InG, byte InB, byte InA = 255)
+	: r(InR), g(InG), b(InB), a(InA)
+	{ }
+};
+
 //==========================================================================
 //
 //	KTexture
@@ -57,7 +87,7 @@ class KCanvas:public KObject
 	DECLARE_CLASS(KCanvas, KObject, 0);
 
 private:
-	static KTexture *Textures;
+	static KTexture **Textures;
 	static int NumTextures;
 
 public:
@@ -72,6 +102,11 @@ public:
 
 	static void StaticInit(void);
 	static KTexture *FindTexture(char *Name);
+
+	void SetColor(FColor &c)
+	{
+		gl.Color4ub(c.r, c.g, c.b, c.a);
+	}
 
 	void DrawPatch1(int x, int y, int lumpnum)
 	{

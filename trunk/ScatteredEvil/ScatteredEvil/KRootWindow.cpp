@@ -34,12 +34,13 @@ void KRootWindow::Init(void)
 
 //==========================================================================
 //
-//	KRootWindow::DescendantRemoved
+//	KRootWindow::SetFocus
 //
 //==========================================================================
 
 void KRootWindow::SetFocus(KWindow *NewFocus)
 {
+	guard(KRootWindow::SetFocus);
 	if (!NewFocus)
 	{
 		NewFocus = this;
@@ -61,6 +62,7 @@ void KRootWindow::SetFocus(KWindow *NewFocus)
 			w->FocusEnteredDescendant(FocusWindow);
 		}
 	}
+	unguard;
 }
 
 //==========================================================================
@@ -71,11 +73,13 @@ void KRootWindow::SetFocus(KWindow *NewFocus)
 
 void KRootWindow::DescendantRemoved(KWindow *Descendant)
 {
+	guard(KRootWindow::DescendantRemoved);
 	if (Descendant == FocusWindow)
 	{
 		SetFocus(this);
 	}
 	Super::DescendantRemoved(Descendant);
+	unguard;
 }
 
 //==========================================================================
@@ -86,5 +90,7 @@ void KRootWindow::DescendantRemoved(KWindow *Descendant)
 
 void KRootWindow::PaintWindows(KCanvas *Canvas)
 {
+	guard(KRootWindow::PaintWindows);
 	DrawTree(Canvas);
+	unguard;
 }

@@ -21,6 +21,21 @@ class KRootWindow:public KModalWindow
 	void Init(KWindow *AParent) { gi.Error("Root cannot have a parent"); }
 	virtual void Init(void);
 
+	// KRootWindow interface
+	KModalWindow *GetCurrentModal(void)
+	{
+		KWindow *pChild = GetTopChild();
+		while (pChild)
+		{
+			if (pChild->WindowType >= WIN_Modal)
+				break;
+			pChild = pChild->GetLowerSibling();
+		}
+		if (!pChild)
+			pChild = this;
+		return (KModalWindow *)pChild;
+	}
+
 	void SetFocus(KWindow *NewFocus);
 
 	void DescendantRemoved(KWindow *Descendant);
