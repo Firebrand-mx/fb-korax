@@ -12,6 +12,7 @@
 #include "i_win32.h"
 #include "i_sound.h"
 #include "settings.h"
+#include "console.h"
 
 // MACROS -------------------------------------------------------------------
 
@@ -65,6 +66,8 @@ int CreateDSBuffer(DWORD flags, int samples, int freq, int bits, int channels,
 extern HWND hWndMain;
 
 // PUBLIC DATA --------------------------------------------------------------
+
+float							snd_min_distance = 100;
 
 // PRIVATE DATA -------------------------------------------------------------
 
@@ -472,6 +475,7 @@ void I2_SetVolume(sndsource_t *src, float vol)
 		ds_vol = 100 * 20 * log10(vol);
 		if(ds_vol < DSBVOLUME_MIN) ds_vol = DSBVOLUME_MIN;
 	}
+//CON_Printf("vol %f log10 %f ds_vol %d\n", vol, log10(vol), ds_vol);
 	IDirectSoundBuffer_SetVolume(src->source, ds_vol);
 }
 
@@ -646,13 +650,13 @@ int I2_PlaySound(void *data, boolean play3d, sound3d_t *desc, int pan)
 		if(desc->flags & DDSOUNDF_VERY_LOUD)
 		{
 			// You can hear this from very far away (e.g. thunderclap).
-			IDirectSound3DBuffer_SetMinDistance(sndbuf->source3D, 10000, DS3D_DEFERRED);
-			IDirectSound3DBuffer_SetMaxDistance(sndbuf->source3D, 20000, DS3D_DEFERRED);	
+			IDirectSound3DBuffer_SetMinDistance(sndbuf->source3D, 10000, DS3D_IMMEDIATE);//DS3D_DEFERRED);
+			IDirectSound3DBuffer_SetMaxDistance(sndbuf->source3D, 20000, DS3D_IMMEDIATE);//DS3D_DEFERRED);
 		}
 		else
 		{
-			IDirectSound3DBuffer_SetMinDistance(sndbuf->source3D, 100, DS3D_DEFERRED);
-			IDirectSound3DBuffer_SetMaxDistance(sndbuf->source3D, MAX_SND_DIST, DS3D_DEFERRED);
+			IDirectSound3DBuffer_SetMinDistance(sndbuf->source3D, snd_min_distance, DS3D_IMMEDIATE);//DS3D_DEFERRED);
+			IDirectSound3DBuffer_SetMaxDistance(sndbuf->source3D, MAX_SND_DIST, DS3D_IMMEDIATE);//DS3D_DEFERRED);
 		}
 		if(desc->flags & DDSOUNDF_LOCAL)
 			IDirectSound3DBuffer_SetMode(sndbuf->source3D, DS3DMODE_DISABLE, DS3D_DEFERRED);
