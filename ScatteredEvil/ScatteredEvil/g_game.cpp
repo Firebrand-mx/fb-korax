@@ -284,28 +284,6 @@ extern  int             isCyberPresent;     // is CyberMan present?
 boolean usearti = true;
 void I_ReadCyberCmd (ticcmd_t *cmd);
 
-static int findWeapon(player_t *plr, boolean forward)
-{
-	int	i, c;
-
-#if 1
-	for(i=plr->readyweapon + (forward? 1 : -1), c=0; c<NUMWEAPONS; c++, forward? i++ : i--)
-	{
-		if(i > NUMWEAPONS-1) i = 0;
-		if(i < 0) i = NUMWEAPONS-1;
-		if(plr->weaponowned[i]) return i;
-	}
-#else
-	for(i=plr->readyweapon + (forward? 1 : -1), c=0; c<NUMACTUALWEAPONS; c++, forward? i++ : i--)
-	{
-		if(i > NUMACTUALWEAPONS-1) i = 0;
-		if(i < 0) i = NUMACTUALWEAPONS-1;
-		if(plr->weaponowned[i]) return i;
-	}
-#endif
-	return plr->readyweapon;
-}
-
 static boolean inventoryMove(player_t *plr, int dir)
 {
 	inventoryTics = 5*35;
@@ -709,11 +687,11 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 	if(actions[H2A_PREVIOUSWEAPON].on)
 	{
-		cmd->buttons |= BT_CHANGE | (findWeapon(players+consoleplayer, false)<<BT_WEAPONSHIFT);
+		cmd->buttons |= BT_CHANGE | (14<<BT_WEAPONSHIFT);
 	}
 	else if(actions[H2A_NEXTWEAPON].on)
 	{
-		cmd->buttons |= BT_CHANGE | (findWeapon(players+consoleplayer, true)<<BT_WEAPONSHIFT);
+		cmd->buttons |= BT_CHANGE | (15<<BT_WEAPONSHIFT);
 	}
 	else for(i = 0; i < NUMWEAPONS; i++)
 	{
