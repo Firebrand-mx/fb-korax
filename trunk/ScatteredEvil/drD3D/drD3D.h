@@ -65,6 +65,35 @@ typedef struct
 #define VERTEX_FORMAT	( D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1 )
 
 
+#define DO_GUARD
+#define DO_GUARD_SLOW
+
+//==========================================================================
+//
+//	Guard macros
+//
+//==========================================================================
+
+#ifdef DO_GUARD
+#define guard(name)		static const char *__FUNC_NAME__ = #name; try {
+#define unguard			} catch (...) { gim.CoreDump(__FUNC_NAME__); throw; }
+#define unguardf(msg)	} catch (...) { gim.CoreDump(__FUNC_NAME__); gim.CoreDump msg; throw; }
+#else
+#define guard(name)		static const char *__FUNC_NAME__ = #name; {
+#define unguard			}
+#define unguardf(msg)	}
+#endif
+
+#ifdef DO_GUARD_SLOW
+#define guardSlow(name)		guard(name)
+#define unguardSlow			unguard
+#define unguardfSlow(msg)	unguardf(msg)
+#else
+#define guardSlow(name)		{
+#define unguardSlow			}
+#define unguardfSlow(msg)	}
+#endif
+
 //------------------------------------------------------------------------
 // draw.c
 //
@@ -160,7 +189,6 @@ int Gamma(int set, DGLubyte *data);
 // state.c
 //
 extern int		usefog;
-extern int		texturesEnabled;
 
 void initState();
 int	GetIntegerv(int name, int *v);

@@ -36,6 +36,7 @@ int			primType = DGL_FALSE;
 
 int fullscreenMode(int width, int height, int bpp)
 {
+	guard(fullscreenMode);
 	DEVMODE	newMode;
 	int		res;
 
@@ -64,11 +65,13 @@ int fullscreenMode(int width, int height, int bpp)
 
 	// Done!
 	return 1;
+	unguard;
 }
 
 // Only adjusts the window style and size.
 void windowedMode(int width, int height)
 {
+	guard(windowedMode);
 	// We need to have a large enough client area.
 	RECT rect;
 	int xoff = (GetSystemMetrics(SM_CXSCREEN) - width) / 2, 
@@ -88,10 +91,12 @@ void windowedMode(int width, int height)
 
 	screenWidth = width;
 	screenHeight = height;
+	unguard;
 }
 
 void initState()
 {
+	guard(initState);
 	GLfloat fogcol[4] = { .54f, .54f, .54f, 1 };
 
 	nearClip = 5;
@@ -138,10 +143,12 @@ void initState()
 #ifdef RENDER_WIREFRAME
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 #endif
+	unguard;
 }
 
 int initOpenGL()
 {
+	guard(initOpenGL);
 	// Create the OpenGL rendering context.
 	if(!(hglrc = wglCreateContext(hdc)))
 	{
@@ -159,6 +166,7 @@ int initOpenGL()
 
 	initState();
 	return 1;
+	unguard;
 }
 
 
@@ -166,6 +174,7 @@ int initOpenGL()
 
 int Init(int width, int height, int bpp, int fullscreen)
 {
+	guard(Init);
 	char	*token, buff[2049];
 	int		res, pixForm;
 	PIXELFORMATDESCRIPTOR pfd = 
@@ -270,11 +279,13 @@ int Init(int width, int height, int bpp, int fullscreen)
 	}
 
 	return DGL_OK;
+	unguard;
 }
 
 
 void Shutdown(void)
 {
+	guard(Shutdown);
 	// Delete the rendering context.
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
@@ -283,11 +294,13 @@ void Shutdown(void)
 
 	// Go back to normal display settings.
 	ChangeDisplaySettings(0, 0);
+	unguard;
 }
 
 
 int	ChangeMode(int width, int height, int bpp, int fullscreen)
 {
+	guard(ChangeMode);
 	if(!windowed && !fullscreen)
 	{
 		// We're currently in a fullscreen mode, but the caller
@@ -309,42 +322,52 @@ int	ChangeMode(int width, int height, int bpp, int fullscreen)
 		}
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 void Clear(int bufferbits)
 {
+	guard(Clear);
 	GLbitfield mask = 0;
 
 	if(bufferbits & DGL_COLOR_BUFFER_BIT) mask |= GL_COLOR_BUFFER_BIT;
 	if(bufferbits & DGL_DEPTH_BUFFER_BIT) mask |= GL_DEPTH_BUFFER_BIT;
 	glClear(mask);
+	unguard;
 }
 
 
 void OnScreen(void)
 {
+	guard(OnScreen);
 	// Swap buffers.
 	SwapBuffers(hdc);
 #ifdef RENDER_WIREFRAME
 	Clear(DGL_COLOR_BUFFER_BIT);
 #endif
+	unguard;
 }
 
 
 void Viewport(int x, int y, int width, int height)
 {
+	guard(Viewport);
 	glViewport(x, FLIP(y+height-1), width, height);
+	unguard;
 }
 
 
 void Scissor(int x, int y, int width, int height)
 {
+	guard(Scissor);
 	glScissor(x, FLIP(y+height-1), width, height);
+	unguard;
 }
 
 int	GetIntegerv(int name, int *v)
 {
+	guard(GetIntegerv);
 	float rgba[4];
 
 	switch(name)
@@ -398,11 +421,13 @@ int	GetIntegerv(int name, int *v)
 		return DGL_ERROR;
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 int	SetInteger(int name, int value)
 {
+	guard(SetInteger);
 	switch(name)
 	{
 	case DGL_DL_BLEND_MODE:
@@ -417,22 +442,26 @@ int	SetInteger(int name, int value)
 		return DGL_ERROR;
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 char* GetString(int name)
 {
+	guard(GetString);
 	switch(name)
 	{
 	case DGL_VERSION:
 		return DROGL_VERSION_FULL;
 	}
 	return NULL;
+	unguard;
 }
 	
 
 void Enable(int cap)
 {
+	guard(Enable);
 	switch(cap)
 	{
 	case DGL_TEXTURING:
@@ -476,10 +505,12 @@ void Enable(int cap)
 		enablePalTexExt(DGL_TRUE);
 		break;
 	}
+	unguard;
 }
 
 void Disable(int cap)
 {
+	guard(Disable);
 	switch(cap)
 	{
 	case DGL_TEXTURING:
@@ -523,11 +554,13 @@ void Disable(int cap)
 		enablePalTexExt(DGL_FALSE);
 		break;
 	}
+	unguard;
 }
 
 
 void Func(int func, int param1, int param2)
 {
+	guard(Func);
 	switch(func)
 	{
 	case DGL_BLENDING:
@@ -576,110 +609,145 @@ void Func(int func, int param1, int param2)
 			param2 / 255.0f);
 		break;
 	}
+	unguard;
 }
 
 	
 void MatrixMode(int mode)
 {
+	guard(MatrixMode);
 	glMatrixMode(mode==DGL_PROJECTION? GL_PROJECTION
 		: mode==DGL_TEXTURE? GL_TEXTURE
 		: GL_MODELVIEW);
+	unguard;
 }
 
 
 void PushMatrix(void)
 {
+	guard(PushMatrix);
 	glPushMatrix();
+	unguard;
 }
 
 
 void PopMatrix(void)
 {
+	guard(PopMatrix);
 	glPopMatrix();
+	unguard;
 }
 
 
 void LoadIdentity(void)
 {
+	guard(LoadIdentity);
 	glLoadIdentity();
+	unguard;
 }
 
 
 void Translatef(float x, float y, float z)
 {
+	guard(Translatef);
 	glTranslatef(x, y, z);
+	unguard;
 }
 
 
 void Rotatef(float angle, float x, float y, float z)
 {
+	guard(Rotatef);
 	glRotatef(angle, x, y, z);
+	unguard;
 }
 
 
 void Scalef(float x, float y, float z)
 {
+	guard(Scalef);
 	glScalef(x, y, z);
+	unguard;
 }
 
 
 void Ortho(float left, float top, float right, float bottom, float znear, float zfar)
 {
+	guard(Ortho);
 	glOrtho(left, right, bottom, top, znear, zfar);
+	unguard;
 }
 
 
 void Perspective(float fovy, float aspect, float zNear, float zFar)
 {
+	guard(Perspective);
 	gluPerspective(fovy, aspect, zNear, zFar);
+	unguard;
 }
 
 
 void Color3ub(DGLubyte r, DGLubyte g, DGLubyte b)
 {
+	guard(Color3ub);
 	glColor3ub(r, g, b);
+	unguard;
 }
 
 
 void Color3ubv(void *data)
 {
+	guard(Color3ubv);
 	glColor3ubv((GLubyte *)data);
+	unguard;
 }
 
 
 void Color4ub(DGLubyte r, DGLubyte g, DGLubyte b, DGLubyte a)
 {
+	guard(Color4ub);
 	glColor4ub(r, g, b, a);
+	unguard;
 }
 
 
 void Color4ubv(void *data)
 {
+	guard(Color4ubv);
 	glColor4ubv((GLubyte *)data);
+	unguard;
 }
 
 
 void Color3f(float r, float g, float b)
 {
+	guard(Color3f);
 	glColor3f(r, g, b);
+	unguard;
 }
 
 
 void Color3fv(float *data)
 {
+	guard(Color3fv);
 	glColor3fv(data);
+	unguard;
 }
 
 
 void Color4f(float r, float g, float b, float a)
 {
+	guard(Color4f);
 	glColor4f(r, g, b, a);
+	unguard;
 }
 
 
 void Color4fv(float *data)
 {
+	guard(Color4fv);
 	glColor4fv(data);
+	unguard;
 }
 
 
@@ -697,6 +765,7 @@ int	EndScene(void)
 
 void Begin(int mode)
 {
+	guard(Begin);
 	if(mode == DGL_SEQUENCE)
 	{
 		inSequence = DGL_TRUE;
@@ -712,11 +781,13 @@ void Begin(int mode)
 		: mode==DGL_TRIANGLE_STRIP? GL_TRIANGLE_STRIP
 		: mode==DGL_QUAD_STRIP? GL_QUAD_STRIP
 		: GL_QUADS);
+	unguard;
 }
 
 
 void End(void)
 {
+	guard(End);
 	if(!primType)
 	{
 		inSequence = DGL_FALSE;
@@ -724,78 +795,98 @@ void End(void)
 	}
 	glEnd();
 	primType = DGL_FALSE;
+	unguard;
 }
 
 
 void Vertex2f(float x, float y)
 {
+	guard(Vertex2f);
 	glVertex2f(x, y);
+	unguard;
 }
 
 
 void Vertex2fv(float *data)
 {
+	guard(Vertex2fv);
 	glVertex2fv(data);
+	unguard;
 }
 
 
 void Vertex3f(float x, float y, float z)
 {
+	guard(Vertex3f);
 	glVertex3f(x, y, z);
+	unguard;
 }
 
 
 void Vertex3fv(float *data)
 {
+	guard(Vertex3fv);
 	glVertex3fv(data);
+	unguard;
 }
 
 
 void TexCoord2f(float s, float t)
 {
+	guard(TexCoord2f);
 	glTexCoord2f(s, t);
+	unguard;
 }
 
 
 void TexCoord2fv(float *data)
 {
+	guard(TexCoord2fv);
 	glTexCoord2fv(data);
+	unguard;
 }
 
 
 void Vertices2ftv(int num, gl_ft2vertex_t *data)
 {
+	guard(Vertices2ftv);
 	for(; num>0; num--, data++)
 	{
 		glTexCoord2fv(data->tex);
 		glVertex2fv(data->pos);		
 	}
+	unguard;
 }
 
 
 void Vertices3ftv(int num, gl_ft3vertex_t *data)
 {
+	guard(Vertices3ftv);
 	for(; num>0; num--, data++)
 	{
 		glTexCoord2fv(data->tex);
 		glVertex3fv(data->pos);		
 	}
+	unguard;
 }
 
 
 void Vertices3fctv(int num, gl_fct3vertex_t *data)
 {
+	guard(Vertices3fctv);
 	for(; num>0; num--, data++)
 	{
 		glColor4fv(data->color);
 		glTexCoord2fv(data->tex);
 		glVertex3fv(data->pos);		
 	}
+	unguard;
 }
 	
 
 void RenderList(int format, int num, void *data)
 {
+	guard(RenderList);
 	int	i;
 	rendlist_t *rl = (rendlist_t *)data;
 	rendlist_t **many = (rendlist_t **)data;
@@ -822,22 +913,26 @@ void RenderList(int format, int num, void *data)
 		renderDynLightLists(many[0], many[1]);
 		break;
 	}		
+	unguard;
 }
 
 
 int Grab(int x, int y, int width, int height, int format, void *buffer)
 {
+	guard(Grab);
 	if(format != DGL_RGB) return DGL_UNSUPPORTED;
 	// y+height-1 is the bottom edge of the rectangle. It's
 	// flipped to change the origin.
 	glReadPixels(x, FLIP(y+height-1), width, height, GL_RGB,
 		GL_UNSIGNED_BYTE, buffer);
 	return DGL_OK;
+	unguard;
 }
 
 
 void Fog(int pname, float param)
 {
+	guard(Fog);
 	int		iparam = (int) param;
 
 	switch(pname)
@@ -871,11 +966,13 @@ void Fog(int pname, float param)
 		}
 		break;
 	}
+	unguard;
 }
 
 
 void Fogv(int pname, void *data)
 {
+	guard(Fogv);
 	float	param = *(float*) data;
 	byte	*ubvparam = (byte*) data;
 	float	col[4];
@@ -893,12 +990,14 @@ void Fogv(int pname, void *data)
 		Fog(pname, param);
 		break;
 	}
+	unguard;
 }
 
 
 // Clipping will be performed.
 int Project(int num, gl_fc3vertex_t *inVertices, gl_fc3vertex_t *outVertices)
 {
+	guard(Project);
 	GLdouble	modelMatrix[16], projMatrix[16];
 	GLint		viewport[4];
 	GLdouble	x, y, z;
@@ -927,11 +1026,13 @@ int Project(int num, gl_fc3vertex_t *inVertices, gl_fc3vertex_t *outVertices)
 		}
 	}
 	return numOut;
+	unguard;
 }
 
 
 int ReadPixels(int *inData, int format, void *pixels)
 {
+	guard(ReadPixels);
 	int		type = inData[0], num, *coords, i;
 	float	*fv = (float *)pixels;
 	
@@ -960,12 +1061,15 @@ int ReadPixels(int *inData, int format, void *pixels)
 		return DGL_UNSUPPORTED;
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 int Gamma(int set, DGLubyte *data)
 {
+	guard(Gamma);
 	return DGL_UNSUPPORTED;
+	unguard;
 }
 
 

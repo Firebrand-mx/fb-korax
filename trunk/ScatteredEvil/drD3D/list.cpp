@@ -16,15 +16,18 @@ int globalColor = 0;
 // Undone with PopMatrix().
 void setupZBias(int level)
 {
+	guard(setupZBias);
 	float sc = .99f - level*.01f;
 
 	MatrixMode(DGL_PROJECTION);
 	PushMatrix();
 	Scalef(sc, sc, sc);
+	unguard;
 }
 
 static void drawWall(rendpoly_t *cq, byte tex, byte col)
 {
+	guard(drawWall);
 	float		tcleft = 0, tcright = 1, tctop = 0, tcbottom = 1;
 	vertex_t	vtx[4];
 	
@@ -67,10 +70,12 @@ static void drawWall(rendpoly_t *cq, byte tex, byte col)
 	IDirect3DDevice3_DrawPrimitive(d3dDevice,
 		D3DPT_TRIANGLEFAN, VERTEX_FORMAT,
 		vtx, 4, D3DDP_DONOTLIGHT | D3DDP_DONOTUPDATEEXTENTS);
+	unguard;
 }
 
 static void drawFlat(rendpoly_t *cq, byte tex, byte col)
 {
+	guard(drawFlat);
 	vertex_t vtx[DGL_MAX_POLY_SIDES];
 	rendpoly_vertex_t *rpVtx = cq->vertices;
 	int i;
@@ -105,12 +110,15 @@ static void drawFlat(rendpoly_t *cq, byte tex, byte col)
 	IDirect3DDevice3_DrawPrimitive(d3dDevice,
 		D3DPT_TRIANGLEFAN, VERTEX_FORMAT,
 		vtx, cq->numvertices, D3DDP_DONOTLIGHT | D3DDP_DONOTUPDATEEXTENTS);
+	unguard;
 }
 
 void initForReading(rendlist_t *li)
 {
+	guard(initForReading);
 	readlist = li;
 	readlist->cursor = readlist->data;
+	unguard;
 }
 
 INLINE byte readByte()
@@ -138,6 +146,7 @@ INLINE float readFloat()
 
 int readPoly(rendpoly_t *poly)
 {
+	guard(readPoly);
 	int i, c, temp;
 	rendpoly_vertex_t *vtx;
 	
@@ -172,11 +181,13 @@ int readPoly(rendpoly_t *poly)
 		}
 	}
 	return DGL_TRUE;
+	unguard;
 }
 
 // This is only for solid, non-masked primitives.
 void renderList(rendlist_t *rl)
 {
+	guard(renderList);
 	rendpoly_t	cq;
 	char		dlight = DGL_FALSE;
 	char		flats;
@@ -221,11 +232,13 @@ void renderList(rendlist_t *rl)
 
 	// Enable alpha blending once more.
 	Enable(DGL_BLENDING);
+	unguard;
 }
 
 // Masked lists only include quads.
 void renderMaskedList(rendlist_t *mrl)
 {
+	guard(renderMaskedList);
 	rendpoly_t	cq;
 	DGLuint		currentTex;
 	
@@ -255,10 +268,12 @@ void renderMaskedList(rendlist_t *mrl)
 		drawWall(&cq, DGL_TRUE, DGL_TRUE);
 	}
 	EndScene();
+	unguard;
 }
 
 void renderSkyMaskLists(rendlist_t *smrl, rendlist_t *skyw)
 {
+	guard(renderSkyMaskLists);
 	rendpoly_t	cq;
 
 	if(LIST_EMPTY(smrl) && LIST_EMPTY(skyw)) return; // Nothing to do here.
@@ -291,10 +306,12 @@ void renderSkyMaskLists(rendlist_t *smrl, rendlist_t *skyw)
 	SetRS(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA);
 	
 	Enable(DGL_TEXTURING);
+	unguard;
 }
 
 void renderDynLightLists(rendlist_t *frl, rendlist_t *wrl)
 {
+	guard(renderDynLightLists);
 	rendpoly_t	cq;
 
 	if(LIST_EMPTY(frl) && LIST_EMPTY(wrl)) return; // Nothing to do.
@@ -361,10 +378,12 @@ void renderDynLightLists(rendlist_t *frl, rendlist_t *wrl)
 	SetRS(D3DRENDERSTATE_ZFUNC, D3DCMP_LESS);
 	SetRS(D3DRENDERSTATE_SRCBLEND, D3DBLEND_SRCALPHA);
 	SetRS(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	unguard;
 }
 
 void renderDLitPass(rendlist_t *rl, int num)
 {
+	guard(renderDLitPass);
 	int			k;//, i;
 	rendpoly_t	cq;
 	char		flats, inited;
@@ -417,10 +436,12 @@ void renderDLitPass(rendlist_t *rl, int num)
 	SetRS(D3DRENDERSTATE_ZFUNC, D3DCMP_LESS);
 	SetRS(D3DRENDERSTATE_SRCBLEND, D3DBLEND_SRCALPHA);
 	SetRS(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	unguard;
 }
 
 void RenderList(int format, int num, void *data)
 {
+	guard(RenderList);
 	int	i;
 	rendlist_t *rl = (rendlist_t *)data;
 	rendlist_t **many = (rendlist_t **)data;
@@ -449,6 +470,7 @@ void RenderList(int format, int num, void *data)
 		renderDynLightLists(many[0], many[1]);
 		break;
 	}		
+	unguard;
 }
 
 

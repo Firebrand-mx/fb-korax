@@ -91,14 +91,17 @@ void uploadMatrix()
 
 void MatrixMode(int mode)
 {
+	guard(MatrixMode);
 	currentStack = (mode == DGL_PROJECTION)? &projStack
 		: (mode == DGL_TEXTURE)? &textureStack
 		: &modelViewStack;
+	unguard;
 }
 
 
 void PushMatrix(void)
 {
+	guard(PushMatrix);
 	// Is there still room on the stack?
 	if(currentStack->pos < currentStack->depth-1)
 	{
@@ -107,11 +110,13 @@ void PushMatrix(void)
 			currentStack->matrices + currentStack->pos, sizeof(D3DMATRIX));
 		currentStack->pos++;
 	}
+	unguard;
 }
 
 
 void PopMatrix(void)
 {
+	guard(PopMatrix);
 	// Is there something on the stack?
 	if(currentStack->pos > 0)
 	{
@@ -119,21 +124,25 @@ void PopMatrix(void)
 		currentStack->pos--;
 		uploadMatrix();
 	}
+	unguard;
 }
 
 
 void LoadIdentity(void)
 {
+	guard(LoadIdentity);
 	D3DMATRIX *mat = getCurMatrix();
 
 	memset(mat, 0, sizeof(*mat));
 	mat->_11 = mat->_22 = mat->_33 = mat->_44 = 1.0f;
 	uploadMatrix();
+	unguard;
 }
 
 
 void Translatef(float x, float y, float z)
 {
+	guard(Translatef);
 	D3DMATRIX tr, *mat = getCurMatrix();
 
 	memset(&tr, 0, sizeof(tr));
@@ -144,11 +153,13 @@ void Translatef(float x, float y, float z)
 	// Multiply the current matrix by the tr matrix.
 	matMul(mat, &tr, mat);
 	uploadMatrix();
+	unguard;
 }
 
 
 void PostTranslatef(float x, float y, float z)
 {
+	guard(PostTranslatef);
 	D3DMATRIX tr, *mat = getCurMatrix();
 
 	memset(&tr, 0, sizeof(tr));
@@ -159,11 +170,13 @@ void PostTranslatef(float x, float y, float z)
 	// Multiply the current matrix by the tr matrix.
 	matMul(&tr, mat, mat);
 	uploadMatrix();
+	unguard;
 }
 
 
 void Rotatef(float angle, float x, float y, float z)
 {
+	guard(Rotatef);
 	D3DMATRIX	tr, *mat = getCurMatrix();
 	float		angleRad = -angle * (float) PI / 180.0f,
 				c = (float) cos(angleRad), 
@@ -200,11 +213,13 @@ void Rotatef(float angle, float x, float y, float z)
 	// Multiply and upload.
 	matMul(mat, &tr, mat);
 	uploadMatrix();
+	unguard;
 }
 
 
 void Scalef(float x, float y, float z)
 {
+	guard(Scalef);
 	D3DMATRIX tr, *mat = getCurMatrix();
 
 	memset(&tr, 0, sizeof(tr));
@@ -215,11 +230,13 @@ void Scalef(float x, float y, float z)
 	// Multiply the current matrix by the tr matrix.
 	matMul(mat, &tr, mat);
 	uploadMatrix();
+	unguard;
 }
 
 
 void Ortho(float left, float top, float right, float bottom, float znear, float zfar)
 {
+	guard(Ortho);
 	D3DMATRIX tr, *mat = getCurMatrix();
 
 	memset(&tr, 0, sizeof(tr));
@@ -234,11 +251,13 @@ void Ortho(float left, float top, float right, float bottom, float znear, float 
 	// Multiply the current matrix by the tr matrix.
 	matMul(mat, &tr, mat);
 	uploadMatrix();
+	unguard;
 }
 
 
 void Perspective(float fovy, float aspect, float zNear, float zFar)
 {
+	guard(Perspective);
 	D3DMATRIX	tr, *mat = getCurMatrix();
 	float		left, right, top, bottom;
 
@@ -259,4 +278,5 @@ void Perspective(float fovy, float aspect, float zNear, float zFar)
 	// Multiply and upload.
 	matMul(mat, &tr, mat);
 	uploadMatrix();
+	unguard;
 }

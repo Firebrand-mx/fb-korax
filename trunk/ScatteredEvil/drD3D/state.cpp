@@ -5,7 +5,6 @@
 
 #include "drD3D.h"
 
-int			texturesEnabled = DGL_TRUE;
 int			usefog;
 
 
@@ -13,6 +12,7 @@ int			usefog;
 
 void initState()
 {
+	guard(initState);
 	D3DDEVICEDESC	devdesc, dummy;
 
 	currentTexName = 0;
@@ -88,6 +88,7 @@ void initState()
 	{
 		gim.Message( "Driver supports dynamic gamma ramps for primary surface.\n");
 	}
+	unguard;
 }
 
 
@@ -95,6 +96,7 @@ void initState()
 
 int	GetIntegerv(int name, int *v)
 {
+	guard(GetIntegerv);
 	switch(name)
 	{
 	case DGL_MAX_TEXTURE_SIZE:
@@ -144,11 +146,13 @@ int	GetIntegerv(int name, int *v)
 		return DGL_ERROR;
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 int	SetInteger(int name, int value)
 {
+	guard(SetInteger);
 	switch(name)
 	{
 	case DGL_DL_BLEND_MODE:
@@ -163,27 +167,30 @@ int	SetInteger(int name, int value)
 		return DGL_ERROR;
 	}
 	return DGL_OK;
+	unguard;
 }
 
 
 char* GetString(int name)
 {
+	guard(GetString);
 	switch(name)
 	{
 	case DGL_VERSION:
 		return DRD3D_VERSION_FULL;
 	}
 	return NULL;
+	unguard;
 }
 	
 
 void Enable(int cap)
 {
+	guard(Enable);
 	switch(cap)
 	{
 	case DGL_TEXTURING:
-		texturesEnabled = DGL_TRUE;
-		Bind(currentTexName);
+		SetTSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
 		break;
 
 	case DGL_BLENDING:
@@ -223,15 +230,16 @@ void Enable(int cap)
 		enablePalTexExt(DGL_TRUE);
 		break;
 	}
+	unguard;
 }
 
 void Disable(int cap)
 {
+	guard(Disable);
 	switch(cap)
 	{
 	case DGL_TEXTURING:
-		texturesEnabled = DGL_FALSE;
-		Bind(currentTexName);
+		SetTSS(0, D3DTSS_COLOROP, D3DTOP_DISABLE);
 		break;
 
 	case DGL_BLENDING:
@@ -271,11 +279,13 @@ void Disable(int cap)
 		enablePalTexExt(DGL_FALSE);
 		break;
 	}
+	unguard;
 }
 
 
 void Func(int func, int param1, int param2)
 {
+	guard(Func);
 	D3DBLEND d3dBlendMode[] =
 	{
 		D3DBLEND_ZERO,
@@ -326,11 +336,13 @@ void Func(int func, int param1, int param2)
 		}
 		break;
 	}
+	unguard;
 }
 
 
 void Fog(int pname, float param)
 {
+	guard(Fog);
 	int		iparam = (int) param;
 
 	switch(pname)
@@ -362,11 +374,13 @@ void Fog(int pname, float param)
 		}
 		break;
 	}
+	unguard;
 }
 
 
 void Fogv(int pname, void *data)
 {
+	guard(Fogv);
 	float	param = *(float*) data;
 	byte	*ubvparam = (byte*) data;
 
@@ -381,4 +395,5 @@ void Fogv(int pname, void *data)
 		Fog(pname, param);
 		break;
 	}
+	unguard;
 }

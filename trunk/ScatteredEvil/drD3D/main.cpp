@@ -30,6 +30,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
 void setupWindow()
 {
+	guard(setupWindow);
 	// Whatever the mode, let's be the topmost window!
 	SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
 	if(windowed)
@@ -47,17 +48,20 @@ void setupWindow()
 		SetWindowLong(hwnd, GWL_STYLE, WS_VISIBLE|WS_POPUP|WS_CLIPCHILDREN|WS_CLIPSIBLINGS);
 		SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, screenWidth, screenHeight, 0);
 	}
+	unguard;
 }
 
 
 int desktopBits()
 {
+	guardSlow(desktopBits);
 	HWND hDesktop = GetDesktopWindow();
 	HDC desktop_hdc = GetDC(hDesktop);
 	int deskbpp = GetDeviceCaps(desktop_hdc, PLANES) * GetDeviceCaps(desktop_hdc, BITSPIXEL);
 
 	ReleaseDC(hDesktop, desktop_hdc);
 	return deskbpp;
+	unguardSlow;
 }
 
 
@@ -65,6 +69,7 @@ int desktopBits()
 
 int Init(int width, int height, int bpp, int fullscreen)
 {
+	guard(Init);
 	// Find our window. This may not be the best way to do this...
 	hwnd = FindWindow("DoomMainWClass", NULL);
 
@@ -86,18 +91,22 @@ int Init(int width, int height, int bpp, int fullscreen)
 	initState();
 
 	return DGL_OK;
+	unguard;
 }
 
 
 void Shutdown(void)
 {
+	guard(Shutdown);
 	deleteAllTextures(DGL_TRUE);	// Delete and unallocate the list.
 	dxShutdown();
+	unguard;
 }
 
 
 int	ChangeMode(int width, int height, int bpp, int fullscreen)
 {
+	guard(ChangeMode);
 	if(!windowed && !fullscreen)
 	{
 		// We're currently in a fullscreen mode, but the caller
@@ -122,11 +131,13 @@ int	ChangeMode(int width, int height, int bpp, int fullscreen)
 	}
 	// Unsupported.
 	return DGL_ERROR;
+	unguard;
 }
 
 
 void Clear(int bufferbits)
 {
+	guard(Clear);
 	D3DRECT	rect = { 0, 0, screenWidth, screenHeight };
 	int		mask = 0;
 
@@ -134,11 +145,13 @@ void Clear(int bufferbits)
 	if(bufferbits & DGL_DEPTH_BUFFER_BIT) mask |= D3DCLEAR_ZBUFFER;
 
 	IDirect3DViewport3_Clear2(d3dVp, 1, &rect, mask, 0, 1.0f, 0);
+	unguard;
 }
 
 
 void OnScreen(void)
 {
+	guard(OnScreen);
 	if(windowed)
 	{
 		RECT rect;
@@ -154,6 +167,7 @@ void OnScreen(void)
 		IDirectDrawSurface4_Flip(sPrimary, NULL, 0);
 	}
 	dxRestoreSurfaces();
+	unguard;
 }
 
 
