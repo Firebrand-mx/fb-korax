@@ -1190,7 +1190,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 			break;
 		}
 	}
-	// Push the	target
+	// Push the target
 	if (inflictor && (!source || !source.bIsPlayer) &&
 		!inflictor.bNoDamageThrust)
 	{
@@ -1261,14 +1261,14 @@ void Damage(Actor inflictor, Actor source, int damage)
 */		
 //Old Armor handling above
 		saved = itof(damage) * itof(40+Player.constitution) / 100.0;
-//		savedPercent = itof(damage) * itof(60-Player.constitution) / 100.0;
+		//savedPercent = itof(damage) * itof(60-Player.constitution) / 100.0;
 		if (savedPercent > itof(Player.ArmorPoints)) 
 		{
 			saved = itof(Player.ArmorPoints) * itof(40+Player.constitution) / 100.0;
-//			savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
+			//savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
 		}
 		damage -= ftoi(saved);
-		Player.ArmorPoints -= ftoi(saved);//Percent);
+		Player.ArmorPoints -= ftoi(saved);//Percent
 
 		if (damage >= Player.Health
 			&& ((gameskill == sk_baby) || deathmatch) && !Player.MorphTime)
@@ -3330,10 +3330,10 @@ bool ExplodeMissile(void)
 		}
 		break;
 	}
-	if (Effects & EF_DLIGHT_MASK)
+	if (!(Effects & EF_ROCKET) && (Effects & EF_DLIGHT_MASK))
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(svc_explosion);
+		MSG_WriteByte(svc_explosion2);
 		MSG_WriteByte(Effects & EF_DLIGHT_MASK);
 		MSG_WriteShort(ftoi(Origin.x));
 		MSG_WriteShort(ftoi(Origin.y));
@@ -3699,6 +3699,22 @@ void A_Explode(void)
 		damage = 30;
 		distance = 64.0;
 		break;
+	case MorningStarMissile:
+		damage = 80;		
+		if (Instigator && Instigator.bIsPlayer)
+		{
+			damage = damage*Instigator.Player.intelligence/10;
+		}
+		break;
+	case WElectricBall:
+		damage = 120;
+		distance = 192.0;
+		damageSelf = false;
+		if (Instigator && Instigator.bIsPlayer)
+		{
+			damage = damage*Instigator.Player.intelligence/10;
+		}
+		break;
 	default:
 		break;
 	}
@@ -3863,6 +3879,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2004/12/09 00:07:08  firebrand_kh
+//  Added code for the Witchaven player class
+//
 //  Revision 1.2  2004/11/23 12:50:27  dj_jl
 //  Added support for many sector specials.
 //
