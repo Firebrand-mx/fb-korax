@@ -1957,13 +1957,43 @@ extern boolean EV_TalkSomeBody(byte *args, mobj_t *mo, mobj_t *mobj);
 
 mobj_t          *usething;
 
+boolean CON_StartConversation(mobj_t *User, mobj_t *Target);
+
 boolean         PTR_UseTraverse (intercept_t *in)
 {
 	int sound;
 	fixed_t pheight;
 
-   if(in->isaline)
-   { // Check line
+	if (!in->isaline)
+	{ 
+		mobj_t *mobj;
+
+		// Check thing
+		mobj = in->d.thing;
+	    if (!usething->player)
+		{
+			return true;	//	What the heck?
+		}
+		if (usething == mobj)
+		{
+			return true;	//	Don't use self.
+		}
+
+		if (mobj->special == USE_SIT_DOWN_SPECIAL)
+		{ 
+			// Wrong special
+			EV_SitDown(mobj->args, usething);
+			return false; // Stop searching
+		}
+		else if (mobj->special == USE_TALK_SPECIAL)
+		{
+			EV_TalkSomeBody(mobj->args, usething, mobj);
+			return false; // Stop searching
+		}
+		return true;
+	}
+	
+	// Check line
 	if (!in->d.line->special)
 	{
 		P_LineOpening (in->d.line);
@@ -2028,32 +2058,6 @@ boolean         PTR_UseTraverse (intercept_t *in)
 	P_ActivateLine(in->d.line, usething, 0, SPAC_USE);
 	
 	return false;                   // can't use for than one special line in a row
-   } else {
-
-    if(usething->player)
-	{
-	mobj_t *mobj;
-
-	// Check thing
-	mobj = in->d.thing;
-	if(mobj->special == USE_SIT_DOWN_SPECIAL)
-	{ // Wrong special
-		EV_SitDown(mobj->args,usething);
-		return false; // Stop searching
-	}
-	else if (mobj->special == USE_TALK_SPECIAL)
-	{
-		EV_TalkSomeBody(mobj->args,usething,mobj);
-		return false; // Stop searching
-	}
-	else 
-	{
-		return true;
-	}
-	}
-	return true;
-   }
-
 }
 
 
