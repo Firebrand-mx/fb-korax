@@ -29,6 +29,14 @@
 #define CLF_ACTION		0x1		// The control is an action (+/- in front).
 #define CLF_REPEAT		0x2		// Bind down + repeat.
 
+#define LEFT_DIR 0
+#define RIGHT_DIR 1
+#define ITEM_HEIGHT 20
+#define SELECTOR_XOFFSET (-28)
+#define SELECTOR_YOFFSET (-1)
+#define SLOTTEXTLEN	16
+#define ASCII_CURSOR '['
+
 //#define USE_JOURNAL_MOUSE
 
 // TYPES -------------------------------------------------------------------
@@ -46,6 +54,108 @@ typedef struct
 	int			defMouse;		// Zero means there is no default.
 	int			defJoy;			//
 } Control_t;
+
+class KMenuWindow:public KWindow
+{
+	DECLARE_CLASS(KMenuWindow, KWindow, 0);
+
+	KMenuWindow()
+	{
+		Width = 320;
+		Height = 200;
+	}
+};
+
+typedef enum
+{
+	ITT_EMPTY,
+	ITT_EFUNC,
+	ITT_LRFUNC,
+	ITT_SETMENU,
+	ITT_INERT
+} ItemType_t;
+
+typedef enum
+{
+	MENU_MAIN,
+	MENU_CLASS,
+	MENU_SKILL,
+	MENU_CHAR,
+	MENU_OPTIONS,
+	MENU_OPTIONS2,
+	MENU_GAMEPLAY,
+	MENU_GRAPHICS,
+	MENU_EFFECTS,
+	MENU_RESOLUTION,
+	MENU_CONTROLS,
+	MENU_MOUSEOPTS,
+	MENU_JOYCONFIG,
+	MENU_LOAD,
+	MENU_SAVE,
+	MENU_NONE
+} MenuType_t;
+
+typedef struct
+{
+	ItemType_t type;
+	char *text;
+	void (*func)(int option);
+	int option;
+	MenuType_t menu;
+} MenuItem_t;
+
+class KMenuItem_t:public KMenuWindow
+{
+	DECLARE_CLASS(KMenuItem_t, KMenuWindow, 0);
+
+	ItemType_t type;
+	char *text;
+	void (*func)(int option);
+	int option;
+	MenuType_t menu;
+
+	KMenuItem_t()
+	{
+		Height = ITEM_HEIGHT;
+	}
+
+	virtual void DrawWindow(KGC *gc);
+};
+
+class Menu_t:public KMenuWindow
+{
+	DECLARE_CLASS(Menu_t, KMenuWindow, 0);
+	NO_DEFAULT_CONSTRUCTOR(Menu_t);
+
+	int x;
+	int y;
+	int itemCount;
+	MenuItem_t *items;
+	int oldItPos;
+	MenuType_t prevMenu;
+	// Enhancements. -jk
+	int	itemHeight;
+	KMenuItem_t *Items[128];
+
+	//	Constructor
+	Menu_t(int Ax, int Ay, int AitemCount, MenuItem_t *Aitems,
+		MenuType_t AprevMenu, int AitemHeight = ITEM_HEIGHT) : x(Ax), y(Ay), 
+		itemCount(AitemCount), items(Aitems),
+		prevMenu(AprevMenu), itemHeight(AitemHeight)
+	{
+		X = 160;
+		Y = 100;
+		Font = KCanvas::BigFont;
+		bIsVisible = false;
+	}
+
+	virtual void Init(KWindow *AParent);
+	virtual void CreateChoices(void);
+	virtual void PostDrawWindow(KGC *gc);
+	virtual bool KeyPressed(int key);
+};
+
+extern boolean shiftdown;
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
@@ -117,19 +227,6 @@ static void SCReverbVolume(int option);
 static void SCSfxFrequency(int option);
 static void SCSfx16bit(int option);
 
-static void DrawMainMenu(void);
-static void DrawClassMenu(void);
-static void DrawSkillMenu(void);
-static void DrawCharMenu(void);
-static void DrawOptionsMenu(void);
-static void DrawOptions2Menu(void);
-static void DrawGameplayMenu(void);
-static void DrawGraphicsMenu(void);
-static void DrawEffectsMenu(void);
-static void DrawResolutionMenu(void);
-static void DrawMouseOptsMenu(void);
-static void DrawControlsMenu(void);
-static void DrawJoyConfigMenu(void);
 static void DrawFileSlots(Menu_t *menu);
 static void DrawFilesMenu(void);
 static void MN_DrawInfo(void);
@@ -138,8 +235,6 @@ static void MN_DrawSpells(void);
 static void MN_DrawUpdating(void);
 static void InitUpdating(void);
 static void AcceptUpdating(void);
-static void DrawLoadMenu(void);
-static void DrawSaveMenu(void);
 static void DrawSlider(Menu_t *menu, int item, int width, int slot);
 void MN_LoadSlotText(void);
 
@@ -167,11 +262,12 @@ int mousesx,mousesy;
 int currentJournal;
 int currentJournalPage;
 
+IMPLEMENT_CLASS(KMenuWindow);
+IMPLEMENT_CLASS(KMenuItem_t);
+IMPLEMENT_CLASS(Menu_t);
+
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
-static int FontABaseLump;
-static int FontAYellowBaseLump;
-static int FontBBaseLump;
 static int MauloBaseLump;
 static int MenuPClass;
 static int MenuPSkill;
@@ -306,21 +402,23 @@ static int quickload;
 static MenuItem_t MainItems[] =
 {
 	{ ITT_SETMENU, "NEW GAME", SCNetCheck2, 1, MENU_CLASS },
+	{ ITT_SETMENU, "LOAD GAME", SCNetCheck2, 2, MENU_LOAD },
+	{ ITT_SETMENU, "SAVE GAME", NULL, 0, MENU_SAVE },
 	{ ITT_SETMENU, "OPTIONS", NULL, 0, MENU_OPTIONS },
-	{ ITT_SETMENU, "GAME FILES", NULL, 0, MENU_FILES },
 	{ ITT_EFUNC, "INFO", SCInfo, 0, MENU_NONE },
 	{ ITT_EFUNC, "QUIT GAME", SCQuitGame, 0, MENU_NONE }
 };
 
-static Menu_t MainMenu(
-	110, 56,
-	DrawMainMenu,
-	5, MainItems,
-	0,
-	MENU_NONE,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 5, 0
-);
+class KMenuScreenMain:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenMain, Menu_t, 0);
+
+	KMenuScreenMain() : Menu_t(110, 56, 6, MainItems, MENU_NONE)
+	{ }
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenMain);
 
 static MenuItem_t ClassItems[] =
 {
@@ -330,31 +428,16 @@ static MenuItem_t ClassItems[] =
 	//{ ITT_EFUNC, "CORVUS", SCClass, 3, MENU_NONE } //Da Corvus man
 };
 
-static Menu_t ClassMenu(
-	66, 66,
-	DrawClassMenu,
-	3, ClassItems, //Remi: 4 for Corvus
-	0,
-	MENU_MAIN,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 3, 0 //Remi: 4 to enable Corvus selection
-);
-
-static MenuItem_t FilesItems[] =
+class KMenuScreenClass:public Menu_t
 {
-	{ ITT_SETMENU, "LOAD GAME", SCNetCheck2, 2, MENU_LOAD },
-	{ ITT_SETMENU, "SAVE GAME", NULL, 0, MENU_SAVE }
-};
+	DECLARE_CLASS(KMenuScreenClass, Menu_t, 0);
 
-static Menu_t FilesMenu(
-	110, 60,
-	DrawFilesMenu,
-	2, FilesItems,
-	0,
-	MENU_MAIN,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 2, 0
-);
+	KMenuScreenClass() : Menu_t(66, 66, 3, ClassItems, MENU_MAIN)
+	{ }
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenClass);
 
 static MenuItem_t LoadItems[] =
 {
@@ -366,15 +449,16 @@ static MenuItem_t LoadItems[] =
 	{ ITT_EFUNC, NULL, SCLoadGame, 5, MENU_NONE }
 };
 
-static Menu_t LoadMenu(
-	70, 30,
-	DrawLoadMenu,
-	6, LoadItems,
-	0,
-	MENU_FILES,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 6, 0
-);
+class KMenuScreenLoadGame:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenLoadGame, Menu_t, 0);
+
+	KMenuScreenLoadGame() : Menu_t(70, 30, 6, LoadItems, MENU_MAIN)
+	{ }
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenLoadGame);
 
 static MenuItem_t SaveItems[] =
 {
@@ -386,15 +470,16 @@ static MenuItem_t SaveItems[] =
 	{ ITT_EFUNC, NULL, SCSaveGame, 5, MENU_NONE }
 };
 
-static Menu_t SaveMenu(
-	70, 30,
-	DrawSaveMenu,
-	6, SaveItems,
-	0,
-	MENU_FILES,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 6, 0
-);
+class KMenuScreenSaveGame:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenSaveGame, Menu_t, 0);
+
+	KMenuScreenSaveGame() : Menu_t(70, 30, 6, SaveItems, MENU_MAIN)
+	{ }
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenSaveGame);
 
 static MenuItem_t SkillItems[] =
 {
@@ -405,15 +490,18 @@ static MenuItem_t SkillItems[] =
 	{ ITT_EFUNC, NULL, SCSkill, sk_nightmare, MENU_NONE }
 };
 
-static Menu_t SkillMenu(
-	120, 44,
-	DrawSkillMenu,
-	5, SkillItems,
-	2,
-	MENU_CLASS,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 5, 0
-);
+class KMenuScreenSkill:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenSkill, Menu_t, 0);
+
+	KMenuScreenSkill() : Menu_t(120, 44, 5, SkillItems, MENU_CLASS)
+	{
+		oldItPos = 2;
+	}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenSkill);
 
 static MenuItem_t CharItems[] =
 {
@@ -425,16 +513,18 @@ static MenuItem_t CharItems[] =
 	{ ITT_EFUNC, "%s: %d", SCChar, 4, MENU_NONE }*/
 };
 
-static Menu_t CharMenu(
-	120, 130,
-	DrawCharMenu,
-	3, CharItems,
-	2,
-	MENU_SKILL,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 3, 0
-);
+class KMenuScreenChar:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenChar, Menu_t, 0);
 
+	KMenuScreenChar() : Menu_t(120, 130, 3, CharItems, MENU_SKILL)
+	{
+		oldItPos = 2;
+	}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenChar);
 
 static MenuItem_t OptionsItems[] =
 {
@@ -447,15 +537,16 @@ static MenuItem_t OptionsItems[] =
 	{ ITT_SETMENU, "JOYSTICK OPTIONS...", NULL, 0, MENU_JOYCONFIG }
 };
 
-static Menu_t OptionsMenu(
-	110, 80,
-	DrawOptionsMenu,
-	7, OptionsItems,
-	0,
-	MENU_MAIN,
-	MN_DrTextA_CS, 9,//ITEM_HEIGHT
-	0, 7, 0
-);
+class KMenuScreenOptions:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenOptions, Menu_t, 0);
+
+	KMenuScreenOptions() : Menu_t(110, 40, 7, OptionsItems, MENU_MAIN)
+	{ }
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenOptions);
 
 static MenuItem_t Options2Items[] =
 {
@@ -477,15 +568,18 @@ static MenuItem_t Options2Items[] =
 	{ ITT_EFUNC, "16 BIT INTERPOLATION :", SCSfx16bit, 0, MENU_NONE }
 };
 
-static Menu_t Options2Menu(
-	70, 20,
-	DrawOptions2Menu,
-	16, Options2Items,
-	0,
-	MENU_OPTIONS,
-	MN_DrTextA_CS, 10,
-	0, 16, 0
-);
+class KMenuScreenOptions2:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenOptions2, Menu_t, 0);
+
+	KMenuScreenOptions2() : Menu_t(70, 20, 16, Options2Items, MENU_OPTIONS, 10)
+	{
+		Font = KCanvas::SmallFont;
+	}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenOptions2);
 
 static MenuItem_t GameplayItems[] =
 {
@@ -500,15 +594,18 @@ static MenuItem_t GameplayItems[] =
 	{ ITT_LRFUNC, "SCREEN SIZE", SCScreenSize, 0, MENU_NONE },
 };
 
-static Menu_t GameplayMenu(
-	64, 25,
-	DrawGameplayMenu,
-	9, GameplayItems,
-	0,
-	MENU_OPTIONS,
-	MN_DrTextA_CS, 10,
-	0, 9, 0
-);
+class KMenuScreenGameplay:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenGameplay, Menu_t, 0);
+
+	KMenuScreenGameplay() : Menu_t(64, 25, 9, GameplayItems, MENU_OPTIONS, 10)
+	{
+		Font = KCanvas::SmallFont;
+	}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenGameplay);
 
 static MenuItem_t GraphicsItems[] = 
 {
@@ -523,15 +620,16 @@ static MenuItem_t GraphicsItems[] =
 	{ ITT_SETMENU, "RESOLUTION...", NULL, 0, MENU_RESOLUTION }
 };
 
-static Menu_t GraphicsMenu(
-	58, 10,
-	DrawGraphicsMenu,
-	9, GraphicsItems,
-	0,
-	MENU_OPTIONS,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 9, 0
-);
+class KMenuScreenGraphics:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenGraphics, Menu_t, 0);
+
+	KMenuScreenGraphics() : Menu_t(58, 10, 9, GraphicsItems, MENU_OPTIONS)
+	{}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenGraphics);
 
 static MenuItem_t EffectsItems[] =
 {
@@ -554,15 +652,18 @@ static MenuItem_t EffectsItems[] =
 	{ ITT_EFUNC, "SPRITE BLENDING :", SCSpriteBlending, 0, MENU_NONE }
 };
 
-static Menu_t EffectsMenu(
-	60, 15,
-	DrawEffectsMenu,
-	17, EffectsItems,
-	0,
-	MENU_GRAPHICS,
-	MN_DrTextA_CS, 10,
-	0, 17, 0
-);
+class KMenuScreenEffects:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenEffects, Menu_t, 0);
+
+	KMenuScreenEffects() : Menu_t(60, 15, 17, EffectsItems, MENU_GRAPHICS, 10)
+	{
+		Font = KCanvas::SmallFont;
+	}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenEffects);
 
 static MenuItem_t ResolutionItems[] =
 {
@@ -572,15 +673,16 @@ static MenuItem_t ResolutionItems[] =
 	{ ITT_EFUNC, "MAKE DEFAULT", SCResMakeDefault, 0, MENU_NONE }
 };
 
-static Menu_t ResolutionMenu(
-	88, 60,
-	DrawResolutionMenu,
-	4, ResolutionItems,
-	0,
-	MENU_GRAPHICS,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 4, 0
-);
+class KMenuScreenResolution:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenResolution, Menu_t, 0);
+
+	KMenuScreenResolution() : Menu_t(88, 60, 4, ResolutionItems, MENU_GRAPHICS)
+	{}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenResolution);
 
 static MenuItem_t ControlsItems[] =
 {
@@ -669,15 +771,30 @@ static MenuItem_t ControlsItems[] =
 	{ ITT_EFUNC, "REPLY :", SCControlConfig, H2A_REPLY, MENU_NONE }*/
 };
 
-static Menu_t ControlsMenu(
-	32, 26,
-	DrawControlsMenu,
-	77, ControlsItems,
-	1,
-	MENU_OPTIONS,
-	MN_DrTextA_CS, 9,
-	0, 18, 0
-);
+class KMenuScreenControls:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenControls, Menu_t, 0);
+
+	// For scrolling menus.
+	int numVisItems;
+
+	KMenuScreenControls() : Menu_t(32, 26, 79, ControlsItems, MENU_OPTIONS, 9)
+	{
+		X = 0;
+		Y = 0;
+		Width = 640;
+		Height = 480;
+		Font = KCanvas::SmallFont;
+		numVisItems = 40;
+		oldItPos = 1;
+	}
+
+	void CreateChoices();
+	void DrawWindow(KGC *gc);
+	void PostDrawWindow(KGC *gc);
+	bool KeyPressed(int key);
+};
+IMPLEMENT_CLASS(KMenuScreenControls);
 
 static MenuItem_t MouseOptsItems[] =
 {
@@ -690,15 +807,16 @@ static MenuItem_t MouseOptsItems[] =
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
 };
 
-static Menu_t MouseOptsMenu(
-	72, 30,
-	DrawMouseOptsMenu,
-	7, MouseOptsItems,
-	0,
-	MENU_OPTIONS,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 7, 0
-);
+class KMenuScreenMouseOptions:public Menu_t
+{
+	DECLARE_CLASS(KMenuScreenMouseOptions, Menu_t, 0);
+
+	KMenuScreenMouseOptions() : Menu_t(72, 30, 7, MouseOptsItems, MENU_OPTIONS)
+	{}
+
+	void DrawWindow(KGC *);
+};
+IMPLEMENT_CLASS(KMenuScreenMouseOptions);
 
 static MenuItem_t JoyConfigItems[] =
 {
@@ -709,35 +827,18 @@ static MenuItem_t JoyConfigItems[] =
 	{ ITT_EFUNC, "POV LOOK :", SCPOVLook, 0, MENU_NONE }
 };
 
-static Menu_t JoyConfigMenu(
-	80, 50,
-	DrawJoyConfigMenu,
-	5, JoyConfigItems,
-	0,
-	MENU_OPTIONS,
-	MN_DrTextB_CS, ITEM_HEIGHT,
-	0, 5, 0
-);
-
-static Menu_t *Menus[] =
+class KMenuScreenJoyConfig:public Menu_t
 {
-	&MainMenu,
-	&ClassMenu,
-	&SkillMenu,
-	&CharMenu,
-	&OptionsMenu,
-	&Options2Menu,
-	&GameplayMenu,
-	&GraphicsMenu,
-	&EffectsMenu,
-	&ResolutionMenu,
-	&ControlsMenu,
-	&MouseOptsMenu,
-	&JoyConfigMenu,
-	&FilesMenu,
-	&LoadMenu,
-	&SaveMenu,
+	DECLARE_CLASS(KMenuScreenJoyConfig, Menu_t, 0);
+
+	KMenuScreenJoyConfig() : Menu_t(80, 50, 5, JoyConfigItems, MENU_OPTIONS)
+	{}
+
+	void DrawWindow(KGC *);
 };
+IMPLEMENT_CLASS(KMenuScreenJoyConfig);
+
+static Menu_t *Menus[MENU_NONE];
 
 static char *GammaText[] = 
 {
@@ -795,10 +896,29 @@ static int findRes(int w, int h)
 
 void MN_Init(void)
 {
-	InitFonts();
+	KCanvas::StaticInit();
 	MenuActive = false;
 	MauloBaseLump = gi.W_GetNumForName("FBULA0"); // ("M_SKL00");
-	CurrentMenu = &MainMenu;
+
+	GRootWindow = Spawn<KRootWindow>();
+	GRootWindow->Init();
+	Menus[MENU_MAIN] = NewWindow(KMenuScreenMain, GRootWindow);
+	Menus[MENU_CLASS] = NewWindow(KMenuScreenClass, GRootWindow);
+	Menus[MENU_SKILL] = NewWindow(KMenuScreenSkill, GRootWindow);
+	Menus[MENU_CHAR] = NewWindow(KMenuScreenChar, GRootWindow);
+	Menus[MENU_OPTIONS] = NewWindow(KMenuScreenOptions, GRootWindow);
+	Menus[MENU_OPTIONS2] = NewWindow(KMenuScreenOptions2, GRootWindow);
+	Menus[MENU_GAMEPLAY] = NewWindow(KMenuScreenGameplay, GRootWindow);
+	Menus[MENU_GRAPHICS] = NewWindow(KMenuScreenGraphics, GRootWindow);
+	Menus[MENU_EFFECTS] = NewWindow(KMenuScreenEffects, GRootWindow);
+	Menus[MENU_RESOLUTION] = NewWindow(KMenuScreenResolution, GRootWindow);
+	Menus[MENU_CONTROLS] = NewWindow(KMenuScreenControls, GRootWindow);
+	Menus[MENU_MOUSEOPTS] = NewWindow(KMenuScreenMouseOptions, GRootWindow);
+	Menus[MENU_JOYCONFIG] = NewWindow(KMenuScreenJoyConfig, GRootWindow);
+	Menus[MENU_LOAD] = NewWindow(KMenuScreenLoadGame, GRootWindow);
+	Menus[MENU_SAVE] = NewWindow(KMenuScreenSaveGame, GRootWindow);
+
+	CurrentMenu = Menus[MENU_MAIN];
 
 	// Find the correct resolution.
 	selRes = findRes(gi.Get(DD_SCREEN_WIDTH), gi.Get(DD_SCREEN_HEIGHT));
@@ -810,35 +930,34 @@ void MN_Init(void)
 
 //---------------------------------------------------------------------------
 //
-// PROC InitFonts
+//	Menu_t::Init
 //
 //---------------------------------------------------------------------------
 
-static void InitFonts(void)
+void Menu_t::Init(KWindow *AParent)
 {
-	FontABaseLump = gi.W_GetNumForName("FONTA_S")+1;
-	FontAYellowBaseLump = gi.W_GetNumForName("FONTAY_S")+1;
-	FontBBaseLump = gi.W_GetNumForName("FONTB_S")+1;
+	Super::Init(AParent);
+	CreateChoices();
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC MN_TextFilter
+//	Menu_t::CreateChoices
 //
 //---------------------------------------------------------------------------
 
-void MN_TextFilter(char *text)
+void Menu_t::CreateChoices(void)
 {
-	int		k;
-
-	for(k=0; text[k]; k++)
+	for (int i = 0; i < itemCount; i++)
 	{
-		char ch = toupper(text[k]);
-		if(ch == '_') ch = '[';	// Mysterious... (from save slots).
-		else if(ch == '\\') ch = '/';
-		// Check that the character is printable.
-		else if(ch < 32 || ch > 'Z') ch = 32; // Character out of range.
-		text[k] = ch;			
+		KMenuItem_t *It = NewWindow(KMenuItem_t, this);
+		It->SetPos(x, y + i * itemHeight);
+		It->type = items[i].type;
+		It->text = items[i].text;
+		It->func = items[i].func;
+		It->option = items[i].option;
+		It->menu = items[i].menu;
+		Items[i] = It;
 	}
 }
 
@@ -852,22 +971,8 @@ void MN_TextFilter(char *text)
 
 void MN_DrTextA_CS(char *text, int x, int y)
 {
-	char c;
-	patch_t *p;
-	if(text==NULL) return;
-	while((c = *text++) != 0)
-	{
-		if(c < 33)
-		{
-			x += 5;
-		}
-		else
-		{
-			p = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
-			GCanvas->DrawPatch(x, y, FontABaseLump+c-33);
-			x += p->width-1;
-		}
-	}
+	GCanvas->SetFont(GCanvas->SmallFont);
+	GCanvas->DrawText(x, y, text);
 }
 
 void MN_DrTextA(char *text, int x, int y)
@@ -884,23 +989,8 @@ void MN_DrTextA(char *text, int x, int y)
 
 void MN_DrTextAYellow_CS(char *text, int x, int y)
 {
-	char c;
-	patch_t *p;
-
-	if(text==NULL) return;
-	while((c = *text++) != 0)
-	{
-		if(c < 33)
-		{
-			x += 5;
-		}
-		else
-		{
-			p = (patch_t*)gi.W_CacheLumpNum(FontAYellowBaseLump+c-33, PU_CACHE);
-			GCanvas->DrawPatch(x, y, FontAYellowBaseLump+c-33);
-			x += p->width-1;
-		}
-	}
+	GCanvas->SetFont(GCanvas->YellowFont);
+	GCanvas->DrawText(x, y, text);
 }
 
 void MN_DrTextAYellow(char *text, int x, int y)
@@ -919,24 +1009,7 @@ void MN_DrTextAYellow(char *text, int x, int y)
 
 int MN_TextAWidth(char *text)
 {
-	char c;
-	int width;
-	patch_t *p;
-
-	width = 0;
-	while((c = *text++) != 0)
-	{
-		if(c < 33)
-		{
-			width += 5;
-		}
-		else
-		{
-			p = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
-			width += p->width-1;
-		}
-	}
-	return(width);
+	return KCanvas::SmallFont->TextWidth(text);
 }
 
 //---------------------------------------------------------------------------
@@ -949,22 +1022,8 @@ int MN_TextAWidth(char *text)
 
 void MN_DrTextB_CS(char *text, int x, int y)
 {
-	char c;
-	patch_t *p;
-
-	while((c = *text++) != 0)
-	{
-		if(c < 33)
-		{
-			x += 8;
-		}
-		else
-		{
-			p = (patch_t *)gi.W_CacheLumpNum(FontBBaseLump+c-33, PU_CACHE);
-			GCanvas->DrawPatch(x, y, FontBBaseLump+c-33);
-			x += p->width-1;
-		}
-	}
+	GCanvas->SetFont(GCanvas->BigFont);
+	GCanvas->DrawText(x, y, text);
 }
 
 void MN_DrTextB(char *text, int x, int y)
@@ -983,24 +1042,7 @@ void MN_DrTextB(char *text, int x, int y)
 
 int MN_TextBWidth(char *text)
 {
-	char c;
-	int width;
-	patch_t *p;
-
-	width = 0;
-	while((c = *text++) != 0)
-	{
-		if(c < 33)
-		{
-			width += 5;
-		}
-		else
-		{
-			p = (patch_t *)gi.W_CacheLumpNum(FontBBaseLump+c-33, PU_CACHE);
-			width += p->width-1;
-		}
-	}
-	return(width);
+	return KCanvas::BigFont->TextWidth(text);
 }
 
 //---------------------------------------------------------------------------
@@ -1086,43 +1128,28 @@ char *QuitEndMsg[] =
 };
 
 
-float MN_GL_SetupState(float time, float offset)
+float MN_GL_SetupState(float time)
 {
 	float alpha;
 
-#ifdef USE640
 	GCanvas->SetOrigin(160, 120);
-#endif
 	gl.MatrixMode(DGL_MODELVIEW);
 	gl.PushMatrix();
 	if(time > 1 && time <= 2)
 	{
 		time = 2-time;
-#ifdef USE640
 		gl.Translatef(320, 240, 0);
 		gl.Scalef(.9f+time*.1f, .9f+time*.1f, 1);
 		gl.Translatef(-320, -240, 0);
-#else
-		gl.Translatef(160, 100, 0);
-		gl.Scalef(.9f+time*.1f, .9f+time*.1f, 1);
-		gl.Translatef(-160, -100, 0);
-#endif
 		gl.Color4f(1, 1, 1, alpha = time);
 	}
 	else
 	{
-#ifdef USE640
 		gl.Translatef(320, 240, 0);
 		gl.Scalef(2-time, 2-time, 1);
 		gl.Translatef(-320, -240, 0);
-#else
-		gl.Translatef(160, 100, 0);
-		gl.Scalef(2-time, 2-time, 1);
-		gl.Translatef(-160, -100, 0);
-#endif
 		gl.Color4f(1, 1, 1, alpha = time*time);
 	}
-	gl.Translatef(0, -offset, 0);
 	return alpha;
 }
 
@@ -1130,9 +1157,7 @@ void MN_GL_RestoreState()
 {
 	gl.MatrixMode(DGL_MODELVIEW);
 	gl.PopMatrix();
-#ifdef USE640
 	GCanvas->SetOrigin(0, 0);
-#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1143,60 +1168,40 @@ void MN_GL_RestoreState()
 
 void MN_Drawer(void)
 {
-	int i;
-	int x;
-	int y;
-	MenuItem_t *item;
-	char *selName;
-	
-#ifdef USE640
 	GCanvas->SetOrigin(160, 0);
-#endif
 	DrawMessage();
-#ifdef USE640
 	GCanvas->SetOrigin(0, 0);
-#endif
 
 	// FPS.
-	if(showFPS)
+	if (showFPS)
 	{
 		char fpsbuff[80];
 		sprintf(fpsbuff, "%d FPS", gi.FrameRate());
-#ifdef USE640
 		MN_DrTextA(fpsbuff, 640-MN_TextAWidth(fpsbuff), 0);
-#else
-		MN_DrTextA(fpsbuff, 320-MN_TextAWidth(fpsbuff), 0);
-#endif
 		gi.Update(DDUF_TOP);
 	}
 	
-	if(MenuActive == false)
+	if (MenuActive == false)
 	{
-		if(bgAlpha > 0)
+		if (bgAlpha > 0)
 		{
 			gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
 			gi.GL_SetNoTexture();
-#ifdef USE640
 			GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, bgAlpha);
-#else
-			GCanvas->DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
-#endif
 		}
-		if(askforquit)  //Draw questioning
+		if (askforquit)  //Draw questioning
 		{
-#ifdef USE640
 			GCanvas->SetOrigin(160, 120);
-#endif
 			MN_DrTextA(QuitEndMsg[typeofask-1], 160-
 				MN_TextAWidth(QuitEndMsg[typeofask-1])/2, 80);
-			if(typeofask == 3)
+			if (typeofask == 3)
 			{
 				MN_DrTextA(SlotText[quicksave-1], 160-
 					MN_TextAWidth(SlotText[quicksave-1])/2, 90);
 				MN_DrTextA("?", 160+
 					MN_TextAWidth(SlotText[quicksave-1])/2, 90);
 			}
-			if(typeofask == 4)
+			if (typeofask == 4)
 			{
 				MN_DrTextA(SlotText[quickload-1], 160-
 					MN_TextAWidth(SlotText[quickload-1])/2, 90);
@@ -1204,20 +1209,17 @@ void MN_Drawer(void)
 					MN_TextAWidth(SlotText[quicksave-1])/2, 90);
 			}
 			gi.Update(DDUF_FULLSCREEN);
-#ifdef USE640
 			GCanvas->SetOrigin(0, 0);
-#endif
 		}
 	}
-	if(MenuActive || fadingOut || JournalActive || SpellsActive || UpdatingActive)
+	if (MenuActive || fadingOut || JournalActive || SpellsActive || UpdatingActive)
 	{
 		int effTime = (MenuTime>menuDarkTicks)? menuDarkTicks : MenuTime;
 		float temp = .5 * effTime/(float)menuDarkTicks;
-		float alpha;
 
-		gi.Update(DDUF_FULLSCREEN);
-		
-		if(!fadingOut)
+		gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
+
+		if (!fadingOut)
 		{
 			if(temp > bgAlpha) bgAlpha = temp;
 			effTime = (MenuTime>slamInTicks)? slamInTicks : MenuTime;
@@ -1225,101 +1227,97 @@ void MN_Drawer(void)
 	
 			// Draw a dark background. It makes it easier to read the menus.
 			gi.GL_SetNoTexture();
-#ifdef USE640
 			GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, bgAlpha);
-#else
-			GCanvas->DrawRect(0, 0, 320, 200, 0, 0, 0, bgAlpha);
-#endif
 		}
-		else temp = outFade+1;
 
-		alpha = MN_GL_SetupState(temp, CurrentMenu->offset);								
-
-		if(JournalActive) //Drawing for Journal
+		MN_GL_SetupState(temp);
+		if (JournalActive) //Drawing for Journal
 		{
 			MN_DrawJournal();
-			MN_GL_RestoreState();
-			return;
 		}
-		if(SpellsActive) //Drawing for Spells
+		else if (SpellsActive) //Drawing for Spells
 		{
 			MN_DrawSpells();
-			MN_GL_RestoreState();
-			return;
 		}
-		if(UpdatingActive) //Drawing for Updating
+		else if (UpdatingActive) //Drawing for Updating
 		{
 			MN_DrawUpdating();
-			MN_GL_RestoreState();
-			return;
 		}
-		if(InfoType)
+		else if (InfoType)
 		{
 			MN_DrawInfo();
-			MN_GL_RestoreState();
-			return;
 		}
-		gi.Update(DDUF_BORDER);
-
-		CurrentMenu->DrawTree(GCanvas);
-
-		x = CurrentMenu->x;
-		y = CurrentMenu->y;
-		for(i=0, item=CurrentMenu->items + CurrentMenu->firstItem; 
-			i<CurrentMenu->numVisItems && CurrentMenu->firstItem + i < CurrentMenu->itemCount; 
-			i++, y += CurrentMenu->itemHeight, item++)
+		else
 		{
-			if(item->type != ITT_EMPTY || item->text)
-			{
-				// Decide which color to use.
-				if(item->type == ITT_EMPTY)
-					gi.GL_SetColorAndAlpha(.95f, 0, 0, alpha); // Red for titles.
-				else
-					gi.GL_SetColorAndAlpha(1, 1, 1, alpha);
-
-				if(item->text)
-					CurrentMenu->textDrawer(item->text, x, y);
-			}
+			CurrentMenu->Show();
+			GRootWindow->PaintWindows(GCanvas);
+			CurrentMenu->Hide();
 		}
-		// Back to normal color.
-		gi.GL_SetColorAndAlpha(1, 1, 1, alpha);
-		
-		y = CurrentMenu->y+((CurrentItPos-CurrentMenu->firstItem)*CurrentMenu->itemHeight)+SELECTOR_YOFFSET
-			- (10-CurrentMenu->itemHeight/2);
-		selName = MenuTime&16 ? "M_SLCTR1" : "M_SLCTR2";
-		GCanvas->DrawPatch(x+SELECTOR_XOFFSET, y, gi.W_GetNumForName(selName));
-
 		MN_GL_RestoreState();
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawMainMenu
+//	KMenuItem_t::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawMainMenu(void)
+void KMenuItem_t::DrawWindow(KGC *gc)
+{
+	Super::DrawWindow(gc);
+
+	if (text)
+	{
+		// Decide which color to use.
+		if (type == ITT_EMPTY)
+			gc->SetFont(KCanvas::YellowFont);
+		else
+			gc->SetFont(Parent->Font);
+
+		gc->DrawText(0, 0, text);
+	}
+}
+
+//---------------------------------------------------------------------------
+//
+//	Menu_t::PostDrawWindow
+//
+//---------------------------------------------------------------------------
+
+void Menu_t::PostDrawWindow(KGC *gc)
+{
+	gc->DrawIcon(x + SELECTOR_XOFFSET, y + SELECTOR_YOFFSET + 
+		(CurrentItPos * itemHeight) - (10 - itemHeight / 2), 
+		FindTexture(MenuTime & 16 ? "M_SLCTR1" : "M_SLCTR2"));
+}
+
+//---------------------------------------------------------------------------
+//
+//	KMenuScreenMain::DrawWindow
+//
+//---------------------------------------------------------------------------
+
+void KMenuScreenMain::DrawWindow(KGC *gc)
 {
 	int frame;
 
 	frame = (MenuTime/5)%7;
 	
-	GCanvas->DrawPatch(88, 0, gi.W_GetNumForName("M_HTIC"));
+	gc->DrawIcon(88, 0, FindTexture("M_HTIC"));
 
-	GCanvas->DrawPatch(37, 80, MauloBaseLump+(frame+2)%7);
-	GCanvas->DrawPatch(278, 80, MauloBaseLump+frame);
+	gc->GetCanvas()->DrawPatch(37, 80, MauloBaseLump+(frame+2)%7);
+	gc->GetCanvas()->DrawPatch(278, 80, MauloBaseLump+frame);
 }
 
 //==========================================================================
 //
-// DrawClassMenu
+//	KMenuScreenClass::DrawWindow
 //
 //==========================================================================
 
-static void DrawClassMenu(void)
+void KMenuScreenClass::DrawWindow(KGC *gc)
 {
-	pclass_t pclass;
 //	spriteinfo_t	sprInfo;
 //	int				w, h, alpha;
 
@@ -1337,9 +1335,9 @@ static void DrawClassMenu(void)
 		"m_mwalk1"
 	};
 
-	MN_DrTextB_CS("CHOOSE CLASS:", 34, 24);
-	pclass = (pclass_t)CurrentMenu->items[CurrentItPos].option;
-	GCanvas->DrawPatch(174, 8, gi.W_GetNumForName(boxLumpName[pclass]));
+	gc->DrawText(34, 24, "CHOOSE CLASS:");
+	int pclass = Items[CurrentItPos]->option;
+	gc->DrawIcon(174, 8, FindTexture(boxLumpName[pclass]));
 	/*if (pclass == 3) //Remi: Corvus, never happens in this source state
 	{
 		gl.GetIntegerv(DGL_A, &alpha);
@@ -1352,31 +1350,32 @@ static void DrawClassMenu(void)
 		gl.Color4ub(255, 255, 255, alpha);
 	}
 	else*/
-	GCanvas->DrawPatch(174+24, 8+12,gi.W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
+	gc->GetCanvas()->DrawPatch(174+24, 8+12, 
+		gi.W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawSkillMenu
+//	KMenuScreenSkill::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawSkillMenu(void)
+void KMenuScreenSkill::DrawWindow(KGC *gc)
 {
-	MN_DrTextB_CS("CHOOSE SKILL LEVEL:", 74, 16);
+	gc->DrawText(74, 16, "CHOOSE SKILL LEVEL:");
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawSkillMenu
+//	KMenuScreenChar::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawCharMenu(void)
+void KMenuScreenChar::DrawWindow(KGC *gc)
 {
 	char tmp[2][5][13];
 	int i;
-	MN_DrTextB_CS("GENERATE YOUR CHARACTER:", 50, 16);
+	gc->DrawText(50, 16, "GENERATE YOUR CHARACTER:");
 	sprintf(tmp[0][0],"HEALTH:");
 	sprintf(tmp[0][1],"%s",sp_wording[MenuPClass]);
 	sprintf(tmp[0][2],"STRENGTH:");
@@ -1388,9 +1387,10 @@ static void DrawCharMenu(void)
 	sprintf(tmp[1][3],"%02d",MenuPValues.val[3]);
 	sprintf(tmp[1][4],"%02d",MenuPValues.val[4]);
 	for (i=0;i<5;i++)
-	  MN_DrTextB_CS(tmp[0][i], 74, 44+i*16);
-	for (i=0;i<5;i++)
-	  MN_DrTextB_CS(tmp[1][i], 194, 44+i*16);
+	{
+		gc->DrawText(74, 44+i*16, tmp[0][i]);
+		gc->DrawText(194, 44+i*16, tmp[1][i]);
+	}
 }
 
 
@@ -1410,34 +1410,34 @@ static void DrawFilesMenu(void)
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawLoadMenu
+//	KMenuScreenLoadGame::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawLoadMenu(void)
+void KMenuScreenLoadGame::DrawWindow(KGC *gc)
 {
-	MN_DrTextB_CS("LOAD GAME", 160-MN_TextBWidth("LOAD GAME")/2, 10);
-	if(!slottextloaded)
+	gc->DrawText(160 - Font->TextWidth("LOAD GAME")/2, 10, "LOAD GAME");
+	if (!slottextloaded)
 	{
 		MN_LoadSlotText();
 	}
-	DrawFileSlots(&LoadMenu);
+	DrawFileSlots(this);
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawSaveMenu
+//	KMenuScreenSaveGame::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawSaveMenu(void)
+void KMenuScreenSaveGame::DrawWindow(KGC *gc)
 {
-	MN_DrTextB_CS("SAVE GAME", 160-MN_TextBWidth("SAVE GAME")/2, 10);
+	gc->DrawText(160 - Font->TextWidth("SAVE GAME")/2, 10, "SAVE GAME");
 	if(!slottextloaded)
 	{
 		MN_LoadSlotText();
 	}
-	DrawFileSlots(&SaveMenu);
+	DrawFileSlots(this);
 }
 
 //===========================================================================
@@ -1513,41 +1513,39 @@ static void DrawFileSlots(Menu_t *menu)
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawOptionsMenu
+//	KMenuScreenOptions::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawOptionsMenu(void)
+void KMenuScreenOptions::DrawWindow(KGC *gc)
 {
-	GCanvas->DrawPatch(88, 0, gi.W_GetNumForName("M_HTIC"));
-	MN_DrTextB_CS("OPTIONS", 154-MN_TextBWidth("OPTIONS")/2, 56);
+	gc->DrawText(154-Font->TextWidth("OPTIONS")/2, 10, "OPTIONS");
 }
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawOptions2Menu
+//	KMenuScreenOptions2::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawOptions2Menu(void)
+void KMenuScreenOptions2::DrawWindow(KGC *gc)
 {
-	Menu_t *menu = &Options2Menu;
-	char *musDevStr[3] = { "NONE", "MIDI", "CD" };
-	char *freqStr[4] = { "11 KHZ", "22 KHZ", "INVALID!", "44 KHZ" };
+	static char *musDevStr[3] = { "NONE", "MIDI", "CD" };
+	static char *freqStr[4] = { "11 KHZ", "22 KHZ", "INVALID!", "44 KHZ" };
 	int temp = (int) (*(float*) gi.GetCVar("s_reverbVol")->ptr * 10 + .5f);
 
-	DrawSlider(menu, 1, 18, gi.Get(DD_SFX_VOLUME)/15);
-	DrawSlider(menu, 4, 18, gi.Get(DD_MIDI_VOLUME)/15);
-	DrawSlider(menu, 7, 18, gi.CD(DD_GET_VOLUME,0)/15);
-	MN_DrTextA_CS(musDevStr[gi.Get(DD_MUSIC_DEVICE)], menu->x + 
-		MN_TextAWidth("MUSIC DEVICE : "), menu->y + menu->itemHeight*9);
-	MN_DrTextA_CS(*(int*) gi.GetCVar("s_3d")->ptr? "ON" : "OFF",
-		menu->x + MN_TextAWidth("3D SOUNDS : "), menu->y + menu->itemHeight*10);
-	DrawSlider(menu, 12, 11, temp);
-	MN_DrTextA_CS(freqStr[*(int*) gi.GetCVar("s_resample")->ptr - 1], 
-		menu->x + MN_TextAWidth("SFX FREQUENCY : "), menu->y + menu->itemHeight*14);
-	MN_DrTextA_CS(*(int*) gi.GetCVar("s_16bit")->ptr? "ON" : "OFF",
-		menu->x + MN_TextAWidth("16 BIT INTERPOLATION : "), menu->y + menu->itemHeight*15);
+	DrawSlider(this, 1, 18, gi.Get(DD_SFX_VOLUME)/15);
+	DrawSlider(this, 4, 18, gi.Get(DD_MIDI_VOLUME)/15);
+	DrawSlider(this, 7, 18, gi.CD(DD_GET_VOLUME,0)/15);
+	gc->DrawText(x + Font->TextWidth("MUSIC DEVICE : "), y + itemHeight*9, 
+		musDevStr[gi.Get(DD_MUSIC_DEVICE)]);
+	gc->DrawText(x + Font->TextWidth("3D SOUNDS : "), 
+		y + itemHeight*10, *(int*) gi.GetCVar("s_3d")->ptr? "ON" : "OFF");
+	DrawSlider(this, 12, 11, temp);
+	gc->DrawText(x + Font->TextWidth("SFX FREQUENCY : "), 
+		y + itemHeight*14, freqStr[*(int*) gi.GetCVar("s_resample")->ptr - 1]);
+	gc->DrawText(x + Font->TextWidth("16 BIT INTERPOLATION : "), y + itemHeight*15,
+		*(int*) gi.GetCVar("s_16bit")->ptr? "ON" : "OFF");
 }
 
 static void SCMusicDevice(int option)
@@ -1567,33 +1565,32 @@ static void SCMusicDevice(int option)
 	S_StartSong(gamemap, true);
 }
 
-static void DrawGameplayMenu(void)
+void KMenuScreenGameplay::DrawWindow(KGC *gc)
 {
-	Menu_t *menu = &GameplayMenu;
-	char *xhairnames[7] = { "NONE", "CROSS", "ANGLES", "SQUARE",
+	static char *xhairnames[7] = { "NONE", "CROSS", "ANGLES", "SQUARE",
 		"OPEN SQUARE", "DIAMOND", "V" };
 	
-	MN_DrTextA_CS(messageson? "YES" : "NO", 
-		menu->x+MN_TextAWidth("MESSAGES : "), menu->y);
-	MN_DrTextA_CS((alwaysRun)? "YES" : "NO", 
-		menu->x+MN_TextAWidth("ALWAYS RUN : "), menu->y+menu->itemHeight);
-	MN_DrTextA_CS((lookSpring)? "YES" : "NO", 
-		menu->x+MN_TextAWidth("LOOKSPRING : "), menu->y + menu->itemHeight*2);
-	MN_DrTextA_CS((noAutoAim)? "YES" : "NO", 
-		menu->x+MN_TextAWidth("NO AUTOAIM : "), menu->y + menu->itemHeight*3);
-	MN_DrTextA_CS(xhairnames[xhair], 
-		menu->x+MN_TextAWidth("CROSSHAIR : "), menu->y + menu->itemHeight*4);
-	DrawSlider(menu, 6, 9, xhairSize);
-	DrawSlider(menu, 9, 9, screenblocks-3);
+	gc->DrawText(x+Font->TextWidth("MESSAGES : "), y, 
+		messageson ? "YES" : "NO");
+	gc->DrawText(x+Font->TextWidth("ALWAYS RUN : "), y + itemHeight, 
+		alwaysRun? "YES" : "NO");
+	gc->DrawText(x+Font->TextWidth("LOOKSPRING : "), y + itemHeight * 2,
+		lookSpring ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth("NO AUTOAIM : "), y + itemHeight * 3,
+		noAutoAim ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth("CROSSHAIR : "), y + itemHeight * 4,
+		xhairnames[xhair]);
+	DrawSlider(this, 6, 9, xhairSize);
+	DrawSlider(this, 9, 9, screenblocks-3);
 }
 
-static void DrawGraphicsMenu(void)
+void KMenuScreenGraphics::DrawWindow(KGC *gc)
 {
-	char *mipStr[6] = 
+	static const char *mipStr[6] = 
 	{
 		"N", "L", "N, MIP N", "L, MIP N", "N, MIP L", "L, MIP L"
 	};
-	char *texQStr[9] =
+	static const char *texQStr[9] =
 	{
 		"0 - MINIMUM",
 		"1 - VERY LOW",
@@ -1605,54 +1602,51 @@ static void DrawGraphicsMenu(void)
 		"7 - VERY HIGH",
 		"8 - MAXIMUM"
 	};
-	Menu_t *menu = &GraphicsMenu;
 	cvar_t *cv = gi.GetCVar("r_texquality");
 
-	DrawSlider(menu, 1, 5, gi.Get(DD_SKY_DETAIL)-3);
-	MN_DrTextB_CS(mipStr[gi.Get(DD_MIPMAPPING)], menu->x+MN_TextBWidth("MIPMAPPING : ")+8,
-		menu->y+menu->itemHeight*2);
-	MN_DrTextB_CS(gi.Get(DD_SMOOTH_IMAGES)? "YES" : "NO",
-		menu->x+MN_TextBWidth("SMOOTH GFX : ")+8, menu->y+menu->itemHeight*3);
+	DrawSlider(this, 1, 5, gi.Get(DD_SKY_DETAIL)-3);
+	gc->DrawText(x + Font->TextWidth("MIPMAPPING : ") + 8, y + itemHeight * 2,
+		mipStr[gi.Get(DD_MIPMAPPING)]);
+	gc->DrawText(x + Font->TextWidth("SMOOTH GFX : ") + 8, y + itemHeight * 3,
+		gi.Get(DD_SMOOTH_IMAGES)? "YES" : "NO");
 	
-	MN_DrTextB_CS(*(int*) gi.GetCVar("borderupd")->ptr? "YES" : "NO",
-		menu->x+MN_TextBWidth("UPDATE BORDERS : ")+8, menu->y+menu->itemHeight*4);
+	gc->DrawText(x + Font->TextWidth("UPDATE BORDERS : ") + 8, y + itemHeight * 4,
+		*(int*) gi.GetCVar("borderupd")->ptr? "YES" : "NO");
 	
-	MN_DrTextB_CS(texQStr[*(int*) cv->ptr], menu->x+MN_TextBWidth("TEX QUALITY : ")+8, 
-		menu->y+menu->itemHeight*5);
+	gc->DrawText(x + Font->TextWidth("TEX QUALITY : ") + 8, y + itemHeight * 5,
+		texQStr[*(int*) cv->ptr]);
 
 	// This isn't very good programming, but here we can reset the 
 	// current resolution selection.
 	selRes = findRes(gi.Get(DD_SCREEN_WIDTH), gi.Get(DD_SCREEN_HEIGHT));
 }
 
-static void DrawEffectsMenu(void)
+void KMenuScreenEffects::DrawWindow(KGC *gc)
 {
-	char	*dlblendStr[4] = { "MULTIPLY", "ADD", "NONE", "DON'T RENDER" };
-	char	*flareStr[6] = { "OFF", "1", "2", "3", "4", "5" };
-	char	*alignStr[4] = { "CAMERA", "VIEW PLANE", "CAMERA (R)", "VIEW PLANE (R)" };
-	Menu_t	*menu = &EffectsMenu;
-	int		x = menu->x + 140, y = menu->y, h = menu->itemHeight;
+	static const char	*dlblendStr[4] = { "MULTIPLY", "ADD", "NONE", "DON'T RENDER" };
+	static const char	*flareStr[6] = { "OFF", "1", "2", "3", "4", "5" };
+	static const char	*alignStr[4] = { "CAMERA", "VIEW PLANE", "CAMERA (R)", "VIEW PLANE (R)" };
+	int		x = this->x + 140, y = this->y, h = this->itemHeight;
 	int		temp;
 
-	MN_DrTextA_CS(showFPS? "YES" : "NO", x, y);
-	MN_DrTextA_CS(translucentIceCorpse? "YES" : "NO", 
-		menu->x + MN_TextAWidth("FROZEN THINGS TRANSLUCENT : "), y+h);
-	MN_DrTextA_CS(*(int*) gi.GetCVar("dynlights")->ptr? "ON" : "OFF", x, y+h*2);
-	MN_DrTextA_CS(dlblendStr[*(int*) gi.GetCVar("dlblend")->ptr], x, y+h*3);
-	MN_DrTextA_CS(*(int*) gi.GetCVar("sprlight")->ptr? "YES" : "NO", x, y+h*4);
+	gc->DrawText(x, y, showFPS? "YES" : "NO");
+	gc->DrawText(this->x + Font->TextWidth("FROZEN THINGS TRANSLUCENT : "), y+h,
+		translucentIceCorpse ? "YES" : "NO");
+	gc->DrawText(x, y+h*2, *(int*) gi.GetCVar("dynlights")->ptr? "ON" : "OFF");
+	gc->DrawText(x, y+h*3, dlblendStr[*(int*) gi.GetCVar("dlblend")->ptr]);
+	gc->DrawText(x, y+h*4, *(int*) gi.GetCVar("sprlight")->ptr? "YES" : "NO");
 	temp = (int) (*(float*) gi.GetCVar("dlfactor")->ptr * 10 + .5f);
-	DrawSlider(menu, 6, 11, temp);
-	MN_DrTextA_CS(flareStr[*(int*) gi.GetCVar("flares")->ptr], x, y+h*8);
-	DrawSlider(menu, 10, 11, *(int*) gi.GetCVar("flareintensity")->ptr / 10);
-	DrawSlider(menu, 13, 11, *(int*) gi.GetCVar("flaresize")->ptr);
-	MN_DrTextA_CS(alignStr[*(int*) gi.GetCVar("spralign")->ptr], x, y+h*15);
-	MN_DrTextA_CS(*(int*) gi.GetCVar("sprblend")->ptr? "ON" : "OFF", x, y+h*16);
+	DrawSlider(this, 6, 11, temp);
+	gc->DrawText(x, y+h*8, flareStr[*(int*) gi.GetCVar("flares")->ptr]);
+	DrawSlider(this, 10, 11, *(int*) gi.GetCVar("flareintensity")->ptr / 10);
+	DrawSlider(this, 13, 11, *(int*) gi.GetCVar("flaresize")->ptr);
+	gc->DrawText(x, y+h*15, alignStr[*(int*) gi.GetCVar("spralign")->ptr]);
+	gc->DrawText(x, y+h*16, *(int*) gi.GetCVar("sprblend")->ptr? "ON" : "OFF");
 }
 
-static void DrawResolutionMenu(void)
+void KMenuScreenResolution::DrawWindow(KGC *gc)
 {
 	char buffer[40];
-	Menu_t *menu = &ResolutionMenu;
 	
 	if(selRes == -1)
 		strcpy(buffer, "NOT AVAILABLE");
@@ -1664,7 +1658,9 @@ static void DrawResolutionMenu(void)
 			selRes == findRes(gi.Get(DD_DEFAULT_RES_X), gi.Get(DD_DEFAULT_RES_Y))? 
 				" (DEFAULT)" : "");			
 	}
-	MN_DrTextA_CS(buffer, menu->x+8, menu->y+menu->itemHeight+4);
+	gc->SetFont(KCanvas::SmallFont);
+	gc->DrawText(x+8, y+itemHeight+4, buffer);
+	gc->SetFont(Font);
 }
 
 static void SCResSelector(int option)
@@ -1884,22 +1880,20 @@ static void SCSpriteLight(int option)
 
 //---------------------------------------------------------------------------
 //
-// PROC DrawMouseOptsMenu
+//	KMenuScreenMouseOptions::DrawWindow
 //
 //---------------------------------------------------------------------------
 
-static void DrawMouseOptsMenu(void)
+void KMenuScreenMouseOptions::DrawWindow(KGC *gc)
 {
-	Menu_t *menu = &MouseOptsMenu;
-
-	MN_DrTextB_CS((gi.Get(DD_MOUSE_INVERSE_Y))? "YES" : "NO", menu->x+
-		MN_TextBWidth(menu->items[0].text)+12, menu->y);
-	MN_DrTextB_CS((usemlook)? "YES" : "NO", menu->x+
-		MN_TextBWidth(menu->items[1].text)+12, menu->y+menu->itemHeight);
-	MN_DrTextB_CS((mlookInverseY)? "YES" : "NO", menu->x+
-		MN_TextBWidth(menu->items[2].text)+12, menu->y+menu->itemHeight*2);
-	DrawSlider(&MouseOptsMenu, 4, 18, mouseSensitivityX);
-	DrawSlider(&MouseOptsMenu, 6, 18, mouseSensitivityY);
+	gc->DrawText(x + Font->TextWidth(Items[0]->text) + 12, y,
+		gi.Get(DD_MOUSE_INVERSE_Y) ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth(Items[1]->text) + 12, y + itemHeight,
+		usemlook ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth(Items[2]->text) + 12, y + itemHeight * 2,
+		mlookInverseY ? "YES" : "NO");
+	DrawSlider(this, 4, 18, mouseSensitivityX);
+	DrawSlider(this, 6, 18, mouseSensitivityY);
 }
 
 static void SCControlConfig(int option)
@@ -1933,31 +1927,53 @@ void spacecat(char *str, const char *catstr)
 	}
 }
 
-static void DrawControlsMenu(void)
+//---------------------------------------------------------------------------
+//
+//	KMenuScreenControls::CreateChoices
+//
+//---------------------------------------------------------------------------
+
+void KMenuScreenControls::CreateChoices(void)
 {
-	int			i, k;
+	for (int i = 0; i < itemCount; i++)
+	{
+		KMenuItem_t *It = NewWindow(KMenuItem_t, this);
+		It->SetPos(x + (i / numVisItems) * 320, y + (i % numVisItems) * itemHeight);
+		It->type = items[i].type;
+		It->text = items[i].text;
+		It->func = items[i].func;
+		It->option = items[i].option;
+		It->menu = items[i].menu;
+		Items[i] = It;
+	}
+}
+
+//---------------------------------------------------------------------------
+//
+//	KMenuScreenControls::DrawWindow
+//
+//---------------------------------------------------------------------------
+
+void KMenuScreenControls::DrawWindow(KGC *gc)
+{
+	int			i;
 	char		controlCmd[80];
 	char		buff[80], prbuff[80], *token;
-	Menu_t		*menu = CurrentMenu;
-	MenuItem_t	*item = menu->items + menu->firstItem;
 	Control_t	*ctrl;
 
-	MN_DrTextB_CS("CONTROLS", 120, 4);
+	gc->SetFont(KCanvas::BigFont);
+	gc->DrawText(280, 4, "CONTROLS");
 
 	// Draw the page arrows.
-	token = (!menu->firstItem || MenuTime&8)? "invgeml2" : "invgeml1";
-	GCanvas->DrawPatch(menu->x, menu->y-16, gi.W_GetNumForName(token));
-	token = (menu->firstItem+menu->numVisItems >= menu->itemCount || MenuTime&8)? 
-		"invgemr2" : "invgemr1";
-	GCanvas->DrawPatch(312-menu->x, menu->y-16, gi.W_GetNumForName(token));
-
-	for(i=0; i<menu->numVisItems && menu->firstItem+i < menu->itemCount; i++, item++)
+	gc->SetFont(KCanvas::YellowFont);
+	for (i = 0; i < itemCount; i++)
 	{
-		if(item->type == ITT_EMPTY) continue;
+		KMenuItem_t	*item = Items[i];
+		if (item->type == ITT_EMPTY) continue;
 		
 		ctrl = controls + item->option;
 		strcpy(buff, "");
-		if(ctrl->flags & CLF_ACTION)
+		if (ctrl->flags & CLF_ACTION)
 			sprintf(controlCmd, "+%s", ctrl->command);
 		else
 			strcpy(controlCmd, ctrl->command);
@@ -1969,18 +1985,14 @@ static void DrawControlsMenu(void)
 		// It may contain characters we can't print.
 		strcpy(prbuff, "");
 		token = strtok(buff, " ");
-		while(token)
+		while (token)
 		{
-			if(token[0] == '+')
+			if (token[0] == '+')
 				spacecat(prbuff, token+1);
-			if(token[0] == '*' && !(ctrl->flags & CLF_REPEAT) || token[0] == '-')
+			if (token[0] == '*' && !(ctrl->flags & CLF_REPEAT) || token[0] == '-')
 				spacecat(prbuff, token);
 			token = strtok(NULL, " ");
 		}
-		strupr(prbuff);
-		for(k=0; prbuff[k]; k++)
-			if(prbuff[k] < 32 || prbuff[k] > 'Z')
-				prbuff[k] = ' ';
 
 		if(grabbing == ctrl)
 		{
@@ -1988,8 +2000,95 @@ static void DrawControlsMenu(void)
 			spacecat(prbuff, "...");
 		}
 
-		MN_DrTextAYellow_CS(prbuff, menu->x+134, menu->y + i*menu->itemHeight);
+		gc->DrawText(x + 134 + (i / numVisItems) * 320, 
+			y + (i % numVisItems) * itemHeight, prbuff);
 	}
+	gc->SetFont(Font);
+}
+
+//---------------------------------------------------------------------------
+//
+//	KMenuScreenControls::PostDrawWindow
+//
+//---------------------------------------------------------------------------
+
+void KMenuScreenControls::PostDrawWindow(KGC *gc)
+{
+	gc->DrawIcon(x + SELECTOR_XOFFSET + (CurrentItPos / numVisItems) * 320, 
+		y + SELECTOR_YOFFSET + ((CurrentItPos % numVisItems) * itemHeight) - 
+		(10 - itemHeight / 2), 
+		FindTexture(MenuTime & 16 ? "M_SLCTR1" : "M_SLCTR2"));
+}
+
+//---------------------------------------------------------------------------
+//
+//	KMenuScreenControls::KeyPressed
+//
+//---------------------------------------------------------------------------
+
+bool KMenuScreenControls::KeyPressed(int key)
+{
+	KMenuItem_t *item;
+
+	int firstVI = (CurrentItPos / numVisItems) * numVisItems;
+	int lastVI = firstVI + numVisItems - 1;
+	if (lastVI > itemCount - 1)
+		lastVI = itemCount - 1;
+	item = Items[CurrentItPos];
+	switch (key)
+	{
+	case DDKEY_DOWNARROW:
+		do
+		{
+			if (CurrentItPos + 1 > lastVI)
+			{
+				CurrentItPos = firstVI;
+			}
+			else
+			{
+				CurrentItPos++;
+			}
+		} while (Items[CurrentItPos]->type == ITT_EMPTY);
+		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
+		return true;
+
+	case DDKEY_UPARROW:
+		do
+		{
+			if (CurrentItPos <= firstVI)
+			{
+				CurrentItPos = lastVI;
+			}
+			else
+			{
+				CurrentItPos--;
+			}
+		} while (Items[CurrentItPos]->type == ITT_EMPTY);
+		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
+		return true;
+
+	case DDKEY_LEFTARROW:
+		// Let's try to change to the previous page.
+		if (CurrentItPos - numVisItems >= 0)
+		{
+			CurrentItPos -= numVisItems;
+			// Make a sound, too.
+			S_StartSound(NULL, SFX_PICKUP_KEY);
+		}
+		return true;
+
+	case DDKEY_RIGHTARROW:
+		// Move on to the next page, if possible.
+		if (CurrentItPos + numVisItems < itemCount)
+		{
+			CurrentItPos += numVisItems;
+			if (CurrentItPos > itemCount - 1)
+				CurrentItPos = itemCount - 1;
+			S_StartSound(NULL, SFX_PICKUP_KEY);						
+		}
+		return true;
+	}
+	return Super::KeyPressed(key);
 }
 
 static void SCJoySensi(int option)
@@ -2001,17 +2100,15 @@ static void SCJoySensi(int option)
 	else if(joySensitivity > 1) joySensitivity--;
 }
 
-static void DrawJoyConfigMenu()
+void KMenuScreenJoyConfig::DrawWindow(KGC *gc)
 {
-	Menu_t	*menu = &JoyConfigMenu;
-
-	DrawSlider(menu, 1, 9, joySensitivity-1);	
-	MN_DrTextB_CS((usejlook)? "YES" : "NO", menu->x+MN_TextBWidth(menu->items[2].text)+12, 
-		menu->y+menu->itemHeight*2);
-	MN_DrTextB_CS((jlookInverseY)? "YES" : "NO", menu->x+MN_TextBWidth(menu->items[3].text)+12, 
-		menu->y+menu->itemHeight*3);
-	MN_DrTextB_CS(povLookAround? "YES" : "NO", menu->x+MN_TextBWidth(menu->items[4].text)+12,
-		menu->y+menu->itemHeight*4);
+	DrawSlider(this, 1, 9, joySensitivity-1);	
+	gc->DrawText(x + Font->TextWidth(Items[2]->text) + 12, y + itemHeight * 2,
+		usejlook ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth(Items[3]->text) + 12, y + itemHeight * 3,
+		jlookInverseY ? "YES" : "NO");
+	gc->DrawText(x + Font->TextWidth(Items[4]->text) + 12, y + itemHeight * 4,
+		povLookAround? "YES" : "NO");
 }
 
 //---------------------------------------------------------------------------
@@ -2207,7 +2304,7 @@ static void SCLoadGame(int option)
 		return;
 	}
 	// Update save game menu position.
-	SaveMenu.oldItPos = option;
+	CurrentMenu->oldItPos = option;
 
 	G_LoadGame(option);
 	MN_DeactivateMenu();
@@ -2250,9 +2347,9 @@ static void SCSaveGame(int option)
 	{
 		G_SaveGame(option, SlotText[option]);
 		FileMenuKeySteal = false;
-		MN_DeactivateMenu();
 		// Update save game menu position.
-		LoadMenu.oldItPos = option;
+		CurrentMenu->oldItPos = option;
+		MN_DeactivateMenu();
 	}
 	//BorderNeedRefresh = true;
 	gi.Update(DDUF_BORDER);
@@ -2281,36 +2378,36 @@ static void SCClass(int option)
 	switch(MenuPClass)
 	{
 		case PCLASS_FIGHTER:
-			SkillMenu.x = 120;
-			SkillItems[0].text = "SQUIRE";
-			SkillItems[1].text = "KNIGHT";
-			SkillItems[2].text = "WARRIOR";
-			SkillItems[3].text = "BERSERKER";
-			SkillItems[4].text = "TITAN";
+			Menus[MENU_SKILL]->x = 120;
+			Menus[MENU_SKILL]->Items[0]->text = "SQUIRE";
+			Menus[MENU_SKILL]->Items[1]->text = "KNIGHT";
+			Menus[MENU_SKILL]->Items[2]->text = "WARRIOR";
+			Menus[MENU_SKILL]->Items[3]->text = "BERSERKER";
+			Menus[MENU_SKILL]->Items[4]->text = "TITAN";
 			break;
 		case PCLASS_CLERIC:
-			SkillMenu.x = 116;
-			SkillItems[0].text = "ALTAR BOY";
-			SkillItems[1].text = "ACOLYTE";
-			SkillItems[2].text = "PRIEST";
-			SkillItems[3].text = "CARDINAL";
-			SkillItems[4].text = "POPE";
+			Menus[MENU_SKILL]->x = 116;
+			Menus[MENU_SKILL]->Items[0]->text = "ALTAR BOY";
+			Menus[MENU_SKILL]->Items[1]->text = "ACOLYTE";
+			Menus[MENU_SKILL]->Items[2]->text = "PRIEST";
+			Menus[MENU_SKILL]->Items[3]->text = "CARDINAL";
+			Menus[MENU_SKILL]->Items[4]->text = "POPE";
 			break;
 		case PCLASS_MAGE:
-			SkillMenu.x = 112;
-			SkillItems[0].text = "APPRENTICE";
-			SkillItems[1].text = "ENCHANTER";
-			SkillItems[2].text = "SORCERER";
-			SkillItems[3].text = "WARLOCK";
-			SkillItems[4].text = "ARCHIMAGE";
+			Menus[MENU_SKILL]->x = 112;
+			Menus[MENU_SKILL]->Items[0]->text = "APPRENTICE";
+			Menus[MENU_SKILL]->Items[1]->text = "ENCHANTER";
+			Menus[MENU_SKILL]->Items[2]->text = "SORCERER";
+			Menus[MENU_SKILL]->Items[3]->text = "WARLOCK";
+			Menus[MENU_SKILL]->Items[4]->text = "ARCHIMAGE";
 			break;
 		case PCLASS_CORVUS:
-			SkillMenu.x = 112;
-			SkillItems[0].text = "VERY EASY";
-			SkillItems[1].text = "EASY";
-			SkillItems[2].text = "MEDIUM";
-			SkillItems[3].text = "HARD";
-			SkillItems[4].text = "VERY HARD";
+			Menus[MENU_SKILL]->x = 112;
+			Menus[MENU_SKILL]->Items[0]->text = "VERY EASY";
+			Menus[MENU_SKILL]->Items[1]->text = "EASY";
+			Menus[MENU_SKILL]->Items[2]->text = "MEDIUM";
+			Menus[MENU_SKILL]->Items[3]->text = "HARD";
+			Menus[MENU_SKILL]->Items[4]->text = "VERY HARD";
 	}
 	SetMenu(MENU_SKILL);
 }
@@ -2750,8 +2847,6 @@ int H2_PrivilegedResponder(event_t *event)
 boolean MN_Responder(event_t *event)
 {
 	int key;
-	int i;
-	MenuItem_t *item;
 	extern boolean automapactive;
 	extern void H2_StartTitle(void);
 	char *textBuffer;
@@ -3055,137 +3150,11 @@ boolean MN_Responder(event_t *event)
 	}
 	if(!FileMenuKeySteal)
 	{
-		int firstVI = CurrentMenu->firstItem, lastVI = firstVI + CurrentMenu->numVisItems-1;
-		item = &CurrentMenu->items[CurrentItPos];
-		switch(key)
-		{
-			case DDKEY_DOWNARROW:
-				do
-				{
-					if(CurrentItPos+1 > lastVI)//CurrentMenu->itemCount-1)
-					{
-						CurrentItPos = firstVI;//0;
-					}
-					else
-					{
-						CurrentItPos++;
-					}
-				} while(CurrentMenu->items[CurrentItPos].type == ITT_EMPTY);
-				S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
-				return(true);
-				break;
-			case DDKEY_UPARROW:
-				do
-				{
-					if(CurrentItPos <= firstVI)//0)
-					{
-						CurrentItPos = lastVI;//CurrentMenu->itemCount-1;
-					}
-					else
-					{
-						CurrentItPos--;
-					}
-				} while(CurrentMenu->items[CurrentItPos].type == ITT_EMPTY);
-				S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
-				return(true);
-				break;
-			case DDKEY_LEFTARROW:
-				if(item->type == ITT_LRFUNC && item->func != NULL)
-				{
-					item->func(LEFT_DIR);
-					S_StartSound(NULL, SFX_PICKUP_KEY);
-				}
-				else
-				{
-					// Let's try to change to the previous page.
-					if(CurrentMenu->firstItem - CurrentMenu->numVisItems >= 0)
-					{
-						CurrentMenu->firstItem -= CurrentMenu->numVisItems;
-						CurrentItPos -= CurrentMenu->numVisItems;
-						// Make a sound, too.
-						S_StartSound(NULL, SFX_PICKUP_KEY);
-					}
-				}
-				return(true);
-				break;
-			case DDKEY_RIGHTARROW:
-				if(item->type == ITT_LRFUNC && item->func != NULL)
-				{
-					item->func(RIGHT_DIR);
-					S_StartSound(NULL, SFX_PICKUP_KEY);
-				}
-				else
-				{
-					// Move on to the next page, if possible.
-					if(CurrentMenu->firstItem + CurrentMenu->numVisItems < 
-						CurrentMenu->itemCount)
-					{
-						CurrentMenu->firstItem += CurrentMenu->numVisItems;
-						CurrentItPos += CurrentMenu->numVisItems;
-						if(CurrentItPos > CurrentMenu->itemCount-1)
-							CurrentItPos = CurrentMenu->itemCount-1;
-						S_StartSound(NULL, SFX_PICKUP_KEY);						
-					}
-				}
-				return(true);
-				break;
-			case DDKEY_ENTER:
-				if(item->type == ITT_SETMENU)
-				{
-					if(item->func != NULL)	
-					{
-						item->func(item->option);
-					}
-					SetMenu(item->menu);
-				}
-				else if(item->func != NULL)
-				{
-					CurrentMenu->oldItPos = CurrentItPos;
-					if(item->type == ITT_LRFUNC)
-					{
-						item->func(RIGHT_DIR);
-					}
-					else if(item->type == ITT_EFUNC)
-					{
-						item->func(item->option);
-					}
-				}
-				S_StartSound(NULL, SFX_DOOR_LIGHT_CLOSE);
-				return(true);
-				break;
-			case DDKEY_ESCAPE:  //getting out of the menu
-				MN_DeactivateMenu();
-				return(true);
-			case DDKEY_BACKSPACE:
-				S_StartSound(NULL, SFX_PICKUP_KEY);
-				if(CurrentMenu->prevMenu == MENU_NONE)
-				{
-					MN_DeactivateMenu();
-				}
-				else
-				{
-					SetMenu(CurrentMenu->prevMenu);
-				}
-				return(true);
-			default:
-				for(i = firstVI; i <= lastVI/*CurrentMenu->itemCount*/; i++)
-				{
-					if(CurrentMenu->items[i].text && CurrentMenu->items[i].type != ITT_EMPTY)
-					{
-						if(toupper(key)
-							== toupper(CurrentMenu->items[i].text[0]))
-						{
-							CurrentItPos = i;
-							return(true);
-						}
-					}
-				}
-				break;
-		}
-		return(false);
+		return CurrentMenu->KeyPressed(key);
 	}
 	else
 	{ // Editing file names
+		KMenuItem_t *item;
 		textBuffer = &SlotText[currentSlot][slotptr];
 		if(key == DDKEY_BACKSPACE)
 		{
@@ -3208,7 +3177,7 @@ boolean MN_Responder(event_t *event)
 		if(key == DDKEY_ENTER)
 		{
 			SlotText[currentSlot][slotptr] = 0; // clear the cursor
-			item = &CurrentMenu->items[CurrentItPos];
+			item = CurrentMenu->Items[CurrentItPos];
 			CurrentMenu->oldItPos = CurrentItPos;
 			if(item->type == ITT_EFUNC)
 			{
@@ -3251,6 +3220,129 @@ boolean MN_Responder(event_t *event)
 	return(false);
 }
 
+//---------------------------------------------------------------------------
+//
+//	Menu_t::KeyPressed
+//
+//---------------------------------------------------------------------------
+
+bool Menu_t::KeyPressed(int key)
+{
+	int i;
+	KMenuItem_t *item;
+
+	item = Items[CurrentItPos];
+	switch (key)
+	{
+	case DDKEY_DOWNARROW:
+		do
+		{
+			if (CurrentItPos + 1 > itemCount - 1)
+			{
+				CurrentItPos = 0;
+			}
+			else
+			{
+				CurrentItPos++;
+			}
+		} while(Items[CurrentItPos]->type == ITT_EMPTY);
+		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
+		return true;
+
+	case DDKEY_UPARROW:
+		do
+		{
+			if (CurrentItPos <= 0)
+			{
+				CurrentItPos = itemCount - 1;
+			}
+			else
+			{
+				CurrentItPos--;
+			}
+		} while (Items[CurrentItPos]->type == ITT_EMPTY);
+		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
+		return true;
+
+	case DDKEY_LEFTARROW:
+		if (item->type == ITT_LRFUNC && item->func != NULL)
+		{
+			item->func(LEFT_DIR);
+			S_StartSound(NULL, SFX_PICKUP_KEY);
+		}
+		return true;
+
+	case DDKEY_RIGHTARROW:
+		if (item->type == ITT_LRFUNC && item->func != NULL)
+		{
+			item->func(RIGHT_DIR);
+			S_StartSound(NULL, SFX_PICKUP_KEY);
+		}
+		return true;
+
+	case DDKEY_ENTER:
+		if (item->type == ITT_SETMENU)
+		{
+			if (item->func != NULL)	
+			{
+				item->func(item->option);
+			}
+			SetMenu(item->menu);
+		}
+		else if (item->func != NULL)
+		{
+			oldItPos = CurrentItPos;
+			if (item->type == ITT_LRFUNC)
+			{
+				item->func(RIGHT_DIR);
+			}
+			else if (item->type == ITT_EFUNC)
+			{
+				item->func(item->option);
+			}
+		}
+		S_StartSound(NULL, SFX_DOOR_LIGHT_CLOSE);
+		return true;
+
+	case DDKEY_ESCAPE:  //getting out of the menu
+		MN_DeactivateMenu();
+		return true;
+
+	case DDKEY_BACKSPACE:
+		S_StartSound(NULL, SFX_PICKUP_KEY);
+		if (prevMenu == MENU_NONE)
+		{
+			MN_DeactivateMenu();
+		}
+		else
+		{
+			SetMenu(prevMenu);
+		}
+		return true;
+
+	default:
+		for (i = 0; i < itemCount; i++)
+		{
+			if (Items[i]->text && Items[i]->type != ITT_EMPTY)
+			{
+				if (toupper(key) == toupper(Items[i]->text[0]))
+				{
+					CurrentItPos = i;
+					return true;
+				}
+			}
+		}
+		break;
+	}
+	return Super::KeyPressed(key);
+}
+
+//---------------------------------------------------------------------------
+//
+//	CCmdMenuAction
+//
+//---------------------------------------------------------------------------
+
 int CCmdMenuAction(int argc, char **argv)
 {
 	// Can we get out of here early?
@@ -3270,7 +3362,7 @@ int CCmdMenuAction(int argc, char **argv)
 			fadingOut = false;
 			FileMenuKeySteal = false;
 			MenuTime = 0;
-			CurrentMenu = &SaveMenu;
+			CurrentMenu = Menus[MENU_SAVE];
 			CurrentItPos = CurrentMenu->oldItPos;
 			if(!netgame && !demoplayback)
 			{
@@ -3288,7 +3380,7 @@ int CCmdMenuAction(int argc, char **argv)
 			fadingOut = false;
 			FileMenuKeySteal = false;
 			MenuTime = 0;
-			CurrentMenu = &LoadMenu;
+			CurrentMenu = Menus[MENU_LOAD];
 			CurrentItPos = CurrentMenu->oldItPos;
 			if(!netgame && !demoplayback)
 			{
@@ -3304,7 +3396,7 @@ int CCmdMenuAction(int argc, char **argv)
 		fadingOut = false;
 		FileMenuKeySteal = false;
 		MenuTime = 0;
-		CurrentMenu = &Options2Menu;
+		CurrentMenu = Menus[MENU_OPTIONS2];
 		CurrentItPos = CurrentMenu->oldItPos;
 		if(!netgame && !demoplayback)
 		{
@@ -3331,7 +3423,7 @@ int CCmdMenuAction(int argc, char **argv)
 				fadingOut = false;
 				FileMenuKeySteal = false;
 				MenuTime = 0;
-				CurrentMenu = &SaveMenu;
+				CurrentMenu = Menus[MENU_SAVE];
 				CurrentItPos = CurrentMenu->oldItPos;
 				if(!netgame && !demoplayback)
 				{
@@ -3380,7 +3472,7 @@ int CCmdMenuAction(int argc, char **argv)
 				fadingOut = false;
 				FileMenuKeySteal = false;
 				MenuTime = 0;
-				CurrentMenu = &LoadMenu;
+				CurrentMenu = Menus[MENU_LOAD];
 				CurrentItPos = CurrentMenu->oldItPos;
 				if(!netgame && !demoplayback)
 				{
@@ -3464,7 +3556,7 @@ void MN_ActivateMenu(void)
 	FileMenuKeySteal = false;
 	MenuTime = 0;
 	fadingOut = false;
-	CurrentMenu = &MainMenu;
+	CurrentMenu = Menus[MENU_MAIN];
 	CurrentItPos = CurrentMenu->oldItPos;
 	if(!netgame && !demoplayback)
 	{

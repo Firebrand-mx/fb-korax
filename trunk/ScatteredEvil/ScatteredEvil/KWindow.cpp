@@ -11,34 +11,91 @@
 #include "h2def.h"
 #include "mn_def.h"
 
+IMPLEMENT_CLASS(KWindow);
+
 //==========================================================================
 //
 //	KWindow::KWindow
 //
 //==========================================================================
 
-KWindow::KWindow(KWindow *InParent) : 
-	Parent(InParent), FirstChild(NULL), LastChild(NULL), 
-	PrevSibling(NULL), NextSibling(NULL)
+KWindow::KWindow()
 {
-	if (Parent)
-	{
-		Parent->AddChild(this);
-	}
+	bIsVisible = true;
+	Font = KCanvas::SmallFont;
 }
 
 //==========================================================================
 //
-//	KWindow::~KWindow
+//
 //
 //==========================================================================
 
-KWindow::~KWindow()
+void KWindow::Init(KWindow *AParent)
 {
+	Parent = AParent;
+	if (Parent)
+	{
+		Parent->AddChild(this);
+	}
+	WinGC = Spawn<KGC>();
+	ClipTree();
+	InitWindow();
+}
+
+//==========================================================================
+//
+//	KWindow::Destroy
+//
+//==========================================================================
+
+void KWindow::Destroy()
+{
+	KillAllChildren();
 	if (Parent)
 	{
 		Parent->RemoveChild(this);
 	}
+	if (WinGC)
+		WinGC->Destroy();
+	Super::Destroy();
+}
+
+//==========================================================================
+//
+//	KWindow::SetVisibility
+//
+//==========================================================================
+
+void KWindow::SetVisibility(bool NewVisibility)
+{
+	bIsVisible = NewVisibility;
+}
+
+//==========================================================================
+//
+//	KWindow::Move
+//
+//==========================================================================
+
+void KWindow::Move(float NewX, float NewY)
+{
+	X = NewX;
+	Y = NewY;
+	ClipTree();
+}
+
+//==========================================================================
+//
+//	KWindow::Resize
+//
+//==========================================================================
+
+void KWindow::Resize(float NewWidth, float NewHeight)
+{
+	Width = NewWidth;
+	Height = NewHeight;
+	ClipTree();
 }
 
 //==========================================================================
@@ -60,6 +117,7 @@ void KWindow::AddChild(KWindow *NewChild)
 		FirstChild = NewChild;
 	}
 	LastChild = NewChild;
+	ChildAdded(NewChild);
 }
 
 //==========================================================================
@@ -89,6 +147,21 @@ void KWindow::RemoveChild(KWindow *InChild)
 	InChild->PrevSibling = NULL;
 	InChild->NextSibling = NULL;
 	InChild->Parent = NULL;
+	ChildRemoved(InChild);
+}
+
+//==========================================================================
+//
+//	KWindow::KillAllChildren
+//
+//==========================================================================
+
+void KWindow::KillAllChildren()
+{
+	while (FirstChild)
+	{
+		FirstChild->Destroy();
+	}
 }
 
 //==========================================================================
@@ -99,12 +172,58 @@ void KWindow::RemoveChild(KWindow *InChild)
 
 void KWindow::DrawTree(KCanvas *Canvas)
 {
-	KGC dummyGC;
-
-	DrawWindow(&dummyGC);
+	if (!bIsVisible || !ClipRect.HasArea())
+	{
+		//	Nowhere to draw.
+		return;
+	}
+	WinGC->SetCanvas(Canvas);
+	WinGC->SetClipRect(ClipRect);
+	WinGC->SetFont(Font);
+	DrawWindow(WinGC);
 	for (KWindow *c = FirstChild; c; c = c->NextSibling)
 	{
 		c->DrawTree(Canvas);
 	}
-	PostDrawWindow(&dummyGC);
+	WinGC->SetClipRect(ClipRect);
+	PostDrawWindow(WinGC);
+}
+
+//==========================================================================
+//
+//	KWindow::ClipTree
+//
+//==========================================================================
+
+void KWindow::ClipTree()
+{
+	if (Parent)
+	{
+		ClipRect = KClipRect(Parent->ClipRect.OriginX + X, 
+			Parent->ClipRect.OriginY + Y, Width, Height);
+		ClipRect.Intersect(Parent->ClipRect);
+	}
+	else
+	{
+		ClipRect = KClipRect(X, Y, Width, Height);
+	}
+	for (KWindow *c = FirstChild; c; c = c->NextSibling)
+	{
+		c->ClipTree();
+	}
+}
+
+//==========================================================================
+//
+//	KWindow::StaticCreateWindow
+//
+//==========================================================================
+
+KWindow *KWindow::StaticCreateWindow(KClass *InClass, KWindow *InParent)
+{
+	KWindow *Win;
+
+	Win = (KWindow *)StaticSpawnObject(InClass);
+	Win->Init(InParent);
+	return Win;
 }
