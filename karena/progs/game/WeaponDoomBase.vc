@@ -1,0 +1,111 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponDoomBase : Weapon
+	abstract;
+
+//===========================================================================
+//
+//  A_GunFlash
+//
+//===========================================================================
+
+void A_GunFlash(int FlashState)
+{
+	Player.MO.SetState(Player.MO.MissileState);
+	Player.SetPsprite(ps_flash, FlashState);
+}
+
+//===========================================================================
+//
+//  A_Light1
+//
+//===========================================================================
+
+void A_Light1(void)
+{
+	Player.ExtraLight = 1;
+}
+
+//===========================================================================
+//
+//  A_Light2
+//
+//===========================================================================
+
+void A_Light2(void)
+{
+	Player.ExtraLight = 2;
+}
+
+//===========================================================================
+//
+//  GunShot
+//
+//===========================================================================
+
+void GunShot(Actor A, int accurate, TVec dir)
+{
+	int damage;
+
+	//  Make a copy of angles because inacurate shoot will modify them
+	if (!accurate)
+	{
+		TAVec angles;
+
+		VectorAngles(&dir, &angles);
+		angles.yaw = AngleMod360(angles.yaw +
+			(Random() - Random()) * 45.0 / 8.0);
+		AngleVector(&angles, &dir);
+	}
+
+	damage = 5 * (P_Random() % 3 + 1);
+
+	if (int_mod) {
+		damage = damage * Player.intelligence / 10;
+	}
+
+	PuffType = DoomPuff;
+
+	LineAttack(A, dir, MISSILERANGE, damage);
+}
+
+defaultproperties
+{
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:48:33  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:20  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

@@ -1,0 +1,172 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponMace : Weapon;
+
+//===========================================================================
+//
+//	A_FireMacePL1B
+//
+//===========================================================================
+
+void A_FireMacePL1B(void)
+{
+	Actor ball;
+	float angle;
+
+	UseWeaponMana();
+	ball = Spawn(MaceFX2, Player.MO.Origin +
+		vector(0.0, 0.0, 28.0 - Player.MO.FloorClip));
+	ball.Velocity.z =
+		(2.0 + 173.0 * -tan(Player.MO.Angles.pitch) / 32.0) * 35.0;
+	angle = Player.MO.Angles.yaw;
+	if (int_mod)
+	{
+		ball.MissileDamage = ball.MissileDamage *Player.intelligence/10;
+	}
+	ball.Instigator = Player.MO;
+	ball.Angles.yaw = angle;
+	ball.Origin.z += 173.0 * -tan(Player.MO.Angles.pitch) / 16.0;
+	ball.Velocity.x = Player.MO.Velocity.x / 2.0 + ball.Speed * cos(angle);
+	ball.Velocity.y = Player.MO.Velocity.y / 2.0 + ball.Speed * sin(angle);
+	ball.PlaySound('MaceFire', CHAN_WEAPON);
+	ball.CheckMissileSpawn();
+}
+
+//===========================================================================
+//
+//  A_FireMacePL1
+//
+//===========================================================================
+
+void A_FireMacePL1(void)
+{
+	Actor ball;
+
+	if (P_Random() < 28)
+	{
+		A_FireMacePL1B();
+		return;
+	}
+	UseWeaponMana();
+	SX = Random() * 4.0 - 2.0;
+	SY = WEAPONTOP + Random() * 4.0;
+	ball = Player.
+	SpawnPlayerMissileAngle(MaceFX1,
+		AngleMod360(Player.MO.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
+	if (ball)
+	{
+		if (int_mod)
+		{
+			ball.MissileDamage = ball.MissileDamage *Player.intelligence/10;
+		}
+		ball.Instigator = Player.MO;
+		ball._Special1 = 16;	// tics till dropoff
+	}
+}
+
+//===========================================================================
+//
+//  A_FireMacePL2
+//
+//===========================================================================
+
+void A_FireMacePL2(void)
+{
+	Actor A;
+
+	UseWeaponMana();
+	A = Player.SpawnPlayerMissile(MaceFX4);
+	if (A)
+	{
+		A.Instigator = Player.MO;
+		if (int_mod)
+		{
+			A.MissileDamage = A.MissileDamage *Player.intelligence/10;
+		}
+		A.Velocity.x += Player.MO.Velocity.x;
+		A.Velocity.y += Player.MO.Velocity.y;
+		A.Velocity.z =
+			(2.0 + 173.0 * -tan(Player.MO.Angles.pitch) / 32.0) * 35.0;
+		if (linetarget)
+		{
+			A.Enemy = linetarget;
+		}
+	}
+	Player.MO.PlaySound('MaceFire', CHAN_WEAPON);
+}
+
+__states__
+{
+	S_MACEREADY('MACE', 0, 1.0 / 35.0, S_MACEREADY) { A_WeaponReady(); }
+	S_MACEDOWN('MACE', 0, 1.0 / 35.0, S_MACEDOWN) { A_Lower(); }
+	S_MACEUP('MACE', 0, 1.0 / 35.0, S_MACEUP) { A_Raise(); }
+	S_MACEATK1_1('MACE', 1, 4.0 / 35.0, S_MACEATK1_2) { }
+	S_MACEATK1_2('MACE', 2, 3.0 / 35.0, S_MACEATK1_3) { A_FireMacePL1(); }
+	S_MACEATK1_3('MACE', 3, 3.0 / 35.0, S_MACEATK1_4) { A_FireMacePL1(); }
+	S_MACEATK1_4('MACE', 4, 3.0 / 35.0, S_MACEATK1_5) { A_FireMacePL1(); }
+	S_MACEATK1_5('MACE', 5, 3.0 / 35.0, S_MACEATK1_6) { A_FireMacePL1(); }
+	S_MACEATK1_6('MACE', 2, 4.0 / 35.0, S_MACEATK1_7) { A_ReFire(); }
+	S_MACEATK1_7('MACE', 3, 4.0 / 35.0, S_MACEATK1_8) { }
+	S_MACEATK1_8('MACE', 4, 4.0 / 35.0, S_MACEATK1_9) { }
+	S_MACEATK1_9('MACE', 5, 4.0 / 35.0, S_MACEATK1_10) { }
+	S_MACEATK1_10('MACE', 1, 4.0 / 35.0, S_MACEREADY) { }
+	S_MACEATK2_1('MACE', 1, 4.0 / 35.0, S_MACEATK2_2) { }
+	S_MACEATK2_2('MACE', 3, 4.0 / 35.0, S_MACEATK2_3) { A_FireMacePL2(); }
+	S_MACEATK2_3('MACE', 1, 4.0 / 35.0, S_MACEATK2_4) { }
+	S_MACEATK2_4('MACE', 0, 8.0 / 35.0, S_MACEREADY) { A_ReFire(); }
+}
+
+/* FIFTH */
+defaultproperties
+{
+	Mana = MANA_1;
+	manause = 7;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+
+	UpState = S_MACEUP;
+	DownState = S_MACEDOWN;
+	ReadyState = S_MACEREADY;
+	AttackState = S_MACEATK1_1;
+	HoldAttackState = S_MACEATK1_2;
+	PSpriteSY = 15.0;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.2  2003/11/12 16:49:44  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:23  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************

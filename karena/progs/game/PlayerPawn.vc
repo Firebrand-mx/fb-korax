@@ -1,0 +1,133 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerPawn : Pawn
+	abstract;
+
+int AttackEndState;
+
+name GruntSound;
+name NormalDeathSound;
+name CrazyDeathSound;
+name Extreme1DeathSound;
+name Extreme2DeathSound;
+name Extreme3DeathSound;
+name FailedUseSound;
+name PuzzleFailSound;
+
+int InitialStrength;
+int InitialWisdom;
+int InitialDexterity;
+int InitialConstitution;
+int InitialIntelligence;
+
+//===========================================================================
+//
+//  RoughCheckThing
+//
+//	Minotaur looking around player
+//
+//===========================================================================
+
+bool RoughCheckThing(Entity Other)
+{
+	Actor link = Actor(Other);
+	
+	if (!bIsPlayer)
+	{
+		return false;
+	}
+	if (!link.bCountKill && (!link.bIsPlayer || link == self))
+	{
+		return false;
+	}
+	if (!link.bShootable)
+	{
+		return false;
+	}
+	if (link.bDormant)
+	{
+		return false;
+	}
+	if (link.IsA('Minotaur') && link.Instigator == self)
+	{
+		return false;
+	}
+	if (netgame && !deathmatch && link.bIsPlayer)
+	{
+		return false;
+	}
+	if (CanSee(link))
+	{
+		return true;
+	}
+	return false;
+}
+
+//============================================================================
+//
+//  FireDeath
+//
+//============================================================================
+
+bool FireDeath(void)
+{
+	//Shouldn't be called except for not so fiery deaths
+	return false;
+}
+
+
+defaultproperties
+{
+	ReactionCount = 0;
+	bCountKill = false;
+	bActivateMCross = false;
+	bCheckNoMonsters = false;
+	bDropOff = true;
+	bWindThrust = true;
+	bSlide = true;
+	FailedUseSound = 'None';
+	PuzzleFailSound = 'None';
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.4  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.3  2003/07/11 16:47:39  dj_jl
+//  Made array of players with pointers
+//
+//  Revision 1.2  2003/03/08 12:41:44  dj_jl
+//  Removing class pointers.
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
