@@ -90,6 +90,11 @@ int pic_shld[16];
 
 int pic_paused;
 
+// For the Fullscreen stuff
+int pic_health;
+int pic_armor2;
+int pic_arti[NUMARTIFACTS];
+
 /*string arti_pic_names[NUMARTIFACTS] = {
 	"ARTIBOX",	// none
 	"ARTIINVU",	// invulnerability
@@ -382,7 +387,12 @@ void SB_StartMap(void)
 		pic_shld[i] = R_RegisterPic(Name, PIC_PATCH);
 	}
 
+	//  PAUSED IMAGE
 	pic_paused = R_RegisterPic("PAUSED", PIC_PATCH);
+	
+	//  FULLSCREEN ICONS FOR HEALTH AND ARMOR
+	pic_health = R_RegisterPic("PTN1A0", PIC_PATCH);
+	pic_armor2 = R_RegisterPic("ARM1A0", PIC_PATCH);
 }
 
 //==========================================================================
@@ -555,7 +565,7 @@ void SB_DrawMainBar(void)
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber9(40, 176, cl->Frags, 0);
 		*/
-		SB_DrawNumber9(30, 5, cl->Frags, 0);
+		SB_DrawNumber9(15, 5, cl->Frags, 0);
 		/*if (deathmatch == 2)
 		{
 			int mystuff = 0;
@@ -765,7 +775,7 @@ void SB_DrawMainBar(void)
 	}*/
 
 	// Armor
-	SB_DrawNumber9(250, 176, cl->armorpoints/*ftoi((AutoArmorSave[sb_pclass]
+	SB_DrawNumber9(253, 176, cl->armorpoints/*ftoi((AutoArmorSave[sb_pclass]
 			+ cl->armorpoints[ARMOR_ARMOR]
 			+ cl->armorpoints[ARMOR_SHIELD]
 			+ cl->armorpoints[ARMOR_HELMET]
@@ -780,7 +790,7 @@ void SB_DrawMainBar(void)
 
 void SB_DrawKeyBar(void)
 {
-	int i;
+/*	int i;
 	int num;
 
 	SB_DrawBackground();
@@ -797,7 +807,7 @@ void SB_DrawKeyBar(void)
 	}
 
 	//  Armor
-/*	for (i = 0; i < NUMARMOR; i++)
+	for (i = 0; i < NUMARMOR; i++)
 	{
 		if (!cl->armorpoints[i])
 		{
@@ -819,6 +829,248 @@ void SB_DrawKeyBar(void)
 		}
 		R_DrawPic2(150 + 31 * i, 164, pic_armor[i], num);
 	}*/
+// NO CHANGE FOR THE STATBAR IN AUTOMAP MODE
+	int sb_mana1;
+	int sb_mana2;
+	int sb_mana3;
+	int sb_mana4;
+	int sb_mana5;
+	int sb_manaVial1;
+	int sb_manaVial2;
+	int sb_manaVial3;
+	int sb_manaVial4;
+	int sb_manaVial5;
+	int readyweapon;
+
+	SB_DrawBackground();
+	R_DrawPic(38, 162, pic_statbar);
+
+//[Korax]
+	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
+	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
+	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);
+
+	// Frags / health
+	if (deathmatch)
+	{
+/*		R_DrawPic(38, 162, pic_kills);
+		SB_DrawNumber9(40, 176, cl->Frags, 0);
+		*/
+		SB_DrawNumber9(15, 5, cl->Frags, 0);
+		/*if (deathmatch == 2)
+		{
+			int mystuff = 0;
+			int i;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+					if (!scores[i].bActive) continue;
+				string col = Info_ValueForKey(ARR2STR(scores[i].userinfo), "color");
+				if (!col || col=="")
+				{
+					continue;
+				}
+				int mcol = atoi(col);
+				if (mcol == sb_color)
+				{
+					int j;
+					for (j = 0; j < MAXPLAYERS; j++)
+					{
+						mystuff+= scores[i].frags[j];
+					}
+				}
+			}
+			SB_DrawNumber9(50, 5, mystuff, 0);
+		}*/
+	}
+//	else
+	{
+		if (cl->health >= 25)
+		{
+			SB_DrawNumber9(40, 176, cl->health, 0);
+		}
+		else
+		{
+			SB_DrawNumber9(40, 176, cl->health, 1);
+		}
+	}
+
+	//  Mana
+	if (cl->mana[0] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana1 = 0;
+	}
+	else
+	{
+		sb_mana1 = 1;
+	}
+	if (cl->mana[1] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana2 = 0;
+	}
+	else
+	{
+		sb_mana2 = 1;
+	}
+	if (cl->mana[2] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana3 = 0;
+	}
+	else
+	{
+		sb_mana3 = 1;
+	}
+	if (cl->mana[3] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana4 = 0;
+		sb_manaVial4 = 0;
+	}
+	else
+	{
+		sb_mana4 = 1;
+		sb_manaVial4 = 1;
+	}
+	if (cl->mana[4] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana5 = 0;
+		sb_manaVial5 = 0;
+	}
+	else
+	{
+		sb_mana5 = 1;
+		sb_manaVial5 = 1;
+	}
+	// Update mana graphics based upon mana count/weapon type
+	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
+	if (readyweapon == WP_FIRST)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+		sb_manaVial1 = 0;
+		sb_manaVial2 = 0;
+		sb_manaVial3 = 0;
+	}
+	else if (readyweapon == WP_SECOND)
+	{
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+		sb_manaVial1 = 1;
+		sb_manaVial2 = 0;
+		sb_manaVial3 = 0;
+	}
+	else if (readyweapon == WP_THIRD)
+	{
+		sb_mana1 = 0;
+		sb_mana3 = 0;
+		sb_manaVial1 = 0;
+		sb_manaVial2 = 1;
+		sb_manaVial3 = 0;
+	}
+	else if (readyweapon == WP_FOURTH)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+		sb_manaVial1 = 0;
+		sb_manaVial2 = 0;
+		sb_manaVial3 = 1;
+	}
+	else if (readyweapon == WP_FIFTH)
+	{
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+		sb_manaVial1 = 1;
+		sb_manaVial2 = 0;
+		sb_manaVial3 = 0;
+	}
+	else if (readyweapon == WP_SIXTH)
+	{
+		sb_mana1 = 0;
+		sb_mana3 = 0;
+		sb_manaVial1 = 0;
+		sb_manaVial2 = 1;
+		sb_manaVial3 = 0;
+	}
+	else if (readyweapon == WP_SEVENTH)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+		sb_manaVial1 = 0;
+		sb_manaVial2 = 0;
+		sb_manaVial3 = 1;
+	}
+	else
+	{
+		sb_manaVial1 = 1;
+		sb_manaVial2 = 1;
+		sb_manaVial3 = 1;
+	}
+
+	SB_DrawMNumber(79, 181, cl->mana[0]);
+	SB_DrawMNumber(109, 181, cl->mana[1]);
+	SB_DrawMNumber(140, 181, cl->mana[2]);
+	SB_DrawMNumber(171, 181, cl->mana[3]);
+	SB_DrawMNumber(202, 181, cl->mana[4]);
+	R_DrawPic(77, 164, pic_manadim1[sb_mana1]);
+	R_DrawPic(107, 164, pic_manadim2[sb_mana2]);//+30
+	R_DrawPic(138, 164, pic_manadim3[sb_mana3]);//+31
+	R_DrawPic(169, 164, pic_manadim4[sb_mana4]);//+31
+	R_DrawPic(200, 164, pic_manadim5[sb_mana5]);//+31
+	R_DrawPic(94, 164, pic_manavial1[sb_manaVial1]);
+	R_DrawPic(124, 164, pic_manavial2[sb_manaVial2]);
+	R_DrawPic(155, 164, pic_manavial3[sb_manaVial3]);
+	R_DrawPic(186, 164, pic_manavial4[sb_manaVial4]);
+	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
+	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / MAX_MANA, 31);
+	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / MAX_MANA, 31);
+	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
+	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
+	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
+
+	// Ready artifact
+/*	if (cl->ArtifactFlash)
+	{
+		R_DrawPic(148, 164, pic_artiflash[cl->ArtifactFlash]);
+	}
+	else if (cl->readyArtifact > 0)
+	{
+		R_DrawPic(143, 163, pic_arti[cl->readyArtifact]);
+		SB_DrawINumber(166, 184, cl->inventory[cl->inv_ptr].count);
+	}
+*/
+	// Weapon Pieces
+	//[Korax]
+	/*if ((cl->stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
+	{
+		R_DrawPic(190, 162, pic_wpslot);
+		if (cl->stats.flags & SBF_PIECE1)
+		{
+			R_DrawPic(wppiecex[0], 162, pic_wppiece[0]);
+		}
+		if (cl->stats.flags & SBF_PIECE2)
+		{
+			R_DrawPic(wppiecex[1], 162, pic_wppiece[1]);
+		}
+		if (cl->stats.flags & SBF_PIECE3)
+		{
+			R_DrawPic(wppiecex[2], 162, pic_wppiece[2]);
+		}
+	}
+	else
+	{
+		R_DrawPic(190, 162, pic_wpfull);
+	}*/
+
+	// Armor
+	SB_DrawNumber9(253, 176, cl->armorpoints/*ftoi((AutoArmorSave[sb_pclass]
+			+ cl->armorpoints[ARMOR_ARMOR]
+			+ cl->armorpoints[ARMOR_SHIELD]
+			+ cl->armorpoints[ARMOR_HELMET]
+			+ cl->armorpoints[ARMOR_AMULET]) / 5.0)*/, 0);
 }
 
 //==========================================================================
@@ -868,18 +1120,30 @@ void SB_DrawFullscreenStats(void)
 {
 	int i;
 	int x;
+	int sb_mana1;
+	int sb_mana2;
+	int sb_mana3;
+	int sb_mana4;
+	int sb_mana5;
+	int readyweapon;
+
 
 	//  Health
 	SB_DrawNumber12(5, 180, cl->health);
+	R_DrawPic(62, 224, pic_health);
+
+	//  Armorpoints
+	SB_DrawNumber12(5, 160, cl->armorpoints);
+	R_DrawPic(62, 200, pic_armor2);
 
 //[Korax]
-	SB_DrawNumber9(200, 5, 0+cl->exp_level, 1);
-	SB_DrawNumber9(250, 5, 0+cl->experience, 1);
+	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
+	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
 	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);
 	//  Frags
 	if (deathmatch)
 	{
-		SB_DrawNumber9(45, 185, cl->Frags, 0);
+		SB_DrawNumber9(15, 5, cl->Frags, 0);
 	}
 
 /*	if (cl->InventoryTime)
@@ -915,6 +1179,107 @@ void SB_DrawFullscreenStats(void)
 		R_DrawPic(284, 169, pic_arti[cl->readyArtifact]);
 		SB_DrawINumber(306, 192, cl->inventory[cl->inv_ptr].count);
 	}*/
+
+
+	//  Mana Display in Fullscreen
+	if (cl->mana[0] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana1 = 0;
+	}
+	else
+	{
+		sb_mana1 = 1;
+	}
+	if (cl->mana[1] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana2 = 0;
+	}
+	else
+	{
+		sb_mana2 = 1;
+	}
+	if (cl->mana[2] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana3 = 0;
+	}
+	else
+	{
+		sb_mana3 = 1;
+	}
+	if (cl->mana[3] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana4 = 0;
+	}
+	else
+	{
+		sb_mana4 = 1;
+	}
+	if (cl->mana[4] == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana5 = 0;
+	}
+	else
+	{
+		sb_mana5 = 1;
+	}
+	// Update mana graphics based upon mana count/weapon type
+	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
+	if (readyweapon == WP_FIRST)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+	}
+	else if (readyweapon == WP_SECOND)
+	{
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+	}
+	else if (readyweapon == WP_THIRD)
+	{
+		sb_mana1 = 0;
+		sb_mana3 = 0;
+	}
+	else if (readyweapon == WP_FOURTH)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+	}
+	else if (readyweapon == WP_FIFTH)
+	{
+		sb_mana2 = 0;
+		sb_mana3 = 0;
+	}
+	else if (readyweapon == WP_SIXTH)
+	{
+		sb_mana1 = 0;
+		sb_mana3 = 0;
+	}
+	else if (readyweapon == WP_SEVENTH)
+	{
+		sb_mana1 = 0;
+		sb_mana2 = 0;
+	}
+	else
+	{
+
+	}
+
+	SB_DrawMNumber(118, 192, cl->mana[0]);
+	SB_DrawMNumber(148, 192, cl->mana[1]);
+	SB_DrawMNumber(179, 192, cl->mana[2]);
+	SB_DrawMNumber(210, 192, cl->mana[3]);
+	SB_DrawMNumber(241, 192, cl->mana[4]);
+	R_DrawPic(102, 186, pic_manadim1[sb_mana1]);
+	R_DrawPic(132, 186, pic_manadim2[sb_mana2]);//+30
+	R_DrawPic(163, 186, pic_manadim3[sb_mana3]);//+31
+	R_DrawPic(194, 186, pic_manadim4[sb_mana4]);//+31
+	R_DrawPic(225, 186, pic_manadim5[sb_mana5]);//+31
 }
 
 //==========================================================================
@@ -1016,6 +1381,7 @@ void SB_Drawer(int sb_view)
 	//  Animated icons
 	SB_DrawIcons();
 
+	//  Pause icon
 	SB_DrawPause();
 }
 
@@ -1066,6 +1432,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/01/06 14:56:38  firebrand_kh
+//  Implemented new fullscreen HUD status for health, armorpoints & mana
+//
 //  Revision 1.2  2004/11/17 16:07:52  firebrand_kh
 //  *** empty log message ***
 //
