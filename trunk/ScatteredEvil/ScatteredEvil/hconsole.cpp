@@ -152,7 +152,6 @@ ccmd_t gameCCmds[] =
 	"playdemo",		CCmdPlayDemo,			"Play a demo.",
 	"recorddemo",	CCmdRecordDemo,			"Record a demo.",
 	"viewsize",		CCmdViewSize,			"Set the view size.",
-	"sbsize",		CCmdViewSize,			"Set the status bar size.",
 	"screenshot",	CCmdScreenShot,			"Take a screenshot.",
 	"stopdemo",		CCmdStopDemo,			"Stop the currently played/recorded demo.",
 	"warp",			CCmdCheatWarp,			"Warp to a map.",
