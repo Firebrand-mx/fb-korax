@@ -49,7 +49,7 @@ KClass *KClass::FindClassChecked(const char *AName)
 	KClass *c = FindClass(AName);
 	if (!c)
 	{
-		gi.Error("KClass::FindClassChecked: Class %s not found", AName);
+		I_Error("KClass::FindClassChecked: Class %s not found", AName);
 	}
 	return c;
 }
@@ -107,7 +107,7 @@ KObject::~KObject(void)
 KObject *KObject::StaticSpawnObject(KClass *AClass)
 {
 	guard(KObject::StaticSpawnObject);
-	KObject *Obj = (KObject *)gi.Z_Malloc(AClass->ClassSize, PU_STATIC, 0);
+	KObject *Obj = (KObject *)Z_Malloc(AClass->ClassSize, PU_STATIC, 0);
 	memset(Obj, 0, AClass->ClassSize);
 	AClass->ClassConstructor(Obj);
 	Obj->Class = AClass;

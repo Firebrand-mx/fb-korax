@@ -305,7 +305,7 @@ void P_LoadACScripts(int lump)
 	acsHeader_t *header;
 	acsInfo_t *info;
 
-	header = (acsHeader_t *)gi.W_CacheLumpNum(lump, PU_LEVEL);
+	header = (acsHeader_t *)W_CacheLumpNum(lump, PU_LEVEL);
 	ActionCodeBase = (byte *)header;
 	buffer = (int *)((byte *)header+header->infoOffset);
 	ACScriptCount = *buffer++;
@@ -313,7 +313,7 @@ void P_LoadACScripts(int lump)
 	{ // Empty behavior lump
 		return;
 	}
-	ACSInfo = (acsInfo_t *)gi.Z_Malloc(ACScriptCount*sizeof(acsInfo_t), PU_LEVEL, 0);
+	ACSInfo = (acsInfo_t *)Z_Malloc(ACScriptCount*sizeof(acsInfo_t), PU_LEVEL, 0);
 	memset(ACSInfo, 0, ACScriptCount*sizeof(acsInfo_t));
 	for(i = 0, info = ACSInfo; i < ACScriptCount; i++, info++)
 	{
@@ -350,7 +350,7 @@ static void StartOpenACS(int number, int infoIndex, int *address)
 {
 	acs_t *script;
 
-	script = (acs_t *)gi.Z_Malloc(sizeof(acs_t), PU_LEVSPEC, 0);
+	script = (acs_t *)Z_Malloc(sizeof(acs_t), PU_LEVSPEC, 0);
 	memset(script, 0, sizeof(acs_t));
 	script->number = number;
 
@@ -360,7 +360,7 @@ static void StartOpenACS(int number, int infoIndex, int *address)
 	script->infoIndex = infoIndex;
 	script->ip = address;
 	script->thinker.function = (think_t)T_InterpretACS;
-	gi.AddThinker(&script->thinker);
+	P_AddThinker(&script->thinker);
 }
 
 //==========================================================================
@@ -414,7 +414,7 @@ boolean P_StartACS(int number, int map, byte *args, mobj_t *activator,
 	infoIndex = GetACSIndex(number);
 	if(infoIndex == -1)
 	{ // Script not found
-		//gi.Error("P_StartACS: Unknown script number %d", number);
+		//I_Error("P_StartACS: Unknown script number %d", number);
 		sprintf(ErrorMsg, "P_STARTACS ERROR: UNKNOWN SCRIPT %d", number);
 		P_SetMessage(&players[consoleplayer], ErrorMsg, true);
 	}
@@ -428,7 +428,7 @@ boolean P_StartACS(int number, int map, byte *args, mobj_t *activator,
 	{ // Script is already executing
 		return false;
 	}
-	script = (acs_t *)gi.Z_Malloc(sizeof(acs_t), PU_LEVSPEC, 0);
+	script = (acs_t *)Z_Malloc(sizeof(acs_t), PU_LEVSPEC, 0);
 	memset(script, 0, sizeof(acs_t));
 	script->number = number;
 	script->infoIndex = infoIndex;
@@ -442,7 +442,7 @@ boolean P_StartACS(int number, int map, byte *args, mobj_t *activator,
 		script->vars[i] = args[i];
 	}
 	*statePtr = ASTE_RUNNING;
-	gi.AddThinker(&script->thinker);
+	P_AddThinker(&script->thinker);
 	NewScript = script;
 	return true;
 }
@@ -475,7 +475,7 @@ static boolean AddToACSStore(int map, int number, byte *args)
 	{ // Append required
 		if(i == MAX_ACS_STORE)
 		{
-			gi.Error("AddToACSStore: MAX_ACS_STORE (%d) exceeded.",
+			I_Error("AddToACSStore: MAX_ACS_STORE (%d) exceeded.",
 				MAX_ACS_STORE);
 		}
 		index = i;
@@ -604,7 +604,7 @@ void T_InterpretACS(acs_t *script)
 	{
 		ACSInfo[script->infoIndex].state = ASTE_INACTIVE;
 		ScriptFinished(ACScript->number);
-		gi.RemoveThinker(&ACScript->thinker);
+		P_RemoveThinker(&ACScript->thinker);
 		return;
 	}
 	if(ACSInfo[script->infoIndex].state != ASTE_RUNNING)
@@ -628,7 +628,7 @@ void T_InterpretACS(acs_t *script)
 	{
 		ACSInfo[script->infoIndex].state = ASTE_INACTIVE;
 		ScriptFinished(ACScript->number);
-		gi.RemoveThinker(&ACScript->thinker);
+		P_RemoveThinker(&ACScript->thinker);
 	}
 }
 
@@ -1307,7 +1307,7 @@ static void ThingCount(int type, int tid)
 	}
 	else
 	{ // Count only types
-		for(think = gi.thinkercap->next; think != gi.thinkercap;
+		for(think = thinkercap.next; think != &thinkercap;
 			think = think->next)
 		{
 			if(think->function != (think_t)P_MobjThinker)
@@ -1363,7 +1363,7 @@ static int CmdChangeFloor(void)
 	int flat;
 	int sectorIndex;
 
-	flat = gi.R_FlatNumForName(ACStrings[Pop()]);
+	flat = R_FlatNumForName(ACStrings[Pop()]);
 	tag = Pop();
 	sectorIndex = -1;
 	while((sectorIndex = P_FindSectorFromTag(tag, sectorIndex)) >= 0)
@@ -1380,7 +1380,7 @@ static int CmdChangeFloorDirect(void)
 	int sectorIndex;
 
 	tag = *PCodePtr++;
-	flat = gi.R_FlatNumForName(ACStrings[*PCodePtr++]);
+	flat = R_FlatNumForName(ACStrings[*PCodePtr++]);
 	sectorIndex = -1;
 	while((sectorIndex = P_FindSectorFromTag(tag, sectorIndex)) >= 0)
 	{
@@ -1395,7 +1395,7 @@ static int CmdChangeCeiling(void)
 	int flat;
 	int sectorIndex;
 
-	flat = gi.R_FlatNumForName(ACStrings[Pop()]);
+	flat = R_FlatNumForName(ACStrings[Pop()]);
 	tag = Pop();
 	sectorIndex = -1;
 	while((sectorIndex = P_FindSectorFromTag(tag, sectorIndex)) >= 0)
@@ -1412,7 +1412,7 @@ static int CmdChangeCeilingDirect(void)
 	int sectorIndex;
 
 	tag = *PCodePtr++;
-	flat = gi.R_FlatNumForName(ACStrings[*PCodePtr++]);
+	flat = R_FlatNumForName(ACStrings[*PCodePtr++]);
 	sectorIndex = -1;
 	while((sectorIndex = P_FindSectorFromTag(tag, sectorIndex)) >= 0)
 	{
@@ -1571,7 +1571,7 @@ static int CmdEndPrintBold(void)
 
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(players[i].plr->ingame)
+		if(players[i].ingame)
 		{
 			P_SetYellowMessage(&players[i], PrintBuffer, true);
 		}
@@ -1612,7 +1612,7 @@ static int CmdPlayerCount(void)
 	count = 0;
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		count += players[i].plr->ingame;
+		count += players[i].ingame;
 	}
 	Push(count);
 	return SCRIPT_CONTINUE;
@@ -1688,7 +1688,7 @@ static int CmdAmbientSound(void)
 {
 	int volume;
 	mobj_t *mobj = NULL;	// For 3D positioning.
-	mobj_t *plrmo = players[displayplayer].plr->mo;
+	mobj_t *plrmo = players[displayplayer].mo;
 
 	volume = Pop();
 	// If we are playing 3D sounds, create a temporary source mobj
@@ -1731,7 +1731,7 @@ static int CmdSetLineTexture(void)
 	int texture;
 	int searcher;
 
-	texture = gi.R_TextureNumForName(ACStrings[Pop()]);
+	texture = R_TextureNumForName(ACStrings[Pop()]);
 	position = Pop();
 	side = Pop();
 	lineTag = Pop();
@@ -1812,7 +1812,7 @@ int CCmdScriptInfo(int argc, char **argv)
 	{
 		acsInfo_t *aptr = ACSInfo + i;
 		if(whichOne != -1 && whichOne != aptr->number) continue;
-		gi.conprintf("%d %s (a: %d, w: %d)\n", aptr->number, scriptStates[aptr->state],
+		CON_Printf("%d %s (a: %d, w: %d)\n", aptr->number, scriptStates[aptr->state],
 			aptr->argCount, aptr->waitValue);
 	}	
 	return true;

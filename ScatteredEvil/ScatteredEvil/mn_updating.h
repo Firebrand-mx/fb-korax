@@ -29,12 +29,14 @@ IMPLEMENT_CLASS(KUpdatingLevelDesc);
 //
 //==========================================================================
 
-class KUpdatingHeader:public KMenuItem_t
+class KUpdatingHeader:public KWindow
 {
-	DECLARE_CLASS(KUpdatingHeader, KMenuItem_t, 0);
+	DECLARE_CLASS(KUpdatingHeader, KWindow, 0);
 
 	KUpdatingHeader(void)
 	{
+		Width = 320;
+		Height = 10;
 		Font = KCanvas::SmallFont;
 	}
 
@@ -53,14 +55,16 @@ IMPLEMENT_CLASS(KUpdatingHeader);
 //
 //==========================================================================
 
-class KUpdatingRemaining:public KMenuItem_t
+class KUpdatingRemaining:public KWindow
 {
-	DECLARE_CLASS(KUpdatingRemaining, KMenuItem_t, 0);
+	DECLARE_CLASS(KUpdatingRemaining, KWindow, 0);
 
 	unsigned int Value;
 
 	KUpdatingRemaining(void)
 	{
+		Width = 320;
+		Height = 10;
 		Font = KCanvas::SmallFont;
 	}
 
@@ -197,14 +201,13 @@ class KUpdatingScreen:public KMenuScreen
 	{
 		bUseSelector = false;
 		Font = KCanvas::SmallFont;
-		ChoiceStartX = 260;
-		ChoiceStartY = 200;
-		itemHeight = 13;
 	}
 
 	void CreateChoices(void)
 	{
 		player_t &player = players[consoleplayer];
+		int CurX = 260;
+		int CurY = 200;
 
 		KUpdatingLevelDesc *Desc = NewWindow(KUpdatingLevelDesc, this);
 		Desc->SetPos(170, 120);
@@ -216,45 +219,43 @@ class KUpdatingScreen:public KMenuScreen
 		Desc->Disable();
 
 		KUpdatingHeader *Hdr = NewWindow(KUpdatingHeader, this);
-		Hdr->SetPos(ChoiceStartX, ChoiceStartY - 26);
-		Hdr->Disable();
+		Hdr->SetPos(CurX, CurY - 26);
 
 		WinHealth = NewWindow(KUpdatingScroller, this);
-		WinHealth->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
+		WinHealth->SetPos(CurX, CurY);
 		WinHealth->ActionText = "HEALTH:";
 		WinHealth->StartValue = player.maxhealth_old;
 		WinHealth->Value = player.maxhealth;
 		WinHealth->Disable();
-		Items[NumItems++] = WinHealth;
+		CurY += 13;
 
 		WinSPPower = NewWindow(KUpdatingScroller, this);
-		WinSPPower->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
+		WinSPPower->SetPos(CurX, CurY);
 		WinSPPower->ActionText = sp_wording[player.pclass];
 		WinSPPower->StartValue = player.sp_power_old;
 		WinSPPower->Value = player.maxsp_power;
 		WinSPPower->Disable();
-		Items[NumItems++] = WinSPPower;
+		CurY += 13;
 
 		WinStrength = NewWindow(KUpdatingScroller, this);
-		WinStrength->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
+		WinStrength->SetPos(CurX, CurY);
 		WinStrength->ActionText = "STRENGTH:";
 		WinStrength->StartValue = player.strength;
 		WinStrength->Value = player.strength;
-		Items[NumItems++] = WinStrength;
+		CurY += 13;
 
 		WinEfficiency = NewWindow(KUpdatingScroller, this);
-		WinEfficiency->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
+		WinEfficiency->SetPos(CurX, CurY);
 		WinEfficiency->ActionText = "EFFICIENCY:";
 		WinEfficiency->StartValue = player.agility;
 		WinEfficiency->Value = player.agility;
-		Items[NumItems++] = WinEfficiency;
+		CurY += 13;
 
 		WinSpeed = NewWindow(KUpdatingScroller, this);
-		WinSpeed->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
+		WinSpeed->SetPos(CurX, CurY);
 		WinSpeed->ActionText = "SPEED:";
 		WinSpeed->StartValue = player.speed;
 		WinSpeed->Value = player.speed;
-		Items[NumItems++] = WinSpeed;
 
 		switch (player.pclass)
 		{
@@ -275,19 +276,18 @@ class KUpdatingScreen:public KMenuScreen
 			break;
 		}
 
+		CurY += 26;
 		WinNav = NewWindow(KUpdatingRemaining, this);
-		WinNav->SetPos(ChoiceStartX, ChoiceStartY + (NumItems + 1) * itemHeight);
+		WinNav->SetPos(CurX, CurY);
 		WinNav->Value = player.av_points;
 		WinStrength->WinNav = WinNav;
 		WinEfficiency->WinNav = WinNav;
 		WinSpeed->WinNav = WinNav;
 
+		CurY += 26;
 		WinOkButton = NewWindow(KUpdatingOkButton, this);
-		WinOkButton->SetPos(ChoiceStartX + 120, ChoiceStartY + (NumItems + 3) * itemHeight);
+		WinOkButton->SetPos(CurX + 120, CurY);
 		WinOkButton->SetButtonText("OK");
-		Items[NumItems++] = WinOkButton;
-
-		CycleNextChoice();
 	}
 
 	void AcceptUpdating(void)

@@ -74,16 +74,16 @@ void P_RecursiveSound(sector_t *sec, int soundblocks)
 	sector_t *other;
 
 	// Wake up all monsters in this sector
-	if(sec->validcount == Validcount && sec->soundtraversed <= soundblocks+1)
+	if(sec->validcount == validcount && sec->soundtraversed <= soundblocks+1)
 	{ // Already flooded
 		return;
 	}
-	sec->validcount = Validcount;
+	sec->validcount = validcount;
 	sec->soundtraversed = soundblocks+1;
 	sec->soundtarget = soundtarget;
 	for(i = 0; i < sec->linecount; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		if(!(check->flags&ML_TWOSIDED))
 		{
 			continue;
@@ -127,7 +127,7 @@ void P_RecursiveSound(sector_t *sec, int soundblocks)
 void P_NoiseAlert(mobj_t *target, mobj_t *emmiter)
 {
 	soundtarget = target;
-	Validcount++;
+	validcount++;
 	P_RecursiveSound(emmiter->subsector->sector, 0);
 }
 
@@ -368,7 +368,7 @@ void P_NewChaseDir (mobj_t *actor)
 	int			tdir, olddir, turnaround;
 
 	if (!actor->target)
-		gi.Error ("P_NewChaseDir: called with no target");
+		I_Error ("P_NewChaseDir: called with no target");
 
 	olddir = actor->movedir;
 	turnaround=opposite[olddir];
@@ -482,13 +482,13 @@ boolean P_LookForMonsters(mobj_t *actor)
 	mobj_t *mo;
 	thinker_t *think;
 
-	if(!P_CheckSight(players[0].plr->mo, actor) 
+	if(!P_CheckSight(players[0].mo, actor) 
 		&& !(actor->flags3&MF3_FRIENDLY)) //Friendly monster don't care about player's LOS
 	{ // Player can't see monster
 		return(false);
 	}
 	count = 0;
-	for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+	for(think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
 		if(think->function != (think_t)P_MobjThinker)
 		{ // Not a mobj thinker
@@ -525,7 +525,7 @@ boolean P_LookForMonsters(mobj_t *actor)
 		if (actor->type == MT_MINOTAUR)
 		{
 			if ((mo->type == MT_MINOTAUR) && 
-				 (mo->target != ((player_t *)actor->special1)->plr->mo))
+				 (mo->target != ((player_t *)actor->special1)->mo))
 			{
 				continue;
 			}
@@ -574,14 +574,14 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround)
 		dist = 0;		
 		for (i=0; i<MAXPLAYERS; i++)
 		{
-			if (!players[i].plr->ingame) continue;
+			if (!players[i].ingame) continue;
 			player = &players[i];			
-			if (player->plr->mo->health <= 0) continue;
-			if ((dist = 0) || (dist > P_AproxDistance(actor->x-player->plr->mo->x, 
-				actor->y-player->plr->mo->y)))
+			if (player->mo->health <= 0) continue;
+			if ((dist = 0) || (dist > P_AproxDistance(actor->x-player->mo->x, 
+				actor->y-player->mo->y)))
 			{
-				dist = P_AproxDistance(actor->x-player->plr->mo->x, actor->y-player->plr->mo->y);
-				ctarget = player->plr->mo;
+				dist = P_AproxDistance(actor->x-player->mo->x, actor->y-player->mo->y);
+				ctarget = player->mo;
 			}
 		}				
 		if (dist > 0)
@@ -598,7 +598,7 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround)
 
 	for( ; ; actor->lastlook = (actor->lastlook+1)&3 ) //Normal monster looks for player code
 	{
-		if (!players[actor->lastlook].plr->ingame)
+		if (!players[actor->lastlook].ingame)
 			continue;
 
 		if (c++ == 2 || actor->lastlook == stop)
@@ -618,27 +618,27 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround)
 			}
 		}
 		
-		if (!P_CheckSight (actor, player->plr->mo))
+		if (!P_CheckSight (actor, player->mo))
 			continue;               // out of sight
 
 		if (!allaround)
 		{
 			an = R_PointToAngle2 (actor->x, actor->y,
-			player->plr->mo->x, player->plr->mo->y) - actor->angle;
+			player->mo->x, player->mo->y) - actor->angle;
 			if (an > ANG90 && an < ANG270)
 			{
-				dist = P_AproxDistance (player->plr->mo->x - actor->x,
-					player->plr->mo->y - actor->y);
+				dist = P_AproxDistance (player->mo->x - actor->x,
+					player->mo->y - actor->y);
 				// if real close, react anyway
 				if (dist > MELEERANGE)
 					continue;               // behind back
 			}
 		}
-		if(player->plr->mo->flags&MF_SHADOW)
+		if(player->mo->flags&MF_SHADOW)
 		{ // Player is invisible
-			if((P_AproxDistance(player->plr->mo->x-actor->x,
-				player->plr->mo->y-actor->y) > 2*MELEERANGE)
-				&& P_AproxDistance(player->plr->mo->momx, player->plr->mo->momy)
+			if((P_AproxDistance(player->mo->x-actor->x,
+				player->mo->y-actor->y) > 2*MELEERANGE)
+				&& P_AproxDistance(player->mo->momx, player->mo->momy)
 				< 5*FRACUNIT)
 			{ // Player is sneaking - can't detect
 				return(false);
@@ -656,7 +656,7 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround)
 			}
 		}
 
-		actor->target = player->plr->mo;
+		actor->target = player->mo;
 		return(true);
 	}
 	return(false);
@@ -1234,9 +1234,9 @@ void A_MinotaurLook(mobj_t *actor)
 	{
     	for (i=0; i<MAXPLAYERS; i++)
 		{
-			if (!players[i].plr->ingame) continue;
+			if (!players[i].ingame) continue;
 			player = &players[i];
-			mo = player->plr->mo;
+			mo = player->mo;
 			if (mo == master) continue;
 			if (mo->health <= 0) continue;
 			dist = P_AproxDistance(actor->x - mo->x, actor->y - mo->y);
@@ -1257,7 +1257,7 @@ void A_MinotaurLook(mobj_t *actor)
 
 	if (!actor->target)				// Normal monster search
 	{
-		for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+		for(think = thinkercap.next; think != &thinkercap; think = think->next)
 		{
 			if(think->function != (think_t)P_MobjThinker) continue;
 			mo = (mobj_t *)think;
@@ -1828,7 +1828,7 @@ int P_Massacre(void)
 	thinker_t *think;
 
 	count = 0;
-	for(think = gi.thinkercap->next; think != gi.thinkercap;
+	for(think = thinkercap.next; think != &thinkercap;
 		think = think->next)
 	{
 		if(think->function != (think_t)P_MobjThinker)
@@ -1878,8 +1878,8 @@ void A_SkullPop(mobj_t *actor)
 	mo->player = player;
 	mo->health = actor->health;
 	mo->angle = actor->angle;
-	player->plr->mo = mo;
-	player->plr->lookdir = 0;
+	player->mo = mo;
+	player->lookdir = 0;
 	player->damagecount = 32;
 }
 
@@ -1997,7 +1997,7 @@ void P_InitCreatureCorpseQueue(boolean corpseScan)
 	if (!corpseScan) return;
 
 	// Search mobj list for corpses and place them in this queue
-	for(think = gi.thinkercap->next; think != gi.thinkercap; think = think->next)
+	for(think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
 		if(think->function != (think_t)P_MobjThinker) continue;
 		mo = (mobj_t *)think;
@@ -4224,7 +4224,7 @@ void A_SorcBallOrbit(mobj_t *actor)
 			angle = baseangle + BALL3_ANGLEOFFSET;
 			break;
 		default:
-			gi.Error("corrupted sorcerer");
+			I_Error("corrupted sorcerer");
 			break;
 	}
 	actor->angle = angle;
@@ -5108,8 +5108,8 @@ void A_FreezeDeathChunks(mobj_t *actor)
 		actor->player = NULL;
 		mo->health = actor->health;
 		mo->angle = actor->angle;
-		mo->player->plr->mo = mo;
-		mo->player->plr->lookdir = 0;
+		mo->player->mo = mo;
+		mo->player->lookdir = 0;
 	}
 	P_RemoveMobjFromTIDList(actor);
 	P_SetMobjState(actor, S_FREETARGMOBJ);

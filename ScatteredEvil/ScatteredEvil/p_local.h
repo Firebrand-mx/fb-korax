@@ -78,11 +78,11 @@ typedef enum
 // ***** P_TICK *****
 
 extern int TimerGame; // tic countdown for deathmatch
-/*extern thinker_t thinkercap; // both the head and tail of the thinker list
+extern thinker_t thinkercap; // both the head and tail of the thinker list
 
 void P_InitThinkers(void);
 void P_AddThinker(thinker_t *thinker);
-void P_RemoveThinker(thinker_t *thinker);*/
+void P_RemoveThinker(thinker_t *thinker);
 
 // ***** P_PSPR *****
 
@@ -225,21 +225,6 @@ extern  intercept_t             intercepts[MAXINTERCEPTS], *intercept_p;
 typedef boolean (*traverser_t) (intercept_t *in);
 
 
-/*#define P_AproxDistance		gi.ApproxDistance
-#define P_PointOnLineSide	gi.PointOnLineSide
-#define P_BoxOnLineSide		gi.BoxOnLineSide
-
-#define openrange			gi.Get(DD_OPENRANGE)
-#define opentop				gi.Get(DD_OPENTOP)
-#define openbottom			gi.Get(DD_OPENBOTTOM)
-#define lowfloor			gi.Get(DD_LOWFLOOR)
-#define P_LineOpening		gi.LineOpening
-
-#define P_BlockLinesIterator	gi.BlockLinesIterator
-#define P_BlockThingsIterator	gi.BlockThingsIterator
-
-#define P_PathTraverse		gi.PathTraverse*/
-
 fixed_t P_AproxDistance (fixed_t dx, fixed_t dy);
 int     P_PointOnLineSide (fixed_t x, fixed_t y, line_t *line);
 int     P_PointOnDivlineSide (fixed_t x, fixed_t y, divline_t *line);
@@ -301,18 +286,6 @@ void P_RadiusAttack (mobj_t *spot, mobj_t *source, int damage, int distance,
 // ***** P_SETUP *****
 
 void P_Validate();
-
-extern byte *rejectmatrix;                              // for fast sight rejection
-extern short *blockmaplump;                             // offsets in blockmap are from here
-extern short *blockmap;
-extern int bmapwidth, bmapheight;               // in mapblocks
-extern fixed_t bmaporgx, bmaporgy;              // origin of block map
-extern mobj_t **blocklinks;                             // for thing chains
-
-/*#define bmapwidth	(*gi.bmapwidth)
-#define bmapheight	(*gi.bmapheight)
-#define bmaporgx	(*gi.bmaporgx)
-#define bmaporgy	(*gi.bmaporgy)*/
 
 // ***** P_INTER *****
 
@@ -418,8 +391,10 @@ boolean PO_Busy(int polyobj);
 
 //================ Conversation system ====================
 
-boolean CON_StartConversation(mobj_t *User, mobj_t *Target);
-void CON_Ticker(void);
+void ConSys_LoadConversations(char *MapName);
+void ConSys_DestroyConversations(void);
+boolean ConSys_StartConversation(mobj_t *User, mobj_t *Target);
+void ConSys_Ticker(void);
 
 #include "p_spec.h"
 

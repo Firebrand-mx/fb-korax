@@ -1,29 +1,64 @@
 #include "mn_def.h"
 
+//==========================================================================
+//
+//	Conversation objects
+//
+//==========================================================================
+
+#define PLAYER_TID	-1
+
+enum EEventAction
+{
+	EA_NextEvent,
+	EA_JumpToLabel,
+	//EA_JumpToConversation,
+	EA_WaitForInput,
+	EA_WaitForSpeech,
+	EA_WaitForText,
+	EA_PlayAnim,
+	EA_ConTurnActors,
+	EA_End
+};
+
 enum EConEventType
 {
 	ET_Speech,
 	ET_Choice,
+	ET_Jump,
 	ET_End
 };
 
-struct KConversation;
+enum EConPlayState
+{
+	CPS_PlayEvent,
+	CPS_WaitForInput,
+	CPS_WaitForText,
+};
+
+class KConversation;
 
 //
 //	KConSpeech
 //
-struct KConSpeech
+class KConSpeech:public KObject
 {
-	char *Speech;
+	DECLARE_CLASS(KConSpeech, KObject, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConSpeech);
+
+	char Speech[256];
 };
 
 //
 //	KConChoice
 //
-struct KConChoice
+class KConChoice:public KObject
 {
-	char *ChoiceText;			// Choice text
-	char *ChoiceLabel;			// Choice label
+	DECLARE_CLASS(KConChoice, KObject, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConChoice);
+
+	char ChoiceText[256];		// Choice text
+	char ChoiceLabel[32];		// Choice label
 
 	bool bDisplayAsSpeech;		// Display choice as speech after user selects it
 
@@ -33,22 +68,30 @@ struct KConChoice
 //
 //	KConEvent
 //
-struct KConEvent
+class KConEvent:public KObject
 {
+	DECLARE_ABSTRACT_CLASS(KConEvent, KObject, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConEvent);
+
 	EConEventType EventType;	// Event type
-	char *Label;				// Optional event label
+	char Label[32];				// Optional event label
 	KConEvent *NextEvent;		// Pointer to next event
 	KConversation *Conversation;// Conversation that owns this event
+
+	virtual void ParseScript(void) = 0;
 };
 
 //
 //	KConversation
 //
-struct KConversation
+class KConversation:public KObject
 {
-	char *ConName;				// Conversation name
-	char *ConOwnerName;			// Conversation owner name
-	//bool bFirstPerson;		// Remain in First-Person mode
+	DECLARE_CLASS(KConversation, KObject, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConversation);
+
+	char ConName[32];			// Conversation name
+	int ConOwnerTID;			// Conversation owner TID
+	bool bFirstPerson;			// Remain in First-Person mode
 	//bool bRandomCamera;		// Random camera placement (can be overriden)
 
 	KConEvent *EventList;		// First event
@@ -56,40 +99,101 @@ struct KConversation
 	int ConID;					// Internal conversation ID
 
 	KConversation *NextCon;		// Pointer to next conversation
+
+	void ParseScript(void);
+	void BindEvents(mobj_t *pPlayer, mobj_t *InvokeActor);
+	bool CheckActors(void);
+	KConEvent *GetEventFromLabel(const char *Label);
 };
 
 //
 //	KConEventSpeech
 //
-struct KConEventSpeech:KConEvent
+class KConEventSpeech:public KConEvent
 {
+	DECLARE_CLASS(KConEventSpeech, KConEvent, 0);
+	
 	mobj_t *Speaker;			// Mobj who speaks
-	char *SpeakerName;			// Mobj name
+	int SpeakerTID;				// Mobj TID
 	mobj_t *SpeakingTo;			// Mobj who is being spoken to
-	char SpeakingToName;		// Mobj name
+	int SpeakingToTID;			// Mobj TID
 	KConSpeech *ConSpeech;		// Speech
 	bool bContinued;			// True if this speech continued from last speech event
+
+	KConEventSpeech(void)
+	{
+		EventType = ET_Speech;
+	}
+	void ParseScript(void);
 };
 
 //
 //	KConEventChoice
 //
-struct KConEventChoice:KConEvent
+class KConEventChoice:public KConEvent
 {
+	DECLARE_CLASS(KConEventChoice, KConEvent, 0);
+
 	bool bClearScreen;
 	KConChoice *ChoiceList;
+
+	KConEventChoice(void)
+	{
+		EventType = ET_Choice;
+	}
+	void ParseScript(void);
+};
+
+//
+//	KConEventJump
+//
+class KConEventJump:public KConEvent
+{
+	DECLARE_CLASS(KConEventJump, KConEvent, 0);
+
+	char JumpLabel[32];
+
+	KConEventJump(void)
+	{
+		EventType = ET_Jump;
+	}
+	void ParseScript(void);
 };
 
 //
 //	KConEventEnd
 //
-struct KConEventEnd:KConEvent
+class KConEventEnd:public KConEvent
 {
+	DECLARE_CLASS(KConEventEnd, KConEvent, 0);
+
+	KConEventEnd(void)
+	{
+		EventType = ET_End;
+	}
+	void ParseScript(void);
+};
+
+//
+//	KConversationList
+//
+//	Maintains a collection of Conversation objects
+//
+class KConversationList:public KObject
+{
+	DECLARE_CLASS(KConversationList, KObject, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConversationList);
+
+	KConversation *Conversations;
+
+	void ParseScript(const char *MapName);
+	void AddConversation(KConversation *Con);
+	KConversation *GetActiveConversation(mobj_t *pPlayer, mobj_t *InvokeActor);
 };
 
 //==========================================================================
 //
-//	Playback of cnversations
+//	Playback of conversations
 //
 //==========================================================================
 
@@ -99,30 +203,49 @@ class KConPlay:public KObject
 	NO_DEFAULT_CONSTRUCTOR(KConPlay);
 
 protected:
+	enum EDisplayMode
+	{
+		DM_FirstPerson,
+		DM_ThirdPerson
+	} DisplayMode;
+
+	EConPlayState InState;
+	KConversation *Con;
+	KConEvent *CurrentEvent;
+	KConEvent *LastEvent;
 	bool bConversationStarted;
 	bool bTerminated;
 
-	mobj_t *ConOwner;
-	mobj_t *ConTarget;
+	mobj_t *Player;
+	mobj_t *InvokeActor;
 
-	class KConWindow *ConWin;
+	class KConWindow *ConWinThird;
+	class KConWindowFirst *ConWinFirst;
 
 	mobj_t *CurrentSpeaker;
 	mobj_t *CurrentSpeakingTo;
 
-	int con_timer;
-	int test_state;
+	int ConTimer;
 
 public:
+	void SetConversation(KConversation *NewCon);
 	bool StartConversation(mobj_t *NewOwner, mobj_t *NewTarget);
 	void TerminateConversation(void);
 
+	void PlayNextEvent(void);
+	void PlayChoice(KConChoice *Choice);
+	void ProcessAction(EEventAction NextAction, const char *NextLabel);
+
+	void SetupEvent(void);
+	EEventAction SetupEventSpeech(KConEventSpeech *Event, char *NextLabel);
+	EEventAction SetupEventChoice(KConEventChoice *Event, char *NextLabel);
+	EEventAction SetupEventJump(KConEventJump *Event, char *NextLabel);
+	EEventAction SetupEventEnd(KConEventEnd *Event, char *NextLabel);
+
+	void GotoState(EConPlayState NewState);
 	void Tick(void);
 
 	void SetCameraMobjs(void);
-
-	void PlayNextEvent(void);
-	void PlayChoice(KConChoice *Choice);
 
 	bool ConversationStarted(void) { return bConversationStarted; }
 	bool Terminated(void) { return bTerminated; }
@@ -137,17 +260,12 @@ public:
 //
 //	KConChoiceWindow
 //
-class KConChoiceWindow:public KWindow
+class KConChoiceWindow:public KButtonWindow
 {
-	DECLARE_CLASS(KConChoiceWindow, KWindow, 0);
-	KConChoiceWindow();
+	DECLARE_CLASS(KConChoiceWindow, KButtonWindow, 0);
+	NO_DEFAULT_CONSTRUCTOR(KConChoiceWindow);
 
 	KConChoice *Choice;
-	KTextWindow *WinText;
-
-	void InitWindow(void);
-
-	void SetText(const char *Text);
 
 	void FocusEnteredWindow(void);
 	void FocusLeftWindow(void);
@@ -168,17 +286,41 @@ protected:
 	KTextWindow *WinSpeech;
 	KConChoiceWindow *WinChoices[10];
 	int NumChoices;
-	int CurrentChoice;
 
 public:
 	void SetConPlay(KConPlay *NewPlay) { ConPlay = NewPlay; }
 	void Clear(void);
 	void DisplayText(const char *Text);
+	void AppendText(const char *Text);
 	void DisplayChoice(KConChoice *Choice);
 
 	bool KeyPressed(int key);
+	bool ButtonActivated(KWindow *button);
 	void DescendantRemoved(KWindow *Child);
 
 protected:
 	void CreateSpeechWindow(void);
+};
+
+//
+//	KConWindowFirst
+//
+class KConWindowFirst:public KModalWindow
+{
+	DECLARE_CLASS(KConWindowFirst, KModalWindow, 0);
+
+	KConWindowFirst();
+	void InitWindow(void);
+
+protected:
+	KConPlay *ConPlay;
+	KTextWindow *WinSpeech;
+
+public:
+	void SetConPlay(KConPlay *NewPlay) { ConPlay = NewPlay; }
+	void Clear(void);
+	void DisplayText(const char *Text);
+	void AppendText(const char *Text);
+
+	void DescendantRemoved(KWindow *Child);
 };

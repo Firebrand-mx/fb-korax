@@ -9,6 +9,13 @@ extern char *SavePath;
 extern int chooseAndUse, lookdirSpeed;
 extern boolean fastMonsters;
 
+extern float flareFadeMax, flareFadeMin, minFlareSize;
+extern int alwaysAlign;
+extern int r_ambient;
+extern int dlMaxRad;
+extern int snd_Resample, snd_16bits;
+extern boolean consoleDump;
+
 extern int skyDetail, mipmapping, linearRaw;
 extern int useDynLights, showFPS, lookSpring;
 extern int snd_MusicDevice, mlookInverseY;

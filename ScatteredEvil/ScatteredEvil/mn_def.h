@@ -19,5 +19,6 @@ class KRootWindow;
 #include "KRootWindow.h"
 
 #include "KTextWindow.h"
+#include "KButtonWindow.h"
 
 #endif // __MENU_DEFS_H_

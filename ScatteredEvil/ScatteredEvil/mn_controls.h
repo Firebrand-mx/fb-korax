@@ -143,7 +143,7 @@ class KMenuChoiceControl:public KMenuItem_t
 		else
 			strcpy(controlCmd, ctrl->command);
 		// Let's gather all the bindings for this command.
-		if(!gi.BindingsForCommand(controlCmd, buff))
+		if (!B_BindingsForCommand(controlCmd, buff))
 			strcpy(buff, "NONE");
 
 		// Now we must interpret what the bindings string says.
@@ -191,7 +191,7 @@ class KMenuChoiceControl:public KMenuItem_t
 							ctrl->command);
 					else
 						sprintf(cmd, "delbind \"%s\"", ctrl->command);
-					gi.Execute(cmd, true);
+					CON_Execute(cmd, true);
 					bGrabbing = false;
 					return true;
 				}
@@ -204,12 +204,12 @@ class KMenuChoiceControl:public KMenuItem_t
 
 			// We shall issue a silent console command, but first we need
 			// a textual representation of the event.
-			gi.EventBuilder(evname, event, false); // "Deconstruct" into a name.
+			B_EventConverter(evname, event, false); // "Deconstruct" into a name.
 
 			// If this binding already exists, remove it.
 			sprintf(cmd, "%s%s", ctrl->flags & CLF_ACTION? "+" : "",
 				ctrl->command);
-			if (gi.BindingsForCommand(cmd, buff))
+			if (B_BindingsForCommand(cmd, buff))
 				if (findtoken(buff, evname, " "))		// Get rid of it?
 				{
 					del = true;
@@ -218,7 +218,7 @@ class KMenuChoiceControl:public KMenuItem_t
 			if (!del) sprintf(buff, "\"%s\"", ctrl->command);
 			sprintf(cmd, "%s %s %s", ctrl->flags & CLF_REPEAT? "bindr" : "bind",
 				evname+1, buff);
-			gi.Execute(cmd, true);
+			CON_Execute(cmd, true);
 			// We've finished the grab.
 			bGrabbing = false;
 			S_StartSound(NULL, SFX_CHAT);
@@ -302,8 +302,8 @@ class KMenuScreenControls:public KMenuScreen
 {
 	DECLARE_CLASS(KMenuScreenControls, KMenuScreen, 0);
 
-	// For scrolling menus.
-	int numVisItems;
+	int CurX;
+	int CurY;
 
 	KMenuScreenControls(void)
 	{
@@ -311,12 +311,12 @@ class KMenuScreenControls:public KMenuScreen
 		ChoiceStartY = 26;
 		itemHeight = 9;
 		Font = KCanvas::SmallFont;
-		numVisItems = 40;
-		CursorPos = 1;
 	}
 
 	void CreateChoices(void)
 	{
+		CurX = ChoiceStartX;
+		CurY = ChoiceStartY;
 		CreateItem("PLAYER ACTIONS");
 		AddControl("LEFT :", H2A_TURNLEFT);
 		AddControl("RIGHT :", H2A_TURNRIGHT);
@@ -353,7 +353,9 @@ class KMenuScreenControls:public KMenuScreen
 		AddControl("SPELL6 :", H2A_SPELL6);
 		AddControl("SPELL7 :", H2A_SPELL7);
 /*		AddControl("SPELL8 :", H2A_SPELL8);*/
-		CreateItem(NULL);
+
+		CurX = ChoiceStartX + 320;
+		CurY = ChoiceStartY;
 		CreateItem("ARTIFACTS");
 		AddControl("TORCH :", H2A_TORCH);
 		AddControl("QUARTZ FLASK :", H2A_HEALTH);
@@ -404,10 +406,9 @@ class KMenuScreenControls:public KMenuScreen
 	{
 		KMenuControlsLabel *It = NewWindow(KMenuControlsLabel, this);
 		It->LabelText = text;
-		It->SetPos(ChoiceStartX + (NumItems / numVisItems) * 320, 
-			ChoiceStartY + (NumItems % numVisItems) * itemHeight);
+		It->SetPos(CurX, CurY);
 		It->Disable();
-		Items[NumItems++] = It;
+		CurY += itemHeight;
 	}
 
 	void AddControl(char *text, int option)
@@ -415,11 +416,10 @@ class KMenuScreenControls:public KMenuScreen
 		KMenuChoiceControl *It;
 	
 		It = NewWindow(KMenuChoiceControl, this);
-		It->SetPos(ChoiceStartX + (NumItems / numVisItems) * 320, 
-			ChoiceStartY + (NumItems % numVisItems) * itemHeight);
+		It->SetPos(CurX, CurY);
 		It->ControlText = text;
 		It->ControlIndex = option;
-		Items[NumItems++] = It;
+		CurY += itemHeight;
 	}
 
 	void KMenuScreenControls::DrawWindow(KGC *gc)
@@ -452,7 +452,7 @@ void H2_DefaultBindings(void)
 		// If this command is bound to something, skip it.
 		sprintf(cmd, "%s%s", ctr->flags & CLF_ACTION? "+" : "",
 			ctr->command);
-		if(gi.BindingsForCommand(cmd, buff)) continue;
+		if (B_BindingsForCommand(cmd, buff)) continue;
 
 		// This Control has no bindings, set it to the default.
 		sprintf(buff, "\"%s\"", ctr->command);
@@ -460,28 +460,28 @@ void H2_DefaultBindings(void)
 		{
 			event.type = ev_keydown;
 			event.data1 = ctr->defKey;
-			gi.EventBuilder(evname, &event, false);
+			B_EventConverter(evname, &event, false);
 			sprintf(cmd, "%s %s %s", ctr->flags & CLF_REPEAT? "safebindr" : "safebind",
 				evname+1, buff);
-			gi.Execute(cmd, true);
+			CON_Execute(cmd, true);
 		}
 		if(ctr->defMouse)
 		{
 			event.type = ev_mousebdown;
 			event.data1 = 1 << (ctr->defMouse-1);
-			gi.EventBuilder(evname, &event, false);
+			B_EventConverter(evname, &event, false);
 			sprintf(cmd, "%s %s %s", ctr->flags & CLF_REPEAT? "safebindr" : "safebind",
 				evname+1, buff);
-			gi.Execute(cmd, true);
+			CON_Execute(cmd, true);
 		}
 		if(ctr->defJoy)
 		{
 			event.type = ev_joybdown;
 			event.data1 = 1 << (ctr->defJoy-1);
-			gi.EventBuilder(evname, &event, false);
+			B_EventConverter(evname, &event, false);
 			sprintf(cmd, "%s %s %s", ctr->flags & CLF_REPEAT? "safebindr" : "safebind",
 				evname+1, buff);
-			gi.Execute(cmd, true);
+			CON_Execute(cmd, true);
 		}
 	}
 }

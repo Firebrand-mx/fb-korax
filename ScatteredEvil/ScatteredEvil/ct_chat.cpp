@@ -132,7 +132,7 @@ void CT_Init(void)
 		memset(plr_lastmsg[i], 0, MESSAGESIZE);
 		memset(chat_msg[i], 0, MESSAGESIZE);
 	}
-	FontABaseLump = gi.W_GetNumForName("FONTA_S")+1;
+	FontABaseLump = W_GetNumForName("FONTA_S")+1;
 	return;
 }
 
@@ -217,7 +217,7 @@ boolean CT_Responder(event_t *ev)
 		{
 			sendto = CT_PLR_PLAYER8;
 		}
-		if(sendto == 0 || (sendto != CT_PLR_ALL && !players[sendto-1].plr->ingame)
+		if(sendto == 0 || (sendto != CT_PLR_ALL && !players[sendto-1].ingame)
 			|| sendto == consoleplayer+1)
 		{
 			return false;
@@ -328,7 +328,7 @@ void CT_Ticker(void)
 
 	for(i=0; i < MAXPLAYERS; i++)
 	{
-		if(!players[i].plr->ingame)
+		if(!players[i].ingame)
 		{
 			continue;
 		}
@@ -348,7 +348,7 @@ void CT_Ticker(void)
 				numplayers = 0;
 				for(j = 0; j < MAXPLAYERS; j++)
 				{
-					numplayers += players[j].plr->ingame;
+					numplayers += players[j].ingame;
 				}
 				CT_AddChar(i, 0); // set the end of message character
 				/*if(numplayers > 2)
@@ -386,7 +386,7 @@ void CT_Ticker(void)
 						else
 							sprintf(buff, "chatNum %d ", chat_dest[i]-1);
 						strcatQuoted(buff, plr_lastmsg[i]);
-						gi.Execute(buff, true);
+						CON_Execute(buff, true);
 					}
 				}
 				CT_ClearChatMessage(i);
@@ -427,14 +427,14 @@ void CT_Drawer(void)
 			}
 			else
 			{
-				patch=(patch_t *)gi.W_CacheLumpNum(FontABaseLump+
+				patch=(patch_t *)W_CacheLumpNum(FontABaseLump+
 					chat_msg[consoleplayer][i]-33, PU_CACHE);
-				gi.GL_DrawPatch(x, 10, FontABaseLump+chat_msg[consoleplayer][i]-33);
+				GL_DrawPatch(x, 10, FontABaseLump+chat_msg[consoleplayer][i]-33);
 				x += patch->width;
 			}
 		}
-		gi.GL_DrawPatch(x, 10, gi.W_GetNumForName("FONTA59"));
-		gi.Update(DDUF_TOP | DDUF_MESSAGES);
+		GL_DrawPatch(x, 10, W_GetNumForName("FONTA59"));
+		DD_GameUpdate(DDUF_TOP | DDUF_MESSAGES);
 	}
 }
 
@@ -495,7 +495,7 @@ void CT_AddChar(int player, char c)
 	}
 	else
 	{
-		patch = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
+		patch = (patch_t *)W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
 		msglen[player] += patch->width;
 	}
 }
@@ -524,7 +524,7 @@ void CT_BackSpace(int player)
 	}
 	else
 	{
-		patch = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
+		patch = (patch_t *)W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
 		msglen[player] -= patch->width;
 	}
 	chat_msg[player][msgptr[player]] = 0;

@@ -12,10 +12,16 @@ class KMenuScreenChar:public KMenuScreen
 	{
 		ChoiceStartX = 280;
 		ChoiceStartY = 270;
-		CursorPos = 2;
 		ButtonDefaults[0] = FButtonDefault("REROLL", MA_Custom, MENU_NONE, 0);
 		ButtonDefaults[1] = FButtonDefault("DEFAULT", MA_Custom, MENU_NONE, 1);
 		ButtonDefaults[2] = FButtonDefault("OK", MA_Custom, MENU_NONE, 2);
+	}
+
+	void InitWindow(void)
+	{
+		Super::InitWindow();
+		CycleNextChoice();
+		CycleNextChoice();
 	}
 
 	void ProcessCustomMenuAction(int Key)

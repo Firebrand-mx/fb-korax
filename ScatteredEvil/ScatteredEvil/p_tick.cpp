@@ -25,7 +25,7 @@
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
-//static void RunThinkers(void);
+static void RunThinkers(void);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
@@ -33,7 +33,7 @@
 
 int leveltime;
 int TimerGame;
-//thinker_t thinkercap; // The head and tail of the thinker list
+thinker_t thinkercap; // The head and tail of the thinker list
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -49,7 +49,7 @@ void P_Ticker(void)
 {
 	int i;
 
-	CON_Ticker();
+	ConSys_Ticker();
 	if(paused)
 	{
 		return;
@@ -57,7 +57,7 @@ void P_Ticker(void)
 
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(players[i].plr->ingame)
+		if(players[i].ingame)
 		{
 			P_PlayerThink(&players[i]);
 		}
@@ -69,7 +69,7 @@ void P_Ticker(void)
 			G_Completed(P_TranslateMap(P_GetMapNextMap(gamemap)), 0);
 		}
 	}
-	gi.RunThinkers();
+	RunThinkers();
 	P_UpdateSpecials();
 	P_AnimateSurfaces();
 	leveltime++;
@@ -81,7 +81,7 @@ void P_Ticker(void)
 //
 //==========================================================================
 
-/*static void RunThinkers(void)
+static void RunThinkers(void)
 {
 	thinker_t *currentthinker;
 
@@ -110,7 +110,7 @@ void P_Ticker(void)
 
 void P_InitThinkers(void)
 {
-	thinkercap.prev = thinkercap.next  = &thinkercap;
+	thinkercap.prev = thinkercap.next = &thinkercap;
 }
 
 //==========================================================================
@@ -142,4 +142,3 @@ void P_RemoveThinker(thinker_t *thinker)
 {
 	thinker->function = (think_t)-1;
 }
-*/

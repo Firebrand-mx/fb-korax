@@ -99,7 +99,7 @@ extern void AM_Stop (void);
 void IN_Start(void)
 {
 	int i;
-	gi.GL_SetFilter(0);
+	GL_SetFilter(0);
 	InitStats();
 	LoadPics();
 	intermission = true;
@@ -147,7 +147,7 @@ static void Stop(void)
 	UnloadPics();
 	SB_state = -1;
 	//BorderNeedRefresh = true;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 }
 
 //========================================================================
@@ -192,13 +192,13 @@ static void InitStats(void)
 			{
                 if(!overrideHubMsg) {
     				msgLumpName = ClusMsgLumpNames[oldCluster-1];
-    				msgLump = gi.W_GetNumForName(msgLumpName);
-    				msgSize = gi.W_LumpLength(msgLump);
+    				msgLump = W_GetNumForName(msgLumpName);
+    				msgSize = W_LumpLength(msgLump);
     				if(msgSize >= MAX_INTRMSN_MESSAGE_SIZE)
     				{
-    					gi.Error("Cluster message too long (%s)", msgLumpName);
+    					I_Error("Cluster message too long (%s)", msgLumpName);
     				}
-    				gi.W_ReadLump(msgLump, ClusterMessage);
+    				W_ReadLump(msgLump, ClusterMessage);
     				ClusterMessage[msgSize] = 0; // Append terminator
     				HubText = ClusterMessage;
     				HubCount = strlen(HubText)*TEXTSPEED+TEXTWAIT;
@@ -223,12 +223,12 @@ static void InitStats(void)
 		for(i=0; i<MAXPLAYERS; i++)
 		{
 			totalFrags[i] = 0;
-			if(players[i].plr->ingame)
+			if(players[i].ingame)
 			{
 				playercount++;
 				for(j=0; j<MAXPLAYERS; j++)
 				{
-					if(players[i].plr->ingame)
+					if(players[i].ingame)
 					{
 						totalFrags[i] += players[i].frags[j];
 					}
@@ -267,22 +267,18 @@ static void LoadPics(void)
 
 	if(HubCount || gametype == DEATHMATCH)
 	{
-		//patchINTERPIC = W_CacheLumpName("INTERPIC", PU_STATIC);
-		patchINTERPICLumpRS = gi.W_GetNumForName("INTERPIC");
-		FontBLumpBase = gi.W_GetNumForName("FONTB16");
+		patchINTERPICLumpRS = W_GetNumForName("INTERPIC");
+		FontBLumpBase = W_GetNumForName("FONTB16");
 		for(i=0; i<10; i++)
 		{
-			FontBNumbersLump[i] = /*W_CacheLumpNum(*/FontBLumpBase+i/*, PU_STATIC)*/;
+			FontBNumbersLump[i] = FontBLumpBase+i;
 		}
-		FontBLump = gi.W_GetNumForName("FONTB_S")+1;
-		//FontBNegative = W_CacheLumpName("FONTB13", PU_STATIC);
-		FontBNegativeLump = gi.W_GetNumForName("FONTB13");
-		FontABaseLump = gi.W_GetNumForName("FONTA_S")+1;
+		FontBLump = W_GetNumForName("FONTB_S")+1;
+		FontBNegativeLump = W_GetNumForName("FONTB13");
+		FontABaseLump = W_GetNumForName("FONTA_S")+1;
 	
-		//FontBSlash = W_CacheLumpName("FONTB15", PU_STATIC);
-		FontBSlashLump = gi.W_GetNumForName("FONTB15");
-		//FontBPercent = W_CacheLumpName("FONTB05", PU_STATIC);
-		FontBPercentLump = gi.W_GetNumForName("FONTB05");
+		FontBSlashLump = W_GetNumForName("FONTB15");
+		FontBPercentLump = W_GetNumForName("FONTB05");
 	}
 }
 
@@ -353,7 +349,7 @@ static void CheckForSkip(void)
 
   	for(i = 0, player = players; i < MAXPLAYERS; i++, player++)
 	{
-    	if(players[i].plr->ingame)
+    	if(players[i].ingame)
     	{
 			if(player->cmd.buttons&BT_ATTACK)
 			{
@@ -416,8 +412,7 @@ void IN_Drawer(void)
 		return;
 	}
 	GCanvas->SetOrigin(160, 120);
-	//UpdateState |= I_FULLSCRN;
-	gi.Update(DDUF_FULLSCREEN);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 	GCanvas->DrawRawScreen(patchINTERPICLumpRS);
 
 	if(gametype == SINGLE)
@@ -464,8 +459,8 @@ static void DrDeathTally(void)
 	static boolean showTotals;
 	int temp;
 
-	GCanvas->DrawPatch1(TALLY_TOP_X, TALLY_TOP_Y,	gi.W_GetNumForName("tallytop"));
-	GCanvas->DrawPatch1(TALLY_LEFT_X, TALLY_LEFT_Y, gi.W_GetNumForName("tallylft"));
+	GCanvas->DrawPatch1(TALLY_TOP_X, TALLY_TOP_Y,	W_GetNumForName("tallytop"));
+	GCanvas->DrawPatch1(TALLY_LEFT_X, TALLY_LEFT_Y, W_GetNumForName("tallylft"));
 
 	if(intertime < TALLY_EFFECT_TICKS)
 	{
@@ -498,7 +493,7 @@ static void DrDeathTally(void)
 		{
 			x = xPos>>FRACBITS;
 			bold = (i == consoleplayer || j == consoleplayer);
-			if(players[i].plr->ingame && players[j].plr->ingame)
+			if(players[i].ingame && players[j].ingame)
 			{
 				if(bold)
 				{
@@ -522,7 +517,7 @@ static void DrDeathTally(void)
 				}
 			}
 		}
-		if(showTotals && players[i].plr->ingame
+		if(showTotals && players[i].ingame
 			&& !((slaughterboy&(1<<i)) && !(intertime&16)))
 		{
 			DrNumber(totalFrags[i], TALLY_TOTALS_X, y, 1000);
@@ -611,7 +606,7 @@ static void DrawHubText(void)
 			cx += 5;
 			continue;
 		}
-		w = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
+		w = (patch_t *)W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
 		if(cx+w->width > SCREENWIDTH)
 		{
 			break;

@@ -43,7 +43,7 @@ class KMenuChoice_Resolution:public KMenuUIChoiceEnum
 	void LoadSetting(void)
 	{
 		// Find the correct resolution.
-		selRes = findRes(gi.Get(DD_SCREEN_WIDTH), gi.Get(DD_SCREEN_HEIGHT));
+		selRes = findRes(screenWidth, screenHeight);
 		SetValue(selRes);
 	}
 
@@ -55,7 +55,7 @@ class KMenuChoice_Resolution:public KMenuUIChoiceEnum
 	void DrawWindow(KGC *gc)
 	{
 		Super::DrawWindow(gc);
-		if (selRes == findRes(gi.Get(DD_DEFAULT_RES_X), gi.Get(DD_DEFAULT_RES_Y)))
+		if (selRes == findRes(defResX, defResY))
 		{
 			gc->DrawText(240, 0, " (DEFAULT)");
 		}
@@ -87,17 +87,9 @@ class KMenuScreenResolution:public KMenuScreen
 	{
 		ChoiceStartX = 248;
 		ChoiceStartY = 200;
+		Choices[0] = KMenuChoice_Resolution::StaticClass();
 		ButtonDefaults[0] = FButtonDefault("MAKE CURRENT", MA_Custom, MENU_NONE, 1);
 		ButtonDefaults[1] = FButtonDefault("MAKE DEFAULT", MA_Custom, MENU_NONE, 2);
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_Resolution, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
 	}
 
 	void ProcessCustomMenuAction(int Key)
@@ -105,15 +97,15 @@ class KMenuScreenResolution:public KMenuScreen
 		switch (Key)
 		{
 		case 1:
-			if (gi.ChangeResolution(resolutions[selRes].width, resolutions[selRes].height))
+			if (I_ChangeResolution(resolutions[selRes].width, resolutions[selRes].height))
 				P_SetMessage(&players[consoleplayer], "RESOLUTION CHANGED", true);
 			else
 				P_SetMessage(&players[consoleplayer], "RESOLUTION CHANGE FAILED", true);
 			break;
 
 		case 2:
-			gi.Set(DD_DEFAULT_RES_X, resolutions[selRes].width);
-			gi.Set(DD_DEFAULT_RES_Y, resolutions[selRes].height);
+			defResX = resolutions[selRes].width;
+			defResY = resolutions[selRes].height;
 			break;
 		}
 	}

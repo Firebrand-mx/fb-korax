@@ -134,7 +134,6 @@ int jlookInverseY;	// Inverse jlook Y axis.
 int showFPS, lookSpring;
 int translucentIceCorpse=0;
 int mouseSensitivityX=8, mouseSensitivityY=8;
-int joySensitivity=5;	// Joystick sensitivity (dead zone).
 boolean povLookAround=false;
 int dclickuse = true;
 
@@ -349,8 +348,6 @@ int CCmdInventory(int argc, char **argv)
 	inventoryMove(players+consoleplayer, !stricmp(argv[0], "invright"));
 	return true;
 }
-
-boolean handleZ;
 
 void G_BuildTiccmd (ticcmd_t *cmd)
 {
@@ -623,8 +620,8 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		actions[H2A_PANIC].on = false; 	// Use one of each artifact
 		cmd->arti = NUMARTIFACTS;
 	}
-	else if(players[consoleplayer].plr->mo && actions[H2A_HEALTH].on && !cmd->arti 
-	&& (players[consoleplayer].plr->mo->health < players[consoleplayer].maxhealth))
+	else if(players[consoleplayer].mo && actions[H2A_HEALTH].on && !cmd->arti 
+	&& (players[consoleplayer].mo->health < players[consoleplayer].maxhealth))
 	{
 		actions[H2A_HEALTH].on = false;
 		cmd->arti = arti_health;						
@@ -814,10 +811,10 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	}
 
 	// Lookspring.
-	if(lookSpring && !actions[H2A_MLOOK].on)// && players[consoleplayer].plr->mo)
+	if(lookSpring && !actions[H2A_MLOOK].on)// && players[consoleplayer].mo)
 	{
 		if(abs(forward) >= forwardmove[pClass][speed]/*players[consoleplayer].fspeed[speed];*/)
-			//players[consoleplayer].plr->mo->player->centering = true;			
+			//players[consoleplayer].mo->player->centering = true;			
 			look = TOCENTER;
 	}
 
@@ -911,7 +908,7 @@ void G_DoLoadLevel (void)
 	gamestate = GS_LEVEL;
 	for (i=0 ; i<MAXPLAYERS ; i++)
 	{
-		if (players[i].plr->ingame && players[i].playerstate == PST_DEAD)
+		if (players[i].ingame && players[i].playerstate == PST_DEAD)
 			players[i].playerstate = PST_REBORN;
         if(netgame == 0 || (netgame != 0 && deathmatch != 0) 
            || firstFragReset == 1) {
@@ -922,11 +919,10 @@ void G_DoLoadLevel (void)
 
 	SN_StopAllSequences();	
 	P_SetupLevel (gameepisode, gamemap, 0, gameskill);   
-	gi.Set(DD_DISPLAYPLAYER, consoleplayer);
-	//displayplayer = consoleplayer;      // view the guy you are playing   
-	starttime = gi.GetTime ();
+	displayplayer = consoleplayer;      // view the guy you are playing   
+	starttime = I_GetTime();
 	gameaction = ga_nothing;
-	gi.Z_CheckHeap ();
+	Z_CheckHeap ();
 
 //
 // clear cmd building stuff
@@ -950,12 +946,12 @@ int CCmdCycleSpy(int argc, char **argv)
 	{ // Cycle the display player
 		do
 		{
-			gi.Set(DD_DISPLAYPLAYER, displayplayer+1);
-			if(displayplayer == MAXPLAYERS)
+			displayplayer = displayplayer + 1;
+			if (displayplayer == MAXPLAYERS)
 			{
-				gi.Set(DD_DISPLAYPLAYER, 0);
+				displayplayer = 0;
 			}
-		} while(!players[displayplayer].plr->ingame
+		} while(!players[displayplayer].ingame
 			&& displayplayer != consoleplayer);
 	}
 	return true;
@@ -1089,21 +1085,15 @@ void G_Ticker(void)
 	if(udfile == NULL) 
 	{
 		udfile = fopen("haps.txt", "wt");
-		if(!udfile) gi.Error("Can't open the haps!\n");
+		if(!udfile) I_Error("Can't open the haps!\n");
 	}
 #endif
-
-	/*if(ticdf == NULL)
-	{
-		if(gi.CheckParm("-ticdebug"))
-			ticdf = fopen("ticdbg.txt", "wt");
-	}*/
 
 //
 // do player reborns if needed
 //
 	for (i=0 ; i<MAXPLAYERS ; i++)
-		if (players[i].plr->ingame && players[i].playerstate == PST_REBORN)
+		if (players[i].ingame && players[i].playerstate == PST_REBORN)
 			G_DoReborn (i);
 
 //
@@ -1169,7 +1159,7 @@ void G_Ticker(void)
 		int count=0;
 		thinker_t *iter;
 		fprintf(udfile, "Tick %i: ", gametic);
-		for(iter = gi.thinkercap->next; iter && iter != gi.thinkercap; iter = iter->next)
+		for(iter = thinkercap->next; iter && iter != thinkercap; iter = iter->next)
 			count++;
 		fprintf(udfile, "%i thinkers, prndidx = %i\n", count, prndindex);
 	}
@@ -1184,12 +1174,12 @@ void G_Ticker(void)
 	//if(ticdf && netgame) fprintf(ticdf, "Tick %i", gametic);
 	
 	for (i=0 ; i<MAXPLAYERS ; i++)
-		if (players[i].plr->ingame)
+		if (players[i].ingame)
 		{
 			cmd = &players[i].cmd;
 
 			//memcpy (cmd, &netcmds[i][buf], sizeof(ticcmd_t));
-			gi.GetTicCmd(cmd, i);
+			D_GetTicCmd(cmd, i);
 	
 			/*if(ticdf && netgame) fprintf(ticdf, " / %i [f%i s%i a%i %i c%i b%i l%i a%i]", i,
 				cmd->forwardmove, cmd->sidemove, cmd->angleturn, cmd->consistancy,
@@ -1204,14 +1194,14 @@ void G_Ticker(void)
 			{
 				if (gametic > BACKUPTICS && consistancy[i][buf] != cmd->consistancy)
 				{
-					//gi.Error ("consistency failure (%i should be %i)",cmd->consistancy, consistancy[i][buf]);
+					//I_Error ("consistency failure (%i should be %i)",cmd->consistancy, consistancy[i][buf]);
 
 					// Disconnect.
-					gi.Execute(gi.Get(DD_SERVER)? "net server close" : "net disconnect", true);
-					gi.Message("G_Ticker: CONSISTENCY FAILURE! Netgame aborted.\n");
+					CON_Execute(server ? "net server close" : "net disconnect", true);
+					ST_Message("G_Ticker: CONSISTENCY FAILURE! Netgame aborted.\n");
 				}
-/*				if (players[i].plr->mo)
-					consistancy[i][buf] = players[i].plr->mo->x;
+/*				if (players[i].mo)
+					consistancy[i][buf] = players[i].mo->x;
 				else*/
 					// This used to have rndindex, but that can't be right...?
 					consistancy[i][buf] = prndindex;
@@ -1225,7 +1215,7 @@ void G_Ticker(void)
 // check for special buttons
 //
 	for (i=0 ; i<MAXPLAYERS ; i++)
-		if (players[i].plr->ingame)
+		if (players[i].ingame)
 		{
 			if (players[i].cmd.buttons & BT_SPECIAL)
 			{
@@ -1391,18 +1381,18 @@ void G_PlayerExitMap(int playerNumber)
 
 	if(player->morphTics)
 	{
-		player->readyweapon = (newweapontype_t)player->plr->mo->special1; // Restore weapon
+		player->readyweapon = (newweapontype_t)player->mo->special1; // Restore weapon
 		player->morphTics = 0;
 	}
 	//Remi
 	if (player->pclass >= PCLASS_ETTIN)
-		P_UndoPossessMonster(player->plr->mo,player);
+		P_UndoPossessMonster(player->mo,player);
 	player->messageTics = 0;
 	player->messageTics2 = 0; //Remi
-	player->plr->lookdir = 0;
-	player->plr->mo->flags &= ~MF_SHADOW; // Remove invisibility
-	player->plr->extralight = 0; // Remove weapon flashes
-	player->plr->fixedcolormap = 0; // Remove torch
+	player->lookdir = 0;
+	player->mo->flags &= ~MF_SHADOW; // Remove invisibility
+	player->extralight = 0; // Remove weapon flashes
+	player->fixedcolormap = 0; // Remove torch
 	player->damagecount = 0; // No palette changes
 	player->bonuscount = 0;
 	player->poisoncount = 0;
@@ -1411,30 +1401,6 @@ void G_PlayerExitMap(int playerNumber)
 		SB_state = -1; // refresh the status bar
 		//viewangleoffset = 0;
 	}
-}
-
-//==========================================================================
-//
-// ClearPlayer
-//
-// Safely clears the player data structures.
-//
-//==========================================================================
-
-void ClearPlayer(player_t *p)
-{
-	ddplayer_t	*ddplayer = p->plr;
-	int			playeringame = ddplayer->ingame;
-
-	memset(p, 0, sizeof(*p));
-	// Restore the pointer to ddplayer.
-	p->plr = ddplayer;
-	// Also clear ddplayer.
-	memset(ddplayer, 0, sizeof(*ddplayer));
-	// Restore the pointer to this player.
-	ddplayer->extradata = p;
-	// Restore the playeringame data.
-	ddplayer->ingame = playeringame;
 }
 
 //==========================================================================
@@ -1449,11 +1415,13 @@ void ClearPlayer(player_t *p)
 void G_PlayerReborn(int player)
 {
 	player_t *p;
+	int playeringame;
 	int frags[MAXPLAYERS];
 	int killcount, itemcount, secretcount;
 	uint worldTimer;
 	int i; //Remi test
 
+	playeringame = players[player].ingame;
 	memcpy(frags, players[player].frags, sizeof(frags));
 	killcount = players[player].killcount;
 	itemcount = players[player].itemcount;
@@ -1461,9 +1429,9 @@ void G_PlayerReborn(int player)
 	worldTimer = players[player].worldTimer;
 
 	p = &players[player];
-//	memset(p, 0, sizeof(*p));
-	ClearPlayer(p);
+	memset(p, 0, sizeof(*p));
 
+	players[player].ingame = playeringame;
 	memcpy(players[player].frags, frags, sizeof(players[player].frags));
 	players[player].killcount = killcount;
 	players[player].itemcount = itemcount;
@@ -1515,7 +1483,7 @@ void G_PlayerReborn(int player)
 	
 	p->messageTics = 0;
 	p->messageTics2 = 0;
-	p->plr->lookdir = 0;
+	p->lookdir = 0;
 	localQuakeHappening[player] = false;
 	if(p == &players[consoleplayer])
 	{
@@ -1548,13 +1516,13 @@ boolean G_CheckSpot (int playernum, mapthing_t *mthing)
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
 
-	players[playernum].plr->mo->flags2 &= ~MF2_PASSMOBJ;
-	if (!P_CheckPosition (players[playernum].plr->mo, x, y) )
+	players[playernum].mo->flags2 &= ~MF2_PASSMOBJ;
+	if (!P_CheckPosition (players[playernum].mo, x, y) )
 	{
-		players[playernum].plr->mo->flags2 |= MF2_PASSMOBJ;
+		players[playernum].mo->flags2 |= MF2_PASSMOBJ;
 		return false;
 	}
-	players[playernum].plr->mo->flags2 |= MF2_PASSMOBJ;
+	players[playernum].mo->flags2 |= MF2_PASSMOBJ;
 
 // spawn a teleport fog
 	ss = R_PointInSubsector (x,y);
@@ -1563,7 +1531,7 @@ boolean G_CheckSpot (int playernum, mapthing_t *mthing)
 	mo = P_SpawnMobj (x+20*finecosine[an], y+20*finesine[an],
 		ss->sector->floorheight+TELEFOGHEIGHT, MT_TFOG);
 
-	if (players[consoleplayer].plr->viewz != 1)
+	if (players[consoleplayer].viewz != 1)
 		S_StartSound (mo, SFX_TELEPORT);  // don't start sound on first frame
 
 	return true;
@@ -1584,25 +1552,18 @@ void G_DeathMatchSpawnPlayer (int playernum)
 	int             i,j;
 	int             selections;
 
-#ifdef TIC_DEBUG
-	FUNTAG("G_DeathMatchSpawnPlayer");
-#endif
-
 	selections = deathmatch_p - deathmatchstarts;
 
 	// This check has been moved to p_setup.c:P_LoadThings()
 	//if (selections < 8)
-	//	gi.Error ("Only %i deathmatch spots, 8 required", selections);
+	//	I_Error ("Only %i deathmatch spots, 8 required", selections);
 
 	for (j=0 ; j<20 ; j++)
 	{
 		i = P_Random() % selections;
 
-		//gi.Message("Checking dmstart %i (prndidx=%i)...\n", i, prndindex);
-
 		if (G_CheckSpot (playernum, &deathmatchstarts[i]) )
 		{
-			//gi.Message("Spawning player %i at dmstart %i\n", playernum, i);
 			deathmatchstarts[i].type = playernum+1;
 			P_SpawnPlayer (&deathmatchstarts[i]);
 			return;
@@ -1660,7 +1621,7 @@ void G_DoReborn(int playernum)
 	}
 	else
 	{ // Net-game
-		players[playernum].plr->mo->player = NULL; // Dissassociate the corpse
+		players[playernum].mo->player = NULL; // Dissassociate the corpse
 
 		if(deathmatch)
 		{ // Spawn at random spot if in death match
@@ -1740,7 +1701,7 @@ void G_DoReborn(int playernum)
 		players[playernum].exp_level = exp_level;
 		players[playernum].next_level = next_level;
 		players[playernum].prev_level = prev_level;
-		players[playernum].maxhealth = players[playernum].health = players[playernum].plr->mo->health = maxhealth;
+		players[playernum].maxhealth = players[playernum].health = players[playernum].mo->health = maxhealth;
 		players[playernum].maxhealth_old = maxhealth_old;
 		players[playernum].maxsp_power = players[playernum].sp_power = maxsp_power;
 		players[playernum].sp_power_old = sp_power_old;
@@ -1750,7 +1711,7 @@ void G_DoReborn(int playernum)
 		players[playernum].mana[MANA_2] = 25;
 		if(bestWeapon)
 		{ // Bring up the best weapon
-			P_NewPendingWeapon(players[playernum].plr->mo->player,50); //Remi
+			P_NewPendingWeapon(players[playernum].mo->player,50); //Remi
 			//players[playernum].pendingweapon = bestWeapon;
 		}
 	}
@@ -1871,7 +1832,7 @@ void G_DoCompleted(void)
 	}
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
-		if(players[i].plr->ingame)
+		if(players[i].ingame)
 		{
 			G_PlayerExitMap(i);
 		}
@@ -2133,7 +2094,7 @@ void G_InitNew(skill_t skill, int episode, int map)
 	gamemap = map;
 	gameskill = skill;
 	//BorderNeedRefresh = true;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 
 	// Initialize the sky
 	P_InitSky(map);
@@ -2183,16 +2144,14 @@ void G_WriteDemoTiccmd (ticcmd_t *cmd)
 	if(offset+7 > demoBufferSize) // 6 bytes per ticcmd.
 	{
 		// We need to allocate a new, larger buffer! Allocate 32 kb more.
-		byte *newbuffer = (byte *)gi.Z_Malloc(demoBufferSize+=0x8000, PU_STATIC, NULL);
+		byte *newbuffer = (byte *)Z_Malloc(demoBufferSize+=0x8000, PU_STATIC, NULL);
 		// Copy the old buffer data.
 		memcpy(newbuffer, demobuffer, offset);
 		// Free the old buffer.
-		gi.Z_Free(demobuffer);
+		Z_Free(demobuffer);
 		demobuffer = newbuffer;
 		// Update the pointer.
 		demo_p = demobuffer + offset;
-
-		//gi.Message("demo buffer reallocated\n");
 	}
 
 	if (actions[H2A_STOPDEMO].on)     // press to end demo recording
@@ -2225,7 +2184,7 @@ void G_RecordDemo (skill_t skill, int numplayers, int episode, int map, char *na
 	usergame = false;
 	strcpy (demoname, name);
 	strcat (demoname, ".lmp");
-	demobuffer = demo_p = (byte *)gi.Z_Malloc(demoBufferSize=0x20000, PU_STATIC, NULL);
+	demobuffer = demo_p = (byte *)Z_Malloc(demoBufferSize=0x20000, PU_STATIC, NULL);
 	*demo_p++ = DEMO_VER;
 	*demo_p++ = skill;
 	*demo_p++ = episode;
@@ -2233,7 +2192,7 @@ void G_RecordDemo (skill_t skill, int numplayers, int episode, int map, char *na
 	
 	for (i=0 ; i<MAXPLAYERS ; i++)
 	{
-		*demo_p++ = players[i].plr->ingame;
+		*demo_p++ = players[i].ingame;
 		*demo_p++ = PlayerClass[i];
 	}		
 	demorecording = true;
@@ -2262,7 +2221,7 @@ void G_DoPlayDemo (void)
 	int             i, episode, map, demver;
 	
 	gameaction = ga_nothing;
-	demobuffer = demo_p = (byte *)gi.W_CacheLumpName (defdemoname, PU_STATIC);
+	demobuffer = demo_p = (byte *)W_CacheLumpName (defdemoname, PU_STATIC);
 	demver = *demo_p++;
 	if (demver!=DEMO_VER) return;
 	skill = (skill_t)(*demo_p++);
@@ -2272,7 +2231,7 @@ void G_DoPlayDemo (void)
 	for (i=0 ; i<MAXPLAYERS ; i++)
 	{
 		//gi.SetPlayerInGame(i, *demo_p++);
-		players[i].plr->ingame = *demo_p++;
+		players[i].ingame = *demo_p++;
 		PlayerClass[i] = (pclass_t)(*demo_p++);
 	}
 	// Initialize world info, etc.
@@ -2300,7 +2259,7 @@ void G_TimeDemo (char *name)
 	/*skill_t			skill;
 	int             episode, map;
 	
-	demobuffer = demo_p = gi.W_CacheLumpName (name, PU_STATIC);
+	demobuffer = demo_p = W_CacheLumpName (name, PU_STATIC);
 	skill = *demo_p++;
 	episode = *demo_p++;
 	map = *demo_p++;
@@ -2310,7 +2269,7 @@ void G_TimeDemo (char *name)
 	int             i, episode, map, demver;
 	
 	gameaction = ga_nothing;
-	demobuffer = demo_p = (byte *)gi.W_CacheLumpName (name, PU_STATIC);
+	demobuffer = demo_p = (byte *)W_CacheLumpName (name, PU_STATIC);
 	demver = *demo_p++;
 	if (demver!=DEMO_VER) return;
 	skill = (skill_t)(*demo_p++);
@@ -2319,7 +2278,7 @@ void G_TimeDemo (char *name)
 
 	for (i=0 ; i<MAXPLAYERS ; i++)
 	{
-		players[i].plr->ingame = *demo_p++;
+		players[i].ingame = *demo_p++;
 		PlayerClass[i] = (pclass_t)(*demo_p++);
 	}
 
@@ -2356,16 +2315,16 @@ boolean G_CheckDemoStatus (void)
 	if (timingdemo)
 	{
 		float seconds;
-		endtime = gi.GetTime ();
-		gi.Message( "\nTimedemo results:\n");
-		gi.Message( "* %d gametics in %d realtics.\n",gametic, endtime-starttime);
+		endtime = I_GetTime();
+		ST_Message( "\nTimedemo results:\n");
+		ST_Message( "* %d gametics in %d realtics.\n",gametic, endtime-starttime);
 		seconds = (endtime-starttime)/35.0;
-		gi.Message( "* Timedemo ran for %f seconds.\n", seconds);
+		ST_Message( "* Timedemo ran for %f seconds.\n", seconds);
 		//printf( "* Average FPS is thus: %f\n",gametic/seconds);
-		//gi.Error ("timed %i gametics in %i realtics",gametic, endtime-starttime);
-		gi.Message("* Average FPS: %.3f\n--- Ending Timedemo ---\n", gametic/seconds);
+		//I_Error ("timed %i gametics in %i realtics",gametic, endtime-starttime);
+		ST_Message("* Average FPS: %.3f\n--- Ending Timedemo ---\n", gametic/seconds);
 		
-		if(singledemo) gi.Quit();
+		if(singledemo) I_Quit();
 		
 		// Do some reseting.
 		timingdemo = false;
@@ -2387,9 +2346,9 @@ boolean G_CheckDemoStatus (void)
 	
 	if (demoplayback)
 	{
-		if (singledemo) gi.Quit ();
+		if (singledemo) I_Quit();
 			
-		gi.Z_ChangeTag (demobuffer, PU_CACHE);
+		Z_ChangeTag (demobuffer, PU_CACHE);
 		demoplayback = false;
 		H2_AdvanceDemo();
 		return true;
@@ -2400,13 +2359,13 @@ boolean G_CheckDemoStatus (void)
 		int demosize;
 		*demo_p++ = DEMOMARKER;
 		demosize = demo_p - demobuffer;
-		gi.WriteFile (demoname, demobuffer, demosize);
-		gi.Z_Free (demobuffer);
+		M_WriteFile(demoname, demobuffer, demosize);
+		Z_Free (demobuffer);
 		demorecording = false;
 		
-		gi.Message("Demo %s recorded (%d bytes).\n", demoname, demosize);
+		ST_Message("Demo %s recorded (%d bytes).\n", demoname, demosize);
 
-		if(singledemo) gi.Quit();
+		if(singledemo) I_Quit();
 
 		demorecording = false;
 		H2_AdvanceDemo();

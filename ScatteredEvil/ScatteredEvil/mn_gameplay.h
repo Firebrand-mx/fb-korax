@@ -156,40 +156,13 @@ class KMenuScreenGameplay:public KMenuScreen
 	{
 		ChoiceStartX = 224;
 		ChoiceStartY = 165;
-		Font = KCanvas::SmallFont;
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_Messages, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_AllwaysRun, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_Lookspring, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_AutoAim, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_Crosshair, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_CrosshairSize, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_ScreenSize, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
+		Choices[0] = KMenuChoice_Messages::StaticClass();
+		Choices[1] = KMenuChoice_AllwaysRun::StaticClass();
+		Choices[2] = KMenuChoice_Lookspring::StaticClass();
+		Choices[3] = KMenuChoice_AutoAim::StaticClass();
+		Choices[4] = KMenuChoice_Crosshair::StaticClass();
+		Choices[5] = KMenuChoice_CrosshairSize::StaticClass();
+		Choices[6] = KMenuChoice_ScreenSize::StaticClass();
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenGameplay);

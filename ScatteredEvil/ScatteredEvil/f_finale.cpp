@@ -78,8 +78,8 @@ void F_StartFinale (void)
 	FinaleCount = 0;
 	FinaleText = GetFinaleText(0);
 	FinaleEndCount = 70;
-	FinaleLumpNum = gi.W_GetNumForName("FINALE1");
-	FontABaseLump = gi.W_GetNumForName("FONTA_S")+1;
+	FinaleLumpNum = W_GetNumForName("FINALE1");
+	FontABaseLump = W_GetNumForName("FONTA_S")+1;
 	InitializeFade(1);
 
 //	S_ChangeMusic(mus_victor, true);
@@ -118,7 +118,7 @@ void F_Ticker (void)
 			case 2: // Pic 2, Text 2
 				FinaleText = GetFinaleText(1);
 				FinaleEndCount = strlen(FinaleText)*TEXTSPEED+TEXTWAIT;
-				FinaleLumpNum = gi.W_GetNumForName("FINALE2");
+				FinaleLumpNum = W_GetNumForName("FINALE2");
 				S_StartSongName("orb", false);
 				break;
 			case 3: // Pic 2 -- Fade out
@@ -127,7 +127,7 @@ void F_Ticker (void)
 				InitializeFade(0);
 				break;
 			case 4: // Pic 3 -- Fade in
-				FinaleLumpNum = gi.W_GetNumForName("FINALE3");
+				FinaleLumpNum = W_GetNumForName("FINALE3");
 				FinaleEndCount = 71;
 				DeInitializeFade();
 				InitializeFade(1);
@@ -162,16 +162,16 @@ static void TextWrite (void)
 	int		cx, cy;
 	patch_t *w;
 
-	gi.GL_DrawRawScreen(FinaleLumpNum);
+	GL_DrawRawScreen(FinaleLumpNum);
 	if(FinaleStage == 5)
 	{ // Chess pic, draw the correct character graphic
 		if(netgame)
 		{
-			gi.GL_DrawPatch(20, 0, gi.W_GetNumForName("chessall"));
+			GL_DrawPatch(20, 0, W_GetNumForName("chessall"));
 		}
 		else if(PlayerClass[consoleplayer])
 		{
-			gi.GL_DrawPatch(60, 0, gi.W_GetNumForName("chessc")+PlayerClass[consoleplayer]-1);
+			GL_DrawPatch(60, 0, W_GetNumForName("chessc")+PlayerClass[consoleplayer]-1);
 		}
 	}
 	// Draw the actual text
@@ -213,12 +213,12 @@ static void TextWrite (void)
 			cx += 5;
 			continue;
 		}
-		w = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
+		w = (patch_t *)W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
 		if(cx+w->width > SCREENWIDTH)
 		{
 			break;
 		}
-		gi.GL_DrawPatch(cx, cy, FontABaseLump+c-33);
+		GL_DrawPatch(cx, cy, FontABaseLump+c-33);
 		cx += w->width;
 	}
 }
@@ -274,16 +274,16 @@ static void FadePic(void)
 
 static void DrawPic(void)
 {
-	gi.GL_DrawRawScreen(FinaleLumpNum);
+	GL_DrawRawScreen(FinaleLumpNum);
 	if(FinaleStage == 4 || FinaleStage == 5)
 	{ // Chess pic, draw the correct character graphic
 		if(netgame)
 		{
-			gi.GL_DrawPatch(20, 0, gi.W_GetNumForName("chessall"));
+			GL_DrawPatch(20, 0, W_GetNumForName("chessall"));
 		}
 		else if(PlayerClass[consoleplayer])
 		{
-			gi.GL_DrawPatch(60, 0, gi.W_GetNumForName("chessc")+PlayerClass[consoleplayer]-1);
+			GL_DrawPatch(60, 0, W_GetNumForName("chessc")+PlayerClass[consoleplayer]-1);
 		}
 	}
 }
@@ -318,11 +318,10 @@ void F_Drawer(void)
 	// The Dark Fader (Darth Vader?). The black filter, if you will.
 	if(FinaleStage == 0 || FinaleStage == 3 || FinaleStage == 4)
 	{
-		gi.GL_SetNoTexture();
-		gi.GL_DrawRect(0, 0, 320, 200, 0,0,0, (255-(Palette>>FRACBITS))/255.0);
+		GL_SetNoTexture();
+		GL_DrawRect(0, 0, 320, 200, 0,0,0, (255-(Palette>>FRACBITS))/255.0);
 	}
-	//UpdateState |= I_FULLSCRN;	
-	gi.Update(DDUF_FULLSCREEN);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 //==========================================================================
@@ -344,13 +343,13 @@ static char *GetFinaleText(int sequence)
 	};
 
 	msgLumpName = winMsgLumpNames[sequence];
-	msgLump = gi.W_GetNumForName(msgLumpName);
-	msgSize = gi.W_LumpLength(msgLump);
+	msgLump = W_GetNumForName(msgLumpName);
+	msgSize = W_LumpLength(msgLump);
 	if(msgSize >= MAX_INTRMSN_MESSAGE_SIZE)
 	{
-		gi.Error("Finale message too long (%s)", msgLumpName);
+		I_Error("Finale message too long (%s)", msgLumpName);
 	}
-	gi.W_ReadLump(msgLump, ClusterMessage);
+	W_ReadLump(msgLump, ClusterMessage);
 	ClusterMessage[msgSize] = 0; // Append terminator
 	return ClusterMessage;
 }

@@ -88,12 +88,12 @@ void P_InitTerrainTypes(void)
 
 	size = (numflats+1)*sizeof(int);
 	// Free if there already is memory allocated.
-	if(TerrainTypes) gi.Z_Free(TerrainTypes);
-	TerrainTypes = (int *)gi.Z_Malloc(size, PU_STATIC, 0);
+	if(TerrainTypes) Z_Free(TerrainTypes);
+	TerrainTypes = (int *)Z_Malloc(size, PU_STATIC, 0);
 	memset(TerrainTypes, 0, size);
 	for(i = 0; TerrainTypeDefs[i].type != -1; i++)
 	{
-		lump = gi.W_CheckNumForName(TerrainTypeDefs[i].name);
+		lump = W_CheckNumForName(TerrainTypeDefs[i].name);
 		if(lump != -1)
 		{
 			TerrainTypes[lump-firstflat] = TerrainTypeDefs[i].type;
@@ -179,7 +179,7 @@ fixed_t P_FindLowestFloorSurrounding(sector_t *sec)
 
 	for (i=0 ;i < sec->linecount ; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		other = getNextSector(check,sec);
 		if (!other)
 			continue;
@@ -203,7 +203,7 @@ fixed_t P_FindHighestFloorSurrounding(sector_t *sec)
 
 	for (i=0 ;i < sec->linecount ; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		other = getNextSector(check,sec);
 		if (!other)
 			continue;
@@ -230,7 +230,7 @@ fixed_t P_FindNextHighestFloor(sector_t *sec,int currentheight)
 
 	for (i =0,h = 0 ;i < sec->linecount ; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		other = getNextSector(check,sec);
 		if (!other)
 			continue;
@@ -263,7 +263,7 @@ fixed_t P_FindLowestCeilingSurrounding(sector_t *sec)
 
 	for (i=0 ;i < sec->linecount ; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		other = getNextSector(check,sec);
 		if (!other)
 			continue;
@@ -287,7 +287,7 @@ fixed_t P_FindHighestCeilingSurrounding(sector_t *sec)
 
 	for (i=0 ;i < sec->linecount ; i++)
 	{
-		check = sec->Lines[i];
+		check = sec->lines[i];
 		other = getNextSector(check,sec);
 		if (!other)
 			continue;
@@ -1024,8 +1024,8 @@ void P_PlayerInSpecialSector(player_t *player)
 		2048*25
 	};
 
-	sector = player->plr->mo->subsector->sector;
-	if(player->plr->mo->z != sector->floorheight)
+	sector = player->mo->subsector->sector;
+	if(player->mo->z != sector->floorheight)
 	{ // Player is not touching the floor
 		return;
 	}
@@ -1077,7 +1077,7 @@ void P_PlayerInSpecialSector(player_t *player)
 			// Used in (R_plane):R_Drawplanes
 			break;
 		default:
-			gi.Error("P_PlayerInSpecialSector: "
+			I_Error("P_PlayerInSpecialSector: "
 				"unknown special %i", sector->special);
 	}
 }
@@ -1090,7 +1090,7 @@ void P_PlayerInSpecialSector(player_t *player)
 
 void P_PlayerOnSpecialFlat(player_t *player, int floorType)
 {
-	if(player->plr->mo->z != player->plr->mo->floorz)
+	if(player->mo->z != player->mo->floorz)
 	{ // Player is not touching the floor
 		return;
 	}
@@ -1099,8 +1099,8 @@ void P_PlayerOnSpecialFlat(player_t *player, int floorType)
 		case FLOOR_LAVA:
 			if(!(leveltime&31))
 			{
-				P_DamageMobj(player->plr->mo, &LavaInflictor, NULL, 10);
-				S_StartSound(player->plr->mo, SFX_LAVA_SIZZLE);
+				P_DamageMobj(player->mo, &LavaInflictor, NULL, 10);
+				S_StartSound(player->mo, SFX_LAVA_SIZZLE);
 			}
 			break;
 		default:
@@ -1216,7 +1216,7 @@ void P_SpawnSpecials (void)
 				{
 					if(TaggedLineCount == MAX_TAGGED_LINES)
 					{
-						gi.Error("P_SpawnSpecials: MAX_TAGGED_LINES "
+						I_Error("P_SpawnSpecials: MAX_TAGGED_LINES "
 							"(%d) exceeded.", MAX_TAGGED_LINES);
 					}
 					TaggedLines[TaggedLineCount].line = &lines[i];

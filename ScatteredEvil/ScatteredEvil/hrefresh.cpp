@@ -82,7 +82,7 @@ void R_SetViewSize(int blocks)
 {
 	setsizeneeded = true;
 	setblocks = blocks;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 }
 
 void R_HandleSectorSpecials()
@@ -145,13 +145,13 @@ void G_Drawer(void)
 			|| players[consoleplayer].pclass >= PCLASS_ETTIN) //Remi: Possessed always big screen
 		{
 			// Full screen.
-			gi.ViewWindow(0, 0, 320, 200);
+			R_SetViewSize(0, 0, 320, 200);
 		}
 		else
 		{
 			int w = setblocks*32;
 			int h = setblocks*(200-SBARHEIGHT)/10;
-			gi.ViewWindow(160-(w>>1), (200-SBARHEIGHT-h)>>1, w, h);
+			R_SetViewSize(160-(w>>1), (200-SBARHEIGHT-h)>>1, w, h);
 		}
 	}
 
@@ -175,26 +175,26 @@ void G_Drawer(void)
 				if(localQuakeHappening[displayplayer] && !paused)
 				{
 					int intensity = localQuakeHappening[displayplayer];
-					gi.Set(DD_VIEWX_OFFSET, ((M_Random() % (intensity<<2))
-							-(intensity<<1))<<FRACBITS);
-					gi.Set(DD_VIEWY_OFFSET, ((M_Random() % (intensity<<2))
-							-(intensity<<1))<<FRACBITS);
+					viewxOffset = ((M_Random() % (intensity<<2))
+							-(intensity<<1))<<FRACBITS;
+					viewyOffset = ((M_Random() % (intensity<<2))
+							-(intensity<<1))<<FRACBITS;
 				}
 				else
 				{
-					gi.Set(DD_VIEWX_OFFSET, 0);
-					gi.Set(DD_VIEWY_OFFSET, 0);
+					viewxOffset = 0;
+					viewyOffset = 0;
 				}
 				// The view angle offset.
-				gi.Set(DD_VIEWANGLE_OFFSET, ANGLE_MAX * -lookOffset);
+				viewangleoffset = ANGLE_MAX * -lookOffset;
 				// Render the view.
 				if(!dontrender)
-					gi.RenderPlayerView(players[displayplayer].plr);
-				if (!players[displayplayer].plr->ThirdPersonView)
+					R_RenderPlayerView(&players[displayplayer]);
+				if (!players[displayplayer].ThirdPersonView)
 					X_Drawer(); // Draw the crosshair.
 			}
-			gi.Update(DDUF_FULLVIEW);
-			if (!players[displayplayer].plr->ThirdPersonView)
+			DD_GameUpdate(DDUF_FULLVIEW);
+			if (!players[displayplayer].ThirdPersonView)
 			{
 				SB_Drawer();
 				// We'll draw the chat text *after* the status bar to
@@ -214,15 +214,15 @@ void G_Drawer(void)
 	}
 
 	if (paused && !MenuActive && !askforquit && 
-		!players[displayplayer].plr->ThirdPersonView)
+		!players[displayplayer].ThirdPersonView)
 	{
 		if (!netgame)
 		{
-			GCanvas->DrawPatch1(320, gi.Get(DD_VIEWWINDOW_Y)*480/200+5, gi.W_GetNumForName("PAUSED"));
+			GCanvas->DrawPatch1(320, viewwindowy*480/200+5, W_GetNumForName("PAUSED"));
 		}
 		else
 		{
-			GCanvas->DrawPatch1(320, 70, gi.W_GetNumForName("PAUSED"));
+			GCanvas->DrawPatch1(320, 70, W_GetNumForName("PAUSED"));
 		}
 	}
 }
@@ -235,26 +235,26 @@ void G_Drawer(void)
 
 static void PageDrawer(void)
 {
-	GCanvas->DrawRawScreen(gi.W_GetNumForName(pagename));
+	GCanvas->DrawRawScreen(W_GetNumForName(pagename));
 	if(demosequence == 1)
 	{
-		GCanvas->DrawPatch1(4, 440, gi.W_GetNumForName("ADVISOR"));
+		GCanvas->DrawPatch1(4, 440, W_GetNumForName("ADVISOR"));
 	}
 /*
 	gl.MatrixMode(DGL_PROJECTION);
 	gl.PushMatrix();
 	gl.LoadIdentity();
 	gl.Ortho(0, 0, 768, 512, -1, 1);
-	GCanvas->DrawPatch1(0, 0, gi.W_GetNumForName("TITLEA"));
-	GCanvas->DrawPatch1(256, 0, gi.W_GetNumForName("TITLEB"));
-	GCanvas->DrawPatch1(512, 0, gi.W_GetNumForName("TITLEC"));
-	GCanvas->DrawPatch1(0, 256, gi.W_GetNumForName("TITLED"));
-	GCanvas->DrawPatch1(256, 256, gi.W_GetNumForName("TITLEE"));
-	GCanvas->DrawPatch1(512, 256, gi.W_GetNumForName("TITLEF"));
+	GCanvas->DrawPatch1(0, 0, W_GetNumForName("TITLEA"));
+	GCanvas->DrawPatch1(256, 0, W_GetNumForName("TITLEB"));
+	GCanvas->DrawPatch1(512, 0, W_GetNumForName("TITLEC"));
+	GCanvas->DrawPatch1(0, 256, W_GetNumForName("TITLED"));
+	GCanvas->DrawPatch1(256, 256, W_GetNumForName("TITLEE"));
+	GCanvas->DrawPatch1(512, 256, W_GetNumForName("TITLEF"));
 	gl.MatrixMode(DGL_PROJECTION);
 	gl.PopMatrix();
 */
-	gi.Update(DDUF_FULLSCREEN);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 #define FMAKERGBA(r,g,b,a) ( (byte)(0xff*r) + ((byte)(0xff*g)<<8) + ((byte)(0xff*b)<<16) + ((byte)(0xff*a)<<24) )
@@ -283,14 +283,14 @@ void H2_SetFilter(int filter)
 		// Light blue?
 		rgba = FMAKERGBA(.5f, .5f, 1, .4f);
 	else if(filter)
-		gi.Error("H2_SetFilter: Real strange filter number: %d.\n", filter);
+		I_Error("H2_SetFilter: Real strange filter number: %d.\n", filter);
 
-	gi.GL_SetFilter(rgba);		
+	GL_SetFilter(rgba);		
 }
 
 void H2_EndFrame(void)
 {
-	S_UpdateSounds(players[displayplayer].plr->mo);
+	S_UpdateSounds(players[displayplayer].mo);
 }
 
 void H2_ConsoleBg(int *width, int *height)
@@ -298,7 +298,7 @@ void H2_ConsoleBg(int *width, int *height)
 	extern int consoleFlat;
 	extern float consoleZoom;
 
-	gi.GL_SetFlat(consoleFlat);
+	GL_SetFlat(consoleFlat);
 	*width = 64*consoleZoom;
 	*height = 64*consoleZoom;
 }
@@ -346,7 +346,7 @@ void H2_DoAdvanceDemo(void)
 			pagename = "TITLE";
 			break;
 		case 2:
-			gi.Update(DDUF_BORDER | DDUF_FULLSCREEN);
+			DD_GameUpdate(DDUF_BORDER | DDUF_FULLSCREEN);
 			G_DeferedPlayDemo("demo1");
 			break;
 		case 3:
@@ -355,7 +355,7 @@ void H2_DoAdvanceDemo(void)
 			pagename = "CREDIT";
 			break;
 		case 4:
-			gi.Update(DDUF_BORDER | DDUF_FULLSCREEN);
+			DD_GameUpdate(DDUF_BORDER | DDUF_FULLSCREEN);
 			G_DeferedPlayDemo("demo2");
 			break;
 		case 5:
@@ -364,7 +364,7 @@ void H2_DoAdvanceDemo(void)
 			pagename = "CREDIT";
 			break;
 		case 6:
-			gi.Update(DDUF_BORDER | DDUF_FULLSCREEN);			
+			DD_GameUpdate(DDUF_BORDER | DDUF_FULLSCREEN);			
 			G_DeferedPlayDemo("demo3");
 			break;
 	}
@@ -385,8 +385,6 @@ void H2_DoAdvanceDemo(void)
 ========================
 */
 
-player_t *viewplayer;
-
 // Y-adjustment values for full screen (4 weapons)
 /*int PSpriteSY[NUMCLASSES][NUMWEAPONS] =
 {
@@ -405,7 +403,7 @@ void R_DrawPSprite (pspdef_t *psp)
 	int			y;
 
 	// Get the sprite info.
-	gi.GetSpriteInfo(psp->state->sprite, psp->state->frame, &sprinfo);
+	R_GetSpriteInfo(psp->state->sprite, psp->state->frame, &sprinfo);
 
 	// Calculate edges of the shape.
 	tx = psp->sx - (160 + lookOffset*1300) * FRACUNIT;
@@ -420,11 +418,11 @@ void R_DrawPSprite (pspdef_t *psp)
 	{
 		if(viewplayer->powers[pw_invulnerability] > 4*32)
 		{
-			if(viewplayer->plr->mo->flags2 & MF2_DONTDRAW)
+			if(viewplayer->mo->flags2 & MF2_DONTDRAW)
 			{ // don't draw the psprite
 				alpha = .333f;
 			}
-			else if(viewplayer->plr->mo->flags & MF_SHADOW)
+			else if(viewplayer->mo->flags & MF_SHADOW)
 			{
 				alpha = .666f;
 			}
@@ -442,12 +440,12 @@ void R_DrawPSprite (pspdef_t *psp)
 	else
 	{
 		// local light
-		light = viewplayer->plr->mo->subsector->sector->lightlevel / 255.0;
+		light = viewplayer->mo->subsector->sector->lightlevel / 255.0;
 	}
 
 	// Do some OpenGL rendering, oh yeah.
 	y = -(sprinfo.topOffset>>FRACBITS)+(psp->sy>>FRACBITS);
-	if(gi.Get(DD_VIEWWINDOW_HEIGHT) == SCREENHEIGHT 
+	if (viewheight == SCREENHEIGHT 
 		|| players[consoleplayer].pclass >= PCLASS_ETTIN) //Possessed always big screen
 	{
 		y += NewWeaponInfo[players[consoleplayer].readyweapon].PSpriteSY >> FRACBITS;
@@ -457,8 +455,8 @@ void R_DrawPSprite (pspdef_t *psp)
 //		y -= 19;
 //	}
 	light += .1f;	// Add some extra light.
-	gi.GL_SetColorAndAlpha(light, light, light, alpha);
-	gi.GL_DrawPSprite(x1, y, 1, sprinfo.flip, sprinfo.lump);
+	GL_SetColorAndAlpha(light, light, light, alpha);
+	GL_DrawPSprite(x1, y, 1, sprinfo.flip, sprinfo.lump);
 }
 
 /*
@@ -469,12 +467,11 @@ void R_DrawPSprite (pspdef_t *psp)
 ========================
 */
 
-void R_DrawPlayerSprites(ddplayer_t *viewplr)
+void R_DrawPlayerSprites(void)
 {
 	int			i;
 	pspdef_t	*psp;
 
-	viewplayer = (player_t*) viewplr->extradata;
 	for (i=0, psp=viewplayer->psprites ; i<NUMPSPRITES ; i++,psp++)
 		if (psp->state)
 			R_DrawPSprite (psp);

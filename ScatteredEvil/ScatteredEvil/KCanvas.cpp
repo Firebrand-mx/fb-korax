@@ -40,7 +40,7 @@ KFont::KFont(char *Name, int InSpaceWidth, int InSpaceHeight)
 	for (i = 0; i < 96; i++)
 	{
 		sprintf(buffer, "%s%02d", Name, i);
-		if (gi.W_CheckNumForName(buffer) >= 0)
+		if (W_CheckNumForName(buffer) >= 0)
 		{
 			Chars[i] = KCanvas::FindTexture(buffer);
 			if ((i + 32 >= 'a') && (i + 32 <= 'z') && !Chars[i + 'A' - 'a'])
@@ -140,8 +140,8 @@ KTexture *KCanvas::FindTexture(char *Name)
 	Textures[NumTextures - 1] = new KTexture;
 	KTexture &T = *Textures[NumTextures - 1];
 	strcpy(T.Name, Name);
-	T.LumpNum = gi.W_GetNumForName(Name);
-	patch_t *patch = (patch_t *)gi.W_CacheLumpNum(T.LumpNum, PU_CACHE);
+	T.LumpNum = W_GetNumForName(Name);
+	patch_t *patch = (patch_t *)W_CacheLumpNum(T.LumpNum, PU_CACHE);
 	T.Width = SHORT(patch->width);
 	T.Height = SHORT(patch->height);
 	T.XOffset = SHORT(patch->leftoffset);
@@ -161,7 +161,7 @@ void KCanvas::DrawTile(KTexture *Texture,
 	float s1, float t1, float s2, float t2)
 {
 	guard(KCanvas::DrawTile);
-	gi.GL_SetPatch(Texture->LumpNum);
+	GL_SetPatch(Texture->LumpNum);
 
 	x1 += OrgX;
 	x2 += OrgX;

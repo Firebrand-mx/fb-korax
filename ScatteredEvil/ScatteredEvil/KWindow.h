@@ -9,6 +9,17 @@
 //**************************************************************************
 
 // ----------------------------------------------------------------------
+// EMove - Movement direction
+
+enum EMove
+{
+	MOVE_Left,
+	MOVE_Right,
+	MOVE_Up,
+	MOVE_Down
+};
+
+// ----------------------------------------------------------------------
 //	EWinType - used as a quick way to distinguish window types
 
 enum EWinType
@@ -166,6 +177,17 @@ public:
 		Resize(NewWidth, NewHeight);
 	}
 
+	// Keyboard traversal routines
+	KWindow *MoveFocus(EMove moveDir, bool bForceWrap = false);
+	KWindow *MoveFocusLeft(void)  { return MoveFocus(MOVE_Left);  }
+	KWindow *MoveFocusRight(void) { return MoveFocus(MOVE_Right); }
+	KWindow *MoveFocusUp(void)    { return MoveFocus(MOVE_Up);    }
+	KWindow *MoveFocusDown(void)  { return MoveFocus(MOVE_Down);  }
+
+	// Straight focus setting/getting routines
+	bool SetFocusWindow(KWindow *pNewFocusWindow);
+	KWindow *GetFocusWindow(void);
+
 	// Slayer of innocent children
 	void DestroyAllChildren(void) { KillAllChildren(); }
 
@@ -183,6 +205,7 @@ public:
 	virtual void DescendantAdded(KWindow *) { }
 	virtual void DescendantRemoved(KWindow *) { }
 
+	virtual void ConfigurationChanged(void) { }
 	virtual void VisibilityChanged(bool bNewVisibility) { }
 	virtual void SensitivityChanged(bool bNewSensitivity) { }
 
@@ -215,11 +238,16 @@ protected:
 	void KillAllChildren();
 
 private:
-
+	// Child adopter/orphaner routines
 	void AddChild(KWindow *);
 	void RemoveChild(KWindow *);
 
-	void DrawTree(KCanvas *);
+	// Insures that the focus window can still have focus
+	void CheckFocusWindow(void);
 
+	// Sets clipping on an entire window tree
 	void ClipTree();
+
+	// Draws all windows
+	void DrawTree(KCanvas *);
 };

@@ -182,7 +182,7 @@ boolean P_TeleportMove (mobj_t *thing, fixed_t x, fixed_t y)
 	tmceilingz = newsubsec->sector->ceilingheight;
 	tmfloorpic = newsubsec->sector->floorpic;
 
-	Validcount++;
+	validcount++;
 	numspechit = 0;
 
 //
@@ -823,7 +823,7 @@ boolean P_CheckPosition (mobj_t *thing, fixed_t x, fixed_t y)
 	tmceilingz = newsubsec->sector->ceilingheight;
 	tmfloorpic = newsubsec->sector->floorpic;
 
-	Validcount++;
+	validcount++;
 	numspechit = 0;
 
 	if(tmflags&MF_NOCLIP && !(tmflags&MF_SKULLFLY))
@@ -913,7 +913,7 @@ mobj_t *P_CheckOnmobj(mobj_t *thing)
 	tmceilingz = newsubsec->sector->ceilingheight;
 	tmfloorpic = newsubsec->sector->floorpic;
 
-	Validcount++;
+	validcount++;
 	numspechit = 0;
 
 	if ( tmflags & MF_NOCLIP )
@@ -1309,7 +1309,7 @@ void P_HitSlideLine (line_t *ld)
 	deltaangle = moveangle-lineangle;
 	if (deltaangle > ANG180)
 		deltaangle += ANG180;
-//              gi.Error ("SlideLine: ang>ANG180");
+//              I_Error ("SlideLine: ang>ANG180");
 
 	lineangle >>= ANGLETOFINESHIFT;
 	deltaangle >>= ANGLETOFINESHIFT;
@@ -1333,7 +1333,7 @@ boolean         PTR_SlideTraverse (intercept_t *in)
 	line_t  *li;
 
 	if (!in->isaline)
-		gi.Error ("PTR_SlideTraverse: not a line?");
+		I_Error ("PTR_SlideTraverse: not a line?");
 
 	li = in->d.line;
 	if ( ! (li->flags & ML_TWOSIDED) )
@@ -1485,7 +1485,7 @@ boolean PTR_BounceTraverse(intercept_t *in)
 	line_t  *li;
 
 	if (!in->isaline)
-		gi.Error ("PTR_BounceTraverse: not a line?");
+		I_Error ("PTR_BounceTraverse: not a line?");
 
 	li = in->d.line;
 	if (!(li->flags&ML_TWOSIDED))
@@ -1564,7 +1564,7 @@ void P_BounceWall(mobj_t *mo)
 	deltaangle = (2*lineangle)-moveangle;
 //	if (deltaangle > ANG180)
 //		deltaangle += ANG180;
-//              gi.Error ("SlideLine: ang>ANG180");
+//              I_Error ("SlideLine: ang>ANG180");
 
 	lineangle >>= ANGLETOFINESHIFT;
 	deltaangle >>= ANGLETOFINESHIFT;
@@ -1713,8 +1713,6 @@ boolean         PTR_ShootTraverse (intercept_t *in)
 	fixed_t         slope;
 	fixed_t         dist;
 	fixed_t         thingtopslope, thingbottomslope;
-//	mobj_t		*mo;
-	//divline_t	*trace = (divline_t*) gi.Get(DD_TRACE_ADDRESS);
 
 	extern mobj_t LavaInflictor;
 
@@ -1973,7 +1971,7 @@ boolean         PTR_UseTraverse (intercept_t *in)
 			return true;	//	Don't use self.
 		}
 
-		if (CON_StartConversation(usething, mobj))
+		if (ConSys_StartConversation(usething, mobj))
 		{
 			return true;
 		}
@@ -2068,11 +2066,11 @@ void P_UseLines (player_t *player)
 	int                     angle;
 	fixed_t         x1, y1, x2, y2;
 
-	usething = player->plr->mo;
+	usething = player->mo;
 
-	angle = player->plr->mo->angle >> ANGLETOFINESHIFT;
-	x1 = player->plr->mo->x;
-	y1 = player->plr->mo->y;
+	angle = player->mo->angle >> ANGLETOFINESHIFT;
+	x1 = player->mo->x;
+	y1 = player->mo->y;
 	x2 = x1 + (USERANGE>>FRACBITS)*finecosine[angle];
 	y2 = y1 + (USERANGE>>FRACBITS)*finesine[angle];
 
@@ -2172,11 +2170,11 @@ boolean P_UsePuzzleItem(player_t *player, int itemType)
 	fixed_t x1, y1, x2, y2;
 
 	PuzzleItemType = itemType;
-	PuzzleItemUser = player->plr->mo;
+	PuzzleItemUser = player->mo;
 	PuzzleActivated = false;
-	angle = player->plr->mo->angle>>ANGLETOFINESHIFT;
-	x1 = player->plr->mo->x;
-	y1 = player->plr->mo->y;
+	angle = player->mo->angle>>ANGLETOFINESHIFT;
+	x1 = player->mo->x;
+	y1 = player->mo->y;
 	x2 = x1+(USERANGE>>FRACBITS)*finecosine[angle];
 	y2 = y1+(USERANGE>>FRACBITS)*finesine[angle];
 	P_PathTraverse(x1, y1, x2, y2, PT_ADDLINES|PT_ADDTHINGS,

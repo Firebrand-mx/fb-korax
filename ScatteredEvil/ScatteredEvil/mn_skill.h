@@ -12,7 +12,6 @@ class KMenuScreenSkill:public KMenuScreen
 	{
 		ChoiceStartX = 280;
 		ChoiceStartY = 184;
-		CursorPos = 2;
 		switch(MenuPClass)
 		{
 		case PCLASS_FIGHTER:
@@ -48,6 +47,13 @@ class KMenuScreenSkill:public KMenuScreen
 			ButtonDefaults[4] = FButtonDefault("NIGHTMARE", MA_Custom, MENU_NONE, sk_nightmare);
 			break;
 		}
+	}
+
+	void InitWindow(void)
+	{
+		Super::InitWindow();
+		CycleNextChoice();
+		CycleNextChoice();
 	}
 
 	void ProcessCustomMenuAction(int Key)

@@ -23,6 +23,8 @@ KModalWindow::KModalWindow()
 {
 	WindowType = WIN_Modal;
 	bIsSelectable = true;
+	bWrapFocus = true;
+	PreferredFocus = this;
 }
 
 //==========================================================================
@@ -45,10 +47,18 @@ void KModalWindow::CleanUp(void)
 void KModalWindow::AddWindowToTables(KWindow *pWindow)
 {
 	guard(KModalWindow::AddWindowToTables);
+	if (WindowListCount >= 256)
+	{
+		I_Error("Too many selectable windows");
+	}
 	RowMajorWindowList[WindowListCount] = pWindow;
 	ColMajorWindowList[WindowListCount] = pWindow;
 	WindowListCount++;
 	ResortWindowTables();
+	if (PreferredFocus == this)
+	{
+		PreferredFocus = pWindow;
+	}
 	unguard;
 }
 
@@ -73,6 +83,17 @@ void KModalWindow::RemoveWindowFromTables(KWindow *pWindow)
 	{
 		ColMajorWindowList[i] = ColMajorWindowList[i + 1];
 		ColMajorWindowList[i]->ColMajorIndex = i;
+	}
+	if (PreferredFocus == pWindow)
+	{
+		if (WindowListCount)
+			PreferredFocus = RowMajorWindowList[0];
+		else
+			PreferredFocus = this;
+		if (IsCurrentModal())
+		{
+			GetRootWindow()->SetFocus(PreferredFocus);
+		}
 	}
 	unguard;
 }

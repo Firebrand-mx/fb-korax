@@ -769,10 +769,10 @@ explode:
 	{ // If in a walking frame, stop moving
 		if(player)
 		{
-			if((unsigned)((player->plr->mo->state-states)
+			if((unsigned)((player->mo->state-states)
 				-PStateRun[player->pclass]) < 4)
 			{
-				P_SetMobjState(player->plr->mo, PStateNormal[player->pclass]);
+				P_SetMobjState(player->mo, PStateNormal[player->pclass]);
 			}
 		}
 		mo->momx = 0;
@@ -1070,14 +1070,6 @@ void P_BlasterMobjThinker(mobj_t *mobj)
 	boolean changexy;
 	mobj_t *mo;
 
-#ifdef TIC_DEBUG
-	FUNTAG("P_BlasterMobjThinker");
-
-	if(rndDebugfile) fprintf(rndDebugfile, " -- z: %f, floorz: %f, mom: %f, %f, %f\n",
-		FIX2FLT(mobj->z), FIX2FLT(mobj->floorz), FIX2FLT(mobj->momx), FIX2FLT(mobj->momy),
-		FIX2FLT(mobj->momz));
-#endif
-
 	// Handle movement
 	if(mobj->momx || mobj->momy ||
 		(mobj->z != mobj->floorz) || mobj->momz)
@@ -1093,19 +1085,12 @@ void P_BlasterMobjThinker(mobj_t *mobj)
 				if(!P_TryMove(mobj, mobj->x+xfrac, mobj->y+yfrac))
 				{ // Blocked move
 					P_ExplodeMissile(mobj);
-#ifdef TIC_DEBUG
-					FUNTAG(" + missile exploded");
-#endif
 					return;
 				}
 			}
 			mobj->z += zfrac;
 			if(mobj->z <= mobj->floorz)
 			{ // Hit the floor
-#ifdef TIC_DEBUG
-				FUNTAG(" + floor hit");
-#endif
-
 				mobj->z = mobj->floorz;
 				P_HitFloor(mobj);
 				P_ExplodeMissile(mobj);
@@ -1115,9 +1100,6 @@ void P_BlasterMobjThinker(mobj_t *mobj)
 			{ // Hit the ceiling
 				mobj->z = mobj->ceilingz-mobj->height;
 				P_ExplodeMissile(mobj);
-#ifdef TIC_DEBUG
-				FUNTAG(" + ceiling hit");
-#endif
 				return;
 			}
 			if(changexy)
@@ -1163,16 +1145,10 @@ void P_BlasterMobjThinker(mobj_t *mobj)
 		{
 			if(!P_SetMobjState(mobj, mobj->state->nextstate))
 			{ // mobj was removed
-#ifdef TIC_DEBUG
-				FUNTAG(" + mobj removed");
-#endif
 				return;
 			}
 		}
 	}
-#ifdef TIC_DEBUG
-	FUNTAG(" + end");
-#endif
 }
 
 //===========================================================================
@@ -1355,7 +1331,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	fixed_t space;
 	int i,numPl=0;
 
-	mobj = (mobj_t *)gi.Z_Malloc(sizeof(*mobj), PU_LEVEL, NULL);
+	mobj = (mobj_t *)Z_Malloc(sizeof(*mobj), PU_LEVEL, NULL);
 	memset(mobj, 0, sizeof(*mobj));
 	info = &mobjinfo[type];
 	mobj->type = type;
@@ -1371,7 +1347,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
                                  // see P_DamageMobj in P_inter.c
 
 	for (i=0; i<MAXPLAYERS; i++)
-		if (players[i].plr->ingame) numPl++;
+		if (players[i].ingame) numPl++;
 	if (netgame) 
 	{
 		mobj->experience = info->spawnhealth * netMobHealthModifier*numPl;
@@ -1441,7 +1417,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	}
 
 	mobj->thinker.function = (think_t)P_MobjThinker;
-	gi.AddThinker(&mobj->thinker);
+	P_AddThinker(&mobj->thinker);
 	return(mobj);
 }
 
@@ -1472,7 +1448,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	S_StopSound(mobj);
 
 	// Free block
-	gi.RemoveThinker((thinker_t *)mobj);
+	P_RemoveThinker((thinker_t *)mobj);
 }
 
 //==========================================================================
@@ -1492,7 +1468,7 @@ void P_SpawnPlayer(mapthing_t *mthing)
 	fixed_t x, y, z;
 	mobj_t *mobj;
 
-	if(!players[mthing->type-1].plr->ingame)
+	if(!players[mthing->type-1].ingame)
 	{ // Not playing
 		return;
 	}
@@ -1533,7 +1509,7 @@ void P_SpawnPlayer(mapthing_t *mthing)
 			mobj = P_SpawnMobj(x, y, z, MT_PLAYER_MAGE);
 			break;
 		default:
-			gi.Error("P_SpawnPlayer: Unknown class type");
+			I_Error("P_SpawnPlayer: Unknown class type");
 			break;
 	}
 
@@ -1559,7 +1535,7 @@ void P_SpawnPlayer(mapthing_t *mthing)
 	mobj->angle = ANG45 * (mthing->angle/45);
 	mobj->player = p;
 	mobj->health = p->health;
-	p->plr->mo = mobj;
+	p->mo = mobj;
 	p->playerstate = PST_LIVE;
 	p->refire = 0;
 	P_ClearMessage(p);
@@ -1568,10 +1544,10 @@ void P_SpawnPlayer(mapthing_t *mthing)
 	p->poisoncount = 0;
 	p->morphTics = 0;
 	p->berserkTics = 0;
-	p->plr->extralight = 0;
-	p->plr->fixedcolormap = 0;
+	p->extralight = 0;
+	p->fixedcolormap = 0;
 	p->viewheight = heights[p->pclass]*FRACUNIT;
-	p->plr->lookdir = 0;
+	p->lookdir = 0;
 	P_SetupPsprites(p);
 	if(deathmatch)
 	{ // Give all keys in death match mode
@@ -1625,7 +1601,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 	if(mthing->type <= 4)
 	{
 		if(mthing->arg1 < 0 || mthing->arg1 > MAX_PLAYER_STARTS)
-			gi.Error("P_SpawnMapThing: mthing->arg1 is really weird! (%d)\n", mthing->arg1);
+			I_Error("P_SpawnMapThing: mthing->arg1 is really weird! (%d)\n", mthing->arg1);
 		playerstarts[mthing->arg1][mthing->type-1] = *mthing;
 		if(!deathmatch && !mthing->arg1)
 		{
@@ -1701,7 +1677,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		spawnMask = 0;
 		for(i = 0; i < MAXPLAYERS; i++)
 		{
-			if(players[i].plr->ingame)
+			if(players[i].ingame)
 			{
 				spawnMask |= classFlags[PlayerClass[i]];
 			}
@@ -1723,7 +1699,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 
 	if(i == NUMMOBJTYPES)
 	{ // Can't find thing type
-		gi.Error("P_SpawnMapThing: Unknown type %i at (%i, %i)",
+		I_Error("P_SpawnMapThing: Unknown type %i at (%i, %i)",
 			mthing->type, mthing->x, mthing->y);
 	}
 
@@ -1832,7 +1808,7 @@ void P_CreateTIDList(void)
 	thinker_t *t;
 
 	i = 0;
-	for(t = gi.thinkercap->next; t != gi.thinkercap; t = t->next)
+	for(t = thinkercap.next; t != &thinkercap; t = t->next)
 	{ // Search all current thinkers
 		if(t->function != (think_t)P_MobjThinker)
 		{ // Not a mobj thinker
@@ -1843,7 +1819,7 @@ void P_CreateTIDList(void)
 		{ // Add to list
 			if(i == MAX_TID_COUNT)
 			{
-				gi.Error("P_CreateTIDList: MAX_TID_COUNT (%d) exceeded.",
+				I_Error("P_CreateTIDList: MAX_TID_COUNT (%d) exceeded.",
 					MAX_TID_COUNT);
 			}
 			TIDList[i] = mobj->tid;
@@ -1878,7 +1854,7 @@ void P_InsertMobjIntoTIDList(mobj_t *mobj, int tid)
 	{ // Append required
 		if(i == MAX_TID_COUNT)
 		{
-			gi.Error("P_InsertMobjIntoTIDList: MAX_TID_COUNT (%d)"
+			I_Error("P_InsertMobjIntoTIDList: MAX_TID_COUNT (%d)"
 				"exceeded.", MAX_TID_COUNT);
 		}
 		index = i;
@@ -2425,8 +2401,8 @@ mobj_t *P_SpawnPlayerMissile(mobj_t *source, mobjtype_t type)
 {
 	angle_t an;
 	fixed_t x, y, z, slope;
-	//float fangle = source->player->plr->lookdir * 85.0/110.0 /180*PI;
-	float fangle = LOOKDIR2RAD(source->player->plr->lookdir);
+	//float fangle = source->player->lookdir * 85.0/110.0 /180*PI;
+	float fangle = LOOKDIR2RAD(source->player->lookdir);
 	float movfac = 1;
 	boolean dontAim = noAutoAim && !demorecording && !demoplayback && !netgame;
 
@@ -2446,7 +2422,7 @@ mobj_t *P_SpawnPlayerMissile(mobj_t *source, mobjtype_t type)
 		{
 			an = source->angle;
 			if(demoplayback || demorecording)// || netgame)
-				slope = (((int)source->player->plr->lookdir)<<FRACBITS)/173;
+				slope = (((int)source->player->lookdir)<<FRACBITS)/173;
 			else
 			{
 				slope = FRACUNIT * sin(fangle) / 1.2;
@@ -2468,16 +2444,9 @@ mobj_t *P_SpawnPlayerMissile(mobj_t *source, mobjtype_t type)
 	}
 	else
 	{
-		z = source->z + 4*8*FRACUNIT+(((int)source->player->plr->lookdir)<<FRACBITS)/173;
+		z = source->z + 4*8*FRACUNIT+(((int)source->player->lookdir)<<FRACBITS)/173;
 		z -= source->floorclip;
 	}
-
-#ifdef TIC_DEBUG
-	FUNTAG("P_SpawnPlayerMissile");
-	if(rndDebugfile) fprintf(rndDebugfile, " -- srcZ:%f, plr:%d, lookdir:%f, z:%f, slope:%f\n", 
-		FIX2FLT(source->z), source->player-players, source->player->plr->lookdir, 
-		FIX2FLT(z), FIX2FLT(slope));
-#endif
 
 	MissileMobj = P_SpawnMobj(x, y, z, type);
 	if(MissileMobj->info->seesound)
@@ -2533,7 +2502,7 @@ mobj_t *P_SpawnPlayerMinotaur(mobj_t *source, mobjtype_t type)
 	an = source->angle;
 	x = source->x + FixedMul(dist, finecosine[an>>ANGLETOFINESHIFT]);
 	y = source->y + FixedMul(dist, finesine[an>>ANGLETOFINESHIFT]);
-	z = source->z + 4*8*FRACUNIT+((source->player->plr->lookdir)<<FRACBITS)/173;
+	z = source->z + 4*8*FRACUNIT+((source->player->lookdir)<<FRACBITS)/173;
 	z -= source->floorclip;
 	MissileMobj = P_SpawnMobj(x, y, z, type);
 	if(MissileMobj->info->seesound)
@@ -2572,7 +2541,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle)
 	mobj_t *th;
 	angle_t an;
 	fixed_t x, y, z, slope;
-	float fangle = LOOKDIR2RAD(source->player->plr->lookdir);
+	float fangle = LOOKDIR2RAD(source->player->lookdir);
 	float movfac = 1;
 	boolean dontAim = noAutoAim && !demorecording && !demoplayback && !netgame;
 
@@ -2594,7 +2563,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle)
 		{
 			an = angle;
 			if(demoplayback || demorecording)// || netgame)
-				slope = (((int)source->player->plr->lookdir)<<FRACBITS)/173;
+				slope = (((int)source->player->lookdir)<<FRACBITS)/173;
 			else
 			{
 				slope = FRACUNIT * sin(fangle) / 1.2;
@@ -2604,7 +2573,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle)
 	}
 	x = source->x;
 	y = source->y;
-	z = source->z + 4*8*FRACUNIT+(((int)source->player->plr->lookdir)<<FRACBITS)/173;
+	z = source->z + 4*8*FRACUNIT+(((int)source->player->lookdir)<<FRACBITS)/173;
 	z -= source->floorclip;
 	th = P_SpawnMobj(x, y, z, type);
 //	if(th->info->seesound)
@@ -2631,7 +2600,7 @@ mobj_t *P_SPMAngleXYZ(mobj_t *source, fixed_t x, fixed_t y,
 	mobj_t *th;
 	angle_t an;
 	fixed_t slope;
-	float fangle = LOOKDIR2RAD(source->player->plr->lookdir);
+	float fangle = LOOKDIR2RAD(source->player->lookdir);
 	float movfac = 1;
 	boolean dontAim = noAutoAim && !demorecording && !demoplayback && !netgame;
 
@@ -2653,7 +2622,7 @@ mobj_t *P_SPMAngleXYZ(mobj_t *source, fixed_t x, fixed_t y,
 		{
 			an = angle;
 			if(demoplayback || demorecording)// || netgame)
-				slope = (((int)source->player->plr->lookdir)<<FRACBITS)/173;
+				slope = (((int)source->player->lookdir)<<FRACBITS)/173;
 			else
 			{
 				slope = FRACUNIT * sin(fangle) / 1.2;
@@ -2661,7 +2630,7 @@ mobj_t *P_SPMAngleXYZ(mobj_t *source, fixed_t x, fixed_t y,
 			}
 		}
 	}
-	z += 4*8*FRACUNIT+(((int)source->player->plr->lookdir)<<FRACBITS)/173;
+	z += 4*8*FRACUNIT+(((int)source->player->lookdir)<<FRACBITS)/173;
 	z -= source->floorclip;
 	th = P_SpawnMobj(x, y, z, type);
 //	if(th->info->seesound)

@@ -11,16 +11,7 @@ class KMenuChoice_MouseInverseY:public KMenuChoice_OnOff
 	KMenuChoice_MouseInverseY(void)
 	{
 		ActionText = "INVERSE Y";
-	}
-
-	void LoadSetting(void)
-	{
-		SetValue(gi.Get(DD_MOUSE_INVERSE_Y));
-	}
-
-	void SaveSetting(void)
-	{
-		gi.Set(DD_MOUSE_INVERSE_Y, GetValue());
+		pInteger = &mouseInverseY;
 	}
 };
 IMPLEMENT_CLASS(KMenuChoice_MouseInverseY);
@@ -115,31 +106,11 @@ class KMenuScreenMouseOptions:public KMenuScreen
 	{
 		ChoiceStartX = 232;
 		ChoiceStartY = 170;
-	}
-
-	void CreateChoices()
-	{
-		KMenuUIChoice *Choice;
-
-		Choice = NewWindow(KMenuChoice_MouseInverseY, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_MouseLook, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_InverseMLook, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_MouseXSensitivity, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
-
-		Choice = NewWindow(KMenuChoice_MouseYSensitivity, this);
-		Choice->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-		Items[NumItems++] = Choice;
+		Choices[0] = KMenuChoice_MouseInverseY::StaticClass();
+		Choices[1] = KMenuChoice_MouseLook::StaticClass();
+		Choices[2] = KMenuChoice_InverseMLook::StaticClass();
+		Choices[3] = KMenuChoice_MouseXSensitivity::StaticClass();
+		Choices[4] = KMenuChoice_MouseYSensitivity::StaticClass();
 	}
 };
 IMPLEMENT_CLASS(KMenuScreenMouseOptions);

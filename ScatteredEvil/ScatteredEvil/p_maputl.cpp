@@ -414,8 +414,8 @@ If the function returns false, exit with false without checking anything else.
 =
 = P_BlockLinesIterator
 =
-= The Validcount flags are used to avoid checking lines
-= that are marked in multiple mapblocks, so increment Validcount before
+= The validcount flags are used to avoid checking lines
+= that are marked in multiple mapblocks, so increment validcount before
 = the first call to P_BlockLinesIterator, then make one or more calls to it
 ===================
 */
@@ -440,17 +440,17 @@ boolean P_BlockLinesIterator (int x, int y, boolean(*func)(line_t*) )
 	{
 		if(polyLink->polyobj)
 		{
-			if(polyLink->polyobj->validcount != Validcount)
+			if(polyLink->polyobj->validcount != validcount)
 			{
-				polyLink->polyobj->validcount = Validcount;
-				tempSeg = polyLink->polyobj->Segs;
-				for(i = 0; i < polyLink->polyobj->numSegs; i++, tempSeg++)
+				polyLink->polyobj->validcount = validcount;
+				tempSeg = polyLink->polyobj->segs;
+				for(i = 0; i < polyLink->polyobj->numsegs; i++, tempSeg++)
 				{
-					if((*tempSeg)->linedef->validcount == Validcount)
+					if((*tempSeg)->linedef->validcount == validcount)
 					{
 						continue;
 					}
-					(*tempSeg)->linedef->validcount = Validcount;
+					(*tempSeg)->linedef->validcount = validcount;
 					if(!func((*tempSeg)->linedef))
 					{
 						return false;
@@ -466,9 +466,9 @@ boolean P_BlockLinesIterator (int x, int y, boolean(*func)(line_t*) )
 	for ( list = blockmaplump+offset ; *list != -1 ; list++)
 	{
 		ld = &lines[*list];
-		if (ld->validcount == Validcount)
+		if (ld->validcount == validcount)
 			continue;               // line has already been checked
-		ld->validcount = Validcount;
+		ld->validcount = validcount;
 
 		if ( !func(ld) )
 			return false;
@@ -699,7 +699,7 @@ boolean P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2,
 
 	earlyout = flags & PT_EARLYOUT;
 
-	Validcount++;
+	validcount++;
 	intercept_p = intercepts;
 
 	if ( ((x1-bmaporgx)&(MAPBLOCKSIZE-1)) == 0)

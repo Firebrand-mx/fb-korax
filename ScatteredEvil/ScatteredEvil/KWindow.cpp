@@ -45,7 +45,7 @@ void KWindow::Init(KWindow *AParent)
 	}
 	WinGC = Spawn<KGC>();
 	ClipTree();
-	if (bIsSelectable)
+	if (bIsVisible && bIsSensitive && bIsSelectable)
 		GetModalWindow()->AddWindowToTables(this);
 	InitWindow();
 	bIsInitialized = true;
@@ -95,7 +95,7 @@ void KWindow::Destroy()
 KRootWindow *KWindow::GetRootWindow(void)
 {
 	guard(KWindow::GetRootWindow);
-	KWindow *win = this;
+	KWindow *win = Parent ? Parent : this;
 	while (win->WindowType < WIN_Root)
 	{
 		win = win->Parent;
@@ -113,7 +113,7 @@ KRootWindow *KWindow::GetRootWindow(void)
 KModalWindow *KWindow::GetModalWindow(void)
 {
 	guard(KWindow::GetModalWindow);
-	KWindow *win = this;
+	KWindow *win = Parent ? Parent : this;
 	while (win->WindowType < WIN_Modal)
 	{
 		win = win->Parent;
@@ -228,7 +228,7 @@ void KWindow::Raise(void)
 	guard(KWindow::Raise);
 	if (!Parent)
 	{
-		gi.Error("Can't raise root window");
+		I_Error("Can't raise root window");
 	}
 	if (Parent->LastChild == this)
 	{
@@ -264,7 +264,7 @@ void KWindow::Lower(void)
 	guard(KWindow::Lower);
 	if (!Parent)
 	{
-		gi.Error("Can't lower root window");
+		I_Error("Can't lower root window");
 	}
 	if (Parent->FirstChild == this)
 	{
@@ -302,6 +302,13 @@ void KWindow::SetVisibility(bool NewVisibility)
 	{
 		bIsVisible = NewVisibility;
 		VisibilityChanged(NewVisibility);
+		if (bIsSensitive && bIsSelectable)
+		{
+			if (bIsVisible)
+				GetModalWindow()->AddWindowToTables(this);
+			else
+				GetModalWindow()->RemoveWindowFromTables(this);
+		}
 	}
 	unguard;
 }
@@ -319,6 +326,13 @@ void KWindow::SetSensitivity(bool NewSensitivity)
 	{
 		bIsSensitive = NewSensitivity;
 		SensitivityChanged(NewSensitivity);
+		if (bIsVisible && bIsSelectable)
+		{
+			if (bIsSensitive)
+				GetModalWindow()->AddWindowToTables(this);
+			else
+				GetModalWindow()->RemoveWindowFromTables(this);
+		}
 	}
 	unguard;
 }
@@ -335,10 +349,13 @@ void KWindow::SetSelectability(bool NewSelectability)
 	if (bIsSelectable != NewSelectability)
 	{
 		bIsSelectable = NewSelectability;
-		if (bIsSelectable)
-			GetModalWindow()->AddWindowToTables(this);
-		else
-			GetModalWindow()->RemoveWindowFromTables(this);
+		if (bIsVisible && bIsSensitive)
+		{
+			if (bIsSelectable)
+				GetModalWindow()->AddWindowToTables(this);
+			else
+				GetModalWindow()->RemoveWindowFromTables(this);
+		}
 	}
 	unguard;
 }
@@ -436,6 +453,7 @@ void KWindow::Move(float NewX, float NewY)
 	X = NewX;
 	Y = NewY;
 	ClipTree();
+	ConfigurationChanged();
 	GetModalWindow()->ResortWindowTables();
 	unguard;
 }
@@ -452,6 +470,112 @@ void KWindow::Resize(float NewWidth, float NewHeight)
 	Width = NewWidth;
 	Height = NewHeight;
 	ClipTree();
+	ConfigurationChanged();
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::MoveFocus
+//
+//==========================================================================
+
+KWindow *KWindow::MoveFocus(EMove moveDir, bool bForceWrap)
+{
+	guard(KWindow::MoveFocus);
+	KModalWindow *pModal = GetRootWindow()->GetCurrentModal();
+	KWindow *pFocus = pModal->PreferredFocus;
+	if (!pModal->WindowListCount)
+		return pFocus;
+	bool bWrapFocus = pModal->bWrapFocus || bForceWrap;
+	int NewIndex;
+	KWindow *pNewFocus;
+	switch (moveDir)
+	{
+	case MOVE_Left:
+		NewIndex = pFocus->ColMajorIndex - 1;
+		if (NewIndex < 0)
+		{
+			if (bWrapFocus)
+				NewIndex = pModal->WindowListCount - 1;
+			else
+				return pFocus;
+		}
+		pNewFocus = pModal->ColMajorWindowList[NewIndex];
+		break;
+
+	case MOVE_Right:
+		NewIndex = pFocus->ColMajorIndex + 1;
+		if (NewIndex >= pModal->WindowListCount)
+		{
+			if (bWrapFocus)
+				NewIndex = 0;
+			else
+				return pFocus;
+		}
+		pNewFocus = pModal->ColMajorWindowList[NewIndex];
+		break;
+
+	case MOVE_Up:
+		NewIndex = pFocus->RowMajorIndex - 1;
+		if (NewIndex < 0)
+		{
+			if (bWrapFocus)
+				NewIndex = pModal->WindowListCount - 1;
+			else
+				return pFocus;
+		}
+		pNewFocus = pModal->RowMajorWindowList[NewIndex];
+		break;
+
+	case MOVE_Down:
+		NewIndex = pFocus->RowMajorIndex + 1;
+		if (NewIndex >= pModal->WindowListCount)
+		{
+			if (bWrapFocus)
+				NewIndex = 0;
+			else
+				return pFocus;
+		}
+		pNewFocus = pModal->RowMajorWindowList[NewIndex];
+		break;
+	}
+	GetRootWindow()->SetFocus(pNewFocus);
+	return pNewFocus;
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::SetFocusWindow
+//
+//==========================================================================
+
+bool KWindow::SetFocusWindow(KWindow *pNewFocusWindow)
+{
+	guard(KWindow::SetFocusWindow);
+	if (!pNewFocusWindow ||
+		!pNewFocusWindow->IsVisible() ||
+		!pNewFocusWindow->IsSensitive() ||
+		!pNewFocusWindow->IsSelectable())
+	{
+		return false;
+	}
+	GetRootWindow()->SetFocus(pNewFocusWindow);
+	return true;
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::GetFocusWindow
+//
+//==========================================================================
+
+KWindow *KWindow::GetFocusWindow(void)
+{
+	guard(KWindow::GetFocusWindow);
+	return GetRootWindow()->FocusWindow;
 	unguard;
 }
 
@@ -537,30 +661,20 @@ void KWindow::KillAllChildren()
 
 //==========================================================================
 //
-//	KWindow::DrawTree
+//	KWindow::CheckFocusWindow
 //
 //==========================================================================
 
-void KWindow::DrawTree(KCanvas *Canvas)
+void KWindow::CheckFocusWindow(void)
 {
-	guard(KWindow::DrawTree);
-	if (!bIsVisible || !ClipRect.HasArea())
+	guard(KWindow::CheckFocusWindow);
+	KModalWindow *pModal = WindowType >= WIN_Modal ?
+		(KModalWindow *)this : GetModalWindow();
+	if (!bIsVisible || !bIsSensitive || !bIsSelectable ||
+		!pModal->IsCurrentModal() || pModal->PreferredFocus != this)
 	{
-		//	Nowhere to draw.
-		return;
+		GetRootWindow()->SetFocus(GetRootWindow()->GetCurrentModal()->PreferredFocus);
 	}
-	WinGC->SetCanvas(Canvas);
-	WinGC->SetClipRect(ClipRect);
-	WinGC->SetTileColor(TileColor);
-	WinGC->SetTextColor(TextColor);
-	WinGC->SetFont(Font);
-	DrawWindow(WinGC);
-	for (KWindow *c = FirstChild; c; c = c->NextSibling)
-	{
-		c->DrawTree(Canvas);
-	}
-	WinGC->SetClipRect(ClipRect);
-	PostDrawWindow(WinGC);
 	unguard;
 }
 
@@ -587,6 +701,35 @@ void KWindow::ClipTree()
 	{
 		c->ClipTree();
 	}
+	unguard;
+}
+
+//==========================================================================
+//
+//	KWindow::DrawTree
+//
+//==========================================================================
+
+void KWindow::DrawTree(KCanvas *Canvas)
+{
+	guard(KWindow::DrawTree);
+	if (!bIsVisible || !ClipRect.HasArea())
+	{
+		//	Nowhere to draw.
+		return;
+	}
+	WinGC->SetCanvas(Canvas);
+	WinGC->SetClipRect(ClipRect);
+	WinGC->SetTileColor(TileColor);
+	WinGC->SetTextColor(TextColor);
+	WinGC->SetFont(Font);
+	DrawWindow(WinGC);
+	for (KWindow *c = FirstChild; c; c = c->NextSibling)
+	{
+		c->DrawTree(Canvas);
+	}
+	WinGC->SetClipRect(ClipRect);
+	PostDrawWindow(WinGC);
 	unguard;
 }
 

@@ -137,7 +137,7 @@ public:
 	// Destructors.
 	virtual ~KObject();
 	void operator delete(void* Object, size_t)
-		{ gi.Z_Free(Object); }
+		{ Z_Free(Object); }
 
 	// KObject interface.
 	virtual void Destroy(void);
@@ -173,7 +173,7 @@ template<class T> T* Cast(KObject* Src)
 template<class T, class U> T* CastChecked(U* Src)
 {
 	if (!Src || !Src->IsA(T::StaticClass()))
-		gi.Error("Cast to %s failed", T::StaticClass()->GetName());
+		I_Error("Cast to %s failed", T::StaticClass()->GetName());
 	return (T*)Src;
 }
 

@@ -135,21 +135,21 @@ static void OpenScript(char *name, int type)
 	SC_Close();
 	if(type == LUMP_SCRIPT)
 	{ // Lump script
-		ScriptBuffer = (char *)gi.W_CacheLumpName(name, PU_STATIC);
-		ScriptSize = gi.W_LumpLength(gi.W_GetNumForName(name));
+		ScriptBuffer = (char *)W_CacheLumpName(name, PU_STATIC);
+		ScriptSize = W_LumpLength(W_GetNumForName(name));
 		strcpy(ScriptName, name);
-		ScriptFreeCLib = false; // De-allocate using gi.Z_Free()
+		ScriptFreeCLib = false; // De-allocate using Z_Free()
 	}
 	else if(type == FILE_ZONE_SCRIPT)
 	{ // File script - zone
-		ScriptSize = gi.ReadFile(name, (byte **)&ScriptBuffer);
-		gi.ExtractFileBase(name, ScriptName);
-		ScriptFreeCLib = false; // De-allocate using gi.Z_Free()
+		ScriptSize = M_ReadFile(name, (byte **)&ScriptBuffer);
+		M_ExtractFileBase(name, ScriptName);
+		ScriptFreeCLib = false; // De-allocate using Z_Free()
 	}
 	else
 	{ // File script - clib
-		ScriptSize = gi.ReadFileClib(name, (byte **)&ScriptBuffer);
-		gi.ExtractFileBase(name, ScriptName);
+		ScriptSize = M_ReadFileCLib(name, (byte **)&ScriptBuffer);
+		M_ExtractFileBase(name, ScriptName);
 		ScriptFreeCLib = true; // De-allocate using free()
 	}
 	ScriptPtr = ScriptBuffer;
@@ -177,7 +177,7 @@ void SC_Close(void)
 		}
 		else
 		{
-			gi.Z_Free(ScriptBuffer);
+			Z_Free(ScriptBuffer);
 		}
 		ScriptOpen = false;
 	}
@@ -227,8 +227,9 @@ boolean SC_GetString(void)
 			sc_End = true;
 			return false;
 		}
-		if(*ScriptPtr != ASCII_COMMENT)
-		{ // Found a token
+		if (*ScriptPtr != ASCII_COMMENT && (ScriptPtr[0] != '/' || ScriptPtr[1] != '/'))
+		{ 
+			// Found a token
 			foundToken = true;
 		}
 		else
@@ -322,7 +323,7 @@ boolean SC_GetNumber(void)
 		sc_Number = strtol(sc_String, &stopper, 0);
 		if(*stopper != 0)
 		{
-			gi.Error("SC_GetNumber: Bad numeric constant \"%s\".\n"
+			I_Error("SC_GetNumber: Bad numeric constant \"%s\".\n"
 				"Script %s, Line %d", sc_String, ScriptName, sc_Line);
 		}
 		return true;
@@ -467,7 +468,7 @@ void SC_ScriptError(char *message)
 	{
 		message = "Bad syntax.";
 	}
-	gi.Error("Script error, \"%s\" line %d: %s", ScriptName,
+	I_Error("Script error, \"%s\" line %d: %s", ScriptName,
 		sc_Line, message);
 }
 
@@ -481,6 +482,6 @@ static void CheckOpen(void)
 {
 	if(ScriptOpen == false)
 	{
-		gi.Error("SC_ call before SC_Open().");
+		I_Error("SC_ call before SC_Open().");
 	}
 }

@@ -113,46 +113,46 @@ void SB_Init(void)
 	int i;
 	int startLump;
 
-	PatchNumH2BAR = gi.W_GetNumForName("H2BAR");
-	PatchNumH2TOP = gi.W_GetNumForName("H2TOP");
-	PatchNumINVBAR = gi.W_GetNumForName("INVBAR");
-	PatchNumLFEDGE	= gi.W_GetNumForName("LFEDGE");
-	PatchNumRTEDGE	= gi.W_GetNumForName("RTEDGE");
-	PatchNumSTATBAR = gi.W_GetNumForName("STATBAR");
-	PatchNumKEYBAR = gi.W_GetNumForName("KEYBAR");
-	PatchNumSELECTBOX = gi.W_GetNumForName("SELECTBOX");
-	PatchNumMANAVIAL1 = gi.W_GetNumForName("MANAVL1");
-	PatchNumMANAVIAL2 = gi.W_GetNumForName("MANAVL2");
-	PatchNumMANAVIALDIM1 = gi.W_GetNumForName("MANAVL1D");
-	PatchNumMANAVIALDIM2 = gi.W_GetNumForName("MANAVL2D");
-	PatchNumMANADIM1 = gi.W_GetNumForName("MANADIM1");
-	PatchNumMANADIM2 = gi.W_GetNumForName("MANADIM2");
-	PatchNumMANABRIGHT1 = gi.W_GetNumForName("MANABRT1");
-	PatchNumMANABRIGHT2 = gi.W_GetNumForName("MANABRT2");
-	PatchNumINVLFGEM1 = gi.W_GetNumForName("invgeml1");
-	PatchNumINVLFGEM2 = gi.W_GetNumForName("invgeml2");
-	PatchNumINVRTGEM1 = gi.W_GetNumForName("invgemr1");
-	PatchNumINVRTGEM2 = gi.W_GetNumForName("invgemr2");
+	PatchNumH2BAR = W_GetNumForName("H2BAR");
+	PatchNumH2TOP = W_GetNumForName("H2TOP");
+	PatchNumINVBAR = W_GetNumForName("INVBAR");
+	PatchNumLFEDGE	= W_GetNumForName("LFEDGE");
+	PatchNumRTEDGE	= W_GetNumForName("RTEDGE");
+	PatchNumSTATBAR = W_GetNumForName("STATBAR");
+	PatchNumKEYBAR = W_GetNumForName("KEYBAR");
+	PatchNumSELECTBOX = W_GetNumForName("SELECTBOX");
+	PatchNumMANAVIAL1 = W_GetNumForName("MANAVL1");
+	PatchNumMANAVIAL2 = W_GetNumForName("MANAVL2");
+	PatchNumMANAVIALDIM1 = W_GetNumForName("MANAVL1D");
+	PatchNumMANAVIALDIM2 = W_GetNumForName("MANAVL2D");
+	PatchNumMANADIM1 = W_GetNumForName("MANADIM1");
+	PatchNumMANADIM2 = W_GetNumForName("MANADIM2");
+	PatchNumMANABRIGHT1 = W_GetNumForName("MANABRT1");
+	PatchNumMANABRIGHT2 = W_GetNumForName("MANABRT2");
+	PatchNumINVLFGEM1 = W_GetNumForName("invgeml1");
+	PatchNumINVLFGEM2 = W_GetNumForName("invgeml2");
+	PatchNumINVRTGEM1 = W_GetNumForName("invgemr1");
+	PatchNumINVRTGEM2 = W_GetNumForName("invgemr2");
 
-	startLump = gi.W_GetNumForName("IN0");
+	startLump = W_GetNumForName("IN0");
 	for(i = 0; i < 10; i++)
 	{
 		PatchNumINumbers[i] = startLump+i;
 	}
-	PatchNumNEGATIVE = gi.W_GetNumForName("NEGNUM");
-	FontBNumBase = gi.W_GetNumForName("FONTB16");
-	startLump = gi.W_GetNumForName("SMALLIN0");
+	PatchNumNEGATIVE = W_GetNumForName("NEGNUM");
+	FontBNumBase = W_GetNumForName("FONTB16");
+	startLump = W_GetNumForName("SMALLIN0");
 	for(i = 0; i < 10; i++)
 	{
 		PatchNumSmNumbers[i] = startLump+i;
 	}
-	PlayPalette = gi.W_GetNumForName("PLAYPAL");
-	SpinFlylump = gi.W_GetNumForName("SPFLY0");
-	SpinMinotaurLump = gi.W_GetNumForName("SPMINO0");
-	SpinSpeedLump = gi.W_GetNumForName("SPBOOT0");
-	SpinDefenseLump = gi.W_GetNumForName("SPSHLD0");
+	PlayPalette = W_GetNumForName("PLAYPAL");
+	SpinFlylump = W_GetNumForName("SPFLY0");
+	SpinMinotaurLump = W_GetNumForName("SPMINO0");
+	SpinSpeedLump = W_GetNumForName("SPBOOT0");
+	SpinDefenseLump = W_GetNumForName("SPSHLD0");
 
-	PatchNumKILLS = gi.W_GetNumForName("KILLS");
+	PatchNumKILLS = W_GetNumForName("KILLS");
 	SB_SetClassData();
 }
 
@@ -167,22 +167,22 @@ void SB_SetClassData(void)
 	int pclass;
 
 	pclass = PlayerClass[consoleplayer]; // original player class (not pig)
-	PatchNumWEAPONSLOT = gi.W_GetNumForName("wpslot0")+pclass;
-	PatchNumWEAPONFULL = gi.W_GetNumForName("wpfull0")+pclass;
-	PatchNumPIECE1 = gi.W_GetNumForName("wpiecef1")+pclass;
-	PatchNumPIECE2 = gi.W_GetNumForName("wpiecef2")+pclass;
-	PatchNumPIECE3 = gi.W_GetNumForName("wpiecef3")+pclass;
-	PatchNumCHAIN =gi.W_GetNumForName("chain")+pclass;
+	PatchNumWEAPONSLOT = W_GetNumForName("wpslot0")+pclass;
+	PatchNumWEAPONFULL = W_GetNumForName("wpfull0")+pclass;
+	PatchNumPIECE1 = W_GetNumForName("wpiecef1")+pclass;
+	PatchNumPIECE2 = W_GetNumForName("wpiecef2")+pclass;
+	PatchNumPIECE3 = W_GetNumForName("wpiecef3")+pclass;
+	PatchNumCHAIN =W_GetNumForName("chain")+pclass;
 	if(!netgame)
 	{ // single player game uses red life gem (the second gem)
-		PatchNumLIFEGEM = gi.W_GetNumForName("lifegem")+MAXPLAYERS*pclass+1;
+		PatchNumLIFEGEM = W_GetNumForName("lifegem")+MAXPLAYERS*pclass+1;
 	}
 	else
 	{
-		PatchNumLIFEGEM = gi.W_GetNumForName("lifegem")+MAXPLAYERS*pclass+consoleplayer;
+		PatchNumLIFEGEM = W_GetNumForName("lifegem")+MAXPLAYERS*pclass+consoleplayer;
 	}
 	SB_state = -1;
-	gi.Update(DDUF_FULLSCREEN);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 //==========================================================================
@@ -196,7 +196,7 @@ void SB_Ticker(void)
 	int delta;
 	int curHealth;
 
-	curHealth = players[consoleplayer].plr->mo->health;
+	curHealth = players[consoleplayer].mo->health;
 	if(curHealth < 0)
 	{
 		curHealth = 0;
@@ -295,20 +295,20 @@ static void DrRedINumber(signed int val, int x, int y)
 	}
 	if(val > 999)
 	{
-		GCanvas->DrawPatch1(x+offset, y, gi.W_GetNumForName("inred0")+val/1000);
+		GCanvas->DrawPatch1(x+offset, y, W_GetNumForName("inred0")+val/1000);
 		offset+=8;
 	}
 	if(val > 99)
 	{
-		GCanvas->DrawPatch1(x+offset, y, gi.W_GetNumForName("inred0")+(val%1000)/100);
+		GCanvas->DrawPatch1(x+offset, y, W_GetNumForName("inred0")+(val%1000)/100);
 	}
 	val = val%100;
 	if(val > 9 || oldval > 99)
 	{
-		GCanvas->DrawPatch1(x+8+offset, y, gi.W_GetNumForName("inred0")+val/10);
+		GCanvas->DrawPatch1(x+8+offset, y, W_GetNumForName("inred0")+val/10);
 	}
 	val = val%10;
-	GCanvas->DrawPatch1(x+16+offset, y, gi.W_GetNumForName("inred0")+val);
+	GCanvas->DrawPatch1(x+16+offset, y, W_GetNumForName("inred0")+val);
 }
 
 //==========================================================================
@@ -333,27 +333,27 @@ static void DrBNumber(signed int val, int x, int y)
 	}
 	if(val > 999)
 	{
-		patch = (patch_t *)gi.W_CacheLumpNum(FontBNumBase+val/1000, PU_CACHE);
-		gi.GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/1000);
+		patch = (patch_t *)W_CacheLumpNum(FontBNumBase+val/1000, PU_CACHE);
+		GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/1000);
 	}
 	val = val%1000;
 	xpos += 12;
 	if(val > 99 || oldval > 999)
 	{
-		patch = (patch_t *)gi.W_CacheLumpNum(FontBNumBase+val/100, PU_CACHE);
-		gi.GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/100);
+		patch = (patch_t *)W_CacheLumpNum(FontBNumBase+val/100, PU_CACHE);
+		GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/100);
 	}
 	val = val%100;
 	xpos += 12;
 	if(val > 9 || oldval > 99)
 	{
-		patch = (patch_t *)gi.W_CacheLumpNum(FontBNumBase+val/10, PU_CACHE);
-		gi.GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/10);
+		patch = (patch_t *)W_CacheLumpNum(FontBNumBase+val/10, PU_CACHE);
+		GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val/10);
 	}
 	val = val%10;
 	xpos += 12;
-	patch = (patch_t *)gi.W_CacheLumpNum(FontBNumBase+val, PU_CACHE);
-	gi.GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val);
+	patch = (patch_t *)W_CacheLumpNum(FontBNumBase+val, PU_CACHE);
+	GL_DrawShadowedPatch(xpos+6-patch->width/2, y, FontBNumBase+val);
 }
 
 //==========================================================================
@@ -447,7 +447,7 @@ extern boolean automapactive;
 
 void SB_Drawer(void)
 {
-	gi.Update(DDUF_TOP | DDUF_BORDER);
+	DD_GameUpdate(DDUF_TOP | DDUF_BORDER);
 
 	CPlayer = &players[consoleplayer];
 	if (CPlayer->pclass >=PCLASS_ETTIN)
@@ -455,7 +455,7 @@ void SB_Drawer(void)
 		//Remi: Possessed monsters have forced fullscreen
 		DrawPossWeaponry();
 	}
-	else if (gi.Get(DD_VIEWWINDOW_HEIGHT) == SCREENHEIGHT && !automapactive)
+	else if (viewheight == SCREENHEIGHT && !automapactive)
 	{
 		DrawFullScreenStuff();
 	}
@@ -519,7 +519,7 @@ static void DrawAnimatedIcons(void)
 			|| !(CPlayer->powers[pw_flight]&16))
 		{
 			frame = (leveltime/3)&15;
-			if(CPlayer->plr->mo->flags2&MF2_FLY)
+			if(CPlayer->mo->flags2&MF2_FLY)
 			{
 				if(hitCenterFrame && (frame != 15 && frame != 0))
 				{
@@ -545,7 +545,7 @@ static void DrawAnimatedIcons(void)
 				}
 			}
 		}
-		gi.Update(DDUF_TOP | DDUF_MESSAGES);
+		DD_GameUpdate(DDUF_TOP | DDUF_MESSAGES);
 	}
 
 	// Speed Boots
@@ -557,7 +557,7 @@ static void DrawAnimatedIcons(void)
 			frame = (leveltime/3)&15;
 			GCanvas->DrawPatch1(60+leftoff, 19, SpinSpeedLump+frame);
 		}
-		gi.Update(DDUF_TOP | DDUF_MESSAGES);
+		DD_GameUpdate(DDUF_TOP | DDUF_MESSAGES);
 	}
 
 	// Defensive power
@@ -569,7 +569,7 @@ static void DrawAnimatedIcons(void)
 			frame = (leveltime/3)&15;
 			GCanvas->DrawPatch1(260, 19, SpinDefenseLump+frame);
 		}
-		gi.Update(DDUF_TOP | DDUF_MESSAGES);
+		DD_GameUpdate(DDUF_TOP | DDUF_MESSAGES);
 	}
 
 	// Minotaur Active
@@ -581,7 +581,7 @@ static void DrawAnimatedIcons(void)
 			frame = (leveltime/3)&15;
 			GCanvas->DrawPatch1(600, 19, SpinMinotaurLump+frame);
 		}
-		gi.Update(DDUF_TOP | DDUF_MESSAGES);
+		DD_GameUpdate(DDUF_TOP | DDUF_MESSAGES);
 	}
 }
 
@@ -637,7 +637,7 @@ void SB_PaletteFlash(boolean forceChange)
 			}
 			palette += STARTBONUSPALS;
 		}
-		else if(CPlayer->plr->mo->flags2&MF2_ICEDAMAGE)
+		else if(CPlayer->mo->flags2&MF2_ICEDAMAGE)
 		{ // Frozen player
 			palette = STARTICEPAL;
 		}
@@ -701,17 +701,17 @@ void DrawMainBar(void)
 	// Ready artifact
 	if(ArtifactFlash)
 	{
-		GCanvas->DrawPatch1(148, 164, gi.W_GetNumForName("useartia")+ArtifactFlash-1);
+		GCanvas->DrawPatch1(148, 164, W_GetNumForName("useartia")+ArtifactFlash-1);
 		ArtifactFlash--;
 		oldarti = -1; // so that the correct artifact fills in after the flash
-		gi.Update(DDUF_STATBAR);
+		DD_GameUpdate(DDUF_STATBAR);
 	}
 	else if(oldarti != CPlayer->readyArtifact
 		|| oldartiCount != CPlayer->inventory[inv_ptr].count)
 	{
 		if(CPlayer->readyArtifact > 0)
 		{
-			GCanvas->DrawPatch1(143, 163, gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
+			GCanvas->DrawPatch1(143, 163, W_GetNumForName(patcharti[CPlayer->readyArtifact]));
 			if(CPlayer->inventory[inv_ptr].count > 1)
 			{
 				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 162, 184);
@@ -757,14 +757,14 @@ void DrawMainBar(void)
 	{ // Draw Dim Mana icon
 		manaPatchNum1 = PatchNumMANADIM1;
 	}
-	gi.Update(DDUF_STATBAR);
+	DD_GameUpdate(DDUF_STATBAR);
 	temp = CPlayer->mana[1];
 	DrSmallNumber(temp, 111, 181);
 	if(temp == 0)
 	{ // Draw Dim Mana icon
 		manaPatchNum2 = PatchNumMANADIM2;
 	}		
-	gi.Update(DDUF_STATBAR);
+	DD_GameUpdate(DDUF_STATBAR);
 	if(NewWeaponInfo[CPlayer->readyweapon].mana == MANA_NONE)
 	{
 		manaPatchNum1 = PatchNumMANADIM1;
@@ -813,11 +813,11 @@ void DrawMainBar(void)
 	GCanvas->DrawPatch1(94, 164, manaVialPatchNum1);
 	GCanvas->DrawPatch1(102, 164, manaVialPatchNum2);
 
-	gi.GL_SetNoTexture();
+	GL_SetNoTexture();
 	GCanvas->DrawRect(95, 165, 3, 22-(22*CPlayer->mana[0])/MAX_MANA, 0,0,0,1);
 	GCanvas->DrawRect(103, 165, 3, 22-(22*CPlayer->mana[1])/MAX_MANA, 0,0,0,1);
 		
-	gi.Update(DDUF_STATBAR);
+	DD_GameUpdate(DDUF_STATBAR);
 	// Armor
 	temp = AutoArmorSave[CPlayer->pclass]
 		+CPlayer->armorpoints[ARMOR_ARMOR]+CPlayer->armorpoints[ARMOR_SHIELD]
@@ -845,7 +845,7 @@ void DrawInventoryBar(void)
 		if(CPlayer->inventorySlotNum > x+i
 			&& CPlayer->inventory[x+i].type != arti_none)
 		{
-			GCanvas->DrawPatch1(50+i*31, 163, gi.W_GetNumForName(
+			GCanvas->DrawPatch1(50+i*31, 163, W_GetNumForName(
 				patcharti[CPlayer->inventory[x+i].type]));
 			if(CPlayer->inventory[x+i].count > 1)
 			{
@@ -883,7 +883,7 @@ void DrawKeyBar(void)
 	{
 		if(CPlayer->keys&(1<<i))
 		{
-			GCanvas->DrawPatch1(xPosition, 163, gi.W_GetNumForName("keyslot1")+i);
+			GCanvas->DrawPatch1(xPosition, 163, W_GetNumForName("keyslot1")+i);
 			xPosition += 20;
 		}
 	}
@@ -900,17 +900,17 @@ void DrawKeyBar(void)
 			(ArmorIncrement[CPlayer->pclass][i]>>2))
 		{
 			GCanvas->DrawFuzzPatch(150+31*i, 164, 
-				gi.W_GetNumForName("armslot1")+i);
+				W_GetNumForName("armslot1")+i);
 		}
 		else if(CPlayer->armorpoints[i] <= 
 			(ArmorIncrement[CPlayer->pclass][i]>>1))
 		{
-			gi.GL_DrawAltFuzzPatch(150+31*i, 164, 
-				gi.W_GetNumForName("armslot1")+i);
+			GL_DrawAltFuzzPatch(150+31*i, 164, 
+				W_GetNumForName("armslot1")+i);
 		}
 		else
 		{
-			GCanvas->DrawPatch1(150+31*i, 164, gi.W_GetNumForName("armslot1")+i);
+			GCanvas->DrawPatch1(150+31*i, 164, W_GetNumForName("armslot1")+i);
 		}
 	}
 }
@@ -964,9 +964,9 @@ void DrawFullScreenStuff(void)
 	int x;
 	int temp;
 	
-	if(CPlayer->plr->mo->health > 0)
+	if(CPlayer->mo->health > 0)
 	{
-		DrBNumber(CPlayer->plr->mo->health, 5, 440);
+		DrBNumber(CPlayer->mo->health, 5, 440);
 	}
 	else
 	{
@@ -1012,7 +1012,7 @@ void DrawFullScreenStuff(void)
 		temp = 0;
 		for(i=0; i<MAXPLAYERS; i++)
 		{
-			if(players[i].plr->ingame)
+			if(players[i].ingame)
 			{
 				temp += CPlayer->frags[i];
 			}
@@ -1023,9 +1023,9 @@ void DrawFullScreenStuff(void)
 	{
 		if (CPlayer->readyArtifact > 0)
 		{
-			GCanvas->DrawFuzzPatch(586, 430, gi.W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawFuzzPatch(586, 430, W_GetNumForName("ARTIBOX"));
 			GCanvas->DrawPatch1(584, 429,
-				gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
+				W_GetNumForName(patcharti[CPlayer->readyArtifact]));
 			if(CPlayer->inventory[inv_ptr].count > 1)
 			{
 				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 602, 452);
@@ -1037,11 +1037,11 @@ void DrawFullScreenStuff(void)
 		x = inv_ptr-curpos;
 		for(i = 0; i < 7; i++)
 		{
-			GCanvas->DrawFuzzPatch(210+i*31, 428, gi.W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawFuzzPatch(210+i*31, 428, W_GetNumForName("ARTIBOX"));
 			if(CPlayer->inventorySlotNum > x+i
 				&& CPlayer->inventory[x+i].type != arti_none)
 			{
-				GCanvas->DrawPatch1(209+i*31, 427, gi.W_GetNumForName(
+				GCanvas->DrawPatch1(209+i*31, 427, W_GetNumForName(
 					patcharti[CPlayer->inventory[x+i].type]));
 
 				if(CPlayer->inventory[x+i].count > 1)
@@ -1088,9 +1088,9 @@ static void DrawPossWeaponry(void)
 		j -= 10;
 	}
 
-	if(CPlayer->plr->mo->health > 0)
+	if(CPlayer->mo->health > 0)
 	{
-		DrBNumber(CPlayer->plr->mo->health, 5, 440);
+		DrBNumber(CPlayer->mo->health, 5, 440);
 	}
 	else
 	{
@@ -1102,7 +1102,7 @@ static void DrawPossWeaponry(void)
 		int temp = 0;
 		for(int i=0; i<MAXPLAYERS; i++)
 		{
-			if(players[i].plr->ingame)
+			if(players[i].ingame)
 			{
 				temp += CPlayer->frags[i];
 			}
@@ -1120,9 +1120,9 @@ static void DrawPossWeaponry(void)
 
 void Draw_TeleportIcon(void)
 {
-	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("teleicon"));
-	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
-	gi.Update(DDUF_FULLSCREEN);
+	GCanvas->DrawPatch1(260, 208, W_GetNumForName("teleicon"));
+	DD_GameUpdate(DDUF_FULLSCREEN | DDUF_UPDATE);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 //==========================================================================
@@ -1133,9 +1133,9 @@ void Draw_TeleportIcon(void)
 
 void Draw_SaveIcon(void)
 {
-	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("saveicon"));
-	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
-	gi.Update(DDUF_FULLSCREEN);
+	GCanvas->DrawPatch1(260, 208, W_GetNumForName("saveicon"));
+	DD_GameUpdate(DDUF_FULLSCREEN | DDUF_UPDATE);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 //==========================================================================
@@ -1146,9 +1146,9 @@ void Draw_SaveIcon(void)
 
 void Draw_LoadIcon(void)
 {
-	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("loadicon"));
-	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
-	gi.Update(DDUF_FULLSCREEN);
+	GCanvas->DrawPatch1(260, 208, W_GetNumForName("loadicon"));
+	DD_GameUpdate(DDUF_FULLSCREEN | DDUF_UPDATE);
+	DD_GameUpdate(DDUF_FULLSCREEN);
 }
 
 
@@ -1252,14 +1252,14 @@ int CCmdCheatWarp(int argc, char **argv)
 	if(!canCheat()) return false; // Can't cheat!
 	if(argc != 2)
 	{
-		gi.conprintf( "Usage: warp (num)\n");
+		CON_Printf( "Usage: warp (num)\n");
 		return true;
 	}
 	num = atoi(argv[1]);
 	tens = num/10 + '0';
 	ones = num%10 + '0';
 	// We don't want that keys are repeated while we wait.
-	gi.ClearKeyRepeaters();
+	I_ClearKeyRepeaters();
 
 	tens = tens-'0';
 	ones = ones-'0';
@@ -1296,7 +1296,7 @@ int CCmdCheatWarp(int argc, char **argv)
 	else
 	{ // Search primary lumps
 		sprintf(mapName, "MAP%02d", map);
-		if(gi.W_CheckNumForName(mapName) == -1)
+		if(W_CheckNumForName(mapName) == -1)
 		{ // Can't find
 			P_SetMessage(players+consoleplayer, TXT_CHEATNOMAP, true);
 			return false;

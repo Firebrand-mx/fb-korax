@@ -34,17 +34,9 @@
 
 // TYPES -------------------------------------------------------------------
 
-class KMenuUIButton;
-
-class KMenuWindow:public KWindow
+struct chr_val
 {
-	DECLARE_CLASS(KMenuWindow, KWindow, 0);
-
-	KMenuWindow()
-	{
-		Width = 320;
-		Height = 200;
-	}
+	int val[5];
 };
 
 typedef enum
@@ -85,72 +77,7 @@ enum EMenuAction
 	MA_Custom,
 };
 
-class KMenuItem_t:public KMenuWindow
-{
-	DECLARE_CLASS(KMenuItem_t, KMenuWindow, 0);
-
-	KMenuItem_t()
-	{
-		Height = ITEM_HEIGHT;
-	}
-};
-
-class KMenuScreen:public KModalWindow
-{
-	DECLARE_CLASS(KMenuScreen, KModalWindow, 0);
-
-	struct FButtonDefault
-	{
-		char *Name;
-		int Action;
-		MenuType_t Invoke;
-		int Key;
-
-		FButtonDefault(void) { }
-		FButtonDefault(char *InName, int InAction,
-			MenuType_t InInvoke = MENU_NONE, int InKey = 0)
-			: Name(InName), Action(InAction), Invoke(InInvoke), Key(InKey)
-		{ }
-	};
-
-	enum { MAX_BUTTONS = 10 };
-
-	KMenuItem_t *Items[128];
-	int NumItems;
-	int CursorPos;
-	//int CursorPrev;
-
-	int ChoiceStartX;
-	int ChoiceStartY;
-	int	itemHeight;
-
-	bool bUseSelector;
-
-	FButtonDefault ButtonDefaults[MAX_BUTTONS];
-	KMenuUIButton *WinButtons[MAX_BUTTONS];
-
-	//	Constructor
-	KMenuScreen(void)
-	{
-		Width = 640;
-		Height = 480;
-		itemHeight = ITEM_HEIGHT;
-		Font = KCanvas::BigFont;
-		bUseSelector = true;
-	}
-
-	void InitWindow(void);
-	virtual void CreateChoices(void);
-	virtual void CreateButtons(void);
-	virtual void PostDrawWindow(KGC *gc);
-	virtual bool RawInputEvent(event_t *event);
-	virtual bool KeyPressed(int key);
-	void CyclePrevChoice(void);
-	void CycleNextChoice(void);
-	bool ButtonActivated(KWindow *button);
-	void ProcessMenuAction(int Action, MenuType_t Invoke, int Key);
-	virtual void ProcessCustomMenuAction(int Key) { }
-};
+class KMenuScreen;
 
 extern boolean shiftdown;
 
@@ -160,6 +87,9 @@ boolean G_CheckDemoStatus(void);
 boolean F_Responder(event_t *ev);
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
+
+chr_val Defaultroll(int Sclass);
+chr_val Reroll(int Sclass);
 
 void SetMenu(MenuType_t menu);
 
@@ -191,19 +121,10 @@ boolean mn_SuicideConsole;
 KMenuScreen	*CurrentMenu;
 int		MenuTime;
 
-IMPLEMENT_CLASS(KMenuWindow);
-IMPLEMENT_CLASS(KMenuItem_t);
-IMPLEMENT_CLASS(KMenuScreen);
-
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
-static int MauloBaseLump;
 static int MenuPClass;
 static int MenuPSkill;
-typedef struct
-{
-	int val[5];
-} chr_val;
 chr_val MenuPValues = { 10, 80, 8, 2, 10 };	// -JL- Added default values
 static boolean soundchanged;
 
@@ -252,6 +173,54 @@ static char* sp_wording[NUMCLASSES]=
 
 // CODE --------------------------------------------------------------------
 
+#include "mn_base.h"
+
+#include "mn_main.h"
+#include "mn_class.h"
+#include "mn_skill.h"
+#include "mn_char.h"
+#include "mn_load.h"
+#include "mn_save.h"
+#include "mn_options.h"
+#include "mn_gameplay.h"
+#include "mn_gfx.h"
+#include "mn_effects.h"
+#include "mn_resolution.h"
+#include "mn_sound.h"
+#include "mn_controls.h"
+#include "mn_mouse.h"
+#include "mn_joy.h"
+#include "mn_info.h"
+#include "mn_updating.h"
+#include "mn_journal.h"
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+static KClass *MenuClasses[MAX_MENU] = {
+	KMenuScreenMain::StaticClass(),
+	KMenuScreenClass::StaticClass(),
+	KMenuScreenSkill::StaticClass(),
+	KMenuScreenChar::StaticClass(),
+	KMenuScreenLoadGame::StaticClass(),
+	KMenuScreenSaveGame::StaticClass(),
+	KMenuScreenOptions::StaticClass(),
+	KMenuScreenGameplay::StaticClass(),
+	KMenuScreenGraphics::StaticClass(),
+	KMenuScreenEffects::StaticClass(),
+	KMenuScreenResolution::StaticClass(),
+	KMenuScreenSound::StaticClass(),
+	KMenuScreenControls::StaticClass(),
+	KMenuScreenMouseOptions::StaticClass(),
+	KMenuScreenJoyConfig::StaticClass(),
+	KMenuScreenInfo::StaticClass(),
+	KUpdatingScreen::StaticClass(),
+	KJournalScreen::StaticClass(),
+};
+
 //---------------------------------------------------------------------------
 //
 // PROC MN_Init
@@ -263,44 +232,10 @@ void MN_Init(void)
 	guard(MN_Init);
 	KCanvas::StaticInit();
 	MenuActive = false;
-	MauloBaseLump = gi.W_GetNumForName("FBULA0"); // ("M_SKL00");
 
 	GRootWindow = Spawn<KRootWindow>();
 	GRootWindow->Init();
 	unguard;
-}
-
-//---------------------------------------------------------------------------
-//
-//	KMenuScreen::InitWindow
-//
-//---------------------------------------------------------------------------
-
-void KMenuScreen::InitWindow(void)
-{
-	guard(KMenuScreen::InitWindow);
-	Super::InitWindow();
-	CreateChoices();
-	CreateButtons();
-	if (NumItems)
-	{
-		GRootWindow->SetFocus(Items[CursorPos]);
-	}
-	else
-	{
-		GRootWindow->SetFocus(this);
-	}
-	unguard;
-}
-
-//---------------------------------------------------------------------------
-//
-//	KMenuScreen::CreateChoices
-//
-//---------------------------------------------------------------------------
-
-void KMenuScreen::CreateChoices(void)
-{
 }
 
 //---------------------------------------------------------------------------
@@ -319,7 +254,7 @@ void MN_DrTextA_CS(char *text, int x, int y)
 
 void MN_DrTextA(char *text, int x, int y)
 {
-	gi.GL_SetColorAndAlpha(1, 1, 1, 1);
+	GL_SetColorAndAlpha(1, 1, 1, 1);
 	MN_DrTextA_CS(text, x, y);
 }
 
@@ -337,7 +272,7 @@ void MN_DrTextAYellow_CS(char *text, int x, int y)
 
 void MN_DrTextAYellow(char *text, int x, int y)
 {
-	gi.GL_SetColorAndAlpha(1, 1, 1, 1);
+	GL_SetColorAndAlpha(1, 1, 1, 1);
 	MN_DrTextAYellow_CS(text, x, y);
 }
 
@@ -370,7 +305,7 @@ void MN_DrTextB_CS(char *text, int x, int y)
 
 void MN_DrTextB(char *text, int x, int y)
 {
-	gi.GL_SetColorAndAlpha(1, 1, 1, 1);
+	GL_SetColorAndAlpha(1, 1, 1, 1);
 	MN_DrTextB_CS(text, x, y);
 }
 
@@ -477,9 +412,9 @@ void MN_Drawer(void)
 	if (showFPS)
 	{
 		char fpsbuff[80];
-		sprintf(fpsbuff, "%d FPS", gi.FrameRate());
+		sprintf(fpsbuff, "%d FPS", I_GetFrameRate());
 		MN_DrTextA(fpsbuff, 640-MN_TextAWidth(fpsbuff), 0);
-		gi.Update(DDUF_TOP);
+		DD_GameUpdate(DDUF_TOP);
 	}
 	
 	if (MenuActive == false)
@@ -503,37 +438,21 @@ void MN_Drawer(void)
 				MN_DrTextA("?", 160+
 					MN_TextAWidth(_SlotText[quicksave-1])/2, 90);
 			}
-			gi.Update(DDUF_FULLSCREEN);
+			DD_GameUpdate(DDUF_FULLSCREEN);
 			GCanvas->SetOrigin(0, 0);
 		}
 	}
 	if (MenuActive)
 	{
-		gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
+		DD_GameUpdate(DDUF_FULLSCREEN | DDUF_BORDER);
 
 		// Draw a dark background. It makes it easier to read the menus.
-		gi.GL_SetNoTexture();
+		GL_SetNoTexture();
 		GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, 0.5);
 		gl.Color4f(1, 1, 1, 1);
 	}
 	GRootWindow->PaintWindows(GCanvas);
 	unguard;
-}
-
-//---------------------------------------------------------------------------
-//
-//	KMenuScreen::PostDrawWindow
-//
-//---------------------------------------------------------------------------
-
-void KMenuScreen::PostDrawWindow(KGC *gc)
-{
-	if (bUseSelector && Items[CursorPos])
-	{
-		gc->DrawIcon(Items[CursorPos]->X + SELECTOR_XOFFSET,
-			Items[CursorPos]->Y + SELECTOR_YOFFSET - (10 - itemHeight / 2),
-			FindTexture(MenuTime & 16 ? "M_SLCTR1" : "M_SLCTR2"));
-	}
 }
 
 //---------------------------------------------------------------------------
@@ -604,7 +523,7 @@ void MN_LoadSlotText(void)
 
 static void SCQuitGame(int option)
 {
-	gi.OpenConsole(false);
+	CON_Open(false);
 	MenuActive = false;
 	askforquit = true;
 	typeofask = 1; //quit game
@@ -662,7 +581,7 @@ static void SCLoadGame(int option)
 	G_LoadGame(option);
 	MN_DeactivateMenu();
 	//BorderNeedRefresh = true;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 	if(quickload == -1)
 	{
 		quickload = option+1;
@@ -681,7 +600,7 @@ static void SCSaveGame(int option)
 	G_SaveGame(option, _SlotText[option]);
 	MN_DeactivateMenu();
 	//BorderNeedRefresh = true;
-	gi.Update(DDUF_BORDER);
+	DD_GameUpdate(DDUF_BORDER);
 	if (quicksave == -1)
 	{
 		quicksave = option+1;
@@ -778,9 +697,12 @@ chr_val Reroll(int Sclass)
 int H2_PrivilegedResponder(event_t *event)
 {
 	guard(H2_PrivilegedResponder);
-	if (MenuActive && CurrentMenu->RawInputEvent(event))
+	for (KWindow *W = GRootWindow->FocusWindow; W; W = W->GetParent())
 	{
-		return true;
+		if (W->RawInputEvent(event))
+		{
+			return true;
+		}
 	}
 
 	// Process the screen shot key right away.
@@ -837,14 +759,14 @@ boolean MN_Responder(event_t *event)
 					{
 						case 1:
 							G_CheckDemoStatus(); 
-							gi.Quit();
+							I_Quit();
 							break;
 						case 2:
 							P_ClearMessage(&players[consoleplayer]);
 							typeofask = 0;
 							askforquit = false;
 							paused = false;
-							gi.GL_SetFilter(0);
+							GL_SetFilter(0);
 							H2_StartTitle(); // go to intro/demo mode.
 							break;
 						case 3:
@@ -854,7 +776,7 @@ boolean MN_Responder(event_t *event)
 							askforquit = false;
 							typeofask = 0;
 							//BorderNeedRefresh = true;
-							gi.Update(DDUF_BORDER);
+							DD_GameUpdate(DDUF_BORDER);
 							return true;
 						case 4:
 							P_SetMessage(&players[consoleplayer], 
@@ -863,13 +785,13 @@ boolean MN_Responder(event_t *event)
 							askforquit = false;
 							typeofask = 0;
 							//BorderNeedRefresh = true;
-							gi.Update(DDUF_BORDER);
+							DD_GameUpdate(DDUF_BORDER);
 							return true;
 						case 5:
 							askforquit = false;
 							typeofask = 0;	
 							//BorderNeedRefresh = true;
-							gi.Update(DDUF_BORDER);
+							DD_GameUpdate(DDUF_BORDER);
 							mn_SuicideConsole = true;
 							return true;
 							break;
@@ -889,7 +811,7 @@ boolean MN_Responder(event_t *event)
 					paused = false;
 					/*UpdateState |= I_FULLSCRN;
 					BorderNeedRefresh = true;*/
-					gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
+					DD_GameUpdate(DDUF_FULLSCREEN | DDUF_BORDER);
 					return true;
 				}
 				return false;
@@ -935,667 +857,6 @@ boolean MN_Responder(event_t *event)
 
 //---------------------------------------------------------------------------
 //
-//	KMenuScreen::RawInputEvent
-//
-//---------------------------------------------------------------------------
-
-bool KMenuScreen::RawInputEvent(event_t *event)
-{
-	if (Items[CursorPos] && Items[CursorPos]->RawInputEvent(event))
-	{
-		return true;
-	}
-	return Super::RawInputEvent(event);
-}
-
-void KMenuScreen::CyclePrevChoice(void)
-{
-	do
-	{
-		if (CursorPos <= 0)
-		{
-			CursorPos = NumItems - 1;
-		}
-		else
-		{
-			CursorPos--;
-		}
-	} while (!Items[CursorPos]->IsSensitive());
-	GRootWindow->SetFocus(Items[CursorPos]);
-}
-
-void KMenuScreen::CycleNextChoice(void)
-{
-	do
-	{
-		if (CursorPos + 1 > NumItems - 1)
-		{
-			CursorPos = 0;
-		}
-		else
-		{
-			CursorPos++;
-		}
-	} while (!Items[CursorPos]->IsSensitive());
-	GRootWindow->SetFocus(Items[CursorPos]);
-}
-
-//---------------------------------------------------------------------------
-//
-//	KMenuScreen::KeyPressed
-//
-//---------------------------------------------------------------------------
-
-bool KMenuScreen::KeyPressed(int key)
-{
-	switch (key)
-	{
-	case DDKEY_DOWNARROW:
-		CycleNextChoice();
-		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
-		return true;
-
-	case DDKEY_UPARROW:
-		CyclePrevChoice();
-		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
-		return true;
-
-	case DDKEY_ESCAPE:
-		PopMenu();
-		return true;
-	}
-	return Super::KeyPressed(key);
-}
-
-//==========================================================================
-//
-//	KMenuUIChoice
-//
-//==========================================================================
-
-class KMenuUIChoice:public KMenuItem_t
-{
-	DECLARE_CLASS(KMenuUIChoice, KMenuItem_t, 0);
-	
-	char *ActionText;
-
-	KMenuUIChoice(void)
-	{
-		Font = KCanvas::SmallFont;
-		ActionText = "Choice";
-	}
-
-	void InitWindow(void)
-	{
-		Super::InitWindow();
-
-		LoadSetting();
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		gc->DrawText(0, 0, ActionText);
-	}
-
-	virtual void LoadSetting(void)
-	{
-	}
-
-	virtual void SaveSetting(void)
-	{
-	}
-};
-IMPLEMENT_CLASS(KMenuUIChoice);
-
-//==========================================================================
-//
-//	KMenuUIChoiceSlider
-//
-//==========================================================================
-
-class KMenuUIChoiceSlider:public KMenuUIChoice
-{
-	DECLARE_CLASS(KMenuUIChoiceSlider, KMenuUIChoice, 0);
-
-	int TickPosition;
-	int NumTicks;
-	float StartValue;
-	float EndValue;
-
-	int *pInteger;
-	float *pFloat;
-	char *CVarName;
-	cvar_t *pCVar;
-
-	KTexture *TexMid1;
-	KTexture *TexMid2;
-	KTexture *TexLeft;
-	KTexture *TexRight;
-	KTexture *TexKnob;
-
-	KMenuUIChoiceSlider(void)
-	{
-		ActionText = "Slider choice";
-		NumTicks = 11;
-		EndValue = 10.0;
-	}
-
-	void InitWindow(void)
-	{
-		if (CVarName)
-		{
-			pCVar = gi.GetCVar(CVarName);
-			if (pCVar->type == CVT_INT)
-			{
-				pInteger = (int *)pCVar->ptr;
-			}
-			else if (pCVar->type == CVT_FLOAT)
-			{
-				pFloat = (float *)pCVar->ptr;
-			}
-			StartValue = pCVar->min;
-			EndValue = pCVar->max;
-		}
-
-		Super::InitWindow();
-
-		TexMid1 = FindTexture("M_SLDMD1");
-		TexMid2 = FindTexture("M_SLDMD2");
-		TexLeft = FindTexture("M_SLDLT");
-		TexRight = FindTexture("M_SLDRT");
-		TexKnob = FindTexture("M_SLDKB");
-	}
-
-	void CycleNextValue(void)
-	{
-		int NewValue;
-
-		NewValue = GetTickPosition();
-		if (NewValue < NumTicks - 1)
-		{
-			NewValue++;
-		}
-		SetTickPosition(NewValue);
-	}
-
-	void CyclePreviousValue(void)
-	{
-		int NewValue;
-
-		NewValue = GetTickPosition();
-		if (NewValue > 0)
-		{
-			NewValue--;
-		}
-		SetTickPosition(NewValue);
-	}
-
-	int GetTickPosition(void)
-	{
-		return TickPosition;
-	}
-
-	void SetTickPosition(int NewPosition)
-	{
-		TickPosition = NewPosition;
-	}
-
-	void SetValue(float NewValue)
-	{
-		SetTickPosition(int((NewValue - StartValue) * (NumTicks - 1) / 
-			(EndValue - StartValue)));
-	}
-
-	float GetValue(void)
-	{
-		return StartValue + GetTickPosition() * (EndValue - StartValue) / 
-			(NumTicks - 1);
-	}
-
-	void LoadSetting(void)
-	{
-		if (pInteger)
-		{
-			SetValue(float(*pInteger));
-		}
-		else if (pFloat)
-		{
-			SetValue(*pFloat);
-		}
-	}
-
-	void SaveSetting(void)
-	{
-		if (pInteger)
-		{
-			*pInteger = int(GetValue());
-		}
-		else if (pFloat)
-		{
-			*pFloat = GetValue();
-		}
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		int x;
-		int y;
-		int i;
-
-		Super::DrawWindow(gc);
-
-		x = 24 + 160;
-		y = 0;
-		for (i = 0; i < 12; i++)
-		{
-			gc->DrawIcon(x + i * 8, y, i & 1 ?  TexMid2 : TexMid1);
-		}
-		gc->DrawIcon(x - 32, y, TexLeft);
-		gc->DrawIcon(x + 96, y, TexRight);
-		gc->DrawIcon(x - 2 + TickPosition * 100 / (NumTicks - 1), y + 7, TexKnob);
-	}
-
-	bool KeyPressed(int key)
-	{
-		switch (key)
-		{
-		case DDKEY_LEFTARROW:
-			CyclePreviousValue();
-			SaveSetting();
-			S_StartSound(NULL, SFX_PICKUP_KEY);
-			return true;
-
-		case DDKEY_RIGHTARROW:
-		case DDKEY_ENTER:
-			CycleNextValue();
-			SaveSetting();
-			S_StartSound(NULL, SFX_PICKUP_KEY);
-			return true;
-		}
-		return Super::KeyPressed(key);
-	}
-};
-IMPLEMENT_CLASS(KMenuUIChoiceSlider);
-
-//==========================================================================
-//
-//	KMenuUIChoiceEnum
-//
-//==========================================================================
-
-class KMenuUIChoiceEnum:public KMenuUIChoice
-{
-	DECLARE_CLASS(KMenuUIChoiceEnum, KMenuUIChoice, 0);
-
-	enum { MAX_ENUM_COUNT = 40 };
-
-	const char *EnumText[MAX_ENUM_COUNT];
-
-	int CurrentValue;
-
-	int *pInteger;
-	char *CVarName;
-
-	KMenuUIChoiceEnum(void)
-	{
-	}
-
-	void InitWindow(void)
-	{
-		if (CVarName)
-		{
-			cvar_t *pCVar;
-			pCVar = gi.GetCVar(CVarName);
-			pInteger = (int *)pCVar->ptr;
-		}
-		Super::InitWindow();
-	}
-
-	void CycleNextValue(void)
-	{
-		int NewValue;
-
-		// Cycle to the next value, but make sure we don't exceed the 
-		// bounds of the enumText array.  If we do, start back at the 
-		// bottom.
-
-		NewValue = GetValue() + 1;
-
-		if (NewValue == MAX_ENUM_COUNT)
-			NewValue = 0;
-		else if (!EnumText[NewValue])
-			NewValue = 0;
-
-		SetValue(NewValue);
-	}
-
-	void CyclePreviousValue(void)
-	{
-		int NewValue;
-
-		NewValue = GetValue() - 1;
-
-		if (NewValue < 0)
-		{
-			NewValue = MAX_ENUM_COUNT - 1;
-
-			while (!EnumText[NewValue] && NewValue > 0)
-				NewValue--;	
-		}
-
-		SetValue(NewValue);
-	}
-
-	void SetValue(int NewValue)
-	{
-		CurrentValue = NewValue;
-	}
-
-	int GetValue(void)
-	{
-		return CurrentValue;
-	}
-
-	void LoadSetting(void)
-	{
-		if (pInteger)
-		{
-			SetValue(*pInteger);
-		}
-	}
-
-	void SaveSetting(void)
-	{
-		if (pInteger)
-		{
-			*pInteger = GetValue();
-		}
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		Super::DrawWindow(gc);
-
-		gc->DrawText(160, 0, EnumText[CurrentValue]);
-	}
-
-	bool KeyPressed(int key)
-	{
-		switch (key)
-		{
-		case DDKEY_LEFTARROW:
-			CyclePreviousValue();
-			SaveSetting();
-			S_StartSound(NULL, SFX_PICKUP_KEY);
-			return true;
-
-		case DDKEY_RIGHTARROW:
-		case DDKEY_ENTER:
-			CycleNextValue();
-			SaveSetting();
-			S_StartSound(NULL, SFX_PICKUP_KEY);
-			return true;
-		}
-		return Super::KeyPressed(key);
-	}
-};
-IMPLEMENT_CLASS(KMenuUIChoiceEnum);
-
-//==========================================================================
-//
-//	KMenuChoice_OnOff
-//
-//==========================================================================
-
-class KMenuChoice_OnOff:public KMenuUIChoiceEnum
-{
-	DECLARE_CLASS(KMenuChoice_OnOff, KMenuUIChoiceEnum, 0);
-
-	KMenuChoice_OnOff(void)
-	{
-		EnumText[0] = "OFF";
-		EnumText[1] = "ON";
-	}
-};
-IMPLEMENT_CLASS(KMenuChoice_OnOff);
-
-//==========================================================================
-//
-//	KMenuUIFileSlot
-//
-//==========================================================================
-
-class KMenuUIFileSlot:public KMenuItem_t
-{
-	DECLARE_CLASS(KMenuUIFileSlot, KMenuItem_t, 0);
-
-	int SlotIndex;
-
-	KMenuUIFileSlot(void)
-	{
-		Font = KCanvas::SmallFont;
-	}
-
-	void PrepareSlot(int InIndex)
-	{
-		SlotIndex = InIndex;
-
-		if (!slottextloaded)
-		{
-			MN_LoadSlotText();
-		}
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		gc->DrawIcon(0, 0, FindTexture("M_FSLOT"));
-		if (_SlotStatus[SlotIndex])
-		{
-			gc->DrawText(5, 5, _SlotText[SlotIndex]);
-		}
-	}
-};
-IMPLEMENT_CLASS(KMenuUIFileSlot);
-
-//==========================================================================
-//
-//	KMenuUIButton
-//
-//==========================================================================
-
-class KMenuUIButton:public KMenuItem_t
-{
-	DECLARE_CLASS(KMenuUIButton, KMenuItem_t, 0);
-
-	char *ButtonText;
-
-	KMenuUIButton(void)
-	{
-		ButtonText = "Button";
-		Font = KCanvas::BigFont;
-	}
-
-	void SetButtonText(char *NewText)
-	{
-		ButtonText = NewText;
-	}
-
-	void DrawWindow(KGC *gc)
-	{
-		gc->DrawText(0, 0, ButtonText);
-	}
-
-	bool KeyPressed(int key)
-	{
-		switch (key)
-		{
-		case DDKEY_ENTER:
-			GetParent()->ButtonActivated(this);
-			S_StartSound(NULL, SFX_DOOR_LIGHT_CLOSE);
-			return true;
-		}
-		return Super::KeyPressed(key);
-	}
-};
-IMPLEMENT_CLASS(KMenuUIButton);
-
-//==========================================================================
-//
-//	KMenuScreen::CreateButtons
-//
-//==========================================================================
-
-void KMenuScreen::CreateButtons(void)
-{
-	int ButtonIndex;
-
-	for (ButtonIndex = 0; ButtonIndex < MAX_BUTTONS; ButtonIndex++)
-	{
-		if (ButtonDefaults[ButtonIndex].Name)
-		{
-			WinButtons[ButtonIndex] = NewWindow(KMenuUIButton, this);
-
-			WinButtons[ButtonIndex]->SetButtonText(ButtonDefaults[ButtonIndex].Name);
-			WinButtons[ButtonIndex]->SetPos(ChoiceStartX, ChoiceStartY + NumItems * itemHeight);
-			Items[NumItems++] = WinButtons[ButtonIndex];
-		}
-		else
-		{
-			break;
-		}
-	}
-}
-
-//==========================================================================
-//
-//	KMenuScreen::ButtonActivated
-//
-//==========================================================================
-
-bool KMenuScreen::ButtonActivated(KWindow *ButtonPressed)
-{
-	bool bHandled;
-	int ButtonIndex;
-
-	bHandled = false;
-
-	Super::ButtonActivated(ButtonPressed);
-
-	// Figure out which button was pressed
-	for (ButtonIndex = 0; ButtonIndex < MAX_BUTTONS; ButtonIndex++)
-	{
-		if (ButtonPressed == WinButtons[ButtonIndex])
-		{
-			// Check to see if there's somewhere to go
-			ProcessMenuAction(ButtonDefaults[ButtonIndex].Action, 
-				ButtonDefaults[ButtonIndex].Invoke, 
-				ButtonDefaults[ButtonIndex].Key);
-
-			bHandled = true;
-			break;
-		}
-	}
-
-	return bHandled;
-}
-
-//==========================================================================
-//
-//	KMenuScreen::ProcessMenuAction
-//
-//==========================================================================
-
-void KMenuScreen::ProcessMenuAction(int Action, MenuType_t Invoke, int Key)
-{
-	switch (Action)
-	{
-	case MA_None:
-		break;
-
-	case MA_Menu:
-		SetMenu(Invoke);
-		break;
-
-	case MA_MenuNC:
-		if (SCNetCheck(Key))
-		{
-			SetMenu(Invoke);
-		}
-		break;
-
-	case MA_EndGame:
-		if (!demoplayback && SCNetCheck(3))
-		{
-			ForceMenuOff();
-			askforquit = true;
-			typeofask = 2; //endgame
-		}
-		break;
-
-	case MA_Quit:
-		SCQuitGame(0);
-		break;
-
-	case MA_Custom:
-		ProcessCustomMenuAction(Key);
-		break;
-	}
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-#include "mn_main.h"
-#include "mn_class.h"
-#include "mn_skill.h"
-#include "mn_char.h"
-#include "mn_load.h"
-#include "mn_save.h"
-#include "mn_options.h"
-#include "mn_gameplay.h"
-#include "mn_gfx.h"
-#include "mn_effects.h"
-#include "mn_resolution.h"
-#include "mn_sound.h"
-#include "mn_controls.h"
-#include "mn_mouse.h"
-#include "mn_joy.h"
-#include "mn_info.h"
-#include "mn_updating.h"
-#include "mn_journal.h"
-
-//---------------------------------------------------------------------------
-//
-//
-//
-//---------------------------------------------------------------------------
-
-static KClass *MenuClasses[MAX_MENU] = {
-	KMenuScreenMain::StaticClass(),
-	KMenuScreenClass::StaticClass(),
-	KMenuScreenSkill::StaticClass(),
-	KMenuScreenChar::StaticClass(),
-	KMenuScreenLoadGame::StaticClass(),
-	KMenuScreenSaveGame::StaticClass(),
-	KMenuScreenOptions::StaticClass(),
-	KMenuScreenGameplay::StaticClass(),
-	KMenuScreenGraphics::StaticClass(),
-	KMenuScreenEffects::StaticClass(),
-	KMenuScreenResolution::StaticClass(),
-	KMenuScreenSound::StaticClass(),
-	KMenuScreenControls::StaticClass(),
-	KMenuScreenMouseOptions::StaticClass(),
-	KMenuScreenJoyConfig::StaticClass(),
-	KMenuScreenInfo::StaticClass(),
-	KUpdatingScreen::StaticClass(),
-	KJournalScreen::StaticClass(),
-};
-
-//---------------------------------------------------------------------------
-//
 //	PushMenu
 //
 //---------------------------------------------------------------------------
@@ -1621,14 +882,13 @@ static void PopMenu(void)
 	MenuSP--;
 
 	if (MenuSP < 0)
-		gi.Error("PopMenu: Stack underflow");
+		I_Error("PopMenu: Stack underflow");
 
 	MenuStack[MenuSP]->Destroy();
 	if (MenuSP)
 	{
 		CurrentMenu = MenuStack[MenuSP - 1];
 		CurrentMenu->Show();
-		GRootWindow->SetFocus(CurrentMenu->Items[CurrentMenu->CursorPos]);
 		S_StartSound(NULL, SFX_PICKUP_KEY);
 	}
 	else
@@ -1773,7 +1033,7 @@ int CCmdMenuAction(int argc, char **argv)
 	}
 	else if(!stricmp(argv[0], "suicide"))
 	{
-		gi.OpenConsole(false);
+		CON_Open(false);
 		MenuActive = false;
 		askforquit = true;
 		typeofask = 5; // suicide
@@ -1832,14 +1092,14 @@ int CCmdMenuAction(int argc, char **argv)
 	}
 	else if(!stricmp(argv[0], "toggleGamma"))
 	{
-		int gamma = gi.Get(DD_GAMMA) + 1;
+		int gamma = usegamma + 1;
 		char cmd[20];
 		if(gamma > 4)
 		{
 			gamma = 0;
 		}
 		sprintf(cmd, "setgamma %d", gamma);
-		gi.Execute(cmd, true);
+		CON_Execute(cmd, true);
 		P_SetMessage(&players[consoleplayer], GammaText[gamma],
 			false);
 	}

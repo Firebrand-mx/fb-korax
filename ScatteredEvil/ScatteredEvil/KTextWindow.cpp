@@ -23,7 +23,6 @@ KTextWindow::KTextWindow()
 {
 	guard(KTextWindow::KTextWindow);
 	Font = KCanvas::SmallFont;
-	bIsSensitive = false;
 	unguard;
 }
 

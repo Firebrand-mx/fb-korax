@@ -16,9 +16,10 @@ class KRootWindow:public KModalWindow
 	friend class KWindow;
 	friend class KModalWindow;
 
-	KWindow *FocusWindow;
+	// Input windows
+	KWindow *FocusWindow;		// Recipient window for all keyboard events
 
-	void Init(KWindow *AParent) { gi.Error("Root cannot have a parent"); }
+	void Init(KWindow *AParent) { I_Error("Root cannot have a parent"); }
 	virtual void Init(void);
 
 	// KRootWindow interface

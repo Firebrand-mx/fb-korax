@@ -3,43 +3,7 @@
 
 IMPLEMENT_CLASS(KConChoiceWindow);
 IMPLEMENT_CLASS(KConWindow);
-
-//==========================================================================
-//
-//	KConChoiceWindow::KConChoiceWindow
-//
-//==========================================================================
-
-KConChoiceWindow::KConChoiceWindow()
-{
-	Width = 480;
-	Height = 10;
-}
-
-//==========================================================================
-//
-//	KConChoiceWindow::InitWindow
-//
-//==========================================================================
-
-void KConChoiceWindow::InitWindow(void)
-{
-	WinText = NewWindow(KTextWindow, this);
-	WinText->SetPos(10, 0);
-	WinText->SetSize(460, 10);
-	WinText->SetFont(KCanvas::SmallFont);
-}
-
-//==========================================================================
-//
-//	KConChoiceWindow::SetText
-//
-//==========================================================================
-
-void KConChoiceWindow::SetText(const char *Text)
-{
-	WinText->SetText(Text);
-}
+IMPLEMENT_CLASS(KConWindowFirst);
 
 //==========================================================================
 //
@@ -49,7 +13,8 @@ void KConChoiceWindow::SetText(const char *Text)
 
 void KConChoiceWindow::FocusEnteredWindow(void)
 {
-	WinText->SetFont(KCanvas::YellowFont);
+	SetFont(KCanvas::YellowFont);
+	Super::FocusEnteredWindow();
 }
 
 //==========================================================================
@@ -60,7 +25,8 @@ void KConChoiceWindow::FocusEnteredWindow(void)
 
 void KConChoiceWindow::FocusLeftWindow(void)
 {
-	WinText->SetFont(KCanvas::SmallFont);
+	SetFont(KCanvas::SmallFont);
+	Super::FocusLeftWindow();
 }
 
 //==========================================================================
@@ -100,7 +66,6 @@ void KConWindow::Clear(void)
 	for (int i = 0; i < 10; i++)
 		WinChoices[i] = NULL;
 	NumChoices = 0;
-	CurrentChoice = 0;
 }
 
 //==========================================================================
@@ -113,7 +78,18 @@ void KConWindow::DisplayText(const char *Text)
 {
 	CreateSpeechWindow();
 	WinSpeech->SetText(Text);
-	GetRootWindow()->SetFocus(this);
+}
+
+//==========================================================================
+//
+//	KConWindow::AppendText
+//
+//==========================================================================
+
+void KConWindow::AppendText(const char *Text)
+{
+	CreateSpeechWindow();
+	WinSpeech->AppendText(Text);
 }
 
 //==========================================================================
@@ -126,13 +102,10 @@ void KConWindow::DisplayChoice(KConChoice *Choice)
 {
 	KConChoiceWindow *newChoice = NewWindow(KConChoiceWindow, this);
 	newChoice->SetPos(0, 410 + 10 * NumChoices);
+	newChoice->SetSize(480, 10);
 	newChoice->SetText(Choice->ChoiceText);
 	newChoice->Choice = Choice;
 	WinChoices[NumChoices++] = newChoice;
-	if (NumChoices == 1)
-	{
-		GetRootWindow()->SetFocus(newChoice);
-	}
 }
 
 //==========================================================================
@@ -146,31 +119,15 @@ bool KConWindow::KeyPressed(int key)
 	switch (key)
 	{
 	case DDKEY_UPARROW:
-		if (NumChoices)
-		{
-			CurrentChoice--;
-			if (CurrentChoice < 0)
-				CurrentChoice = NumChoices - 1;
-			GetRootWindow()->SetFocus(WinChoices[CurrentChoice]);
-		}
+		MoveFocusUp();
 		break;
 
 	case DDKEY_DOWNARROW:
-		if (NumChoices)
-		{
-			CurrentChoice++;
-			if (CurrentChoice >= NumChoices)
-				CurrentChoice = 0;
-			GetRootWindow()->SetFocus(WinChoices[CurrentChoice]);
-		}
+		MoveFocusDown();
 		break;
 
 	case DDKEY_ENTER:
-		if (NumChoices)
-		{
-			ConPlay->PlayChoice(WinChoices[CurrentChoice]->Choice);
-		}
-		else
+		if (!NumChoices)
 		{
 			ConPlay->PlayNextEvent();
 		}
@@ -185,6 +142,25 @@ bool KConWindow::KeyPressed(int key)
 		break;
 	}
 	return true;
+}
+
+//==========================================================================
+//
+//	KConWindow::DescendantRemoved
+//
+//==========================================================================
+
+bool KConWindow::ButtonActivated(KWindow *button)
+{
+	KConChoiceWindow *Choice;
+
+	Choice = Cast<KConChoiceWindow>(button);
+	if (Choice)
+	{
+		ConPlay->PlayChoice(Choice->Choice);
+		return true;
+	}
+	return false;
 }
 
 //==========================================================================
@@ -214,4 +190,84 @@ void KConWindow::CreateSpeechWindow(void)
 		WinSpeech->SetPos(0, 400);
 		WinSpeech->SetSize(640, 10);
 	}
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::KConWindowFirst
+//
+//==========================================================================
+
+KConWindowFirst::KConWindowFirst(void)
+{
+	X = 0;
+	Y = 400;
+	Width = 640;
+	Height = 80;
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::InitWindow
+//
+//==========================================================================
+
+void KConWindowFirst::InitWindow(void)
+{
+	Super::InitWindow();
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::Clear
+//
+//==========================================================================
+
+void KConWindowFirst::Clear(void)
+{
+	DestroyAllChildren();
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::DisplayText
+//
+//==========================================================================
+
+void KConWindowFirst::DisplayText(const char *Text)
+{
+	if (!WinSpeech)
+	{
+		WinSpeech = NewWindow(KTextWindow, this);
+		WinSpeech->SetSize(640, 10);
+	}
+	WinSpeech->SetText(Text);
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::AppendText
+//
+//==========================================================================
+
+void KConWindowFirst::AppendText(const char *Text)
+{
+	//	Make sure we have a text window
+	if (!WinSpeech)
+		return;
+
+	WinSpeech->AppendText(Text);
+}
+
+//==========================================================================
+//
+//	KConWindowFirst::DescendantRemoved
+//
+//==========================================================================
+
+void KConWindowFirst::DescendantRemoved(KWindow *Child)
+{
+	Super::DescendantRemoved(Child);
+	if (WinSpeech == Child)
+		WinSpeech = NULL;
 }
