@@ -1011,11 +1011,6 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 	}
 	players[consoleplayer].plr->viewz = 1; // will be set by player think
 
-	if(gi.Get(DD_MUSIC_DEVICE)!=2)
-	{
-		S_StartSongName("chess", true); // Waiting-for-level-load song
-	}
-
 	gi.Z_FreeTags(PU_LEVEL, PU_PURGELEVEL-1);
 	gi.GL_ResetData();
 
