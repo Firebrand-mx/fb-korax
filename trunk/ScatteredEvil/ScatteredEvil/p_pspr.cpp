@@ -564,7 +564,7 @@ int P_GetWeaponNum(player_t *player, newweapontype_t weapontype)
 
 void P_NewPendingWeapon(player_t *player, int key)
 {
-	int i;
+	int i, ii;
 	int weaponnumber = 50; //Used for checking if the player has weapon
 	int j = 0;
 	//0=Nothing, 1=First or only, 2=Last, 3 = Not first or last, 4=Not in line
@@ -624,7 +624,59 @@ void P_NewPendingWeapon(player_t *player, int key)
 		}
 		return;
 	}
-	
+
+	if (key == 14 || key == 15)
+	{
+		//	set previous / next weapon and check mana
+		for (ii = 1; ii < NUMACTUALWEAPONS; ii++)
+		{
+			if (key == 14)
+				//	Add NUMACTUALWEAPONS because % on negative values is negative.
+				i = (player->readyweapon + NUMACTUALWEAPONS - ii) % NUMACTUALWEAPONS;
+			else
+				i = (player->readyweapon + ii) % NUMACTUALWEAPONS;
+			if (NewWeaponInfo[i].classtype != pclass)
+			{
+				continue;
+			}
+			//	Found possible weapon
+			if (pclass < PCLASS_ETTIN &&
+				!player->weaponowned[P_GetWeaponNum(player, (newweapontype_t)i)])
+			{
+				//	Player doesn't have it.
+				continue;
+			}
+			//Player has the weapon and don't have it up, check for mana
+			// -JL- Check the actual mana count this weapon will use
+			int manaCount = NewWeaponInfo[i].ammouse * 10 / player->agility;
+			if (NewWeaponInfo[i].mana == MANA_BOTH)
+			{
+				//	Special case, check both mana pots
+				if (player->mana[MANA_1] < manaCount ||
+					player->mana[MANA_2] < manaCount)
+				{
+					continue;
+				}
+			}
+			else if (NewWeaponInfo[i].mana != MANA_NONE)
+			{
+				if (player->mana[NewWeaponInfo[i].mana] < manaCount)
+				{
+					continue;
+				}
+			}
+			//	Everything's OK, use it.
+			player->pendingweapon = (newweapontype_t)i;
+			if (player->powers[pw_weaponlevel2] &&
+				NewWeaponInfo[i+1].bindkey == NewWeaponInfo[i].bindkey + 20)
+			{
+				player->pendingweapon = (newweapontype_t)(i + 1);
+			}
+			return;
+		}
+		return;
+	}
+
 	for (i = 0; i < NUMACTUALWEAPONS; i++) //First find the highest weaponnumber
 	{
 		if (NewWeaponInfo[i].classtype == pclass && NewWeaponInfo[i].bindkey == key)
