@@ -3,8 +3,6 @@
 
 // Hope you don't mind the mess...
 
-#define USE640
-
 #include "dd_data.h"
 #include "dd_md2.h"
 

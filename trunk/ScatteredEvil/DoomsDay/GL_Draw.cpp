@@ -317,17 +317,10 @@ int GL_DrawFilter()
 		(curfilter>>24)&0xff);
 	
 	gl.Begin(DGL_QUADS);
-#ifdef USE640
 	gl.Vertex2f(0, 0);
 	gl.Vertex2f(640, 0);
 	gl.Vertex2f(640, 480);
 	gl.Vertex2f(0, 480);
-#else
-	gl.Vertex2f(0, 0);
-	gl.Vertex2f(320, 0);
-	gl.Vertex2f(320, 200);
-	gl.Vertex2f(0, 200);
-#endif
 	gl.End();
 
 	gl.Enable(DGL_TEXTURING);

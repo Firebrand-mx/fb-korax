@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include "h2def.h"
 #include "p_local.h"
-#include "KCanvas.h"
+#include "mn_def.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -216,19 +216,11 @@ void G_Drawer(void)
 	{
 		if(!netgame)
 		{
-#ifdef USE640
 			GCanvas->DrawPatch1(320, gi.Get(DD_VIEWWINDOW_Y)*480/200+5, gi.W_GetNumForName("PAUSED"));
-#else
-			GCanvas->DrawPatch1(160, gi.Get(DD_VIEWWINDOW_Y)+5, gi.W_GetNumForName("PAUSED"));
-#endif
 		}
 		else
 		{
-#ifdef USE640
 			GCanvas->DrawPatch1(320, 70, gi.W_GetNumForName("PAUSED"));
-#else
-			GCanvas->DrawPatch1(160, 70, gi.W_GetNumForName("PAUSED"));
-#endif
 		}
 	}
 }
@@ -244,11 +236,7 @@ static void PageDrawer(void)
 	GCanvas->DrawRawScreen(gi.W_GetNumForName(pagename));
 	if(demosequence == 1)
 	{
-#ifdef USE640
 		GCanvas->DrawPatch1(4, 440, gi.W_GetNumForName("ADVISOR"));
-#else
-		GCanvas->DrawPatch1(4, 160, gi.W_GetNumForName("ADVISOR"));
-#endif
 	}
 /*
 	gl.MatrixMode(DGL_PROJECTION);
