@@ -14,14 +14,7 @@
 
 #include "h2def.h"
 #include "p_local.h"
-#include "soundst.h"
-#include "settings.h"
-
-#ifdef DEMOCAM
-#include "g_demo.h"
-#endif
-
-#define USE640
+#include "KCanvas.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -46,6 +39,7 @@ static void DrawKeyBar(void);
 static void DrawWeaponPieces(void);
 static void DrawFullScreenStuff(void);
 static void DrawAnimatedIcons(void);
+static void DrawPossWeaponry(void);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
@@ -56,7 +50,6 @@ extern int AutoArmorSave[NUMCLASSES];
 
 // PUBLIC DATA DECLARATIONS ------------------------------------------------
 
-int DebugSound; // Debug flag for displaying sound info
 boolean inventory;
 int curpos;
 int inv_ptr;
@@ -258,28 +251,28 @@ static void DrINumber(signed int val, int x, int y)
 		}
 		if(val > 9)
 		{
-			gi.GL_DrawPatch(x+8, y, PatchNumINumbers[val/10]);
-			gi.GL_DrawPatch(x, y, PatchNumNEGATIVE);
+			GCanvas->DrawPatch1(x+8, y, PatchNumINumbers[val/10]);
+			GCanvas->DrawPatch1(x, y, PatchNumNEGATIVE);
 		}
 		else
 		{
-			gi.GL_DrawPatch(x+8, y, PatchNumNEGATIVE);
+			GCanvas->DrawPatch1(x+8, y, PatchNumNEGATIVE);
 		}
 		val = val%10;
-		gi.GL_DrawPatch(x+16, y, PatchNumINumbers[val]);
+		GCanvas->DrawPatch1(x+16, y, PatchNumINumbers[val]);
 		return;
 	}
 	if(val > 99)
 	{
-		gi.GL_DrawPatch(x, y, PatchNumINumbers[val/100]);
+		GCanvas->DrawPatch1(x, y, PatchNumINumbers[val/100]);
 	}
 	val = val%100;
 	if(val > 9 || oldval > 99)
 	{
-		gi.GL_DrawPatch(x+8, y, PatchNumINumbers[val/10]);
+		GCanvas->DrawPatch1(x+8, y, PatchNumINumbers[val/10]);
 	}
 	val = val%10;
-	gi.GL_DrawPatch(x+16, y, PatchNumINumbers[val]);
+	GCanvas->DrawPatch1(x+16, y, PatchNumINumbers[val]);
 }
 
 //==========================================================================
@@ -302,20 +295,20 @@ static void DrRedINumber(signed int val, int x, int y)
 	}
 	if(val > 999)
 	{
-		gi.GL_DrawPatch(x+offset, y, gi.W_GetNumForName("inred0")+val/1000);
+		GCanvas->DrawPatch1(x+offset, y, gi.W_GetNumForName("inred0")+val/1000);
 		offset+=8;
 	}
 	if(val > 99)
 	{
-		gi.GL_DrawPatch(x+offset, y, gi.W_GetNumForName("inred0")+(val%1000)/100);
+		GCanvas->DrawPatch1(x+offset, y, gi.W_GetNumForName("inred0")+(val%1000)/100);
 	}
 	val = val%100;
 	if(val > 9 || oldval > 99)
 	{
-		gi.GL_DrawPatch(x+8+offset, y, gi.W_GetNumForName("inred0")+val/10);
+		GCanvas->DrawPatch1(x+8+offset, y, gi.W_GetNumForName("inred0")+val/10);
 	}
 	val = val%10;
-	gi.GL_DrawPatch(x+16+offset, y, gi.W_GetNumForName("inred0")+val);
+	GCanvas->DrawPatch1(x+16+offset, y, gi.W_GetNumForName("inred0")+val);
 }
 
 //==========================================================================
@@ -383,78 +376,15 @@ static void DrSmallNumber(int val, int x, int y)
 	}
 	if(val > 99)
 	{
-		gi.GL_DrawPatch(x, y, PatchNumSmNumbers[val/100]);
-		gi.GL_DrawPatch(x+4, y, PatchNumSmNumbers[(val%100)/10]);
+		GCanvas->DrawPatch1(x, y, PatchNumSmNumbers[val/100]);
+		GCanvas->DrawPatch1(x+4, y, PatchNumSmNumbers[(val%100)/10]);
 	}
 	else if(val > 9)
 	{
-		gi.GL_DrawPatch(x+4, y, PatchNumSmNumbers[val/10]);
+		GCanvas->DrawPatch1(x+4, y, PatchNumSmNumbers[val/10]);
 	}
 	val %= 10;
-	gi.GL_DrawPatch(x+8, y, PatchNumSmNumbers[val]);
-}
-
-//==========================================================================
-//
-// DrawSoundInfo
-//
-// Displays sound debugging information.
-//
-//==========================================================================
-
-static void DrawSoundInfo(void)
-{
-	int i;
-	SoundInfo_t s;
-	ChanInfo_t *c;
-	char text[32];
-	int x;
-	int y;
-	int xPos[7] = {1, 75, 112, 156, 200, 230, 260};
-
-	if(leveltime&16)
-	{
-		MN_DrTextA("*** SOUND DEBUG INFO ***", xPos[0], 20);
-	}
-	S_GetChannelInfo(&s);
-	if(s.channelCount == 0)
-	{
-		return;
-	}
-	x = 0;
-	MN_DrTextA("NAME", xPos[x++], 30);
-	MN_DrTextA("MO.T", xPos[x++], 30);
-	MN_DrTextA("MO.X", xPos[x++], 30);
-	MN_DrTextA("MO.Y", xPos[x++], 30);
-	MN_DrTextA("ID", xPos[x++], 30);
-	MN_DrTextA("PRI", xPos[x++], 30);
-	MN_DrTextA("DIST", xPos[x++], 30);
-	for(i = 0; i < s.channelCount; i++)
-	{
-		c = &s.chan[i];
-		x = 0;
-		y = 40+i*10;
-		if(c->mo == NULL)
-		{ // Channel is unused
-			MN_DrTextA("------", xPos[0], y);
-			continue;
-		}
-		sprintf(text, "%s", c->name);
-		strupr(text);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", c->mo->type);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", c->mo->x>>FRACBITS);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", c->mo->y>>FRACBITS);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", c->id);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", S_sfx[c->id].usefulness);//c->mo->thinker.function);//c->priority);
-		MN_DrTextA(text, xPos[x++], y);
-		sprintf(text, "%d", c->distance);
-	}
-	gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
+	GCanvas->DrawPatch1(x+8, y, PatchNumSmNumbers[val]);
 }
 
 //==========================================================================
@@ -517,48 +447,40 @@ extern boolean automapactive;
 
 void SB_Drawer(void)
 {
-	// Sound info debug stuff
-	if(DebugSound)
-	{
-		DrawSoundInfo();
-	}
-	CPlayer = &players[consoleplayer];
-	if((gi.Get(DD_VIEWWINDOW_HEIGHT) == SCREENHEIGHT
-		|| CPlayer->pclass >=PCLASS_ETTIN) //Remi: Possessed monsters have forced fullscreen		
-		&& !automapactive
-		
-#ifdef DEMOCAM 
-		&& (demoplayback && democam.mode)
+#ifdef USE640
+	gi.Update(DDUF_TOP | DDUF_BORDER);
 #endif
-		)
+
+	CPlayer = &players[consoleplayer];
+	if (CPlayer->pclass >=PCLASS_ETTIN)
+	{
+		//Remi: Possessed monsters have forced fullscreen
+		DrawPossWeaponry();
+	}
+	else if (gi.Get(DD_VIEWWINDOW_HEIGHT) == SCREENHEIGHT && !automapactive)
 	{
 		DrawFullScreenStuff();
 	}
 	else
 	{
-		float fscale = sbarscale/20.0f;
-		// Setup special status bar matrix.
-		if(sbarscale != 20)
-		{
-			gl.MatrixMode(DGL_MODELVIEW);
-			gl.PushMatrix();
-			gl.Translatef(160 - 320*fscale/2, 200*(1-fscale), 0);
-			gl.Scalef(fscale, fscale, 1);
-		}
-		
-		gi.GL_DrawPatch(0, 134, PatchNumH2BAR);
-		DrawCommonBar();
+#ifdef USE640
+     	if (CPlayer->pclass<PCLASS_ETTIN) DrRedINumber(CPlayer->sp_power, 600 , 13);
+		GCanvas->SetOrigin(160, 280);
+#else
      	if (CPlayer->pclass<PCLASS_ETTIN) DrRedINumber(CPlayer->sp_power, 280 , 13);
+#endif
+		GCanvas->DrawPatch1(0, 134, PatchNumH2BAR);
+		DrawCommonBar();
 		if(!inventory)
 		{
 			// Main interface
 			if(!automapactive)
 			{
-				gi.GL_DrawPatch(38, 162, PatchNumSTATBAR);
+				GCanvas->DrawPatch1(38, 162, PatchNumSTATBAR);
 			}
 			else
 			{
-				gi.GL_DrawPatch(38, 162, PatchNumKEYBAR);
+				GCanvas->DrawPatch1(38, 162, PatchNumKEYBAR);
 			}
 			if(!automapactive)
 			{
@@ -573,12 +495,9 @@ void SB_Drawer(void)
 		{
 			DrawInventoryBar();
 		}
-		// Restore the old modelview matrix.
-		if(sbarscale != 20)
-		{
-			gl.MatrixMode(DGL_MODELVIEW);
-			gl.PopMatrix();
-		}
+#ifdef USE640
+		GCanvas->SetOrigin(0, 0);
+#endif
 	}
 	SB_PaletteFlash(false);
 	DrawAnimatedIcons();
@@ -599,7 +518,7 @@ static void DrawAnimatedIcons(void)
 
 	// If the fullscreen mana is drawn, we need to move the icons on the left
 	// a bit to the right.
-	if(showFullscreenMana==1 && screenblocks>10) leftoff = 42;
+	if(screenblocks>10) leftoff = 42;
 
 	// Wings of wrath
 	if(CPlayer->powers[pw_flight])
@@ -612,11 +531,11 @@ static void DrawAnimatedIcons(void)
 			{
 				if(hitCenterFrame && (frame != 15 && frame != 0))
 				{
-					gi.GL_DrawPatch(20+leftoff, 19, SpinFlylump+15);
+					GCanvas->DrawPatch1(20+leftoff, 19, SpinFlylump+15);
 				}
 				else
 				{
-					gi.GL_DrawPatch(20+leftoff, 19, SpinFlylump+frame);
+					GCanvas->DrawPatch1(20+leftoff, 19, SpinFlylump+frame);
 					hitCenterFrame = false;
 				}
 			}
@@ -624,12 +543,12 @@ static void DrawAnimatedIcons(void)
 			{
 				if(!hitCenterFrame && (frame != 15 && frame != 0))
 				{
-					gi.GL_DrawPatch(20+leftoff, 19, SpinFlylump+frame);
+					GCanvas->DrawPatch1(20+leftoff, 19, SpinFlylump+frame);
 					hitCenterFrame = false;
 				}
 				else
 				{
-					gi.GL_DrawPatch(20+leftoff, 19, SpinFlylump+15);
+					GCanvas->DrawPatch1(20+leftoff, 19, SpinFlylump+15);
 					hitCenterFrame = true;
 				}
 			}
@@ -644,7 +563,7 @@ static void DrawAnimatedIcons(void)
 			|| !(CPlayer->powers[pw_speed]&16))
 		{
 			frame = (leveltime/3)&15;
-			gi.GL_DrawPatch(60+leftoff, 19, SpinSpeedLump+frame);
+			GCanvas->DrawPatch1(60+leftoff, 19, SpinSpeedLump+frame);
 		}
 		gi.Update(DDUF_TOP | DDUF_MESSAGES);
 	}
@@ -656,7 +575,7 @@ static void DrawAnimatedIcons(void)
 			|| !(CPlayer->powers[pw_invulnerability]&16))
 		{
 			frame = (leveltime/3)&15;
-			gi.GL_DrawPatch(260, 19, SpinDefenseLump+frame);
+			GCanvas->DrawPatch1(260, 19, SpinDefenseLump+frame);
 		}
 		gi.Update(DDUF_TOP | DDUF_MESSAGES);
 	}
@@ -668,7 +587,11 @@ static void DrawAnimatedIcons(void)
 			|| !(CPlayer->powers[pw_minotaur]&16))
 		{
 			frame = (leveltime/3)&15;
-			gi.GL_DrawPatch(300, 19, SpinMinotaurLump+frame);
+#ifdef USE640
+			GCanvas->DrawPatch1(600, 19, SpinMinotaurLump+frame);
+#else
+			GCanvas->DrawPatch1(300, 19, SpinMinotaurLump+frame);
+#endif
 		}
 		gi.Update(DDUF_TOP | DDUF_MESSAGES);
 	}
@@ -756,7 +679,7 @@ void DrawCommonBar(void)
 {
 	int healthPos;
 
-	gi.GL_DrawPatch(0, 134, PatchNumH2TOP);
+	GCanvas->DrawPatch1(0, 134, PatchNumH2TOP);
 
 	healthPos = HealthMarker*100/players[consoleplayer].maxhealth;
 	if(healthPos < 0)
@@ -767,10 +690,10 @@ void DrawCommonBar(void)
 	{
 		healthPos = 100;
 	}
-	gi.GL_DrawPatch(28+(((healthPos*196)/100)%9), 193, PatchNumCHAIN);
-	gi.GL_DrawPatch(7+((healthPos*11)/5), 193, PatchNumLIFEGEM);
-	gi.GL_DrawPatch(0, 193, PatchNumLFEDGE);
-	gi.GL_DrawPatch(277, 193, PatchNumRTEDGE);
+	GCanvas->DrawPatch1(28+(((healthPos*196)/100)%9), 193, PatchNumCHAIN);
+	GCanvas->DrawPatch1(7+((healthPos*11)/5), 193, PatchNumLIFEGEM);
+	GCanvas->DrawPatch1(0, 193, PatchNumLFEDGE);
+	GCanvas->DrawPatch1(277, 193, PatchNumRTEDGE);
 }
 
 //==========================================================================
@@ -790,7 +713,7 @@ void DrawMainBar(void)
 	// Ready artifact
 	if(ArtifactFlash)
 	{
-		gi.GL_DrawPatch(148, 164, gi.W_GetNumForName("useartia")+ArtifactFlash-1);
+		GCanvas->DrawPatch1(148, 164, gi.W_GetNumForName("useartia")+ArtifactFlash-1);
 		ArtifactFlash--;
 		oldarti = -1; // so that the correct artifact fills in after the flash
 		gi.Update(DDUF_STATBAR);
@@ -800,7 +723,7 @@ void DrawMainBar(void)
 	{
 		if(CPlayer->readyArtifact > 0)
 		{
-			gi.GL_DrawPatch(143, 163, gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
+			GCanvas->DrawPatch1(143, 163, gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
 			if(CPlayer->inventory[inv_ptr].count > 1)
 			{
 				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 162, 184);
@@ -816,7 +739,7 @@ void DrawMainBar(void)
 		{
 			temp += CPlayer->plr->frags[i];
 		}
-		if (PatchNumKILLS!=0) gi.GL_DrawPatch(38, 162, PatchNumKILLS);
+		if (PatchNumKILLS!=0) GCanvas->DrawPatch1(38, 162, PatchNumKILLS);
 			DrINumber(temp, 40, 176);
 	}
 	else
@@ -897,14 +820,14 @@ void DrawMainBar(void)
 			manaPatchNum2 = PatchNumMANABRIGHT2;
 		}
 	}
-	gi.GL_DrawPatch(77, 164, manaPatchNum1);
-	gi.GL_DrawPatch(110, 164, manaPatchNum2);
-	gi.GL_DrawPatch(94, 164, manaVialPatchNum1);
-	gi.GL_DrawPatch(102, 164, manaVialPatchNum2);
+	GCanvas->DrawPatch1(77, 164, manaPatchNum1);
+	GCanvas->DrawPatch1(110, 164, manaPatchNum2);
+	GCanvas->DrawPatch1(94, 164, manaVialPatchNum1);
+	GCanvas->DrawPatch1(102, 164, manaVialPatchNum2);
 
 	gi.GL_SetNoTexture();
-	gi.GL_DrawRect(95, 165, 3, 22-(22*CPlayer->mana[0])/MAX_MANA, 0,0,0,1);
-	gi.GL_DrawRect(103, 165, 3, 22-(22*CPlayer->mana[1])/MAX_MANA, 0,0,0,1);
+	GCanvas->DrawRect(95, 165, 3, 22-(22*CPlayer->mana[0])/MAX_MANA, 0,0,0,1);
+	GCanvas->DrawRect(103, 165, 3, 22-(22*CPlayer->mana[1])/MAX_MANA, 0,0,0,1);
 		
 	gi.Update(DDUF_STATBAR);
 	// Armor
@@ -928,13 +851,13 @@ void DrawInventoryBar(void)
 	int x;
 
 	x = inv_ptr-curpos;
-	gi.GL_DrawPatch(38, 162, PatchNumINVBAR);
+	GCanvas->DrawPatch1(38, 162, PatchNumINVBAR);
 	for(i = 0; i < 7; i++)
 	{
 		if(CPlayer->inventorySlotNum > x+i
 			&& CPlayer->inventory[x+i].type != arti_none)
 		{
-			gi.GL_DrawPatch(50+i*31, 163, gi.W_GetNumForName(
+			GCanvas->DrawPatch1(50+i*31, 163, gi.W_GetNumForName(
 				patcharti[CPlayer->inventory[x+i].type]));
 			if(CPlayer->inventory[x+i].count > 1)
 			{
@@ -942,15 +865,15 @@ void DrawInventoryBar(void)
 			}
 		}
 	}
-	gi.GL_DrawPatch(50+curpos*31, 163, PatchNumSELECTBOX);
+	GCanvas->DrawPatch1(50+curpos*31, 163, PatchNumSELECTBOX);
 	if(x != 0)
 	{
-		gi.GL_DrawPatch(42, 163, !(leveltime&4) ? PatchNumINVLFGEM1 :
+		GCanvas->DrawPatch1(42, 163, !(leveltime&4) ? PatchNumINVLFGEM1 :
 			PatchNumINVLFGEM2);
 	}
 	if(CPlayer->inventorySlotNum-x > 7)
 	{
-		gi.GL_DrawPatch(269, 163, !(leveltime&4) ? PatchNumINVRTGEM1 :
+		GCanvas->DrawPatch1(269, 163, !(leveltime&4) ? PatchNumINVRTGEM1 :
 			PatchNumINVRTGEM2);
 	}
 }
@@ -972,7 +895,7 @@ void DrawKeyBar(void)
 	{
 		if(CPlayer->keys&(1<<i))
 		{
-			gi.GL_DrawPatch(xPosition, 163, gi.W_GetNumForName("keyslot1")+i);
+			GCanvas->DrawPatch1(xPosition, 163, gi.W_GetNumForName("keyslot1")+i);
 			xPosition += 20;
 		}
 	}
@@ -988,7 +911,7 @@ void DrawKeyBar(void)
 		if(CPlayer->armorpoints[i] <= 
 			(ArmorIncrement[CPlayer->pclass][i]>>2))
 		{
-			gi.GL_DrawFuzzPatch(150+31*i, 164, 
+			GCanvas->DrawFuzzPatch(150+31*i, 164, 
 				gi.W_GetNumForName("armslot1")+i);
 		}
 		else if(CPlayer->armorpoints[i] <= 
@@ -999,7 +922,7 @@ void DrawKeyBar(void)
 		}
 		else
 		{
-			gi.GL_DrawPatch(150+31*i, 164, gi.W_GetNumForName("armslot1")+i);
+			GCanvas->DrawPatch1(150+31*i, 164, gi.W_GetNumForName("armslot1")+i);
 		}
 	}
 }
@@ -1023,21 +946,21 @@ static void DrawWeaponPieces(void)
 {
 	if(CPlayer->pieces == 7)
 	{
-		gi.GL_DrawPatch(190, 162, PatchNumWEAPONFULL);
+		GCanvas->DrawPatch1(190, 162, PatchNumWEAPONFULL);
 		return;
 	}
-	gi.GL_DrawPatch(190, 162, PatchNumWEAPONSLOT);
+	GCanvas->DrawPatch1(190, 162, PatchNumWEAPONSLOT);
 	if(CPlayer->pieces&WPIECE1)
 	{
-		gi.GL_DrawPatch(PieceX[PlayerClass[consoleplayer]][0], 162, PatchNumPIECE1);
+		GCanvas->DrawPatch1(PieceX[PlayerClass[consoleplayer]][0], 162, PatchNumPIECE1);
 	}
 	if(CPlayer->pieces&WPIECE2)
 	{
-		gi.GL_DrawPatch(PieceX[PlayerClass[consoleplayer]][1], 162, PatchNumPIECE2);
+		GCanvas->DrawPatch1(PieceX[PlayerClass[consoleplayer]][1], 162, PatchNumPIECE2);
 	}
 	if(CPlayer->pieces&WPIECE3)
 	{
-		gi.GL_DrawPatch(PieceX[PlayerClass[consoleplayer]][2], 162, PatchNumPIECE3);
+		GCanvas->DrawPatch1(PieceX[PlayerClass[consoleplayer]][2], 162, PatchNumPIECE3);
 	}
 }
 
@@ -1053,28 +976,35 @@ void DrawFullScreenStuff(void)
 	int x;
 	int temp;
 	
-#ifdef DEMOCAM
-	if(demoplayback && democam.mode) return;
-#endif
-
 	if(CPlayer->plr->mo->health > 0)
 	{
+#ifdef USE640
+		DrBNumber(CPlayer->plr->mo->health, 5, 440);
+#else
 		DrBNumber(CPlayer->plr->mo->health, 5, 180);
+#endif
 	}
 	else
 	{
+#ifdef USE640
+		DrBNumber(0, 5, 440);
+#else
 		DrBNumber(0, 5, 180);
+#endif
 	}
 
-	if (CPlayer->pclass <PCLASS_ETTIN) 
-		DrRedINumber(CPlayer->sp_power, 280 , 13);
+#ifdef USE640
+	DrRedINumber(CPlayer->sp_power, 600, 13);
+#else
+	DrRedINumber(CPlayer->sp_power, 280 , 13);
+#endif
 
-	if(showFullscreenMana && CPlayer->pclass <PCLASS_CORVUS)
+	if (CPlayer->pclass <PCLASS_CORVUS)
 	{
 		int dim[2] = { PatchNumMANADIM1, PatchNumMANADIM2 };
 		int bright[2] = { PatchNumMANABRIGHT1, PatchNumMANABRIGHT2 };
 		int patches[2] = { 0, 0 };
-		int ypos = showFullscreenMana==2? 152 : 2;
+		int ypos = 2;//152;
 		for(i=0; i<2; i++) if(CPlayer->mana[i] == 0) patches[i] = dim[i];		
 		if(NewWeaponInfo[CPlayer->readyweapon].mana == MANA_NONE)
 		{
@@ -1096,7 +1026,7 @@ void DrawFullScreenStuff(void)
 		}
 		for(i=0; i<2; i++)
 		{
-			gi.GL_DrawPatch(2, ypos + i*13, patches[i]);
+			GCanvas->DrawPatch1(2, ypos + i*13, patches[i]);
 			DrINumber(CPlayer->mana[i], 18, ypos + i*13);
 		}
 	}
@@ -1111,31 +1041,74 @@ void DrawFullScreenStuff(void)
 				temp += CPlayer->plr->frags[i];
 			}
 		}
+#ifdef USE640
+		DrINumber(temp, 45, 445);
+#else
 		DrINumber(temp, 45, 185);
+#endif
 	}
-	if(!inventory && CPlayer->pclass <PCLASS_ETTIN)
+	if (!inventory)
 	{
-		if(CPlayer->readyArtifact > 0)
+		if (CPlayer->readyArtifact > 0)
 		{
-			gi.GL_DrawFuzzPatch(286, 170, gi.W_GetNumForName("ARTIBOX"));
-			gi.GL_DrawPatch(284, 169,
+#ifdef USE640
+			GCanvas->DrawFuzzPatch(586, 430, gi.W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawPatch1(584, 429,
+				gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
+			if(CPlayer->inventory[inv_ptr].count > 1)
+			{
+				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 602, 452);
+			}
+#else
+			GCanvas->DrawFuzzPatch(286, 170, gi.W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawPatch1(284, 169,
 				gi.W_GetNumForName(patcharti[CPlayer->readyArtifact]));
 			if(CPlayer->inventory[inv_ptr].count > 1)
 			{
 				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 302, 192);
 			}
+#endif
 		}
 	}
-	else if(CPlayer->pclass <PCLASS_ETTIN)
+	else
 	{
+#ifdef USE640
 		x = inv_ptr-curpos;
 		for(i = 0; i < 7; i++)
 		{
-			gi.GL_DrawFuzzPatch(50+i*31, 168, gi.W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawFuzzPatch(210+i*31, 428, gi.W_GetNumForName("ARTIBOX"));
 			if(CPlayer->inventorySlotNum > x+i
 				&& CPlayer->inventory[x+i].type != arti_none)
 			{
-				gi.GL_DrawPatch(49+i*31, 167, gi.W_GetNumForName(
+				GCanvas->DrawPatch1(209+i*31, 427, gi.W_GetNumForName(
+					patcharti[CPlayer->inventory[x+i].type]));
+
+				if(CPlayer->inventory[x+i].count > 1)
+				{
+					DrSmallNumber(CPlayer->inventory[x+i].count, 226+i*31,
+ 						448);
+				}
+			}
+		}
+		GCanvas->DrawPatch1(210+curpos*31, 427, PatchNumSELECTBOX);
+		if(x != 0)
+		{
+			GCanvas->DrawPatch1(200, 427, !(leveltime&4) ? PatchNumINVLFGEM1 :
+				PatchNumINVLFGEM2);
+		}
+		if(CPlayer->inventorySlotNum-x > 7)
+		{
+			GCanvas->DrawPatch1(428, 427, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
+		}
+#else
+		x = inv_ptr-curpos;
+		for(i = 0; i < 7; i++)
+		{
+			GCanvas->DrawFuzzPatch(50+i*31, 168, gi.W_GetNumForName("ARTIBOX"));
+			if(CPlayer->inventorySlotNum > x+i
+				&& CPlayer->inventory[x+i].type != arti_none)
+			{
+				GCanvas->DrawPatch1(49+i*31, 167, gi.W_GetNumForName(
 					patcharti[CPlayer->inventory[x+i].type]));
 
 				if(CPlayer->inventory[x+i].count > 1)
@@ -1145,16 +1118,85 @@ void DrawFullScreenStuff(void)
 				}
 			}
 		}
-		gi.GL_DrawPatch(50+curpos*31, 167, PatchNumSELECTBOX);
+		GCanvas->DrawPatch1(50+curpos*31, 167, PatchNumSELECTBOX);
 		if(x != 0)
 		{
-			gi.GL_DrawPatch(40, 167, !(leveltime&4) ? PatchNumINVLFGEM1 :
+			GCanvas->DrawPatch1(40, 167, !(leveltime&4) ? PatchNumINVLFGEM1 :
 				PatchNumINVLFGEM2);
 		}
 		if(CPlayer->inventorySlotNum-x > 7)
 		{
-			gi.GL_DrawPatch(268, 167, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
+			GCanvas->DrawPatch1(268, 167, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
 		}
+#endif
+	}
+}
+
+//==========================================================================
+//
+// DrawPossWeaponry
+//
+//==========================================================================
+
+static void DrawPossWeaponry(void)
+{
+	int i;
+	int j;
+	char name[16];
+
+#ifdef USE640
+	j = 460;
+#else
+	j = 190;
+#endif
+
+	for(i = NUMACTUALWEAPONS; i > 0; i--)
+	{
+		if (NewWeaponInfo[i].classtype != CPlayer->pclass) continue;				
+		sprintf(name, "%d: %s",NewWeaponInfo[i].bindkey+1,NewWeaponInfo[i].name);
+		if (i == CPlayer->readyweapon && CPlayer->pendingweapon == WP_NOCHANGE)
+#ifdef USE640
+			MN_DrTextAYellow(name,550,j);
+		else MN_DrTextA(name,550,j);
+#else
+			MN_DrTextAYellow(name,230,j);
+		else MN_DrTextA(name,230,j);
+#endif
+		j -= 10;
+	}
+
+	if(CPlayer->plr->mo->health > 0)
+	{
+#ifdef USE640
+		DrBNumber(CPlayer->plr->mo->health, 5, 440);
+#else
+		DrBNumber(CPlayer->plr->mo->health, 5, 180);
+#endif
+	}
+	else
+	{
+#ifdef USE640
+		DrBNumber(0, 5, 440);
+#else
+		DrBNumber(0, 5, 180);
+#endif
+	}
+
+	if(deathmatch)
+	{
+		int temp = 0;
+		for(int i=0; i<MAXPLAYERS; i++)
+		{
+			if(players[i].plr->ingame)
+			{
+				temp += CPlayer->plr->frags[i];
+			}
+		}
+#ifdef USE640
+		DrINumber(temp, 45, 445);
+#else
+		DrINumber(temp, 45, 185);
+#endif
 	}
 }
 
@@ -1167,7 +1209,7 @@ void DrawFullScreenStuff(void)
 
 void Draw_TeleportIcon(void)
 {
-	gi.GL_DrawPatch(100, 68, gi.W_GetNumForName("teleicon"));
+	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("teleicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }
@@ -1180,7 +1222,7 @@ void Draw_TeleportIcon(void)
 
 void Draw_SaveIcon(void)
 {
-	gi.GL_DrawPatch(100, 68, gi.W_GetNumForName("saveicon"));
+	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("saveicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }
@@ -1193,7 +1235,7 @@ void Draw_SaveIcon(void)
 
 void Draw_LoadIcon(void)
 {
-	gi.GL_DrawPatch(100, 68, gi.W_GetNumForName("loadicon"));
+	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("loadicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }

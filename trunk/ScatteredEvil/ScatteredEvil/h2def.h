@@ -21,12 +21,9 @@
 #include "../DoomsDay/dd_gl.h"
 #include <malloc.h>
 
-#pragma warning (disable:4761 4244)
+#define USE640
 
-#ifdef __WATCOMC__
-#define	strcasecmp strcmpi
-#define	strncasecmp strnicmp
-#endif
+#pragma warning (disable:4761 4244)
 
 //--- MSVC stuff. 
 #define strcasecmp stricmp
@@ -37,12 +34,6 @@
 #define VERSION 199
 #define VERSION_TEXT "ScatteredEvil v1.0"
 
-// Uncomment, to enable all timebomb stuff
-//#define TIMEBOMB
-#define TIMEBOMB_YEAR	95		// years since 1900
-#define TIMEBOMB_STARTDATE	268	// initial date (9/26)
-#define TIMEBOMB_ENDDATE	301	// end date (10/29)
-
 // if rangecheck is undefined, most parameter validation debugging code
 // will not be compiled
 #ifndef NORANGECHECKING
@@ -51,14 +42,8 @@
 
 // Past distributions
 #ifndef VER_ID
-//#define VER_ID "DVL"
 #define VER_ID "Korax"
 #endif
-//#define VERSIONTEXT "ID V1.2"
-//#define VERSIONTEXT "RETAIL STORE BETA"		// 9/26/95
-//#define VERSIONTEXT "DVL BETA 10 05 95" // Used for GT for testing
-//#define VERSIONTEXT "DVL BETA 10 07 95" // Just an update for Romero
-//#define VERSIONTEXT "FINAL 1.0 (10 13 95)" // Just an update for Romero
 #ifdef RANGECHECK
 #define VERSIONTEXT "Version 2.2 +R "__DATE__" ("VER_ID")"
 #else
@@ -172,17 +157,6 @@ typedef enum
 	ga_screenshot
 } gameaction_t;
 
-typedef enum
-{
-	wipe_0,
-	wipe_1,
-	wipe_2,
-	wipe_3,
-	wipe_4,
-	NUMWIPES,
-	wipe_random
-} wipe_t;
-
 /*
 ===============================================================================
 
@@ -191,34 +165,7 @@ typedef enum
 ===============================================================================
 */
 
-// think_t is a function pointer to a routine to handle an actor
-/*typedef void (*think_t) ();
-
-typedef struct thinker_s
-{
-	struct		thinker_s	*prev, *next;
-	think_t		function;
-} thinker_t;*/
-
 struct player_s;
-
-/*typedef struct mobj_s
-{
-	thinker_t		thinker;			// thinker node
-
-	fixed_t			x,y,z;				// position
-	struct	mobj_s	*snext, *sprev;		// links in sector (if needed)
-	angle_t			angle;
-	spritenum_t		sprite;				// used to find patch_t and flip value
-	int				frame;				// might be ord with FF_FULLBRIGHT
-	fixed_t			radius;
-	int				ddflags;			// Doomsday mobj flags (DDMF_*)
-	struct subsector_s *subsector;
-	fixed_t			floorclip;			// value to use for floor clipping
-	struct player_s	*player;			// only valid if type == MT_PLAYER
-} 
-mobj_t;
-*/
 
 #pragma pack(1)
 typedef struct savemobj_s
@@ -331,12 +278,6 @@ typedef struct
 
 // Most damage defined using HITDICE
 #define HITDICE(a) ((1+(P_Random()&7))*a)
-
-//
-// frame flags
-//
-/*#define	FF_FULLBRIGHT	0x8000		// flag in thing->frame
-#define FF_FRAMEMASK	0x7fff*/
 
 // --- mobj.flags ---
 
@@ -478,16 +419,6 @@ typedef struct
 	int		tics;
 	fixed_t	sx, sy;
 } pspdef_t;
-
-/* Old Heretic key type
-typedef enum
-{
-	key_yellow,
-	key_green,
-	key_blue,
-	NUMKEYS
-} keytype_t;
-*/
 
 typedef enum
 {
@@ -876,62 +807,11 @@ typedef struct player_s
 #define	CF_GODMODE		2
 #define	CF_NOMOMENTUM	4 // not really a cheat, just a debug aid
 
-
-/*#define		BACKUPTICS		12
-
-typedef struct
-{
-	unsigned	checksum;					// high bit is retransmit request
-	byte		retransmitfrom;				// only valid if NCMD_RETRANSMIT
-	byte		starttic;
-	byte		player, numtics;
-	ticcmd_t	cmds[BACKUPTICS];
-} doomdata_t;
-
-typedef struct
-{
-	long	id;
-	short	intnum;			// DOOM executes an int to execute commands
-
-// communication between DOOM and the driver
-	short	command;		// CMD_SEND or CMD_GET
-	short	remotenode;		// dest for send, set by get (-1 = no packet)
-	short	datalength;		// bytes in doomdata to be sent
-
-// info common to all nodes
-	short	numnodes;		// console is allways node 0
-	short	ticdup;			// 1 = no duplication, 2-5 = dup for slow nets
-	short	extratics;		// 1 = send a backup tic in every packet
-	short	deathmatch;		// 1 = deathmatch
-	short	savegame;		// -1 = new game, 0-5 = load savegame
-	short	episode;		// 1-3
-	short	map;			// 1-9
-	short	skill;			// 1-5
-
-// info specific to this node
-	short	consoleplayer;
-	short	numplayers;
-	short	angleoffset;	// 1 = left, 0 = center, -1 = right
-	short	drone;			// 1 = drone
-
-// packet data to be sent
-	doomdata_t	data;
-} doomcom_t;
-
-#define	DOOMCOM_ID		0x12345678l
-
-extern	doomcom_t		*doomcom;
-extern	doomdata_t		*netbuffer;		// points inside doomcom
-
-#define	MAXNETNODES		16			// max computers in a game
-
-#define	CMD_SEND	1
-#define	CMD_GET		2
-#define CMD_FRAG	3
-*/
+#ifdef USE640
+#define	SBARHEIGHT	16			// status bar height at bottom of screen
+#else
 #define	SBARHEIGHT	39			// status bar height at bottom of screen
-
-//void NET_SendFrags(ddplayer_t *player);
+#endif
 
 /*
 ===============================================================================
@@ -947,18 +827,12 @@ extern	doomdata_t		*netbuffer;		// points inside doomcom
 
 #define BORINGTICS 300
 
-//extern event_t events[MAXEVENTS];
-//extern int eventhead;
-//extern int eventtail;
-
 extern fixed_t finesine[5*FINEANGLES/4];
 extern fixed_t *finecosine;
 
 extern gameaction_t gameaction;
 
 extern boolean paused;
-
-extern boolean shareware; // true if other episodes not present
 
 extern boolean DevMaps; // true = map development mode
 extern char *DevMapsDir; // development maps directory
@@ -969,30 +843,17 @@ extern boolean respawnparm; // checkparm of -respawn
 
 extern boolean randomclass; // checkparm of -randclass
 
-extern boolean debugmode; // checkparm of -debug
-
-extern boolean nofullscreen;	// checkparm of -nofullscreen
-
 extern boolean usergame; // ok to save / end game
 
 extern boolean ravpic; // checkparm of -ravpic
-
-extern boolean altpal; // checkparm to use an alternate palette routine
-
-extern boolean cdrom; // true if cd-rom mode active ("-cdrom")
 
 extern boolean deathmatch; // only if started as net death
 
 extern boolean netcheat; // allow cheating during netgames
 
-//extern boolean netgame; // only true if >1 player
-#define netgame	 gi.Get(DD_NETGAME)
-
-extern boolean cmdfrag; // true if a CMD_FRAG packet should be sent out every
-						// kill
+#define netgame	 gi.Get(DD_NETGAME)	// only true if >1 player
 
 extern player_t players[MAXPLAYERS];
-//extern boolean playeringame[MAXPLAYERS];
 extern pclass_t PlayerClass[MAXPLAYERS];
 extern byte PlayerColor[MAXPLAYERS];
 
@@ -1002,40 +863,21 @@ extern byte PlayerColor[MAXPLAYERS];
 //extern int displayplayer;
 #define displayplayer gi.Get(DD_DISPLAYPLAYER)
 
-//extern int viewangleoffset;	// ANG90 = left side, ANG270 = right
-
 extern	boolean		singletics;			// debug flag to cancel adaptiveness
 
-extern int DebugSound; // debug flag for displaying sound info
-
 extern boolean demoplayback;
-extern int maxzone;				// Maximum chunk allocated for zone heap
 
 extern int Sky1Texture;
 extern int Sky2Texture;
 
 extern	gamestate_t	gamestate;
 extern	skill_t		gameskill;
-//extern	boolean		respawnmonsters;
 extern	int			gameepisode;
 extern	int			gamemap;
-extern 	int 			prevmap;
+extern 	int 		prevmap;
 extern	int			levelstarttic;		// gametic at level start
 extern	int			leveltime;			// tics in game play for par
 
-/*extern	ticcmd_t	netcmds[MAXPLAYERS][BACKUPTICS];
-extern int ticdup;
-
-//#define	MAXNETNODES		8
-
-extern	ticcmd_t		localcmds[BACKUPTICS];
-extern int rndindex;
-extern int gametic, maketic;
-extern	int        	nettics[MAXNETNODES];*/
-
-/*#define gametic		(*gi.gametic)
-#define maketic		(*gi.maketic)
-#define ticdup		(*gi.ticdup)*/
 #define gametic		gi.Get(DD_GAMETIC)
 #define maketic		gi.Get(DD_MAKETIC)
 #define ticdup		gi.Get(DD_TICDUP)
@@ -1050,18 +892,10 @@ extern int RebornPosition;
 #define MAX_PLAYER_STARTS 8
 extern mapthing_t playerstarts[MAX_PLAYER_STARTS][MAXPLAYERS];
 
-//extern int viewwindowx;
-//extern int viewwindowy;
-//extern int viewwidth;
-//extern int scaledviewwidth;
-//extern int viewheight;
-
 extern int mouseSensitivityX, mouseSensitivityY, usemlook, usejlook;
 extern int mouseInverseY, alwaysRun;
 
 extern boolean precache; // if true, load all graphics at level load
-
-extern byte *memscreen; // off screen work buffer, from V_video.c
 
 extern boolean singledemo; // quit after playing a demo from cmdline
 
@@ -1085,153 +919,6 @@ extern byte netDeathmatch, netNomonsters, netRandomclass, netRespawn;
 */
 
 
-/*--- MSVC stuff.
-#ifdef __WATCOMC__
-#pragma aux FixedMul =	\
-	"imul ebx",			\
-	"shrd eax,edx,16"	\
-	parm	[eax] [ebx] \
-	value	[eax]		\
-	modify exact [eax edx]
-
-#pragma aux FixedDiv2 =	\
-	"cdq",				\
-	"shld edx,eax,16",	\
-	"sal eax,16",		\
-	"idiv ebx"			\
-	parm	[eax] [ebx] \
-	value	[eax]		\
-	modify exact [eax edx]
-#endif*/
-
-// I shall now attempt the MSVC version of those above.
-//--- jk
-
-/*fixed_t	FixedDiv (fixed_t a, fixed_t b);
-
-__inline fixed_t FixedMul (fixed_t a, fixed_t b)
-{
-	__asm {
-		// The parameters in eax and ebx.
-		mov		eax, a
-		mov		ebx, b
-		// The multiplying.
-		imul	ebx
-		shrd	eax, edx, 16
-		// eax should hold the return value.
-	}
-}
-
-__inline fixed_t FixedDiv2 (fixed_t a, fixed_t b)
-{
-	__asm {
-		// The parameters.
-		mov		eax, a
-		mov		ebx, b
-		// The operation.
-		cdq
-		shld	edx, eax, 16
-		sal		eax, 16
-		idiv	ebx
-		// And the value returns in eax.
-	}
-}
-
-
-#ifdef __BIG_ENDIAN__
-short ShortSwap(short);
-long LongSwap(long);
-#define SHORT(x)	ShortSwap(x)
-#define LONG(x)		LongSwap(x)
-#else
-#define SHORT(x)	(x)
-#define LONG(x)		(x)
-#endif
-*/
-
-//-----------
-//MEMORY ZONE
-//-----------
-// tags < 100 are not overwritten until freed
-/*#define	PU_STATIC		1			// static entire execution time
-#define	PU_SOUND		2			// static while playing
-#define	PU_MUSIC		3			// static while playing
-#define	PU_DAVE			4			// anything else Dave wants static
-
-#define PU_OPENGL		10			// OpenGL allocated stuff. -jk
-#define PU_REFRESHTEX	11			// Textures/refresh.
-#define PU_REFRESHCM	12			// Colormap.
-#define PU_REFRESHTRANS	13
-#define PU_REFRESHSPR	14
-#define PU_SPRITE		20
-
-#define	PU_LEVEL		50			// static until level exited
-#define	PU_LEVSPEC		51			// a special thinker in a level
-// tags >= 100 are purgable whenever needed
-#define	PU_PURGELEVEL	100
-#define	PU_CACHE		101
-
-
-void	Z_Init (void);
-void 	*Z_Malloc (int size, int tag, void *ptr);
-void 	Z_Free (void *ptr);
-void 	Z_FreeTags (int lowtag, int hightag);
-//void 	Z_DumpHeap (int lowtag, int hightag);
-//void	Z_FileDumpHeap (FILE *f);
-void	Z_CheckHeap (void);
-void	Z_ChangeTag2 (void *ptr, int tag);
-void	Z_ChangeUser(void *ptr, void *newuser); //-jk
-//int 	Z_FreeMemory (void);
-void	*Z_GetUser(void *ptr);
-int		Z_GetTag(void *ptr);
-
-
-typedef struct memblock_s
-{
-	int 				size;			// including the header and possibly tiny fragments
-	void				**user; 		// NULL if a free block
-	int 				tag;			// purgelevel
-	int 				id; 			// should be ZONEID
-	struct memblock_s	*next, *prev;
-} memblock_t;
-
-#define Z_ChangeTag(p,t) \
-{ \
-if (( (memblock_t *)( (byte *)(p) - sizeof(memblock_t)))->id!=0x1d4a11) \
-	I_Error("Z_CT at "__FILE__":%i",__LINE__); \
-Z_ChangeTag2(p,t); \
-};
-
-//-------
-//WADFILE
-//-------
-typedef struct
-{
-	char		name[8];
-	int			handle, position, size;
-} lumpinfo_t;
-
-extern lumpinfo_t *lumpinfo;
-extern int numlumps;
-
-void W_InitMultipleFiles(char **filenames);
-void W_OpenAuxiliary(char *filename);
-void W_CloseAuxiliaryFile(void);
-void W_CloseAuxiliary(void);
-void W_UsePrimary(void);
-void W_UseAuxiliary(void);
-int W_CheckNumForName(char *name);
-int W_GetNumForName(char *name);
-int W_LumpLength(int lump);
-void W_ReadLump(int lump, void *dest);
-void *W_CacheLumpNum(int lump, int tag);
-void *W_CacheLumpName(char *name, int tag);
-boolean W_AddFile(char *filename);
-void W_UpdateCache();
-void W_Reset();*/
-
-//#include "w_wad.h"
-
 //----------
 //BASE LEVEL
 //----------
@@ -1243,236 +930,9 @@ void H2_Main(void);
 
 void H2_SetFilter(int filter);
 
-//void H2_GameLoop(void);
-// not a globally visible function, just included for source reference
-// called by H2_Main, never exits
-// manages timing and IO
-// calls all ?_Responder, ?_Ticker, and ?_Drawer functions
-// calls I_GetTime, I_StartFrame, and I_StartTic
-
-//void H2_PostEvent(event_t *ev);
-// called by IO functions when input is detected
-
-//void NetUpdate (void);
-// create any new ticcmds and broadcast to other players
-
-//void D_QuitNetGame (void);
-// broadcasts special packets to other players to notify of game exit
-
-//void TryRunTics (void);
-
-//---------
-//SYSTEM IO
-//---------
-/*#if 1
-#define	SCREENWIDTH		320
-#define	SCREENHEIGHT	200
-#else
-#define	SCREENWIDTH		560
-#define	SCREENHEIGHT	375
-#endif*/
-
-/*byte *I_ZoneBase (int *size);
-// called by startup code to get the ammount of memory to malloc
-// for the zone management
-
-int I_GetTime (void);
-// called by H2_GameLoop
-// returns current time in tics
-
-void I_StartFrame (void);
-// called by H2_GameLoop
-// called before processing any tics in a frame (just after displaying a frame)
-// time consuming syncronous operations are performed here (joystick reading)
-// can call H2_PostEvent
-
-void I_EndFrame (void);
-// called by H2_GameLoop
-// called to update anything else (i.e. sound) that needs updating in the 
-// end of a frame
-
-void I_StartTic (void);
-// called by H2_GameLoop
-// called before processing each tic in a frame
-// quick syncronous operations are performed here
-// can call H2_PostEvent
-
-// asyncronous interrupt functions should maintain private ques that are
-// read by the syncronous functions to be converted into events
-
-// Scancode/H2Key conversion.
-byte I_ScanToKey(byte scan);
-byte I_KeyToScan(byte key);
-
-void I_ClearKeyRepeaters();
-
-void I_NameForControlKey(int h2key, char *buff);
-// If buff is "" upon returning, the key is not valid for controls.
-
-void I_Init (void);
-// called by H2_Main
-// determines the hardware configuration and sets up the video mode
-
-void I_InitGraphics (void);
-
-void I_InitNetwork (void);
-void I_NetCmd (void);
-
-void I_CheckExternDriver(void);
-
-void I_Error (char *error, ...);
-// called by anything that can generate a terminal error
-// bad exit with diagnostic message
-
-void I_Quit (void);
-// called by M_Responder when quit is selected
-// clean exit, displays sell blurb
-
-void I_SetPalette (byte *palette);
-// takes full 8 bit values
-
-void I_Update(void);
-// Copy buffer to video
-
-void I_WipeUpdate(wipe_t wipe);
-// Copy buffer to video with wipe effect
-
-void I_WaitVBL(int count);
-// wait for vertical retrace or pause a bit
-
-void I_BeginRead (void);
-void I_EndRead (void);
-
-byte	*I_AllocLow (int length);
-// allocates from low memory under dos, just mallocs under unix
-
-void I_Tactile (int on, int off, int total);
-
-#ifdef __WATCOMC__
-extern boolean useexterndriver;
-
-#define EBT_FIRE			1
-#define EBT_OPENDOOR 		2
-#define EBT_SPEED			4
-#define EBT_STRAFE			8
-#define EBT_MAP				0x10
-#define EBT_INVENTORYLEFT 	0x20
-#define EBT_INVENTORYRIGHT 	0x40
-#define EBT_USEARTIFACT		0x80
-#define EBT_FLYDROP			0x100
-#define EBT_CENTERVIEW		0x200
-#define EBT_PAUSE			0x400
-#define EBT_WEAPONCYCLE		0x800
-#define EBT_JUMP			0x1000
-
-typedef struct
-{
-	short vector; // Interrupt vector
-	
-	signed char moveForward; // forward/backward (maxes at 50)
-	signed char moveSideways; // strafe (maxes at 24)
-	short angleTurn; // turning speed (640 [slow] 1280 [fast])
-	short angleHead; // head angle (+2080 [left] : 0 [center] : -2048 [right])
-	signed char pitch; // look up/down (-110 : +90)
-	signed char flyDirection; // flyheight (+1/-1)
-	unsigned short buttons; // EBT_* flags
-} externdata_t;
-#endif
-*/
 //----
 //GAME
 //----
-
-/*enum // Hexen Control Keys
-{
-	HCK_RIGHT,
-	HCK_LEFT,
-	HCK_UP,
-	HCK_DOWN,
-	HCK_STRAFELEFT,
-	HCK_STRAFERIGHT,
-	HCK_JUMP,
-	HCK_FIRE,
-	HCK_USE,
-	HCK_STRAFE,
-	HCK_SPEED,
-	HCK_FLYUP,
-	HCK_FLYDOWN,
-	HCK_FLYCENTER,
-	HCK_LOOKUP,
-	HCK_LOOKDOWN,
-	HCK_LOOKCENTER,
-	HCK_INVLEFT,
-	HCK_INVRIGHT,
-	HCK_USEARTIFACT,
-	HCK_MLOOK,
-	HCK_NEXTWEAPON,
-	HCK_PREVIOUSWEAPON,
-	HCK_PAUSE,
-	HCK_STOPDEMO,
-
-	// Item hotkeys.
-	HCK_PANIC,
-	HCK_TORCH,
-	HCK_HEALTH,
-	HCK_MYSTICURN,
-	HCK_KRATER,
-	HCK_SPEEDBOOTS,
-	HCK_BLASTRADIUS,
-	HCK_TELEPORT,
-	HCK_TELEPORTOTHER,
-	HCK_POISONBAG,
-	HCK_INVULNERABILITY,
-	HCK_DARKSERVANT,
-	HCK_EGG,
-
-	NUM_CONTROLS
-};
-
-enum // Hexen Controls for the Mouse
-{
-	HCM_FIRE,
-	HCM_STRAFE,
-	HCM_FORWARD,
-	HCM_BACKWARD,
-	HCM_SPEED,
-	HCM_JUMP,
-	HCM_LOOK,
-	HCM_USE,
-	HCM_NEXTWEAPON,
-	HCM_PREVIOUSWEAPON,
-
-	NUM_MOUSECONTROLS
-};
-
-enum // Hexen Controls for the Joystick
-{
-	HCJ_FIRE,
-	HCJ_STRAFE,
-	HCJ_FORWARD,
-	HCJ_BACKWARD,
-	HCJ_SPEED,
-	HCJ_JUMP,
-	HCJ_LOOK,
-	HCJ_USE,
-	HCJ_NEXTWEAPON,
-	HCJ_PREVIOUSWEAPON,
-	HCJ_LOOKUP,
-	HCJ_LOOKCENTER,
-	HCJ_LOOKDOWN,
-	HCJ_FLYUP,
-	HCJ_FLYDOWN,
-	HCJ_FLYCENTER,
-	HCJ_STRAFELEFT,
-	HCJ_STRAFERIGHT,
-	HCJ_INVLEFT,
-	HCJ_INVRIGHT,
-	HCJ_USEARTIFACT,
-
-	NUM_JOYCONTROLS
-};
-
-*/
 
 void G_DeathMatchSpawnPlayer (int playernum);
 
@@ -1582,59 +1042,14 @@ int P_GetCDTitleTrack(void);
 
 extern boolean setsizeneeded;
 
-void R_SetViewSize (int blocks, int detail);
+void R_SetViewSize (int blocks);
 // called by M_Responder
-
-/*extern boolean BorderNeedRefresh;
-extern boolean BorderTopRefresh;
-
-extern int UpdateState;
-// define the different areas for the dirty map
-#define I_NOUPDATE	0
-#define I_FULLVIEW	1
-#define I_STATBAR	2
-#define I_MESSAGES	4
-#define I_FULLSCRN	8
-
-void R_RenderPlayerView (player_t *player);
-// called by G_Drawer
-
-void R_Init (void);
-// called by startup code
-
-void R_Update(void);
-
-void R_DrawViewBorder (void);
-void R_DrawTopBorder (void);
-// if the view size is not full screen, draws a border around it
-
-void R_SetViewSize (int blocks, int detail);
-// called by M_Responder
-
-int	R_FlatNumForName (char *name);
-
-int	R_TextureNumForName (char *name);
-int	R_CheckTextureNumForName (char *name);
-// called by P_Ticker for switches and animations
-// returns the texture number for the texture name
-*/
 
 //----
 //MISC
 //----
-//extern	int		myargc;
-//extern	char	**myargv;
 extern	int		localQuakeHappening[MAXPLAYERS];
 
-/*int	M_CheckParm(char *check);
-// returns the position of the given parameter in the arg list (0 if not found)
-boolean M_ParmExists(char *check);
-
-void M_ExtractFileBase(char *path, char *dest);
-
-void M_ForceUppercase(char *text);
-// Changes a string to uppercase
-*/
 int M_Random (void);
 // returns a number from 0 to 255
 
@@ -1663,8 +1078,6 @@ void P_SaveRandom(void);
 void P_RestoreRandom(void);
 
 void M_ScreenShot (void);
-
-extern unsigned char rndtable[256];
 
 //------------------------------
 // SC_man.c

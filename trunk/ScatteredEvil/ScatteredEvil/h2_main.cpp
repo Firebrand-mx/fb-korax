@@ -72,10 +72,6 @@ static void ExecOptionPLAYDEMO(char **args, int tag);
 static void CreateSavePath(void);
 static void WarpCheck(void);
 
-#ifdef TIMEBOMB
-static void DoTimeBomb(void);
-#endif
-
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern char *SavePath;
@@ -91,15 +87,10 @@ gl_export_t		gl;
 
 boolean DevMaps;			// true = Map development mode
 char *DevMapsDir = "";		// development maps directory
-boolean shareware;			// true if only episode 1 present
 boolean nomonsters;			// checkparm of -nomonsters
 boolean respawnparm;		// checkparm of -respawn
 boolean randomclass;		// checkparm of -randclass
-boolean debugmode;			// checkparm of -debug
 boolean ravpic;				// checkparm of -ravpic
-boolean nofullscreen;		// checkparm of -nofullscreen
-boolean cdrom;				// true if cd-rom mode active
-boolean cmdfrag;			// true if a CMD_FRAG packet should be sent out
 boolean singletics;			// debug flag to cancel adaptiveness
 boolean artiskip;			// whether shift-enter skips an artifact
 boolean netcheat;			// allow cheating in netgames (-netcheat)
@@ -190,7 +181,6 @@ void H2_PreInit(void)
 	startepisode = 1;
 	startskill = sk_medium;
 	startmap = 1;
-	shareware = false; // Always false for Hexen
 
 	HandleArgs();
 }
@@ -219,7 +209,7 @@ void H2_PostInit(void)
 	PlayerClass[consoleplayer] = (pclass_t)pClass;
 
 	// Init the view.
-	R_SetViewSize(screenblocks, 0);
+	R_SetViewSize(screenblocks);
 
 	// Set sprite/model replacements.
 	for(p=0; p<NUMSPRITES; p++)
@@ -344,21 +334,10 @@ static void HandleArgs()
 	randomclass = gi.ParmExists("-randclass");
 	ravpic = gi.ParmExists("-ravpic");
 	artiskip = gi.ParmExists("-artiskip");
-	debugmode = gi.ParmExists("-debug");
 	netDeathmatch = gi.ParmExists("-deathmatch");
-	cdrom = gi.ParmExists("-cdrom");
-	cmdfrag = gi.ParmExists("-cmdfrag");
-	nofullscreen = gi.ParmExists("-nofullscreen");
 	netcheat = gi.ParmExists("-netcheat");
 	dontrender = gi.ParmExists("-noview");
 	
-/*	if(gi.ParmExists("-betademo")) 
-	{
-		gi.Set(DD_SHAREWARE, true);
-		shareware = true;
-		gi.Message( "*** Hexen 4-level Beta Demo ***\n");
-	}*/
-
 	// Process command line options
 	for(opt = ExecOptions; opt->name != NULL; opt++)
 	{
@@ -516,18 +495,6 @@ long superatol(char *s)
 	return(mul*n);
 }
 
-
-/*static void ExecOptionMAXZONE(char **args, int tag)
-{
-	int size;
-	
-	size = superatol(args[1]);
-	if (size < MINIMUM_HEAP_SIZE) size = MINIMUM_HEAP_SIZE;
-	if (size > MAXIMUM_HEAP_SIZE) size = MAXIMUM_HEAP_SIZE;
-	maxzone = size;
-}*/
-
-
 //==========================================================================
 //
 // H2_AdvanceDemo
@@ -605,10 +572,6 @@ static void CreateSavePath(void)
 	char creationPath[121];
 	int len;
 
-	if(cdrom)
-	{
-		SavePath = "c:\\hexndata\\";
-	}
 	len = strlen(SavePath);
 	if (len >= 120) gi.Error("Save path too long\n");
 	strcpy(creationPath, SavePath);

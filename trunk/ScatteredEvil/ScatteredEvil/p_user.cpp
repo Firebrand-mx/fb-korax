@@ -30,7 +30,7 @@ extern void P_InitSky(int map);
 
 // Data
 
-int lookdirSpeed=3, quakeFly=0;
+int lookdirSpeed=3;
 
 boolean onground;
 int newtorch; // used in the torch flicker effect.
@@ -124,18 +124,8 @@ void P_Thrust(player_t *player, angle_t angle, fixed_t move)
 	angle >>= ANGLETOFINESHIFT;
 	if(player->powers[pw_flight] && !(player->plr->mo->z <= player->plr->mo->floorz))
 	{
-		/*float xmul=1, ymul=1;
-
-		// How about Quake-flying? -- jk
-		if(quakeFly)
-		{
-			float ang = LOOKDIR2RAD(player->plr->lookdir);
-			xmul = ymul = cos(ang);
-			player->plr->mo->momz += sin(ang) * move;
-		}*/
-		
-		player->plr->mo->momx += /*xmul * */FixedMul(move, finecosine[angle]);
-		player->plr->mo->momy += /*ymul * */FixedMul(move, finesine[angle]);
+		player->plr->mo->momx += FixedMul(move, finecosine[angle]);
+		player->plr->mo->momy += FixedMul(move, finesine[angle]);
 	}
 	else if(P_GetThingFloorType(player->plr->mo) == FLOOR_ICE) // Friction_Low
 	{
@@ -417,7 +407,6 @@ void P_MovePlayer(player_t *player)
 
 	if(player->plr->mo->flags2&MF2_FLY)
 	{
-//		if(!quakeFly || (quakeFly && !player->plr->mo->momz))
 		player->plr->mo->momz = player->flyheight*FRACUNIT;
 		if(player->flyheight)
 		{

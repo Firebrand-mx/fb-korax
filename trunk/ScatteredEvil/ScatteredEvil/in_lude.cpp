@@ -12,7 +12,7 @@
 
 #include "h2def.h"
 #include <ctype.h>
-//#include "ogl_def.h"
+#include "KCanvas.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -99,8 +99,6 @@ extern void AM_Stop (void);
 void IN_Start(void)
 {
 	int i;
-	//I_SetPalette(W_CacheLumpName("PLAYPAL", PU_CACHE));
-//	OGL_SetFilter(0);
 	gi.GL_SetFilter(0);
 	InitStats();
 	LoadPics();
@@ -417,10 +415,12 @@ void IN_Drawer(void)
 	{
 		return;
 	}
+#ifdef USE640
+	GCanvas->SetOrigin(160, 120);
+#endif
 	//UpdateState |= I_FULLSCRN;
 	gi.Update(DDUF_FULLSCREEN);
-	//memcpy(memscreen, (byte *)patchINTERPIC, SCREENWIDTH*SCREENHEIGHT);
-	gi.GL_DrawRawScreen(patchINTERPICLumpRS);
+	GCanvas->DrawRawScreen(patchINTERPICLumpRS);
 
 	if(gametype == SINGLE)
 	{
@@ -433,6 +433,9 @@ void IN_Drawer(void)
 	{
 		DrDeathTally();
 	}
+#ifdef USE640
+	GCanvas->SetOrigin(0, 0);
+#endif
 }
 
 //========================================================================
@@ -465,12 +468,8 @@ static void DrDeathTally(void)
 	static boolean showTotals;
 	int temp;
 
-	/*V_DrawPatch(TALLY_TOP_X, TALLY_TOP_Y,
-		W_CacheLumpName("tallytop", PU_CACHE));*/
-	gi.GL_DrawPatch(TALLY_TOP_X, TALLY_TOP_Y,	gi.W_GetNumForName("tallytop"));
-	/*V_DrawPatch(TALLY_LEFT_X, TALLY_LEFT_Y,
-		W_CacheLumpName("tallylft", PU_CACHE));*/
-	gi.GL_DrawPatch(TALLY_LEFT_X, TALLY_LEFT_Y, gi.W_GetNumForName("tallylft"));
+	GCanvas->DrawPatch1(TALLY_TOP_X, TALLY_TOP_Y,	gi.W_GetNumForName("tallytop"));
+	GCanvas->DrawPatch1(TALLY_LEFT_X, TALLY_LEFT_Y, gi.W_GetNumForName("tallylft"));
 
 	if(intertime < TALLY_EFFECT_TICKS)
 	{
@@ -621,7 +620,7 @@ static void DrawHubText(void)
 		{
 			break;
 		}
-		gi.GL_DrawPatch(cx, cy, FontABaseLump+c-33);
+		GCanvas->DrawPatch1(cx, cy, FontABaseLump+c-33);
 		cx += w->width;
 	}
 }

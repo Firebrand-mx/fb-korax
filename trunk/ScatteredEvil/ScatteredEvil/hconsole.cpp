@@ -34,7 +34,6 @@ int CCmdPlayDemo(int argc, char **argv);
 int CCmdRecordDemo(int argc, char **argv);
 int CCmdStopDemo(int argc, char **argv);
 int CCmdSuicide(int argc, char **argv);
-int CCmdSetDemoMode(int argc, char **argv);
 int CCmdCrosshair(int argc, char **argv);
 int CCmdViewSize(int argc, char **argv);
 int CCmdInventory(int argc, char **argv);
@@ -77,7 +76,6 @@ cvar_t gameCVars[] =
 	"icecorpse",		0,			CVT_INT,	&translucentIceCorpse, 0, 1, "1=Translucent frozen monsters.",
 	"immediateuse",		0,			CVT_INT,	&chooseAndUse,	0, 1,	"1=Use items immediately from the inventory.",
 	"lookspeed",		0,			CVT_INT,	&lookdirSpeed,	1, 5,	"The speed of looking up/down.",
-	"quakefly",			0,			CVT_INT,	&quakeFly,		0, 1,	"1=Use Quake's flight model (fly where you're looking).",
 	"bgflat",		CVF_NO_MAX,		CVT_INT,	&consoleFlat,	0, 0,	"The number of the flat to use for the console background.",
 	"bgzoom",			0,			CVT_FLOAT,	&consoleZoom,	0.1f, 100.0f, "Zoom factor for the console background.",
 	"povlook",			0,			CVT_BYTE,	&povLookAround,	0, 1,	"1=Look around using the POV hat.",
@@ -88,7 +86,6 @@ cvar_t gameCVars[] =
 	"lookspring",		0,			CVT_INT,	&lookSpring,	0, 1,	"1=Lookspring active.",
 	"noautoaim",		0,			CVT_INT,	&noAutoAim,		0, 1,	"1=Autoaiming disabled.",
 	"h_viewsize",	CVF_PROTECTED,	CVT_INT,	&screenblocks,	3, 11,	"View window size (3-11).",
-	"h_sbsize",		CVF_PROTECTED,	CVT_INT,	&sbarscale,		1, 20,	"Status bar size (1-20).",
 	"dclickuse",		0,			CVT_INT,	&dclickuse,		0, 1,	"1=Double click forward/strafe equals pressing the use key.",
 	
 	"xhair", CVF_NO_MAX|CVF_PROTECTED, CVT_INT,	&xhair,			0, 0,	"The current crosshair.",
@@ -99,11 +96,9 @@ cvar_t gameCVars[] =
 
 	"s_3d",				0,			CVT_INT,	&snd_3D,		0, 1,	"1=Play sounds in 3D.",
 	"s_reverbVol",		0,			CVT_FLOAT,	&snd_ReverbFactor, 0, 1, "General reverb strength (0-1).",
-	"sounddebug",	CVF_NO_ARCHIVE,	CVT_INT,	&DebugSound,	0, 1,	"1=Display sound debug information.",
 	"reverbdebug",	CVF_NO_ARCHIVE,	CVT_BYTE,	&reverbDebug,	0, 1,	"1=Reverberation debug information in the console.",
 
 	"messages",			0,			CVT_INT,	&messageson,	0, 1,	"1=Show messages.",
-	"showmana",			0,			CVT_INT,	&showFullscreenMana, 0, 2, "Show mana when the status bar is hidden.",
 	"savedir",		CVF_PROTECTED,	CVT_CHARPTR, &SavePath,		0, 0,	"The directory for saved games.",
 	"chatmacro0",		0,			CVT_CHARPTR, &chat_macros[0], 0, 0, "Chat macro 1.",
 	"chatmacro1",		0,			CVT_CHARPTR, &chat_macros[1], 0, 0, "Chat macro 2.",
@@ -144,9 +139,6 @@ ccmd_t gameCCmds[] =
 	"cd",			CCmdCD,					"CD player control.",
 	"bunny",		CCmdCheatClip,			"Movement clipping on/off.",
 	"crosshair",	CCmdCrosshair,			"Crosshair settings.",	
-#ifdef DEMOCAM
-	"demomode",		CCmdSetDemoMode,		"Set demo external camera mode.",
-#endif
 	"octomont",		CCmdCheatGive,			"Cheat command to give you various kinds of things.",
 	"fag",			CCmdCheatGod,			"I don't think He needs any help...",
 	"mad",		    CCmdCheatMassacre,		"Kill all the monsters on the level.",
@@ -275,12 +267,6 @@ int CCmdViewSize(int argc, char **argv)
 		gi.conprintf( "Size can be: +, -, (num).\n");
 		return true;
 	}
-	if(!stricmp(argv[0], "sbsize"))
-	{
-		min = 1;
-		max = 20;
-		val = &sbarscale;
-	}
 	if(!stricmp(argv[1], "+"))
 		(*val)++;
 	else if(!stricmp(argv[1], "-"))
@@ -292,7 +278,7 @@ int CCmdViewSize(int argc, char **argv)
 	if(*val > max) *val = max;
 
 	// Update the view size if necessary.
-	R_SetViewSize(screenblocks, 0);
+	R_SetViewSize(screenblocks);
 	return true;
 }
 

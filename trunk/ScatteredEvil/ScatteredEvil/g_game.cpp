@@ -16,11 +16,8 @@
 #include "p_local.h"
 #include "soundst.h"
 #include "Settings.h"
-#include "g_demo.h"
 #include "h2_actn.h"
 #include <assert.h>
-
-//#define DEMOCAM			// Define this to make the democamera functional.
 
 #define AM_STARTKEY	9
 #define DEMO_VER 66
@@ -32,12 +29,6 @@ extern void P_PlayerNextArtifact(player_t *player);
 extern void P_UndoPossessMonster(mobj_t *actor, player_t *player); //Remi
 
 // Functions
-
-#ifdef DEMOCAM
-void G_CameraControls(ticcmd_t *cmd);
-#endif
-
-//void D_CheckNetGame();
 
 boolean G_CheckDemoStatus (void);
 void G_ReadDemoTiccmd (ticcmd_t *cmd);
@@ -68,7 +59,6 @@ byte demoDisabled = 0; // is demo playing disabled?
 gameaction_t    gameaction;
 gamestate_t     gamestate;
 skill_t         gameskill;
-//boolean         respawnmonsters;
 int             gameepisode;
 int             gamemap;
 int				 prevmap;
@@ -99,8 +89,6 @@ chr_val Defaultroll(int Sclass);
 chr_val Reroll(int Sclass);
 
 extern chr_val MenuPValues;
-
-democamdata_t	democam;
 
 // Position indicator for cooperative net-play reborn
 int RebornPosition;
@@ -143,8 +131,7 @@ int alwaysRun;		// Always run.
 int noAutoAim;		// No auto-aiming?
 int mlookInverseY;	// Inverse mlook Y axis.
 int jlookInverseY;	// Inverse jlook Y axis.
-int showFullscreenMana=1;
-int showFPS, sbarscale=20, lookSpring;
+int showFPS, lookSpring;
 int translucentIceCorpse=0;
 int mouseSensitivityX=8, mouseSensitivityY=8;
 int joySensitivity=5;	// Joystick sensitivity (dead zone).
@@ -369,9 +356,6 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 {
 	int             i;
 	boolean         strafe, bstrafe;
-#ifdef DEMOCAM
-	boolean			externaldemo = demoplayback && democam.mode;
-#endif
 	int             speed, tspeed, lspeed;
 	int             forward, side;
 	int look, arti;
@@ -798,14 +782,8 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	}
 	// If mouse look is active, mousey doesn't control forward.
 	// During demo recording mouselook won't work.
-#ifdef DEMOCAM
-	if((!usemlook && !actions[H2A_MLOOK].on) || 
-		demorecording || (demoplayback && !democam.plr->mode) || paused 
-		|| (players[consoleplayer].playerstate == PST_DEAD && !externaldemo)) 
-#else
 	if((!usemlook && !actions[H2A_MLOOK].on) || 
 		demorecording || demoplayback || paused || players[consoleplayer].playerstate == PST_DEAD) 
-#endif
 		forward += mousey;
 	else
 	{
@@ -1216,11 +1194,6 @@ void G_Ticker(void)
 			/*if(ticdf && netgame) fprintf(ticdf, " / %i [f%i s%i a%i %i c%i b%i l%i a%i]", i,
 				cmd->forwardmove, cmd->sidemove, cmd->angleturn, cmd->consistancy,
 				cmd->chatchar, cmd->buttons, cmd->lookfly, cmd->arti);*/
-
-#ifdef DEMOCAM
-			if(demoplayback && i==consoleplayer && democam.mode > 0)
-				G_CameraControls(cmd);
-#endif
 
 			if (demoplayback)
 				G_ReadDemoTiccmd (cmd);
@@ -2329,19 +2302,6 @@ void G_DoPlayDemo (void)
 	precache = true;
 	usergame = false;
 	demoplayback = true;
-
-	memset(&democam, 0, sizeof(democam));
-#ifdef DEMOCAM
-	democam.x = democam.y = democam.z = 0;
-	democam.lookdir = democam.viewangle = 0;
-	democam.dist = 128;
-	democam.mode = 2;
-	// Creating the camera mobj makes random number generation go random...
-	M_SaveRandom();
-	democam.mo = P_SpawnMobj(players[consoleplayer].plr->mo->x,
-		players[consoleplayer].plr->mo->y, players[consoleplayer].plr->mo->z, MT_CAMERA);
-	M_RestoreRandom();
-#endif
 }
 
 
@@ -2474,135 +2434,10 @@ boolean G_CheckDemoStatus (void)
 	return false;
 }
 
-#ifdef DEMOCAM
-// The camera is totally separate from the ticcmd system.
-//void G_CameraControls(mobj_t *cam)
-void G_CameraControls(ticcmd_t *cmd)
-{
-	mobj_t	*cam = democam.mo;
-	int		fly;
-/*	int		forward, side;
-	int		speed, strafe = 0;
-
-	strafe = gamekeydown[controls[HCK_STRAFE]] || mousebuttons[mouseControls[HCM_STRAFE]]
-		|| joybuttons[joyControls[HCJ_STRAFE]];
-	speed = gamekeydown[controls[HCK_SPEED]] || mousebuttons[mouseControls[HCM_SPEED]]
-		|| joybuttons[joyControls[HCJ_SPEED]] || alwaysRun;
-
-	if(gamekeydown[controls[HCK_LEFT]])
-		cam->angle += ANGLE_1*2;
-	if(gamekeydown[controls[HCK_RIGHT]])
-		cam->angle -= ANGLE_1*2;
-	cam->momz = 0;
-	if(gamekeydown[controls[HCK_FLYUP]])
-		cam->momz += FRACUNIT;
-	if(gamekeydown[controls[HCK_FLYDOWN]])
-		cam->momz -= FRACUNIT;
-	forward = 0;
-	if(gamekeydown[controls[HCK_UP]])
-		forward += FRACUNIT*3;
-	if(gamekeydown[controls[HCK_DOWN]])
-		forward -= FRACUNIT*3;
-	side = 0;
-	if(gamekeydown[controls[HCK_STRAFELEFT]])
-		side -= FRACUNIT*3;
-	if(gamekeydown[controls[HCK_STRAFERIGHT]])
-		side += FRACUNIT*3;
-
-	if(speed) forward *= 2;
-
-	// Looking with the mouse.
-	if(strafe)
-	{
-		side += mousex*2;
-	}
-	else
-	{
-		cam->angle -= mousex*0x8 << 16;
-	}
-	mousex = 0;
-
-	if(!usemlook && !gamekeydown[controls[HCK_MLOOK]] && !mousebuttons[mouseControls[HCM_LOOK]]) 
-		forward += mousey;
-	else
-	{
-		// We'll directly change the viewing pitch of the demo camera.
-		float adj = (((mousey*0x8)<<16)/(float)ANGLE_180*180*110.0/85.0), newlookdir;
-		if(mlookInverseY) adj = -adj;
-		newlookdir = democam.lookdir + adj;
-		if(newlookdir > 110) newlookdir = 110;
-		if(newlookdir < -110) newlookdir = -110;
-		democam.lookdir = newlookdir;
-	}
-	mousey = 0;*/
-
-/*typedef struct
-{
-	char		forwardmove;		// *2048 for move
-	char		sidemove;			// *2048 for move
-	short		angleturn;			// <<16 for angle delta
-	short		consistancy;		// checks for net game
-	byte		chatchar;
-	byte		buttons;
-	byte		lookfly;			// look/fly up/down/centering
-	byte		arti;				// artitype_t to use
-} ticcmd_t;
-*/
-	cam->angle += cmd->angleturn << 16;
-
-	// Move.
-	//cam->momx = cam->momy = 0;
-	if(cmd->forwardmove)
-	{
-		cam->momx += FixedMul(cmd->forwardmove*2048, finecosine[cam->angle>>ANGLETOFINESHIFT]);
-		cam->momy += FixedMul(cmd->forwardmove*2048, finesine[cam->angle>>ANGLETOFINESHIFT]);
-	}
-	if(cmd->sidemove)
-	{
-		cam->momx += FixedMul(cmd->sidemove*2048, finesine[cam->angle>>ANGLETOFINESHIFT]);
-		cam->momy -= FixedMul(cmd->sidemove*2048, finecosine[cam->angle>>ANGLETOFINESHIFT]);
-	}
-	cam->momz = 0;
-	fly = cmd->lookfly>>4;
-	if(fly > 7)
-	{
-		fly -= 16;
-	}
-	if(fly != TOCENTER)
-	{
-		cam->momz = (fly*2)<<FRACBITS;
-	}
-
-	
-/*	cam->x = players[consoleplayer].mo->x;
-	cam->y = players[consoleplayer].mo->y;
-	cam->z = players[consoleplayer].mo->z + players[consoleplayer].mo->height/2;
-	cam->momx = -FixedMul(FRACUNIT*democam.dist, finecosine[cam->angle>>ANGLETOFINESHIFT]);
-	cam->momy = -FixedMul(FRACUNIT*democam.dist, finesine[cam->angle>>ANGLETOFINESHIFT]);
-	cam->momz = FRACUNIT*(democam.dist*sin(-democam.lookdir/160*PI));*/
-}
-#endif
-
 int CCmdPause(int argc, char **argv)
 {
 	extern boolean MenuActive;
 
 	if(!MenuActive) sendpause = true;
-	return true;
-}
-
-int CCmdSetDemoMode(int argc, char **argv)
-{
-	if(argc != 2)
-	{
-		gi.conprintf( "Usage: demomode (0-3)\n");
-		gi.conprintf( "0=normal, 1=fixed, 2=free, 3=movie.\n");
-		gi.conprintf( "Current mode is %d.\n", democam.mode);
-		return true;
-	}
-	democam.mode = atoi(argv[1]);
-	if(democam.mode < 0) democam.mode = 0;
-	if(democam.mode > 3) democam.mode = 3;
-	gi.conprintf( "Demo mode %d set.\n", democam.mode);
 	return true;
 }

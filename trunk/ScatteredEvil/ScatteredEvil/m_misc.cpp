@@ -357,7 +357,7 @@ extern int repWait1, repWait2; // The initial and secondary repeater delays (tic
 extern  int screenblocks, consoleFlat, consoleTurn, conCompMode;
 extern	int maxDynLights, dlBlend, chooseAndUse;
 extern	int haloMode, flareBoldness, flareSize, xhair, xhairColor[3], xhairSize;
-extern	int lookdirSpeed, quakeFly;
+extern	int lookdirSpeed;
 
 extern char *chat_macros[10];
 

@@ -90,7 +90,7 @@ void A_NPCWalk(mobj_t *actor)
 	if (!actor->movecount)
 	{
 		//	Initialize walking time
-		actor->movecount = (P_Random() & 7) + 1;
+		actor->movecount = ((P_Random() & 7) + 1) * 4;
 		return;
 	}
 
@@ -110,7 +110,7 @@ void A_NPCWalk(mobj_t *actor)
 	}
 
 	// walk around
-	if (--actor->movecount < 0 || !P_Move(actor))
+	if (--actor->movecount <= 0 || !P_Move(actor))
 	{
 		P_SetMobjState(actor, actor->info->spawnstate);
 	}

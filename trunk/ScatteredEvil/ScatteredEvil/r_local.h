@@ -12,34 +12,8 @@
 
 #ifndef __R_LOCAL__
 #define __R_LOCAL__
-//#pragma pack(1)
-
-#define ANGLETOSKYSHIFT         22              // sky map is 256*128*4 maps
-
-#define BASEYCENTER                     100
-
-#define MAXWIDTH                        1120
-#define MAXHEIGHT                       832
 
 #define PI                                      3.141592657
-
-#define CENTERY                         (SCREENHEIGHT/2)
-
-#define MINZ                    (FRACUNIT*4)
-
-#define FIELDOFVIEW             2048    // fineangles in the SCREENWIDTH wide window
-
-//
-// lighting constants
-//
-#define LIGHTLEVELS                     16
-#define LIGHTSEGSHIFT           4
-#define MAXLIGHTSCALE           48
-#define LIGHTSCALESHIFT         12
-#define MAXLIGHTZ                       128
-#define LIGHTZSHIFT                     20
-#define NUMCOLORMAPS            32              // number of diminishing
-#define INVERSECOLORMAP         32
 
 /*
 ==============================================================================
@@ -103,22 +77,6 @@ typedef enum
 	ST_POSITIVE,
 	ST_NEGATIVE
 } slopetype_t;
-
-/*
-typedef struct line_s
-{
-	vertex_t        *v1, *v2;
-	fixed_t         dx,dy;                          // v2 - v1 for side checking
-	short           flags;
-	short           special, tag;
-	short           sidenum[2];                     // sidenum[1] will be -1 if one sided
-	fixed_t         bbox[4];
-	slopetype_t     slopetype;                      // to aid move clipping
-	sector_t        *frontsector, *backsector;
-	int                     validcount;                     // if == validcount, already checked
-	void            *specialdata;           // thinker_t for reversable actions
-} line_t;
-*/
 
 typedef struct line_s
 {
@@ -221,82 +179,7 @@ typedef struct
 
 } node_t;
 
-/*
-==============================================================================
-
-						OTHER TYPES
-
-==============================================================================
-*/
-
-typedef byte    lighttable_t;           // this could be wider for >8 bit display
-
-#define MAXVISPLANES    160
-#define MAXOPENINGS             SCREENWIDTH*64
-
-typedef struct
-{
-	fixed_t         height;
-	int                     picnum;
-	int                     lightlevel;
-	int                     special;
-	int                     minx, maxx;
-	byte            pad1;                                           // leave pads for [minx-1]/[maxx+1]
-	byte            top[SCREENWIDTH];
-	byte            pad2;
-	byte            pad3;
-	byte            bottom[SCREENWIDTH];
-	byte            pad4;
-} visplane_t;
-
-typedef struct drawseg_s
-{
-	seg_t           *curline;
-	int                     x1, x2;
-	fixed_t         scale1, scale2, scalestep;
-	int                     silhouette;                     // 0=none, 1=bottom, 2=top, 3=both
-	fixed_t         bsilheight;                     // don't clip sprites above this
-	fixed_t         tsilheight;                     // don't clip sprites below this
-// pointers to lists for sprite clipping
-	short           *sprtopclip;            // adjusted so [x1] is first value
-	short           *sprbottomclip;         // adjusted so [x1] is first value
-	short           *maskedtexturecol;      // adjusted so [x1] is first value
-} drawseg_t;
-
-#define SIL_NONE        0
-#define SIL_BOTTOM      1
-#define SIL_TOP         2
-#define SIL_BOTH        3
-
-#define MAXDRAWSEGS             256
-
-// A vissprite_t is a thing that will be drawn during a refresh
-/*typedef struct vissprite_s
-{
-	struct vissprite_s *prev, *next;
-	int             x1, x2;
-	fixed_t         gx, gy;                 // for line side calculation
-	fixed_t         gz, gzt;                // global bottom / top for silhouette clipping
-	fixed_t         startfrac;              // horizontal position of x1
-	fixed_t         scale;
-	fixed_t         xiscale;                // negative if flipped
-	fixed_t         texturemid;
-	int             patch;
-//	lighttable_t    *colormap;
-	int				lightlevel;
-	float			v1[2], v2[2];		// The vertices (v1 is the left one).
-	float			secfloor, secceil;
-	int             mobjflags;        // for color translation and shadow draw
-	boolean         psprite;                // true if psprite
-	int				class;			// player class (used in translation)
-	fixed_t         floorclip;               
-	
-	boolean			viewAligned;		// Align to view plane.
-} vissprite_t;
-*/
-
-
-//=============================================================================
+// ==============================================================================
 
 // Map data is in the main engine, so these are helpers...
 #define numvertexes		(*gi.numvertexes)
@@ -315,226 +198,15 @@ typedef struct drawseg_s
 #define lines			((line_t*)(*gi.lines))
 #define sides			((side_t*)(*gi.sides))
 
-
-extern  angle_t         clipangle;
-
-extern  int				viewangletox[FINEANGLES/2];
-extern  angle_t         xtoviewangle[SCREENWIDTH+1];
-extern  fixed_t         finetangent[FINEANGLES/2];
-
-extern  fixed_t         rw_distance;
-extern  angle_t         rw_normalangle;
-
-//
-// R_main.c
-//
-extern  int             centerx, centery;
-extern  int             flyheight;
-
 #define Validcount		(*gi.validcount)
 
-extern  int             sscount, linecount, loopcount;
-extern  lighttable_t    *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
-extern  lighttable_t    *scalelightfixed[MAXLIGHTSCALE];
-extern  lighttable_t    *zlight[LIGHTLEVELS][MAXLIGHTZ];
-
-extern  int				extralight;
-
-extern  fixed_t			viewcos, viewsin;
-
-extern  int             detailshift;            // 0 = high, 1 = low
-
-extern  void            (*colfunc) (void);
-extern  void            (*basecolfunc) (void);
-extern  void            (*fuzzcolfunc) (void);
-extern  void            (*spanfunc) (void);
-
-int             R_PointOnSide (fixed_t x, fixed_t y, node_t *node);
-int             R_PointOnSegSide (fixed_t x, fixed_t y, seg_t *line);
-angle_t R_PointToAngle (fixed_t x, fixed_t y);
-//angle_t R_PointToAngle2 (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2);
-#define R_PointToAngle2		gi.R_PointToAngle2
-fixed_t R_PointToDist (fixed_t x, fixed_t y);
-fixed_t R_ScaleFromGlobalAngle (angle_t visangle);
-//subsector_t *R_PointInSubsector (fixed_t x, fixed_t y);
-#define R_PointInSubsector	(subsector_t*)gi.R_PointInSubsector
-//void R_AddPointToBox (int x, int y, fixed_t *box);
-
-
-//
-// R_bsp.c
-//
-extern  seg_t           *curline;
-extern  side_t  *sidedef;
-extern  line_t  *linedef;
-extern  sector_t        *frontsector, *backsector;
-
-extern  int     rw_x;
-extern  int     rw_stopx;
-
-extern  boolean         segtextured;
-extern  boolean         markfloor;              // false if the back side is the same plane
-extern  boolean         markceiling;
-extern  boolean         skymap;
-
-extern  drawseg_t       drawsegs[MAXDRAWSEGS], *ds_p;
-
-extern  lighttable_t    **hscalelight, **vscalelight, **dscalelight;
-
-typedef void (*drawfunc_t) (int start, int stop);
-void R_ClearClipSegs (void);
-
-void R_ClearDrawSegs (void);
-//void R_InitSkyMap (void);
-void R_RenderBSPNode (int bspnum);
-
-//
-// R_segs.c
-//
-extern  int                     rw_angle1;              // angle to line origin
-extern int TransTextureStart;
-extern int TransTextureEnd;
-
-void R_RenderMaskedSegRange (drawseg_t *ds, int x1, int x2);
-
-//
-// R_plane.c
-//
-//typedef void (*planefunction_t) (int top, int bottom);
-//extern  planefunction_t         floorfunc, ceilingfunc;
-
-//extern  int                     skyflatnum;
-//#define skyflatnum (*gi.skyflatnum)
 #define skyflatnum		gi.Get(DD_SKYFLATNUM)
 
-extern  short                   openings[MAXOPENINGS], *lastopening;
-
-extern  short           floorclip[SCREENWIDTH];
-extern  short           ceilingclip[SCREENWIDTH];
-
-extern  fixed_t         yslope[SCREENHEIGHT];
-extern  fixed_t         distscale[SCREENWIDTH];
-
-void R_InitPlanes (void);
-void R_ClearPlanes (void);
-void R_MapPlane (int y, int x1, int x2);
-void R_MakeSpans (int x, int t1, int b1, int t2, int b2);
-void R_DrawPlanes (void);
-
-visplane_t *R_FindPlane (fixed_t height, int picnum, int lightlevel,
-	int special);
-visplane_t *R_CheckPlane (visplane_t *pl, int start, int stop);
-
-
-//
-// R_debug.m
-//
-extern  int     drawbsp;
-
-void RD_OpenMapWindow (void);
-void RD_ClearMapWindow (void);
-void RD_DisplayLine (int x1, int y1, int x2, int y2, float gray);
-void RD_DrawNodeLine (node_t *node);
-void RD_DrawLineCheck (seg_t *line);
-void RD_DrawLine (seg_t *line);
-void RD_DrawBBox (fixed_t *bbox);
-
-
-//
-// R_data.c
-//
-typedef struct
-{
-	int		originx;	// block origin (allways UL), which has allready
-	int		originy;	// accounted  for the patch's internal origin
-	int		patch;
-} texpatch_t;
-
-// a maptexturedef_t describes a rectangular texture, which is composed of one
-// or more mappatch_t structures that arrange graphic patches
-typedef struct
-{
-	char		name[8];		// for switch changing, etc
-	short		width;
-	short		height;
-	short		patchcount;
-	texpatch_t	patches[1];		// [patchcount] drawn back to front
-								//  into the cached texture
-	// Extra stuff. -jk
-	boolean		masked;			// from maptexture_t
-} texture_t;
-
-extern  fixed_t         *textureheight;         // needed for texture pegging
-extern  fixed_t         *spritewidth;           // needed for pre rendering (fracs)
-extern  fixed_t         *spriteoffset;
-extern  fixed_t         *spritetopoffset;
-extern  int             viewwidth, scaledviewwidth, viewheight;
 #define firstflat		gi.Get(DD_FIRSTFLAT)
 #define numflats		gi.Get(DD_NUMFLATS)
 
-extern  int             /*firstspritelump, lastspritelump,*/ numspritelumps;
-//extern boolean LevelUseFullBright;
-
-byte    *R_GetColumn (int tex, int col);
-void    R_InitData (void);
-void	R_UpdateData (void);
-//void R_PrecacheLevel (void);
-
-
-//
-// R_things.c
-//
-/*#define MAXVISSPRITES   1024 //192
-
-extern  vissprite_t     vissprites[MAXVISSPRITES], *vissprite_p;
-extern  vissprite_t     vsprsortedhead;
-
-// constant arrays used for psprite clipping and initializing clipping
-extern  short   negonearray[SCREENWIDTH];
-extern  short   screenheightarray[SCREENWIDTH];
-
-// vars for R_DrawMaskedColumn
-extern  short           *mfloorclip;
-extern  short           *mceilingclip;
-extern  fixed_t         spryscale;
-extern  fixed_t         sprtopscreen;
-extern  fixed_t         sprbotscreen;
-
-extern  fixed_t         pspritescale, pspriteiscale;
-
-
-void R_DrawMaskedColumn (column_t *column, signed int baseclip);
-
-
-//void    R_SortVisSprites (void);
-
-void    R_AddSprites (sector_t *sec);
-void    R_AddPSprites (void);
-void    R_DrawSprites (void);
-//void    R_InitSprites (char **namelist);
-void    R_ClearSprites (void);
-void    R_DrawMasked (void);
-//void    R_ClipVisSprite (vissprite_t *vis, int xl, int xh);
-*/
-//=============================================================================
-//
-// R_draw.c
-//
-//=============================================================================
-/*
-extern  byte    *translationtables;
-extern  byte    *dc_translation;
-
-void    R_InitBuffer (int width, int height);
-void    R_InitTranslationTables (void);
-void	R_UpdateTranslationTables (void);
-*/
-
-
-
-extern int sbarscale;
-
-//#pragma pack()
+#define R_PointToAngle2		gi.R_PointToAngle2
+#define R_PointInSubsector	(subsector_t*)gi.R_PointInSubsector
 
 #endif          // __R_LOCAL__
 

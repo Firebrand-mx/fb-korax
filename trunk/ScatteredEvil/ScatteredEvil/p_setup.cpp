@@ -1174,7 +1174,7 @@ static void InitMapInfo(void)
 	info->warpTrans = 0;
 	info->nextMap = 1; // Always go to map 1 if not specified
 	info->cdTrack = 1;
-	info->sky1Texture = gi.R_TextureNumForName(shareware? "SKY2" : DEFAULT_SKY_NAME);
+	info->sky1Texture = gi.R_TextureNumForName(DEFAULT_SKY_NAME);
 	info->sky2Texture = info->sky1Texture;
 	info->sky1ScrollDelta = 0;
 	info->sky2ScrollDelta = 0;

@@ -77,7 +77,6 @@ static boolean ShowKills = 0;
 static unsigned ShowKillsCount = 0;
 
 extern boolean viewactive;
-extern int sbarscale;
 
 static byte antialias[NUMALIAS][8]=
 {
@@ -274,7 +273,6 @@ void AM_initVariables(void)
   //static event_t st_notify = { ev_keyup, AM_MSGENTERED };
 
   automapactive = true;
-//  fb = memscreen;
 
   f_oldloc.x = DDMAXINT;
   amclock = 0;
@@ -618,8 +616,6 @@ void AM_clearFB(int color)
 {
 	int dmapx;
 	int dmapy;
-//	float scaler, tcy, centx, centy;
-	float scaler;
 	int lump;
 
 	if(followplayer)
@@ -657,81 +653,21 @@ void AM_clearFB(int color)
 		mapystart += finit_height;
 	}
 
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	//blit the automap background to the screen.
-/*	j=mapystart*finit_width;
-	for(i = 0; i < SCREENHEIGHT-SBARHEIGHT; i++)
-	{
-		memcpy(memscreen+i*finit_width, maplump+j+mapxstart, 	
-			finit_width-mapxstart);
-		memcpy(memscreen+i*finit_width+finit_width-mapxstart, maplump+j, 
-			mapxstart);
-		j += finit_width;
-		if(j >= finit_height*finit_width)
-			j=0;
-	}*/
-//	gi.GL_SetRawImage(maplumpnum, 0);	// We only want the left portion.
-
-	//printf( "maplumpsize: %d bytes\n", lumpinfo[maplumpnum].size);
-
-	// Set up the texture matrix. It'll take care of translating and 
-	// zooming the background image.
-/*	glMatrixMode(GL_TEXTURE);
-	glPushMatrix();
-	glLoadIdentity();
-	//glTranslatef(FIX2FLT(m_x)/256.0, -FIX2FLT(m_y)/256.0, 0);
-	scaler = FIX2FLT(scale_mtof);
-	//glTranslatef(mapxstart/256, mapystart/256, 0);
-//	glTranslatef(FIX2FLT(m_x+m_w/2)*scaler/256, -FIX2FLT(m_y+m_h/2)*scaler/1.2/256, 0);
-	//scaler = FIX2FLT(scale_mtof);
-
-	centx = finit_width/256.0/2;
-	centy = finit_height/256.0/2;
-
-	glTranslatef(centx, centy, 0);
-	glScalef(1/scaler, 1/scaler, 1);
-	glTranslatef(-centx, -centy, 0);
-	
-	scaler = finit_width/256.0;// /2;
-	tcy = finit_height/256.0;// /2;
-
-	// We'll do the drawing ourselves.
-	glBegin(GL_QUADS);
-	//glTexCoord2f(-scaler, -tcy);
-	glTexCoord2f(0, 0);	
-	glVertex2i(0, 0);
-	glTexCoord2f(scaler, 0);//-tcy);
-	glVertex2i(320, 0);
-	glTexCoord2f(scaler, tcy);
-	glVertex2i(320, finit_height);
-	glTexCoord2f(0, tcy);
-	//glTexCoord2f(0-scaler, tcy);
-	glVertex2i(0, finit_height);
-	glEnd();
-
-	glPopMatrix();*/
-			
 	gi.GL_SetColorAndAlpha(1, 1, 1, 1);
 	
 	gi.GL_SetFlat(gi.R_FlatNumForName("F_022"));
-	scaler = sbarscale/20.0;
 	gi.GL_DrawCutRectTiled(0, finit_height+4, 320, 200-finit_height-4, 64, 64, 
-		160-160*scaler+1, finit_height, 320*scaler-2, 200-finit_height);
+		1, finit_height, 320-2, 200-finit_height);
 
 	gi.GL_SetPatch(lump=gi.W_GetNumForName("bordb"));
 	gi.GL_DrawCutRectTiled(0, finit_height, 320, 4, 
 		//lumptexsizes[lump].w, lumptexsizes[lump].h, 
 		16, 4,
-		160-160*scaler+1, finit_height, 320*scaler-2, 4);
+		1, finit_height, 320-2, 4);
 
 	gi.GL_SetRawImage(maplumpnum, 0);	// We only want the left portion.
-	gi.GL_DrawRectTiled(0, 0, finit_width, /*(sbarscale<20)?200 : */finit_height, 128, 100);//79);		
-
-
-
-//	 memcpy(memscreen, maplump, finit_width*finit_height);
-//  memset(fb, color, f_w*f_h);
+	gi.GL_DrawRectTiled(0, 0, finit_width, finit_height, 128, 100);//79);		
 
 }
 
@@ -1388,8 +1324,8 @@ void AM_Drawer (void)
 	//UpdateState |= I_FULLSCRN;
 	gi.Update(DDUF_FULLSCREEN);
 
-	// Update the height (in case sbarscale has been changed).
-	finit_height = SCREENHEIGHT-SBARHEIGHT*sbarscale/20/*-3*/;
+	// Update the height.
+	finit_height = SCREENHEIGHT-SBARHEIGHT;
 
 	AM_clearFB(BACKGROUND);
 

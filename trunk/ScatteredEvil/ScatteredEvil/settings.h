@@ -6,10 +6,10 @@
 extern int screenblocks;
 extern char *SavePath;
 
-extern int chooseAndUse, lookdirSpeed, quakeFly;
+extern int chooseAndUse, lookdirSpeed;
 extern boolean fastMonsters;
 
-extern int skyDetail, showFullscreenMana, mipmapping, linearRaw;
+extern int skyDetail, mipmapping, linearRaw;
 extern int useDynLights, showFPS, lookSpring;
 extern int snd_MusicDevice, mlookInverseY;
 extern int echoMsg, simpleSky;
@@ -17,7 +17,6 @@ extern int translucentIceCorpse, consoleAlpha, consoleLight;
 extern int repWait1, repWait2;
 extern int maxDynLights, dlBlend, missileBlend;
 extern int haloMode, flareBoldness, flareSize;
-extern int alwaysAlign, sbarscale;
 
 extern byte netMobDamageModifier; // multiplier for non-player mobj damage
 extern byte netMobHealthModifier; // health modifier for non-player mobjs

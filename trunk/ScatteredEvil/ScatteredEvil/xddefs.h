@@ -13,13 +13,6 @@
 #ifndef __XDDEFS__
 #define __XDDEFS__
 
-/*#ifndef __BYTEBOOL__
-#define __BYTEBOOL__
-typedef enum {false, true} h2bool;
-typedef unsigned char byte;
-#define boolean h2bool
-#endif*/
-
 //--------------------------------------------------------------------------
 //
 // Map level types
@@ -167,66 +160,4 @@ typedef struct
 #define MTF_GCOOP		512
 #define MTF_GDEATHMATCH	1024
 
-//--------------------------------------------------------------------------
-//
-// Texture definition
-//
-//--------------------------------------------------------------------------
-/*
-typedef struct
-{
-	short	originx;
-	short	originy;
-	short	patch;
-	short	stepdir;
-	short	colormap;
-} mappatch_t;
-
-typedef struct
-{
-	char		name[8];
-	boolean		masked;	
-	short		width;
-	short		height;
-	void		**columndirectory;	// OBSOLETE
-	short		patchcount;
-	mappatch_t	patches[1];
-} maptexture_t;
-
-//--------------------------------------------------------------------------
-//
-// Graphics
-//
-//--------------------------------------------------------------------------
-
-// posts are runs of non masked source pixels
-typedef struct
-{
-	byte		topdelta;		// -1 is the last post in a column
-	byte		length;
-// length data bytes follows
-} post_t;
-
-// column_t is a list of 0 or more post_t, (byte)-1 terminated
-typedef post_t	column_t;
-
-// a patch holds one or more columns
-// patches are used for sprites and all masked pictures
-typedef struct
-{
-	short		width;				// bounding box size
-	short		height;
-	short		leftoffset;			// pixels to the left of origin
-	short		topoffset;			// pixels below the origin
-	int			columnofs[8];		// only [width] used
-									// the [0] is &columnofs[width]
-} patch_t;
-
-// a pic is an unmasked block of pixels
-typedef struct
-{
-	byte		width,height;
-	byte		data;
-} pic_t;
-*/
 #endif // __XDDEFS__

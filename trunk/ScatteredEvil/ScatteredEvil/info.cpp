@@ -16523,7 +16523,7 @@ MF_SPECIAL,		// flags
 },
 
 {		// MT_CMAGE
-11000,		// doomednum
+12034,		// doomednum
 S_CMAGE,		// spawnstate
 100,		// spawnhealth
 S_CMAGE_WALK1,		// seestate

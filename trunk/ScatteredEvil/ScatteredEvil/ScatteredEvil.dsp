@@ -168,10 +168,6 @@ SOURCE=.\mn_menu.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\mn_mplr.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\p_acs.cpp
 # End Source File
 # Begin Source File
@@ -320,14 +316,6 @@ SOURCE=.\drcoord.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dstrings.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\g_demo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\h2_actn.h
 # End Source File
 # Begin Source File
@@ -401,10 +389,6 @@ SOURCE=.\soundst.h
 # Begin Source File
 
 SOURCE=.\textdefs.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\vgaview.h
 # End Source File
 # Begin Source File
 
