@@ -32,6 +32,7 @@ class KWindow:public KObject
 {
 	DECLARE_CLASS(KWindow, KObject, 0);
 
+	friend class KModalWindow;
 	friend class KRootWindow;
 
 private:
@@ -57,6 +58,8 @@ public:
 
 	bool bIsVisible;
 	bool bIsSensitive;
+	bool bIsInitialized;
+	bool bBeingDestroyed;
 
 	KFont *Font;
 
@@ -67,10 +70,12 @@ public:
 	// Structors
 	KWindow();
 	virtual void Init(KWindow *AParent);
+	virtual void CleanUp(void);
 	virtual void Destroy();
 
 	// Ancestral routines
 	KRootWindow *GetRootWindow(void);
+	KModalWindow *GetModalWindow(void);
 	KWindow *GetParent(void);
 
 	// Child routines
@@ -151,9 +156,23 @@ public:
 
 	virtual void ChildAdded(KWindow *) { }
 	virtual void ChildRemoved(KWindow *) { }
+	virtual void DescendantAdded(KWindow *) { }
+	virtual void DescendantRemoved(KWindow *) { }
 
 	virtual void VisibilityChanged(bool bNewVisibility) { }
 	virtual void SensitivityChanged(bool bNewSensitivity) { }
+
+	// Called when keyboard input focus is going to this window
+	virtual void  FocusEnteredWindow(void) { }
+
+	// Called when keyboard input focus is no longer going to this window
+	virtual void  FocusLeftWindow(void) { }
+
+	// Called when keyboard input focus is going to a descendant
+	virtual void FocusEnteredDescendant(KWindow *EnterWindow) { }
+
+	// Called when keyboard input focus is no longer going to a descendant
+	virtual void FocusLeftDescendant(KWindow *LeaveWindow) { }
 
 	virtual bool RawInputEvent(event_t *event) { return false; }
 	virtual bool KeyPressed(int key) { return false; }

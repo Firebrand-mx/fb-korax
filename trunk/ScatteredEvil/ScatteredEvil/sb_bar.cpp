@@ -1120,7 +1120,7 @@ static void DrawPossWeaponry(void)
 
 void Draw_TeleportIcon(void)
 {
-	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("teleicon"));
+	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("teleicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }
@@ -1133,7 +1133,7 @@ void Draw_TeleportIcon(void)
 
 void Draw_SaveIcon(void)
 {
-	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("saveicon"));
+	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("saveicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }
@@ -1146,7 +1146,7 @@ void Draw_SaveIcon(void)
 
 void Draw_LoadIcon(void)
 {
-	GCanvas->DrawPatch1(100, 68, gi.W_GetNumForName("loadicon"));
+	GCanvas->DrawPatch1(260, 208, gi.W_GetNumForName("loadicon"));
 	gi.Update(DDUF_FULLSCREEN | DDUF_UPDATE);
 	gi.Update(DDUF_FULLSCREEN);
 }

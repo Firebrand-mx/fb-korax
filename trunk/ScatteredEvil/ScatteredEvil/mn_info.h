@@ -12,6 +12,7 @@ class KMenuScreenInfo:public KMenuScreen
 
 	KMenuScreenInfo(void)
 	{
+		bUseSelector = false;
 	}
 
 	void DrawWindow(KGC *gc)
