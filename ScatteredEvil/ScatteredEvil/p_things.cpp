@@ -194,12 +194,12 @@ boolean EV_ThingProjectile(byte *args, boolean gravity)
 		newMobj->momy = FixedMul(speed, finesine[fineAngle]);
 		newMobj->momz = vspeed;
 		newMobj->flags2 |= MF2_DROPPED; // Don't respawn
-		if(gravity == true)
+		if(gravity)
 		{
 			newMobj->flags &= ~MF_NOGRAVITY;
 			newMobj->flags2 |= MF2_LOGRAV;
 		}
-		if(P_CheckMissileSpawn(newMobj) == true)
+		if(P_CheckMissileSpawn(newMobj))
 		{
 			success = true;
 		}
@@ -252,7 +252,7 @@ boolean EV_ThingSpawn(byte *args, boolean fog)
 		else
 		{
 			newMobj->angle = angle;
-			if(fog == true)
+			if(fog)
 			{
 				fogMobj = P_SpawnMobj(mobj->x, mobj->y,
 					mobj->z+TELEFOGHEIGHT, MT_TFOG);
@@ -285,7 +285,7 @@ boolean EV_ThingActivate(int tid)
 	searcher = -1;
 	while((mobj = P_FindMobjFromTID(tid, &searcher)) != NULL)
 	{
-		if(ActivateThing(mobj) == true)
+		if(ActivateThing(mobj))
 		{
 			success = true;
 		}
@@ -309,7 +309,7 @@ boolean EV_ThingDeactivate(int tid)
 	searcher = -1;
 	while((mobj = P_FindMobjFromTID(tid, &searcher)) != NULL)
 	{
-		if(DeactivateThing(mobj) == true)
+		if(DeactivateThing(mobj))
 		{
 			success = true;
 		}

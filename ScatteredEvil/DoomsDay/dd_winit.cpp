@@ -449,12 +449,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	switch(msg)
-	{
-	default:
-		return DefWindowProc(hWnd, msg, wParam, lParam);
-	}
-	return 0;
+	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
  
 // Shuts down the Doomsday.

@@ -30,12 +30,9 @@ void SN_InitSequenceScript(void);
 int CCmdCD(int argc, char **argv);
 int CCmdMidi(int argc, char **argv);
 int CCmdPause(int argc, char **argv);
-int CCmdCheat(int argc, char **argv);
 int CCmdPlayDemo(int argc, char **argv);
 int CCmdRecordDemo(int argc, char **argv);
 int CCmdStopDemo(int argc, char **argv);
-int CCmdTimeDemo(int argc, char **argv);
-int CCmdScriptInfo(int argc, char **argv);
 int CCmdSuicide(int argc, char **argv);
 int CCmdSetDemoMode(int argc, char **argv);
 int CCmdCrosshair(int argc, char **argv);
@@ -46,19 +43,14 @@ int CCmdScreenShot(int argc, char **argv);
 DEFCC(CCmdHexenFont);
 DEFCC(CCmdMenuAction);
 DEFCC(CCmdCycleSpy);
-DEFCC(CCmdTest);
 
 // The cheats.
 int CCmdCheatGod(int argc, char **argv);
 int CCmdCheatClip(int argc, char **argv);
 int CCmdCheatGive(int argc, char **argv);
 int CCmdCheatWarp(int argc, char **argv);
-int CCmdCheatPig(int argc, char **argv);
 int CCmdCheatMassacre(int argc, char **argv);
 int CCmdCheatShadowcaster(int argc, char **argv);
-int CCmdCheatWhere(int argc, char **argv);
-int CCmdCheatRunScript(int argc, char **argv);
-int CCmdCheatReveal(int argc, char **argv);
 int CCmdCheatArtifactAll(int argc, char **argv);
 int CCmdCheatWeapons(int argc, char **argv);
 
@@ -105,7 +97,6 @@ cvar_t gameCVars[] =
 	"xhairB",			0,			CVT_BYTE,	&xhairColor[2], 0, 255, "Blue crosshair color component.",
 	"xhairSize",	CVF_NO_MAX,		CVT_INT,	&xhairSize,		0, 0,	"Crosshair size: 1=Normal.",
 
-	//"s_channels",	CVF_PROTECTED,	CVT_INT,	&snd_Channels,	1, 16,	"The number of sounds that can be played simultaneously.",
 	"s_3d",				0,			CVT_INT,	&snd_3D,		0, 1,	"1=Play sounds in 3D.",
 	"s_reverbVol",		0,			CVT_FLOAT,	&snd_ReverbFactor, 0, 1, "General reverb strength (0-1).",
 	"sounddebug",	CVF_NO_ARCHIVE,	CVT_INT,	&DebugSound,	0, 1,	"1=Display sound debug information.",
@@ -151,8 +142,6 @@ cvar_t gameCVars[] =
 ccmd_t gameCCmds[] =
 {
 	"cd",			CCmdCD,					"CD player control.",
-//	"cheat",		CCmdCheat,				"Issue a cheat code using the original Hexen cheats.",
-//	"class",		CCmdCheatShadowcaster,	"Change player class.",
 	"bunny",		CCmdCheatClip,			"Movement clipping on/off.",
 	"crosshair",	CCmdCrosshair,			"Crosshair settings.",	
 #ifdef DEMOCAM
@@ -169,19 +158,12 @@ ccmd_t gameCCmds[] =
 	"midi",			CCmdMidi,				"MIDI music control.",
 	"pause",		CCmdPause,				"Pause the game (same as pressing the pause key).",
 	"playdemo",		CCmdPlayDemo,			"Play a demo.",
-//	"pig",			CCmdCheatPig,			"Turn yourself into a pig. Go ahead.",
 	"recorddemo",	CCmdRecordDemo,			"Record a demo.",
-//	"reveal",		CCmdCheatReveal,		"Map cheat.",
-//	"runscript",	CCmdCheatRunScript,		"Run a script.",
-//	"scriptinfo",	CCmdScriptInfo,			"Show information about all scripts or one particular script.",
 	"viewsize",		CCmdViewSize,			"Set the view size.",
 	"sbsize",		CCmdViewSize,			"Set the status bar size.",
 	"screenshot",	CCmdScreenShot,			"Take a screenshot.",
-//	"sndchannels",	CCmdSndChannels,		"Set or query the number of sound channels.",
 	"stopdemo",		CCmdStopDemo,			"Stop the currently played/recorded demo.",
-	//"timedemo",		CCmdTimeDemo, 
 	"warp",			CCmdCheatWarp,			"Warp to a map.",
-//	"where",		CCmdCheatWhere,			"Prints your map number and exact location.",
 
 	"spy",			CCmdCycleSpy,			"Change the viewplayer when not in deathmatch.",
 
@@ -195,10 +177,9 @@ ccmd_t gameCCmds[] =
 	"endGame",		CCmdMenuAction,			"End the current game.",
 	"toggleMsgs",	CCmdMenuAction,			"Toggle messages on/off (cvar messages).",
 	"quickLoad",	CCmdMenuAction,			"Load the last quicksaved game.",
-	"quit",			CCmdMenuAction,			"Quit Korax.", //JHexen
+	"quit",			CCmdMenuAction,			"Quit Scattered Evil.",
 	"toggleGamma",	CCmdMenuAction,			"Change the gamma correction level.",
 	
-//	"test",			CCmdTest,				"Test.",
 	NULL
 };
 
@@ -336,17 +317,3 @@ DEFCC(CCmdHexenFont)
 	return true;
 }
 
-DEFCC(CCmdTest)
-{
-	/*int		i;
-
-	for(i=0; i<MAXPLAYERS; i++)
-		if(players[i].plr->ingame)
-		{
-			gi.conprintf( "%i: cls:%i col:%i look:%f\n", i, PlayerClass[i],
-				PlayerColor[i], players[i].plr->lookdir);
-		}*/
-	if(argc != 2) return false;
-	S_StartSoundAtVolume(NULL, SFX_CHAT, atoi(argv[1]));
-	return true;
-}

@@ -72,7 +72,7 @@ void SC_Open(char *name)
 {
 	char fileName[128];
 
-	if(sc_FileScripts == true)
+	if(sc_FileScripts)
 	{
 		sprintf(fileName, "%s%s.txt", sc_ScriptsDir, name);
 		SC_OpenFile(fileName);
@@ -171,7 +171,7 @@ void SC_Close(void)
 {
 	if(ScriptOpen)
 	{
-		if(ScriptFreeCLib == true)
+		if(ScriptFreeCLib)
 		{
 			free(ScriptBuffer);
 		}

@@ -76,7 +76,7 @@ void P_SetMessage(player_t *player, char *message, boolean ultmsg)
 		return;
 	}
 
-	if(!player->messageTics <= 0 && player->message) //If there's already a message, move it to 2
+	if(player->messageTics > 0 && player->message) //If there's already a message, move it to 2
 	{
 		if (player->yellowMessage) player->yellowMessage2 = true;
 		else player->yellowMessage2 = false;
@@ -126,7 +126,7 @@ void P_SetYellowMessage(player_t *player, char *message, boolean ultmsg)
 		return;
 	}
 
-	if(!player->messageTics <= 0 && player->message) //If there's already a message, move it to 2
+	if(player->messageTics > 0 && player->message) //If there's already a message, move it to 2
 	{
 		if (player->yellowMessage) player->yellowMessage2 = true;
 		else player->yellowMessage2 = false;
@@ -2122,7 +2122,7 @@ boolean P_PossessMonster(player_t *player, mobj_t *actor)
 			break;
 		// -JL- Added buried wraiths
 		case MT_WRAITHB:
-			if (!actor->flags & MF_SHOOTABLE)
+			if (!(actor->flags & MF_SHOOTABLE))
 			{
 				// Still buried
 				return false;

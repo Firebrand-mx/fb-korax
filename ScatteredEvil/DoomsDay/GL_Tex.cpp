@@ -975,7 +975,7 @@ unsigned int GL_PrepareTexture(int idx)
 		gl.TexParameter(DGL_MIN_FILTER, glmode[mipmapping]);
 		gl.TexParameter(DGL_MAG_FILTER, DGL_LINEAR);
 
-		texmasked[idx] = alphaChannel==true;	
+		texmasked[idx] = alphaChannel;
 
 		Z_Free(buffer);
 	}

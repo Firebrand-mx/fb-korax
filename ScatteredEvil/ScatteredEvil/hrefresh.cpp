@@ -169,19 +169,10 @@ void G_Drawer(void)
 			}
 			else
 			{
-				boolean special200 = false;
 				R_HandleSectorSpecials();
 				P_SetDDFlags();
 				// The display player cannot be seen.
 				players[displayplayer].plr->mo->ddflags |= DDMF_DONTDRAW;
-				// Check for the sector special 200: use sky2.
-				// I wonder where this is used?
-				if(players[displayplayer].plr->mo->subsector->sector->special == 200)
-				{
-					special200 = true;
-					gi.SkyParams(0, DD_DISABLE, 0);
-					gi.SkyParams(1, DD_ENABLE, 0);
-				}
 				// How about a bit of quake?
 				if(localQuakeHappening[displayplayer] && !paused)
 				{
@@ -202,11 +193,6 @@ void G_Drawer(void)
 				// Render the view.
 				if(!dontrender)
 					gi.RenderPlayerView(players[displayplayer].plr);
-				if(special200)
-				{
-					gi.SkyParams(0, DD_ENABLE, 0);
-					gi.SkyParams(1, DD_DISABLE, 0);
-				}
 				X_Drawer(); // Draw the crosshair.
 			}
 			gi.Update(DDUF_FULLVIEW);

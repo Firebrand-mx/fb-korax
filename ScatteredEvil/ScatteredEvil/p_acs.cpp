@@ -642,7 +642,7 @@ void P_TagFinished(int tag)
 {
 	int i;
 
-	if(TagBusy(tag) == true)
+	if(TagBusy(tag))
 	{
 		return;
 	}
@@ -666,7 +666,7 @@ void P_PolyobjFinished(int po)
 {
 	int i;
 
-	if(PO_Busy(po) == true)
+	if(PO_Busy(po))
 	{
 		return;
 	}
