@@ -49,7 +49,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->floorheight;
 						sector->floorheight = dest;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							sector->floorheight =lastpos;
 							P_ChangeSector(sector,crush);
@@ -62,7 +62,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->floorheight;
 						sector->floorheight -= speed;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							sector->floorheight = lastpos;
 							P_ChangeSector(sector,crush);
@@ -77,7 +77,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->floorheight;
 						sector->floorheight = dest;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							sector->floorheight = lastpos;
 							P_ChangeSector(sector,crush);
@@ -90,7 +90,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->floorheight;
 						sector->floorheight += speed;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							//if (crush == true)
 							//{
@@ -114,7 +114,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->ceilingheight;
 						sector->ceilingheight = dest;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							sector->ceilingheight = lastpos;
 							P_ChangeSector(sector,crush);
@@ -127,7 +127,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->ceilingheight;
 						sector->ceilingheight -= speed;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							//if (crush == true)
 							//{
@@ -146,7 +146,7 @@ result_e	T_MovePlane(sector_t *sector,fixed_t speed,
 						lastpos = sector->ceilingheight;
 						sector->ceilingheight = dest;
 						flag = P_ChangeSector(sector,crush);
-						if (flag == true)
+						if (flag)
 						{
 							sector->ceilingheight = lastpos;
 							P_ChangeSector(sector,crush);

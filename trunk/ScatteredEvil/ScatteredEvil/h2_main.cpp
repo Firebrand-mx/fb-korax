@@ -605,7 +605,7 @@ static void CreateSavePath(void)
 	char creationPath[121];
 	int len;
 
-	if(cdrom == true)
+	if(cdrom)
 	{
 		SavePath = "c:\\hexndata\\";
 	}

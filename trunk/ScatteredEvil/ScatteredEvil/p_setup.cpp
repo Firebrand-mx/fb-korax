@@ -992,10 +992,6 @@ void P_CalcSectorReverbs()
 =================
 */
 
-//#ifdef __WATCOMC__
-extern boolean i_CDMusic;
-//#endif
-
 void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 {
 	int i, setupflags = DDSLF_POLYGONIZE | DDSLF_FIX_SKY | DDSLF_REVERB;
@@ -1015,7 +1011,7 @@ void P_SetupLevel(int episode, int map, int playermask, skill_t skill)
 	}
 	players[consoleplayer].plr->viewz = 1; // will be set by player think
 
-	if(i_CDMusic == false)
+	if(gi.Get(DD_MUSIC_DEVICE)!=2)
 	{
 		S_StartSongName("chess", true); // Waiting-for-level-load song
 	}
