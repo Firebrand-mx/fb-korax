@@ -21,7 +21,6 @@
 #include "h2_actn.h"
 #include "mn_def.h"
 #include "Settings.h"
-#include "journal.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -32,8 +31,6 @@
 #define SELECTOR_YOFFSET (-1)
 #define SLOTTEXTLEN	16
 #define ASCII_CURSOR '['
-
-//#define USE_JOURNAL_MOUSE
 
 // TYPES -------------------------------------------------------------------
 
@@ -69,6 +66,10 @@ typedef enum
 	MENU_JOYCONFIG,
 	MENU_INFO,
 
+	//	Treat them as menus
+	MENU_UPDATING,
+	MENU_JOURNAL,
+
 	MAX_MENU,
 
 	MENU_NONE = MAX_MENU
@@ -94,9 +95,9 @@ class KMenuItem_t:public KMenuWindow
 	}
 };
 
-class KMenuScreen:public KMenuWindow
+class KMenuScreen:public KModalWindow
 {
-	DECLARE_CLASS(KMenuScreen, KMenuWindow, 0);
+	DECLARE_CLASS(KMenuScreen, KModalWindow, 0);
 
 	struct FButtonDefault
 	{
@@ -123,6 +124,8 @@ class KMenuScreen:public KMenuWindow
 	int ChoiceStartY;
 	int	itemHeight;
 
+	bool bUseSelector;
+
 	FButtonDefault ButtonDefaults[MAX_BUTTONS];
 	KMenuUIButton *WinButtons[MAX_BUTTONS];
 
@@ -133,14 +136,17 @@ class KMenuScreen:public KMenuWindow
 		Height = 480;
 		itemHeight = ITEM_HEIGHT;
 		Font = KCanvas::BigFont;
+		bUseSelector = true;
 	}
 
-	virtual void Init(KWindow *AParent);
+	void InitWindow(void);
 	virtual void CreateChoices(void);
 	virtual void CreateButtons(void);
 	virtual void PostDrawWindow(KGC *gc);
 	virtual bool RawInputEvent(event_t *event);
 	virtual bool KeyPressed(int key);
+	void CyclePrevChoice(void);
+	void CycleNextChoice(void);
 	bool ButtonActivated(KWindow *button);
 	void ProcessMenuAction(int Action, MenuType_t Invoke, int Key);
 	virtual void ProcessCustomMenuAction(int Key) { }
@@ -166,11 +172,6 @@ static void SCLoadGame(int option);
 static void SCSaveGame(int option);
 
 static void DrawFilesMenu(void);
-static void MN_DrawJournal(void);
-static void MN_DrawSpells(void);
-static void MN_DrawUpdating(void);
-static void InitUpdating(void);
-static void AcceptUpdating(void);
 void MN_LoadSlotText(void);
 
 static void PopMenu(void);
@@ -180,6 +181,8 @@ static void ForceMenuOff(void);
 
 extern boolean gamekeydown[256]; // The NUMKEYS macro is local to g_game
 
+extern int AutoArmorSave[NUMCLASSES];
+
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
 boolean	MenuActive;
@@ -187,16 +190,6 @@ boolean messageson = true;
 boolean mn_SuicideConsole;
 KMenuScreen	*CurrentMenu;
 int		MenuTime;
-
-boolean	SpellsActive;
-boolean	UpdatingActive;
-unsigned int navpoints;
-int currentUpdatingRow;
-
-boolean	JournalActive;
-int mousesx,mousesy;
-int currentJournal;
-int currentJournalPage;
 
 IMPLEMENT_CLASS(KMenuWindow);
 IMPLEMENT_CLASS(KMenuItem_t);
@@ -239,15 +232,6 @@ static char *GammaText[] =
 	TXT_GAMMA_LEVEL_4
 };
 	
-static int upd_values[4][2];
-static int maxupd_values[4][3]=
-{
-	{0,0,0},
-	{-1,60,5},
-	{5,40,-1},
-	{30,20,10}
-};
-
 static int av_pos[5]=
 {
 	{2},
@@ -286,15 +270,23 @@ void MN_Init(void)
 
 //---------------------------------------------------------------------------
 //
-//	KMenuScreen::Init
+//	KMenuScreen::InitWindow
 //
 //---------------------------------------------------------------------------
 
-void KMenuScreen::Init(KWindow *AParent)
+void KMenuScreen::InitWindow(void)
 {
-	Super::Init(AParent);
+	Super::InitWindow();
 	CreateChoices();
 	CreateButtons();
+	if (NumItems)
+	{
+		GRootWindow->SetFocus(Items[CursorPos]);
+	}
+	else
+	{
+		GRootWindow->SetFocus(this);
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -508,7 +500,7 @@ void MN_Drawer(void)
 			GCanvas->SetOrigin(0, 0);
 		}
 	}
-	if (MenuActive || JournalActive || SpellsActive || UpdatingActive)
+	if (MenuActive)
 	{
 		gi.Update(DDUF_FULLSCREEN | DDUF_BORDER);
 
@@ -517,20 +509,6 @@ void MN_Drawer(void)
 		GCanvas->DrawRect(0, 0, 640, 480, 0, 0, 0, 0.5);
 		gl.Color4f(1, 1, 1, 1);
 
-		GCanvas->SetOrigin(160, 120);
-		if (JournalActive) //Drawing for Journal
-		{
-			MN_DrawJournal();
-		}
-		else if (SpellsActive) //Drawing for Spells
-		{
-			MN_DrawSpells();
-		}
-		else if (UpdatingActive) //Drawing for Updating
-		{
-			MN_DrawUpdating();
-		}
-		GCanvas->SetOrigin(0, 0);
 		GRootWindow->PaintWindows(GCanvas);
 	}
 }
@@ -543,7 +521,7 @@ void MN_Drawer(void)
 
 void KMenuScreen::PostDrawWindow(KGC *gc)
 {
-	if (Items[CursorPos])
+	if (bUseSelector && Items[CursorPos])
 	{
 		gc->DrawIcon(Items[CursorPos]->X + SELECTOR_XOFFSET,
 			Items[CursorPos]->Y + SELECTOR_YOFFSET - (10 - itemHeight / 2),
@@ -826,159 +804,15 @@ boolean MN_Responder(event_t *event)
 
 	if(event->type != ev_keydown && event->type != ev_keyrepeat)
 	{
-#ifdef USE_JOURNAL_MOUSE
-		if (JournalActive && ((event->type== ev_mouse)||(event->type== ev_mousebdown))) ;
-		else
-#endif
 		return(false);
 	}
 	key = event->data1;
 
-	if (JournalActive)
+	for (KWindow *W = GRootWindow->FocusWindow; W; W = W->GetParent())
 	{
-#ifdef USE_JOURNAL_MOUSE
-		if (event->type== ev_mouse)
+		if (W->KeyPressed(key))
 		{
-//			int mousex = (event->data1 * (mouseSensitivityX*2+5)) / 6;
-//			int mousey = (event->data2 * (mouseSensitivityY*2+5)) / 6;
-			int mousex = event->data1;
-			int mousey = event->data2;
-			mousesx+=mousex;mousesy-=mousey;
-			if (mousesx<0) mousesx=0; else
-			if (mousesx>300) mousesx=300;
-			if (mousesy<0) mousesy=0; else
-			if (mousesy>180) mousesy=180;
-			return(true); // eat events
-		}
-
-		if (event->type== ev_mousebdown)
-		{
-			for(i=0; i<3; i++)
-				if(event->data1 & (1<<i))
-					if (mousesx<80) currentJournal=mousesy/40;
-					else if (mousesx>300 && mousesy>180)
-						currentJournalPage= currentJournalPage==1 ? 1 : currentJournalPage+1;
-//					mousebutton[i] = true;
-//
-			currentJournalPage=0;
-			return(false);
-		}
-#endif
-
-		if(key == DDKEY_ESCAPE || key == DDKEY_TAB)
-		{
-			JournalActive = false;
-			if(!netgame && !demoplayback && !demorecording)
-			{
-				paused = false;
-			}
-			return(true);
-		}
-		if(key == DDKEY_DOWNARROW)
-		{
-			currentJournal= currentJournal==4 ? 0 : currentJournal+1;
-			currentJournalPage=0;
-			return(true);
-		}
-		if(key == DDKEY_LEFTARROW)
-		{
-			currentJournalPage= currentJournalPage==0 ? 0 : currentJournalPage-1;
-			return(true);
-		}
-		if(key == DDKEY_RIGHTARROW)
-		{
-			currentJournalPage= currentJournalPage==journalPages[currentJournal].num_pages-1 ? journalPages[currentJournal].num_pages-1 : currentJournalPage+1;
-			return(true);
-		}
-		if(key == DDKEY_UPARROW)
-		{
-			currentJournal= currentJournal==0 ? 4 : currentJournal-1;
-			currentJournalPage=0;
-			return(true);
-		}
-	}
-
-	if (SpellsActive)
-	{
-		if(key == DDKEY_ESCAPE || key == 's')
-		{
-			SpellsActive = false;
-			if(!netgame && !demoplayback && !demorecording)
-			{
-				paused = false;
-			}
-			return(true);
-		}
-		if(key == DDKEY_DOWNARROW)
-		{
-			return(true);
-		}
-		if(key == DDKEY_LEFTARROW)
-		{
-			return(true);
-		}
-		if(key == DDKEY_RIGHTARROW)
-		{
-			return(true);
-		}
-		if(key == DDKEY_UPARROW)
-		{
-			return(true);
-		}
-	}
-
-	if (UpdatingActive)
-	{
-		if(key == DDKEY_ESCAPE || key == 'u')
-		{
-			UpdatingActive = false;
-			if(!netgame && !demoplayback && !demorecording)
-			{
-				paused = false;
-			}
-			return(true);
-		}
-		if(key == DDKEY_DOWNARROW)
-		{
-			currentUpdatingRow= currentUpdatingRow==4 ? 1 : currentUpdatingRow+1;
-			return(true);
-		}
-		if(!players[consoleplayer].berserkTics)
-		{ //Remi: Player can't mess with stats while berserking		
-			if(key == DDKEY_LEFTARROW)
-			{
-				if (upd_values[currentUpdatingRow][0]<upd_values[currentUpdatingRow][1] && currentUpdatingRow<4 && currentUpdatingRow>0) 
-				{
-					upd_values[currentUpdatingRow][1]=upd_values[currentUpdatingRow][1]-1;
-					navpoints++;
-				}
-				return(true);
-			}
-			if(key == DDKEY_RIGHTARROW)
-			{
-				if (navpoints>0 && currentUpdatingRow<4 && currentUpdatingRow>0  && (upd_values[currentUpdatingRow][1]<maxupd_values[currentUpdatingRow][players[consoleplayer].pclass] || maxupd_values[currentUpdatingRow][players[consoleplayer].pclass]==-1)) 
-				{
-					upd_values[currentUpdatingRow][1]=upd_values[currentUpdatingRow][1]+1;
-					navpoints--;
-				}
-				return(true);
-			}
-		}
-		if(key == DDKEY_UPARROW)
-		{
-			currentUpdatingRow= currentUpdatingRow==1 ? 4 : currentUpdatingRow-1;
-			return(true);
-		}
-		if(key == DDKEY_ENTER)
-		{
-			if (currentUpdatingRow!=4) return(false);
-			AcceptUpdating();
-			UpdatingActive = false;
-			if(!netgame && !demoplayback && !demorecording)
-			{
-				paused = false;
-			}
-			return(true);
+			return true;
 		}
 	}
 
@@ -1052,27 +886,21 @@ boolean MN_Responder(event_t *event)
 		}
 		return false; // don't let the keys filter thru
 	}
-	if(MenuActive == false && !chatmodeon && !(JournalActive || SpellsActive || UpdatingActive))
+	if (!MenuActive && !chatmodeon)
 	{
 		switch(key)
 		{
 			case DDKEY_TAB:
-				JournalActive=true;
+				SetMenu(MENU_JOURNAL);
+				MenuActive = true;
 				if(!netgame && !demoplayback && !demorecording)
 				{
 					paused = true;
 				}
 				return true;  //kmod
-/*			case 's':
-				SpellsActive=true;
-				if(!netgame && !demoplayback && !demorecording)
-				{
-					paused = true;
-				}
-				return true;*/  //kmod
 			case 'u':
-				InitUpdating();
-				UpdatingActive=true;
+				SetMenu(MENU_UPDATING);
+				MenuActive = true;
 				if(!netgame && !demoplayback && !demorecording)
 				{
 					paused = true;
@@ -1091,7 +919,7 @@ boolean MN_Responder(event_t *event)
 		} //getting into menu
 		return(false);
 	}
-	return CurrentMenu->KeyPressed(key);
+	return false;
 }
 
 //---------------------------------------------------------------------------
@@ -1109,6 +937,38 @@ bool KMenuScreen::RawInputEvent(event_t *event)
 	return Super::RawInputEvent(event);
 }
 
+void KMenuScreen::CyclePrevChoice(void)
+{
+	do
+	{
+		if (CursorPos <= 0)
+		{
+			CursorPos = NumItems - 1;
+		}
+		else
+		{
+			CursorPos--;
+		}
+	} while (!Items[CursorPos]->IsSensitive());
+	GRootWindow->SetFocus(Items[CursorPos]);
+}
+
+void KMenuScreen::CycleNextChoice(void)
+{
+	do
+	{
+		if (CursorPos + 1 > NumItems - 1)
+		{
+			CursorPos = 0;
+		}
+		else
+		{
+			CursorPos++;
+		}
+	} while (!Items[CursorPos]->IsSensitive());
+	GRootWindow->SetFocus(Items[CursorPos]);
+}
+
 //---------------------------------------------------------------------------
 //
 //	KMenuScreen::KeyPressed
@@ -1117,39 +977,15 @@ bool KMenuScreen::RawInputEvent(event_t *event)
 
 bool KMenuScreen::KeyPressed(int key)
 {
-	if (Items[CursorPos] && Items[CursorPos]->KeyPressed(key))
-	{
-		return true;
-	}
 	switch (key)
 	{
 	case DDKEY_DOWNARROW:
-		do
-		{
-			if (CursorPos + 1 > NumItems - 1)
-			{
-				CursorPos = 0;
-			}
-			else
-			{
-				CursorPos++;
-			}
-		} while (!Items[CursorPos]->IsSensitive());
+		CycleNextChoice();
 		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
 		return true;
 
 	case DDKEY_UPARROW:
-		do
-		{
-			if (CursorPos <= 0)
-			{
-				CursorPos = NumItems - 1;
-			}
-			else
-			{
-				CursorPos--;
-			}
-		} while (!Items[CursorPos]->IsSensitive());
+		CyclePrevChoice();
 		S_StartSound(NULL, SFX_FIGHTER_HAMMER_HITWALL);
 		return true;
 
@@ -1717,6 +1553,8 @@ void KMenuScreen::ProcessMenuAction(int Action, MenuType_t Invoke, int Key)
 #include "mn_mouse.h"
 #include "mn_joy.h"
 #include "mn_info.h"
+#include "mn_updating.h"
+#include "mn_journal.h"
 
 //---------------------------------------------------------------------------
 //
@@ -1741,6 +1579,8 @@ static KClass *MenuClasses[MAX_MENU] = {
 	KMenuScreenMouseOptions::StaticClass(),
 	KMenuScreenJoyConfig::StaticClass(),
 	KMenuScreenInfo::StaticClass(),
+	KUpdatingScreen::StaticClass(),
+	KJournalScreen::StaticClass(),
 };
 
 //---------------------------------------------------------------------------
@@ -1777,6 +1617,7 @@ static void PopMenu(void)
 	{
 		CurrentMenu = MenuStack[MenuSP - 1];
 		CurrentMenu->Show();
+		GRootWindow->SetFocus(CurrentMenu->Items[CurrentMenu->CursorPos]);
 		S_StartSound(NULL, SFX_PICKUP_KEY);
 	}
 	else
@@ -2006,231 +1847,6 @@ int CCmdMenuAction(int argc, char **argv)
 				return true;
 */	
 	return true;
-}
-
-//---------------------------------------------------------------------------
-//
-// PROC MN_DrawSpells
-//
-//---------------------------------------------------------------------------
-
-void MN_DrawSpells(void)
-{
-	gi.GL_SetFilter(0);
-	//Draw back
-	GCanvas->DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
-}
-
-//---------------------------------------------------------------------------
-//
-// PROC MN_DrawUpdating
-//
-//---------------------------------------------------------------------------
-
-void InitUpdating(void)
-{
-	player_t player;
-	player = players[consoleplayer];
-	navpoints = player.av_points;
-//	navpoints=5;
-	upd_values[0][0] = player.maxhealth_old;
-	upd_values[0][1] = player.maxhealth;
-	upd_values[1][0] = player.strength;
-	upd_values[1][1] = player.strength;
-	upd_values[2][0] = player.agility;
-	upd_values[2][1] = player.agility;
-	upd_values[3][0] = player.speed;
-	upd_values[3][1] = player.speed;
-	currentUpdatingRow=1;
-}
-
-void AcceptUpdating(void)
-{
-	player_t player;
-	player = players[consoleplayer];
-	if (/*(upd_values[0][0]<=upd_values[0][1])&&*/
-		(upd_values[1][0]<=upd_values[1][1])&&
-		(upd_values[2][0]<=upd_values[2][1])&&
-		(upd_values[3][0]<=upd_values[3][1])&&
-		(player.av_points>=navpoints))
-	{
-		players[consoleplayer].av_points = navpoints;
-		players[consoleplayer].maxhealth_old = players[consoleplayer].maxhealth;//upd_values[0][1];
-		players[consoleplayer].sp_power_old = players[consoleplayer].maxsp_power;//upd_values[0][1];
-//		players[consoleplayer].maxhealth = health_table[player.pclass]*upd_values[0][1];*/
-		players[consoleplayer].strength = upd_values[1][1];
-		players[consoleplayer].agility = upd_values[2][1];
-		players[consoleplayer].speed = upd_values[3][1];
-	}
-}
-
-void MN_DrawUpdating(void)
-{
-	char tmp[3][12][13];
-	char leveldesc[4][40];
-	int i;
-	player_t &player = players[consoleplayer];
-
-	sprintf(leveldesc[0],"YOU'RE LEVEL  %d",player.exp_level);
-	sprintf(leveldesc[1],"EXPERIENCE POINTS: %d",player.experience);
-	sprintf(leveldesc[2],"YOU NEED %d POINTS FOR LEVEL %d",player.next_level-player.experience,player.exp_level+1);
-	sprintf(leveldesc[3],"SILVER: %d",player.money);
-
-
-	sprintf(tmp[0][0],"POINTS:");
-	sprintf(tmp[0][1],"");
-	sprintf(tmp[0][2],"HEALTH:");
-	sprintf(tmp[0][3],"%s",sp_wording[player.pclass]);
-	sprintf(tmp[0][4],"STRENGTH:");
-	sprintf(tmp[0][5],"EFFICIENCY:");
-	sprintf(tmp[0][6],"SPEED:");
-	sprintf(tmp[0][7],"");
-	sprintf(tmp[0][8],"REMAINING:");
-
-	sprintf(tmp[1][0],"OLD");
-	sprintf(tmp[1][1],"");
-	sprintf(tmp[1][2],"%3d",upd_values[0][0]);
-	sprintf(tmp[1][3],((player.pclass!=3)?"%3d":""),player.sp_power_old);
-	sprintf(tmp[1][4],"%02d",upd_values[1][0]);
-	sprintf(tmp[1][5],"%02d",upd_values[2][0]);
-	sprintf(tmp[1][6],"%02d",upd_values[3][0]);
-
-	sprintf(tmp[2][0]," NEW ");
-	sprintf(tmp[2][1],"");
-	sprintf(tmp[2][2],"  %3d  ",upd_values[0][1]);
-	sprintf(tmp[2][3],((player.pclass!=3)?"  %3d  ":""),player.maxsp_power);
-	sprintf(tmp[2][4],"- %02d +",upd_values[1][1]);
-	sprintf(tmp[2][5],"- %02d +",upd_values[2][1]);
-	sprintf(tmp[2][6],"- %02d +",upd_values[3][1]);
-	sprintf(tmp[2][7],"");
-	sprintf(tmp[2][8],"%02d",navpoints);
-	sprintf(tmp[2][9],"");
-	sprintf(tmp[2][10],"OK");
-
-	/*for (i=0;i<3;i++)
-		MN_DrTextA(leveldesc[i],10,i*13+10);*/
-	for (i=0;i<4;i++)
-		MN_DrTextA(leveldesc[i],10,i*13+1);
-
-	for (i=0;i<9;i++)
-		MN_DrTextA(tmp[0][i],100,i*13+56);
-	for (i=0;i<7;i++)
-		MN_DrTextA(tmp[1][i],180,i*13+56);
-	for (i=0;i<11;i++)
-		MN_DrTextA(tmp[2][i],220,i*13+56);
-
-	MN_DrTextAYellow(tmp[2][av_pos[currentUpdatingRow]],220,av_pos[currentUpdatingRow]*13+56);
-}
-
-//---------------------------------------------------------------------------
-//
-// PROC MN_DrawJournal
-//
-//---------------------------------------------------------------------------
-
-static char* journal[5]=
-{
-	{"STATS"},
-	{"BESTIARY"},
-	{"THINGS"},
-	{"MAP"},
-	{"NOTES"}
-};
-
-static int coords[5][2]=
-{
-	{21,18},
-	{64,20},
-	{103,28},
-	{140,22},
-	{176,22}
-};
-
-
-static float height_float [4] =
-{
-	{6},{5.5f},{5},{2}
-};
-
-
-extern int AutoArmorSave[NUMCLASSES];
-
-void MN_DrawJournal(void)
-{
-	int i,temp=0/*,ma,co*/;
-    int time_mod=*(int*) gi.GetCVar("time_mod")->ptr;
-	int months=1;
-	int days=1;
-	int hours=0;
-	int minutes=0;
-	int worldTimer;
-	int tempMon;
-	char tmp[12][40];
-	player_t *player;
-
-	gi.GL_SetFilter(0);
-	//Draw back
-	GCanvas->DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
-	player = &players[consoleplayer];
-	//Draw Menu, and actual one
-	for (i=0;i<5;i++)
-		MN_DrTextA(journal[i],coords[i][1],coords[i][0]);
-	MN_DrTextAYellow(journal[currentJournal],coords[currentJournal][1],coords[currentJournal][0]);
-	/*co=consoleplayer;
-	ma=players[consoleplayer].maxhealth;*/
-	//itoa(players[consoleplayer].maxhealth,tmp,10);
-	worldTimer = player->worldTimer;
-
-	worldTimer /= 35;
-	worldTimer = worldTimer*60/time_mod;
-	months = worldTimer/43200;
-	worldTimer -= months*43200;
-	days = worldTimer/1440;
-	worldTimer -= days*1440;
-	hours = worldTimer/60;
-	worldTimer -= hours*60;
-	minutes = worldTimer;
-	//player.money=123;
-	temp = AutoArmorSave[player->pclass]
-		+player->armorpoints[ARMOR_ARMOR]+player->armorpoints[ARMOR_SHIELD]
-		+player->armorpoints[ARMOR_HELMET]+player->armorpoints[ARMOR_AMULET];
-	
-	tempMon=player->money/10;
-
-	sprintf(tmp[0],"");
-	sprintf(tmp[1],"TODAY IS %d DAY, %d:%d",days,hours,minutes);
-	sprintf(tmp[2],"HEIGHT: %.1f FEET",height_float[player->pclass]);
-
-	sprintf(tmp[3],"HEALTH POINTS: %d OF %d", player->plr->mo->health, player->maxhealth);
-	sprintf(tmp[4],"STRENGTH: %d",player->strength);
-	sprintf(tmp[5],"AGILITY: %d",player->agility);
-	sprintf(tmp[6],"SPEED: %d",player->speed);
-	sprintf(tmp[7],"DEFENSE: %d",FixedDiv(temp, 5*FRACUNIT)>>FRACBITS);
-	sprintf(tmp[8],"YOU'RE LEVEL %d",player->exp_level);
-	sprintf(tmp[9],"EXPERIENCE POINTS %d",player->experience);
-	sprintf(tmp[10],"YOU NEED %d POINTS FOR LVL %d", player->next_level - player->experience, player->exp_level+1);
-	sprintf(tmp[11],"MONEY: %d PH'ORIND %d FIL-AIRE",tempMon,player->money-(tempMon*10));
-	//memset(statColls1[1],30,);
-	for (i=0;i<12;i++)
-	{
-		statColls1[i]=tmp[i];
-	}
-	//*tmp=NULL;
-	//Draw the Pages
-	if (journalPages[currentJournal].pages!=NULL)
-	{
-		MN_DrTextAYellow(journalPages[currentJournal].pages[currentJournalPage].title,200-(MN_TextAWidth(journalPages[currentJournal].pages[currentJournalPage].title)/2),18);
-		if (strcmp(journalPages[currentJournal].pages[currentJournalPage].imageName,"")!=0) GCanvas->DrawPatch(journalPages[currentJournal].pages[currentJournalPage].x,journalPages[currentJournal].pages[currentJournalPage].y,gi.W_GetNumForName(journalPages[currentJournal].pages[currentJournalPage].imageName));
-		for (i=0;i<journalPages[currentJournal].pages[currentJournalPage].num_collss;i++)
-			MN_DrTextA(journalPages[currentJournal].pages[currentJournalPage].colls_side[i],198,i*13+35);	
-		for (i=0;i<journalPages[currentJournal].pages[currentJournalPage].num_colls;i++)
-			MN_DrTextA(journalPages[currentJournal].pages[currentJournalPage].colls[i],85,i*13+journalPages[currentJournal].pages[currentJournalPage].collOffset);	
-	}
-
-	//Draw Mouse cursor
-#ifdef USE_JOURNAL_MOUSE
-	GCanvas->DrawPatch(mousesx,mousesy,gi.W_GetNumForName("armslot1"));
-#endif
 }
 
 //==========================================================================

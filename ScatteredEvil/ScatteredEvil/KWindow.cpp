@@ -22,12 +22,13 @@ IMPLEMENT_CLASS(KWindow);
 KWindow::KWindow()
 {
 	bIsVisible = true;
+	bIsSensitive = true;
 	Font = KCanvas::SmallFont;
 }
 
 //==========================================================================
 //
-//
+//	KWindow::Init
 //
 //==========================================================================
 
@@ -42,6 +43,17 @@ void KWindow::Init(KWindow *AParent)
 	WinGC = Spawn<KGC>();
 	ClipTree();
 	InitWindow();
+	bIsInitialized = true;
+}
+
+//==========================================================================
+//
+//	KWindow::CleanUp
+//
+//==========================================================================
+
+void KWindow::CleanUp(void)
+{
 }
 
 //==========================================================================
@@ -52,6 +64,7 @@ void KWindow::Init(KWindow *AParent)
 
 void KWindow::Destroy()
 {
+	bBeingDestroyed = true;
 	KillAllChildren();
 	if (Parent)
 	{
@@ -76,6 +89,22 @@ KRootWindow *KWindow::GetRootWindow(void)
 		win = win->Parent;
 	}
 	return (KRootWindow *)win;
+}
+
+//==========================================================================
+//
+//	KWindow::GetModalWindow
+//
+//==========================================================================
+
+KModalWindow *KWindow::GetModalWindow(void)
+{
+	KWindow *win = this;
+	while (win->WindowType < WIN_Modal)
+	{
+		win = win->Parent;
+	}
+	return (KModalWindow *)win;
 }
 
 //==========================================================================
@@ -323,6 +352,10 @@ void KWindow::AddChild(KWindow *NewChild)
 	}
 	LastChild = NewChild;
 	ChildAdded(NewChild);
+	for (KWindow *w = this; w; w = w->Parent)
+	{
+		w->DescendantAdded(NewChild);
+	}
 }
 
 //==========================================================================
@@ -353,6 +386,10 @@ void KWindow::RemoveChild(KWindow *InChild)
 	InChild->NextSibling = NULL;
 	InChild->Parent = NULL;
 	ChildRemoved(InChild);
+	for (KWindow *w = this; w; w = w->Parent)
+	{
+		w->DescendantRemoved(InChild);
+	}
 }
 
 //==========================================================================

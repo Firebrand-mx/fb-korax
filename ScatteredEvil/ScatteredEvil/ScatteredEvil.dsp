@@ -100,6 +100,10 @@ SOURCE=.\am_map.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\con_main.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ct_chat.cpp
 # End Source File
 # Begin Source File
@@ -145,6 +149,10 @@ SOURCE=.\KCanvas.cpp
 # Begin Source File
 
 SOURCE=.\KGC.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\KModalWindow.cpp
 # End Source File
 # Begin Source File
 
@@ -353,15 +361,15 @@ SOURCE=.\info.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\journal.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\KCanvas.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\KGC.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KModalWindow.h
 # End Source File
 # Begin Source File
 
@@ -413,6 +421,10 @@ SOURCE=.\mn_info.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\mn_journal.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\mn_joy.h
 # End Source File
 # Begin Source File
@@ -446,6 +458,10 @@ SOURCE=.\mn_skill.h
 # Begin Source File
 
 SOURCE=.\mn_sound.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mn_updating.h
 # End Source File
 # Begin Source File
 

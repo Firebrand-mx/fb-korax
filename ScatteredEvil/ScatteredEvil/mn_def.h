@@ -9,11 +9,13 @@
 class KCanvas;
 class KGC;
 class KWindow;
+class KModalWindow;
 class KRootWindow;
 
 #include "KCanvas.h"
 #include "KGC.h"
 #include "KWindow.h"
+#include "KModalWindow.h"
 #include "KRootWindow.h"
 
 #endif // __MENU_DEFS_H_
