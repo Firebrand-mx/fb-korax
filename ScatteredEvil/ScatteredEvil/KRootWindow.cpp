@@ -23,6 +23,7 @@ KRootWindow *GRootWindow;
 
 void KRootWindow::Init(void)
 {
+	WindowType = WIN_Root;
 	X = 0;
 	Y = 0;
 	Width = 640;
