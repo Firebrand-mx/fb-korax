@@ -95,6 +95,10 @@ int P_GetIdleState(mobj_t *actor)
 			return S_ETTIN_HURTED_LOOK1;
 		case MT_DEMON:
 			return S_DEMN_DAMAGED_LOOK1;
+		case MT_DEMON2:
+			return S_DEMN2_DAMAGED_LOOK1;
+		case MT_CENTAUR:
+			return S_CENTAUR_DAMAGED_LOOK1;
 		}
 	}
 	return actor->info->spawnstate;
@@ -116,6 +120,10 @@ int P_GetSeeState(mobj_t *actor)
 			return S_ETTIN_HURTED_CHASE1;
 		case MT_DEMON:
 			return S_DEMN_DAMAGED_CHASE1;
+		case MT_DEMON2:
+			return S_DEMN2_DAMAGED_CHASE1;
+		case MT_CENTAUR:
+			return S_CENTAUR_DAMAGED_WALK1;
 		}
 	}
 	return actor->info->seestate;
@@ -137,6 +145,10 @@ int P_GetMeleeState(mobj_t *actor)
 			return S_ETTIN_HURTED_ATK1_1;
 		case MT_DEMON:
 			return S_DEMN_DAMAGED_ATK1_1;
+		case MT_DEMON2:
+			return S_DEMN2_DAMAGED_ATK1_1;
+		case MT_CENTAUR:
+			return S_CENTAUR_DAMAGED_ATK1;
 		}
 	}
 	return actor->info->meleestate;
@@ -156,6 +168,10 @@ int P_GetMissileState(mobj_t *actor)
 		{
 		case MT_DEMON:
 			return S_DEMN_DAMAGED_ATK2_1;
+		case MT_DEMON2:
+			return S_DEMN2_DAMAGED_ATK2_1;
+		case MT_CENTAUR:
+			return S_CENTAUR_DAMAGED_MISSILE1;
 		}
 	}
 	return actor->info->missilestate;
@@ -177,6 +193,10 @@ int P_GetPainState(mobj_t *actor)
 			return S_ETTIN_HURTED_PAIN1;
 		case MT_DEMON:
 			return S_DEMN_DAMAGED_PAIN1;
+		case MT_DEMON2:
+			return S_DEMN2_DAMAGED_PAIN1;
+		case MT_CENTAUR:
+			return S_CENTAUR_DAMAGED_PAIN1;
 		}
 	}
 	return actor->info->painstate;
