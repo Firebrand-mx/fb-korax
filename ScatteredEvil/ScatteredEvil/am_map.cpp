@@ -27,8 +27,8 @@ static int grid = 0;
 static int leveljuststarted = 1; // kluge until AM_LevelInit() is called
 
 boolean    automapactive = false;
-static int finit_width = SCREENWIDTH;
-static int finit_height = SCREENHEIGHT-SBARHEIGHT/*-3*/;
+static int finit_width = SCREENWIDTH/2;
+static int finit_height = SCREENHEIGHT*200/480-SBARHEIGHT/*-3*/;
 static int f_x, f_y; // location of window on screen
 static int f_w, f_h; // size of window on screen
 static int lightlev; // used for funky strobing effect
@@ -107,9 +107,6 @@ static int maplumpnum;
 static short mapystart=0; // y-value for the start of the map bitmap...used in
 										//the parallax stuff.
 static short mapxstart=0; //x-value for the bitmap.
-
-//byte screens[][SCREENWIDTH*SCREENHEIGHT];
-//void V_MarkRect (int x, int y, int width, int height);
 
 // Functions
 
@@ -1321,7 +1318,7 @@ void AM_Drawer (void)
 	DD_GameUpdate(DDUF_FULLSCREEN);
 
 	// Update the height.
-	finit_height = SCREENHEIGHT-SBARHEIGHT;
+	finit_height = SCREENHEIGHT*200/480-SBARHEIGHT;
 
 	AM_clearFB(BACKGROUND);
 

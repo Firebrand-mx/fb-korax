@@ -679,8 +679,6 @@ int             basejoyx, basejoyy;
 
 void I_StartupJoystick (void)
 {
-//	int     centerx, centery;
-
 	joystickpresent = 0;
 	if(M_CheckParm("-nojoy") || !usejoystick)
 	{

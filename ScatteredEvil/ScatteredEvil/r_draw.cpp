@@ -137,12 +137,12 @@ void R_DrawViewBorder (void)
 {
 	int		lump;
 
-	if(viewwidth == 320 && viewheight == 200) return;
+	if(viewwidth == 640 && viewheight == 480) return;
 
-	int x = viewwindowx * 2;
-	int y = viewwindowy * 480 / 200;
-	int w = viewwidth * 2;
-	int h = viewheight * 480 / 200;
+	int x = viewwindowx;
+	int y = viewwindowy;
+	int w = viewwidth;
+	int h = viewheight;
 
 	// View background.
 	GL_SetColorAndAlpha(1,1,1,1);
@@ -193,16 +193,16 @@ boolean BorderTopRefresh;
 
 void R_DrawTopBorder (void)
 {
-	if (viewwidth == 320 && viewheight == 200)
+	if (viewwidth == 640 && viewheight == 480)
 		return;
 
 	GL_SetColorAndAlpha(1,1,1,1);
 	GL_SetFlat(R_FlatNumForName(borderGfx[BG_BACKGROUND]));
 	
-	int x = viewwindowx * 2;
-	int y = viewwindowy * 480 / 200;
-	int w = viewwidth * 2;
-	int h = viewheight * 480 / 200;
+	int x = viewwindowx;
+	int y = viewwindowy;
+	int w = viewwidth;
+	int h = viewheight;
 
 	GL_DrawRectTiled(0, 0, 640, 64, 64, 64);
 	if(viewwindowy < 65)

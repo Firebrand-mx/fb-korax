@@ -379,7 +379,7 @@ void R_ProjectSprite (mobj_t *thing)
 	//	return;		// thing is behind view plane
 		tz = FRACUNIT;		
 	
-	xscale = FixedDiv(SCREENWIDTH<<FRACBITS, tz);
+	xscale = FixedDiv((SCREENWIDTH/2)<<FRACBITS, tz);
 
 	gxt = -FixedMul(tr_x,viewsin);
 	gyt = FixedMul(tr_y,viewcos);
@@ -510,7 +510,7 @@ void R_ProjectSprite (mobj_t *thing)
 	}
 
 	vis->x1 = x1 < 0 ? 0 : x1;
-	vis->x2 = x2 >= viewwidth ? viewwidth-1 : x2;
+	vis->x2 = x2 >= viewwidth/2 ? viewwidth/2-1 : x2;
 	iscale = FixedDiv (FRACUNIT, xscale);
 	if (flip)
 	{

@@ -21,8 +21,6 @@ int			borderUpd = 0;	// Update borders?
 
 int			validcount = 1;		// increment every time a check is made
 
-int			centerx, centery;
-
 int			framecount;		// just for profiling purposes
 
 int			sscount, linecount, loopcount;
@@ -244,121 +242,7 @@ fixed_t	R_PointToDist (fixed_t x, fixed_t y)
 
 
 
-/*
-=================
-=
-= R_InitPointToAngle
-=
-=================
-*/
-
-void R_InitPointToAngle (void)
-{
-// now getting from tables.c
-#if 0
-	int	i;
-	long	t;
-	float	f;
-//
-// slope (tangent) to angle lookup
-//
-	for (i=0 ; i<=SLOPERANGE ; i++)
-	{
-		f = atan( (float)i/SLOPERANGE )/(3.141592657*2);
-		t = 0xffffffff*f;
-		tantoangle[i] = t;
-	}
-#endif
-}
-
 //=============================================================================
-
-/*
-================
-=
-= R_ScaleFromGlobalAngle
-=
-= Returns the texture mapping scale for the current line at the given angle
-= rw_distance must be calculated first
-================
-*/
-
-fixed_t R_ScaleFromGlobalAngle (angle_t visangle)
-{
-/*	fixed_t		scale;
-	int			anglea, angleb;
-	int			sinea, sineb;
-	fixed_t		num,den;
-
-#if 0
-{
-	fixed_t		dist,z;
-	fixed_t		sinv, cosv;
-
-	sinv = finesine[(visangle-rw_normalangle)>>ANGLETOFINESHIFT];
-	dist = FixedDiv (rw_distance, sinv);
-	cosv = finecosine[(viewangle-visangle)>>ANGLETOFINESHIFT];
-	z = abs(FixedMul (dist, cosv));
-	scale = FixedDiv(projection, z);
-	return scale;
-}
-#endif
-
-	anglea = ANG90 + (visangle-viewangle);
-	angleb = ANG90 + (visangle-rw_normalangle);
-// bothe sines are allways positive
-	sinea = finesine[anglea>>ANGLETOFINESHIFT];
-	sineb = finesine[angleb>>ANGLETOFINESHIFT];
-	num = FixedMul(projection,sineb)<<detailshift;
-	den = FixedMul(rw_distance,sinea);
-	if (den > num>>16)
-	{
-		scale = FixedDiv (num, den);
-		if (scale > 64*FRACUNIT)
-			scale = 64*FRACUNIT;
-		else if (scale < 256)
-			scale = 256;
-	}
-	else
-		scale = 64*FRACUNIT;
-
-	return scale;*/
-	return 0;
-}
-
-
-
-/*
-=================
-=
-= R_InitTextureMapping
-=
-=================
-*/
-
-void R_InitTextureMapping (void)
-{
-}
-
-//=============================================================================
-
-/*
-====================
-=
-= R_InitLightTables
-=
-= Only inits the zlight table, because the scalelight table changes
-= with view size
-=
-====================
-*/
-
-#define		DISTMAP	2
-
-void R_InitLightTables (void)
-{
-}
-
 
 /*
 ==============
@@ -370,8 +254,6 @@ void R_InitLightTables (void)
 =
 ==============
 */
-
-//boolean	setsizeneeded;
 
 void R_SetViewSize(int x, int y, int w, int h)
 {
@@ -391,95 +273,6 @@ void R_SetViewSize(int x, int y, int w, int h)
 
 void R_ExecuteSetViewSize (void)
 {
-	//fixed_t	cosadj, dy;
-//	int		i,j, level, startmap;
-
-//	setsizeneeded = false;
-
-/*	if (setblocks == 11)
-	{*/
-//		scaledviewwidth = SCREENWIDTH;
-		//viewheight = SCREENHEIGHT;
-/*	}
-	else
-	{
-		scaledviewwidth = setblocks*32;
-		viewheight = (setblocks*(200-SBARHEIGHT*sbarscale/20)/10);
-	}*/
-
-//	detailshift = setdetail;
-//	viewwidth = scaledviewwidth>>detailshift;
-
-	centery = viewheight/2;
-	centerx = viewwidth/2;
-//	centerxfrac = centerx<<FRACBITS;
-//	centeryfrac = centery<<FRACBITS;
-//	projection = 0xffff<<FRACBITS;//centerxfrac;
-
-	/*if (!detailshift)
-	{
-		colfunc = basecolfunc = R_DrawColumn;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpan;
-	}
-	else
-	{
-		colfunc = basecolfunc = R_DrawColumnLow;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpanLow;
-	}*/
-
-	//R_InitBuffer (scaledviewwidth, viewheight);
-
-//	R_InitTextureMapping ();
-
-//
-// psprite scales
-//
-/*	pspritescale = FRACUNIT*viewwidth/SCREENWIDTH;
-	pspriteiscale = FRACUNIT*SCREENWIDTH/viewwidth;*/
-
-//
-// thing clipping
-//
-/*	for (i=0 ; i<viewwidth ; i++)
-		screenheightarray[i] = viewheight;*/
-
-//
-// planes
-//
-	/*for (i=0 ; i<viewheight ; i++)
-	{
-		dy = ((i-viewheight/2)<<FRACBITS)+FRACUNIT/2;
-		dy = abs(dy);
-		yslope[i] = FixedDiv ( (viewwidth<<detailshift)/2*FRACUNIT, dy);
-	}
-
-	for (i=0 ; i<viewwidth ; i++)
-	{
-		cosadj = abs(finecosine[xtoviewangle[i]>>ANGLETOFINESHIFT]);
-		distscale[i] = FixedDiv (FRACUNIT,cosadj);
-	}*/
-
-//
-// Calculate the light levels to use for each level / scale combination
-//
-	/*for (i=0 ; i< LIGHTLEVELS ; i++)
-	{
-		startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
-		for (j=0 ; j<MAXLIGHTSCALE ; j++)
-		{
-			level = startmap - j*SCREENWIDTH/(viewwidth<<detailshift)/DISTMAP;
-			if (level < 0)
-				level = 0;
-			if (level >= NUMCOLORMAPS)
-				level = NUMCOLORMAPS-1;
-			scalelight[i][j] = colormaps + level*256;
-		}
-	}*/
-
 //
 // draw the border
 //
@@ -510,17 +303,11 @@ void R_InitSkyMap(void)
 ==============
 */
 
-int detailLevel;
-//int screenblocks;
-
 void R_Init(void)
 {
 	R_InitData();
-	R_InitPointToAngle();
-	// viewwidth / viewheight / detailLevel are set by the defaults
-//	R_SetViewSize(screenblocks, detailLevel);
-	R_SetViewSize(0, 0, 320, 200);
-	R_InitLightTables();
+	// viewwidth / viewheight are set by the defaults
+	R_SetViewSize(0, 0, 640, 480);
 	R_InitSkyMap();
 	R_InitTranslationTables();
 	R_InitSprites();
@@ -534,7 +321,6 @@ void R_Update(void)
 	GL_TexDestroy();
 
 	R_UpdateData();
-	R_InitLightTables();
 	R_InitSkyMap();
 	R_UpdateTranslationTables();
 	

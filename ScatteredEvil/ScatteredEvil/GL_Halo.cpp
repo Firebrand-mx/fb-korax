@@ -172,7 +172,7 @@ void H_Render()
 	float		radius, size, clipRange = farClip-nearClip, secDiff[2];
 	float		factor = flareBoldness/100.0f;
 	float		scaler = 2 - flareSize/10.0f;
-	float		viewscaler = viewwidth/320.0f;
+	float		viewscaler = viewwidth/640.0f;
 	float		flareSizeFactor, secondaryAlpha;
 	boolean		needScissor = false;
 	int			*readData, *iter;
