@@ -63,6 +63,12 @@ boolean ConSys_StartConversation(mobj_t *User, mobj_t *Target)
 {
 	if (!ConList)
 		return false;
+	if (ConPlay)
+	{
+		//	Already running a conversation.
+		//FIXME Add check wether it can be interrupted.
+		return false;
+	}
 	KConversation *Con = ConList->GetActiveConversation(User, Target);
 	if (Con)
 	{

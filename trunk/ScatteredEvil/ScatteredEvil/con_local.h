@@ -26,6 +26,7 @@ enum EConEventType
 	ET_Speech,
 	ET_Choice,
 	ET_Jump,
+	ET_RandomLabel,
 	ET_End
 };
 
@@ -161,6 +162,23 @@ class KConEventJump:public KConEvent
 };
 
 //
+//	KConEventRandomLabel
+//
+class KConEventRandomLabel:public KConEvent
+{
+	DECLARE_CLASS(KConEventRandomLabel, KConEvent, 0);
+
+	int NumLabels;
+	char Labels[16][32];
+
+	KConEventRandomLabel(void)
+	{
+		EventType = ET_RandomLabel;
+	}
+	void ParseScript(void);
+};
+
+//
 //	KConEventEnd
 //
 class KConEventEnd:public KConEvent
@@ -240,6 +258,7 @@ public:
 	EEventAction SetupEventSpeech(KConEventSpeech *Event, char *NextLabel);
 	EEventAction SetupEventChoice(KConEventChoice *Event, char *NextLabel);
 	EEventAction SetupEventJump(KConEventJump *Event, char *NextLabel);
+	EEventAction SetupEventRandomLabel(KConEventRandomLabel *Event, char *NextLabel);
 	EEventAction SetupEventEnd(KConEventEnd *Event, char *NextLabel);
 
 	void GotoState(EConPlayState NewState);
@@ -256,6 +275,17 @@ public:
 //	Cnversation UI windows
 //
 //==========================================================================
+
+//
+//	KFilledRectWindow
+//
+class KFilledRectWindow:public KWindow
+{
+	DECLARE_CLASS(KFilledRectWindow, KWindow, 0);
+	NO_DEFAULT_CONSTRUCTOR(KFilledRectWindow);
+
+	void DrawWindow(KGC *gc);
+};
 
 //
 //	KConChoiceWindow
@@ -280,9 +310,12 @@ class KConWindow:public KModalWindow
 
 	KConWindow();
 	void InitWindow(void);
+	void CleanUp(void);
 
 protected:
 	KConPlay *ConPlay;
+	KFilledRectWindow *UpperConWindow;
+	KFilledRectWindow *LowerConWindow;
 	KTextWindow *WinSpeech;
 	KConChoiceWindow *WinChoices[10];
 	int NumChoices;
@@ -314,6 +347,7 @@ class KConWindowFirst:public KModalWindow
 
 protected:
 	KConPlay *ConPlay;
+	KFilledRectWindow *LowerConWindow;
 	KTextWindow *WinSpeech;
 
 public:
