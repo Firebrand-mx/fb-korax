@@ -30,6 +30,8 @@
 #define CLF_ACTION		0x1		// The control is an action (+/- in front).
 #define CLF_REPEAT		0x2		// Bind down + repeat.
 
+#define USE_JOURNAL_MOUSE
+
 // TYPES -------------------------------------------------------------------
 
 typedef struct
@@ -316,8 +318,7 @@ static MenuItem_t MainItems[] =
 	{ ITT_EFUNC, "QUIT GAME", SCQuitGame, 0, MENU_NONE }
 };
 
-static Menu_t MainMenu =
-{
+static Menu_t MainMenu(
 	110, 56,
 	DrawMainMenu,
 	6, MainItems,
@@ -325,7 +326,7 @@ static Menu_t MainMenu =
 	MENU_NONE,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 6, 0
-};
+);
 
 static MenuItem_t ClassItems[] =
 {
@@ -335,8 +336,7 @@ static MenuItem_t ClassItems[] =
 	//{ ITT_EFUNC, "CORVUS", SCClass, 3, MENU_NONE } //Da Corvus man
 };
 
-static Menu_t ClassMenu =
-{
+static Menu_t ClassMenu(
 	66, 66,
 	DrawClassMenu,
 	3, ClassItems, //Remi: 4 for Corvus
@@ -344,7 +344,7 @@ static Menu_t ClassMenu =
 	MENU_MAIN,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 3, 0 //Remi: 4 to enable Corvus selection
-};
+);
 
 static MenuItem_t FilesItems[] =
 {
@@ -352,8 +352,7 @@ static MenuItem_t FilesItems[] =
 	{ ITT_SETMENU, "SAVE GAME", NULL, 0, MENU_SAVE }
 };
 
-static Menu_t FilesMenu =
-{
+static Menu_t FilesMenu(
 	110, 60,
 	DrawFilesMenu,
 	2, FilesItems,
@@ -361,7 +360,7 @@ static Menu_t FilesMenu =
 	MENU_MAIN,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 2, 0
-};
+);
 
 static MenuItem_t LoadItems[] =
 {
@@ -373,8 +372,7 @@ static MenuItem_t LoadItems[] =
 	{ ITT_EFUNC, NULL, SCLoadGame, 5, MENU_NONE }
 };
 
-static Menu_t LoadMenu =
-{
+static Menu_t LoadMenu(
 	70, 30,
 	DrawLoadMenu,
 	6, LoadItems,
@@ -382,7 +380,7 @@ static Menu_t LoadMenu =
 	MENU_FILES,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 6, 0
-};
+);
 
 static MenuItem_t SaveItems[] =
 {
@@ -394,8 +392,7 @@ static MenuItem_t SaveItems[] =
 	{ ITT_EFUNC, NULL, SCSaveGame, 5, MENU_NONE }
 };
 
-static Menu_t SaveMenu =
-{
+static Menu_t SaveMenu(
 	70, 30,
 	DrawSaveMenu,
 	6, SaveItems,
@@ -403,7 +400,7 @@ static Menu_t SaveMenu =
 	MENU_FILES,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 6, 0
-};
+);
 
 static MenuItem_t SkillItems[] =
 {
@@ -414,8 +411,7 @@ static MenuItem_t SkillItems[] =
 	{ ITT_EFUNC, NULL, SCSkill, sk_nightmare, MENU_NONE }
 };
 
-static Menu_t SkillMenu =
-{
+static Menu_t SkillMenu(
 	120, 44,
 	DrawSkillMenu,
 	5, SkillItems,
@@ -423,7 +419,7 @@ static Menu_t SkillMenu =
 	MENU_CLASS,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5, 0
-};
+);
 
 static MenuItem_t CharItems[] =
 {
@@ -435,8 +431,7 @@ static MenuItem_t CharItems[] =
 	{ ITT_EFUNC, "%s: %d", SCChar, 4, MENU_NONE }*/
 };
 
-static Menu_t CharMenu =
-{
+static Menu_t CharMenu(
 	120, 130,
 	DrawCharMenu,
 	3, CharItems,
@@ -444,7 +439,7 @@ static Menu_t CharMenu =
 	MENU_SKILL,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 3, 0
-};
+);
 
 
 static MenuItem_t OptionsItems[] =
@@ -458,8 +453,7 @@ static MenuItem_t OptionsItems[] =
 	{ ITT_SETMENU, "JOYSTICK OPTIONS...", NULL, 0, MENU_JOYCONFIG }
 };
 
-static Menu_t OptionsMenu =
-{
+static Menu_t OptionsMenu(
 	110, 80,
 	DrawOptionsMenu,
 	7, OptionsItems,
@@ -467,7 +461,7 @@ static Menu_t OptionsMenu =
 	MENU_MAIN,
 	MN_DrTextA_CS, 9,//ITEM_HEIGHT
 	0, 7, 0
-};
+);
 
 static MenuItem_t Options2Items[] =
 {
@@ -489,8 +483,7 @@ static MenuItem_t Options2Items[] =
 	{ ITT_EFUNC, "16 BIT INTERPOLATION :", SCSfx16bit, 0, MENU_NONE }
 };
 
-static Menu_t Options2Menu =
-{
+static Menu_t Options2Menu(
 	70, 20,
 	DrawOptions2Menu,
 	16, Options2Items,
@@ -498,7 +491,7 @@ static Menu_t Options2Menu =
 	MENU_OPTIONS,
 	MN_DrTextA_CS, 10,
 	0, 16, 0
-};
+);
 
 static MenuItem_t GameplayItems[] =
 {
@@ -519,8 +512,7 @@ static MenuItem_t GameplayItems[] =
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE }
 };
 
-static Menu_t GameplayMenu =
-{
+static Menu_t GameplayMenu(
 	64, 25,
 	DrawGameplayMenu,
 	15, GameplayItems,
@@ -528,7 +520,7 @@ static Menu_t GameplayMenu =
 	MENU_OPTIONS,
 	MN_DrTextA_CS, 10,
 	0, 15, 0
-};
+);
 
 static MenuItem_t GraphicsItems[] = 
 {
@@ -543,8 +535,7 @@ static MenuItem_t GraphicsItems[] =
 	{ ITT_SETMENU, "RESOLUTION...", NULL, 0, MENU_RESOLUTION }
 };
 
-static Menu_t GraphicsMenu =
-{
+static Menu_t GraphicsMenu(
 	58, 10,
 	DrawGraphicsMenu,
 	9, GraphicsItems,
@@ -552,7 +543,7 @@ static Menu_t GraphicsMenu =
 	MENU_OPTIONS,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 9, 0
-};
+);
 
 static MenuItem_t EffectsItems[] =
 {
@@ -575,8 +566,7 @@ static MenuItem_t EffectsItems[] =
 	{ ITT_EFUNC, "SPRITE BLENDING :", SCSpriteBlending, 0, MENU_NONE }
 };
 
-static Menu_t EffectsMenu =
-{
+static Menu_t EffectsMenu(
 	60, 15,
 	DrawEffectsMenu,
 	17, EffectsItems,
@@ -584,7 +574,7 @@ static Menu_t EffectsMenu =
 	MENU_GRAPHICS,
 	MN_DrTextA_CS, 10,
 	0, 17, 0
-};
+);
 
 static MenuItem_t ResolutionItems[] =
 {
@@ -594,8 +584,7 @@ static MenuItem_t ResolutionItems[] =
 	{ ITT_EFUNC, "MAKE DEFAULT", SCResMakeDefault, 0, MENU_NONE }
 };
 
-static Menu_t ResolutionMenu =
-{
+static Menu_t ResolutionMenu(
 	88, 60,
 	DrawResolutionMenu,
 	4, ResolutionItems,
@@ -603,7 +592,7 @@ static Menu_t ResolutionMenu =
 	MENU_GRAPHICS,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 4, 0
-};
+);
 
 static MenuItem_t ControlsItems[] =
 {
@@ -692,8 +681,7 @@ static MenuItem_t ControlsItems[] =
 	{ ITT_EFUNC, "REPLY :", SCControlConfig, H2A_REPLY, MENU_NONE }*/
 };
 
-static Menu_t ControlsMenu =
-{
+static Menu_t ControlsMenu(
 	32, 26,
 	DrawControlsMenu,
 	77, ControlsItems,
@@ -701,7 +689,7 @@ static Menu_t ControlsMenu =
 	MENU_OPTIONS,
 	MN_DrTextA_CS, 9,
 	0, 18, 0
-};
+);
 
 static MenuItem_t MouseOptsItems[] =
 {
@@ -714,8 +702,7 @@ static MenuItem_t MouseOptsItems[] =
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
 };
 
-static Menu_t MouseOptsMenu = 
-{
+static Menu_t MouseOptsMenu(
 	72, 30,
 	DrawMouseOptsMenu,
 	7, MouseOptsItems,
@@ -723,7 +710,7 @@ static Menu_t MouseOptsMenu =
 	MENU_OPTIONS,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 7, 0
-};
+);
 
 static MenuItem_t JoyConfigItems[] =
 {
@@ -734,8 +721,7 @@ static MenuItem_t JoyConfigItems[] =
 	{ ITT_EFUNC, "POV LOOK :", SCPOVLook, 0, MENU_NONE }
 };
 
-static Menu_t JoyConfigMenu =
-{
+static Menu_t JoyConfigMenu(
 	80, 50,
 	DrawJoyConfigMenu,
 	5, JoyConfigItems,
@@ -743,7 +729,7 @@ static Menu_t JoyConfigMenu =
 	MENU_OPTIONS,
 	MN_DrTextB_CS, ITEM_HEIGHT,
 	0, 5, 0
-};
+);
 
 static Menu_t *Menus[] =
 {
@@ -901,7 +887,7 @@ void MN_DrTextA_CS(char *text, int x, int y)
 		else
 		{
 			p = (patch_t *)gi.W_CacheLumpNum(FontABaseLump+c-33, PU_CACHE);
-			gi.GL_DrawPatchCS(x, y, FontABaseLump+c-33);
+			GCanvas->DrawPatch(x, y, FontABaseLump+c-33);
 			x += p->width-1;
 		}
 	}
@@ -934,7 +920,7 @@ void MN_DrTextAYellow_CS(char *text, int x, int y)
 		else
 		{
 			p = (patch_t*)gi.W_CacheLumpNum(FontAYellowBaseLump+c-33, PU_CACHE);
-			gi.GL_DrawPatchCS(x, y, FontAYellowBaseLump+c-33);
+			GCanvas->DrawPatch(x, y, FontAYellowBaseLump+c-33);
 			x += p->width-1;
 		}
 	}
@@ -998,7 +984,7 @@ void MN_DrTextB_CS(char *text, int x, int y)
 		else
 		{
 			p = (patch_t *)gi.W_CacheLumpNum(FontBBaseLump+c-33, PU_CACHE);
-			gi.GL_DrawPatchCS(x, y, FontBBaseLump+c-33);
+			GCanvas->DrawPatch(x, y, FontBBaseLump+c-33);
 			x += p->width-1;
 		}
 	}
@@ -1312,10 +1298,7 @@ void MN_Drawer(void)
 		}
 		gi.Update(DDUF_BORDER);
 
-		if(CurrentMenu->drawFunc != NULL)
-		{
-			CurrentMenu->drawFunc();
-		}
+		CurrentMenu->DrawTree(GCanvas);
 
 		x = CurrentMenu->x;
 		y = CurrentMenu->y;
@@ -1341,7 +1324,7 @@ void MN_Drawer(void)
 		y = CurrentMenu->y+((CurrentItPos-CurrentMenu->firstItem)*CurrentMenu->itemHeight)+SELECTOR_YOFFSET
 			- (10-CurrentMenu->itemHeight/2);
 		selName = MenuTime&16 ? "M_SLCTR1" : "M_SLCTR2";
-		gi.GL_DrawPatchCS(x+SELECTOR_XOFFSET, y, gi.W_GetNumForName(selName));
+		GCanvas->DrawPatch(x+SELECTOR_XOFFSET, y, gi.W_GetNumForName(selName));
 
 		MN_GL_RestoreState();
 	}
@@ -1359,11 +1342,10 @@ static void DrawMainMenu(void)
 
 	frame = (MenuTime/5)%7;
 	
-	gi.GL_DrawPatchCS(88, 0, gi.W_GetNumForName("M_HTIC"));
+	GCanvas->DrawPatch(88, 0, gi.W_GetNumForName("M_HTIC"));
 
-// Old Gold skull positions: (40, 10) and (232, 10)
-	gi.GL_DrawPatchCS(37, 80, MauloBaseLump+(frame+2)%7);
-	gi.GL_DrawPatchCS(278, 80, MauloBaseLump+frame);
+	GCanvas->DrawPatch(37, 80, MauloBaseLump+(frame+2)%7);
+	GCanvas->DrawPatch(278, 80, MauloBaseLump+frame);
 }
 
 //==========================================================================
@@ -1394,7 +1376,7 @@ static void DrawClassMenu(void)
 
 	MN_DrTextB_CS("CHOOSE CLASS:", 34, 24);
 	pclass = (pclass_t)CurrentMenu->items[CurrentItPos].option;
-	gi.GL_DrawPatchCS(174, 8, gi.W_GetNumForName(boxLumpName[pclass]));
+	GCanvas->DrawPatch(174, 8, gi.W_GetNumForName(boxLumpName[pclass]));
 	/*if (pclass == 3) //Remi: Corvus, never happens in this source state
 	{
 		gl.GetIntegerv(DGL_A, &alpha);
@@ -1407,7 +1389,7 @@ static void DrawClassMenu(void)
 		gl.Color4ub(255, 255, 255, alpha);
 	}
 	else*/
-	gi.GL_DrawPatchCS(174+24, 8+12,gi.W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
+	GCanvas->DrawPatch(174+24, 8+12,gi.W_GetNumForName(walkLumpName[pclass])+((MenuTime>>3)&3));
 }
 
 //---------------------------------------------------------------------------
@@ -1557,7 +1539,7 @@ static void DrawFileSlots(Menu_t *menu)
 	y = menu->y;
 	for(i = 0; i < 6; i++)
 	{
-		gi.GL_DrawPatchCS(x, y, gi.W_GetNumForName("M_FSLOT"));
+		GCanvas->DrawPatch(x, y, gi.W_GetNumForName("M_FSLOT"));
 		if(SlotStatus[i])
 		{
 			MN_DrTextA_CS(SlotText[i], x+5, y+5);
@@ -1574,7 +1556,7 @@ static void DrawFileSlots(Menu_t *menu)
 
 static void DrawOptionsMenu(void)
 {
-	gi.GL_DrawPatchCS(88, 0, gi.W_GetNumForName("M_HTIC"));
+	GCanvas->DrawPatch(88, 0, gi.W_GetNumForName("M_HTIC"));
 	MN_DrTextB_CS("OPTIONS", 154-MN_TextBWidth("OPTIONS")/2, 56);
 }
 
@@ -2018,10 +2000,10 @@ static void DrawControlsMenu(void)
 
 	// Draw the page arrows.
 	token = (!menu->firstItem || MenuTime&8)? "invgeml2" : "invgeml1";
-	gi.GL_DrawPatchCS(menu->x, menu->y-16, gi.W_GetNumForName(token));
+	GCanvas->DrawPatch(menu->x, menu->y-16, gi.W_GetNumForName(token));
 	token = (menu->firstItem+menu->numVisItems >= menu->itemCount || MenuTime&8)? 
 		"invgemr2" : "invgemr1";
-	gi.GL_DrawPatchCS(312-menu->x, menu->y-16, gi.W_GetNumForName(token));
+	GCanvas->DrawPatch(312-menu->x, menu->y-16, gi.W_GetNumForName(token));
 
 	for(i=0; i<menu->numVisItems && menu->firstItem+i < menu->itemCount; i++, item++)
 	{
@@ -2855,18 +2837,23 @@ boolean MN_Responder(event_t *event)
 
 	if(event->type != ev_keydown && event->type != ev_keyrepeat)
 	{
-		/*if (JournalActive && ((event->type== ev_mouse)||(event->type== ev_mousebdown))) ;
-		else*/
+#ifdef USE_JOURNAL_MOUSE
+		if (JournalActive && ((event->type== ev_mouse)||(event->type== ev_mousebdown))) ;
+		else
+#endif
 		return(false);
 	}
 	key = event->data1;
 
 	if (JournalActive)
 	{
-/*		if (event->type== ev_mouse)
+#ifdef USE_JOURNAL_MOUSE
+		if (event->type== ev_mouse)
 		{
-			mousex = (event->data1 * (mouseSensitivityX*2+5)) / 6;
-			mousey = (event->data2 * (mouseSensitivityY*2+5)) / 6;
+//			int mousex = (event->data1 * (mouseSensitivityX*2+5)) / 6;
+//			int mousey = (event->data2 * (mouseSensitivityY*2+5)) / 6;
+			int mousex = event->data1;
+			int mousey = event->data2;
 			mousesx+=mousex;mousesy-=mousey;
 			if (mousesx<0) mousesx=0; else
 			if (mousesx>300) mousesx=300;
@@ -2880,13 +2867,14 @@ boolean MN_Responder(event_t *event)
 			for(i=0; i<3; i++)
 				if(event->data1 & (1<<i))
 					if (mousesx<80) currentJournal=mousesy/40;
-					else if (mousesx>300 && mousey>180)
+					else if (mousesx>300 && mousesy>180)
 						currentJournalPage= currentJournalPage==1 ? 1 : currentJournalPage+1;
 //					mousebutton[i] = true;
 //
 			currentJournalPage=0;
 			return(false);
-		}*/
+		}
+#endif
 
 		if(key == DDKEY_ESCAPE || key == DDKEY_TAB)
 		{
@@ -3113,13 +3101,13 @@ boolean MN_Responder(event_t *event)
 	{
 		switch(key)
 		{
-/*			case DDKEY_TAB:
+			case DDKEY_TAB:
 				JournalActive=true;
 				if(!netgame && !demoplayback && !demorecording)
 				{
 					paused = true;
 				}
-				return true;*/  //kmod
+				return true;  //kmod
 /*			case 's':
 				SpellsActive=true;
 				if(!netgame && !demoplayback && !demorecording)
@@ -3135,33 +3123,6 @@ boolean MN_Responder(event_t *event)
 					paused = true;
 				}
 				return true;
-/*			case DDKEY_MINUS:
-				if(automapactive)
-				{ // Don't screen size in automap
-					return(false);
-				}
-				SCScreenSize(LEFT_DIR);
-				S_StartSound(NULL, SFX_PICKUP_KEY);
-				gi.Update(DDUF_BORDER | DDUF_FULLSCREEN);
-				return(true);
-			case DDKEY_EQUALS:
-				if(automapactive)
-				{ // Don't screen size in automap
-					return(false);
-				}
-				SCScreenSize(RIGHT_DIR);
-				S_StartSound(NULL, SFX_PICKUP_KEY);
-				gi.Update(DDUF_BORDER | DDUF_FULLSCREEN);
-				return(true);*/
-#ifdef __NeXT__
-			case 'q':
-				MenuActive = false;
-				askforquit = true;
-				typeofask = 5; // suicide
-				return true;
-#endif
-#ifndef __NeXT__
-#endif
 		}
 
 	}
@@ -3528,11 +3489,8 @@ int CCmdMenuAction(int argc, char **argv)
 	}
 	else if(!stricmp(argv[0], "quit"))
 	{
-		if(gamestate == GS_LEVEL || gamestate == GS_FINALE)
-		{
-			SCQuitGame(0);
-			S_StartSound(NULL, SFX_CHAT);
-		}
+		SCQuitGame(0);
+		S_StartSound(NULL, SFX_CHAT);
 	}
 	else if(!stricmp(argv[0], "toggleGamma"))
 	{
@@ -3656,9 +3614,9 @@ static void DrawSlider(Menu_t *menu, int item, int width, int slot)
 	gi.GL_SetPatch(gi.W_GetNumForName("M_SLDMD1"));
 	gi.GL_DrawRectTiled(x-1, y+1, width*8+2, 13, 8, 13);
 
-	gi.GL_DrawPatchCS(x-32, y, gi.W_GetNumForName("M_SLDLT"));
-	gi.GL_DrawPatchCS(x + width*8, y, gi.W_GetNumForName("M_SLDRT"));
-	gi.GL_DrawPatchCS(x+4+slot*8, y+7, gi.W_GetNumForName("M_SLDKB"));
+	GCanvas->DrawPatch(x-32, y, gi.W_GetNumForName("M_SLDLT"));
+	GCanvas->DrawPatch(x + width*8, y, gi.W_GetNumForName("M_SLDRT"));
+	GCanvas->DrawPatch(x+4+slot*8, y+7, gi.W_GetNumForName("M_SLDKB"));
 }
 
 //---------------------------------------------------------------------------
@@ -3669,8 +3627,10 @@ static void DrawSlider(Menu_t *menu, int item, int width, int slot)
 
 void MN_DrawInfo(void)
 {
+	static char *InfoPages[] = { "HELP1", "HELP2", "CREDIT" };
+
 	gi.GL_SetFilter(0);
-	gi.GL_DrawRawScreen(gi.W_GetNumForName("TITLE")+InfoType);
+	GCanvas->DrawRawScreen(gi.W_GetNumForName(InfoPages[InfoType - 1]));
 }
 
 //---------------------------------------------------------------------------
@@ -3683,7 +3643,7 @@ void MN_DrawSpells(void)
 {
 	gi.GL_SetFilter(0);
 	//Draw back
-	gi.GL_DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
+	GCanvas->DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
 }
 
 //---------------------------------------------------------------------------
@@ -3734,16 +3694,8 @@ void MN_DrawUpdating(void)
 	char tmp[3][12][13];
 	char leveldesc[4][40];
 	int i;
-	player_t player;
-	player=players[consoleplayer];
-//	gi.Update(DDUF_FULLSCREEN);
-//	gi.Update(DDUF_BORDER);
-//	gi.GL_SetFilter(0);
-//	gl.Enable(DGL_TEXTURING);
-	//Draw back
-/*	for (i=0;i<3;i++)
-		gi.GL_DrawPatch(131+i*64,127,gi.W_GetNumForName("w_159"));*/
-//	gi.GL_DrawPatch(195,191,gi.W_GetNumForName("w_106"));
+	player_t &player = players[consoleplayer];
+
 	sprintf(leveldesc[0],"YOU'RE LEVEL  %d",player.exp_level);
 	sprintf(leveldesc[1],"EXPERIENCE POINTS: %d",player.experience);
 	sprintf(leveldesc[2],"YOU NEED %d POINTS FOR LEVEL %d",player.next_level-player.experience,player.exp_level+1);
@@ -3842,7 +3794,7 @@ void MN_DrawJournal(void)
 	player_t player;
 	gi.GL_SetFilter(0);
 	//Draw back
-	gi.GL_DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
+	GCanvas->DrawRawScreen(gi.W_GetNumForName("JOURNAL"));
 	player=players[consoleplayer];
 	//Draw Menu, and actual one
 	for (i=0;i<5;i++)
@@ -3894,7 +3846,7 @@ void MN_DrawJournal(void)
 	if (journalPages[currentJournal].pages!=NULL)
 	{
 		MN_DrTextAYellow(journalPages[currentJournal].pages[currentJournalPage].title,200-(MN_TextAWidth(journalPages[currentJournal].pages[currentJournalPage].title)/2),18);
-		if (strcmp(journalPages[currentJournal].pages[currentJournalPage].imageName,"")!=0) gi.GL_DrawPatch(journalPages[currentJournal].pages[currentJournalPage].x,journalPages[currentJournal].pages[currentJournalPage].y,gi.W_GetNumForName(journalPages[currentJournal].pages[currentJournalPage].imageName));
+		if (strcmp(journalPages[currentJournal].pages[currentJournalPage].imageName,"")!=0) GCanvas->DrawPatch(journalPages[currentJournal].pages[currentJournalPage].x,journalPages[currentJournal].pages[currentJournalPage].y,gi.W_GetNumForName(journalPages[currentJournal].pages[currentJournalPage].imageName));
 		for (i=0;i<journalPages[currentJournal].pages[currentJournalPage].num_collss;i++)
 			MN_DrTextA(journalPages[currentJournal].pages[currentJournalPage].colls_side[i],198,i*13+35);	
 		for (i=0;i<journalPages[currentJournal].pages[currentJournalPage].num_colls;i++)
@@ -3902,7 +3854,9 @@ void MN_DrawJournal(void)
 	}
 
 	//Draw Mouse cursor
-//	gi.GL_DrawPatch(mousesx,mousesy,gi.W_GetNumForName("armslot1"));
+#ifdef USE_JOURNAL_MOUSE
+	GCanvas->DrawPatch(mousesx,mousesy,gi.W_GetNumForName("armslot1"));
+#endif
 }
 
 
