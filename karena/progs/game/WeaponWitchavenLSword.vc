@@ -25,9 +25,17 @@
 
 class WeaponWitchavenLSword : Weapon;
 
+// This weapon also has a shield for it, the shield can cover hits coming from the
+// front only, it works with a counter  that is decreased every hit it gets,
+// if the counter reaches zero the shield is over, another counter (activated when
+// the shield isn't being used) will begin increasing the shield's power by using
+// a small amount of mana (every second or so), if the player is attacking the shield
+// won't work at all, and for the shield to recharge the player must be standing still.
+
 int NoMoreManaState;
 float LongSwordRange;
 bool bThrowFireball;
+int Shieldcharge;
 
 //==========================================================================
 //
@@ -115,7 +123,7 @@ void A_WLSwordAttack(void)
 		}
 	}
 
-	if (useMana == 10)
+	if (useMana == 2)
 	{
 		UseWeaponMana();
 		if (!IsWeaponManaUsable())
@@ -123,12 +131,85 @@ void A_WLSwordAttack(void)
 			SetState(NoMoreManaState);
 		}
 	}
-	bThrowFireball = true;
 }
 
 //============================================================================
 //
-//  A_WElectricBall
+//  A_Init
+//
+//============================================================================
+
+void A_Init(void) // Initialize the counters for the shield
+{
+	Shieldcharge = 30; // We have 30 hits before the shield brokes
+	A_WeaponReady();
+}
+
+//============================================================================
+//
+//  A_ShieldAction
+//
+//============================================================================
+
+void A_ShieldAction(void)
+{
+	if (Shieldcharge != 0) // Do we still have enough charge?
+	{
+		Player.MO.bReflective = true;
+		Player.MO.bInvulnerable = true;
+		Shieldcharge--;
+	}
+	else
+	{
+		Player.MO.bReflective = false;
+		Player.MO.bInvulnerable = false;
+	}
+		
+	//A_ShieldCheck();
+	A_WeaponReady();
+}
+
+//============================================================================
+//
+//  A_ShieldCheck
+//
+//============================================================================
+
+void A_ShieldCheck(void)
+{
+	// How much hits we got left??
+	if (Shieldcharge <= 23)
+	{
+		//return S_WLSWORDREADY1_G;
+		SetState(S_WLSWORDREADY1_G); //Second Shield States
+	}
+	if (Shieldcharge <= 17)
+	{
+		//return S_WLSWORDREADY2_G;
+		SetState(S_WLSWORDREADY2_G); //Third Shield States
+	}
+	if (Shieldcharge <= 7)
+	{
+		//return S_WLSWORDREADY3_G;
+		SetState(S_WLSWORDREADY3_G); //Fourth Shield States
+	}
+}
+
+//============================================================================
+//
+//  A_Unprotect
+//
+//============================================================================
+
+void A_Unprotect(void)
+{
+	Player.MO.bReflective = false;
+	Player.MO.bInvulnerable = false;
+}
+
+//============================================================================
+//
+//  A_WElectricBall 
 //
 //============================================================================
 
@@ -217,15 +298,48 @@ __states__
 	S_WLSWORDATK2_15('WDHS', 16, 1.0 / 35.0, S_WLSWORDATK2_16) { }
 	S_WLSWORDATK2_16('WDHS', 16, 1.0 / 35.0, S_WLSWORDATK_1) { A_ReFire(); }
 	// MANA STATES
-	S_WLSWORDREADY_G('WDHP', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_WeaponReady(); }
-	S_WLSWORDREADY_G1('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_WeaponReady(); }
-	S_WLSWORDREADY_G2('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_WeaponReady(); }
-	S_WLSWORDREADY_G3('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_WeaponReady(); }
-	S_WLSWORDREADY_G4('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_WeaponReady(); }
-	S_WLSWORDREADY_G5('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_WeaponReady(); }
-	S_WLSWORDREADY_G6('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_WeaponReady(); }
-	S_WLSWORDREADY_G7('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_WeaponReady(); }
-	S_WLSWORDREADY_G8('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_WeaponReady(); }
+	S_WLSWORDREADY_G0('WDHP', 0, 1.0 / 35.0, S_WLSWORDREADY_G1) { A_Init(); }
+	// FIRST SHIELD STATE
+	S_WLSWORDREADY_G('WDHP', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_ShieldAction(); }
+	S_WLSWORDREADY_G1('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_ShieldAction(); }
+	S_WLSWORDREADY_G2('WDHP', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_ShieldAction(); }
+	S_WLSWORDREADY_G3('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_ShieldAction(); }
+	S_WLSWORDREADY_G4('WDHP', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_ShieldAction(); }
+	S_WLSWORDREADY_G5('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_ShieldAction(); }
+	S_WLSWORDREADY_G6('WDHP', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_ShieldAction(); }
+	S_WLSWORDREADY_G7('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_ShieldAction(); }
+	S_WLSWORDREADY_G8('WDHP', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_ShieldAction(); }
+	// SECOND SHIELD STATE
+	S_WLSWORDREADY1_G('WDH1', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G1('WDH1', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G2('WDH1', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G3('WDH1', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G4('WDH1', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G5('WDH1', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G6('WDH1', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G7('WDH1', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_ShieldAction(); }
+	S_WLSWORDREADY1_G8('WDH1', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_ShieldAction(); }
+	// THIRD SHIELD STATE
+	S_WLSWORDREADY2_G('WDH2', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G1('WDH2', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G2('WDH2', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G3('WDH2', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G4('WDH2', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G5('WDH2', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G6('WDH2', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G7('WDH2', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_ShieldAction(); }
+	S_WLSWORDREADY2_G8('WDH2', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_ShieldAction(); }
+	// FOURTH SHIELD STATE
+	S_WLSWORDREADY3_G('WDH3', 0, 8.0 / 35.0, S_WLSWORDREADY_G1) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G1('WDH3', 1, 2.0 / 35.0, S_WLSWORDREADY_G2) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G2('WDH3', 1, 2.0 / 35.0, S_WLSWORDREADY_G3) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G3('WDH3', 2, 2.0 / 35.0, S_WLSWORDREADY_G4) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G4('WDH3', 2, 2.0 / 35.0, S_WLSWORDREADY_G5) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G5('WDH3', 3, 2.0 / 35.0, S_WLSWORDREADY_G6) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G6('WDH3', 3, 2.0 / 35.0, S_WLSWORDREADY_G7) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G7('WDH3', 4, 2.0 / 35.0, S_WLSWORDREADY_G8) { A_ShieldAction(); }
+	S_WLSWORDREADY3_G8('WDH3', 4, 2.0 / 35.0, S_WLSWORDREADY_G) { A_ShieldAction(); }
+	// ATTACK FRAMES
 	S_WLSWORDDOWN_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDDOWN_G) { A_Lower(); }
 	S_WLSWORDUP_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDUP_G) { A_Raise(); }
 	S_WLSWORDATK_G1('WDHP', 5, 3.0 / 35.0, S_WLSWORDATK_G2) { /*SX = 0.0;*/ }
@@ -252,14 +366,14 @@ __states__
 	S_WLSWORDATK_G22('WDHP', 3, 1.0 / 35.0, S_WLSWORDATK_G23) { SY = 36.0; }
 	S_WLSWORDATK_G23('WDHP', 4, 1.0 / 35.0, S_WLSWORDREADY_G) { }
 	// SECOND STRIKE (MANA CHARGED)
-	S_WLSWORDATK2_G1('WDHP', 14, 3.0 / 35.0, S_WLSWORDATK2_G2) { /*SX = 0.0;*/ }
+	S_WLSWORDATK2_G1('WDHP', 14, 3.0 / 35.0, S_WLSWORDATK2_G2) { /*SX = 0.0;*/ A_Unprotect(); }
 	S_WLSWORDATK2_G2('WDHP', 14, 3.0 / 35.0, S_WLSWORDATK2_G3) { /*SX = 0.0;*/ }
 	S_WLSWORDATK2_G3('WDHP', 15, 2.0 / 35.0, S_WLSWORDATK2_G4) { /*SX = 0.0;*/ }
 	S_WLSWORDATK2_G4('WDHP', 15, 2.0 / 35.0, S_WLSWORDATK2_G5) { /*SX = 0.0;*/ }
 	S_WLSWORDATK2_G5('WDHP', 16, 1.0 / 35.0, S_WLSWORDATK2_G6) { /*SX = 0.0;*/ }
 	S_WLSWORDATK2_G6('WDHP', 16, 1.0 / 35.0, S_WLSWORDATK2_G7) { /*SX = 0.0;*/ }
 	S_WLSWORDATK2_G7('WDHP', 17, 1.0 / 35.0, S_WLSWORDATK2_G8) { A_WLSwordAttack(); }
-	S_WLSWORDATK2_G8('WDHP', 17, 1.0 / 35.0, S_WLSWORDATK2_G9) { /*SX = -20.0;*/ A_WElectricBall(); }
+	S_WLSWORDATK2_G8('WDHP', 17, 1.0 / 35.0, S_WLSWORDATK2_G9) { /*SX = -20.0;*/ }
 	S_WLSWORDATK2_G9('WDHP', 18, 1.0 / 35.0, S_WLSWORDATK2_G10) { }
 	S_WLSWORDATK2_G10('WDHP', 18, 1.0 / 35.0, S_WLSWORDATK2_G11) { /*SX = -15.0;*/ }
 	S_WLSWORDATK2_G11('WDHP', 19, 1.0 / 35.0, S_WLSWORDATK2_G12) { }
@@ -280,7 +394,7 @@ int GetUpState(void)
 {
 	if (IsWeaponManaUsable())
 	{
-		return S_WLSWORDUP_G;
+		return S_WLSWORDUP_G;		
 	}
 	else
 	{
@@ -316,7 +430,19 @@ int GetReadyState(void)
 {
 	if (IsWeaponManaUsable())
 	{
-		return S_WLSWORDREADY_G;
+		//return S_WLSWORDREADY_G0;		
+		if (Shieldcharge <= 23)
+		{
+			return S_WLSWORDREADY1_G;
+		}
+		if (Shieldcharge <= 17)
+		{
+			return S_WLSWORDREADY2_G;
+		}
+		if (Shieldcharge <= 7)
+		{
+			return S_WLSWORDREADY3_G;
+		}
 	}
 	else
 	{
@@ -353,7 +479,7 @@ void GotMana(int InMana)
 {
 	if (InMana == MANA_1 && IsWeaponManaUsable())
 	{
-		SetState(S_WLSWORDREADY_G);
+		SetState(S_WLSWORDREADY_G0); //To initialize the weapon
 	}
 }
 
@@ -369,7 +495,7 @@ defaultproperties
 	AttackState = S_WLSWORDATK2_1;
 	HoldAttackState = S_WLSWORDATK2_1;
 	NoMoreManaState = S_WLSWORDATK_1;
-	LongSwordRange = 3.0 * MELEERANGE / 2.0;
+	LongSwordRange = 9.0 * MELEERANGE / 4.0;
 	wis_mod = true;
 	int_mod = false;
 	dex_mod = true;
