@@ -1935,23 +1935,25 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 			case MT_BISHOP:
 			case MT_POSS_BISHOP:
 				P_SetMobjState(target, S_BISHOP_ICE);
-				return;		
+				return;
 			case MT_CENTAUR:
 			case MT_CENTAURLEADER:
 			case MT_POSS_CENTAUR:
 			case MT_POSS_CENTAURL:
 				P_SetMobjState(target, S_CENTAUR_ICE);
-				return;		
+				return;
 			case MT_DEMON:
-			case MT_DEMON2:
 			case MT_POSS_DEMON:
-			case MT_POSS_DEMON2:
 				P_SetMobjState(target, S_DEMON_ICE);
+				return;
+			case MT_DEMON2:
+			case MT_POSS_DEMON2:
+				P_SetMobjState(target, S_DEMN2_ICE);
 				return;		
 			case MT_SERPENT:
 			case MT_SERPENTLEADER:
 				P_SetMobjState(target, S_SERPENT_ICE);
-				return;		
+				return;
 			case MT_WRAITH:
 			case MT_WRAITHB:
 			case MT_POSS_WRAITH:
@@ -2988,7 +2990,8 @@ void P_DamageMobj
 		return;
 	}
 	if((P_Random() < target->info->painchance ||
-		(target->info->painstate != P_GetPainState(target) && oldHealth >= target->info->spawnhealth / 2))
+		(target->info->painstate != P_GetPainState(target) && 
+			oldHealth >= target->info->spawnhealth / 2))
 		&& !(target->flags&MF_SKULLFLY))
 	{
 		if(inflictor && (inflictor->type >= MT_LIGHTNING_FLOOR
