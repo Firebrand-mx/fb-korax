@@ -148,6 +148,23 @@ SOURCE=.\KGC.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\KObject.cpp
+
+!IF  "$(CFG)" == "ScatteredEvil - Win32 Release"
+
+# ADD CPP /w /W0
+
+!ELSEIF  "$(CFG)" == "ScatteredEvil - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\KRootWindow.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\KWindow.cpp
 # End Source File
 # Begin Source File
@@ -345,6 +362,14 @@ SOURCE=.\KCanvas.h
 # Begin Source File
 
 SOURCE=.\KGC.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KObject.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\KRootWindow.h
 # End Source File
 # Begin Source File
 
