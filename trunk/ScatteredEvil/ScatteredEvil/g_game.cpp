@@ -915,7 +915,7 @@ void G_DoLoadLevel (void)
 			players[i].playerstate = PST_REBORN;
         if(netgame == 0 || (netgame != 0 && deathmatch != 0) 
            || firstFragReset == 1) {
-    		memset (players[i].plr->frags,0,sizeof(players[i].plr->frags));
+    		memset (players[i].frags,0,sizeof(players[i].frags));
             firstFragReset = 0;
         }
 	}
@@ -1454,7 +1454,7 @@ void G_PlayerReborn(int player)
 	uint worldTimer;
 	int i; //Remi test
 
-	memcpy(frags, players[player].plr->frags, sizeof(frags));
+	memcpy(frags, players[player].frags, sizeof(frags));
 	killcount = players[player].killcount;
 	itemcount = players[player].itemcount;
 	secretcount = players[player].secretcount;
@@ -1464,7 +1464,7 @@ void G_PlayerReborn(int player)
 //	memset(p, 0, sizeof(*p));
 	ClearPlayer(p);
 
-	memcpy(players[player].plr->frags, frags, sizeof(players[player].plr->frags));
+	memcpy(players[player].frags, frags, sizeof(players[player].frags));
 	players[player].killcount = killcount;
 	players[player].itemcount = itemcount;
 	players[player].secretcount = secretcount;
@@ -1858,24 +1858,6 @@ void G_Completed(int map, int position)
 	gameaction = ga_completed;
 	LeaveMap = map;
 	LeavePosition = position;
-
-	//Remi: Shops are forced in here
-	if		(gamemap == 2 && map == 13)
-		LeaveMap = 70;
-	else if (gamemap == 12 && map == 27)
-		LeaveMap = 71;
-	else if (gamemap == 27 && map == 22)
-		LeaveMap = 72;
-	else if (gamemap == 23 && map == 35)
-		LeaveMap = 73;
-	else if (gamemap == 35 && map == 40)
-		LeaveMap = 74;
-	else if (gamemap == 42 && map == 48)  //DeathKings HUB 1
-		LeaveMap = 75;
-	else if (gamemap == 48 && map == 54)  //DeathKings HUB 2
-		LeaveMap = 76;
-	else if (gamemap == 54 && map == 60)  //DeathKings HUB 2 Final
-		LeaveMap = 77;
 }
 
 void G_DoCompleted(void)
