@@ -3371,6 +3371,7 @@ bool ExplodeMissile(void)
 		MSG_WriteShort(ftoi(Origin.z));
 		Effects &= ~EF_DLIGHT_MASK;
 	}
+	Effects &= ~EF_DL_ROCKET;
 	return true;
 }
 
@@ -3754,6 +3755,19 @@ void A_Explode(void)
 	{
 		HitFloorType();
 	}
+
+	if ((Effects & EF_DL_ROCKET) && (Effects & EF_DLIGHT_MASK))
+	{
+		//  Spawn explosion effects - dynamic light and particles
+		MSG_Select(MSG_SV_DATAGRAM);
+		MSG_WriteByte(svc_explosion);
+		MSG_WriteShort(ftoi(Origin.x));
+		MSG_WriteShort(ftoi(Origin.y));
+		MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+
+		//  Clear old dynamic light effect
+		Effects &= ~EF_DLIGHT_MASK;
+	}
 }
 
 //============================================================================
@@ -3910,6 +3924,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2005/03/09 18:26:19  firebrand_kh
+//  Fixed Doom Guy's rocket explosion effect
+//
 //  Revision 1.7  2005/02/10 14:58:14  firebrand_kh
 //  Fixed the mage whirlwind deaths to give experience to the player
 //
