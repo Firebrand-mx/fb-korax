@@ -223,19 +223,6 @@ void H2_PostInit(void)
 
 	CreateSavePath();
 	
-	// Setup the console font.
-	// Hexen font is not the default.
-	/*
-	cfont.flags = DDFONT_WHITE;
-	cfont.height = 9;
-	cfont.sizeX = 1.2f;
-	cfont.sizeY = 2;
-	cfont.TextOut = MN_DrTextA_CS;
-	cfont.Width = MN_TextAWidth;
-	cfont.Filter = MN_TextFilter;
-	//gi.SetConsoleFont(&cfont); 
-	*/
-
 	gi.Message("S_Init...\n");
 	S_Init();
 
