@@ -2594,6 +2594,7 @@ void P_DamageMobj
 	fixed_t thrust;
 	int temp;
 	int i;
+	int oldHealth = target->health;
 
     // the actual damage (== damageP * netMobDamageModifier for 
     // any non-player mob)
@@ -2983,7 +2984,7 @@ void P_DamageMobj
 		return;
 	}
 	if((P_Random() < target->info->painchance ||
-		target->info->painstate != P_GetPainState(target))
+		(target->info->painstate != P_GetPainState(target) && oldHealth >= target->info->spawnhealth / 2))
 		&& !(target->flags&MF_SKULLFLY))
 	{
 		if(inflictor && (inflictor->type >= MT_LIGHTNING_FLOOR
