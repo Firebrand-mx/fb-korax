@@ -145,13 +145,13 @@ void G_Drawer(void)
 			|| players[consoleplayer].pclass >= PCLASS_ETTIN) //Remi: Possessed always big screen
 		{
 			// Full screen.
-			R_SetViewSize(0, 0, 320, 200);
+			R_SetViewSize(0, 0, 640, 480);
 		}
 		else
 		{
-			int w = setblocks*32;
-			int h = setblocks*(200-SBARHEIGHT)/10;
-			R_SetViewSize(160-(w>>1), (200-SBARHEIGHT-h)>>1, w, h);
+			int w = setblocks*64;
+			int h = setblocks*(480-SBARHEIGHT*480/200)/10;
+			R_SetViewSize(320-(w>>1), (480-SBARHEIGHT*480/200-h)>>1, w, h);
 		}
 	}
 
@@ -218,7 +218,7 @@ void G_Drawer(void)
 	{
 		if (!netgame)
 		{
-			GCanvas->DrawPatch1(320, viewwindowy*480/200+5, W_GetNumForName("PAUSED"));
+			GCanvas->DrawPatch1(320, viewwindowy+5, W_GetNumForName("PAUSED"));
 		}
 		else
 		{

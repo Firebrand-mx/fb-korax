@@ -376,8 +376,8 @@ struct line_t;
 #define TICRATE			35			// number of tics / second
 #define TICSPERSEC		35
 
-#define SCREENWIDTH		320
-#define SCREENHEIGHT	200
+#define SCREENWIDTH		640
+#define SCREENHEIGHT	480
 
 #define I_NOUPDATE	0
 #define I_FULLVIEW	1

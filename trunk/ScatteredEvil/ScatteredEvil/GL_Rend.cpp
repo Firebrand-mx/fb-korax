@@ -186,13 +186,13 @@ void GL_SwitchTo3DState()
 	gl.Enable(DGL_CULL_FACE);
 	gl.Enable(DGL_DEPTH_TEST);
 
-	viewpx = viewwindowx * screenWidth/320,
-	viewpy = viewwindowy * screenHeight/200;
+	viewpx = viewwindowx * screenWidth/640,
+	viewpy = viewwindowy * screenHeight/480;
 	// Set the viewport.
-	if(viewheight != SCREENHEIGHT)
+	if (viewheight != SCREENHEIGHT)
 	{
-		viewpw = viewwidth * screenWidth/320;
-		viewph = viewheight * screenHeight/200 + 1;
+		viewpw = viewwidth * screenWidth/640;
+		viewph = viewheight * screenHeight/480 + 1;
 		//glViewport(viewpx, screenHeight-viewpy-viewph, viewpw, viewph);
 		gl.Viewport(viewpx, viewpy, viewpw, viewph);
 	}
@@ -212,7 +212,7 @@ void GL_Restore2DState(int step)
 	{
 		gl.MatrixMode(DGL_PROJECTION);
 		gl.LoadIdentity();
-		gl.Ortho(0, 0, 320, (320*viewheight)/viewwidth, -1, 1);
+		gl.Ortho(0, 0, 320, (320*viewheight*200)/(viewwidth*240), -1, 1);
 		gl.MatrixMode(DGL_MODELVIEW);
 		gl.LoadIdentity();
 	}
