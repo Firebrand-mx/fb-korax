@@ -672,6 +672,10 @@ boolean P_GiveBody(player_t *player, int num)
 			break;
 		}
 	}
+	if (player->berserkTics)
+	{
+		num *= 2;
+	}
 
 	if (tsp+player->sp_power>player->maxsp_power)
 		tsp=player->maxsp_power-player->sp_power;

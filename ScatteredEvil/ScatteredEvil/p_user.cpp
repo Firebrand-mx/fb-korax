@@ -539,7 +539,7 @@ void P_DeathThink(player_t *player)
 		char comd[16];
 		int test=(int)(*(float*)gi.GetCVar("r_fov")->ptr);
 		player->possTics--;
-		if (player->pclass == PCLASS_MAGE)	
+		if (player->pclass < PCLASS_ETTIN)
 			sprintf(comd, "r_FOV %d", test-7);
 		else	
 			sprintf(comd, "r_FOV %d", test+7);
@@ -870,7 +870,7 @@ void P_PlayerThink(player_t *player)
 		fov =*(float*)gi.GetCVar("r_fov")->ptr;
 		test=(int)fov;
 		player->possTics--;
-		if (player->pclass == PCLASS_MAGE)	
+		if (player->pclass < PCLASS_ETTIN)
 			sprintf(comd, "r_FOV %d", test-7);
 		else	
 			sprintf(comd, "r_FOV %d", test+7);
