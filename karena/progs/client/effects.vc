@@ -35,7 +35,9 @@ enum
 {
 	pt_static,
 	pt_explode,
-	pt_explode2
+	pt_explode2,
+	pt_chunks,
+	pt_chunks2
 };
 
 addfields particle_t
@@ -239,6 +241,48 @@ void ParseExplosion2(void)
 
 //==========================================================================
 //
+//  ParseIceChunks
+//
+//==========================================================================
+
+void ParseIceChunks(void)
+{
+	TVec org;
+	int i, c;
+	particle_t *p;
+
+	org.x = itof(MSG_ReadShort());
+	org.y = itof(MSG_ReadShort());
+	org.z = itof(MSG_ReadShort());
+
+	for (i = 0; i < 1024; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+		p->die = cl->time + 5.0;
+		c = P_Random() >> 1; 
+		p->color = RGB(c, c, c);
+		p->ramp = Random() * 4.0;
+		if (i & 1)
+		{
+			p->type = pt_chunks;
+		}
+		else
+		{
+			p->type = pt_chunks2;
+		}
+		p->org.x = org.x + ((Random() * 32.0) - 16.0);
+		p->org.y = org.y + ((Random() * 32.0) - 16.0);
+		p->org.z = org.z + ((Random() * 32.0) - 16.0);
+		p->vel.x = (Random() * 512.0) - 256.0;
+		p->vel.y = (Random() * 512.0) - 256.0;
+		p->vel.z = (Random() * 512.0) - 256.0;
+	}
+}
+
+//==========================================================================
+//
 //  ParseServerCommand
 //
 //==========================================================================
@@ -263,6 +307,10 @@ bool ParseServerCommand(int cmd_type)
 		ParseExplosion2();
 		break;
 
+	case svc_chunks:
+		ParseIceChunks();
+		break;
+
 	case svc_fov:
 		SetCvar("FOV", MSG_ReadByte());
 		break;
@@ -284,7 +332,7 @@ void UpdateParticle(particle_t * p)
 	float time1, time2, time3;
 	float dvel;
 	float grav;
-	int i;
+	int i, c;
 	
 	time1 = frametime * 5.0;
 	time2 = frametime * 10.0;	// 15;
@@ -319,6 +367,32 @@ void UpdateParticle(particle_t * p)
 		p->vel.x -= p->vel.x * frametime;
 		p->vel.y -= p->vel.y * frametime;
 		p->vel.z -= p->vel.z * frametime;
+		p->vel.z -= grav;
+		break;
+
+	case pt_chunks:
+		p->ramp += time2;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+		c = P_Random() >> 1; 
+		p->color = RGB(c, c, c);
+		p->vel.x += p->vel.x * (dvel / 2.0);
+		p->vel.y += p->vel.y * (dvel / 2.0);
+		p->vel.z += p->vel.z * (dvel / 2.0);
+		p->vel.z -= grav;
+		break;
+
+	case pt_chunks2:
+		p->ramp += time3;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+		c = P_Random() >> 1;
+		p->color = RGB(c, c, c); //ramp2[ftoi(p->ramp)];
+		p->vel.x -= p->vel.x * (frametime / 2.0);
+		p->vel.y -= p->vel.y * (frametime / 2.0);
+		p->vel.z -= p->vel.z * (frametime / 2.0);
 		p->vel.z -= grav;
 		break;
 	}
@@ -427,6 +501,9 @@ void CL_UpdateMobj(clmobj_t * mobj, int key)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2005/05/05 14:00:58  firebrand_kh
+//  Added ice chunks particle effect
+//
 //  Revision 1.7  2005/03/09 18:26:18  firebrand_kh
 //  Fixed Doom Guy's rocket explosion effect
 //
