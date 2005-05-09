@@ -1148,6 +1148,17 @@ void Damage(Actor inflictor, Actor source, int damage)
 		case MageWhirlWind:
 			inflictor.TouchWhirlwind(self);
 			return;
+		case DarknessMissile:
+			if (bIsPlayer)
+			{
+				BlindPlayer(source, 20);
+			}
+			else if (!bCountKill)
+			{
+				// only damage monsters or players
+				return;
+			}
+			return;
 		case Minotaur:
 			if (inflictor.bSkullFly)
 			{
@@ -1500,6 +1511,98 @@ void PoisonPlayer(Actor poisoner, int poison)
 //==========================================================================
 
 void PoisonDamage(Actor source, int damage, bool playPainSound)
+{
+	Actor inflictor;
+
+	inflictor = source;
+	if (Health <= 0)
+	{
+		return;
+	}
+	if (bInvulnerable && damage < 10000)
+	{	// mobj is invulnerable
+		return;
+	}
+	if (bIsPlayer && gameskill == sk_baby)
+	{
+		// Take half damage in trainer mode
+		damage >>= 1;
+	}
+	if (damage < 1000 && ((Player.Cheats & CF_GODMODE)
+			|| Player.Powers[pw_invulnerability]))
+	{
+		return;
+	}
+	if (damage >= Player.Health && ((gameskill == sk_baby) || deathmatch) &&
+		!Player.MorphTime)
+	{
+		// Try to use some inventory health
+		AutoUseHealth(damage - Player.Health + 1);
+	}
+	Player.Health -= damage;	// mirror mobj health here for Dave
+	if (Player.Health < 0)
+	{
+		Player.Health = 0;
+	}
+	Player.Attacker = source;
+
+	//
+	// do the damage
+	//
+	Health -= damage;
+	if (Health <= 0)
+	{
+		// Death
+		_Special1 = damage;
+		if (bIsPlayer && inflictor && !Player.MorphTime)
+		{
+			// Check for flame death
+			if (inflictor.bFireDamage && (Health > -50) && (damage > 25))
+			{
+				bFireDamage = true;
+			}
+			if (inflictor.bIceDamage)
+			{
+				bIceDamage = true;
+			}
+		}
+		Died(source);
+		return;
+	}
+	if (!(level->tictime & 63) && playPainSound)
+	{
+		SetState(PainState);
+	}
+}
+
+//==========================================================================
+//
+//  BlindPlayer
+//
+//==========================================================================
+
+void BlindPlayer(Actor blinder, int blind)
+{
+	if ((Player.Cheats & CF_GODMODE) || Player.Powers[pw_invulnerability])
+	{
+		return;
+	}
+	Player.BlindCount += blind;
+	Player.Blinder = blinder;
+	if (Player.BlindCount > 220)
+	{
+		Player.BlindCount = 220;
+	}
+	Player.LastBlindTime = level->time;
+}
+
+//==========================================================================
+//
+//  BlindDamage
+//
+//==========================================================================
+
+void BlindDamage(Actor source, int damage, bool playPainSound)
 {
 	Actor inflictor;
 
@@ -3940,6 +4043,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2005/05/09 22:49:29  firebrand_kh
+//  Fixed Weapon of Darkness to blind the Player
+//
 //  Revision 1.10  2005/05/05 14:01:06  firebrand_kh
 //  Added ice chunks particle effect
 //

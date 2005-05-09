@@ -110,7 +110,7 @@ void A_FHammerAttack(void)
 
 void A_FHammerThrow(void)
 {
-	Actor pmo;
+/*	Actor pmo;
 	TVec org;
 
 	pmo = Player.MO;
@@ -118,12 +118,58 @@ void A_FHammerThrow(void)
 	{
 		return;
 	}
-//	PlayerPawn(Player.MO).SpawnPlayerMissile(DarknessMissile);
 	org = pmo.Origin;
 	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
 	org.z -= pmo.FloorClip;
 	UseWeaponMana();
+//	Player.SpawnPlayerMissile(DarknessMissile);
+	Actor mo = Spawn(DarknessMissile, org);*/
+//OLD BEHAVIOR UP
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+	PlayerPawn pmo;
+
+	pmo = PlayerPawn(Player.MO);
+
+	angles = pmo.Angles;
+	AimLineAttack(pmo, &angles, 16.0 * 64.0);
+	if (!linetarget)
+	{
+		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
+		AimLineAttack(pmo, &angles, 16.0 * 64.0);
+		if (!linetarget)
+		{
+			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
+			AimLineAttack(pmo, &angles, 16.0 * 64.0);
+			if (!linetarget)
+			{
+				angles.yaw = pmo.Angles.yaw;
+			}
+		}
+	}
+	org = pmo.Origin;
+	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
+	org.z -= pmo.FloorClip;
+	
 	Actor mo = Spawn(DarknessMissile, org);
+	mo.Instigator = pmo;
+	mo.Angles = angles;
+	AngleVector(&angles, &vforward);
+
+	mo.Speed = 10.0;
+	mo.bMissile = true;
+	mo.bRip = true;
+	vforward.z = 0.0;
+
+	mo.Velocity = vforward * mo.Speed;
+	mo.Origin += mo.Velocity;
+	mo.TryMove(mo.Origin);
+
+	DarknessMissile dm = DarknessMissile(mo);
+	dm.InitMe(pmo);
+	
+	UseWeaponMana();
 }
 
 /*THIRD*/
@@ -142,12 +188,15 @@ defaultproperties
 	int_mod = false;
 	dex_mod = true;
 	str_mod = true;
-	PickUpMessage = "HALF HAMMER OF RETRIBUTION";
+	PickUpMessage = "WEAPON OF DARKNESS";
 }
 
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2005/05/09 22:49:29  firebrand_kh
+//  Fixed Weapon of Darkness to blind the Player
+//
 //  Revision 1.1  2004/11/16 13:33:22  dj_jl
 //  Initial import.
 //
