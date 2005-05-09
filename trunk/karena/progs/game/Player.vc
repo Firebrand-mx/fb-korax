@@ -100,6 +100,12 @@ Actor Attacker;
 float DamageFlash;
 float BonusFlash;
 
+// Flash for the Darkness Missile
+int BlindCount;
+float LastBlindTime;
+Actor Blinder;		// none for non-player mobjs
+int count;
+
 int PoisonCount;	// screen flash for poison damage
 float LastPoisonTime;
 Actor Poisoner;		// none for non-player mobjs
@@ -169,6 +175,7 @@ void SpawnClient()
 
 	Attacker = none;
 	Poisoner = none;
+	Blinder = none;
 
 	if (netgame && !deathmatch)
 	{
@@ -2603,6 +2610,22 @@ void PlayerTick(float deltaTime)
 		MO.PoisonDamage(Poisoner, 1, true);
 	}
 
+	// Darkness blinding effect
+	if (BlindCount && level->time - LastBlindTime >= 0.5)
+	{
+		BlindCount -= 5;
+		count += 1;
+		if (BlindCount < 0)
+		{
+			BlindCount = 0;
+		}
+		LastBlindTime = level->time;
+		if(count % 5 == 0)
+		{
+			MO.BlindDamage(Blinder, 1, true);
+		}
+	}
+
 	if (DamageFlash)
 	{
 		DamageFlash -= deltaTime;
@@ -2709,6 +2732,14 @@ void PaletteFlash()
 			Palette = NUMPOISONPALS - 1;
 		}
 		Palette += STARTPOISONPALS;
+	}
+	else if (BlindCount)
+	{
+		Palette = (BlindCount + 7) >> 3;
+		if (Palette >= (CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, 255)))
+		{
+			Palette = CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+		}
 	}
 	else if (DamageFlash)
 	{
@@ -4080,6 +4111,7 @@ void UnarchivePlayer()
 {
 	Attacker = none;
 	Poisoner = none;
+	Blinder = none;
 }
 
 defaultproperties
@@ -4089,6 +4121,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2005/05/09 22:49:29  firebrand_kh
+//  Fixed Weapon of Darkness to blind the Player
+//
 //  Revision 1.10  2005/03/28 07:58:56  dj_jl
 //  Latest Vavoom updates.
 //

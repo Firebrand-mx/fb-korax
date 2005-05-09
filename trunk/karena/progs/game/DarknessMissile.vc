@@ -29,12 +29,27 @@ int LifeCount;
 
 //==========================================================================
 //
+//	InitMe
+//
+//==========================================================================
+
+void InitMe(Actor InstigatedBy)
+{
+	LifeCount = 36 + (P_Random() & 7);
+	Instigator = InstigatedBy;
+	bColideWithThings = true;
+	bColideWithWorld = true;
+}
+
+//==========================================================================
+//
 //  A_ChkDeath
 //
 //==========================================================================
 
 void A_ChkDeath(void)
 {
+	P_RadiusAttack(self, Instigator, 4, 40.0, true);
 	if (!--LifeCount)
 	{
 		SetState(DeathState);
@@ -58,13 +73,15 @@ defaultproperties
 	IdleState = S_DARK_MISSILE_1;
 	DeathState = S_DARK_MISSILE_X1;
 	DeathSound = 'FighterHammerExplode';
-	Effects = EF_DL_DARK;
-	LifeCount = 36;
+	Effects = EF_DL_DARK;	
 }
 
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2005/05/09 22:49:29  firebrand_kh
+//  Fixed Weapon of Darkness to blind the Player
+//
 //  Revision 1.1  2004/11/16 13:33:21  dj_jl
 //  Initial import.
 //
