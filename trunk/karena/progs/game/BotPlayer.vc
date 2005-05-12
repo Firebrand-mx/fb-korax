@@ -655,9 +655,12 @@ void BotAim(void)
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	/*if ((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon >= WP_THIRD) ||
-		(player.PClass == PCLASS_CLERIC && player.ReadyWeapon >= WP_SECOND) ||
-		(player.PClass == PCLASS_MAGE))*/
+	if ((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon >= WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+		(player.PClass == PCLASS_CLERIC && player.ReadyWeapon >= WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
+		(player.PClass == PCLASS_MAGE && player.ReadyWeapon >= WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
+		(player.PClass == PCLASS_HERETIC && player.ReadyWeapon >= WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+		(player.PClass == PCLASS_MARINE && player.ReadyWeapon >= WP_FIFTH || WP_SEVENTH || WP_EIGHTH) || 
+		(player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon >= WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH))
 	if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon]>48.0)
 	{
 		// Projectile weapons
@@ -887,8 +890,8 @@ void Roam(void)
 //
 //	Move
 //
-//	Main bot movement function. Dodging/attacking movement is also handled
-// here
+//	Main bot movement function.
+//	Dodging/attacking movement is also handled here
 //
 //==========================================================================
 
@@ -1047,7 +1050,7 @@ void Move(float deltaTime)
 		if (item)
 		{
 			if (bItemIsPowerup ||
-				(bItemIsWeapon && player.ReadyWeapon == WP_FIRST))
+				(bItemIsWeapon && player.ReadyWeapon == WP_FIRST || WP_SECOND))
 			{
 				Roam();
 				return;
@@ -1070,9 +1073,10 @@ void Move(float deltaTime)
 		}
 
 		if (CheckTo(enemy.Origin) && dist >
-			combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon]) {
-			/*if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon]==48.0)
-			print("Going forward %d %d",forwardmove,sidemove);*/
+			combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon])
+		{
+			//if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon] == 48.0)
+			//print("Going forward %d %d", forwardmove, sidemove);
 			forwardmove = FORWARDRUN;
 		}
 		else
@@ -1273,55 +1277,65 @@ void OnBeginPlay(void)
 	strcpy(ARR2STR(player.UserInfo), binfo->userinfo);
 
 	// Setup combat distance tables
-//[Korax]
-	//if (deathmatch)
+	//[Korax]
+	//[FB] What a terrible mess!!
+	if (deathmatch)
 	{
-		float mod = 2.0;
+		float mod = 1.0;
 		/* FIGHTER */
-		combatdist[WP_FIRST]		= 48.0;
-		combatdist[WP_SECOND]		= 48.0;
-		combatdist[WP_THIRD]		= 48.0;
-		combatdist[WP_FOURTH]		= 256.0 / mod;
-		combatdist[WP_FIFTH]		= 256.0 / mod;
-		combatdist[WP_SIXTH]		= 192.0 / mod;
-		combatdist[WP_SEVENTH]		= 48.0;
-		combatdist[WP_EIGHTH]		= 256.0 / mod;
+		combatdist[WP_FIRST]			= 48.0;
+		combatdist[WP_SECOND]			= 48.0;
+		combatdist[WP_THIRD]			= 48.0;
+		combatdist[WP_FOURTH]			= 256.0 / mod;
+		combatdist[WP_FIFTH]			= 384.0 / mod;
+		combatdist[WP_SIXTH]			= 192.0 / mod;
+		combatdist[WP_SEVENTH]			= 48.0;
+		combatdist[WP_EIGHTH]			= 256.0 / mod;
 		/* CLERIC */
+		combatdist[4 + WP_FIRST]		= 48.0;
+		combatdist[4 + WP_SECOND]		= 192.0 / mod;
+		combatdist[4 + WP_THIRD]		= 48.0;
+		combatdist[4 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[4 + WP_FIFTH]		= 192.0 / mod;
+		combatdist[4 + WP_SIXTH]		= 1.0;
+		combatdist[4 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
+		combatdist[4 + WP_EIGHTH]		= 384.0 / mod;
+		/* MAGE */
 		combatdist[8 + WP_FIRST]		= 48.0;
 		combatdist[8 + WP_SECOND]		= 192.0 / mod;
-		combatdist[8 + WP_THIRD]		= 1.0;
+		combatdist[8 + WP_THIRD]		= 192.0 / mod;
 		combatdist[8 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[8 + WP_FIFTH]		= 192.0 / mod;
-		combatdist[8 + WP_SIXTH]		= 48.0;
-		combatdist[8 + WP_SEVENTH]		= 256.0 / mod;
+		combatdist[8 + WP_FIFTH]		= 384.0 / mod;
+		combatdist[8 + WP_SIXTH]		= 192.0 / mod;
+		combatdist[8 + WP_SEVENTH]		= 384.0 / mod;
 		combatdist[8 + WP_EIGHTH]		= 384.0 / mod;
-		/* MAGE */
+		/* HERETIC */
 		combatdist[16 + WP_FIRST]		= 48.0;
-		combatdist[16 + WP_SECOND]		= 192.0 / mod;
+		combatdist[16 + WP_SECOND]		= 256.0 / mod;
 		combatdist[16 + WP_THIRD]		= 192.0 / mod;
 		combatdist[16 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[16 + WP_FIFTH]		= 384.0 / mod;
-		combatdist[16 + WP_SIXTH]		= 192.0 / mod;
-		combatdist[16 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[16 + WP_FIFTH]		= 256.0 / mod;
+		combatdist[16 + WP_SIXTH]		= 384.0 / mod;
+		combatdist[16 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
 		combatdist[16 + WP_EIGHTH]		= 384.0 / mod;
-		/* HERETIC */
+		/* MARINE */
 		combatdist[24 + WP_FIRST]		= 48.0;
 		combatdist[24 + WP_SECOND]		= 192.0 / mod;
 		combatdist[24 + WP_THIRD]		= 256.0 / mod;
 		combatdist[24 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[24 + WP_FIFTH]		= 256.0 / mod;
+		combatdist[24 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
 		combatdist[24 + WP_SIXTH]		= 256.0 / mod;
-		combatdist[24 + WP_SEVENTH]		= 48.0;
+		combatdist[24 + WP_SEVENTH]		= 384.0 / mod;
 		combatdist[24 + WP_EIGHTH]		= 192.0 / mod;
-		/* MARINE */
-		combatdist[32 + WP_FIRST]		= 48.0;
-		combatdist[32 + WP_SECOND]		= 192.0 / mod;
-		combatdist[32 + WP_THIRD]		= 256.0 / mod;
-		combatdist[32 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[32 + WP_FIFTH]		= 256.0 / mod;
-		combatdist[32 + WP_SIXTH]		= 256.0 / mod;
-		combatdist[32 + WP_SEVENTH]		= 256.0 / mod;
-		combatdist[32 + WP_EIGHTH]		= 192.0 / mod;
+		/* WITCHAVEN */
+		combatdist[28 + WP_FIRST]		= 48.0;
+		combatdist[28 + WP_SECOND]		= 48.0;
+		combatdist[28 + WP_THIRD]		= 256.0 / mod;
+		combatdist[28 + WP_FOURTH]		= 384.0 / mod;
+		combatdist[28 + WP_FIFTH]		= 48.0;
+		combatdist[28 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[28 + WP_SEVENTH]		= 256.0;
+		combatdist[28 + WP_EIGHTH]		= 256.0 / mod;
 
 
 		/*combatdist[4 + WP_FIRST]	= 48.0;
@@ -1333,9 +1347,67 @@ void OnBeginPlay(void)
 		combatdist[8 + WP_THIRD]	= 384.0;
 		combatdist[8 + WP_FOURTH]	= 384.0;*/
 	}
-	/*else
+	else
 	{
-		combatdist[WP_FIRST]		= 48.0;
+
+		float mod = 1.0;
+		/* FIGHTER */
+		combatdist[WP_FIRST]			= 48.0;
+		combatdist[WP_SECOND]			= 48.0;
+		combatdist[WP_THIRD]			= 48.0;
+		combatdist[WP_FOURTH]			= 256.0 / mod;
+		combatdist[WP_FIFTH]			= 384.0 / mod;
+		combatdist[WP_SIXTH]			= 192.0 / mod;
+		combatdist[WP_SEVENTH]			= 48.0;
+		combatdist[WP_EIGHTH]			= 256.0 / mod;
+		/* CLERIC */
+		combatdist[4 + WP_FIRST]		= 48.0;
+		combatdist[4 + WP_SECOND]		= 192.0 / mod;
+		combatdist[4 + WP_THIRD]		= 48.0;
+		combatdist[4 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[4 + WP_FIFTH]		= 192.0 / mod;
+		combatdist[4 + WP_SIXTH]		= 1.0;
+		combatdist[4 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
+		combatdist[4 + WP_EIGHTH]		= 384.0 / mod;
+		/* MAGE */
+		combatdist[8 + WP_FIRST]		= 48.0;
+		combatdist[8 + WP_SECOND]		= 192.0 / mod;
+		combatdist[8 + WP_THIRD]		= 192.0 / mod;
+		combatdist[8 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[8 + WP_FIFTH]		= 384.0 / mod;
+		combatdist[8 + WP_SIXTH]		= 192.0 / mod;
+		combatdist[8 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[8 + WP_EIGHTH]		= 384.0 / mod;
+		/* HERETIC */
+		combatdist[16 + WP_FIRST]		= 48.0;
+		combatdist[16 + WP_SECOND]		= 256.0 / mod;
+		combatdist[16 + WP_THIRD]		= 192.0 / mod;
+		combatdist[16 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[16 + WP_FIFTH]		= 256.0 / mod;
+		combatdist[16 + WP_SIXTH]		= 384.0 / mod;
+		combatdist[16 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
+		combatdist[16 + WP_EIGHTH]		= 384.0 / mod;
+		/* MARINE */
+		combatdist[24 + WP_FIRST]		= 48.0;
+		combatdist[24 + WP_SECOND]		= 192.0 / mod;
+		combatdist[24 + WP_THIRD]		= 256.0 / mod;
+		combatdist[24 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[24 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
+		combatdist[24 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[24 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[24 + WP_EIGHTH]		= 192.0 / mod;
+		/* WITCHAVEN */
+		combatdist[28 + WP_FIRST]		= 48.0;
+		combatdist[28 + WP_SECOND]		= 48.0;
+		combatdist[28 + WP_THIRD]		= 256.0 / mod;
+		combatdist[28 + WP_FOURTH]		= 384.0 / mod;
+		combatdist[28 + WP_FIFTH]		= 48.0;
+		combatdist[28 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[28 + WP_SEVENTH]		= 256.0;
+		combatdist[28 + WP_EIGHTH]		= 256.0 / mod;
+
+
+/*		combatdist[WP_FIRST]		= 48.0;
 		combatdist[WP_SECOND]		= 48.0;
 		combatdist[WP_THIRD]		= 192.0 / 2.0;
 		combatdist[WP_FOURTH]		= 256.0 / 2.0;
@@ -1346,8 +1418,8 @@ void OnBeginPlay(void)
 		combatdist[8 + WP_FIRST]	= 192.0 / 2.0;
 		combatdist[8 + WP_SECOND]	= 256.0 / 2.0;
 		combatdist[8 + WP_THIRD]	= 384.0 / 2.0;
-		combatdist[8 + WP_FOURTH]	= 384.0 / 2.0;
-	}*/
+		combatdist[8 + WP_FOURTH]	= 384.0 / 2.0;*/
+	}
 }
 
 //==========================================================================
@@ -1360,6 +1432,12 @@ void OnSpawn(void)
 {
 	enemy = none;
 }
+
+//==========================================================================
+//
+//	GaveMana
+//
+//==========================================================================
 
 void GaveMana(int mana)
 {
@@ -1384,6 +1462,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2005/05/12 20:54:06  firebrand_kh
+//  Fixed and made a small check for the combat distance for bots
+//
 //  Revision 1.1  2004/11/16 13:33:21  dj_jl
 //  Initial import.
 //
