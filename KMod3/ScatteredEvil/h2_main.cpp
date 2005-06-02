@@ -83,6 +83,7 @@ boolean dontrender;			// don't render the player view (debug)
 skill_t startskill;
 int startepisode;
 int startmap;
+float startexpmod;
 
 // Network games parameters.
 byte netMap=1, netClass=0, netColor=0, netSkill=2, netSlot=0; // netSlot zero is 'no slot'
@@ -150,6 +151,7 @@ void H2_PreInit(void)
 	startepisode = 1;
 	startskill = sk_medium;
 	startmap = 1;
+	startexpmod = 1.0;
 
 	HandleArgs();
 }
@@ -259,7 +261,7 @@ void H2_PostInit(void)
 		if(autostart || netgame)
 		{
 			G_StartNewInit();
-			G_InitNew(startskill, startepisode, startmap);
+			G_InitNew(startskill, startepisode, startmap, startexpmod);
 		}
 		else
 		{

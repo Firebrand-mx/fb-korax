@@ -33,7 +33,7 @@ extern void P_UndoPossessMonster(mobj_t *actor, player_t *player); //Remi
 boolean G_CheckDemoStatus (void);
 void G_ReadDemoTiccmd (ticcmd_t *cmd);
 void G_WriteDemoTiccmd (ticcmd_t *cmd);
-void G_InitNew (skill_t skill, int episode, int map);
+void G_InitNew (skill_t skill, int episode, int map, float expmod);
 
 void G_DoReborn (int playernum);
 
@@ -62,6 +62,7 @@ skill_t         gameskill;
 int             gameepisode;
 int             gamemap;
 int				 prevmap;
+float			gameexpmod;
 
 boolean         paused;
 boolean         sendpause;              // send a pause event next tic
@@ -169,7 +170,7 @@ fixed_t sppower_table[NUMCLASSES][5] =		//No longer needed due to new attribute 
 
 fixed_t skillp_table[5] =
 {
-	10,10,7,5,5
+	6,6,5,4,4
 };
 
 fixed_t MaxPlayerMove[NUMCLASSES] = { 0x3C, 0x32, 0x2D, 0x32, 0x31, 0x14, 0x15, 0x14, 0x14, 0x16, 
@@ -259,6 +260,7 @@ extern externdata_t *i_ExternData;
 #endif
 
 static skill_t TempSkill;
+static float TempExpMod;
 static int TempEpisode;
 static int TempMap;
 
@@ -1598,7 +1600,6 @@ void G_DoReborn(int playernum)
 	unsigned int money;
 
 
-
 	if(G_CheckDemoStatus())
 	{
 		return;
@@ -1741,7 +1742,7 @@ void G_StartNewInit(void)
 //
 //==========================================================================
 
-void G_StartNewGame(skill_t skill)
+void G_StartNewGame(skill_t skill, float expmod)
 {
 	int realMap;
 
@@ -1756,7 +1757,7 @@ void G_StartNewGame(skill_t skill)
 	{
 		realMap = 1;
 	}
-	G_InitNew(TempSkill, 1, realMap);
+	G_InitNew(TempSkill, 1, realMap, TempExpMod);
 }
 
 //==========================================================================
@@ -2014,9 +2015,10 @@ void G_DoSaveGame(void)
 //
 //==========================================================================
 
-void G_DeferredNewGame(skill_t skill)
+void G_DeferredNewGame(skill_t skill, int expmod)
 {
 	TempSkill = skill;
+	TempExpMod = expmod / 10.0;
 	gameaction = ga_newgame;
 }
 
@@ -2028,7 +2030,7 @@ void G_DeferredNewGame(skill_t skill)
 
 void G_DoNewGame(void)
 {
-	G_StartNewGame(TempSkill);
+	G_StartNewGame(TempSkill, TempExpMod);
 	gameaction = ga_nothing;
 }
 
@@ -2053,11 +2055,11 @@ void G_DeferedInitNew(skill_t skill, int episode, int map)
 void G_DoInitNew(void)
 {
 	SV_InitBaseSlot();
-	G_InitNew(TempSkill, TempEpisode, TempMap);
+	G_InitNew(TempSkill, TempEpisode, TempMap, TempExpMod);
 	gameaction = ga_nothing;
 }
 
-void G_InitNew(skill_t skill, int episode, int map)
+void G_InitNew(skill_t skill, int episode, int map, float expmod)
 {
 	int i;
 
@@ -2107,6 +2109,7 @@ void G_InitNew(skill_t skill, int episode, int map)
 	gameepisode = episode;
 	gamemap = map;
 	gameskill = skill;
+	gameexpmod = expmod;
 	//BorderNeedRefresh = true;
 	DD_GameUpdate(DDUF_BORDER);
 
@@ -2194,7 +2197,7 @@ void G_RecordDemo (skill_t skill, int numplayers, int episode, int map, char *na
 {
 	int             i;
 	MenuPValues = Defaultroll(PlayerClass[consoleplayer]);
-	G_InitNew (skill, episode, map);
+	G_InitNew (skill, episode, map, 1.0);
 	usergame = false;
 	strcpy (demoname, name);
 	strcat (demoname, ".lmp");
@@ -2253,7 +2256,7 @@ void G_DoPlayDemo (void)
 	MenuPValues = Defaultroll(PlayerClass[consoleplayer]);
 
 	precache = false;               // don't spend a lot of time in loadlevel
-	G_InitNew (skill, episode, map);
+	G_InitNew (skill, episode, map, 1.0);
 	precache = true;
 	usergame = false;
 	demoplayback = true;
@@ -2300,7 +2303,7 @@ void G_TimeDemo (char *name)
 	G_StartNewInit();
 
 	precache = true;   
-	G_InitNew (skill, episode, map);
+	G_InitNew (skill, episode, map, 1.0);
 	usergame = false;
 	demoplayback = true;
 	timingdemo = true;

@@ -21,7 +21,7 @@ class KMenuScreenExpMod:public KMenuScreen
 
 	void ProcessCustomMenuAction(int Key)
 	{
-		MenuExpMod = Key;
+		MenuPExpMod = Key;
 		SetMenu(MENU_CHAR);
 	}
 

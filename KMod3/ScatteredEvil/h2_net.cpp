@@ -153,7 +153,7 @@ int H2_NetServerStarted(int before)
 	if(!netSlot)
 	{
 		G_StartNewInit();
-		G_InitNew((skill_t)netSkill, 1, P_TranslateMap(netMap));
+		G_InitNew((skill_t)netSkill, 1, P_TranslateMap(netMap), 1.0);
 	}
 	else
 	{

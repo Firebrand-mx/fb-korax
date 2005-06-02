@@ -60,7 +60,7 @@ class KMenuScreenSkill:public KMenuScreen
 	{
 		MenuPValues = Reroll(MenuPClass);
 		MenuPSkill = Key;
-		SetMenu(MENU_CHAR);
+		SetMenu(MENU_EXPMOD);
 	}
 
 	void DrawWindow(KGC *gc)

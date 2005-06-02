@@ -39,7 +39,7 @@ class KMenuScreenChar:public KMenuScreen
 		}
 
 		PlayerClass[consoleplayer] = (pclass_t)MenuPClass;
-		G_DeferredNewGame((skill_t)MenuPSkill);
+		G_DeferredNewGame((skill_t)MenuPSkill, MenuPExpMod);
 		SB_SetClassData();
 		SB_state = -1;
 		MN_DeactivateMenu();
