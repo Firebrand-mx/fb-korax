@@ -128,7 +128,7 @@ int		MenuTime;
 
 static int MenuPClass;
 static int MenuPSkill;
-static float MenuExpMod;
+static int MenuPExpMod;
 chr_val MenuPValues = { 10, 80, 8, 2, 10, 10, 10 };	// -JL- Added default values
 static boolean soundchanged;
 

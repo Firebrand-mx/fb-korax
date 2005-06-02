@@ -282,6 +282,8 @@ void SV_SaveGame(int slot, char *description)
 	// Write current map and difficulty
 	StreamOutByte(gamemap);
 	StreamOutByte(gameskill);
+	// And the ExpMod
+	StreamOutByte(gameexpmod);
 
 	// Write global script info
 	StreamOutBuffer(WorldVars, sizeof(WorldVars));
@@ -386,6 +388,7 @@ void SV_LoadGame(int slot)
 	gameepisode = 1;
 	gamemap = GET_BYTE;
 	gameskill = (skill_t)GET_BYTE;
+	gameexpmod = GET_BYTE;
 
 	// Read global script info
 	memcpy(WorldVars, SavePtr.b, sizeof(WorldVars));
@@ -511,7 +514,7 @@ void SV_MapTeleport(int map, int position)
 	}
 	else
 	{ // New map
-		G_InitNew(gameskill, gameepisode, gamemap);
+		G_InitNew(gameskill, gameepisode, gamemap, gameexpmod);
 
 		// Destroy all freshly spawned players
 		for(i = 0; i < MAXPLAYERS; i++)
@@ -670,7 +673,7 @@ void SV_LoadMap(void)
 	char fileName[100];
 
 	// Load a base level
-	G_InitNew(gameskill, gameepisode, gamemap);
+	G_InitNew(gameskill, gameepisode, gamemap, gameexpmod);
 
 	// Remove all thinkers
 	RemoveAllThinkers();

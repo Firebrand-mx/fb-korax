@@ -1338,7 +1338,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher)
 			return;
 		case SPR_ABGM:
 			TryPickupArtifact(player, arti_puzzgembig, special);
-			Give_Level(player,(gameskill<2?5:(gameskill<3?4:3)));
 			return;
 		case SPR_AGMR:
 			TryPickupArtifact(player, arti_puzzgemred, special);
@@ -1633,7 +1632,7 @@ void Give_Experience(player_t *player,int experience)
 	} 
 	else 
 	{
-		player->experience+=experience;
+		player->experience+=(experience * gameexpmod);
 		while (player->experience>=player->next_level && (cl<PCLASS_PIG))
 		{
 			
@@ -1705,7 +1704,7 @@ void Give_Experience(player_t *player,int experience)
 					P_SetYellowMessage(player, "YOU CAN HAVE THE GREY WAND!", false);
 					break;
 				case 5:
-					P_SetYellowMessage(player, "YOU CAN NOW CAST REPULSION!", false);
+					P_SetYellowMessage(player, "YOU CAN NOW CAST DEFENCE!", false);
 					break;
 				case 6:
 					P_SetYellowMessage(player, "YOU NOW HAVE THE RED WAND!", false);
@@ -1881,7 +1880,7 @@ void P_KillMobj(mobj_t *source, mobj_t *target)
 					p = &players[consoleplayer];
 				}
 				// -JL- must use P_Random in gameplay code
-				Give_Experience(p,target->experience*((90+(double)P_Random()/255*21)/100)*(gameskill<2?125:(gameskill<3?100:80))/100);
+				Give_Experience(p,target->experience*((90+(double)P_Random()/255*21)/100)*(gameskill<2?125:(gameskill<3?100:80))/1000);
 			}
 		}
 		else

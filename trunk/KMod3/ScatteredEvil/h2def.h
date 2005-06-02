@@ -838,7 +838,9 @@ extern	int			gameepisode;
 extern	int			gamemap;
 extern 	int 		prevmap;
 extern	int			levelstarttic;		// gametic at level start
-extern	int			leveltime;			// tics in game play for par
+extern	int			leveltime;
+extern	float		gameexpmod;
+			// tics in game play for par
 
 extern int			gametic, maketic;
 extern int			ticdup, server, limbo;
@@ -865,6 +867,7 @@ extern int bodyqueslot;
 extern skill_t startskill;
 extern int startepisode;
 extern int startmap;
+extern float startexpmod;
 extern boolean autostart;
 
 extern byte netMap, netClass, netColor, netSkill, netSlot;
@@ -908,13 +911,13 @@ void H2_SetFilter(int filter);
 
 void G_DeathMatchSpawnPlayer (int playernum);
 
-void G_InitNew (skill_t skill, int episode, int map);
+void G_InitNew (skill_t skill, int episode, int map, float expmod);
 
 void G_DeferedInitNew (skill_t skill, int episode, int map);
 // can be called by the startup code or M_Responder
 // a normal game starts at map 1, but a warp test can start elsewhere
 
-void G_DeferredNewGame(skill_t skill);
+void G_DeferredNewGame(skill_t skill, int expmod);
 
 void G_DeferedPlayDemo (char *demo);
 void G_DoPlayDemo (void);

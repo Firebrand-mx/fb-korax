@@ -207,8 +207,8 @@ inline void VectorAngles(const TVec &vec, TAVec &angles)
 //**************************************************************************
 //
 //	$Log$
-//	Revision 1.1  2004/12/30 10:51:07  tache_man
-//	Initial
+//	Revision 1.2  2005/06/02 22:28:28  tache_man
+//	Final KMod3 Code
 //
 //	Revision 1.1  2002/06/29 16:16:55  dj_jl
 //	Started a work on new conversation system.
