@@ -44,12 +44,33 @@ bool lastpos_valid;
 Actor missile;			// A threathing missile that got to be avoided.
 
 Actor ally;			// Ally to tag along with
+Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
+				// pointed to by this. Allows bot to roam to it if
+				// necessary.
+
+enemyinfo_t enemyinfo;		// Things we know about our enemy
+
+//botstate_t state;		// What we're doing in teamgame mode
+
+float	lastx;			// Last known x location of bot's enemy (go there if enemy goes out of sight)
+float	lasty;			// Last known y location of bot's enemy
+
+// Tickers
+
+float t_respawn;
 float t_strafe;
 float t_react;
+float t_fight;
+float t_rocket;
+float t_turn;
+float t_pissed;
+float t_frust;
 float t_fire;			// Tics left until our gun will actually fire again
 float t_anticip;
+float t_chat;			// Tics left until bots completes "typing" in what he's saying.
+				// Bot also doesn't do anything during this time.
 
-float forwardmove;	// For building ucmd
+float forwardmove;		// For building ucmd
 float sidemove;
 
 // Misc booleans
@@ -57,6 +78,9 @@ bool bAllRound;
 bool bNewItemIsWeapon;
 bool bNewItemIsPowerup;
 
+chatline_t	*chatline;	// For when t_chat expires
+
+/*bottype_t	bottype;	// Bot type*/
 botinfo_t info;			// Aiming, name, perfection, yadda yadda
 
 int angerlevel;
@@ -82,11 +106,24 @@ void BotTick(float deltaTime)
 	player.FlyMove = 0.0;
 	player.Buttons = 0;
 
+	// Don't do anything if we're talking
+//	if (B_Chat())
+//		return;
+
 	// We're dead, so hit space to respawn
 	if (!player.Health)
 	{
 		player.Buttons |= BT_USE;
 		return;
+	}
+
+	// Periodically let out some anger
+	if (!(level->time == 255.0))
+	{
+		if (angerlevel)
+			angerlevel--;
+		else if (angerlevel < 0)
+			angerlevel = 0;
 	}
 
 	// Weed out any bad destinations/enemies
@@ -101,6 +138,7 @@ void BotTick(float deltaTime)
 	Turn();
 
 	// Moving towards destination
+	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
 	Attack();
 	Move(deltaTime);
 
@@ -166,7 +204,7 @@ bool CheckItem(Actor item)
 	bNewItemIsWeapon = false;
 	bNewItemIsPowerup = false;
 //?????
-    if (!item)
+	if (!item)
 		return false;
 	if (!item.bSpecial)
 		return false;
@@ -230,6 +268,10 @@ bool CheckItem(Actor item)
 			return false;
 		if (mana == MANA_3 && player.Mana[MANA_3] == MAX_MANA)
 			return false;
+		if (mana == MANA_4 && player.Mana[MANA_4] == MAX_MANA)
+			return false;
+		if (mana == MANA_5 && player.Mana[MANA_5] == MAX_MANA)
+			return false;
 	}
 
 	if ((item.Class == ItemHealingBottle ||
@@ -239,7 +281,8 @@ bool CheckItem(Actor item)
 		return false;
 
 	if (Artifact(item) && !ArtifactBoostArmor(item) &&
-		!ArtifactInvulnerability(item) && !ArtifactSpeedBoots(item))
+		!ArtifactInvulnerability(item) && !ArtifactSpeedBoots(item)
+		&& !ArtifactBoostMana(item))
 		return false;
 	if (Key(item) && deathmatch)
 		return false;
@@ -648,9 +691,9 @@ void BotAim(void)
 			dist = P_AproxDistance(MO->x - enemy->x, MO->y - enemy->y);
 			fixed_t m = (dist/FRACUNIT) / mobjinfo[MT_PLASMA].speed;
 			bot->SetAngle(R_PointToAngle2(MO->x,
-											MO->y,
-											enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
-											enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));
+						      MO->y,
+						      enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
+						      enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));
 			}
 	*/
 
@@ -743,7 +786,7 @@ Actor FindEnemy(void)
 	float closest_dist, temp;
 	Actor target;
 	float vangle;
-	int i;
+	int i, light;
 
 	//Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
@@ -751,6 +794,30 @@ Actor FindEnemy(void)
 	else
 		vangle = ENEMY_SCAN_FOV;
 	bAllRound = false;
+
+#if 0
+	// Look for monster enemy
+	if (!deathmatch.value && !teamgame.value)
+	{
+		AActor *actor;
+		TThinkerIterator<AActor> iterator;
+
+		while (actor = iterator.Next())
+		{
+			if (!(actor->flags3 & MF3_ENEMY))
+				continue;
+			if (!Check_LOS(MO, actor, vangle))
+				continue;
+			if (!P_CheckSight(MO, actor))
+				continue;
+
+			return actor;
+		}
+
+		// Didn't find anything...
+		return NULL;
+	}
+#endif
 
 	target = none;
 	closest_dist = 99999.0;
@@ -761,17 +828,23 @@ Actor FindEnemy(void)
 		if (svvars->Players[i] && svvars->Players[i].MO &&
 			svvars->Players[i].MO.Health > 0 && botmo != svvars->Players[i].MO)
 		{
-			if (deathmatch==2)
+/*			if (deathmatch==2)
 			{
 				if (svvars->Players[i].Color==player.Color)
 					continue;
-			}
+			}*/
 			 //Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always returns false. tought it should be the same checksight as below but.. (below works) something must be fuckin wierd screded up. 
 			if (Check_LOS(svvars->Players[i].MO, vangle))
 			{
 				if (botmo.CanSee(svvars->Players[i].MO))
 				{
 					temp = MobjDist(svvars->Players[i].MO, botmo);
+					light = svvars->Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
+
+					// Too dark?
+					if (temp > DARK_DIST && light < WHATS_DARK && player.Powers[pw_infrared])
+						continue;
+
 					if (temp < closest_dist)
 					{
 						closest_dist = temp;
@@ -784,6 +857,473 @@ Actor FindEnemy(void)
 
 	return target;
 }
+
+//==========================================================================
+//
+//	B_ChooseWeapon
+//
+//	[FB] Decide which weapon would be best to use in out situation
+//
+//==========================================================================
+
+int B_ChooseWeapon (void)
+{
+//	player_t *player = bot->player;
+//	Actor *MO = bot->player->MO;
+//	Actor *enemy = Bot->enemy;
+	float dist;
+
+	if (!enemy)
+		return player.ReadyWeapon;
+
+	if (enemy)
+	{
+		dist = MobjDist(botmo, enemy);
+
+		if (dist <= MELEERANGE)
+		{
+			if (player.PClass == PCLASS_FIGHTER)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+			
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 50)
+					return WP_SEVENTH;
+			
+				// Didn't find anything good
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_CLERIC)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+				     && player.MO.Health < player.max_health)
+					return WP_SIXTH;
+
+				// Didn't find anything good
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MAGE)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				// Didn't find anything good
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_HERETIC)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+			
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+					return WP_FOURTH;
+
+				// Didn't find anything good
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MARINE)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+			
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+					return WP_THIRD;
+
+				// Didn't find anything good			
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_WITCHAVEN)
+			{
+				if (player.WeaponOwned[WP_FIRST])
+					return WP_FIRST;
+			
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				// Didn't find anything good
+				return player.ReadyWeapon;
+			}
+		}
+		else if (dist <= 512.0)
+		{
+			if (player.PClass == PCLASS_FIGHTER)
+			{
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+			
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_CLERIC)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+				     && player.MO.Health < player.max_health)
+					return WP_SIXTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MAGE)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_HERETIC)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MARINE)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+			
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_WITCHAVEN)
+			{
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			return player.ReadyWeapon;
+		}
+		else
+		{
+			if (player.PClass == PCLASS_FIGHTER)
+			{
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+			
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_CLERIC)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+				     && player.MO.Health < player.max_health)
+					return WP_SIXTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MAGE)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_HERETIC)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_MARINE)
+			{
+				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+					return WP_SECOND;
+
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
+					return WP_FIFTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+			
+				return player.ReadyWeapon;
+			}
+			if (player.PClass == PCLASS_WITCHAVEN)
+			{
+				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
+					return WP_THIRD;
+
+				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
+					return WP_FOURTH;
+
+				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
+					return WP_SIXTH;
+
+				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+					return WP_SEVENTH;
+
+				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+					return WP_EIGHTH;
+
+				return player.ReadyWeapon;
+			}
+			return player.ReadyWeapon;
+		}
+	}
+	return player.ReadyWeapon;
+}
+
+//==========================================================================
+//
+//	B_SetAlly
+//
+//	[FB] This function is called every tick (for each bot) to set
+//	     the mate (teammate coop mate).
+//
+//==========================================================================
+
+/*Actor B_SetAlly (void)
+{
+	//return NULL;
+	
+	float closest_dist, test;
+	Actor target;
+	bool p_leader[MAXPLAYERS];
+	int i, j;
+
+	//is mate alive?
+	if (ally && ally.Health)
+	{
+		ally = ally;
+	}
+
+	//Check old_mates status.
+	if (last_mate && last_mate.Health)
+	{
+		ally = last_mate;
+	}
+
+	for (i=0; i<MAXPLAYERS; i++)
+	{
+		if (!svvars->Players[i]->MO.team || svvars->Players[i] == botmo)
+			continue;
+		if (svvars->Players[i]->MO.team == botmo.team)
+		{
+			ally = svvars->Players[i]->MO;
+			break;
+		}
+
+		p_leader[i] = false;
+		for (j=0; j<MAXPLAYERS; j++)
+		{
+			if (svvars->Players[j]->skullb->ally == svvars->Players[i]->MO)
+			{
+				p_leader[i] = true;
+				break;
+			}
+		}
+	}
+
+//	target = NULL;
+	closest_dist = 9999.0;
+
+	//Check for player friends
+	for (i=0; i<MAXPLAYERS; i++)
+	{
+		if (svvars->Players[i] && svvars->Players[i]->MO 
+			&& bot->player->MO != svvars->Players[i]->MO
+			&& (bot->player->MO->IsTeammate(svvars->Players[i]->MO) || !deathmatch.value)
+			&& GPlayers[i]->MO->health
+			&& ((bot->player->health/2) <= svvars->Players[i]->MO->health || !deathmatch.value)
+			&& !p_leader[i]) //taken?
+		{
+
+			if (P_CheckSight(bot->player->MO, svvars->Players[i]->MO, true))
+			{
+				test = MobjDist(bot, svvars->Players[i]);//P_AproxDistance(GPlayers[i]->MO->x - bot->player->MO->x,
+										//GPlayers[i]->MO->y - bot->player->MO->y);
+
+				if (test < closest_dist)
+				{
+					closest_dist = test;
+					target = svvars->Players[i]->MO;
+				}
+			}
+		}
+	}
+
+	return target;
+}*/
 
 //==========================================================================
 //
@@ -832,6 +1372,10 @@ void Roam(void)
 	}
 	else
 	{
+		// [FB] The pathnodes code should come here, instead of
+		//	making stupid circles right and left, we should
+		//	look for a pathnode and if an item is near roam
+		//	for it
 		// No target, so just run around until we find something
 		int r = P_Random();
 		float an = GetAngle();
@@ -913,7 +1457,7 @@ void Move(float deltaTime)
 			}
 		}
 
-		// Look at the missle and sidestep it
+		// Look at the missile and sidestep it
 		SetAngle(AngleTo(missile.Origin));
 		forwardmove = -FORWARDRUN;
 		return;
@@ -1349,7 +1893,7 @@ void OnBeginPlay(void)
 	}
 	else
 	{
-		float mod = 1.0;
+		float mod = 2.0;
 		/* FIGHTER */
 		combatdist[WP_FIRST]			= 1.0;
 		combatdist[WP_SECOND]			= 1.0;
@@ -1461,6 +2005,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/07/27 21:17:13  firebrand_kh
+//  Added lots of code and fixed some other
+//
 //  Revision 1.3  2005/05/18 15:41:41  firebrand_kh
 //  Fixed bad definition for the new classes on the combat distance
 //
