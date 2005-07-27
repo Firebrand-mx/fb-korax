@@ -628,6 +628,13 @@ void Died(Actor source)
 	bCorpse = true;
 	bNoPassMobj = true;
 	Height /= 4.0;
+
+	// [FB] There's no other decent place to put this...
+	//  Remove muzzle flash
+	if ((Effects & EF_DLIGHT_MASK) == EF_DL_MUZZLEFLASH)
+	{
+		Effects &= ~EF_DLIGHT_MASK;
+	}
 	if ((bCountKill || Class == ZBell) && Special)
 	{
 		// Initiate monster death actions
@@ -850,7 +857,7 @@ void TouchWhirlwind(Actor Other)
 	}
 	if (!(level->tictime & 7))
 	{
-		Other.Damage(none, Instigator, 3);
+		Other.Damage(none, Instigator, 6);
 	}
 }
 
@@ -4097,6 +4104,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.13  2005/07/27 21:10:01  firebrand_kh
+//  Balance Weapons & fixed doom guy flash when dying
+//
 //  Revision 1.12  2005/07/09 13:56:31  dj_jl
 //  Scrolers carrying objects.
 //
