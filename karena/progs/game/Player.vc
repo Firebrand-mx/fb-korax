@@ -100,7 +100,7 @@ Actor Attacker;
 float DamageFlash;
 float BonusFlash;
 
-// Flash for the Darkness Missile
+// [FB] Flash for the Darkness Missile
 int BlindCount;
 float LastBlindTime;
 Actor Blinder;		// none for non-player mobjs
@@ -215,6 +215,7 @@ void SpawnClient()
 		}
 		Mana[MANA_1] = 25;
 		Mana[MANA_2] = 25;
+		Mana[MANA_3] = 25;
 		if (bestWeapon)
 		{
 			// Bring up the best weapon
@@ -308,6 +309,7 @@ void NetGameReborn()
 	}
 	Mana[MANA_1] = 25;
 	Mana[MANA_2] = 25;
+	Mana[MANA_3] = 25;
 	if (bestWeapon)
 	{
 		// Bring up the best weapon
@@ -374,7 +376,7 @@ void SetPlayerColor()
 	MO.Translation = 0;
 	if (PClass == PCLASS_WITCHAVEN)
 	{
-		// The first type should be blue, and the second should be the
+		// [FB] The first type should be blue, and the second should be the
 		// Witchaven's original red color
 		if (Color == 0)
 			MO.Translation = 1 + PClass * (MAXPLAYERS - 1);
@@ -574,6 +576,7 @@ void SpawnPlayer(mthing_t * mthing)
 	ViewHeight = VIEWHEIGHT;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
+//	team = 0; // [FB] The player doesn't belong to any team
 //[Korax]
 	if (!inited)
 	{
@@ -592,6 +595,10 @@ void SpawnPlayer(mthing_t * mthing)
 		// Give all keys in death match mode
 		Keys = 2047;
 	}
+/*	if (deathmatch = 2)
+	{
+		team = Color; // [FB] If team deatchmatch give a player a team
+	}*/
 
 	// Set translation table data
 	SetPlayerColor();
@@ -626,8 +633,6 @@ void PlayerReborn()
 		WeaponOwned[WP_SIXTH] = false;
 		WeaponOwned[WP_SEVENTH] = false;
 		WeaponOwned[WP_EIGHTH] = false;
-		Mana[MANA_2] = 0;
-		Mana[MANA_3] = 0;
 		Mana[MANA_4] = 0;
 		Mana[MANA_5] = 0;
 		ArmorPoints = 0;
@@ -643,6 +648,8 @@ void PlayerReborn()
 	WeaponOwned[WP_FIRST] = true;
 	WeaponOwned[WP_SECOND] = true;
 	Mana[MANA_1] = 25;
+	Mana[MANA_2] = 25;
+	Mana[MANA_3] = 25;
 	SetWeapon(WP_SECOND);
 	LocalQuakeHappening = 0;
 }
@@ -784,7 +791,7 @@ bool GiveBody(int num)
 //
 //  GiveArmor
 //
-//  Returns false if the armor is worse than the current armor.
+//  Works like in Doom and Heretic now
 //
 //==========================================================================
 
@@ -1038,7 +1045,7 @@ void GiveExperience(int exp)
 	{
 		experience += exp;
 		MO.experience = experience;
-		while (experience >= next_level/* && (cl<PCLASS_PIG)*/)
+		while (experience >= next_level/* && (cl < PCLASS_PIG)*/)
 		{
 			exp_level++;
 			next_level = next_level + (1000 * exp_level);
@@ -1070,12 +1077,18 @@ void GiveLevel(int lvl)
 //
 //  ActivateLevel
 //
+// [FB] Using the new leveling system the maximum level is 5 and we
+//      need to check which players have this level to find a lucky
+//      one that will reduce his level for another player (only one
+//	player should be able to reach level 5 now) >:P
+//
 //============================================================================
 
 void ActivateLevel(int lvl)
 {
 	int old_maxhealth;
 	int addhealth;
+	int i;
 
 	strength += strength * 10 / 100;
 	constitution += constitution * 10 / 100;
@@ -1105,6 +1118,19 @@ void ActivateLevel(int lvl)
 		Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
 		MO.Health = Health;
 	}
+/*	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		// [FB] Check the level of every player in the game
+		if(svvars->Players[i].exp_level == 5) // [FB] Found a vicim >:)!
+		{
+			svvars->Players[i].exp_level -= 1;
+
+			// [FB] How to let this player we got his level??
+			centerprint(svvars->Players[i], "SOMEONE REACHED LEVEL 5!! YOU LOST ONE LEVEL!");
+			break;
+		}			
+	}*/
+
 	centerprint(self, "YOU REACHED LEVEL %d", lvl);
 }
 
@@ -1258,41 +1284,57 @@ void MovePlayer(float deltaTime)
 	// code, but to simplify it, we do it here.
 	//  Fighter moves faster, cleric at original speed, mage - slower,
 	// pig - slower, but faster than mage
+	// [FB] Added the missing classes to this part of the code
 	switch (PClass)
 	{
 	case PCLASS_FIGHTER:
-		forward *= 1.18;
-		side *= 1.3;
+		forward *= 1.18 + itof(dexterity) / 100.0;
+		side *= 1.3 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_CLERIC:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_MAGE:
-		forward *= 0.9;
-		side *= 0.9;
+		forward *= 0.9 + itof(dexterity) / 100.0;
+		side *= 0.9 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_HERETIC:
+		forward *= 1.18 + itof(dexterity) / 100.0;
+		side *= 1.3 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_MARINE:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_WITCHAVEN:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_PIG:
-		forward *= 0.97;
-		side *= 0.97;
+		forward *= 0.97 + itof(dexterity) / 100.0;
+		side *= 0.97 + itof(dexterity) / 100.0;
 		break;
 	}
-	forward *= 0.9 + itof(dexterity) / 100.0;
-	side *= 0.9 + itof(dexterity) / 100.0;
 
 	if (Powers[pw_speed] && !MorphTime)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5;
-		side *= 1.5;
+		forward *= 1.5 + itof(dexterity) / 100.0;
+		side *= 1.5 + itof(dexterity) / 100.0;
 	}
 	if ((!Powers[pw_flight] || MO.Origin.z <= MO.FloorZ) &&
 		(MO.GetFloorType() == FLOOR_ICE ||
 		(MO.Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow))
 	{
-		forward *= 0.5;
-		side *= 0.5;
+		forward *= 0.5 + itof(dexterity) / 100.0;
+		side *= 0.5 + itof(dexterity) / 100.0;
 	}
 
 	// Do not let the player control movement
@@ -1301,8 +1343,8 @@ void MovePlayer(float deltaTime)
 	if (!(onground || MO.bFly))
 	{
 		//  not on ground, so little effect on velocity
-		forward *= air_control;
-		side *= air_control;
+		forward *= air_control + itof(dexterity) / 100.0;
+		side *= air_control + itof(dexterity) / 100.0;
 	}
 
 	AngleVectors(&MO.Angles, &vforward, &vright, &vup);
@@ -1314,7 +1356,6 @@ void MovePlayer(float deltaTime)
 	}
 
 	MO.Velocity += 5.0 * deltaTime * wishvel;
-
 	if (forward || side)
 	{
 		SetPlayerRunState();
@@ -1433,34 +1474,52 @@ void WaterMove(float deltaTime)
 	// code, but to simplify it, we do it here.
 	//  Fighter moves faster, cleric at original speed, mage - slower,
 	// pig - slower, but faster than mage
+	// [FB] Added missing classes
 	switch (PClass)
 	{
 	case PCLASS_FIGHTER:
-		forward *= 1.18;
-		side *= 1.3;
+		forward *= 1.18 + itof(dexterity) / 100.0;
+		side *= 1.3 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_CLERIC:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_MAGE:
-		forward *= 0.9;
-		side *= 0.9;
+		forward *= 0.9 + itof(dexterity) / 100.0;
+		side *= 0.9 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_HERETIC:
+		forward *= 1.18 + itof(dexterity) / 100.0;
+		side *= 1.3 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_MARINE:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
+		break;
+
+	case PCLASS_WITCHAVEN:
+		forward *= 1.0 + itof(dexterity) / 100.0;
+		side *= 1.0 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_PIG:
-		forward *= 0.97;
-		side *= 0.97;
+		forward *= 0.97 + itof(dexterity) / 100.0;
+		side *= 0.97 + itof(dexterity) / 100.0;
 		break;
 	}
-	forward *= 0.9 + itof(dexterity) / 100.0;
-	side *= 0.9 + itof(dexterity) / 100.0;
+/*	forward *= 0.9 + itof(dexterity) / 100.0;
+	side *= 0.9 + itof(dexterity) / 100.0; */
 
 	if (Powers[pw_speed] && !MorphTime)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5;
-		side *= 1.5;
+		forward *= 1.5 + itof(dexterity) / 100.0;
+		side *= 1.5 + itof(dexterity) / 100.0;
 	}
 
 	wishvel = vforward * forward + vright * side;
@@ -2592,7 +2651,7 @@ void PlayerTick(float deltaTime)
 			Powers[pw_flight] = 0.0;
 			if (MO.Origin.z != MO.FloorZ)
 			{
-//FIXME             player->centering = true;
+//FIXME             		player->centering = true;
 			}
 			MO.bFly = false;
 			MO.bNoGravity = false;
@@ -2610,7 +2669,7 @@ void PlayerTick(float deltaTime)
 		MO.PoisonDamage(Poisoner, 1, true);
 	}
 
-	// Darkness blinding effect
+	// [FB] Darkness blinding effect
 	if (BlindCount && level->time - LastBlindTime >= 0.5)
 	{
 		BlindCount -= 5;
@@ -2620,7 +2679,7 @@ void PlayerTick(float deltaTime)
 			BlindCount = 0;
 		}
 		LastBlindTime = level->time;
-		if(count % 5 == 0)
+		if(count % 5 == 0) // [FB] Damage the blinded player after some time
 		{
 			MO.BlindDamage(Blinder, 1, true);
 		}
@@ -2733,7 +2792,7 @@ void PaletteFlash()
 		}
 		Palette += STARTPOISONPALS;
 	}
-	else if (BlindCount)
+	else if (BlindCount) // [FB] Black palette for blinding effect
 	{
 		Palette = (BlindCount + 7) >> 3;
 		if (Palette >= (CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, 255)))
@@ -3268,8 +3327,8 @@ void UseArtiBlastRadius()
 			continue;
 		}
 		if ((mo.Class == PoisonCloud) ||	// poison cloud
-			(mo.Class == HolyFX) ||	// holy fx
-			mo.bIceCorpse)	// frozen corpse
+			(mo.Class == HolyFX) ||		// holy fx
+			mo.bIceCorpse)			// frozen corpse
 		{
 			// Let these special cases go
 		}
@@ -3320,7 +3379,7 @@ void UseArtiPoisonBag()
 	Actor bomb;
 
 	angle = MO.Angles.yaw;
-	if (PClass == PCLASS_CLERIC)
+	if (PClass == PCLASS_CLERIC || PClass == PCLASS_WITCHAVEN)
 	{
 		bomb = Spawn(PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
@@ -4121,6 +4180,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.13  2005/07/29 13:44:04  firebrand_kh
+//  Fixed moving speed to be affected by attributes, level req's for weapons
+//
 //  Revision 1.12  2005/07/16 10:16:08  dj_jl
 //  Increased jump velocity.
 //
