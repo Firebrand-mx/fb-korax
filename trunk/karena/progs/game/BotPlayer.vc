@@ -214,8 +214,8 @@ bool CheckItem(Actor item)
 	{
 		bNewItemIsWeapon = true;
 
-		if ((weapon>WP_FOURTH && player.exp_level<3) ||
-			(weapon==WP_EIGHTH && player.exp_level<5)) {
+		if ((weapon > WP_FOURTH && player.exp_level < 2) ||
+			(weapon == WP_EIGHTH && player.exp_level < 3)) {
 			return false;
 		}
 
@@ -286,7 +286,7 @@ bool CheckItem(Actor item)
 		return false;
 	if (Key(item) && deathmatch)
 		return false;
-	// Guess we're okay
+	// [FB] Guess we're okay
 	return true;
 }
 
@@ -698,13 +698,13 @@ void BotAim(void)
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if ((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon >= WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-		(player.PClass == PCLASS_CLERIC && player.ReadyWeapon >= WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
-		(player.PClass == PCLASS_MAGE && player.ReadyWeapon >= WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
-		(player.PClass == PCLASS_HERETIC && player.ReadyWeapon >= WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-		(player.PClass == PCLASS_MARINE && player.ReadyWeapon >= WP_FIFTH || WP_SEVENTH || WP_EIGHTH) || 
-		(player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon >= WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH))
-	if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon]>48.0)
+	if (((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon >= WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_CLERIC && player.ReadyWeapon >= WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MAGE && player.ReadyWeapon >= WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_HERETIC && player.ReadyWeapon >= WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MARINE && player.ReadyWeapon >= WP_FIFTH || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon >= WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH)) /*&&
+	    (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon] > 48.0)*/)
 	{
 		// Projectile weapons
 		switch (info.intelect)
@@ -841,7 +841,7 @@ Actor FindEnemy(void)
 					temp = MobjDist(svvars->Players[i].MO, botmo);
 					light = svvars->Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
 
-					// Too dark?
+					// [FB] Too dark?
 					if (temp > DARK_DIST && light < WHATS_DARK && player.Powers[pw_infrared])
 						continue;
 
@@ -2005,6 +2005,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/07/29 13:39:47  firebrand_kh
+//  Changed level requirements for the weapon pickups
+//
 //  Revision 1.4  2005/07/27 21:17:13  firebrand_kh
 //  Added lots of code and fixed some other
 //
