@@ -1,0 +1,171 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponPickup : Pickup
+	abstract;
+
+int WeaponClass;
+int WeaponType;
+
+//==========================================================================
+//
+//  TouchSpecial
+//
+//==========================================================================
+
+void TouchSpecial(Actor Toucher)
+{
+	bool remove;
+	bool gaveMana;
+	bool gaveWeapon;
+
+	if (!Toucher.bPickUp)
+	{
+		// Can't be picked up by toucher
+		return;
+	}
+	if (Toucher.Health <= 0)
+	{
+		// Toucher is dead
+		return;
+	}
+	remove = true;
+	if (Toucher.Player.PClass != WeaponClass)
+	{
+		// Wrong class, but try to pick up for mana
+		if (netgame && !deathmatch)
+		{
+			// Can't pick up weapons for other classes in coop netplay
+			return;
+		}
+		if (WeaponType == WP_SECOND)
+		{
+			if (!Toucher.Player.GiveMana(MANA_1, 25))
+			{
+				return;
+			}
+		}
+		else
+		{
+			if (!Toucher.Player.GiveMana(MANA_2, 25))
+			{
+				return;
+			}
+		}
+	}
+	else if (netgame && !deathmatch)
+	{
+		// Cooperative net-game
+		if (Toucher.Player.WeaponOwned[WeaponType])
+		{
+			return;
+		}
+		Toucher.Player.WeaponOwned[WeaponType] = true;
+		if (WeaponType == WP_SECOND)
+		{
+			Toucher.Player.GiveMana(MANA_1, 25);
+		}
+		else
+		{
+			Toucher.Player.GiveMana(MANA_2, 25);
+		}
+		Toucher.Player.PendingWeapon = WeaponType;
+		remove = false;
+	}
+	else
+	{
+		// Deathmatch or single player game
+		if (WeaponType == WP_SECOND)
+		{
+			gaveMana = Toucher.Player.GiveMana(MANA_1, 25);
+		}
+		else
+		{
+			gaveMana = Toucher.Player.GiveMana(MANA_2, 25);
+		}
+		if (Toucher.Player.WeaponOwned[WeaponType])
+		{
+			gaveWeapon = false;
+		}
+		else
+		{
+			gaveWeapon = true;
+			Toucher.Player.WeaponOwned[WeaponType] = true;
+			if (WeaponType > Toucher.Player.ReadyWeapon)
+			{
+				// Only switch to more powerful weapons
+				Toucher.Player.PendingWeapon = WeaponType;
+			}
+		}
+		if (!gaveWeapon && !gaveMana)
+		{
+			// Player didn't need the weapon or any mana
+			return;
+		}
+	}
+
+	cprint(Toucher.Player, weaponMessages[WeaponClass * 2 + WeaponType - 1]);
+	if (Special)
+	{
+		ExecuteLineSpecial(Special, &Args[0], NULL, 0, Toucher);
+		Special = 0;
+	}
+
+	if (remove)
+	{
+		if (deathmatch && !bDropped)
+		{
+			HideSpecial();
+		}
+		else
+		{
+			Remove();
+		}
+	}
+
+	Toucher.Player.BonusFlash += BONUSADD;
+	Toucher.PlaySound('PickupWeapon', CHAN_ITEM);
+}
+
+defaultproperties
+{
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2005/08/02 16:13:26  firebrand_kh
+//  Initial Import
+//
+//  Revision 1.3  2004/08/22 19:23:26  dj_jl
+//  Moved many functions to player class.
+//
+//  Revision 1.2  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//  Revision 1.1  2002/10/26 16:32:27  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
