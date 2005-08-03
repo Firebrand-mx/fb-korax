@@ -685,7 +685,7 @@ void Died(Actor source)
 					source.Player.FragsStats[P_GetPlayerNum(Player)]++;
 				}
 				source.Player.Frags++;
-				source.Player.GiveExperience(500+(500*(Player.exp_level-1)/10));
+				source.Player.GiveExperience(500 + (500 * (Player.exp_level - 1) / 10));
 			}
 		}
 	}
@@ -734,12 +734,12 @@ void Died(Actor source)
 	{
 		if (!source.bIsPlayer)
 		{
-			source.experience += ftoi(itof(experience) *((90.0 + 
+			source.experience += ftoi(itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0));  //RPG
 		}
 		else
 		{
-			source.Player.GiveExperience(ftoi(itof(experience) *((90.0 + 
+			source.Player.GiveExperience(ftoi(itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0) * (gameskill < 2 ? 
 				125.0 : (gameskill < 3 ? 100.0 : 80.0)) / 100.0));
 		}
@@ -1309,15 +1309,20 @@ void Damage(Actor inflictor, Actor source, int damage)
 		}
 */		
 //Old Armor handling above
-		saved = itof(damage) * itof(40+Player.constitution) / 100.0;
+		saved = itof(damage) * itof(40 + Player.constitution) / 100.0;
 //		savedPercent = itof(damage) * itof(60-Player.constitution) / 100.0;
 		if (savedPercent > itof(Player.ArmorPoints)) 
 		{
-			saved = itof(Player.ArmorPoints) * itof(40+Player.constitution) / 100.0;
+			saved = itof(Player.ArmorPoints) * itof(40 + Player.constitution) / 100.0;
 //			savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
 		}
 		damage -= ftoi(saved);
 		Player.ArmorPoints -= ftoi(saved);//Percent);
+		if (Player.ArmorPoints < 0)
+		{
+			Player.ArmorPoints = 0; // [FB] No negative armor points
+		}
+
 
 		if (damage >= Player.Health
 			&& ((gameskill == sk_baby) || deathmatch) && !Player.MorphTime)
@@ -4104,6 +4109,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.14  2005/08/03 00:57:16  firebrand_kh
+//  Fixed negative armor if much damage was done to the player
+//
 //  Revision 1.13  2005/07/27 21:10:01  firebrand_kh
 //  Balance Weapons & fixed doom guy flash when dying
 //
