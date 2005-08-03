@@ -48,12 +48,16 @@ int Mana[NUMMANA];
 int experience;
 int exp_level;
 int next_level;
+int old_level; // [FB] If we are going backwards we need this
 int strength;
 int intelligence;
 int wisdom;
 int dexterity;
 int constitution;
 int max_health;
+int bak_health; // [FB] To decrease the health
+int pcount; // [FB] counter
+int done; // [FB] Was the penalty done?
 
 //
 //  ----------
@@ -576,17 +580,35 @@ void SpawnPlayer(mthing_t * mthing)
 	ViewHeight = VIEWHEIGHT;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
+	done = 0; // [FB] We start with no penalty
+	pcount = 0; // [FB] Reset counter
 //	team = 0; // [FB] The player doesn't belong to any team
 //[Korax]
 	if (!inited)
 	{
 		InitiateLevel();
-		pp.experience = 0;
+//		pp.experience = 0; [FB] This is the cause?
 		inited = true;
 	}
 	else
 	{
-		pp.experience = next_level - (1000 * exp_level);
+		// [FB] There's a penalty for dying, you lost some experience
+		pp.experience = experience - ((200  * exp_level) + P_Random() & 150);
+		// [FB] But what if the experience we lost has made us lost a level??
+		//	Then we use the old_level value to compare our current experience,
+		//	if it is lower to it, then we activate a level less than
+		//	our current one
+		if(pp.experience < old_level && done == 0 && exp_level > 1 /* && (cl < PCLASS_PIG)*/)
+		{
+			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to the old_level
+			exp_level--; // [FB] Decrese experience level
+			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
+			done = 1; // [FB] Do this only once
+		}
+		if(pp.experience < 0)
+		{
+			pp.experience = 0; // [FB] We don't want to have negative experience, right?
+		}
 	}
 
 	SetupPsprites();
@@ -652,6 +674,7 @@ void PlayerReborn()
 	Mana[MANA_3] = 25;
 	SetWeapon(WP_SECOND);
 	LocalQuakeHappening = 0;
+	done = 0; // [FB] Reset Penalty
 }
 
 //==========================================================================
@@ -1048,6 +1071,7 @@ void GiveExperience(int exp)
 		while (experience >= next_level/* && (cl < PCLASS_PIG)*/)
 		{
 			exp_level++;
+			old_level = next_level; // [FB] We need to keep this to compare it
 			next_level = next_level + (1000 * exp_level);
 			ActivateLevel(exp_level);
 		}
@@ -1075,12 +1099,30 @@ void GiveLevel(int lvl)
 
 //============================================================================
 //
+//  TakeLevel
+//
+// [FB] So the player is a loser :(
+//
+//============================================================================
+
+void TakeLevel(int lvl)
+{
+	int i;
+	for (i = 0; i < lvl - 1; i++)
+	{
+		exp_level--;
+//		experience = old_level; // [FB] Nope!
+		MO.experience = experience;
+		next_level = old_level + (1000 * exp_level);
+		DeactivateLevel(exp_level);
+	}
+}
+
+//============================================================================
+//
 //  ActivateLevel
 //
-// [FB] Using the new leveling system the maximum level is 5 and we
-//      need to check which players have this level to find a lucky
-//      one that will reduce his level for another player (only one
-//	player should be able to reach level 5 now) >:P
+//  [FB] Using the new leveling system the maximum level is 5
 //
 //============================================================================
 
@@ -1090,12 +1132,13 @@ void ActivateLevel(int lvl)
 	int addhealth;
 	int i;
 
-	strength += strength * 10 / 100;
-	constitution += constitution * 10 / 100;
-	dexterity += dexterity * 10 / 100;
-	intelligence += intelligence * 10 / 100;
-	wisdom += wisdom * 10 / 100;
+	strength += strength * 25 / 100;
+	constitution += constitution * 25 / 100;
+	dexterity += dexterity * 25 / 100;
+	intelligence += intelligence * 25 / 100;
+	wisdom += wisdom * 25 / 100;
 	old_maxhealth = max_health;
+	bak_health = old_maxhealth;
 	if (old_maxhealth == 250)
 	{
 		//	Don't do anything
@@ -1103,13 +1146,13 @@ void ActivateLevel(int lvl)
 	}
 	else
 	{
-		if ((max_health + max_health * 10 / 100) >= 250)
+		if ((max_health + max_health * 25 / 100) >= 250)
 		{
 			addhealth = 250 - max_health;
 		}
 		else
 		{
-			addhealth = max_health * 10 / 100;
+			addhealth = max_health * 25 / 100;
 		}
 	}
 	if (addhealth > 0)
@@ -1118,20 +1161,55 @@ void ActivateLevel(int lvl)
 		Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
 		MO.Health = Health;
 	}
-/*	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		// [FB] Check the level of every player in the game
-		if(svvars->Players[i].exp_level == 5) // [FB] Found a vicim >:)!
-		{
-			svvars->Players[i].exp_level -= 1;
-
-			// [FB] How to let this player we got his level??
-			centerprint(svvars->Players[i], "SOMEONE REACHED LEVEL 5!! YOU LOST ONE LEVEL!");
-			break;
-		}			
-	}*/
 
 	centerprint(self, "YOU REACHED LEVEL %d", lvl);
+}
+
+//============================================================================
+//
+//  DeactivateLevel
+//
+//  [FB] We lost a level, so we need to update the attributes then!
+//
+//============================================================================
+
+void DeactivateLevel(int lvl)
+{
+	int old_maxhealth;
+	int addhealth;
+	int i;
+
+	strength -= strength * 25 / 100;
+	constitution -= constitution * 25 / 100;
+	dexterity -= dexterity * 25 / 100;
+	intelligence -= intelligence * 25 / 100;
+	wisdom -= wisdom * 25 / 100;
+	// [FB] We already calculated the bak_health value
+	if (bak_health < 90)
+	{
+		// Don't do anything
+		addhealth = 0;
+	}
+	else
+	{
+		// [FB] CLEAN ME!!!
+/*		if ((max_health - bak_health * 25 / 100) <= 90)
+		{
+			addhealth = 0 //250 + max_health; [FB] Don't do anything?
+		}
+		else
+		{*/
+		addhealth = bak_health * 25 / 100;
+		//}
+	}
+	if (addhealth > 0)
+	{
+		max_health = max_health - addhealth;
+//		Health = ftoi(itof(Health) / itof(bak_health) * itof(max_health));
+		MO.Health = Health;
+	}
+
+	centerprint(self, "YOU LOWERED TO LEVEL %d", lvl);
 }
 
 //============================================================================
@@ -1156,6 +1234,52 @@ void InitiateLevel()
 	constitution = PlayerPawn(MO).InitialConstitution;
 	intelligence = PlayerPawn(MO).InitialIntelligence;
 }
+
+//==========================================================================
+//
+//  PlayerCamping
+//
+//  [FB] If the player camps much time he'll lost experience too! :O
+//
+//==========================================================================
+
+void PlayerCamping()
+{
+	// [FB] Let's see, if every a tic is 1/35 of a second, a second should
+	//	be multiplied by 35 to have an equality, every 10 secs. the
+	//	player stays camping (without even shooting), we'll start
+	//	decresing his experience according his level, so...
+	int limit;
+	PlayerPawn pp;
+
+	limit = 3 * 35; // [FB] 10 seconds
+
+	// [FB] Check for differences on the player's x & y positions, player
+	//	pressing buttons, etc.
+	if((pcount >= limit) && (pcount % (1 * 35) == 0))
+	{
+		PlayerPawn(MO).experience = experience - (1 * (exp_level)); // [FB] Depending the player level
+		if(pcount == 525)
+		{
+			pcount = 105; // [FB] To avoid overflows
+		}
+		if(PlayerPawn(MO).experience < 0)
+		{
+			PlayerPawn(MO).experience = 0; // [FB] We don't want to have negative experience
+		}
+		// [FB] But what if the experience we lost has made us lost a level??
+		//	Then we use the old_level value to compare our current experience,
+		//	if it is lower to it, then we activate a level less than
+		//	our current one
+		if((PlayerPawn(MO).experience < old_level) && (done == 0) && (exp_level > 1) /* && (cl < PCLASS_PIG)*/)
+		{
+			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to the old_level
+			exp_level--; // [FB] Decrese experience level
+			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
+			done = 1; // [FB] Do this only once
+		}
+	}
+}	   
 
 //==========================================================================
 //
@@ -2751,6 +2875,16 @@ void PlayerTick(float deltaTime)
 	}
 	else
 		FixedColormap = 0;
+
+	if((MO.Velocity.x == 0.0 || MO.Velocity.y == 0.0) && !Buttons & BT_ATTACK) // [FB] Check for the player camping
+	{
+		pcount++;
+		PlayerCamping();
+	}
+	else if((MO.Velocity.x != 0.0 || MO.Velocity.y != 0.0) || Buttons & BT_ATTACK) // [FB] The player is moving
+	{
+		pcount = 0;
+	}
 }
 
 //==========================================================================
@@ -4180,6 +4314,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.14  2005/08/03 00:56:38  firebrand_kh
+//  New leveling system
+//
 //  Revision 1.13  2005/07/29 13:44:04  firebrand_kh
 //  Fixed moving speed to be affected by attributes, level req's for weapons
 //
