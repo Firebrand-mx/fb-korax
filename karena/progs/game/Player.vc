@@ -141,6 +141,7 @@ Actor Rain1;	// active rain maker 1
 Actor Rain2;	// active rain maker 2
 
 bool inited;
+bool used; // [FB] Is the minotaur alive??
 
 //==========================================================================
 //
@@ -900,10 +901,12 @@ bool GivePower(int power)
 		}
 		Powers[power] = INVULNTIME;
 		MO.bInvulnerable = true;
-		if (PClass == PCLASS_MAGE)
+		// [KORAX]
+		/*if (PClass == PCLASS_MAGE)
 		{
 			MO.bReflective = true;
-		}
+		}*/
+		// [KORAX]
 		return true;
 	}
 	if (power == pw_flight)
@@ -948,6 +951,17 @@ bool GivePower(int power)
 		Powers[power] = MAULATORTIME;
 		return true;
 	}
+	if (power == pw_invisibility)
+	{
+		if (Powers[power] > BLINKTHRESHOLD)
+		{
+			// Already have it
+			return false;
+		}
+		Powers[power] = INVISTIME;
+		MO.Translucency = 33;
+		return true;
+	}
 	if (Powers[power])
 	{
 		return false;	// already got it
@@ -978,6 +992,20 @@ bool GiveArtifact(int arti)
 	else if (arti == arti_boostarmor)
 	{
 		return GiveArmor(0, 40);
+	}
+	else if (arti == arti_summon)
+	{
+//		return GivePower(pw_minotaur);
+		UseArtiSummon();
+		return true;
+	}
+	else if (arti == arti_torch)
+	{
+		return GivePower(pw_infrared);
+	}
+	else if (arti == arti_invisibility)
+	{
+		return GivePower(pw_invisibility);
 	}
 	else
 	{
@@ -1166,7 +1194,7 @@ void ActivateLevel(int lvl)
 		}
 
 		centerprint(self, "YOU REACHED LEVEL %d", lvl);
-		MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
+		MO.PlaySound('Chat', CHAN_VOICE);
 	}
 }
 
@@ -1197,15 +1225,7 @@ void DeactivateLevel(int lvl)
 	}
 	else
 	{
-		// [FB] CLEAN ME!!!
-/*		if ((max_health - bak_health * 25 / 100) <= 90)
-		{
-			addhealth = 0 //250 + max_health; [FB] Don't do anything?
-		}
-		else
-		{*/
 		addhealth = bak_health * 25 / 100;
-		//}
 	}
 	if (addhealth > 0)
 	{
@@ -1215,7 +1235,7 @@ void DeactivateLevel(int lvl)
 	}
 
 	centerprint(self, "YOU LOWERED TO LEVEL %d", lvl);
-	MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
+	MO.PlaySound('Chat', CHAN_VOICE);
 }
 
 //============================================================================
@@ -2689,7 +2709,8 @@ void PlayerTick(float deltaTime)
 
 	if (Powers[pw_invulnerability])
 	{
-		if (PClass == PCLASS_CLERIC)
+		//[KORAX]
+		/*if (PClass == PCLASS_CLERIC)
 		{
 			if (!(level->tictime & 7) && bShadow && !bDontDraw)
 			{
@@ -2737,21 +2758,23 @@ void PlayerTick(float deltaTime)
 			{
 				MO.Translucency = 0;
 			}
-		}
+		}*/
+		//[KORAX]
 		Powers[pw_invulnerability] -= deltaTime;
 		if (Powers[pw_invulnerability] <= 0.0)
 		{
 			Powers[pw_invulnerability] = 0.0;
 			MO.bInvulnerable = false;
 			MO.bReflective = false;
-			if (PClass == PCLASS_CLERIC)
+			//[KORAX]
+			/*if (PClass == PCLASS_CLERIC)
 			{
 				MO.bNonShootable = false;
 				MO.Translucency = 0;
-			}
+			}*/
+			//[KORAX]
 		}
 	}
-
 	if (Powers[pw_minotaur])
 	{
 		Powers[pw_minotaur] -= deltaTime;
@@ -2787,6 +2810,16 @@ void PlayerTick(float deltaTime)
 			MO.bNoGravity = false;
 		}
 	}
+	if (Powers[pw_invisibility])
+	{
+		Powers[pw_invisibility] -= deltaTime;
+		if (Powers[pw_invisibility] <= 0.0)
+		{
+			Powers[pw_invisibility] = 0.0;
+			MO.Translucency = 0;
+		}
+	}
+
 
 	if (PoisonCount && level->time - LastPoisonTime >= 0.5)
 	{
@@ -3275,6 +3308,13 @@ bool UseArtifact(int arti)
 			return false;
 		}
 		break;
+	case arti_invisibility:
+		if (!GivePower(pw_invisibility))
+		{
+			return false;
+		}
+		break;
+
 
 	case arti_puzzskull:
 	case arti_puzzgembig:
@@ -3429,18 +3469,55 @@ bool UseArtiHealRadius()
 //
 //  UseArtiSummon
 //
+//  [FB] Original function
+//
 //==========================================================================
 
 void UseArtiSummon()
 {
-	Actor mo;
+/*	Actor mo;
 
 	mo = SpawnPlayerMissile(SummonMissile);
 	if (mo)
 	{
 		mo.Instigator = MO;
 		mo.Velocity.z = 5.0 * 35.0;
+	}*/
+//                          ^
+// [FB] Old behaviour above |
+	int i;
+	float x;
+	float y;
+	float z;
+	TVec Orig;
+	TVec dir;
+	Actor fog, newmobj;
+
+	if (!MinotaurSpotCount)
+	{
+		// No spots
+		return;
 	}
+	i = P_Random();
+
+	i++;
+	x = MinotaurSpot[i % MinotaurSpotCount].x;
+	y = MinotaurSpot[i % MinotaurSpotCount].y;
+	z = MinotaurSpot[i % MinotaurSpotCount].z;
+	dir = MinotaurSpot[i % MinotaurSpotCount] /*-Origin*/;
+	Orig = vector(x, y, z);
+
+	fog = Spawn(TeleportFog, Orig);
+	fog.PlaySound('Teleport', CHAN_VOICE);
+	newmobj = Spawn(SummonMissile, Orig);
+	newmobj.Origin.x = MinotaurSpot[i % MinotaurSpotCount].x;
+	newmobj.Origin.y = MinotaurSpot[i % MinotaurSpotCount].y;
+	newmobj.Origin.z = MinotaurSpot[i % MinotaurSpotCount].z;
+	newmobj.Angles.yaw = MinotaurSpot_angle[i % MinotaurSpotCount];
+	newmobj.Velocity.z = 5.0 * 35.0;
+	newmobj.Instigator = MO;
+	newmobj.bTelestomp = true;
+	used = true;
 }
 
 //==========================================================================
@@ -4320,6 +4397,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.16  2005/08/12 16:23:01  firebrand_kh
+//  Added new artifacts & made some fixes
+//
 //  Revision 1.15  2005/08/08 20:07:46  firebrand_kh
 //  Fixed Blind count to reset when the player is spawned
 //
