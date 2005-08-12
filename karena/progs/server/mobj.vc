@@ -27,6 +27,8 @@ classid PuffType;
 Actor PuffSpawned;
 Actor linetarget;	// who got hit (or none)
 
+#define MAX_MINOTAUR_SPOTS 8 // [FB] Limit the number of Minotaur Spots in a level
+
 int classFlags[] =
 {
 	MTF_FIGHTER,
@@ -95,6 +97,7 @@ string artifactMessages[NUMARTIFACTS] =
 	TXT_ARTIBOOSTMANA,
 	TXT_ARTIBOOSTARMOR,
 	TXT_ARTITELEPORT,
+	TXT_ARTIINVISIBILITY,
 
 	TXT_ARTIPUZZSKULL,
 	TXT_ARTIPUZZGEMBIG,
@@ -152,6 +155,10 @@ int bodyqueslot;
 // Corpse queue for monsters - this should be saved out
 Actor corpseQueue[CORPSEQUEUESIZE];
 int corpseQueueSlot;
+
+int MinotaurSpotCount;
+TVec MinotaurSpot[MAX_MINOTAUR_SPOTS];
+float MinotaurSpot_angle[MAX_MINOTAUR_SPOTS];
 
 //==========================================================================
 //
@@ -292,6 +299,13 @@ void P_SpawnMapThing(mthing_t * mthing, bool spawn_thinkers)
 		return;
 	}
 
+	// [FB] Check for minotaur spots
+	if (mthing->type == 15005)	// [FB] Minotaur Spot
+	{
+		AddMinotaurSpot(mthing->x, mthing->y, itof(45 * (mthing->angle / 45)));
+		return;
+	}
+
 	//  Don't spawn thinkers if we are loading a savegame
 	if (!spawn_thinkers)
 	{
@@ -380,6 +394,40 @@ void P_SpawnMapThing(mthing_t * mthing, bool spawn_thinkers)
 	// Can't find thing type
 	dprint("P_SpawnMapThing: Unknown type %i at (%f, %f)",
 		mthing->type, mthing->x, mthing->y);
+}
+
+//==========================================================================
+//
+//  InitMonsters
+//
+//  [FB] Called at level load.
+//
+//==========================================================================
+
+void InitMonsters(void)
+{
+	MinotaurSpotCount = 0;
+}
+
+//==========================================================================
+//
+//  AddMinotaurSpot
+//
+//  [FB] Count how many minotaur spots this level has
+//
+//==========================================================================
+
+void AddMinotaurSpot(float x, float y, float angle)
+{
+	if (MinotaurSpotCount == MAX_MINOTAUR_SPOTS)
+	{
+		Error("Too many minotaur spots.");
+	}
+	MinotaurSpot[MinotaurSpotCount].x = x;
+	MinotaurSpot[MinotaurSpotCount].y = y;
+	MinotaurSpot[MinotaurSpotCount].z = 0.0;	//FIXME
+	MinotaurSpot_angle[MinotaurSpotCount] = angle;
+	MinotaurSpotCount++;
 }
 
 //**************************************************************************
@@ -668,6 +716,9 @@ int P_Massacre()
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/08/12 16:19:29  firebrand_kh
+//  Added shadowsphere artifact to the game
+//
 //  Revision 1.4  2004/12/27 12:30:02  dj_jl
 //  Vavoom version 1.16 changes.
 //
