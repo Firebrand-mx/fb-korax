@@ -87,6 +87,8 @@ int pic_fly[16];
 int pic_mino[16];
 int pic_boot[16];
 int pic_shld[16];
+int pic_pidm[8];
+int pic_shsp;
 
 int pic_paused;
 
@@ -205,10 +207,6 @@ void SB_StartMap(void)
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
 		}
-		else if (!sb_color)
-		{
-			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
-		}
 		else
 		{
 			sprint(Name, "LIFEGMH%d", sb_color + 1);
@@ -222,10 +220,6 @@ void SB_StartMap(void)
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMD2", PIC_PATCH);
 		}
-		else if (!sb_color)
-		{
-			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
-		}
 		else
 		{
 			sprint(Name, "LIFEGMD%d", sb_color + 1);
@@ -233,15 +227,11 @@ void SB_StartMap(void)
 		}
 		break;
 	case PCLASS_WITCHAVEN:
-		pic_chain = R_RegisterPic("CHAIN4", PIC_PATCH);
+		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
 		if (!netgame)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
-		}
-		else if (!sb_color)
-		{
-			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
 		}
 		else
 		{
@@ -386,6 +376,16 @@ void SB_StartMap(void)
 		sprint(Name, "SPSHLD%d", i);
 		pic_shld[i] = R_RegisterPic(Name, PIC_PATCH);
 	}
+	// [FB] PI Damage animated icon
+	for (i = 0; i < 8; i++)
+	{
+		sprint(Name, "SPPIDM%d", i);
+		pic_pidm[i] = R_RegisterPic(Name, PIC_PATCH);
+	}
+	// [FB] Invisibility icon
+	sprint(Name, "SPSHSP0");
+	pic_shsp = R_RegisterPic(Name, PIC_PATCH);
+	
 
 	//  PAUSED IMAGE
 	pic_paused = R_RegisterPic("PAUSED", PIC_PATCH);
@@ -417,7 +417,7 @@ void SB_DrawBackground(void)
 
 	R_DrawPic(0, 134, pic_bar);
 	R_DrawPic(28 + (((sb_health * 196) / 100) % 9), 193, pic_chain);
-	R_DrawPic(7 + (((sb_health*100/m_h) * 11) / 5), 193, pic_lifegem);
+	R_DrawPic(7 + (((sb_health * 100 / m_h) * 11) / 5), 193, pic_lifegem);
 	R_DrawPic(0, 193, pic_lfedge);
 	R_DrawPic(277, 193, pic_rtedge);
 }
@@ -829,7 +829,7 @@ void SB_DrawKeyBar(void)
 		}
 		R_DrawPic2(150 + 31 * i, 164, pic_armor[i], num);
 	}*/
-// NO CHANGE FOR THE STATBAR IN AUTOMAP MODE
+// [FB] NO CHANGE FOR THE STATBAR IN AUTOMAP MODE
 	int sb_mana1;
 	int sb_mana2;
 	int sb_mana3;
@@ -1128,11 +1128,11 @@ void SB_DrawFullscreenStats(void)
 	int readyweapon;
 
 
-	//  Health
+	//  [FB] Health
 	SB_DrawNumber12(5, 180, cl->health);
 	R_DrawPic(62, 224, pic_health);
 
-	//  Armorpoints
+	//  [FB] Armorpoints
 	SB_DrawNumber12(5, 160, cl->armorpoints);
 	R_DrawPic(62, 200, pic_armor2);
 
@@ -1181,7 +1181,7 @@ void SB_DrawFullscreenStats(void)
 	}*/
 
 
-	//  Mana Display in Fullscreen
+	//  [FB] Mana Display in Fullscreen
 	if (cl->mana[0] == 0)
 	{
 		// Draw Dim Mana icon
@@ -1227,7 +1227,7 @@ void SB_DrawFullscreenStats(void)
 	{
 		sb_mana5 = 1;
 	}
-	// Update mana graphics based upon mana count/weapon type
+	// [FB] Update mana graphics based upon mana count/weapon type
 	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
 	if (readyweapon == WP_FIRST)
 	{
@@ -1335,6 +1335,19 @@ void SB_DrawIcons(void)
 	{
 		R_DrawPic(300, 19, pic_mino[(level->tictime / 3) & 15]);
 	}
+
+	// [FB] PI Damage Active
+	if (cl->stats.flags & SBF_POWER_DAMAGE)
+	{
+		// [FB] This one should appear where the wings of wrath are supposed to do
+		R_DrawPic(20, 19, pic_pidm[(level->tictime / 3) & 7]);
+	}
+
+	// [FB] Invisibility power
+	if (cl->stats.flags & SBF_POWER_INVISIBILITY)
+	{
+		R_DrawPic(100, 19, pic_shsp);
+	}
 }
 
 //==========================================================================
@@ -1432,6 +1445,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/08/12 23:02:06  firebrand_kh
+//  Added new artifacts stuff to the game
+//
 //  Revision 1.3  2005/01/06 14:56:38  firebrand_kh
 //  Implemented new fullscreen HUD status for health, armorpoints & mana
 //
