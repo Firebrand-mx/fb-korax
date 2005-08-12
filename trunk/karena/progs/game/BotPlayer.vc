@@ -89,6 +89,8 @@ float combatdist[NUMWEAPONS * NUMCLASSES]; //different for each weapon.
 
 float angle;			// The wanted angle that the bot tries to get every tic.
 
+int botskill; // [FB] Bot skill
+
 //==========================================================================
 //
 //	BotTick
@@ -1772,13 +1774,46 @@ void Died(Actor killer)
 
 //==========================================================================
 //
+//	BotSkill
+//
+//	[FB] Determine the bot skills depending the game skill, heh!
+//
+//==========================================================================
+
+int BotSkill() // [FB] Select the right skill for the player
+{
+	if(sk_baby)
+	{
+		return 4;
+	}
+	else if(sk_easy)
+	{
+		return 3;
+	}
+	else if(sk_medium)
+	{
+		return 2;
+	}
+	else if(sk_hard)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+//(sk_baby ? bsk_poor : (sk_easy ? bsk_low : (sk_medium ? bsk_medium : (sk_hard ? bsk_high : bsk_excellent)))),
+}
+
+//==========================================================================
+//
 //	OnBeginPlay
 //
 //==========================================================================
 
 void OnBeginPlay(void)
 {
-	int botskill = 2;
+//	int botskill = 2;
 	int bottype = 0;
 	botinfo_t *binfo;
 	int i;
@@ -1806,6 +1841,8 @@ void OnBeginPlay(void)
 	binfo = &botinfo[bottype];
 
 	t_strafe = 1.0;
+
+	botskill = BotSkill();
 
 	if (botskill > 4)
 		botskill = 4;
@@ -2005,6 +2042,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2005/08/12 16:17:14  firebrand_kh
+//  Fixes for bot skills depending the game skill of the game
+//
 //  Revision 1.5  2005/07/29 13:39:47  firebrand_kh
 //  Changed level requirements for the weapon pickups
 //
