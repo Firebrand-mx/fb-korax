@@ -44,7 +44,14 @@ void A_FireMacePL1B(void)
 	angle = Player.MO.Angles.yaw;
 	if (int_mod)
 	{
-		ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+		if(!active_damage)
+		{
+			ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+		}
+		else // [FB] PI Damage
+		{
+			ball.MissileDamage = (ball.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+		}
 	}
 	ball.Instigator = Player.MO;
 	ball.Angles.yaw = angle;
@@ -80,7 +87,14 @@ void A_FireMacePL1(void)
 	{
 		if (int_mod)
 		{
-			ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+			if(!active_damage)
+			{
+				ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				ball.MissileDamage = (ball.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			}
 		}
 		ball.Instigator = Player.MO;
 		ball._Special1 = 16;	// tics till dropoff
@@ -105,6 +119,14 @@ void A_FireMacePL2(void)
 		if (int_mod)
 		{
 			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			if(!active_damage)
+			{
+				A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			}
 		}
 		A.Velocity.x += Player.MO.Velocity.x;
 		A.Velocity.y += Player.MO.Velocity.y;
@@ -160,6 +182,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/08/12 23:04:25  firebrand_kh
+//  Fixed weapons to work with the PI Damage artifact
+//
 //  Revision 1.2  2005/07/27 21:00:06  firebrand_kh
 //  Balanced weapon damage rates & mana usage
 //

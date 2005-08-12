@@ -38,7 +38,14 @@ void A_FireMissile(void)
 	mo = Player.SpawnPlayerMissile(Rocket);
 	if (mo && int_mod)
 	{
-		mo.MissileDamage = mo.MissileDamage * Player.intelligence / 10;
+		if(!active_damage)
+		{
+			mo.MissileDamage = mo.MissileDamage * Player.intelligence / 10;
+		}
+		else // [FB] PI Damage
+		{
+			mo.MissileDamage = (mo.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+		}
 	}
 	Player.MO.PlaySound('LauncherFire', CHAN_WEAPON);
 }
@@ -77,6 +84,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/08/12 23:04:25  firebrand_kh
+//  Fixed weapons to work with the PI Damage artifact
+//
 //  Revision 1.4  2005/08/08 18:16:51  firebrand_kh
 //  Took out model definitions
 //

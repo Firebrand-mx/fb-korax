@@ -38,7 +38,15 @@ void A_Saw(void)
 	TAVec aimAng;
 	TVec dir;
 
-	damage = 8; //2 * (P_Random() % 10 + 1);
+	if(!active_damage)
+	{
+		damage = 8; //2 * (P_Random() % 10 + 1);
+	}
+	else // [FB] PI Damage
+	{
+		damage = 8 * ftoi(3.1415);
+	}
+
 	aimAng = Player.MO.Angles;
 	aimAng.yaw = AngleMod360(aimAng.yaw + (Random() -
 		Random()) * 45.0 / 8.0);
@@ -80,8 +88,8 @@ void A_Saw(void)
 
 __states__
 {
-	S_SAW('SAWG', 2, 4.0 / 35.0, S_SAWB) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON);A_WeaponReady(); }
-	S_SAWB('SAWG', 3, 4.0 / 35.0, S_SAW) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON);A_WeaponReady(); }
+	S_SAW('SAWG', 2, 4.0 / 35.0, S_SAWB) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
+	S_SAWB('SAWG', 3, 4.0 / 35.0, S_SAW) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
 	S_SAWDOWN('SAWG', 2, 1.0 / 35.0, S_SAWDOWN) { A_Lower(); }
 	S_SAWUP('SAWG', 2, 1.0 / 35.0, S_SAWUP) { A_Raise(); }
 	S_SAW1('SAWG', 0, 4.0 / 35.0, S_SAW2) { A_Saw(); }
@@ -107,6 +115,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/08/12 23:04:25  firebrand_kh
+//  Fixed weapons to work with the PI Damage artifact
+//
 //  Revision 1.3  2005/08/08 18:16:51  firebrand_kh
 //  Took out model definitions
 //
