@@ -46,7 +46,14 @@ void A_FireBlasterPL1(void)
 	damage = 42; //30 + (P_Random() & 25);
 	if (int_mod)
 	{
-		damage = damage * Player.intelligence / 10;
+		if(!active_damage)
+		{
+			damage = damage * Player.intelligence / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+		}
 	}
 	AngleVector(&angles, &dir);
 	if (Player.Refire)
@@ -75,7 +82,14 @@ void A_FireBlasterPL2(void)
 		A.bBlaster = true;
 		if (int_mod)
 		{
-			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			if(!active_damage)
+			{
+				A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			}
 		}
 	}
 	Player.MO.PlaySound('BlasterFire', CHAN_WEAPON);

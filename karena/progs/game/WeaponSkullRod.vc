@@ -44,7 +44,14 @@ void A_FireSkullRodPL1()
 	}
 	if (A && int_mod)
 	{
-		A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+		if(!active_damage)
+		{
+			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+		}
+		else // [FB] PI Damage
+		{
+			A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+		}
 	}
 	Player.MO.PlaySound('SkullRodFire', CHAN_WEAPON);
 }
@@ -81,7 +88,14 @@ void A_FireSkullRodPL2()
 
 		if (int_mod)
 		{
-			MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player.intelligence / 10;
+			if(!active_damage)
+			{
+				MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player.intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			}
 		}
 		if (linetarget)
 		{
@@ -141,6 +155,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/08/12 23:04:25  firebrand_kh
+//  Fixed weapons to work with the PI Damage artifact
+//
 //  Revision 1.4  2005/08/08 18:16:51  firebrand_kh
 //  Took out model definitions
 //

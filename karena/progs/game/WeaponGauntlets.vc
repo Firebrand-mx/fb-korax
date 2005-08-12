@@ -47,7 +47,14 @@ void A_GauntletAttack(void)
 	damage = 17; //10 + (P_Random() & 15);
 	if (str_mod)
 	{
-		damage = damage * Player.strength / 10;
+		if(!active_damage)
+		{
+			damage = damage * Player.strength / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+		}
 	}
 	dist = MELEERANGE + 0.00001;
 	angles.yaw = AngleMod360(angles.yaw +
@@ -139,6 +146,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/08/12 23:04:25  firebrand_kh
+//  Fixed weapons to work with the PI Damage artifact
+//
 //  Revision 1.2  2005/07/27 21:00:06  firebrand_kh
 //  Balanced weapon damage rates & mana usage
 //
