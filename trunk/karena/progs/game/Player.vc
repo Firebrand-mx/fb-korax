@@ -589,13 +589,12 @@ void SpawnPlayer(mthing_t * mthing)
 	if (!inited)
 	{
 		InitiateLevel();
-//		pp.experience = 0; [FB] This is the cause?
 		inited = true;
 	}
 	else
 	{
 		// [FB] There's a penalty for dying, you lost some experience
-		pp.experience = experience - ((200  * exp_level) + P_Random() & 150);
+		pp.experience = experience - (200 * exp_level);
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower to it, then we activate a level less than
@@ -962,6 +961,17 @@ bool GivePower(int power)
 		MO.Translucency = 33;
 		return true;
 	}
+	if (power == pw_damage)
+	{
+		if (Powers[power] > BLINKTHRESHOLD)
+		{
+			// Already have it
+			return false;
+		}
+		Powers[power] = DAMAGETIME;
+		Weapon(ViewEnts[ps_weapon]).active_damage = 1; // [FB] Adjust weapon damage
+		return true;
+	}
 	if (Powers[power])
 	{
 		return false;	// already got it
@@ -1006,6 +1016,10 @@ bool GiveArtifact(int arti)
 	else if (arti == arti_invisibility)
 	{
 		return GivePower(pw_invisibility);
+	}
+	else if (arti == arti_damage)
+	{
+		return GivePower(pw_damage);
 	}
 	else
 	{
@@ -2819,6 +2833,15 @@ void PlayerTick(float deltaTime)
 			MO.Translucency = 0;
 		}
 	}
+	if (Powers[pw_damage])
+	{
+		Powers[pw_damage] -= deltaTime;
+		if (Powers[pw_damage] <= 0.0)
+		{
+			Powers[pw_damage] = 0.0;
+			Weapon(ViewEnts[ps_weapon]).active_damage = 0; // [FB] Return to using normal damage
+		}
+	}
 
 
 	if (PoisonCount && level->time - LastPoisonTime >= 0.5)
@@ -2915,12 +2938,12 @@ void PlayerTick(float deltaTime)
 	else
 		FixedColormap = 0;
 
-	if((MO.Velocity.x == 0.0 || MO.Velocity.y == 0.0) && !Buttons & BT_ATTACK) // [FB] Check for the player camping
+	if((MO.Velocity.x == 0.0) || (MO.Velocity.y == 0.0)) // [FB] Check for the player camping
 	{
 		pcount++;
 		PlayerCamping();
 	}
-	else if((MO.Velocity.x != 0.0 || MO.Velocity.y != 0.0) || Buttons & BT_ATTACK) // [FB] The player is moving
+	else if((MO.Velocity.x != 0.0) || (MO.Velocity.y != 0.0)) // [FB] The player is moving
 	{
 		pcount = 0;
 	}
@@ -3060,6 +3083,22 @@ void SetViewPos()
 			!(ftoi(Powers[pw_minotaur] * 35.0) & 16))
 		{
 			Stats.flags |= SBF_POWER_MINOTAUR;
+		}
+	}
+	if (Powers[pw_invisibility])
+	{
+		if (Powers[pw_invisibility] > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_invisibility] * 35.0) & 16))
+		{
+			Stats.flags |= SBF_POWER_INVISIBILITY;
+		}
+	}
+	if (Powers[pw_damage])
+	{
+		if (Powers[pw_damage] > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_damage] * 35.0) & 16))
+		{
+			Stats.flags |= SBF_POWER_DAMAGE;
 		}
 	}
 	if (MO.bFly)
@@ -3314,7 +3353,12 @@ bool UseArtifact(int arti)
 			return false;
 		}
 		break;
-
+	case arti_damage:
+		if (!GivePower(pw_damage))
+		{
+			return false;
+		}
+		break;
 
 	case arti_puzzskull:
 	case arti_puzzgembig:
@@ -4397,6 +4441,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.17  2005/08/14 16:51:01  firebrand_kh
+//  Added new artifacts, fixed some stuff
+//
 //  Revision 1.16  2005/08/12 16:23:01  firebrand_kh
 //  Added new artifacts & made some fixes
 //
