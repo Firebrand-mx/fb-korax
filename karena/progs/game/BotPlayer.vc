@@ -147,7 +147,7 @@ void BotTick(float deltaTime)
 	Pitch();
 
 	// Only walk if we're on skill 0
-	if (!botskill)
+	if (!botskill || sk_baby)
 	{
 		if (forwardmove == FORWARDRUN)
 			forwardmove = FORWARDWALK;
@@ -284,7 +284,8 @@ bool CheckItem(Actor item)
 
 	if (Artifact(item) && !ArtifactBoostArmor(item) &&
 		!ArtifactInvulnerability(item) && !ArtifactSpeedBoots(item)
-		&& !ArtifactBoostMana(item))
+		&& !ArtifactBoostMana(item) && !ArtifactInvisibility(item)
+		&& !ArtifactPIDamage(item) && !ArtifactTorch(item))
 		return false;
 	if (Key(item) && deathmatch)
 		return false;
@@ -1802,7 +1803,6 @@ int BotSkill() // [FB] Select the right skill for the player
 	{
 		return 0;
 	}
-//(sk_baby ? bsk_poor : (sk_easy ? bsk_low : (sk_medium ? bsk_medium : (sk_hard ? bsk_high : bsk_excellent)))),
 }
 
 //==========================================================================
@@ -2042,6 +2042,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2005/08/14 16:57:17  firebrand_kh
+//  Made bots pickup new artifacts
+//
 //  Revision 1.6  2005/08/12 16:17:14  firebrand_kh
 //  Fixes for bot skills depending the game skill of the game
 //
