@@ -67,6 +67,18 @@ bool IsDangerous(sector_t *sec)
 	case FLOOR_SLUDGE:
 		return true;
 	}
+
+	// [FB] Check 3d Floors too!	
+	if(sec->bHasExtrafloors)
+	{
+		switch (sec->special)
+		{
+			case FLOOR_LAVA:
+			case FLOOR_SLUDGE:
+			return true;
+		}
+	}
+		
 	return false;
 }
 
@@ -98,8 +110,9 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		sector_t *front;
 		opening_t *open;
 		float diffheight;
+		float extraheight; // [FB] For extra floors
 
-		ld = in->line;					// This linedef
+		ld = in->line;	// This linedef
 		hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
 
 		// Line is impassible
@@ -127,7 +140,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		// crosses a two sided line
 		open = LineOpenings(ld, hit_point);
-		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
+		open = FindOpening(open, hit_point.z  + botmo.Height / 2.0, hit_point.z + botmo.Height);
 		// No valid openings
 		if (!open)
 		{
@@ -140,13 +153,25 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			return false;
 		}
 
-		diffheight = open->bottom/*back->floorheight*/ - front->floorheight;
-		
+		diffheight = back->floorheight - front->floorheight;
+
+		// [FB] Opening isn't big enough on the other side
+		if (back->ceilingheight - front->floorheight <= botmo.Height)
+		{
+			return false;
+		}
+
+		// [FB] Ceiling is too low
+		if (back->ceilingheight - back->floorheight <= botmo.Height)
+		{
+			return false;
+		}
+
 		if (diffheight > 0.0)
 		{
 			if (diffheight > 48.0)
 			{
-/*				if (front->SSpecial == ThrustThingZ || front->springpadzone)
+			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
 				{
 					return true;
 				}
@@ -158,7 +183,39 @@ bool PTR_BotPathTraverse(intercept_t *in)
 				bot.player.Buttons |= BT_JUMP;
 			}
 		}
-		return true;
+
+		// [FB] Now, let's check the 3d Floors!!
+
+		// [FB] Opening isn't big enough on the other side
+		if ((back->ceilingheight - front->floorheight <= botmo.Height) && front->bHasExtrafloors)
+		{
+			return false;
+		}
+
+		// [FB] Ceiling is too low
+		if ((back->ceilingheight - back->floorheight <= botmo.Height) && back->bHasExtrafloors)
+		{
+			return false;
+		}
+
+		if (diffheight > 0.0 && front->bHasExtrafloors)
+		{
+			if (diffheight > 48.0)
+			{
+			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
+				{
+					return true;
+				}
+				else*/
+					return false;
+			}
+			else if (diffheight <= 48.0 && diffheight >= 24.0)
+			{
+				bot.player.Buttons |= BT_JUMP;
+			}
+		}
+
+		return true;			
 	}
 
 	th = Actor(in->Thing);
@@ -168,17 +225,17 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 	if (th.bSolid)
 		return false;
-/*
-	fixed_t diffheight = (th->z + th->height) - shootthing->z;
+
+/*	fixed_t diffheight = (th->z + th->height) - shootthing->z;
 
 	if (diffheight > 0)
 	{
-		if (diffheight <= 48*FRACUNIT && diffheight >= 24*FRACUNIT)
+		if (diffheight <= 48.0 && diffheight >= 24.0)
 		{
-			bot->player->cmd.ucmd.buttons |= BT_JUMP;
+			bot.player.Buttons |= BT_JUMP;
 			return true;
 		}
-		else if (diffheight <= 24*FRACUNIT)
+		else if (diffheight <= 24.0)
 			return true;
 		else
 			return false;
@@ -3219,6 +3276,9 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2005/08/26 14:44:26  firebrand_kh
+//  Fixed transverse path code for the bots
+//
 //  Revision 1.5  2005/08/14 16:52:23  firebrand_kh
 //  Changed the way the bots are spawned
 //
