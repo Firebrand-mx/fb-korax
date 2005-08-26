@@ -404,11 +404,9 @@ void SB_StartMap(void)
 
 void SB_DrawBackground(void)
 {
-	// [FB] Check this!!
-//	m_h = cl->max_health; // [FB] What's wrong with this? it only marks 10, 12, etc. !!
 	sb_health = HealthMarker;
 
-	// [FB] This should work for now, but it's messy...	
+	// [FB] Calculate the max_health value according the player level
 	if(cl->exp_level == 1)
 	{
 		m_h = 90;
@@ -440,7 +438,7 @@ void SB_DrawBackground(void)
 	}
 
 	R_DrawPic(0, 134, pic_bar);
-	R_DrawPic(28 + ((((sb_health * 100 / m_h) * 196) / 100) % 9), 193, pic_chain);
+	R_DrawPic(28 + ((((sb_health) * 196) / 100) % 9), 193, pic_chain);
 	R_DrawPic(7 + (((sb_health * 100 / m_h) * 11) / 5), 193, pic_lifegem);
 	R_DrawPic(0, 193, pic_lfedge);
 	R_DrawPic(277, 193, pic_rtedge);
@@ -1470,6 +1468,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2005/08/26 16:04:07  firebrand_kh
+//  Fixed calculation of max_health values
+//
 //  Revision 1.6  2005/08/26 15:00:24  firebrand_kh
 //  Took out some unused code from the file
 //
