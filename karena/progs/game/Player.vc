@@ -521,10 +521,10 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 	if (randomclass && deathmatch)
 	{
-		PClass = P_Random() % 4;
+		PClass = P_Random() % 6;
 		if (PClass == BaseClass)
 		{
-			PClass = (PClass + 1) % 4;
+			PClass = (PClass + 1) % 6;
 		}
 		BaseClass = PClass;
 		SB_Start();
@@ -593,7 +593,7 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 	else
 	{
-		// [FB] There's a penalty for dying, you lost some experience
+		// [FB] There's a penalty for dying; you lost some experience
 		pp.experience = experience - (200 * exp_level);
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
@@ -620,7 +620,7 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 /*	if (deathmatch = 2)
 	{
-		team = Color; // [FB] If team deatchmatch give a player a team
+		team = Color; // [FB] If team deatchmatch give the player a team
 	}*/
 
 	// Set translation table data
@@ -676,6 +676,7 @@ void PlayerReborn()
 	SetWeapon(WP_SECOND);
 	LocalQuakeHappening = 0;
 	done = 0; // [FB] Reset Penalty
+	Powers[NUMPOWERS] = 0.0;
 }
 
 //==========================================================================
@@ -731,6 +732,7 @@ void PlayerExitMap(bool clusterChange)
 	DamageFlash = 0.0;	// No palette changes
 	BonusFlash = 0.0;
 	PoisonCount = 0;
+	BlindCount = 0; // [FB] Reset the blind count too!
 }
 
 //==========================================================================
@@ -1222,7 +1224,6 @@ void ActivateLevel(int lvl)
 
 void DeactivateLevel(int lvl)
 {
-	int old_maxhealth;
 	int addhealth;
 	int i;
 
@@ -1279,23 +1280,22 @@ void InitiateLevel()
 //
 //  PlayerCamping
 //
-//  [FB] If the player camps much time he'll lost experience too! :O
+//  [FB] If the player camps much time he'll lost experience too >:D
 //
 //==========================================================================
 
 void PlayerCamping()
 {
 	// [FB] Let's see, if every a tic is 1/35 of a second, a second should
-	//	be multiplied by 35 to have an equality, every 10 secs. the
-	//	player stays camping (without even shooting), we'll start
-	//	decresing his experience according his level, so...
+	//	be multiplied by 35 to have an equality, every 3 secs. the
+	//	player stays camping (even if he's shooting), we'll start
+	//	decreasing his experience according his level, so...
 	int limit;
 	PlayerPawn pp;
 
-	limit = 3 * 35; // [FB] 10 seconds
+	limit = 3 * 35; // [FB] 3 seconds
 
-	// [FB] Check for differences on the player's x & y positions, player
-	//	pressing buttons, etc.
+	// [FB] Check for differences on the player's x & y positions
 	if((pcount >= limit) && (pcount % (1 * 35) == 0))
 	{
 		PlayerPawn(MO).experience = experience - (1 * (exp_level)); // [FB] Depending the player level
@@ -1309,11 +1309,11 @@ void PlayerCamping()
 		}
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
-		//	if it is lower to it, then we activate a level less than
+		//	if it is lower than it, then we activate a level less than
 		//	our current one
 		if((PlayerPawn(MO).experience < old_level) && (done == 0) && (exp_level > 1) /* && (cl < PCLASS_PIG)*/)
 		{
-			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to the old_level
+			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to old_level
 			exp_level--; // [FB] Decrese experience level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 			done = 1; // [FB] Do this only once
@@ -1448,10 +1448,10 @@ void MovePlayer(float deltaTime)
 	// code, but to simplify it, we do it here.
 	//  Fighter moves faster, cleric at original speed, mage - slower,
 	// pig - slower, but faster than mage
-	// [FB] Added the missing classes to this part of the code
 	switch (PClass)
 	{
-	case PCLASS_FIGHTER:
+	// [FB] It seems this isn't used in KA...
+/*	case PCLASS_FIGHTER:
 		forward *= 1.18 + itof(dexterity) / 100.0;
 		side *= 1.3 + itof(dexterity) / 100.0;
 		break;
@@ -1479,13 +1479,16 @@ void MovePlayer(float deltaTime)
 	case PCLASS_WITCHAVEN:
 		forward *= 1.0 + itof(dexterity) / 100.0;
 		side *= 1.0 + itof(dexterity) / 100.0;
-		break;
+		break;*/
 
 	case PCLASS_PIG:
 		forward *= 0.97 + itof(dexterity) / 100.0;
 		side *= 0.97 + itof(dexterity) / 100.0;
 		break;
 	}
+	// [FB] Instead, we make every class walk at the same speed now
+	forward *= 0.9 + itof(dexterity) / 100.0;
+	side *= 0.9 + itof(dexterity) / 100.0;
 
 	if (Powers[pw_speed] && !MorphTime)
 	{
@@ -4441,6 +4444,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.18  2005/08/26 14:40:09  firebrand_kh
+//  Lots of fixes
+//
 //  Revision 1.17  2005/08/14 16:51:01  firebrand_kh
 //  Added new artifacts, fixed some stuff
 //
