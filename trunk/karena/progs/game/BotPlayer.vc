@@ -295,6 +295,71 @@ bool CheckItem(Actor item)
 
 //==========================================================================
 //
+//	CheckPNodes
+// 
+//	[FB] Determines if the bot should get to a Path Node
+//
+//==========================================================================
+
+bool CheckPNodes(Actor node)
+{
+#if 0 // [FB] This is all we will need to check for team games! WOW!!
+			else if (!bot->node && actor->flags3 & MF3_NODE)// && P_CheckSight(MO, actor, false) && (bot->prev != actor && P_AproxDistance(MO->x - actor->x, MO->y - actor->y) <= 32*FRACUNIT))
+			{
+				if (actor->Class == MT_BOTPATH || actor->Class == MT_BOTSNIPE)
+					bot->node = actor;
+				else if (teamgame.value && bot->player->team != TM_NONE)
+				{
+					if (bot->player->team == TM_BLUE)
+					{
+						if (bot->state == BST_DEFENSE && ((int)actor->Class == (int)MT_BOTBLUEGUARD))
+						{
+							bot->node = actor;
+						}
+						else if (bot->state == BST_OFFENSE && ((int)actor->Class == (int)MT_BOTBLUEPATH))
+						{
+							bot->node = actor;
+						}
+						else if (bot->state == BST_RETURN && actor->Class == MT_BOTBLUEGOAL)
+						{
+							bot->node = actor;
+						}
+					}
+					if (bot->player->team == TM_RED)
+					{
+						if (bot->state == BST_DEFENSE && ((int)actor->Class == (int)MT_BOTREDGUARD))
+	
+						{
+							bot->node = actor;
+						}
+						else if (bot->state == BST_OFFENSE && ((int)actor->Class == MT_BOTREDPATH))
+						{
+							bot->node = actor;
+						}
+						else if (bot->state == BST_RETURN && ((int)actor->Class == MT_BOTREDGOAL))
+						{
+							bot->node = actor;
+						}
+					}
+				}
+			}
+#endif
+	// [FB] Just check if the actor is really a Path Node and it's reachable
+	if (node.Class == PathNode/* && player.MO.CanSee(node)*/)
+	{
+		/*if(CheckTo(node.Origin))
+		{*/
+			return true;
+		//}
+	}
+	else // [FB] Don't use it if it's not a PathNode then...
+	{
+		return false;
+	}
+}
+
+//==========================================================================
+//
 //	SetEnemy
 //
 //==========================================================================
@@ -437,6 +502,13 @@ void Scan(void)
 				(MobjDist(botmo, actor) < AVOID_DIST))
 			{
 				missile = actor;
+			}
+			else if(!node)
+			{
+				if (CheckPNodes(actor))
+				{
+					node = actor;
+				}
 			}
 		}
 	}
@@ -583,7 +655,7 @@ int WeapPieceFromItem(Actor item)
 //	ManaFromItem
 //
 //
-// Returns an mana type from an actor
+// Returns a mana type from an actor
 //
 //==========================================================================
 
@@ -657,7 +729,7 @@ bool Check_LOS(Actor to, float vangle)
 	if (vangle == 360.0)
 		return true;
 	if (vangle == 0.0)
-		return false; //Looker seems to be blind.
+		return false; // Looker seems to be blind.
 
 	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
 		vangle / 2.0;
@@ -791,7 +863,7 @@ Actor FindEnemy(void)
 	float vangle;
 	int i, light;
 
-	//Note: It's hard to ambush a bot who is not alone
+	// Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
 		vangle = 360.0;
 	else
@@ -1361,13 +1433,13 @@ void Roam(void)
 	{
 		dest = lastpos;
 	}
-	else if (item)
-	{
-		dest = item.Origin;
-	}
 	else if (node)
 	{
 		dest = node.Origin;
+	}
+	else if (item)
+	{
+		dest = item.Origin;
 	}
 	else if (posdest_valid)
 	{
@@ -1375,14 +1447,16 @@ void Roam(void)
 	}
 	else
 	{
-		// [FB] The pathnodes code should come here, instead of
-		//	making stupid circles right and left, we should
-		//	look for a pathnode and if an item is near roam
-		//	for it
 		// No target, so just run around until we find something
 		int r = P_Random();
 		float an = GetAngle();
 		float dist;
+
+		// [FB] Always check for PathNodes
+		if (node)
+		{
+			dest = node.Origin;
+		}
 
 		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
 		{
@@ -1417,6 +1491,7 @@ void Roam(void)
 				break;
 			}
 		}
+
 		if (posdest_valid)
 		{
 			dest = posdest;
@@ -1445,7 +1520,7 @@ void Roam(void)
 void Move(float deltaTime)
 {
 	float dist;
-	
+
 	// Worry about missiles above all else
 	if (missile)
 	{
@@ -1574,7 +1649,7 @@ void Move(float deltaTime)
 
 		noforward = false;
 		noside = false;
-		if (!sidemove )
+		if (!sidemove)
 			sidemove = SIDERUN;
 
 		if (t_strafe)
@@ -1592,6 +1667,16 @@ void Move(float deltaTime)
 		// Remember where we saw him last in case he gets away
 		lastpos = enemy.Origin;
 		lastpos_valid = true;
+
+		// [FB] Always check for PathNodes
+		if (node)
+		{
+			if(CheckPNodes(node))
+			{
+				Roam();
+				return;
+			}
+		}
 
 		// Check if we'd rather pick up something than fight
 		if (item)
@@ -1639,6 +1724,16 @@ void Move(float deltaTime)
 		{
 			sidemove = -sidemove;
 			t_strafe = 2.0;
+		}
+	}
+
+	// [FB] Always check for PathNodes
+	if (node)
+	{
+		if(CheckPNodes(node))
+		{
+			Roam();
+			return;
 		}
 	}
 
@@ -2042,6 +2137,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2005/08/26 14:29:24  firebrand_kh
+//  Bots now recognize and follow path nodes
+//
 //  Revision 1.7  2005/08/14 16:57:17  firebrand_kh
 //  Made bots pickup new artifacts
 //
