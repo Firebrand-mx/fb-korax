@@ -1317,7 +1317,11 @@ void Damage(Actor inflictor, Actor source, int damage)
 //			savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
 		}
 		damage -= ftoi(saved);
-		Player.ArmorPoints -= ftoi(saved);//Percent);
+		if (damage < 0)
+		{
+			damage = 0;  // [FB] For strange splash damage that gives health
+		}
+		Player.ArmorPoints -= ftoi(saved);//Percent
 		if (Player.ArmorPoints < 0)
 		{
 			Player.ArmorPoints = 0; // [FB] No negative armor points
@@ -1673,7 +1677,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 		Died(source);
 		return;
 	}
-	if (!(level->tictime & 63) && playPainSound)
+	if (playPainSound)
 	{
 		SetState(PainState);
 	}
@@ -4109,6 +4113,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.15  2005/08/26 14:37:20  firebrand_kh
+//  Fixed blind damage pain sound
+//
 //  Revision 1.14  2005/08/03 00:57:16  firebrand_kh
 //  Fixed negative armor if much damage was done to the player
 //
