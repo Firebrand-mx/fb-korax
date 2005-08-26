@@ -40,6 +40,7 @@ int sb_color;
 
 int HealthMarker;
 int sb_health;
+int m_h;
 
 bool hitCenterFrame;
 
@@ -181,6 +182,10 @@ void SB_StartMap(void)
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMC2", PIC_PATCH);
 		}
+		else if (!sb_color)
+		{
+			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
+		}
 		else
 		{
 			sprint(Name, "LIFEGMC%d", sb_color + 1);
@@ -193,6 +198,10 @@ void SB_StartMap(void)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMM2", PIC_PATCH);
+		}
+		else if (!sb_color)
+		{
+			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
 		}
 		else
 		{
@@ -207,6 +216,10 @@ void SB_StartMap(void)
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
 		}
+		else if (!sb_color)
+		{
+			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
+		}
 		else
 		{
 			sprint(Name, "LIFEGMH%d", sb_color + 1);
@@ -220,6 +233,10 @@ void SB_StartMap(void)
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMD2", PIC_PATCH);
 		}
+		else if (!sb_color)
+		{
+			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
+		}
 		else
 		{
 			sprint(Name, "LIFEGMD%d", sb_color + 1);
@@ -232,6 +249,10 @@ void SB_StartMap(void)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
+		}
+		else if (!sb_color)
+		{
+			pic_lifegem = R_RegisterPic("LIFEGEM", PIC_PATCH);
 		}
 		else
 		{
@@ -403,9 +424,32 @@ void SB_StartMap(void)
 
 void SB_DrawBackground(void)
 {
-	int m_h;
-	m_h = cl->max_health;
+	// [FB] Check this!!
+//	m_h = cl->max_health; // [FB] What's wrong with this? it only marks 10, 12, etc. !!
 	sb_health = HealthMarker;
+
+	// [FB] This should work for now, but it's messy...	
+	if(cl->exp_level == 1)
+	{
+		m_h = 90;
+	}
+	else if(cl->exp_level == 2)
+	{
+		m_h = 112;
+	}
+	else if(cl->exp_level == 3)
+	{
+		m_h = 140;
+	}
+	else if(cl->exp_level == 4)
+	{
+		m_h = 156;
+	}
+	else if(cl->exp_level >= 5)
+	{
+		m_h = 175;
+	}
+
 	if (sb_health < 0)
 	{
 		sb_health = 0;
@@ -416,7 +460,7 @@ void SB_DrawBackground(void)
 	}
 
 	R_DrawPic(0, 134, pic_bar);
-	R_DrawPic(28 + (((sb_health * 196) / 100) % 9), 193, pic_chain);
+	R_DrawPic(28 + ((((sb_health * 100 / m_h) * 196) / 100) % 9), 193, pic_chain);
 	R_DrawPic(7 + (((sb_health * 100 / m_h) * 11) / 5), 193, pic_lifegem);
 	R_DrawPic(0, 193, pic_lfedge);
 	R_DrawPic(277, 193, pic_rtedge);
@@ -1410,6 +1454,7 @@ void SB_UpdateWidgets(void)
 	int curHealth;
 
 	curHealth = cl->health;
+
 	if (curHealth < 0)
 	{
 		curHealth = 0;
@@ -1445,6 +1490,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/08/26 14:26:42  firebrand_kh
+//  Fixed health chain movement and alligment
+//
 //  Revision 1.4  2005/08/12 23:02:06  firebrand_kh
 //  Added new artifacts stuff to the game
 //
