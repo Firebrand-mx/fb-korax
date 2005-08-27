@@ -742,23 +742,25 @@ bool PIT_RadiusAttack(Entity Other)
 	{
 		return true;
 	}
-//  if (Other.Flags2 & MF2_BOSS)
-//  {
-//		// Bosses take no damage from PIT_RadiusAttack
-//      return true;
-//  }
+	// [FB] Enabled for KA!
+	if (Actor(Other).bBoss)
+	{
+		// Bosses take no damage from PIT_RadiusAttack
+		return true;
+	}
 	if (!DamageSource && Other == bombsource)
 	{
 		// don't damage the source of the explosion
 		return true;
 	}
-#if 0
-	if (abs(ftoi(Other.Origin.z - bombspot.Origin.z)) > 2 * bombdistance)
+	// [FB] This doesn't seems to work
+/*
+	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) - Actor(bombsource).Origin.z)) > bombdistance)
 	{
 		// too high/low
 		return true;
 	}
-#endif
+*/
 	dist = Length(MobjCenter(Other) - MobjCenter(bombspot)) - Other.Radius;
 	if (dist < 0.0)
 	{
@@ -884,6 +886,9 @@ void PIT_ThrustSpike(Actor actor)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/08/27 14:16:06  firebrand_kh
+//  Updated some stuff for Korax Arena
+//
 //  Revision 1.3  2005/03/28 07:58:57  dj_jl
 //  Latest Vavoom updates.
 //
