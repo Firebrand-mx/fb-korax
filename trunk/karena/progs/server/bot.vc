@@ -69,7 +69,7 @@ bool IsDangerous(sector_t *sec)
 	}
 
 	// [FB] Check 3d Floors too!	
-	if(sec->bHasExtrafloors)
+	if(sec->bHasExtrafloors && sec->bUnderWater)
 	{
 		switch (sec->special)
 		{
@@ -156,20 +156,20 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		diffheight = back->floorheight - front->floorheight;
 
 		// [FB] Opening isn't big enough on the other side
-		if (back->ceilingheight - front->floorheight <= botmo.Height)
+		if (back->ceilingheight - front->floorheight <= botmo.Height && !front->bHasExtrafloors)
 		{
 			return false;
 		}
 
 		// [FB] Ceiling is too low
-		if (back->ceilingheight - back->floorheight <= botmo.Height)
+		if (back->ceilingheight - back->floorheight <= botmo.Height && !back->bHasExtrafloors)
 		{
 			return false;
 		}
 
-		if (diffheight > 0.0)
+		if (diffheight > 0.0 && !front->bHasExtrafloors)
 		{
-			if (diffheight > 48.0)
+			if (diffheight > 48.0 && !front->bHasExtrafloors)
 			{
 			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
 				{
@@ -178,24 +178,26 @@ bool PTR_BotPathTraverse(intercept_t *in)
 				else*/
 					return false;
 			}
-			else if (diffheight <= 48.0 && diffheight >= 24.0)
+			else if (diffheight <= 48.0 && diffheight >= 24.0 && !front->bHasExtrafloors)
 			{
 				bot.player.Buttons |= BT_JUMP;
 			}
 		}
 
 		// [FB] Now, let's check the 3d Floors!!
-
-		// [FB] Opening isn't big enough on the other side
-		if ((back->ceilingheight - front->floorheight <= botmo.Height) && front->bHasExtrafloors)
+		if(botmo.WaterLevel < 2)
 		{
-			return false;
-		}
+			// [FB] Opening isn't big enough on the other side
+			if ((back->ceilingheight - front->floorheight <= botmo.Height) && front->bHasExtrafloors)
+			{
+				return false;
+			}
 
-		// [FB] Ceiling is too low
-		if ((back->ceilingheight - back->floorheight <= botmo.Height) && back->bHasExtrafloors)
-		{
-			return false;
+			// [FB] Ceiling is too low
+			if ((back->ceilingheight - back->floorheight <= botmo.Height) && front->bHasExtrafloors)
+			{
+				return false;
+			}
 		}
 
 		if (diffheight > 0.0 && front->bHasExtrafloors)
@@ -215,6 +217,51 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			}
 		}
 
+		// --- Special Cases ---
+
+		// [FB] Columns on the front sector
+		if (front->ceilingheight == front->floorheight && !front->bHasExtrafloors)
+		{
+			return false;
+		}
+
+		// [FB] Columns on the back sector
+		if (back->ceilingheight == back->floorheight && !back->bHasExtrafloors)
+		{
+			return false;
+		}
+
+		// --- Special Cases For Extra Floors ---
+
+		if(botmo.WaterLevel < 2)
+		{
+			// [FB] When the floor height of an extra floor in the back sector
+			// is equal to the ceiling height of the front sector with
+			// no extra floor
+			if ((back->floorheight - front->ceilingheight <= botmo.Height) && front->bHasExtrafloors)
+			{
+				return false;
+			}
+	
+			// [FB] When the floor height of an extra floor in the front sector
+			// is equal to the ceiling height of the back sector with
+			// no extra floor
+			if ((front->floorheight - back->ceilingheight <= botmo.Height) && front->bHasExtrafloors)
+			{
+				return false;
+			}
+			// [FB] These seem to cause problems for swimming bots
+/*			if (front->ceilingheight == back->floorheight && front->bHasExtrafloors)
+			{
+				return false;
+			}
+
+			if (back->ceilingheight == front->floorheight && back->bHasExtrafloors)
+			{
+				return false;
+			}*/
+		}
+
 		return true;			
 	}
 
@@ -226,16 +273,19 @@ bool PTR_BotPathTraverse(intercept_t *in)
 	if (th.bSolid)
 		return false;
 
-/*	fixed_t diffheight = (th->z + th->height) - shootthing->z;
+	// [FB] What's this, huh?
+/*	float dheight;
+	dheight = abs(th.Origin.z - shoot_thing.Origin.z);
 
-	if (diffheight > 0)
+
+	if (dheight > 0)
 	{
-		if (diffheight <= 48.0 && diffheight >= 24.0)
+		if (dheight <= 48.0 && dheight >= 24.0)
 		{
 			bot.player.Buttons |= BT_JUMP;
 			return true;
 		}
-		else if (diffheight <= 24.0)
+		else if (dheight <= 24.0)
 			return true;
 		else
 			return false;
@@ -3276,6 +3326,9 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2005/08/27 14:17:21  firebrand_kh
+//  Added even more checks for the Transverse Path code
+//
 //  Revision 1.6  2005/08/26 14:44:26  firebrand_kh
 //  Fixed transverse path code for the bots
 //
