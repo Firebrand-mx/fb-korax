@@ -602,6 +602,7 @@ void SpawnPlayer(mthing_t * mthing)
 		if(pp.experience < old_level && done == 0 && exp_level > 1 /* && (cl < PCLASS_PIG)*/)
 		{
 			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to the old_level
+			old_level = old_level - (1000 * exp_level); // [FB] Also decrease the old_level
 			exp_level--; // [FB] Decrese experience level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 			done = 1; // [FB] Do this only once
@@ -1273,6 +1274,7 @@ void PlayerCamping()
 		if((PlayerPawn(MO).experience < old_level) && (done == 0) && (exp_level > 1) /* && (cl < PCLASS_PIG)*/)
 		{
 			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to old_level
+			old_level = old_level - (1000 * exp_level); // [FB] Also decrease the old_level
 			exp_level--; // [FB] Decrese experience level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 			done = 1; // [FB] Do this only once
@@ -1403,64 +1405,37 @@ void MovePlayer(float deltaTime)
 	forward = ForwardMove;
 	side = SideMove;
 
-	//  Adjust speed depending on class. Originaly this is done in input
-	// code, but to simplify it, we do it here.
-	//  Fighter moves faster, cleric at original speed, mage - slower,
-	// pig - slower, but faster than mage
 	switch (PClass)
 	{
-	// [FB] It seems this isn't used in KA...
-/*	case PCLASS_FIGHTER:
-		forward *= 1.18 + itof(dexterity) / 100.0;
-		side *= 1.3 + itof(dexterity) / 100.0;
-		break;
-
+	// [FB] We make every class walk at the same speed now
+	case PCLASS_FIGHTER:
 	case PCLASS_CLERIC:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
-		break;
-
 	case PCLASS_MAGE:
+	case PCLASS_HERETIC:
+	case PCLASS_MARINE:
+	case PCLASS_WITCHAVEN:
 		forward *= 0.9 + itof(dexterity) / 100.0;
 		side *= 0.9 + itof(dexterity) / 100.0;
 		break;
-
-	case PCLASS_HERETIC:
-		forward *= 1.18 + itof(dexterity) / 100.0;
-		side *= 1.3 + itof(dexterity) / 100.0;
-		break;
-
-	case PCLASS_MARINE:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
-		break;
-
-	case PCLASS_WITCHAVEN:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
-		break;*/
 
 	case PCLASS_PIG:
 		forward *= 0.97 + itof(dexterity) / 100.0;
 		side *= 0.97 + itof(dexterity) / 100.0;
 		break;
 	}
-	// [FB] Instead, we make every class walk at the same speed now
-	forward *= 0.9 + itof(dexterity) / 100.0;
-	side *= 0.9 + itof(dexterity) / 100.0;
 
 	if (Powers[pw_speed] && !MorphTime)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5 + itof(dexterity) / 100.0;
-		side *= 1.5 + itof(dexterity) / 100.0;
+		forward *= 1.5;
+		side *= 1.5;
 	}
 	if ((!Powers[pw_flight] || MO.Origin.z <= MO.FloorZ) &&
 		(MO.GetFloorType() == FLOOR_ICE ||
 		(MO.Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow))
 	{
-		forward *= 0.5 + itof(dexterity) / 100.0;
-		side *= 0.5 + itof(dexterity) / 100.0;
+		forward *= 0.5;
+		side *= 0.5;
 	}
 
 	// Do not let the player control movement
@@ -1469,8 +1444,8 @@ void MovePlayer(float deltaTime)
 	if (!(onground || MO.bFly))
 	{
 		//  not on ground, so little effect on velocity
-		forward *= air_control + itof(dexterity) / 100.0;
-		side *= air_control + itof(dexterity) / 100.0;
+		forward *= air_control;
+		side *= air_control;
 	}
 
 	AngleVectors(&MO.Angles, &vforward, &vright, &vup);
@@ -4403,6 +4378,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.20  2005/08/28 20:10:47  firebrand_kh
+//  Added update of the old_level value when decreasing levels
+//
 //  Revision 1.19  2005/08/27 14:15:04  firebrand_kh
 //  Removed an incorrect check for the PoisonDamage & unused code
 //
