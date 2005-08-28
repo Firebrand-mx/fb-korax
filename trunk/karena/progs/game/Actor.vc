@@ -1313,21 +1313,19 @@ void Damage(Actor inflictor, Actor source, int damage)
 //		savedPercent = itof(damage) * itof(60-Player.constitution) / 100.0;
 		if (savedPercent > itof(Player.ArmorPoints)) 
 		{
-			saved = itof(Player.ArmorPoints) * itof(40 + Player.constitution) / 100.0;
+			saved = (itof(Player.ArmorPoints) * itof(40 + Player.constitution)) / 100.0;
 //			savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
 		}
 		damage -= ftoi(saved);
-		if (damage < 0)
+		if (damage < 1) // [FB] Always do damage no matter what
 		{
-			damage = 0;  // [FB] For strange splash damage that gives health
+			damage = 1;
 		}
 		Player.ArmorPoints -= ftoi(saved);//Percent
 		if (Player.ArmorPoints < 0)
 		{
 			Player.ArmorPoints = 0; // [FB] No negative armor points
 		}
-
-
 		if (damage >= Player.Health
 			&& ((gameskill == sk_baby) || deathmatch) && !Player.MorphTime)
 		{
@@ -4113,6 +4111,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.17  2005/08/28 19:00:37  firebrand_kh
+//  Fixed zero damage to always do damage
+//
 //  Revision 1.16  2005/08/27 14:11:05  firebrand_kh
 //  Removed an incorrect check for the PoisonDamage
 //
