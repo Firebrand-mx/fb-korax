@@ -119,6 +119,10 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
 			return false;
 
+		// [FB] It could be a door or something else
+		if (ld->special)
+			return true;
+
 		// Line isn't two sided
 		if (!ld->backsector)
 			return false;
@@ -250,16 +254,6 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			{
 				return false;
 			}
-			// [FB] These seem to cause problems for swimming bots
-/*			if (front->ceilingheight == back->floorheight && front->bHasExtrafloors)
-			{
-				return false;
-			}
-
-			if (back->ceilingheight == front->floorheight && back->bHasExtrafloors)
-			{
-				return false;
-			}*/
 		}
 
 		return true;			
@@ -3326,6 +3320,9 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2005/08/28 18:59:46  firebrand_kh
+//  Removed some unused code from the file and redundant checks
+//
 //  Revision 1.7  2005/08/27 14:17:21  firebrand_kh
 //  Added even more checks for the Transverse Path code
 //
