@@ -23,11 +23,23 @@
 //**
 //**************************************************************************
 
-class MenuChoice_Level:MenuChoiceEnum;
+class MenuChoice_Level : MenuChoiceEnum;
 
-void InitMapList(void)
+string MapLumpNames[32];
+
+bool MapPrefixIs(int i, string Prefix)
+{
+	int			TmpName[3];
+
+	strcpy(ARR2STR(TmpName), P_GetMapLumpName(i));
+	strsetchar(ARR2STR(TmpName), strlen(Prefix), 0);
+	return !stricmp(ARR2STR(TmpName), Prefix);
+}
+
+void InitMapList(int GameType)
 {
 	int i;
+	int Idx;
 #ifdef FIXME
 	int count = 0;
 
@@ -43,19 +55,34 @@ void InitMapList(void)
 	}
 	MaxValue = count;
 #else
+	Idx = 0;
 	for (i = 1; i <= 32; i++)
 	{
-		EnumNames[i - 1] = P_GetMapName(i);
+		switch (GameType)
+		{
+		case 0:	//	Cooperative
+			if (!MapPrefixIs(i, "map"))
+				continue;
+			break;
+		case 1:	//	Deathmatch
+		case 2:	//	Team deathmatch.
+			if (!MapPrefixIs(i, "dm"))
+				continue;
+			break;
+		}
+		EnumNames[Idx] = P_GetMapName(i);
+		MapLumpNames[Idx] = P_GetMapLumpName(i);
+		Idx++;
 	}
-	MaxValue = 32;
+	MaxValue = Idx;
 #endif
 	Value = 0;
 }
 
-void InitWindow(void)
+void InitWindow()
 {
 	::InitWindow();
-	InitMapList();
+	InitMapList(1);
 }
 
 defaultproperties
@@ -66,6 +93,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2005/09/13 17:51:19  dj_jl
+//  Level list depending on game type.
+//
 //  Revision 1.1  2004/11/16 13:33:19  dj_jl
 //  Initial import.
 //
