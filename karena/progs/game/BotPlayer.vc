@@ -26,7 +26,7 @@
 // Main bot class
 class BotPlayer : Object;
 
-Player player;		// Points to reference player
+Player player;			// Points to reference player
 Actor botmo;
 
 // Destinations
@@ -89,7 +89,7 @@ float combatdist[NUMWEAPONS * NUMCLASSES]; //different for each weapon.
 
 float angle;			// The wanted angle that the bot tries to get every tic.
 
-int botskill; // [FB] Bot skill
+int botskill; 			// [FB] Bot skill
 
 //==========================================================================
 //
@@ -128,6 +128,12 @@ void BotTick(float deltaTime)
 			angerlevel = 0;
 	}
 
+	// [FB] Set an ally if we're in a mode that has one
+	if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4)
+		ally = B_SetAlly();
+	else
+		ally = none;
+
 	// Weed out any bad destinations/enemies
 	CheckStuff();
 
@@ -139,7 +145,6 @@ void BotTick(float deltaTime)
 	BotAim();
 	Turn();
 
-	// Moving towards destination
 	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
 	Attack();
 	Move(deltaTime);
@@ -147,7 +152,7 @@ void BotTick(float deltaTime)
 	Pitch();
 
 	// Only walk if we're on skill 0
-	if (!botskill || sk_baby)
+	if (!botskill || gameskill == sk_baby)
 	{
 		if (forwardmove == FORWARDRUN)
 			forwardmove = FORWARDWALK;
@@ -216,10 +221,11 @@ bool CheckItem(Actor item)
 	{
 		bNewItemIsWeapon = true;
 
-		if ((weapon > WP_FOURTH && player.exp_level < 2) ||
-			(weapon == WP_EIGHTH && player.exp_level < 3)) {
+		/*if ((weapon > WP_FOURTH && player.exp_level < 2) ||
+		      (weapon == WP_EIGHTH && player.exp_level < 3))
+		{
 			return false;
-		}
+		}*/
 
 		// If we don't have the weapon, pick it up
 		if (!player.WeaponOwned[weapon])
@@ -232,9 +238,8 @@ bool CheckItem(Actor item)
 			(weapon == WP_FIFTH && player.Mana[MANA_1] == MAX_MANA) ||
 			(weapon == WP_SIXTH && player.Mana[MANA_2] == MAX_MANA) ||
 			(weapon == WP_SEVENTH && player.Mana[MANA_3] == MAX_MANA) ||
-			(weapon == WP_EIGHTH && 
-			((player.Mana[MANA_1] == MAX_MANA)&&
-			(player.Mana[MANA_2] == MAX_MANA)&&
+			(weapon == WP_EIGHTH && ((player.Mana[MANA_1] == MAX_MANA) &&
+			(player.Mana[MANA_2] == MAX_MANA) &&
 			(player.Mana[MANA_3] == MAX_MANA))))
 			return false;
 	}
@@ -256,7 +261,7 @@ bool CheckItem(Actor item)
 */
 	if (WeaponPiece(item))
 	{
-		if (player.Mana[MANA_3] == MAX_MANA)
+		if (player.Mana[NUMMANA] == MAX_MANA)
 			return false;
 	}
 
@@ -287,8 +292,10 @@ bool CheckItem(Actor item)
 		&& !ArtifactBoostMana(item) && !ArtifactInvisibility(item)
 		&& !ArtifactPIDamage(item) && !ArtifactTorch(item))
 		return false;
+
 	if (Key(item) && deathmatch)
 		return false;
+
 	// [FB] Guess we're okay
 	return true;
 }
@@ -387,7 +394,7 @@ void SetEnemy(void)
 //
 //	CheckTo
 //
-//	Checks if an location is reachable
+//	Checks if a location is reachable
 //
 //==========================================================================
 
@@ -772,35 +779,33 @@ void BotAim(void)
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if (((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon >= WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_CLERIC && player.ReadyWeapon >= WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_MAGE && player.ReadyWeapon >= WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_HERETIC && player.ReadyWeapon >= WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_MARINE && player.ReadyWeapon >= WP_FIFTH || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon >= WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH)) /*&&
-	    (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon] > 48.0)*/)
+	if (((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon == WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_CLERIC && player.ReadyWeapon == WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MAGE && player.ReadyWeapon == WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_HERETIC && player.ReadyWeapon == WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MARINE && player.ReadyWeapon == WP_FIFTH || WP_SEVENTH || WP_EIGHTH) ||
+	    (player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon == WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH)))
 	{
 		// Projectile weapons
 		switch (info.intelect)
 		{
-		case bsk_verypoor:
-		case bsk_poor:
-		case bsk_low:
-			// Aim right at the enemy
-			SetAngle(an);
-			break;
-		case bsk_medium:
-		case bsk_high:
-		case bsk_excellent:
-		case bsk_supreme:
+			case bsk_verypoor:
+			case bsk_poor:
+			case bsk_low:
+				// Aim right at the enemy
+				SetAngle(an);
+				break;
+			case bsk_medium:
+			case bsk_high:
+			case bsk_excellent:
+			case bsk_supreme:
 			if (right)
 				SetAngle(an + Random() * 20.0);
 			else
 				SetAngle(an - Random() * 20.0);
 			break;
-
-		default:
-			Error("Unknown bot skill level: %d", info.accuracy);
+			default:
+				Error("Unknown bot skill level: %d", info.accuracy);
 			return;
 		}
 	}
@@ -809,42 +814,42 @@ void BotAim(void)
 		// Instant weapons
 		switch (info.accuracy)
 		{
-		case bsk_verypoor:
-			if (right)
-				SetAngle(an + Random() * 60.0);
-			else
-				SetAngle(an - Random() * 60.0);
-			break;
-		case bsk_poor:
-			if (right)
-				SetAngle(an + Random() * 45.0);
-			else
-				SetAngle(an - Random() * 45.0);
-			break;
-		case bsk_low:
-			if (right)
-				SetAngle(an + Random() * 30.0);
-			else
-				SetAngle(an - Random() * 30.0);
-			break;
-		case bsk_medium:
-			if (right)
-				SetAngle(an + Random() * 15.0);
-			else
-				SetAngle(an - Random() * 15.0);
-			break;
-		case bsk_high:
-			SetAngle(an);
-			break;
-		case bsk_excellent:
-			SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
-			break;
-		case bsk_supreme://FIXME
-			SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
-			break;
-		default:
-			Error("Unknown bot skill level: %d", info.accuracy);
-			return;
+			case bsk_verypoor:
+				if (right)
+					SetAngle(an + Random() * 60.0);
+				else
+					SetAngle(an - Random() * 60.0);
+				break;
+			case bsk_poor:
+				if (right)
+					SetAngle(an + Random() * 45.0);
+				else
+					SetAngle(an - Random() * 45.0);
+				break;
+			case bsk_low:
+				if (right)
+					SetAngle(an + Random() * 30.0);
+				else
+					SetAngle(an - Random() * 30.0);
+				break;
+			case bsk_medium:
+				if (right)
+					SetAngle(an + Random() * 15.0);
+				else
+					SetAngle(an - Random() * 15.0);
+				break;
+			case bsk_high:
+				SetAngle(an);
+				break;
+			case bsk_excellent:
+				SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
+				break;
+			case bsk_supreme://FIXME
+				SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
+				break;
+			default:
+				Error("Unknown bot skill level: %d", info.accuracy);
+				return;
 		}
 	}
 }
@@ -861,6 +866,8 @@ Actor FindEnemy(void)
 	Actor target;
 	float vangle;
 	int i, light;
+	Actor actor;
+
 
 	// Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
@@ -869,29 +876,25 @@ Actor FindEnemy(void)
 		vangle = ENEMY_SCAN_FOV;
 	bAllRound = false;
 
-#if 0
-	// Look for monster enemy
-	if (!deathmatch.value && !teamgame.value)
-	{
-		AActor *actor;
-		TThinkerIterator<AActor> iterator;
 
-		while (actor = iterator.Next())
+	// [FB] Look for monster enemy
+/*	if (!deathmatch.value && !teamgame.value)
+	{*/
+		FOREACH(Actor, actor)
 		{
-			if (!(actor->flags3 & MF3_ENEMY))
+			if (!(actor.bEnemy))
 				continue;
-			if (!Check_LOS(MO, actor, vangle))
+			if (!Check_LOS(actor, vangle))
 				continue;
-			if (!P_CheckSight(MO, actor))
+			if (!botmo.CanSee(actor))
 				continue;
 
 			return actor;
 		}
 
-		// Didn't find anything...
-		return NULL;
-	}
-#endif
+/*		// Didn't find anything...
+		return none;*/
+//	}
 
 	target = none;
 	closest_dist = 99999.0;
@@ -902,11 +905,12 @@ Actor FindEnemy(void)
 		if (svvars->Players[i] && svvars->Players[i].MO &&
 			svvars->Players[i].MO.Health > 0 && botmo != svvars->Players[i].MO)
 		{
-/*			if (deathmatch==2)
+			// [FB] Are we on a Team gameplay mode?
+			if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4)
 			{
-				if (svvars->Players[i].Color==player.Color)
+				if (svvars->Players[i].Color == player.Color)
 					continue;
-			}*/
+			}
 			 //Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always returns false. tought it should be the same checksight as below but.. (below works) something must be fuckin wierd screded up. 
 			if (Check_LOS(svvars->Players[i].MO, vangle))
 			{
@@ -1318,83 +1322,76 @@ int B_ChooseWeapon (void)
 //
 //	B_SetAlly
 //
-//	[FB] This function is called every tick (for each bot) to set
-//	     the mate (teammate coop mate).
+//	[FB] This function is called every tick (for each bot) to set the
+//	     mate (teammate coop mate).
 //
 //==========================================================================
 
-/*Actor B_SetAlly (void)
+Actor B_SetAlly ()
 {
-	//return NULL;
+//	return none;
 	
 	float closest_dist, test;
 	Actor target;
-	bool p_leader[MAXPLAYERS];
 	int i, j;
 
 	//is mate alive?
-	if (ally && ally.Health)
+	if (ally)
 	{
-		ally = ally;
+		if (ally.Health > 0)
+			ally = none;
+		else
+		{
+			last_mate = ally;
+			return ally;
+		}
 	}
 
 	//Check old_mates status.
-	if (last_mate && last_mate.Health)
+	if (last_mate)
 	{
-		ally = last_mate;
+		if (last_mate.Health > 0)
+		{
+			last_mate = none;
+		}
 	}
 
-	for (i=0; i<MAXPLAYERS; i++)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!svvars->Players[i]->MO.team || svvars->Players[i] == botmo)
-			continue;
-		if (svvars->Players[i]->MO.team == botmo.team)
+		if (svvars->Players[i] && svvars->Players[i].Color == player.Color)
 		{
-			ally = svvars->Players[i]->MO;
+			ally = svvars->Players[i].MO;
 			break;
 		}
-
-		p_leader[i] = false;
-		for (j=0; j<MAXPLAYERS; j++)
-		{
-			if (svvars->Players[j]->skullb->ally == svvars->Players[i]->MO)
-			{
-				p_leader[i] = true;
-				break;
-			}
-		}
 	}
 
-//	target = NULL;
-	closest_dist = 9999.0;
+	target = none;
+	closest_dist = 99999.0;
 
 	//Check for player friends
-	for (i=0; i<MAXPLAYERS; i++)
+	for (j = 0; j < MAXPLAYERS; j++)
 	{
-		if (svvars->Players[i] && svvars->Players[i]->MO 
-			&& bot->player->MO != svvars->Players[i]->MO
-			&& (bot->player->MO->IsTeammate(svvars->Players[i]->MO) || !deathmatch.value)
-			&& GPlayers[i]->MO->health
-			&& ((bot->player->health/2) <= svvars->Players[i]->MO->health || !deathmatch.value)
-			&& !p_leader[i]) //taken?
+		if ((svvars->Players[j])
+		    && (botmo != svvars->Players[j].MO)
+		    && (svvars->Players[j].Color == player.Color)
+		    && (botmo.Health / 2 <= svvars->Players[j].MO.Health))
 		{
-
-			if (P_CheckSight(bot->player->MO, svvars->Players[i]->MO, true))
+			if (botmo.CanSee(svvars->Players[j].MO))
 			{
-				test = MobjDist(bot, svvars->Players[i]);//P_AproxDistance(GPlayers[i]->MO->x - bot->player->MO->x,
-										//GPlayers[i]->MO->y - bot->player->MO->y);
+				test = MobjDist(botmo, svvars->Players[j].MO);
 
 				if (test < closest_dist)
 				{
 					closest_dist = test;
-					target = svvars->Players[i]->MO;
+					target = svvars->Players[j].MO;
+					break;
 				}
 			}
 		}
 	}
 
 	return target;
-}*/
+}
 
 //==========================================================================
 //
@@ -1713,6 +1710,35 @@ void Move(float deltaTime)
 		return;
 	}
 
+	// [FB] Follow our buddy if we're tagging along
+	if (ally)
+	{
+		float matedist;
+
+		if (t_strafe)
+		{
+			t_strafe -= deltaTime;
+			if (t_strafe)
+			{
+				sidemove = -sidemove;
+				t_strafe = 2.0;
+			}
+		}
+
+		matedist = MobjDist(botmo, ally);
+
+		SetAngle(AngleTo(ally.Origin));
+
+		if (matedist > (FRIEND_DIST * 2.0))
+			forwardmove = FORWARDRUN;
+		else if (matedist > FRIEND_DIST)
+			forwardmove = FORWARDWALK;
+		else if (matedist < FRIEND_DIST - (FRIEND_DIST / 3.0)) // [FB] Got too close, so move away.
+			forwardmove = -FORWARDWALK;
+
+		return;
+	}
+
 	if (t_strafe)
 	{
 		t_strafe -= deltaTime;
@@ -1964,53 +1990,58 @@ void OnBeginPlay(void)
 		combatdist[WP_SEVENTH]			= 1.0;
 		combatdist[WP_EIGHTH]			= 256.0 / mod;
 		/* CLERIC */
-		combatdist[4 + WP_FIRST]		= 1.0;
-		combatdist[4 + WP_SECOND]		= 192.0 / mod;
-		combatdist[4 + WP_THIRD]		= 1.0;
-		combatdist[4 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[4 + WP_FIFTH]		= 192.0 / mod;
-		combatdist[4 + WP_SIXTH]		= 1.0;
-		combatdist[4 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[4 + WP_EIGHTH]		= 384.0 / mod;
-		/* MAGE */
 		combatdist[8 + WP_FIRST]		= 1.0;
 		combatdist[8 + WP_SECOND]		= 192.0 / mod;
-		combatdist[8 + WP_THIRD]		= 192.0 / mod;
+		combatdist[8 + WP_THIRD]		= 1.0;
 		combatdist[8 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[8 + WP_FIFTH]		= 384.0 / mod;
-		combatdist[8 + WP_SIXTH]		= 192.0 / mod;
-		combatdist[8 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[8 + WP_FIFTH]		= 192.0 / mod;
+		combatdist[8 + WP_SIXTH]		= 1.0;
+		combatdist[8 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
 		combatdist[8 + WP_EIGHTH]		= 384.0 / mod;
-		/* HERETIC */
-		combatdist[12 + WP_FIRST]		= 1.0;
-		combatdist[12 + WP_SECOND]		= 256.0 / mod;
-		combatdist[12 + WP_THIRD]		= 192.0 / mod;
-		combatdist[12 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[12 + WP_FIFTH]		= 256.0 / mod;
-		combatdist[12 + WP_SIXTH]		= 384.0 / mod;
-		combatdist[12 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
-		combatdist[12 + WP_EIGHTH]		= 384.0 / mod;
-		/* MARINE */
+		/* MAGE */
 		combatdist[16 + WP_FIRST]		= 1.0;
 		combatdist[16 + WP_SECOND]		= 192.0 / mod;
-		combatdist[16 + WP_THIRD]		= 256.0 / mod;
+		combatdist[16 + WP_THIRD]		= 192.0 / mod;
 		combatdist[16 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[16 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[16 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[16 + WP_FIFTH]		= 384.0 / mod;
+		combatdist[16 + WP_SIXTH]		= 192.0 / mod;
 		combatdist[16 + WP_SEVENTH]		= 384.0 / mod;
-		combatdist[16 + WP_EIGHTH]		= 192.0 / mod;
+		combatdist[16 + WP_EIGHTH]		= 384.0 / mod;
+		/* HERETIC */
+		combatdist[24 + WP_FIRST]		= 1.0;
+		combatdist[24 + WP_SECOND]		= 256.0 / mod;
+		combatdist[24 + WP_THIRD]		= 192.0 / mod;
+		combatdist[24 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[24 + WP_FIFTH]		= 256.0 / mod;
+		combatdist[24 + WP_SIXTH]		= 384.0 / mod;
+		combatdist[24 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
+		combatdist[24 + WP_EIGHTH]		= 384.0 / mod;
+		/* MARINE */
+		combatdist[32 + WP_FIRST]		= 1.0;
+		combatdist[32 + WP_SECOND]		= 192.0 / mod;
+		combatdist[32 + WP_THIRD]		= 256.0 / mod;
+		combatdist[32 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[32 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
+		combatdist[32 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[32 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[32 + WP_EIGHTH]		= 192.0 / mod;
 		/* WITCHAVEN */
-		combatdist[20 + WP_FIRST]		= 1.0;
-		combatdist[20 + WP_SECOND]		= 1.0;
-		combatdist[20 + WP_THIRD]		= 256.0 / mod;
-		combatdist[20 + WP_FOURTH]		= 384.0 / mod;
-		combatdist[20 + WP_FIFTH]		= 1.0;
-		combatdist[20 + WP_SIXTH]		= 256.0 / mod;
-		combatdist[20 + WP_SEVENTH]		= 256.0;
-		combatdist[20 + WP_EIGHTH]		= 256.0 / mod;
+		combatdist[40 + WP_FIRST]		= 1.0;
+		combatdist[40 + WP_SECOND]		= 1.0;
+		combatdist[40 + WP_THIRD]		= 256.0 / mod;
+		combatdist[40 + WP_FOURTH]		= 384.0 / mod;
+		combatdist[40 + WP_FIFTH]		= 1.0;
+		combatdist[40 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[40 + WP_SEVENTH]		= 256.0;
+		combatdist[40 + WP_EIGHTH]		= 256.0 / mod;
 
 
-		/*combatdist[4 + WP_FIRST]	= 48.0;
+/*		combatdist[WP_FIRST]		= 48.0;
+		combatdist[WP_SECOND]		= 48.0;
+		combatdist[WP_THIRD]		= 192.0;
+		combatdist[WP_FOURTH]		= 256.0;
+		combatdist[4 + WP_FIRST]	= 48.0;
+		combatdist[4 + WP_FIRST]	= 48.0;
 		combatdist[4 + WP_SECOND]	= 192.0;
 		combatdist[4 + WP_THIRD]	= 256.0;
 		combatdist[4 + WP_FOURTH]	= 384.0;
@@ -2032,50 +2063,50 @@ void OnBeginPlay(void)
 		combatdist[WP_SEVENTH]			= 1.0;
 		combatdist[WP_EIGHTH]			= 256.0 / mod;
 		/* CLERIC */
-		combatdist[4 + WP_FIRST]		= 1.0;
-		combatdist[4 + WP_SECOND]		= 192.0 / mod;
-		combatdist[4 + WP_THIRD]		= 1.0;
-		combatdist[4 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[4 + WP_FIFTH]		= 192.0 / mod;
-		combatdist[4 + WP_SIXTH]		= 1.0;
-		combatdist[4 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[4 + WP_EIGHTH]		= 384.0 / mod;
-		/* MAGE */
 		combatdist[8 + WP_FIRST]		= 1.0;
 		combatdist[8 + WP_SECOND]		= 192.0 / mod;
-		combatdist[8 + WP_THIRD]		= 192.0 / mod;
+		combatdist[8 + WP_THIRD]		= 1.0;
 		combatdist[8 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[8 + WP_FIFTH]		= 384.0 / mod;
-		combatdist[8 + WP_SIXTH]		= 192.0 / mod;
-		combatdist[8 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[8 + WP_FIFTH]		= 192.0 / mod;
+		combatdist[8 + WP_SIXTH]		= 1.0;
+		combatdist[8 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
 		combatdist[8 + WP_EIGHTH]		= 384.0 / mod;
-		/* HERETIC */
-		combatdist[12 + WP_FIRST]		= 1.0;
-		combatdist[12 + WP_SECOND]		= 256.0 / mod;
-		combatdist[12 + WP_THIRD]		= 192.0 / mod;
-		combatdist[12 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[12 + WP_FIFTH]		= 256.0 / mod;
-		combatdist[12 + WP_SIXTH]		= 384.0 / mod;
-		combatdist[12 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
-		combatdist[12 + WP_EIGHTH]		= 384.0 / mod;
-		/* MARINE */
+		/* MAGE */
 		combatdist[16 + WP_FIRST]		= 1.0;
 		combatdist[16 + WP_SECOND]		= 192.0 / mod;
-		combatdist[16 + WP_THIRD]		= 256.0 / mod;
+		combatdist[16 + WP_THIRD]		= 192.0 / mod;
 		combatdist[16 + WP_FOURTH]		= 256.0 / mod;
-		combatdist[16 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[16 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[16 + WP_FIFTH]		= 384.0 / mod;
+		combatdist[16 + WP_SIXTH]		= 192.0 / mod;
 		combatdist[16 + WP_SEVENTH]		= 384.0 / mod;
-		combatdist[16 + WP_EIGHTH]		= 192.0 / mod;
+		combatdist[16 + WP_EIGHTH]		= 384.0 / mod;
+		/* HERETIC */
+		combatdist[24 + WP_FIRST]		= 1.0;
+		combatdist[24 + WP_SECOND]		= 256.0 / mod;
+		combatdist[24 + WP_THIRD]		= 192.0 / mod;
+		combatdist[24 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[24 + WP_FIFTH]		= 256.0 / mod;
+		combatdist[24 + WP_SIXTH]		= 384.0 / mod;
+		combatdist[24 + WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
+		combatdist[24 + WP_EIGHTH]		= 384.0 / mod;
+		/* MARINE */
+		combatdist[32 + WP_FIRST]		= 1.0;
+		combatdist[32 + WP_SECOND]		= 192.0 / mod;
+		combatdist[32 + WP_THIRD]		= 256.0 / mod;
+		combatdist[32 + WP_FOURTH]		= 256.0 / mod;
+		combatdist[32 + WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
+		combatdist[32 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[32 + WP_SEVENTH]		= 384.0 / mod;
+		combatdist[32 + WP_EIGHTH]		= 192.0 / mod;
 		/* WITCHAVEN */
-		combatdist[20 + WP_FIRST]		= 1.0;
-		combatdist[20 + WP_SECOND]		= 1.0;
-		combatdist[20 + WP_THIRD]		= 256.0 / mod;
-		combatdist[20 + WP_FOURTH]		= 384.0 / mod;
-		combatdist[20 + WP_FIFTH]		= 1.0;
-		combatdist[20 + WP_SIXTH]		= 256.0 / mod;
-		combatdist[20 + WP_SEVENTH]		= 256.0;
-		combatdist[20 + WP_EIGHTH]		= 256.0 / mod;
+		combatdist[40 + WP_FIRST]		= 1.0;
+		combatdist[40 + WP_SECOND]		= 1.0;
+		combatdist[40 + WP_THIRD]		= 256.0 / mod;
+		combatdist[40 + WP_FOURTH]		= 384.0 / mod;
+		combatdist[40 + WP_FIFTH]		= 1.0;
+		combatdist[40 + WP_SIXTH]		= 256.0 / mod;
+		combatdist[40 + WP_SEVENTH]		= 256.0;
+		combatdist[40 + WP_EIGHTH]		= 256.0 / mod;
 
 
 /*		combatdist[WP_FIRST]		= 48.0;
@@ -2133,6 +2164,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.10  2005/09/15 16:24:08  firebrand_kh
+//  Made bots able to recognize allies and monster enemies, some other fixes
+//
 //  Revision 1.9  2005/08/27 14:11:51  firebrand_kh
 //  Some fixes
 //
