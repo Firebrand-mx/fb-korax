@@ -29,7 +29,7 @@ string MapLumpNames[32];
 
 bool MapPrefixIs(int i, string Prefix)
 {
-	int			TmpName[3];
+	int TmpName[3];
 
 	strcpy(ARR2STR(TmpName), P_GetMapLumpName(i));
 	strsetchar(ARR2STR(TmpName), strlen(Prefix), 0);
@@ -60,13 +60,21 @@ void InitMapList(int GameType)
 	{
 		switch (GameType)
 		{
-		case 0:	//	Cooperative
+		case 0:	//	Clean the Castle
 			if (!MapPrefixIs(i, "map"))
 				continue;
 			break;
 		case 1:	//	Deathmatch
 		case 2:	//	Team deathmatch.
-			if (!MapPrefixIs(i, "dm"))
+			if (!MapPrefixIs(i, "dm_"))
+				continue;
+			break;
+		case 3: //	Capture the Flag
+			if (!MapPrefixIs(i, "cf_"))
+				continue;
+			break;
+		case 4: //	Football
+			if (!MapPrefixIs(i, "fb_"))
 				continue;
 			break;
 		}
@@ -93,6 +101,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/09/15 16:42:13  firebrand_kh
+//  Added more gameplay modes
+//
 //  Revision 1.2  2005/09/13 17:51:19  dj_jl
 //  Level list depending on game type.
 //
