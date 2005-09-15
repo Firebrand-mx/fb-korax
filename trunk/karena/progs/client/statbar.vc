@@ -69,6 +69,8 @@ int pic_manavial2[2];
 int pic_manavial3[2];
 int pic_manavial4[2];
 int pic_manavial5[2];
+int pic_manavial6;
+int pic_manavial7;
 /*int pic_artiflash[5];
 int pic_wpslot;
 int pic_wpfull;
@@ -288,13 +290,15 @@ void SB_StartMap(void)
 	pic_manavial4[1] = R_RegisterPic("MANAVL4", PIC_PATCH);
 	pic_manavial5[0] = R_RegisterPic("MANAVL5D", PIC_PATCH);
 	pic_manavial5[1] = R_RegisterPic("MANAVL5", PIC_PATCH);
+	pic_manavial6 = R_RegisterPic("MANAVL6", PIC_PATCH);
+	pic_manavial7 = R_RegisterPic("MANAVL7", PIC_PATCH);
 /*	pic_artiflash[0] = R_RegisterPic("USEARTIA", PIC_PATCH);
 	pic_artiflash[1] = R_RegisterPic("USEARTIB", PIC_PATCH);
 	pic_artiflash[2] = R_RegisterPic("USEARTIC", PIC_PATCH);
 	pic_artiflash[3] = R_RegisterPic("USEARTID", PIC_PATCH);
 	pic_artiflash[4] = R_RegisterPic("USEARTIE", PIC_PATCH);
-*/
-/*	switch (sb_pclass)
+
+	switch (sb_pclass)
 	{
 	case PCLASS_FIGHTER:
 		pic_wpslot = R_RegisterPic("WPSLOT0", PIC_PATCH);
@@ -326,18 +330,8 @@ void SB_StartMap(void)
 		wppiecex[1] = 205;
 		wppiecex[2] = 224;
 		break;
-	case PCLASS_HERETIC:
-		pic_wpslot = R_RegisterPic("WPSLOT0", PIC_PATCH);
-		pic_wppiece[0] = R_RegisterPic("WPIECEF1", PIC_PATCH);
-		pic_wppiece[1] = R_RegisterPic("WPIECEF2", PIC_PATCH);
-		pic_wppiece[2] = R_RegisterPic("WPIECEF3", PIC_PATCH);
-		pic_wpfull = R_RegisterPic("WPFULL0", PIC_PATCH);
-		wppiecex[0] = 190;
-		wppiecex[1] = 225;
-		wppiecex[2] = 234;
-		break;
 	}
-*/
+
 	//
 	//  KEY BAR
 	//
@@ -356,7 +350,7 @@ void SB_StartMap(void)
 	//
 	//  INVENTORY
 	//
-/*	pic_invbar = R_RegisterPic("INVBAR", PIC_PATCH);
+	pic_invbar = R_RegisterPic("INVBAR", PIC_PATCH);
 	pic_selectbox = R_RegisterPic("SELECTBO", PIC_PATCH);
 	pic_invgeml[0] = R_RegisterPic("INVGEML1", PIC_PATCH);
 	pic_invgeml[1] = R_RegisterPic("INVGEML2", PIC_PATCH);
@@ -368,8 +362,9 @@ void SB_StartMap(void)
 	//
 	for (i = 0; i < 16; i++)
 	{
-		sprint(Name, "SPFLY%d", i);
-		pic_fly[i] = R_RegisterPic(Name, PIC_PATCH);
+		// [KORAX]
+/*		sprint(Name, "SPFLY%d", i);
+		pic_fly[i] = R_RegisterPic(Name, PIC_PATCH);*/
 		sprint(Name, "SPMINO%d", i);
 		pic_mino[i] = R_RegisterPic(Name, PIC_PATCH);
 		sprint(Name, "SPBOOT%d", i);
@@ -409,23 +404,43 @@ void SB_DrawBackground(void)
 	// [FB] Calculate the max_health value according the player level
 	if(cl->exp_level == 1)
 	{
-		m_h = 90;
+		m_h = 100;
 	}
 	else if(cl->exp_level == 2)
 	{
-		m_h = 112;
+		m_h = 109;
 	}
 	else if(cl->exp_level == 3)
 	{
-		m_h = 140;
+		m_h = 118;
 	}
 	else if(cl->exp_level == 4)
 	{
-		m_h = 156;
+		m_h = 128;
 	}
-	else if(cl->exp_level >= 5)
+	else if(cl->exp_level == 5)
 	{
-		m_h = 175;
+		m_h = 139;
+	}
+	else if(cl->exp_level == 6)
+	{
+		m_h = 151;
+	}
+	else if(cl->exp_level == 7)
+	{
+		m_h = 164;
+	}
+	else if(cl->exp_level == 8)
+	{
+		m_h = 178;
+	}
+	else if(cl->exp_level == 9)
+	{
+		m_h = 194;
+	}
+	else if(cl->exp_level == 10)
+	{
+		m_h = 209;
 	}
 
 	if (sb_health < 0)
@@ -480,6 +495,47 @@ void SB_DrawNumber9(int x, int y, int num, int color)
 	if (neg)
 	{
 		R_DrawPic(x - 8, y, pic_minus);
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawNumber92
+//
+//	[FB] Draw the number shadowed
+//
+//==========================================================================
+
+void SB_DrawNumber92(int x, int y, int num, int color)
+{
+	int w = 9;
+	int neg = num < 0;
+
+	if (neg)
+	{
+		num = -num;
+	}
+
+	x = x + 27;
+    
+	// in the special case of 0, you draw 0
+	if (!num)
+	{
+		R_DrawShadowedPic(x - w, y, pic_innum[color][0]);
+	}
+
+	// draw the new number
+	while (num)
+	{
+		x -= w;
+		R_DrawShadowedPic(x, y, pic_innum[color][num % 10]);
+		num /= 10;
+	}
+
+	// draw a minus sign if necessary
+	if (neg)
+	{
+		R_DrawShadowedPic(x - 8, y, pic_minus);
 	}
 }
 
@@ -577,17 +633,17 @@ void SB_DrawMainBar(void)
 	R_DrawPic(38, 162, pic_statbar);
 
 //[Korax]
-	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
-	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
-	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);
+/*	SB_DrawNumber92(160, 5, 0+cl->exp_level, 1);
+	SB_DrawNumber92(230, 5, 0+cl->experience, 1);
+	SB_DrawNumber92(290, 5, 0+cl->next_level, 1);*/
 
 	// Frags / health
 	if (deathmatch)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
-		SB_DrawNumber9(40, 176, cl->Frags, 0);
+		SB_DrawNumber92(40, 176, cl->Frags, 0);
 		*/
-		SB_DrawNumber9(15, 5, cl->Frags, 0);
+		SB_DrawNumber92(15, 5, cl->Frags, 0);
 		/*if (deathmatch == 2)
 		{
 			int mystuff = 0;
@@ -610,7 +666,7 @@ void SB_DrawMainBar(void)
 					}
 				}
 			}
-			SB_DrawNumber9(50, 5, mystuff, 0);
+			SB_DrawNumber92(50, 5, mystuff, 0);
 		}*/
 	}
 //	else
@@ -756,11 +812,15 @@ void SB_DrawMainBar(void)
 	R_DrawPic(155, 164, pic_manavial3[sb_manaVial3]);
 	R_DrawPic(186, 164, pic_manavial4[sb_manaVial4]);
 	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
+	R_DrawPic(231, 165, pic_manavial6);
+	R_DrawPic(238, 165, pic_manavial7);
 	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / MAX_MANA, 31);
 	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / MAX_MANA, 31);
 	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
 	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
 	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
+	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - (1000 * (cl->exp_level - 1)))) / (1000 * cl->exp_level), 31);
+	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
 
 	// Ready artifact
 /*	if (cl->ArtifactFlash)
@@ -868,17 +928,17 @@ void SB_DrawKeyBar(void)
 	R_DrawPic(38, 162, pic_statbar);
 
 //[Korax]
-	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
+/*	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
 	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
-	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);
+	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);*/
 
 	// Frags / health
 	if (deathmatch)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
-		SB_DrawNumber9(40, 176, cl->Frags, 0);
+		SB_DrawNumber92(40, 176, cl->Frags, 0);
 		*/
-		SB_DrawNumber9(15, 5, cl->Frags, 0);
+		SB_DrawNumber92(15, 5, cl->Frags, 0);
 		/*if (deathmatch == 2)
 		{
 			int mystuff = 0;
@@ -901,7 +961,7 @@ void SB_DrawKeyBar(void)
 					}
 				}
 			}
-			SB_DrawNumber9(50, 5, mystuff, 0);
+			SB_DrawNumber92(50, 5, mystuff, 0);
 		}*/
 	}
 //	else
@@ -1047,11 +1107,15 @@ void SB_DrawKeyBar(void)
 	R_DrawPic(155, 164, pic_manavial3[sb_manaVial3]);
 	R_DrawPic(186, 164, pic_manavial4[sb_manaVial4]);
 	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
+	R_DrawPic(231, 165, pic_manavial6);
+	R_DrawPic(238, 165, pic_manavial7);
 	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / MAX_MANA, 31);
 	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / MAX_MANA, 31);
 	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
 	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
 	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
+	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / cl->next_level, 31);
+	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
 
 	// Ready artifact
 /*	if (cl->ArtifactFlash)
@@ -1152,20 +1216,20 @@ void SB_DrawFullscreenStats(void)
 
 	//  [FB] Health
 	SB_DrawNumber12(5, 180, cl->health);
-	R_DrawPic(62, 224, pic_health);
+	R_DrawShadowedPic(62, 224, pic_health);
 
 	//  [FB] Armorpoints
 	SB_DrawNumber12(5, 160, cl->armorpoints);
-	R_DrawPic(62, 200, pic_armor2);
+	R_DrawShadowedPic(62, 200, pic_armor2);
 
 //[Korax]
-	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
-	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
-	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);
+	SB_DrawNumber92(160, 1, 0+cl->exp_level, 1);
+	SB_DrawNumber92(230, 1, 0+cl->experience, 1);
+	SB_DrawNumber92(290, 1, 0+cl->next_level, 1);
 	//  Frags
 	if (deathmatch)
 	{
-		SB_DrawNumber9(15, 5, cl->Frags, 0);
+		SB_DrawNumber92(15, 1, cl->Frags, 0);
 	}
 
 /*	if (cl->InventoryTime)
@@ -1178,7 +1242,7 @@ void SB_DrawFullscreenStats(void)
 			if (cl->inventorySlotNum > x + i
 				&& cl->inventory[x + i].type != arti_none)
 			{
-				R_DrawPic(49 + i * 31, 167,
+				R_DrawShadowedPic(49 + i * 31, 167,
 					pic_arti[cl->inventory[x + i].type]);
 				SB_DrawINumber(69 + i * 31, 188, cl->inventory[x + i].count);
 			}
@@ -1186,11 +1250,11 @@ void SB_DrawFullscreenStats(void)
 		R_DrawPic(50 + cl->curpos * 31, 167, pic_selectbox);
 		if (x != 0)
 		{
-			R_DrawPic(40, 167, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
+			R_DrawShadowedPic(40, 167, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
 		}
 		if (cl->inventorySlotNum - x > 7)
 		{
-			R_DrawPic(268, 167, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
+			R_DrawShadowedPic(268, 167, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
 		}
 		
 	}
@@ -1292,16 +1356,16 @@ void SB_DrawFullscreenStats(void)
 
 	}
 
-	SB_DrawMNumber(118, 192, cl->mana[0]);
-	SB_DrawMNumber(148, 192, cl->mana[1]);
-	SB_DrawMNumber(179, 192, cl->mana[2]);
-	SB_DrawMNumber(210, 192, cl->mana[3]);
-	SB_DrawMNumber(241, 192, cl->mana[4]);
-	R_DrawPic(102, 186, pic_manadim1[sb_mana1]);
-	R_DrawPic(132, 186, pic_manadim2[sb_mana2]);//+30
-	R_DrawPic(163, 186, pic_manadim3[sb_mana3]);//+31
-	R_DrawPic(194, 186, pic_manadim4[sb_mana4]);//+31
-	R_DrawPic(225, 186, pic_manadim5[sb_mana5]);//+31
+	SB_DrawMNumber(120, 192, cl->mana[0]);
+	SB_DrawMNumber(150, 192, cl->mana[1]);
+	SB_DrawMNumber(181, 192, cl->mana[2]);
+	SB_DrawMNumber(212, 192, cl->mana[3]);
+	SB_DrawMNumber(243, 192, cl->mana[4]);
+	R_DrawShadowedPic(102, 186, pic_manadim1[sb_mana1]);
+	R_DrawShadowedPic(132, 186, pic_manadim2[sb_mana2]);//+30
+	R_DrawShadowedPic(163, 186, pic_manadim3[sb_mana3]);//+31
+	R_DrawShadowedPic(194, 186, pic_manadim4[sb_mana4]);//+31
+	R_DrawShadowedPic(225, 186, pic_manadim5[sb_mana5]);//+31
 }
 
 //==========================================================================
@@ -1468,6 +1532,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2005/09/15 16:11:25  firebrand_kh
+//  Fixed the leveling vials and made visual improvements
+//
 //  Revision 1.7  2005/08/26 16:04:07  firebrand_kh
 //  Fixed calculation of max_health values
 //
