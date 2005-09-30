@@ -57,7 +57,7 @@ int constitution;
 int max_health;
 int bak_health; // [FB] To decrease the health
 int pcount; // [FB] counter
-int done; // [FB] Was the penalty done?
+int icount; // [FB] For starting invulnerability count
 
 //
 //  ----------
@@ -141,7 +141,6 @@ Actor Rain1;	// active rain maker 1
 Actor Rain2;	// active rain maker 2
 
 bool inited;
-bool used; // [FB] Is the minotaur alive??
 
 //==========================================================================
 //
@@ -512,6 +511,7 @@ bool CheckSpot(mthing_t * mthing)
 
 void SpawnPlayer(mthing_t * mthing)
 {
+	int i;
 	float x, y, z;
 	PlayerPawn pp;
 
@@ -582,36 +582,20 @@ void SpawnPlayer(mthing_t * mthing)
 	ViewHeight = VIEWHEIGHT;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
-	done = 0; // [FB] We start with no penalty
 	pcount = 0; // [FB] Reset counter
 //	team = 0; // [FB] The player doesn't belong to any team
+	icount = 0;
+
 //[Korax]
 	if (!inited)
 	{
 		InitiateLevel();
 		inited = true;
 	}
-	else
-	{
-		// [FB] There's a penalty for dying; you lost some experience
-		pp.experience = experience - (200 * exp_level);
-		// [FB] But what if the experience we lost has made us lost a level??
-		//	Then we use the old_level value to compare our current experience,
-		//	if it is lower to it, then we activate a level less than
-		//	our current one
-		if(pp.experience < old_level && done == 0 && exp_level > 1 /* && (cl < PCLASS_PIG)*/)
-		{
-			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to the old_level
-			old_level = old_level - (1000 * exp_level); // [FB] Also decrease the old_level
-			exp_level--; // [FB] Decrese experience level
-			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
-			done = 1; // [FB] Do this only once
-		}
-		if(pp.experience < 0)
-		{
-			pp.experience = 0; // [FB] We don't want to have negative experience, right?
-		}
-	}
+
+	// [FB] Wear out any power we had
+	for (i = 0; i < NUMPOWERS; i++)
+		Powers[i] = 0.0;
 
 	SetupPsprites();
 	if (deathmatch)
@@ -619,7 +603,7 @@ void SpawnPlayer(mthing_t * mthing)
 		// Give all keys in death match mode
 		Keys = 2047;
 	}
-/*	if (deathmatch = 2)
+/*	if (deathmatch == 2)
 	{
 		team = Color; // [FB] If team deatchmatch give the player a team
 	}*/
@@ -629,6 +613,31 @@ void SpawnPlayer(mthing_t * mthing)
 	if (bIsBot)
 	{
 		Bot.OnSpawn();
+	}
+
+	// [FB] There's a penalty for dying; you lost some experience
+	if(inited)
+	{
+		experience -= (200 * exp_level);
+
+		if(experience < 0)
+		{
+			experience = 0; // [FB] We don't want to have negative experience, right?
+		}
+
+		pp.experience = experience;
+
+		// [FB] But what if the experience we lost has made us lost a level??
+		//	Then we use the old_level value to compare our current experience,
+		//	if it is lower to it, then we activate a level less than
+		//	our current one
+		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
+		{
+			exp_level--; // [FB] Decrese experience level
+			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
+			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
+			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
+		}
 	}
 }
 
@@ -676,8 +685,6 @@ void PlayerReborn()
 	Mana[MANA_3] = 25;
 	SetWeapon(WP_SECOND);
 	LocalQuakeHappening = 0;
-	done = 0; // [FB] Reset Penalty
-	Powers[NUMPOWERS] = 0.0;
 }
 
 //==========================================================================
@@ -1102,25 +1109,20 @@ bool GiveArtifact(int arti)
 
 void GiveExperience(int exp)
 {
-	if (experience >= 13000)
-		return;
-	if ((experience + exp) >= 13000)
+	experience += exp;
+	MO.experience = experience;
+
+	if(experience > 10999)
 	{
-		experience = 13000;
-		MO.experience = experience;
-		next_level = 19000;
+		experience = 10999;
 	}
-	else
+
+	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
 	{
-		experience += exp;
-		MO.experience = experience;
-		while (experience >= next_level/* && (cl < PCLASS_PIG)*/)
-		{
-			exp_level++;
-			old_level = next_level; // [FB] We need to keep this to compare it
-			next_level = next_level + (1000 * exp_level);
-			ActivateLevel(exp_level);
-		}
+		exp_level++;
+		next_level = 1000 * exp_level;
+		old_level = 1000 * (exp_level - 1); // [FB] We need to keep this to compare it
+		ActivateLevel(exp_level);
 	}
 }
 
@@ -1128,7 +1130,7 @@ void GiveExperience(int exp)
 //
 //  ActivateLevel
 //
-//  [FB] Using the new leveling system the maximum level is 5
+//  [FB] Using the new leveling system the maximum level is 10
 //
 //============================================================================
 
@@ -1138,7 +1140,7 @@ void ActivateLevel(int lvl)
 	int addhealth;
 	int i;
 
-	if(exp_level < 5) // [FB] MAX Level it's 5
+	if(exp_level < 11) // [FB] MAX Level it's 10
 	{
 		strength += strength * 25 / 100;
 		constitution += constitution * 25 / 100;
@@ -1147,22 +1149,24 @@ void ActivateLevel(int lvl)
 		wisdom += wisdom * 25 / 100;
 		old_maxhealth = max_health;
 		bak_health = old_maxhealth;
-		if (old_maxhealth == 250)
+
+		if (old_maxhealth == 212)
 		{
 			//	Don't do anything
 			addhealth = 0;
 		}
 		else
 		{
-			if ((max_health + max_health * 25 / 100) >= 250)
+			if ((max_health + max_health * 9 / 100) >= 212)
 			{
-				addhealth = 250 - max_health;
+				addhealth = 212 - max_health;
 			}
 			else
 			{
-				addhealth = max_health * 25 / 100;
+				addhealth = max_health * 9 / 100;
 			}
 		}
+
 		if (addhealth > 0)
 		{
 			max_health += addhealth;
@@ -1170,8 +1174,8 @@ void ActivateLevel(int lvl)
 			MO.Health = Health;
 		}
 
-		centerprint(self, "YOU REACHED LEVEL %d", lvl);
-		MO.PlaySound('Chat', CHAN_VOICE);
+		cprint(self, "YOU REACHED LEVEL %d", lvl);
+		MO.PlaySound('Chat', CHAN_ITEM);
 	}
 }
 
@@ -1188,29 +1192,35 @@ void DeactivateLevel(int lvl)
 	int addhealth;
 	int i;
 
-	strength -= strength * 25 / 100;
-	constitution -= constitution * 25 / 100;
-	dexterity -= dexterity * 25 / 100;
-	intelligence -= intelligence * 25 / 100;
-	wisdom -= wisdom * 25 / 100;
-	// [FB] We already calculated the bak_health value
-	if (bak_health < 90)
+	if(exp_level >= 1)
 	{
-		// Don't do anything
-		addhealth = 0;
-	}
-	else
-	{
-		addhealth = bak_health * 25 / 100;
-	}
-	if (addhealth > 0)
-	{
-		max_health = max_health - addhealth;
-		MO.Health = Health;
-	}
+		strength -= strength * 25 / 100;
+		constitution -= constitution * 25 / 100;
+		dexterity -= dexterity * 25 / 100;
+		intelligence -= intelligence * 25 / 100;
+		wisdom -= wisdom * 25 / 100;
 
-	centerprint(self, "YOU LOWERED TO LEVEL %d", lvl);
-	MO.PlaySound('Chat', CHAN_VOICE);
+		// [FB] We already calculated the bak_health value
+		if (bak_health < 100)
+		{
+			// Don't do anything
+			addhealth = 0;
+		}
+		else
+		{
+			addhealth = bak_health * 9 / 100;
+		}
+
+		if (addhealth > 0)
+		{
+			max_health = max_health - addhealth;
+			Health = ftoi(itof(Health) / itof(bak_health) * itof(max_health));
+			MO.Health = Health;
+		}
+
+		cprint(self, "YOU LOWERED TO LEVEL %d", lvl);
+		MO.PlaySound('Chat', CHAN_ITEM);
+	}
 }
 
 //============================================================================
@@ -1221,10 +1231,11 @@ void DeactivateLevel(int lvl)
 
 void InitiateLevel()
 {
-	max_health = 90;
+	max_health = 100;
 
 	exp_level = 1;
-	next_level = 1000;
+	next_level =  1000 * exp_level;
+	old_level = 1000 * (exp_level - 1);
 	MO.experience = 0;
 	Health = max_health;
 	MO.Health = Health;
@@ -1240,7 +1251,7 @@ void InitiateLevel()
 //
 //  PlayerCamping
 //
-//  [FB] If the player camps much time he'll lost experience too >:D
+//  [FB] If the player camps much time he'll lost experience too
 //
 //==========================================================================
 
@@ -1251,36 +1262,115 @@ void PlayerCamping()
 	//	player stays camping (even if he's shooting), we'll start
 	//	decreasing his experience according his level, so...
 	int limit;
-	PlayerPawn pp;
 
 	limit = 3 * 35; // [FB] 3 seconds
 
-	// [FB] Check for differences on the player's x & y positions
-	if((pcount >= limit) && (pcount % (1 * 35) == 0))
+	if(inited && (pcount >= limit) && (pcount % (1 * 35) == 0))
 	{
-		PlayerPawn(MO).experience = experience - (1 * (exp_level)); // [FB] Depending the player level
+		experience -= (1 * exp_level); // [FB] Depending the player level
+
+		if(experience < 0)
+		{
+			experience = 0; // [FB] We don't want to have negative experience
+		}
+
+		MO.experience = experience;
+
 		if(pcount == 525)
 		{
 			pcount = 105; // [FB] To avoid overflows
 		}
-		if(PlayerPawn(MO).experience < 0)
-		{
-			PlayerPawn(MO).experience = 0; // [FB] We don't want to have negative experience
-		}
+
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower than it, then we activate a level less than
 		//	our current one
-		if((PlayerPawn(MO).experience < old_level) && (done == 0) && (exp_level > 1) /* && (cl < PCLASS_PIG)*/)
+		while (experience < old_level/* && (cl < PCLASS_PIG)*/)
 		{
-			next_level = next_level - (1000 * exp_level); // [FB] Decrease the next to old_level
-			old_level = old_level - (1000 * exp_level); // [FB] Also decrease the old_level
 			exp_level--; // [FB] Decrese experience level
+			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
+			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
-			done = 1; // [FB] Do this only once
 		}
 	}
 }	   
+
+//==========================================================================
+//
+//  PlayerInvuln
+//
+//  [FB] Give temporary invulnerability
+//
+//==========================================================================
+
+void PlayerInvuln(int count)
+{
+	int l;
+
+	l = 5 * 35;
+
+	while(count <= l)
+	{
+		print("Got the loop");
+		MO.bInvulnerable = true;
+		MO.Translucency = 0;
+		print("INV COUNT: %d", count);
+		if (!(count % 7) == 0 && bShadow && !bDontDraw)
+		{
+			bShadow = false;
+			if (!bAltShadow)
+			{
+				bDontDraw = true;
+				MO.bNonShootable = true;
+			}
+		}
+		if (!(count % 31) == 0)
+		{
+			if (bDontDraw)
+			{
+				if (!bShadow)
+				{
+					bShadow = true;
+					bAltShadow = true;
+				}
+				else
+				{
+					bDontDraw = false;
+					MO.bNonShootable = false;
+				}
+			}
+			else
+			{
+				bShadow = true;
+				bAltShadow = false;
+			}
+		}
+		if (bDontDraw)
+		{
+			MO.Translucency = 100;
+		}
+		else if (bShadow)
+		{
+			MO.Translucency = 66;
+		}
+		else if (bAltShadow)
+		{
+			MO.Translucency = 33;
+		}
+		else
+		{
+			MO.Translucency = 0;
+		}
+		count++;
+	}
+
+	if(count > l)
+	{
+		MO.bInvulnerable = false;
+		MO.Translucency = 0;
+		print("Finished loop");
+	}
+}
 
 //==========================================================================
 //
@@ -1575,37 +1665,16 @@ void WaterMove(float deltaTime)
 	// code, but to simplify it, we do it here.
 	//  Fighter moves faster, cleric at original speed, mage - slower,
 	// pig - slower, but faster than mage
-	// [FB] Added missing classes
 	switch (PClass)
 	{
 	case PCLASS_FIGHTER:
-		forward *= 1.18 + itof(dexterity) / 100.0;
-		side *= 1.3 + itof(dexterity) / 100.0;
-		break;
-
 	case PCLASS_CLERIC:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
-		break;
-
 	case PCLASS_MAGE:
+	case PCLASS_HERETIC:
+	case PCLASS_MARINE:
+	case PCLASS_WITCHAVEN:
 		forward *= 0.9 + itof(dexterity) / 100.0;
 		side *= 0.9 + itof(dexterity) / 100.0;
-		break;
-
-	case PCLASS_HERETIC:
-		forward *= 1.18 + itof(dexterity) / 100.0;
-		side *= 1.3 + itof(dexterity) / 100.0;
-		break;
-
-	case PCLASS_MARINE:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
-		break;
-
-	case PCLASS_WITCHAVEN:
-		forward *= 1.0 + itof(dexterity) / 100.0;
-		side *= 1.0 + itof(dexterity) / 100.0;
 		break;
 
 	case PCLASS_PIG:
@@ -1613,21 +1682,19 @@ void WaterMove(float deltaTime)
 		side *= 0.97 + itof(dexterity) / 100.0;
 		break;
 	}
-/*	forward *= 0.9 + itof(dexterity) / 100.0;
-	side *= 0.9 + itof(dexterity) / 100.0; */
 
 	if (Powers[pw_speed] && !MorphTime)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5 + itof(dexterity) / 100.0;
-		side *= 1.5 + itof(dexterity) / 100.0;
+		forward *= 1.5;
+		side *= 1.5;
 	}
 
 	wishvel = vforward * forward + vright * side;
 	if (!forward && !side /* && !cmd.upmove */ )
 		wishvel.z -= 60.0;	// drift towards bottom
-//  else
-//      wishvel.z += cmd.upmove;
+//  	else
+//      	wishvel.z += cmd.upmove;
 
 	MO.Velocity += 3.5 * deltaTime * wishvel;
 
@@ -2657,7 +2724,6 @@ void PlayerTick(float deltaTime)
 	MovePsprites();
 
 	// Counters, time dependend power ups.
-
 	if (Powers[pw_invulnerability])
 	{
 		//[KORAX]
@@ -2874,6 +2940,13 @@ void PlayerTick(float deltaTime)
 	}
 	else
 		FixedColormap = 0;
+
+/*	// [FB] Temporary Invulnerability
+	if(icount <= 5 * 35)
+	{
+		icount++;
+		PlayerInvuln(icount);
+	}*/
 
 	if((MO.Velocity.x == 0.0) || (MO.Velocity.y == 0.0)) // [FB] Check for the player camping
 	{
@@ -3498,7 +3571,6 @@ void UseArtiSummon()
 	newmobj.Velocity.z = 5.0 * 35.0;
 	newmobj.Instigator = MO;
 	newmobj.bTelestomp = true;
-	used = true;
 }
 
 //==========================================================================
@@ -4378,6 +4450,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.21  2005/09/30 15:45:15  firebrand_kh
+//  Lots of changes and additions
+//
 //  Revision 1.20  2005/08/28 20:10:47  firebrand_kh
 //  Added update of the old_level value when decreasing levels
 //
