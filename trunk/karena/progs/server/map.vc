@@ -776,14 +776,6 @@ bool PIT_RadiusAttack(Entity Other)
 		// don't damage the source of the explosion
 		return true;
 	}
-	// [FB] This doesn't seems to work
-/*
-	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) - Actor(bombsource).Origin.z)) > bombdistance)
-	{
-		// too high/low
-		return true;
-	}
-*/
 	dist = Length(MobjCenter(Other) - MobjCenter(bombspot)) - Other.Radius;
 	if (dist < 0.0)
 	{
@@ -792,6 +784,12 @@ bool PIT_RadiusAttack(Entity Other)
 	if (dist >= bombdistance)
 	{
 		// Out of range
+		return true;
+	}
+	// [FB] Fixed??
+	if (fabs((Actor(Other).Origin.z + Actor(Other).Height) - fabs(Actor(bombspot/*bombsource*/).Origin.z + Actor(bombspot).Height)) > bombdistance)
+	{
+		// too high/low
 		return true;
 	}
 	if (Actor(Other).CanSee(bombspot))
@@ -909,6 +907,9 @@ void PIT_ThrustSpike(Actor actor)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2005/09/30 15:54:46  firebrand_kh
+//  Added vertical distance check to PIT_RadiusAttack
+//
 //  Revision 1.6  2005/09/29 17:19:17  dj_jl
 //  Fix for using a puzzle item.
 //
