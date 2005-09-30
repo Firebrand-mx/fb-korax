@@ -1,0 +1,149 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class BotSpawner:Actor
+	__mobjinfo__(15008);
+
+//===========================================================================
+//
+// [FB] Bot Spawner Variables
+//
+//  	To use this object, we must spawn it using ThingSpawn in a map with
+//  	ACS Script, then define a new TID # to it, that will be used as the
+//  	argument of which bot we wish to spawn, sounds easy, huh?
+//
+//  args[0]     Bot #1 <-- Bot to Spawn
+//
+//===========================================================================
+
+int SpawnCount;
+
+//===========================================================================
+//
+//  A_BotSpawnInit
+//
+//===========================================================================
+
+void A_BotSpawnInit(void)
+{
+	SpawnCount = 0;
+}
+
+//===========================================================================
+//
+//  A_BotSpawn
+//
+//===========================================================================
+
+void A_BotSpawn(void)
+{
+	Actor mo;
+	int i;
+	string Bot;
+
+/*	if (SpawnCount < 5) // [FB] Remaining bots
+	{*/
+		// [FB] Look for the bot specified in the arguments in the
+		//	bots list
+		for(i = 0; i < NUMTOTALBOTS; i++)
+		{
+			// [FB] Is the bot there??
+			if(i == Args[0])
+			{
+				// [FB] Found the bot!
+				Bot = botinfo[i].Name;
+			}
+		}
+		// [FB] Spawn the bot
+		CmdBuf_AddText("Addbot %s\n", Bot);
+		print("Bot %s entered to the game.", Bot);
+/*	}
+	else
+	{*/
+		// [FB] We finished spawning bots, deactivate & destroy spawner
+		Deactivate();
+/*	}
+	SpawnCount++; // [FB] Increase spawn count*/
+}
+
+__states__
+{
+	S_SPAWNBOTS1('', 0, 2.0 / 35.0, S_SPAWNBOTS2) { }
+	S_SPAWNBOTS2('', 0, 2.0 / 35.0, S_SPAWNBOTS3) { /*A_BotSpawnInit();*/ }
+	S_SPAWNBOTS3('', 0, 175.0 / 35.0, S_SPAWNBOTS3) { A_BotSpawn(); }
+	S_SPAWNBOTS_OFF('', 0, -1.0, S_NULL) { }
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+bool Activate(void)
+{
+	SetState(S_SPAWNBOTS1);
+	return true;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+bool Deactivate(void)
+{
+	SetState(S_SPAWNBOTS_OFF);
+	return true;
+}
+
+defaultproperties
+{
+	Health = 1000;
+	Radius = 20.0;
+	Height = 16.0;
+	Mass = 100.0;
+	Translucency = 100;
+	bHidden = true;
+	bNoBlockmap = true;
+	bNoGravity = true;
+	bNoPassMobj = true;
+	IdleState = S_SPAWNBOTS1;
+}
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.1  2005/09/30 15:49:12  firebrand_kh
+//  Initial Import
+//
+//  Revision 1.1  2004/11/16 13:33:20  dj_jl
+//  Initial import.
+//
+//  Revision 1.1  2002/10/26 16:32:26  dj_jl
+//  New style of defining classes.
+//
+//**************************************************************************
