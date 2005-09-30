@@ -436,11 +436,11 @@ void SB_DrawBackground(void)
 	}
 	else if(cl->exp_level == 9)
 	{
-		m_h = 194;
+		m_h = 188;
 	}
 	else if(cl->exp_level == 10)
 	{
-		m_h = 209;
+		m_h = 204;
 	}
 
 	if (sb_health < 0)
@@ -633,9 +633,9 @@ void SB_DrawMainBar(void)
 	R_DrawPic(38, 162, pic_statbar);
 
 //[Korax]
-/*	SB_DrawNumber92(160, 5, 0+cl->exp_level, 1);
-	SB_DrawNumber92(230, 5, 0+cl->experience, 1);
-	SB_DrawNumber92(290, 5, 0+cl->next_level, 1);*/
+/*	SB_DrawNumber92(160, 5, 0 + cl->exp_level, 1);
+	SB_DrawNumber92(230, 5, 0 + cl->experience, 1);
+	SB_DrawNumber92(290, 5, 0 + cl->next_level, 1);*/
 
 	// Frags / health
 	if (deathmatch)
@@ -819,8 +819,8 @@ void SB_DrawMainBar(void)
 	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
 	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
 	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - (1000 * (cl->exp_level - 1)))) / (1000 * cl->exp_level), 31);
-	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
+	R_ShadeRect(232, 166, 3, (22 - (22 * (cl->experience - (1000 * (cl->exp_level - 1)))) / (1000 * cl->exp_level)), 31);
+	R_ShadeRect(239, 166, 3, (22 - (22 * cl->exp_level) / 10), 31);
 
 	// Ready artifact
 /*	if (cl->ArtifactFlash)
@@ -1171,7 +1171,7 @@ void SB_DrawInventoryBar(void)
 	int x;
 
 	SB_DrawBackground();
-	R_DrawPic(38, 162, pic_invbar);
+	R_DrawShadowedPic(38, 162, pic_invbar);
 
 	//  Inventory
 	x = cl->inv_ptr - cl->curpos;
@@ -1180,19 +1180,19 @@ void SB_DrawInventoryBar(void)
 		if (cl->inventorySlotNum > x + i
 			&& cl->inventory[x + i].type != arti_none)
 		{
-			R_DrawPic(50 + i * 31, 163, pic_arti[cl->inventory[x + i].type]);
+			R_DrawShadowedPic(50 + i * 31, 163, pic_arti[cl->inventory[x + i].type]);
 			SB_DrawINumber(71 + i * 31, 185, cl->inventory[x + i].count);
 		}
 	}
 
-	R_DrawPic(50 + cl->curpos * 31, 163, pic_selectbox);
+	R_DrawShadowedPic(50 + cl->curpos * 31, 163, pic_selectbox);
 	if (x != 0)
 	{
-		R_DrawPic(42, 163, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
+		R_DrawShadowedPic(42, 163, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
 	}
 	if (cl->inventorySlotNum - x > 7)
 	{
-		R_DrawPic(269, 163, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
+		R_DrawShadowedPic(269, 163, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
 	}*/
 }
 
@@ -1213,59 +1213,26 @@ void SB_DrawFullscreenStats(void)
 	int sb_mana5;
 	int readyweapon;
 
-
-	//  [FB] Health
-	SB_DrawNumber12(5, 180, cl->health);
-	R_DrawShadowedPic(62, 224, pic_health);
+	//  [FB] Give the fullscreen stats a higher virtual resolution
+	SetVirtualScreen(640, 400);
 
 	//  [FB] Armorpoints
-	SB_DrawNumber12(5, 160, cl->armorpoints);
-	R_DrawShadowedPic(62, 200, pic_armor2);
+	SB_DrawNumber12(10, 340, cl->armorpoints);
+	R_DrawShadowedPic(67, 380, pic_armor2);
+
+	//  [FB] Health
+	SB_DrawNumber12(10, 360, cl->health);
+	R_DrawShadowedPic(67, 404, pic_health);
 
 //[Korax]
-	SB_DrawNumber92(160, 1, 0+cl->exp_level, 1);
-	SB_DrawNumber92(230, 1, 0+cl->experience, 1);
-	SB_DrawNumber92(290, 1, 0+cl->next_level, 1);
+	SB_DrawNumber92(320, 20, 0+cl->exp_level, 1);
+	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
+	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
 	//  Frags
 	if (deathmatch)
 	{
-		SB_DrawNumber92(15, 1, cl->Frags, 0);
+		SB_DrawNumber92(32, 20, cl->Frags, 0);
 	}
-
-/*	if (cl->InventoryTime)
-	{
-		//  Inventory
-		x = cl->inv_ptr - cl->curpos;
-		for (i = 0; i < 7; i++)
-		{
-			R_DrawPic2(50 + i * 31, 168, pic_arti[0], 40);
-			if (cl->inventorySlotNum > x + i
-				&& cl->inventory[x + i].type != arti_none)
-			{
-				R_DrawShadowedPic(49 + i * 31, 167,
-					pic_arti[cl->inventory[x + i].type]);
-				SB_DrawINumber(69 + i * 31, 188, cl->inventory[x + i].count);
-			}
-		}
-		R_DrawPic(50 + cl->curpos * 31, 167, pic_selectbox);
-		if (x != 0)
-		{
-			R_DrawShadowedPic(40, 167, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
-		}
-		if (cl->inventorySlotNum - x > 7)
-		{
-			R_DrawShadowedPic(268, 167, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
-		}
-		
-	}
-	else if (cl->readyArtifact > 0)
-	{
-		//  Ready artifact
-		R_DrawPic2(286, 170, pic_arti[0], 40);
-		R_DrawPic(284, 169, pic_arti[cl->readyArtifact]);
-		SB_DrawINumber(306, 192, cl->inventory[cl->inv_ptr].count);
-	}*/
-
 
 	//  [FB] Mana Display in Fullscreen
 	if (cl->mana[0] == 0)
@@ -1353,19 +1320,55 @@ void SB_DrawFullscreenStats(void)
 	}
 	else
 	{
-
 	}
 
-	SB_DrawMNumber(120, 192, cl->mana[0]);
-	SB_DrawMNumber(150, 192, cl->mana[1]);
-	SB_DrawMNumber(181, 192, cl->mana[2]);
-	SB_DrawMNumber(212, 192, cl->mana[3]);
-	SB_DrawMNumber(243, 192, cl->mana[4]);
-	R_DrawShadowedPic(102, 186, pic_manadim1[sb_mana1]);
-	R_DrawShadowedPic(132, 186, pic_manadim2[sb_mana2]);//+30
-	R_DrawShadowedPic(163, 186, pic_manadim3[sb_mana3]);//+31
-	R_DrawShadowedPic(194, 186, pic_manadim4[sb_mana4]);//+31
-	R_DrawShadowedPic(225, 186, pic_manadim5[sb_mana5]);//+31
+	R_DrawShadowedPic(240, 350, pic_manadim1[sb_mana1]);
+	R_DrawShadowedPic(300, 350, pic_manadim2[sb_mana2]);
+	R_DrawShadowedPic(360, 350, pic_manadim3[sb_mana3]);
+	R_DrawShadowedPic(420, 350, pic_manadim4[sb_mana4]);
+	R_DrawShadowedPic(480, 350, pic_manadim5[sb_mana5]);
+	SB_DrawNumber92(235, 364, cl->mana[0], 0);
+	SB_DrawNumber92(295, 364, cl->mana[1], 0);
+	SB_DrawNumber92(355, 364, cl->mana[2], 0);
+	SB_DrawNumber92(415, 364, cl->mana[3], 0);
+	SB_DrawNumber92(475, 364, cl->mana[4], 0);
+
+//[Korax]
+/*	if (cl->InventoryTime)
+	{
+		//  Inventory
+		x = cl->inv_ptr - cl->curpos;
+		for (i = 0; i < 7; i++)
+		{
+			R_DrawPic2(50 + i * 31, 168, pic_arti[0], 40);
+			if (cl->inventorySlotNum > x + i
+				&& cl->inventory[x + i].type != arti_none)
+			{
+				R_DrawShadowedPic(49 + i * 31, 167,
+					pic_arti[cl->inventory[x + i].type]);
+				SB_DrawINumber(69 + i * 31, 188, cl->inventory[x + i].count);
+			}
+		}
+		R_DrawShadowedPic(50 + cl->curpos * 31, 167, pic_selectbox);
+		if (x != 0)
+		{
+			R_DrawShadowedPic(40, 167, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
+		}
+		if (cl->inventorySlotNum - x > 7)
+		{
+			R_DrawShadowedPic(268, 167, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
+		}
+	}
+	else if (cl->readyArtifact > 0)
+	{
+		//  Ready artifact
+		R_DrawPic2(286, 170, pic_arti[0], 40);
+		R_DrawShadowedPic(284, 169, pic_arti[cl->readyArtifact]);
+		SB_DrawINumber(306, 192, cl->inventory[cl->inv_ptr].count);
+	}*/
+
+	//  [FB] Return virtual screen resolution for everything else
+	SetVirtualScreen(320, 200);
 }
 
 //==========================================================================
@@ -1374,65 +1377,132 @@ void SB_DrawFullscreenStats(void)
 //
 //==========================================================================
 
-void SB_DrawIcons(void)
+void SB_DrawIcons(int view)
 {
 	int frame;
 
-	// Wings of wrath
-	if (cl->stats.flags & SBF_POWER_FLIGHT)
+	if(view == SB_VIEW_FULLSCREEN)
 	{
-		frame = (level->tictime / 3) & 15;
-		if (cl->stats.flags & SBF_IN_FLIGHT)
+		// [FB] Give the fullscreen stats a higher virtual resolution
+		SetVirtualScreen(640, 400);
+
+		// Wings of wrath
+		if (cl->stats.flags & SBF_POWER_FLIGHT)
 		{
-			if (hitCenterFrame && frame != 15 && frame != 0)
+			frame = (level->tictime / 3) & 15;
+			if (cl->stats.flags & SBF_IN_FLIGHT)
 			{
-				frame = 15;
+				if (hitCenterFrame && frame != 15 && frame != 0)
+				{
+					frame = 15;
+				}
+				else
+				{
+					hitCenterFrame = false;
+				}
 			}
 			else
 			{
-				hitCenterFrame = false;
+				if (hitCenterFrame || frame == 15 || frame == 0)
+				{
+					frame = 15;
+					hitCenterFrame = true;
+				}
 			}
+			R_DrawPic(40, 38, pic_fly[frame]);
 		}
-		else
+	
+		// Speed Boots
+		if (cl->stats.flags & SBF_POWER_SPEED)
 		{
-			if (hitCenterFrame || frame == 15 || frame == 0)
-			{
-				frame = 15;
-				hitCenterFrame = true;
-			}
+			R_DrawPic(90, 38, pic_boot[(level->tictime / 3) & 15]);
 		}
-		R_DrawPic(20, 19, pic_fly[frame]);
+	
+		// Defensive power
+		if (cl->stats.flags & SBF_POWER_INVULN)
+		{
+			R_DrawPic(520, 38, pic_shld[(level->tictime / 3) & 15]);
+		}
+	
+		// Minotaur Active
+		if (cl->stats.flags & SBF_POWER_MINOTAUR)
+		{
+			R_DrawPic(600, 38, pic_mino[(level->tictime / 3) & 15]);
+		}
+	
+		// [FB] PI Damage Active
+		if (cl->stats.flags & SBF_POWER_DAMAGE)
+		{
+			// [FB] This one should appear where the wings of wrath are supposed to do
+			R_DrawPic(40, 38, pic_pidm[(level->tictime / 3) & 7]);
+		}
+	
+		// [FB] Invisibility power
+		if (cl->stats.flags & SBF_POWER_INVISIBILITY)
+		{
+			R_DrawPic(200, 38, pic_shsp);
+		}
+		// [FB] Return Virtual resolution for everything else
+		SetVirtualScreen(320, 200);
 	}
-
-	// Speed Boots
-	if (cl->stats.flags & SBF_POWER_SPEED)
+	else
 	{
-		R_DrawPic(60, 19, pic_boot[(level->tictime / 3) & 15]);
-	}
-
-	// Defensive power
-	if (cl->stats.flags & SBF_POWER_INVULN)
-	{
-		R_DrawPic(260, 19, pic_shld[(level->tictime / 3) & 15]);
-	}
-
-	// Minotaur Active
-	if (cl->stats.flags & SBF_POWER_MINOTAUR)
-	{
-		R_DrawPic(300, 19, pic_mino[(level->tictime / 3) & 15]);
-	}
-
-	// [FB] PI Damage Active
-	if (cl->stats.flags & SBF_POWER_DAMAGE)
-	{
-		// [FB] This one should appear where the wings of wrath are supposed to do
-		R_DrawPic(20, 19, pic_pidm[(level->tictime / 3) & 7]);
-	}
-
-	// [FB] Invisibility power
-	if (cl->stats.flags & SBF_POWER_INVISIBILITY)
-	{
-		R_DrawPic(100, 19, pic_shsp);
+		// Wings of wrath
+		if (cl->stats.flags & SBF_POWER_FLIGHT)
+		{
+			frame = (level->tictime / 3) & 15;
+			if (cl->stats.flags & SBF_IN_FLIGHT)
+			{
+				if (hitCenterFrame && frame != 15 && frame != 0)
+				{
+					frame = 15;
+				}
+				else
+				{
+					hitCenterFrame = false;
+				}
+			}
+			else
+			{
+				if (hitCenterFrame || frame == 15 || frame == 0)
+				{
+					frame = 15;
+					hitCenterFrame = true;
+				}
+			}
+			R_DrawPic(20, 19, pic_fly[frame]);
+		}
+	
+		// Speed Boots
+		if (cl->stats.flags & SBF_POWER_SPEED)
+		{
+			R_DrawPic(60, 19, pic_boot[(level->tictime / 3) & 15]);
+		}
+	
+		// Defensive power
+		if (cl->stats.flags & SBF_POWER_INVULN)
+		{
+			R_DrawPic(260, 19, pic_shld[(level->tictime / 3) & 15]);
+		}
+	
+		// Minotaur Active
+		if (cl->stats.flags & SBF_POWER_MINOTAUR)
+		{
+			R_DrawPic(300, 19, pic_mino[(level->tictime / 3) & 15]);
+		}
+	
+		// [FB] PI Damage Active
+		if (cl->stats.flags & SBF_POWER_DAMAGE)
+		{
+			// [FB] This one should appear where the wings of wrath are supposed to do
+			R_DrawPic(20, 19, pic_pidm[(level->tictime / 3) & 7]);
+		}
+	
+		// [FB] Invisibility power
+		if (cl->stats.flags & SBF_POWER_INVISIBILITY)
+		{
+			R_DrawPic(100, 19, pic_shsp);
+		}
 	}
 }
 
@@ -1442,11 +1512,27 @@ void SB_DrawIcons(void)
 //
 //==========================================================================
 
-void SB_DrawPause(void)
+void SB_DrawPause(int view)
 {
-	if (cl->bPaused && GetCvar("draw_pause"))
+	if(view == SB_VIEW_FULLSCREEN)
 	{
-		R_DrawPic(160, netgame ? 70 : 20, pic_paused);
+		// [FB] Give the fullscreen stats a higher virtual resolution
+		SetVirtualScreen(640, 400);
+
+		if (cl->bPaused && GetCvar("draw_pause"))
+		{
+			R_DrawPic(320, netgame ? 140 : 40, pic_paused);
+		}
+
+		// [FB] Return virtual resolution to default for everything else
+		SetVirtualScreen(320, 200);
+	}
+	else
+	{
+		if (cl->bPaused && GetCvar("draw_pause"))
+		{
+			R_DrawPic(160, netgame ? 70 : 20, pic_paused);
+		}
 	}
 }
 
@@ -1478,10 +1564,10 @@ void SB_Drawer(int sb_view)
 	}
 
 	//  Animated icons
-	SB_DrawIcons();
+	SB_DrawIcons(sb_view);
 
 	//  Pause icon
-	SB_DrawPause();
+	SB_DrawPause(sb_view);
 }
 
 //==========================================================================
@@ -1532,6 +1618,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2005/09/30 15:37:44  firebrand_kh
+//  Added more virtual screen resolution to the fullscreen HUD
+//
 //  Revision 1.8  2005/09/15 16:11:25  firebrand_kh
 //  Fixed the leveling vials and made visual improvements
 //
