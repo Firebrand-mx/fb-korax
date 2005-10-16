@@ -90,6 +90,7 @@ float combatdist[NUMWEAPONS * NUMCLASSES]; //different for each weapon.
 float angle;			// The wanted angle that the bot tries to get every tic.
 
 int botskill; 			// [FB] Bot skill
+float count;			// [FB] Roam Count
 
 //==========================================================================
 //
@@ -129,11 +130,18 @@ void BotTick(float deltaTime)
 	}
 
 	// [FB] Set an ally if we're in a mode that has one
-	if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4)
+	if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
 		ally = B_SetAlly();
 	else
 		ally = none;
 
+/*	// [FB] Tag with our allies
+	if (ally)
+	{
+		Ally_Tag(deltaTime);
+		return;
+	}
+*/
 	// Weed out any bad destinations/enemies
 	CheckStuff();
 
@@ -146,6 +154,7 @@ void BotTick(float deltaTime)
 	Turn();
 
 	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
+
 	Attack();
 	Move(deltaTime);
 
@@ -437,7 +446,7 @@ void CheckStuff(void)
 
 	if (node)
 	{
-		if (!CheckTo(node.Origin) || (MobjDist2(botmo, node) < botmo.Radius))
+		if (!CheckTo(node.Origin) || (MobjDist(botmo, node) < botmo.Radius))
 		{
 			prev = node;
 			node = none;
@@ -878,23 +887,44 @@ Actor FindEnemy(void)
 
 
 	// [FB] Look for monster enemy
-/*	if (!deathmatch.value && !teamgame.value)
-	{*/
-		FOREACH(Actor, actor)
-		{
-			if (!(actor.bEnemy))
-				continue;
-			if (!Check_LOS(actor, vangle))
-				continue;
-			if (!botmo.CanSee(actor))
-				continue;
+	FOREACH(Actor, actor)
+	{
+		temp = MobjDist(botmo, actor);
 
-			return actor;
+		if (!(actor.bEnemy))
+			continue;
+		if (!Check_LOS(actor, vangle))
+			continue;
+		if (!botmo.CanSee(actor))
+			continue;
+		if (temp > MAX_MONSTER_TARGET_DIST)
+			continue;
+
+		target = none;
+		closest_dist = 99999.0;
+
+		 //Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always returns false. tought it should be the same checksight as below but.. (below works) something must be fuckin wierd screded up. 
+		if (Check_LOS(actor, vangle))
+		{
+			if (botmo.CanSee(actor))
+			{
+				temp = MobjDist(botmo, actor);
+				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
+
+				// [FB] Too dark?
+				if (temp > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
+					continue;
+
+				if (temp < closest_dist)
+				{
+					closest_dist = temp;
+					target = actor;
+				}
+			}
 		}
 
-/*		// Didn't find anything...
-		return none;*/
-//	}
+		return actor;
+	}
 
 	target = none;
 	closest_dist = 99999.0;
@@ -906,21 +936,30 @@ Actor FindEnemy(void)
 			svvars->Players[i].MO.Health > 0 && botmo != svvars->Players[i].MO)
 		{
 			// [FB] Are we on a Team gameplay mode?
-			if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4)
+			if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
 			{
+				// [FB] Don't attack same team players
 				if (svvars->Players[i].Color == player.Color)
 					continue;
 			}
-			 //Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always returns false. tought it should be the same checksight as below but.. (below works) something must be fuckin wierd screded up. 
+			if (!deathmatch)
+			{
+				// [FB] Don't attack fellow players in some gameplay modes
+				if (svvars->Players[i])
+					continue;
+			}
+			//Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
+			//returns false. tought it should be the same checksight as below but.. (below works) something
+			//must be fuckin wierd screded up. 
 			if (Check_LOS(svvars->Players[i].MO, vangle))
 			{
 				if (botmo.CanSee(svvars->Players[i].MO))
 				{
-					temp = MobjDist(svvars->Players[i].MO, botmo);
+					temp = MobjDist(botmo, svvars->Players[i].MO);
 					light = svvars->Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
 
 					// [FB] Too dark?
-					if (temp > DARK_DIST && light < WHATS_DARK && player.Powers[pw_infrared])
+					if (temp > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
 						continue;
 
 					if (temp < closest_dist)
@@ -944,7 +983,7 @@ Actor FindEnemy(void)
 //
 //==========================================================================
 
-int B_ChooseWeapon (void)
+int B_ChooseWeapon(void)
 {
 	float dist;
 
@@ -1327,10 +1366,10 @@ int B_ChooseWeapon (void)
 //
 //==========================================================================
 
-Actor B_SetAlly ()
+Actor B_SetAlly(void)
 {
 //	return none;
-	
+
 	float closest_dist, test;
 	Actor target;
 	int i, j;
@@ -1338,8 +1377,11 @@ Actor B_SetAlly ()
 	//is mate alive?
 	if (ally)
 	{
-		if (ally.Health > 0)
+		if (ally.Health <= 0)
+		{
 			ally = none;
+			return ally;
+		}
 		else
 		{
 			last_mate = ally;
@@ -1348,49 +1390,93 @@ Actor B_SetAlly ()
 	}
 
 	//Check old_mates status.
-	if (last_mate)
+	if (!ally && last_mate)
 	{
-		if (last_mate.Health > 0)
+		if (last_mate.Health <= 0)
 		{
 			last_mate = none;
+			ally = last_mate;
+			return ally;
 		}
+		else
+		{
+			ally = last_mate;
+			return ally;
+		}
+
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (svvars->Players[i] && svvars->Players[i].Color == player.Color)
+		// [FB] Set an ally for team game modes
+		if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
 		{
-			ally = svvars->Players[i].MO;
-			break;
+			if (svvars->Players[i] && svvars->Players[i].Color == player.Color)
+			{
+				ally = svvars->Players[i].MO;
+				break;
+			}
+		}
+		else if (!deathmatch) // [FB] Set an ally if we're in a mode that has one
+		{
+			if (svvars->Players[i])
+			{
+				ally = svvars->Players[i].MO;
+				break;
+			}
 		}
 	}
 
-	target = none;
 	closest_dist = 99999.0;
 
 	//Check for player friends
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
-		if ((svvars->Players[j])
-		    && (botmo != svvars->Players[j].MO)
-		    && (svvars->Players[j].Color == player.Color)
-		    && (botmo.Health / 2 <= svvars->Players[j].MO.Health))
+		// [FB] Team game modes
+		if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
 		{
-			if (botmo.CanSee(svvars->Players[j].MO))
+			if ((svvars->Players[j])
+			    && (botmo != svvars->Players[j].MO)
+			    && (svvars->Players[j].Color == player.Color)
+			    && (svvars->Players[j].MO.Health <= botmo.Health / 2))
 			{
-				test = MobjDist(botmo, svvars->Players[j].MO);
-
-				if (test < closest_dist)
+				if (botmo.CanSee(svvars->Players[j].MO))
 				{
-					closest_dist = test;
-					target = svvars->Players[j].MO;
-					break;
+					test = MobjDist(botmo, svvars->Players[j].MO);
+
+					if (test < closest_dist)
+					{
+						closest_dist = test;
+						target = svvars->Players[j].MO;
+						ally = target;
+						break;
+					}
+				}
+			}
+		}
+		else if(!deathmatch) // [FB] Other ally gameplay modes (no player color checking)
+		{
+			if ((svvars->Players[j])
+			    && (botmo != svvars->Players[j].MO)
+			    && (svvars->Players[j].MO.Health <= botmo.Health / 2))
+			{
+				if (botmo.CanSee(svvars->Players[j].MO))
+				{
+					test = MobjDist(botmo, svvars->Players[j].MO);
+
+					if (test < closest_dist)
+					{
+						closest_dist = test;
+						target = svvars->Players[j].MO;
+						ally = target;
+						break;
+					}
 				}
 			}
 		}
 	}
 
-	return target;
+	return none;
 }
 
 //==========================================================================
@@ -1674,8 +1760,15 @@ void Move(float deltaTime)
 		// Check if we'd rather pick up something than fight
 		if (item)
 		{
+			float itemdist;
+
+			itemdist = MobjDist(botmo, item);
+
 			if (bItemIsPowerup ||
-				(bItemIsWeapon && player.ReadyWeapon == WP_FIRST || WP_SECOND))
+				(bItemIsWeapon && player.ReadyWeapon == WP_FIRST || player.ReadyWeapon == WP_SECOND)
+				|| ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask
+				|| item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2)))
+				&& itemdist <= GETINCOMBAT)
 			{
 				Roam();
 				return;
@@ -1713,29 +1806,7 @@ void Move(float deltaTime)
 	// [FB] Follow our buddy if we're tagging along
 	if (ally)
 	{
-		float matedist;
-
-		if (t_strafe)
-		{
-			t_strafe -= deltaTime;
-			if (t_strafe)
-			{
-				sidemove = -sidemove;
-				t_strafe = 2.0;
-			}
-		}
-
-		matedist = MobjDist(botmo, ally);
-
-		SetAngle(AngleTo(ally.Origin));
-
-		if (matedist > (FRIEND_DIST * 2.0))
-			forwardmove = FORWARDRUN;
-		else if (matedist > FRIEND_DIST)
-			forwardmove = FORWARDWALK;
-		else if (matedist < FRIEND_DIST - (FRIEND_DIST / 3.0)) // [FB] Got too close, so move away.
-			forwardmove = -FORWARDWALK;
-
+		Ally_Tag(deltaTime);
 		return;
 	}
 
@@ -1765,6 +1836,40 @@ void Move(float deltaTime)
 
 //==========================================================================
 //
+//	Ally_Tag
+//
+// 	[FB] Follow our buddy if we're tagging along
+//
+//==========================================================================
+
+void Ally_Tag(float deltaTime)
+{
+	float matedist, an;
+
+	if (t_strafe)
+	{
+		t_strafe -= deltaTime;
+		if (t_strafe <= 0.0)
+		{
+			sidemove = -sidemove;
+			t_strafe = 2.0;
+		}
+	}
+
+	matedist = MobjDist(botmo, ally);
+
+	SetAngle(AngleTo(ally.Origin));
+
+	if (matedist > (FRIEND_DIST * 2.0))
+		forwardmove = FORWARDRUN;
+	else if (matedist > FRIEND_DIST)
+		forwardmove = FORWARDWALK;
+	else if (matedist < FRIEND_DIST - (FRIEND_DIST / 3.0)) // [FB] Got too close, so move away.
+		forwardmove = -FORWARDWALK;
+}
+
+//==========================================================================
+//
 //	Attack
 //
 //==========================================================================
@@ -1773,6 +1878,10 @@ void Attack(void)
 {
 	// Still reacting to something or we don't have an enemy to fight
 	if (t_react || !enemy)
+		return;
+
+	// [FB] Check if our allies are out of the way of the attack
+	if (ally && Check_LOS(ally, SHOOTFOV))
 		return;
 
 	// No point in firing if we won't hit them
@@ -2164,6 +2273,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2005/10/16 22:43:33  firebrand_kh
+//  Fixed ally tracking and added more checks for it
+//
 //  Revision 1.10  2005/09/15 16:24:08  firebrand_kh
 //  Made bots able to recognize allies and monster enemies, some other fixes
 //
