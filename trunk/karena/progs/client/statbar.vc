@@ -633,41 +633,29 @@ void SB_DrawMainBar(void)
 	R_DrawPic(38, 162, pic_statbar);
 
 //[Korax]
-/*	SB_DrawNumber92(160, 5, 0 + cl->exp_level, 1);
-	SB_DrawNumber92(230, 5, 0 + cl->experience, 1);
-	SB_DrawNumber92(290, 5, 0 + cl->next_level, 1);*/
-
 	// Frags / health
-	if (deathmatch)
+	if (deathmatch && deathmatch != 5)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl->Frags, 0);
 		*/
 		SB_DrawNumber92(15, 5, cl->Frags, 0);
-		/*if (deathmatch == 2)
+
+		if (deathmatch == 2)
 		{
-			int mystuff = 0;
-			int i;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-					if (!scores[i].bActive) continue;
-				string col = Info_ValueForKey(ARR2STR(scores[i].userinfo), "color");
-				if (!col || col=="")
-				{
-					continue;
-				}
-				int mcol = atoi(col);
-				if (mcol == sb_color)
-				{
-					int j;
-					for (j = 0; j < MAXPLAYERS; j++)
-					{
-						mystuff+= scores[i].frags[j];
-					}
-				}
-			}
-			SB_DrawNumber92(50, 5, mystuff, 0);
-		}*/
+			SB_DrawNumber92(70, 5, cl->TeamFrags, 0);
+		}
+	}
+
+	if (deathmatch == 5)
+	{
+		SB_DrawNumber92(85, 5, cl->TeamKills, 0);
+	}
+
+	if (!deathmatch || deathmatch == 5)
+	{
+		SB_DrawNumber92(45, 5, cl->KillsCount, 0);
+		SB_DrawNumber92(135, 5, cl->TotalKills, 0);
 	}
 //	else
 	{
@@ -819,8 +807,8 @@ void SB_DrawMainBar(void)
 	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
 	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
 	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, (22 - (22 * (cl->experience - (1000 * (cl->exp_level - 1)))) / (1000 * cl->exp_level)), 31);
-	R_ShadeRect(239, 166, 3, (22 - (22 * cl->exp_level) / 10), 31);
+	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / (cl->next_level - cl->old_level), 31);
+	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
 
 	// Ready artifact
 /*	if (cl->ArtifactFlash)
@@ -928,41 +916,33 @@ void SB_DrawKeyBar(void)
 	R_DrawPic(38, 162, pic_statbar);
 
 //[Korax]
-/*	SB_DrawNumber9(160, 5, 0+cl->exp_level, 1);
-	SB_DrawNumber9(230, 5, 0+cl->experience, 1);
-	SB_DrawNumber9(290, 5, 0+cl->next_level, 1);*/
+/*	SB_DrawNumber92(160, 5, 0 + cl->exp_level, 1);
+	SB_DrawNumber92(230, 5, 0 + cl->experience, 1);
+	SB_DrawNumber92(290, 5, 0 + cl->next_level, 1);*/
 
 	// Frags / health
-	if (deathmatch)
+	if (deathmatch && deathmatch != 5)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl->Frags, 0);
 		*/
 		SB_DrawNumber92(15, 5, cl->Frags, 0);
-		/*if (deathmatch == 2)
+
+		if (deathmatch == 2)
 		{
-			int mystuff = 0;
-			int i;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-					if (!scores[i].bActive) continue;
-				string col = Info_ValueForKey(ARR2STR(scores[i].userinfo), "color");
-				if (!col || col=="")
-				{
-					continue;
-				}
-				int mcol = atoi(col);
-				if (mcol == sb_color)
-				{
-					int j;
-					for (j = 0; j < MAXPLAYERS; j++)
-					{
-						mystuff+= scores[i].frags[j];
-					}
-				}
-			}
-			SB_DrawNumber92(50, 5, mystuff, 0);
-		}*/
+			SB_DrawNumber92(70, 5, cl->TeamFrags, 0);
+		}
+	}
+
+	if (deathmatch == 5)
+	{
+		SB_DrawNumber92(85, 5, cl->TeamKills, 0);
+	}
+
+	if (!deathmatch || deathmatch == 5)
+	{
+		SB_DrawNumber92(45, 5, cl->KillsCount, 0);
+		SB_DrawNumber92(135, 5, cl->TotalKills, 0);
 	}
 //	else
 	{
@@ -1114,7 +1094,7 @@ void SB_DrawKeyBar(void)
 	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
 	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
 	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / cl->next_level, 31);
+	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / (cl->next_level - cl->old_level), 31);
 	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
 
 	// Ready artifact
@@ -1229,9 +1209,25 @@ void SB_DrawFullscreenStats(void)
 	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
 	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
 	//  Frags
-	if (deathmatch)
+	if (deathmatch && deathmatch != 5)
 	{
 		SB_DrawNumber92(32, 20, cl->Frags, 0);
+
+		if (deathmatch == 2)
+		{
+			SB_DrawNumber92(70, 20, cl->TeamFrags, 0);
+		}
+	}
+
+	if (deathmatch == 5)
+	{
+		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
+	}
+
+	if (!deathmatch || deathmatch == 5)
+	{
+		SB_DrawNumber92(45, 20, cl->KillsCount, 0);
+		SB_DrawNumber92(135, 20, cl->TotalKills, 0);
 	}
 
 	//  [FB] Mana Display in Fullscreen
@@ -1618,6 +1614,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.10  2005/10/17 18:03:19  firebrand_kh
+//  Added team frags and kill count scores
+//
 //  Revision 1.9  2005/09/30 15:37:44  firebrand_kh
 //  Added more virtual screen resolution to the fullscreen HUD
 //
