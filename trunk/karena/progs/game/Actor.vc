@@ -292,6 +292,8 @@ void OnMapSpawn(mthing_t * mthing)
 		{
 			// Quantize angle to 45 degree increments
 			Angles.yaw = itof(45 * (mthing->angle / 45));
+			// [FB] Count for the total kills in the map
+			level->totalkills++;
 		}
 		else
 		{
@@ -621,6 +623,8 @@ Actor ActiveMinotaur(void)
 
 void Died(Actor source)
 {
+	int i;
+
 	bShootable = false;
 	bNoGravity = false;
 	bFloat = false;
@@ -648,8 +652,42 @@ void Died(Actor source)
 			ExecuteLineSpecial(Special, &Args[0], NULL, 0, self);
 		}
 	}
+	if (bCountKill)
+	{
+		level->currentkills++;
+		if(!deathmatch || deathmatch == 5)
+		{
+			// [FB] Update total kills if needed
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if(svvars->Players[i])
+					svvars->Players[i].TotalKills = (level->totalkills - level->currentkills);
+			}
+		}
+	}
 	if (source && source.bIsPlayer)
-	{	// Check for frag changes
+	{
+		// [FB] Increase the player's KillCount
+		if (bCountKill)
+		{
+			source.Player.KillCount++;
+			source.Player.KillsCount++;
+
+			// [FB} Increase team kills count too
+			if (deathmatch == 5)
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					// [FB] Look for players colored the same
+					if(svvars->Players[i] && svvars->Players[i].Color == source.Player.Color)
+					{
+						svvars->Players[i].TeamKills++;
+					}
+				}
+			}
+		}
+	
+		// Check for frag changes
 		if (bIsPlayer)
 		{
 			if (source.Player.bIsBot)
@@ -674,6 +712,19 @@ void Died(Actor source)
 					Player.FragsStats[P_GetPlayerNum(Player)]--;
 				}
 				Player.Frags--;
+
+				// [FB] We also want to increase the team frags count here too
+				if (deathmatch == 2)
+				{
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						// [FB] Look for players colored the same
+						if(svvars->Players[i] && svvars->Players[i].Color == source.Player.Color)
+						{
+							svvars->Players[i].TeamFrags--;
+						}
+					}
+				}
 			}
 			else
 			{
@@ -687,11 +738,22 @@ void Died(Actor source)
 				}
 				source.Player.Frags++;
 				source.Player.GiveExperience(500 + (500 * (Player.exp_level - 1) / 10));
+
+				// [FB] We also want to increase the team frags count here too
+				if (deathmatch == 2)
+				{
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						// [FB] Look for players colored the same
+						if(svvars->Players[i] && svvars->Players[i].Color == source.Player.Color)
+						{
+							svvars->Players[i].TeamFrags++;
+						}
+					}
+				}
 			}
 		}
 	}
-	if (bCountKill)
-		level->currentkills++;
 	if (bIsPlayer)
 	{
 		// Player death
@@ -1212,6 +1274,11 @@ void Damage(Actor inflictor, Actor source, int damage)
 				PoisonPlayer(source, 20);
 				damage >>= 1;
 			}
+			else if (!bCountKill)
+			{
+				// only damage monsters/players with the poison cloud
+				return;
+			}
 			break;
 		case PoisonCloud:
 			if (bIsPlayer)
@@ -1264,18 +1331,23 @@ void Damage(Actor inflictor, Actor source, int damage)
 			damage = Health - 1;
 		}
 
-		if (deathmatch==2 &&
-			(source && 
-				((source.bIsPlayer) || 
-				 (source.Instigator && source.Instigator.bIsPlayer)
-			    )
-			)
-			)
+		// [FB] Don't do damage to teammates in team game modes
+		if ((deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
+		    && (source && ((source.bIsPlayer) || (source.Instigator
+		    && source.Instigator.bIsPlayer))))
 		{
 			int col = (source.bIsPlayer?source.Player.Color:source.Instigator.Player.Color);
 			if (col == Player.Color && damage < 1000)
 				return;
 		}
+
+		if (!deathmatch && (source && ((source.bIsPlayer) ||
+		   (source.Instigator && source.Instigator.bIsPlayer))))
+		{
+			if (damage < 1000)
+				return;
+		}
+
 //[Korax]
 /*		savedPercent = itof(Player.constitution)+AutoArmorSave[Player.PClass]
 			+ Player.ArmorPoints[ARMOR_ARMOR]
@@ -1593,6 +1665,8 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 //==========================================================================
 //
 //  BlindPlayer
+//
+//  [FB] Similar to Actor::Damage
 //
 //==========================================================================
 
@@ -4112,6 +4186,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.19  2005/10/17 18:04:05  firebrand_kh
+//  Added Team Frags and Kill Counts calculations, some other fixes
+//
 //  Revision 1.18  2005/09/15 16:19:01  firebrand_kh
 //  Added flag to recognize monster enemies
 //
