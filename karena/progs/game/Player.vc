@@ -44,7 +44,14 @@ inventory_t Inventory[NUMARTIFACTS];
 
 int Mana[NUMMANA];
 
-//[Korax]
+// [Korax]
+// [FB] Scores for the different gameplay modes
+int TeamFrags; // [FB] Frags from each team
+int KillsCount; // [FB] How many enemies the player killed
+int TeamKills; // [FB] How many enemies has each team killed
+int TotalKills; // [FB] How many enemies there are in a map
+
+// [FB] Player atributes for leveling system
 int experience;
 int exp_level;
 int next_level;
@@ -54,10 +61,13 @@ int intelligence;
 int wisdom;
 int dexterity;
 int constitution;
+//
+//  Other stats (for status bar)
+//
 int max_health;
 int bak_health; // [FB] To decrease the health
+
 int pcount; // [FB] counter
-int icount; // [FB] For starting invulnerability count
 
 //
 //  ----------
@@ -583,13 +593,14 @@ void SpawnPlayer(mthing_t * mthing)
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
 	pcount = 0; // [FB] Reset counter
-//	team = 0; // [FB] The player doesn't belong to any team
-	icount = 0;
 
 //[Korax]
 	if (!inited)
 	{
 		InitiateLevel();
+		// [FB] Start TotalKills counter with all monster count, but just once!
+		if (!deathmatch || deathmatch == 5)
+			TotalKills = level->totalkills;
 		inited = true;
 	}
 
@@ -602,11 +613,9 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		// Give all keys in death match mode
 		Keys = 2047;
+		// [FB] Give temporary invulnerability in DM only
+		GivePower(pw_invulnerability2);
 	}
-/*	if (deathmatch == 2)
-	{
-		team = Color; // [FB] If team deatchmatch give the player a team
-	}*/
 
 	// Set translation table data
 	SetPlayerColor();
@@ -634,8 +643,8 @@ void SpawnPlayer(mthing_t * mthing)
 		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
 		{
 			exp_level--; // [FB] Decrese experience level
-			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
-			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
+			next_level = next_level - 1000; // [FB] Decrease the next to the old_level
+			old_level = old_level - 1000; // [FB] Also decrease the old_level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 		}
 	}
@@ -918,6 +927,17 @@ bool GivePower(int power)
 		// [KORAX]
 		return true;
 	}
+	if (power == pw_invulnerability2)
+	{
+		if (Powers[power] > BLINKTHRESHOLD)
+		{
+			// Already have it
+			return false;
+		}
+		Powers[power] = INVULNTIME2;
+		MO.bInvulnerable = true;
+		return true;
+	}
 	if (power == pw_flight)
 	{
 		if (Powers[power] > BLINKTHRESHOLD)
@@ -1112,9 +1132,9 @@ void GiveExperience(int exp)
 	experience += exp;
 	MO.experience = experience;
 
-	if(experience > 10999)
+	if(experience > 10000)
 	{
-		experience = 10999;
+		experience = 10000;
 	}
 
 	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
@@ -1189,6 +1209,7 @@ void ActivateLevel(int lvl)
 
 void DeactivateLevel(int lvl)
 {
+	int old_maxhealth;
 	int addhealth;
 	int i;
 
@@ -1199,6 +1220,7 @@ void DeactivateLevel(int lvl)
 		dexterity -= dexterity * 25 / 100;
 		intelligence -= intelligence * 25 / 100;
 		wisdom -= wisdom * 25 / 100;
+		old_maxhealth = max_health;
 
 		// [FB] We already calculated the bak_health value
 		if (bak_health < 100)
@@ -1213,8 +1235,8 @@ void DeactivateLevel(int lvl)
 
 		if (addhealth > 0)
 		{
-			max_health = max_health - addhealth;
-			Health = ftoi(itof(Health) / itof(bak_health) * itof(max_health));
+			max_health -= addhealth;
+			Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
 			MO.Health = Health;
 		}
 
@@ -1285,92 +1307,15 @@ void PlayerCamping()
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower than it, then we activate a level less than
 		//	our current one
-		while (experience < old_level/* && (cl < PCLASS_PIG)*/)
+		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
 		{
 			exp_level--; // [FB] Decrese experience level
-			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
-			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
+			next_level = next_level - 1000; // [FB] Decrease the next to the old_level
+			old_level = old_level - 1000; // [FB] Also decrease the old_level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 		}
 	}
 }	   
-
-//==========================================================================
-//
-//  PlayerInvuln
-//
-//  [FB] Give temporary invulnerability
-//
-//==========================================================================
-
-void PlayerInvuln(int count)
-{
-	int l;
-
-	l = 5 * 35;
-
-	while(count <= l)
-	{
-		print("Got the loop");
-		MO.bInvulnerable = true;
-		MO.Translucency = 0;
-		print("INV COUNT: %d", count);
-		if (!(count % 7) == 0 && bShadow && !bDontDraw)
-		{
-			bShadow = false;
-			if (!bAltShadow)
-			{
-				bDontDraw = true;
-				MO.bNonShootable = true;
-			}
-		}
-		if (!(count % 31) == 0)
-		{
-			if (bDontDraw)
-			{
-				if (!bShadow)
-				{
-					bShadow = true;
-					bAltShadow = true;
-				}
-				else
-				{
-					bDontDraw = false;
-					MO.bNonShootable = false;
-				}
-			}
-			else
-			{
-				bShadow = true;
-				bAltShadow = false;
-			}
-		}
-		if (bDontDraw)
-		{
-			MO.Translucency = 100;
-		}
-		else if (bShadow)
-		{
-			MO.Translucency = 66;
-		}
-		else if (bAltShadow)
-		{
-			MO.Translucency = 33;
-		}
-		else
-		{
-			MO.Translucency = 0;
-		}
-		count++;
-	}
-
-	if(count > l)
-	{
-		MO.bInvulnerable = false;
-		MO.Translucency = 0;
-		print("Finished loop");
-	}
-}
 
 //==========================================================================
 //
@@ -2782,14 +2727,96 @@ void PlayerTick(float deltaTime)
 		{
 			Powers[pw_invulnerability] = 0.0;
 			MO.bInvulnerable = false;
-			MO.bReflective = false;
 			//[KORAX]
-			/*if (PClass == PCLASS_CLERIC)
+			/*MO.bReflective = false;
+			if (PClass == PCLASS_CLERIC)
 			{
 				MO.bNonShootable = false;
 				MO.Translucency = 0;
 			}*/
 			//[KORAX]
+		}
+	}
+	if (Powers[pw_invulnerability2])
+	{
+		if (!(level->tictime & 1) && bShadow && !bDontDraw)
+		{
+			bShadow = false;
+			if (!bAltShadow)
+			{
+				bDontDraw = true;
+			}
+		}
+		if (!(level->tictime & 2))
+		{
+			if (bDontDraw)
+			{
+				if (!bShadow)
+				{
+					bShadow = true;
+					bAltShadow = true;
+				}
+				else
+				{
+					bDontDraw = false;
+				}
+			}
+			else
+			{
+				bShadow = true;
+				bAltShadow = false;
+			}
+		}
+		if (!(level->tictime & 3) && bShadow && !bDontDraw)
+		{
+			bShadow = false;
+			if (!bAltShadow)
+			{
+				bDontDraw = true;
+			}
+		}
+		if (!(level->tictime & 4))
+		{
+			if (bDontDraw)
+			{
+				if (!bShadow)
+				{
+					bShadow = true;
+					bAltShadow = true;
+				}
+				else
+				{
+					bDontDraw = false;
+				}
+			}
+			else
+			{
+				bShadow = true;
+				bAltShadow = false;
+			}
+		}
+		if (bDontDraw)
+		{
+			MO.Translucency = 100;
+		}
+		else if (bShadow)
+		{
+			MO.Translucency = 66;
+		}
+		else if (bAltShadow)
+		{
+			MO.Translucency = 33;
+		}
+		else
+		{
+			MO.Translucency = 0;
+		}
+		Powers[pw_invulnerability2] -= deltaTime;
+		if (Powers[pw_invulnerability2] <= 0.0)
+		{
+			Powers[pw_invulnerability2] = 0.0;
+			MO.bInvulnerable = false;
+			MO.Translucency = 0;
 		}
 	}
 	if (Powers[pw_minotaur])
@@ -2941,13 +2968,6 @@ void PlayerTick(float deltaTime)
 	else
 		FixedColormap = 0;
 
-/*	// [FB] Temporary Invulnerability
-	if(icount <= 5 * 35)
-	{
-		icount++;
-		PlayerInvuln(icount);
-	}*/
-
 	if((MO.Velocity.x == 0.0) || (MO.Velocity.y == 0.0)) // [FB] Check for the player camping
 	{
 		pcount++;
@@ -2991,7 +3011,7 @@ void PaletteFlash()
 
 	if (PoisonCount)
 	{
-		Palette = (PoisonCount + 7) >> 3;
+		Palette = ((32 * PoisonCount) + 7) >> 3;
 		if (Palette >= NUMPOISONPALS)
 		{
 			Palette = NUMPOISONPALS - 1;
@@ -4162,6 +4182,11 @@ int GetWeaponManaUse(Weapon weapon)
 	{
 		manause = manause * 10 / wisdom;
 	}
+	// [FB] Always use mana, no matter what
+	if(manause < 1)
+	{
+		manause = 1;
+	}
 	return manause;
 }
 
@@ -4450,6 +4475,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.22  2005/10/17 18:18:10  firebrand_kh
+//  Temporal Invulnerability, scores, and other fixes added
+//
 //  Revision 1.21  2005/09/30 15:45:15  firebrand_kh
 //  Lots of changes and additions
 //
