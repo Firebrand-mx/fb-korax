@@ -868,7 +868,7 @@ void SB_DrawMainBar(void)
 
 void SB_DrawKeyBar(void)
 {
-/*	int i;
+	int i;
 	int num;
 
 	SB_DrawBackground();
@@ -885,7 +885,7 @@ void SB_DrawKeyBar(void)
 	}
 
 	//  Armor
-	for (i = 0; i < NUMARMOR; i++)
+/*	for (i = 0; i < NUMARMOR; i++)
 	{
 		if (!cl->armorpoints[i])
 		{
@@ -907,248 +907,6 @@ void SB_DrawKeyBar(void)
 		}
 		R_DrawPic2(150 + 31 * i, 164, pic_armor[i], num);
 	}*/
-// [FB] NO CHANGE FOR THE STATBAR IN AUTOMAP MODE
-	int sb_mana1;
-	int sb_mana2;
-	int sb_mana3;
-	int sb_mana4;
-	int sb_mana5;
-	int sb_manaVial1;
-	int sb_manaVial2;
-	int sb_manaVial3;
-	int sb_manaVial4;
-	int sb_manaVial5;
-	int readyweapon;
-
-	SB_DrawBackground();
-	R_DrawPic(38, 162, pic_statbar);
-
-//[Korax]
-	//  [FB] Give a higher virtual resolution to these stats
-	SetVirtualScreen(640, 400);
-
-	SB_DrawNumber92(320, 20, 0+cl->exp_level, 1);
-	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
-	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
-	// Frags / health
-	if (deathmatch && deathmatch != 5)
-	{
-/*		R_DrawPic(38, 162, pic_kills);
-		SB_DrawNumber92(40, 176, cl->Frags, 0);
-		*/
-		SB_DrawNumber92(32, 20, cl->Frags, 0);
-
-		if (deathmatch == 2)
-		{
-			SB_DrawNumber92(85, 20, cl->TeamFrags, 0);
-		}
-	}
-
-	if (deathmatch == 5)
-	{
-		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
-	}
-
-	if (!deathmatch || deathmatch == 5)
-	{
-		SB_DrawNumber92(32, 20, cl->KillsCount, 0);
-		SB_DrawNumber92(138, 20, cl->TotalKills, 0);
-	}
-	//  [FB] Return virtual screen resolution for everything else
-	SetVirtualScreen(320, 200);
-//	else
-	{
-		if (cl->health >= 25)
-		{
-			SB_DrawNumber9(40, 176, cl->health, 0);
-		}
-		else
-		{
-			SB_DrawNumber9(40, 176, cl->health, 1);
-		}
-	}
-
-	//  Mana
-	if (cl->mana[0] == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana1 = 0;
-	}
-	else
-	{
-		sb_mana1 = 1;
-	}
-	if (cl->mana[1] == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana2 = 0;
-	}
-	else
-	{
-		sb_mana2 = 1;
-	}
-	if (cl->mana[2] == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana3 = 0;
-	}
-	else
-	{
-		sb_mana3 = 1;
-	}
-	if (cl->mana[3] == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana4 = 0;
-		sb_manaVial4 = 0;
-	}
-	else
-	{
-		sb_mana4 = 1;
-		sb_manaVial4 = 1;
-	}
-	if (cl->mana[4] == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana5 = 0;
-		sb_manaVial5 = 0;
-	}
-	else
-	{
-		sb_mana5 = 1;
-		sb_manaVial5 = 1;
-	}
-	// Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
-	if (readyweapon == WP_FIRST)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == WP_SECOND)
-	{
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 1;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == WP_THIRD)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 1;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == WP_FOURTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 1;
-	}
-	else if (readyweapon == WP_FIFTH)
-	{
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 1;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == WP_SIXTH)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 1;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == WP_SEVENTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 1;
-	}
-	else
-	{
-		sb_manaVial1 = 1;
-		sb_manaVial2 = 1;
-		sb_manaVial3 = 1;
-	}
-
-	SB_DrawMNumber(79, 181, cl->mana[0]);
-	SB_DrawMNumber(109, 181, cl->mana[1]);
-	SB_DrawMNumber(140, 181, cl->mana[2]);
-	SB_DrawMNumber(171, 181, cl->mana[3]);
-	SB_DrawMNumber(202, 181, cl->mana[4]);
-	R_DrawPic(77, 164, pic_manadim1[sb_mana1]);
-	R_DrawPic(107, 164, pic_manadim2[sb_mana2]);//+30
-	R_DrawPic(138, 164, pic_manadim3[sb_mana3]);//+31
-	R_DrawPic(169, 164, pic_manadim4[sb_mana4]);//+31
-	R_DrawPic(200, 164, pic_manadim5[sb_mana5]);//+31
-	R_DrawPic(94, 164, pic_manavial1[sb_manaVial1]);
-	R_DrawPic(124, 164, pic_manavial2[sb_manaVial2]);
-	R_DrawPic(155, 164, pic_manavial3[sb_manaVial3]);
-	R_DrawPic(186, 164, pic_manavial4[sb_manaVial4]);
-	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
-	R_DrawPic(231, 165, pic_manavial6);
-	R_DrawPic(238, 165, pic_manavial7);
-	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / MAX_MANA, 31);
-	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / MAX_MANA, 31);
-	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
-	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
-	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / (cl->next_level - cl->old_level), 31);
-	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
-
-	// Ready artifact
-/*	if (cl->ArtifactFlash)
-	{
-		R_DrawPic(148, 164, pic_artiflash[cl->ArtifactFlash]);
-	}
-	else if (cl->readyArtifact > 0)
-	{
-		R_DrawPic(143, 163, pic_arti[cl->readyArtifact]);
-		SB_DrawINumber(166, 184, cl->inventory[cl->inv_ptr].count);
-	}
-*/
-	// Weapon Pieces
-	//[Korax]
-	/*if ((cl->stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
-	{
-		R_DrawPic(190, 162, pic_wpslot);
-		if (cl->stats.flags & SBF_PIECE1)
-		{
-			R_DrawPic(wppiecex[0], 162, pic_wppiece[0]);
-		}
-		if (cl->stats.flags & SBF_PIECE2)
-		{
-			R_DrawPic(wppiecex[1], 162, pic_wppiece[1]);
-		}
-		if (cl->stats.flags & SBF_PIECE3)
-		{
-			R_DrawPic(wppiecex[2], 162, pic_wppiece[2]);
-		}
-	}
-	else
-	{
-		R_DrawPic(190, 162, pic_wpfull);
-	}*/
-
-	// Armor
-	SB_DrawNumber9(253, 176, cl->armorpoints/*ftoi((AutoArmorSave[sb_pclass]
-			+ cl->armorpoints[ARMOR_ARMOR]
-			+ cl->armorpoints[ARMOR_SHIELD]
-			+ cl->armorpoints[ARMOR_HELMET]
-			+ cl->armorpoints[ARMOR_AMULET]) / 5.0)*/, 0);
 }
 
 //==========================================================================
@@ -1564,7 +1322,8 @@ void SB_Drawer(int sb_view)
 	}
 	else if (sb_view == SB_VIEW_AUTOMAP)
 	{
-		SB_DrawKeyBar();
+//		SB_DrawKeyBar();
+		SB_DrawMainBar();
 	}
 	else
 	{
@@ -1626,6 +1385,9 @@ void SB_UpdateWidgets(void)
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.12  2005/11/08 14:56:48  firebrand_kh
+//  Removed key bar drawing functions
+//
 //  Revision 1.11  2005/10/18 18:16:58  firebrand_kh
 //  Fixed scores layout
 //
