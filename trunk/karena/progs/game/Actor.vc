@@ -36,6 +36,7 @@ int CrashState;
 int DeathState;
 int GibsDeathState;
 int IceDeathState;
+int BurnDeathState;
 
 //  Sounds
 name SightSound;
@@ -775,13 +776,12 @@ void Died(Actor source)
 		Player.Powers[pw_flight] = 0.0;
 		Player.PlayerState = PST_DEAD;
 		Player.DropWeapon();
-		if (bFireDamage)
+		if (bFireDamage && BurnDeathState)
 		{
 			// Player flame death
-			if (PlayerPawn(self).FireDeath())
-			{
-				return;
-			}
+			PlaySound('*burndeath', CHAN_VOICE);
+			SetState(BurnDeathState);
+			return;
 		}
 		if (bIceDamage)
 		{
@@ -1287,7 +1287,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 				{
 					PoisonDamage(source, 15 + (P_Random() & 15), false);	// Don't play painsound
 					PoisonPlayer(source, 50);
-					PlaySound('PlayerPoisonCough', CHAN_VOICE);
+					PlaySound('*poison', CHAN_VOICE);
 				}
 				return;
 			}
@@ -1564,7 +1564,7 @@ void FallingDamage(void)
 		// No-death threshold
 		damage = Health - 1;
 	}
-	PlaySound('PlayerLand', CHAN_BODY);
+	PlaySound('*land', CHAN_BODY);
 	Damage(none, none, damage);
 }
 
@@ -2691,15 +2691,12 @@ bool HitFloor(void)
 				else if (vdot < -GRAVITY * 0.375
 					&& !Player.MorphTime)
 				{
-					PlaySound('PlayerLand', CHAN_BODY);
-					if (PlayerPawn(self).GruntSound)
-					{
-						PlaySound(PlayerPawn(self).GruntSound, CHAN_VOICE);
-					}
+					PlaySound('*land', CHAN_BODY);
+					PlaySound('*grunt', CHAN_VOICE);
 				}
 				else if (GetFloorType() < FLOOR_LIQUID && !Player.MorphTime)
 				{
-					PlaySound('PlayerLand', CHAN_BODY);
+					PlaySound('*land', CHAN_BODY);
 				}
 //FIXME				Player.centering = true;
 			}
@@ -2878,15 +2875,12 @@ void PlayerLandedOnThing(void)
 	}
 	else if (Velocity.z < -GRAVITY * 0.375 && !Player.MorphTime)
 	{
-		PlaySound('PlayerLand', CHAN_BODY);
-		if (PlayerPawn(self).GruntSound)
-		{
-			PlaySound(PlayerPawn(self).GruntSound, CHAN_VOICE);
-		}
+		PlaySound('*land', CHAN_BODY);
+		PlaySound('*grunt', CHAN_VOICE);
 	}
 	else if (!Player.MorphTime)
 	{
-		PlaySound('PlayerLand', CHAN_BODY);
+		PlaySound('*land', CHAN_BODY);
 	}
 //FIXME Player.centering = true;
 }
@@ -3259,7 +3253,7 @@ bool SectorChanged(int CrushChange)
 				SetState(S_GIBS1);
 				Height = 0.0;
 				Radius = 0.0;
-				PlaySound('PlayerFallingSplat', CHAN_VOICE);
+				PlaySound('*splat', CHAN_VOICE);
 			}
 		}
 		return true;
@@ -3797,9 +3791,28 @@ void A_UnSetInvulnerable(void)
 //
 //==========================================================================
 
-void A_Pain(void)
+void A_Pain()
 {
-	if (PainSound)
+	if (bIsPlayer && !Player.MorphTime)
+	{
+		if (Health < 25)
+		{
+			PlaySound('*pain25', CHAN_VOICE);
+		}
+		else if (Health < 50)
+		{
+			PlaySound('*pain50', CHAN_VOICE);
+		}
+		else if (Health < 75)
+		{
+			PlaySound('*pain75', CHAN_VOICE);
+		}
+		else
+		{
+			PlaySound('*pain100', CHAN_VOICE);
+		}
+	}
+	else if (PainSound)
 	{
 		PlaySound(PainSound, CHAN_VOICE);
 	}
@@ -3851,43 +3864,22 @@ void A_Scream(void)
 			if (Velocity.z <= -39.0 * 35.0)
 			{
 				// Falling splat
-				PlaySound('PlayerFallingSplat', CHAN_VOICE);
+				PlaySound('*splat', CHAN_VOICE);
 			}
 			else if (Health > -50)
 			{
 				// Normal death sound
-				if (PlayerPawn(self).NormalDeathSound)
-				{
-					PlaySound(PlayerPawn(self).NormalDeathSound, CHAN_VOICE);
-				}
+				PlaySound('*death', CHAN_VOICE);
 			}
 			else if (Health > -100)
 			{
 				// Crazy death sound
-				if (PlayerPawn(self).CrazyDeathSound)
-				{
-					PlaySound(PlayerPawn(self).CrazyDeathSound, CHAN_VOICE);
-				}
+				PlaySound('*crazydeath', CHAN_VOICE);
 			}
 			else
-			{	// Extreme death sound
-				name sound;
-				if (PlayerPawn(self).Extreme1DeathSound) {
-					switch (P_Random() % 3)
-					{
-					case 0:
-						sound = PlayerPawn(self).Extreme1DeathSound;
-						break;
-					case 1:
-						sound = PlayerPawn(self).Extreme2DeathSound;
-						break;
-					case 2:
-						sound = PlayerPawn(self).Extreme3DeathSound;
-						break;
-					}
-					// Three different extreme deaths
-					PlaySound(sound, CHAN_VOICE);
-				}
+			{
+				// Extreme death sound
+				PlaySound('*xdeath', CHAN_VOICE);
 			}
 		}
 	}
@@ -4187,6 +4179,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.21  2005/11/19 15:23:21  dj_jl
+//  Renamed sounds.
+//
 //  Revision 1.20  2005/11/17 18:58:50  dj_jl
 //  Implemented support for sndinfo extensions.
 //
