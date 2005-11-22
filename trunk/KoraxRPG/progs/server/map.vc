@@ -52,41 +52,31 @@ TVec useDir;
 
 bool PTR_UseTraverse(intercept_t * in)
 {
-	name sound;
+	line_t* line;
 	float pheight;
 	TVec hit_point;
 	opening_t *open;
 
-	if (!in->line->special || (GET_SPAC(in->line->flags) != SPAC_USE &&
-		GET_SPAC(in->line->flags) != SPAC_USETHROUGH))
+	line = in->line;
+	if (!line->special || (GET_SPAC(line->flags) != SPAC_USE &&
+		GET_SPAC(line->flags) != SPAC_USETHROUGH))
 	{
 		hit_point = usething.Origin + (USERANGE * in->frac) * useDir;
-		open = LineOpenings(in->line, hit_point);
+		open = LineOpenings(line, hit_point);
 		open = FindOpening(open, hit_point.z + usething.Height / 2.0,
 			hit_point.z + usething.Height);
 		if (!open)
 		{
 			if (usething.bIsPlayer)
 			{
-				switch (usething.Player.PClass)
+				if (usething.Player.MorphTime)
 				{
-				case PCLASS_FIGHTER:
-					sound = 'PlayerFighterFailedUse';
-					break;
-				case PCLASS_CLERIC:
-					sound = 'PlayerClericFailedUse';
-					break;
-				case PCLASS_MAGE:
-					sound = 'PlayerMageFailedUse';
-					break;
-				case PCLASS_PIG:
-					sound = 'PigActive1';
-					break;
-				default:
-					sound = 'None';
-					break;
+					usething.PlaySound('PigActive1', CHAN_VOICE);
 				}
-				usething.PlaySound(sound, CHAN_VOICE);
+				else
+				{
+					usething.PlaySound('*usefail', CHAN_VOICE);
+				}
 			}
 			return false;	// can't use through a wall
 		}
@@ -95,41 +85,30 @@ bool PTR_UseTraverse(intercept_t * in)
 			pheight = usething.Origin.z + usething.Height / 2.0;
 			if ((open->top < pheight) || (open->bottom > pheight))
 			{
-				switch (usething.Player.PClass)
+				if (usething.Player.MorphTime)
 				{
-				case PCLASS_FIGHTER:
-					sound = 'PlayerFighterFailedUse';
-					break;
-				case PCLASS_CLERIC:
-					sound = 'PlayerClericFailedUse';
-					break;
-				case PCLASS_MAGE:
-					sound = 'PlayerMageFailedUse';
-					break;
-				case PCLASS_PIG:
-					sound = 'PigActive1';
-					break;
-				default:
-					sound = 'None';
-					break;
+					usething.PlaySound('PigActive1', CHAN_VOICE);
 				}
-				usething.PlaySound(sound, CHAN_VOICE);
+				else
+				{
+					usething.PlaySound('*usefail', CHAN_VOICE);
+				}
 			}
 		}
 		return true;	// not a special line, but keep checking
 	}
 
-	if (PointOnPlaneSide(usething.Origin, in->line) == 1)
+	if (PointOnPlaneSide(usething.Origin, line) == 1)
 	{
 		//	Don't use back side unless it's a two-sided line.
-		return in->line->backsector != NULL;
+		return line->backsector != NULL;
 	}
 
-	P_ActivateLine(in->line, usething, 0, SPAC_USE);
+	P_ActivateLine(line, usething, 0, SPAC_USE);
 
 	//WAS can't use more than one special line in a row
 	//jff 3/21/98 NOW multiple use allowed with enabling line flag
-	return GET_SPAC(in->line->flags) == SPAC_USETHROUGH;
+	return GET_SPAC(line->flags) == SPAC_USETHROUGH;
 }
 
 //==========================================================================
@@ -192,25 +171,10 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 			open = LineOpenings(in->line, hit_point);
 			if (!open || open->range <= 0.0)
 			{
-				name sound;
-
-				sound = 'None';
 				if (PuzzleItemUser.bIsPlayer)
 				{
-					switch (PuzzleItemUser.Player.PClass)
-					{
-					case PCLASS_FIGHTER:
-						sound = 'PuzzleFailFighter';
-						break;
-					case PCLASS_CLERIC:
-						sound = 'PuzzleFailCleric';
-						break;
-					case PCLASS_MAGE:
-						sound = 'PuzzleFailMage';
-						break;
-					}
+					PuzzleItemUser.PlaySound('*puzzfail', CHAN_VOICE);
 				}
-				PuzzleItemUser.PlaySound(sound, CHAN_VOICE);
 				return false;	// can't use through a wall
 			}
 			return true;	// Continue searching
@@ -884,8 +848,14 @@ void PIT_ThrustSpike(Actor actor)
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.1  2005/08/02 16:22:37  firebrand_kh
-//  Initial Import
+//  Revision 1.2  2005/11/22 19:28:14  firebrand_kh
+//  Updated to latest Vavoom version
+//
+//  Revision 1.36  2005/11/19 15:15:08  dj_jl
+//  Renamed sounds.
+//
+//  Revision 1.35  2005/09/29 17:17:22  dj_jl
+//  Fix for using a puzzle item.
 //
 //  Revision 1.34  2005/03/28 07:44:09  dj_jl
 //  Some Boom line specials and other improvements.
