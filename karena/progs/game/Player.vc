@@ -160,13 +160,13 @@ bool inited;
 
 void PutClientIntoServer()
 {
-	ViewEnts[ps_weapon] = SpawnObject(Weapon, none);
+	ViewEnts[ps_weapon] = SpawnObject(Weapon);
 	ViewEnts[ps_weapon].Player = self;
-	ViewEnts[ps_flash] = SpawnObject(Weapon, none);
+	ViewEnts[ps_flash] = SpawnObject(Weapon);
 	ViewEnts[ps_flash].Player = self;
 	if (bIsBot)
 	{
-		Bot = SpawnObject(BotPlayer, none);
+		Bot = SpawnObject(BotPlayer);
 		Bot.player = self;
 		Bot.OnBeginPlay();
 	}
@@ -2997,9 +2997,11 @@ void PaletteFlash()
 	else if (BlindCount) // [FB] Black palette for blinding effect
 	{
 		Palette = (BlindCount + 7) >> 3;
-		if (Palette >= (CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, 255)))
+		CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, 255);
+		if (Palette >= CShifts[CSHIFT_CONTENTS])
 		{
-			Palette = CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+			CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+			Palette = CShifts[CSHIFT_CONTENTS];
 		}
 	}
 	else if (DamageFlash)
@@ -3923,7 +3925,7 @@ void SetWeapon(int NewWeapon)
 		ViewEnts[ps_weapon].Destroy();
 	}
 	ViewEnts[ps_weapon] =
-		SpawnObject(WeaponClasses[NewWeapon * NUMCLASSES + PClass], none);
+		SpawnObject(WeaponClasses[NewWeapon * NUMCLASSES + PClass]);
 	ViewEnts[ps_weapon].Player = self;
 	PSpriteSY = Weapon(ViewEnts[ps_weapon]).PSpriteSY;
 }
@@ -4193,7 +4195,7 @@ Weapon GetWea(int weapon)
 {
 	Weapon w;
 
-	w = Weapon(SpawnObject(WeaponClasses[weapon * NUMCLASSES + PClass], none));
+	w = Weapon(SpawnObject(WeaponClasses[weapon * NUMCLASSES + PClass]));
 	w.Player = self;
 	return w;
 }
@@ -4451,6 +4453,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.24  2005/11/24 20:27:54  dj_jl
+//  Removed unused fields from Object class.
+//
 //  Revision 1.23  2005/11/19 15:23:21  dj_jl
 //  Renamed sounds.
 //
