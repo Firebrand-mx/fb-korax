@@ -23,7 +23,28 @@
 //**
 //**************************************************************************
 
-class PoisonDart:Projectile;
+class PoisonDart : Projectile;
+
+//==========================================================================
+//
+//  InflictorModifyDamage
+//
+//==========================================================================
+
+int InflictorModifyDamage(Actor victim, Actor source, int damage)
+{
+	if (victim.bIsPlayer)
+	{
+		victim.PoisonPlayer(source, 20);
+		damage >>= 1;
+	}
+	else if (!bCountKill)
+	{
+		// only damage monsters/players with the poison cloud
+		return -1;
+	}
+	return damage;
+}
 
 __states__
 {
@@ -46,6 +67,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2005/11/30 23:53:37  dj_jl
+//  Switch statement requires integer.
+//
 //  Revision 1.1  2004/11/16 13:33:22  dj_jl
 //  Initial import.
 //

@@ -23,7 +23,28 @@
 //**
 //**************************************************************************
 
-class TeleportOtherFX1:Projectile;
+class TeleportOtherFX1 : Projectile;
+
+//==========================================================================
+//
+//  InflictorModifyDamage
+//
+//==========================================================================
+
+int InflictorModifyDamage(Actor victim, Actor source, int damage)
+{
+//[Korax]
+	if (victim.bCountKill && _Special1 == 1)
+	{
+		//no special fix required
+	} 
+	else if (victim.bCountKill && !victim.bBoss && !Serpent(victim))
+	{
+		victim.TeleportOther();
+		return -1;
+	}
+	return damage;
+}
 
 //==========================================================================
 //
@@ -31,7 +52,7 @@ class TeleportOtherFX1:Projectile;
 //
 //==========================================================================
 
-void A_TeloSpawnA(void)
+void A_TeloSpawnA()
 {
 	Actor A;
 
@@ -51,7 +72,7 @@ void A_TeloSpawnA(void)
 //
 //==========================================================================
 
-void A_TeloSpawnB(void)
+void A_TeloSpawnB()
 {
 	Actor A;
 
@@ -71,7 +92,7 @@ void A_TeloSpawnB(void)
 //
 //==========================================================================
 
-void A_TeloSpawnC(void)
+void A_TeloSpawnC()
 {
 	Actor A;
 
@@ -91,7 +112,7 @@ void A_TeloSpawnC(void)
 //
 //==========================================================================
 
-void A_TeloSpawnD(void)
+void A_TeloSpawnD()
 {
 	Actor A;
 
@@ -133,6 +154,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/11/30 23:53:37  dj_jl
+//  Switch statement requires integer.
+//
 //  Revision 1.2  2005/07/27 21:00:06  firebrand_kh
 //  Balanced weapon damage rates & mana usage
 //

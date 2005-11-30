@@ -584,36 +584,6 @@ int WeapFromItem(Actor item)
 	{
 		return WeaponPickup(item).WeaponType;
 	}
-/*	switch (player.PClass)
-	{
-	case PCLASS_FIGHTER:
-		switch (item.Class)
-		{
-		case WeaponFAxe:
-			return WP_THIRD;
-		case WeaponFHammer:
-			return WP_FOURTH;
-		}
-		break;
-	case PCLASS_CLERIC:
-		switch (item.Class)
-		{
-		case WeaponCSerpentStaff:
-			return WP_FIFTH;
-		case WeaponCFlame:
-			return WP_SIXTH;
-		}
-		break;
-	case PCLASS_MAGE:
-		switch (item.Class)
-		{
-		case WeaponMCone:
-			return WP_SEVENTH;
-		case WeaponMLightning:
-			return WP_EIGHTH;
-		}
-		break;
-	}*/
 	return -1;
 }
 
@@ -627,41 +597,10 @@ int WeapFromItem(Actor item)
 
 int WeapPieceFromItem(Actor item)
 {
-	switch (player.PClass)
+	if (WeaponPiece(item) &&
+		WeaponPiece(item).PieceClass == player.PClass)
 	{
-	case PCLASS_FIGHTER:
-		switch (item.Class)
-		{
-		case WeaponFSwordPiece1:
-			return WPIECE1;
-		case WeaponFSwordPiece2:
-			return WPIECE2;
-		case WeaponFSwordPiece3:
-			return WPIECE3;
-		}
-		break;
-	case PCLASS_CLERIC:
-		switch (item.Class)
-		{
-		case WeaponCHolyPiece1:
-			return WPIECE1;
-		case WeaponCHolyPiece2:
-			return WPIECE2;
-		case WeaponCHolyPiece3:
-			return WPIECE3;
-		}
-		break;
-	case PCLASS_MAGE:
-		switch (item.Class)
-		{
-		case WeaponMStaffPiece1:
-			return WPIECE1;
-		case WeaponMStaffPiece2:
-			return WPIECE2;
-		case WeaponMStaffPiece3:
-			return WPIECE3;
-		}
-		break;
+		return WeaponPiece(item).PieceValue;
 	}
 	return -1;
 }
@@ -681,15 +620,6 @@ int ManaFromItem(Actor item)
 	{
 		return Mana(item).ManaType;
 	}
-/*	switch (item.Class)
-	{
-	case ItemManaBlue:
-		return MANA_1;
-	case ItemManaGreen:
-		return MANA_2;
-	case ItemManaCombined:
-		return MANA_3;
-	}*/
 	return -1;
 }
 
@@ -2273,6 +2203,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.12  2005/11/30 23:53:37  dj_jl
+//  Switch statement requires integer.
+//
 //  Revision 1.11  2005/10/16 22:43:33  firebrand_kh
 //  Fixed ally tracking and added more checks for it
 //
