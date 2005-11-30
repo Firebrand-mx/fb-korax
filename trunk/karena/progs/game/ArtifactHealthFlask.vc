@@ -23,8 +23,59 @@
 //**
 //**************************************************************************
 
-class ArtifactHealthFlask:Pickup
+class ArtifactHealthFlask : Pickup
 	__mobjinfo__(82);
+
+//==========================================================================
+//
+//  TouchSpecial
+//
+//==========================================================================
+
+void TouchSpecial(Actor Toucher)
+{
+	PlayerPawn P;
+
+	if (!Toucher.bPickUp)
+	{
+		// Can't be picked up by toucher
+		return;
+	}
+	if (Toucher.Health <= 0)
+	{
+		// Toucher is dead
+		return;
+	}
+	P = PlayerPawn(Toucher);
+	if (!P)
+	{
+		//	Shouldn't happen
+		return;
+	}
+	if (!P.Player.GiveBody(25))
+	{
+		return;
+	}
+	cprint(P.Player, TXT_ARTIHEALTH);
+	if (Special)
+	{
+		ExecuteLineSpecial(Special, &Args[0], NULL, 0, P);
+		Special = 0;
+	}
+	if (deathmatch && !bDropped)
+	{
+		HideSpecial();
+	}
+	else
+	{
+		// [FB] KA always wants to make items respawn
+		if(!bDropped)
+			HideSpecial();
+		//Remove();
+	}
+	P.Player.BonusFlash += BONUSADD;
+	P.PlaySound('PickupItem', CHAN_ITEM);
+}
 
 __states__
 {
@@ -43,6 +94,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/11/30 23:53:37  dj_jl
+//  Switch statement requires integer.
+//
 //  Revision 1.2  2005/08/08 18:16:51  firebrand_kh
 //  Took out model definitions
 //
