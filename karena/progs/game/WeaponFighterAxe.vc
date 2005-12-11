@@ -73,11 +73,11 @@ void A_FAxeAttack(void)
 	{
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		AimLineAttack(Owner, &angles, AxeRange);
+		Owner.AimLineAttack(&angles, AxeRange);
 		if (linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (LineAttack(Owner, vforward, AxeRange, damage))
+			if (Owner.LineAttack(vforward, AxeRange, damage))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
@@ -91,11 +91,11 @@ void A_FAxeAttack(void)
 		}
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		AimLineAttack(Owner, &angles, AxeRange);
+		Owner.AimLineAttack(&angles, AxeRange);
 		if (linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (LineAttack(Owner, vforward, AxeRange, damage))
+			if (Owner.LineAttack(vforward, AxeRange, damage))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
@@ -112,9 +112,9 @@ void A_FAxeAttack(void)
 	{
 		// didn't find any creatures, so try to strike any walls
 		angles = Owner.Angles;
-		AimLineAttack(Owner, &angles, MELEERANGE);
+		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (LineAttack(Owner, vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -282,6 +282,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
 //  Revision 1.3  2005/08/12 23:04:25  firebrand_kh
 //  Fixed weapons to work with the PI Damage artifact
 //
