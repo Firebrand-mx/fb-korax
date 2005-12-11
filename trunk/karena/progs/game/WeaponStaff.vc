@@ -53,12 +53,12 @@ void A_StaffAttackPL1(void)
 	angles = Owner.Angles;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	AimLineAttack(Owner, &angles, 1.5 * MELEERANGE);
+	Owner.AimLineAttack(&angles, 1.5 * MELEERANGE);
 	if (linetarget)
 	{
 		AngleVector(&angles, &vforward);
 		PuffType = StaffPuff;
-		LineAttack(Owner, vforward, 1.5 * MELEERANGE, damage);
+		Owner.LineAttack(vforward, 1.5 * MELEERANGE, damage);
 		if (linetarget.bCountKill || linetarget.bIsPlayer)
 		{
 			linetarget.Thrust(angles.yaw, 2.0);
@@ -69,10 +69,10 @@ void A_StaffAttackPL1(void)
 	{
 		// didn't find any creatures, so try to strike any walls
 		angles = Player.MO.Angles;
-		AimLineAttack(Player.MO, &angles, MELEERANGE);
+		Player.MO.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
 		PuffType = StaffPuff;
-		if (LineAttack(Player.MO, vforward, MELEERANGE, damage))
+		if (Player.MO.LineAttack(vforward, MELEERANGE, damage))
 		{
 			Player.MO.PlaySound('StaffHit', CHAN_WEAPON);
 		}
@@ -107,6 +107,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
 //  Revision 1.3  2005/08/12 23:04:25  firebrand_kh
 //  Fixed weapons to work with the PI Damage artifact
 //

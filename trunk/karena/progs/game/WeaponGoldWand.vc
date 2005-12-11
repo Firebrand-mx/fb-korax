@@ -52,14 +52,14 @@ void A_FireGoldWandPL1(void)
 		}
 	}
 	angles = Player.MO.Angles;
-	AimLineAttack(Player.MO, &angles, MISSILERANGE);
+	Player.MO.AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
 	if (Player.Refire)
 	{
 		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
 	}
-	LineAttack(Player.MO, dir, MISSILERANGE, damage);
+	Player.MO.LineAttack(dir, MISSILERANGE, damage);
 
 	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
 }
@@ -82,7 +82,7 @@ void A_FireGoldWandPL2(void)
 	UseWeaponMana();
 	PuffType = GoldWandPuff2;
 	angles = Player.MO.Angles;
-	AimLineAttack(Player.MO, &angles, MISSILERANGE);
+	Player.MO.AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
 //	VectorAngles(&dir, &angles);
@@ -121,7 +121,7 @@ void A_FireGoldWandPL2(void)
 				damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		LineAttack(Player.MO, dir, MISSILERANGE, damage);
+		Player.MO.LineAttack(dir, MISSILERANGE, damage);
 		VectorRotateAroundZ(&dir, (45.0 / 8.0) / 2.0);
 	}
 	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
@@ -162,6 +162,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
 //  Revision 1.4  2005/08/12 23:04:25  firebrand_kh
 //  Fixed weapons to work with the PI Damage artifact
 //

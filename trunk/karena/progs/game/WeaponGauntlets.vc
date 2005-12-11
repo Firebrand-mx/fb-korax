@@ -60,9 +60,9 @@ void A_GauntletAttack(void)
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
 	PuffType = GauntletPuff1;
-	AimLineAttack(Player.MO, &angles, dist);
+	Player.MO.AimLineAttack(&angles, dist);
 	AngleVector(&angles, &dir);
-	LineAttack(Player.MO, dir, dist, damage);
+	Player.MO.LineAttack(dir, dist, damage);
 	if (!linetarget)
 	{
 		if (P_Random() > 64)
@@ -71,9 +71,9 @@ void A_GauntletAttack(void)
 		}
 		// didn't find any creatures, so try to strike any walls
 		angles = Player.MO.Angles;
-		AimLineAttack(Player.MO, &angles, MELEERANGE);
+		Player.MO.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &dir);
-		LineAttack(Player.MO, dir, MELEERANGE, damage);
+		Player.MO.LineAttack(dir, MELEERANGE, damage);
 		Player.MO.PlaySound('GauntletFull', CHAN_WEAPON);
 		return;
 	}
@@ -146,6 +146,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
 //  Revision 1.3  2005/08/12 23:04:25  firebrand_kh
 //  Fixed weapons to work with the PI Damage artifact
 //

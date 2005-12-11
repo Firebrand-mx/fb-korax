@@ -60,11 +60,11 @@ void A_FSwordMeleeAttack(void)
 	{
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		AimLineAttack(Owner, &angles, SwordRange);
+		Owner.AimLineAttack(&angles, SwordRange);
 		if (linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (LineAttack(Owner, vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
@@ -78,11 +78,11 @@ void A_FSwordMeleeAttack(void)
 		}
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		AimLineAttack(Owner, &angles, SwordRange);
+		Owner.AimLineAttack(&angles, SwordRange);
 		if (linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (LineAttack(Owner, vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
@@ -99,9 +99,9 @@ void A_FSwordMeleeAttack(void)
 	{
 		// didn't find any creatures, so try to strike any walls
 		angles = Owner.Angles;
-		AimLineAttack(Owner, &angles, MELEERANGE);
+		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (LineAttack(Owner, vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -150,6 +150,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
 //  Revision 1.4  2005/10/18 16:59:18  firebrand_kh
 //  Fixed Y alligment of the weapon's sprites
 //
