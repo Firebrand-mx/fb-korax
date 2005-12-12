@@ -27,7 +27,7 @@ class HereticImp : Pawn
 	__mobjinfo__(15009);
 
 int XCrashState;
-int Special1;
+//int Special1;
 
 //==========================================================================
 //
@@ -73,7 +73,7 @@ void A_ImpMsAttack(void)
 //
 //==========================================================================
 
-void A_ImpDeath(void)
+void A_ImpDeath()
 {
 	bSolid = false;
 	bFloorClip = true;
@@ -94,7 +94,7 @@ void A_ImpXDeath1(void)
 	bSolid = false;
 	bNoGravity = true;
 	bFloorClip = true;
-	Special1 = 666;	// Flag the crash routine
+	_Special1 = 666;	// Flag the crash routine
 }
 
 //==========================================================================
@@ -103,7 +103,7 @@ void A_ImpXDeath1(void)
 //
 //==========================================================================
 
-void A_ImpXDeath2(void)
+void A_ImpXDeath2()
 {
 	bNoGravity = false;
 	if (Origin.z <= FloorZ)
@@ -130,7 +130,7 @@ void A_ImpExplode(void)
 	mo.Velocity.x = (Random() - Random()) * 4.0 * 35.0;
 	mo.Velocity.y = (Random() - Random()) * 4.0 * 35.0;
 	mo.Velocity.z = 9.0 * 35.0;
-	if (Special1 == 666)
+	if (_Special1 == 666)
 	{
 		// Extreme death crash
 		SetState(XCrashState);
@@ -170,8 +170,7 @@ __states__
 	S_IMP_PAIN2('IMPX', 6, 3.0 / 35.0, S_IMP_FLY1) { A_Pain(); }
 	//	Deaths
 	S_IMP_DIE1('IMPX', 6, 4.0 / 35.0, S_IMP_DIE2) { A_ImpDeath(); }
-	S_IMP_DIE2('IMPX', 7, 5.0 / 35.0, S_IMP_DIE3) { A_ImpDeath(); }
-	S_IMP_DIE3('IMPX', 7, 5.0 / 35.0, S_IMP_DIE2) { A_ImpDeath(); }
+	S_IMP_DIE2('IMPX', 7, 5.0 / 35.0, S_IMP_DIE2) { }
 	S_IMP_XDIE1('IMPX', 18, 5.0 / 35.0, S_IMP_XDIE2) { A_ImpXDeath1(); }
 	S_IMP_XDIE2('IMPX', 19, 5.0 / 35.0, S_IMP_XDIE3) { }
 	S_IMP_XDIE3('IMPX', 20, 5.0 / 35.0, S_IMP_XDIE4) { }
@@ -181,9 +180,11 @@ __states__
 	S_IMP_CRASH2('IMPX', 9, 7.0 / 35.0, S_IMP_CRASH3) { A_Scream(); }
 	S_IMP_CRASH3('IMPX', 10, 7.0 / 35.0, S_IMP_CRASH4) { A_QueueCorpse(); }
 	S_IMP_CRASH4('IMPX', 11, -1.0, S_NULL) { }
-	S_IMP_XCRASH1('IMPX', 23, 7.0 / 35.0, S_IMP_XCRASH2) { A_Scream(); }
+	S_IMP_XCRASH1('IMPX', 23, 7.0 / 35.0, S_IMP_XCRASH2) { }
 	S_IMP_XCRASH2('IMPX', 24, 7.0 / 35.0, S_IMP_XCRASH3) { A_QueueCorpse(); }
 	S_IMP_XCRASH3('IMPX', 25, -1.0, S_NULL) { }
+	S_IMP_ICE1('IMPX', 26, 5.0 / 35.0, S_IMP_ICE2) { A_FreezeDeath(); }
+	S_IMP_ICE2('IMPX', 26, 1.0 / 35.0, S_IMP_ICE2) { A_FreezeDeathChunks(); }
 }
 
 defaultproperties
@@ -209,6 +210,7 @@ defaultproperties
 	GibsDeathState = S_IMP_XDIE1;
 	CrashState = S_IMP_CRASH1;
 	XCrashState = S_IMP_XCRASH1;
+	IceDeathState = S_IMP_ICE1;
 	SightSound = 'ImpSight';
 	ActiveSound = 'ImpActive';
 	AttackSound = 'ImpAttack1';
@@ -219,6 +221,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2005/12/12 03:00:03  firebrand_kh
+//  Added ice death states for Heretic enemies
+//
 //  Revision 1.2  2005/10/16 22:44:08  firebrand_kh
 //  Fixed frames duration to be the same as in the original Heretic game
 //
