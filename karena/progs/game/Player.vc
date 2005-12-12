@@ -65,7 +65,8 @@ int constitution;
 //  Other stats (for status bar)
 //
 int max_health;
-int bak_health; // [FB] To decrease the health
+int old_maxhealth; // [FB] To decrease the health
+int bak_health; // [FB] To keep an older level health
 
 int pcount; // [FB] counter
 
@@ -629,7 +630,7 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// [FB] There's a penalty for dying; you lost some experience
-	if(inited)
+	if(inited && PlayerState == PST_LIVE)
 	{
 		experience -= (200 * exp_level);
 
@@ -1136,10 +1137,12 @@ void GiveExperience(int exp)
 	experience += exp;
 	MO.experience = experience;
 
-	if(experience > 10000)
+	if(experience > 9999)
 	{
-		experience = 10000;
+		experience = 9999;
 	}
+
+	MO.experience = experience;
 
 	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
 	{
@@ -1160,7 +1163,6 @@ void GiveExperience(int exp)
 
 void ActivateLevel(int lvl)
 {
-	int old_maxhealth;
 	int addhealth;
 	int i;
 
@@ -1172,7 +1174,7 @@ void ActivateLevel(int lvl)
 		intelligence += intelligence * 25 / 100;
 		wisdom += wisdom * 25 / 100;
 		old_maxhealth = max_health;
-		bak_health = old_maxhealth;
+		bak_health = old_maxhealth - old_maxhealth * 9 / 100; // Save a previous level's health
 
 		if (old_maxhealth == 212)
 		{
@@ -1213,7 +1215,6 @@ void ActivateLevel(int lvl)
 
 void DeactivateLevel(int lvl)
 {
-	int old_maxhealth;
 	int addhealth;
 	int i;
 
@@ -1224,23 +1225,22 @@ void DeactivateLevel(int lvl)
 		dexterity -= dexterity * 25 / 100;
 		intelligence -= intelligence * 25 / 100;
 		wisdom -= wisdom * 25 / 100;
-		old_maxhealth = max_health;
 
 		// [FB] We already calculated the bak_health value
-		if (bak_health < 100)
+		if (old_maxhealth < 100)
 		{
 			// Don't do anything
 			addhealth = 0;
 		}
 		else
 		{
-			addhealth = bak_health * 9 / 100;
+			addhealth = old_maxhealth * 9 / 100;
 		}
 
 		if (addhealth > 0)
 		{
 			max_health -= addhealth;
-			Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
+			Health = max_health; // [FB] Just make it the same as the max_health value
 			MO.Health = Health;
 		}
 
@@ -1291,7 +1291,7 @@ void PlayerCamping()
 
 	limit = 3 * 35; // [FB] 3 seconds
 
-	if(inited && (pcount >= limit) && (pcount % (1 * 35) == 0))
+	if(inited && (pcount >= limit) && (pcount % (1 * 35) == 0) && PlayerState == PST_LIVE)
 	{
 		experience -= (1 * exp_level); // [FB] Depending the player level
 
@@ -1862,7 +1862,7 @@ void PlayerInSpecialSector(float deltaTime)
 			{
 				LastSectorDamageTime = level->time;
 				MO.Damage(GLavaInflictor, none, 5);
-				//MO.HitFloorEffect();
+				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
 			break;
@@ -1871,7 +1871,7 @@ void PlayerInSpecialSector(float deltaTime)
 			{
 				LastSectorDamageTime = level->time;
 				MO.Damage(GLavaInflictor, none, 8);
-				//MO.HitFloorEffect();
+				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
 			break;
@@ -1881,7 +1881,7 @@ void PlayerInSpecialSector(float deltaTime)
 			{
 				LastSectorDamageTime = level->time;
 				MO.Damage(GLavaInflictor, none, 5);
-				//MO.HitFloorEffect();
+				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
 			break;
@@ -2061,6 +2061,7 @@ void PlayerOnSpecialFlat(int floorType)
 		if (!(level->tictime & 31))
 		{
 			MO.Damage(GLavaInflictor, none, 10);
+			MO.HitFloorType();
 			MO.PlaySound('LavaSizzle', CHAN_BODY);
 		}
 		break;
@@ -2087,6 +2088,7 @@ void PlayerInContents()
 		if (!(level->tictime & 31))
 		{
 			MO.Damage(GLavaInflictor, none, 10);
+			MO.HitFloorType();
 			MO.PlaySound('LavaSizzle', CHAN_BODY);
 		}
 		break;
@@ -4641,6 +4643,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.26  2005/12/12 02:17:10  firebrand_kh
+//  Some more fixes
+//
 //  Revision 1.25  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //
