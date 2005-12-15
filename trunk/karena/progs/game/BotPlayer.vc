@@ -89,7 +89,6 @@ float combatdist[NUMWEAPONS * NUMCLASSES]; //different for each weapon.
 
 float angle;			// The wanted angle that the bot tries to get every tic.
 
-int botskill; 			// [FB] Bot skill
 float count;			// [FB] Roam Count
 
 float bottracerange;
@@ -953,12 +952,12 @@ void BotAim(void)
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if (((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon == WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_CLERIC && player.ReadyWeapon == WP_SECOND || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_MAGE && player.ReadyWeapon == WP_FOURTH || WP_FIFTH || WP_SIXTH || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_HERETIC && player.ReadyWeapon == WP_THIRD || WP_FIFTH || WP_SIXTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_MARINE && player.ReadyWeapon == WP_FIFTH || WP_SEVENTH || WP_EIGHTH) ||
-	    (player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon == WP_THIRD || WP_FOURTH || WP_SIXTH || WP_SEVENTH)))
+	if (((player.PClass == PCLASS_FIGHTER && player.ReadyWeapon == WP_FIFTH || player.ReadyWeapon == WP_SIXTH || player.ReadyWeapon == WP_EIGHTH) ||
+	    (player.PClass == PCLASS_CLERIC && player.ReadyWeapon == WP_SECOND || player.ReadyWeapon == WP_SEVENTH || player.ReadyWeapon == WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MAGE && player.ReadyWeapon == WP_FOURTH || player.ReadyWeapon == WP_FIFTH || player.ReadyWeapon == WP_SIXTH || player.ReadyWeapon == WP_SEVENTH ||  player.ReadyWeapon == WP_EIGHTH) ||
+	    (player.PClass == PCLASS_HERETIC && player.ReadyWeapon == WP_THIRD || player.ReadyWeapon == WP_FIFTH || player.ReadyWeapon == WP_SIXTH || player.ReadyWeapon == WP_EIGHTH) ||
+	    (player.PClass == PCLASS_MARINE && player.ReadyWeapon == WP_FIFTH || player.ReadyWeapon == WP_SEVENTH || player.ReadyWeapon == WP_EIGHTH) ||
+	    (player.PClass == PCLASS_WITCHAVEN && player.ReadyWeapon == WP_THIRD || player.ReadyWeapon == WP_FOURTH || player.ReadyWeapon == WP_SIXTH || player.ReadyWeapon == WP_SEVENTH)))
 	{
 		// Projectile weapons
 		switch (info.intelect)
@@ -979,7 +978,7 @@ void BotAim(void)
 				SetAngle(an - Random() * 20.0);
 			break;
 			default:
-				Error("Unknown bot skill level: %d", info.accuracy);
+				Error("Unknown bot skill level: %d", info.intelect);
 			return;
 		}
 	}
@@ -1533,8 +1532,6 @@ int B_ChooseWeapon(void)
 
 Actor B_SetAlly(void)
 {
-//	return none;
-
 	float closest_dist, test;
 	Actor target;
 	int i, j;
@@ -2174,11 +2171,11 @@ void Died(Actor killer)
 
 int BotSkill() // [FB] Select the right skill for the player
 {
-	if(gameskill == sk_baby)
+	if(gameskill == sk_nightmare)
 	{
 		return 4;
 	}
-	else if(gameskill == sk_easy)
+	else if(gameskill == sk_hard)
 	{
 		return 3;
 	}
@@ -2186,7 +2183,7 @@ int BotSkill() // [FB] Select the right skill for the player
 	{
 		return 2;
 	}
-	else if(gameskill == sk_hard)
+	else if(gameskill == sk_easy)
 	{
 		return 1;
 	}
@@ -2204,7 +2201,6 @@ int BotSkill() // [FB] Select the right skill for the player
 
 void OnBeginPlay(void)
 {
-//	int botskill = 2;
 	int bottype = 0;
 	botinfo_t *binfo;
 	int i;
@@ -2438,6 +2434,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.14  2005/12/15 19:22:04  firebrand_kh
+//  Fixed some bot skill checks and functions to calculate it
+//
 //  Revision 1.13  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //
