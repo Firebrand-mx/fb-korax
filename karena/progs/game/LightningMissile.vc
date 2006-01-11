@@ -147,7 +147,11 @@ void A_LightningClip(void)
 
 	if (Class == LightningFloor)
 	{
-		Origin.z = FloorZ;
+		if(Sector->bHasExtrafloors && LightningLink && Instigator.Origin.z >= LightningLink.FloorZ)
+			Origin.z = LightningLink.FloorZ;
+		else
+			Origin.z = FloorZ;
+
 		if (LightningLink)
 			targ = LightningLink.Enemy;
 		else
@@ -155,9 +159,14 @@ void A_LightningClip(void)
 	}
 	else if (Class == LightningCeiling)
 	{
-		Origin.z = CeilingZ - Height;
+		if(Sector->bHasExtrafloors && LightningLink && Instigator.Origin.z <= LightningLink.CeilingZ)
+			Origin.z = LightningLink.CeilingZ - Height;
+		else
+			Origin.z = CeilingZ - Height;
+
 		targ = Enemy;
 	}
+
 	if (Class == LightningFloor)
 	{
 		// floor lightning zig-zags, and forces the ceiling lightning to mimic
@@ -278,6 +287,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2006/01/11 20:48:44  firebrand_kh
+//  Fixed lightning missile to clip against extra floors
+//
 //  Revision 1.2  2005/07/27 21:00:06  firebrand_kh
 //  Balanced weapon damage rates & mana usage
 //
