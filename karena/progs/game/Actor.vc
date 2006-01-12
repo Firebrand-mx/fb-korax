@@ -2894,21 +2894,19 @@ bool Physics()
 					{
 						PlayerLandedOnThing();
 					}
-					if (onmo.Origin.z + onmo.Height - Origin.z <= MaxStepHeight)
+				}
+				if (onmo.Origin.z + onmo.Height - Origin.z <= MaxStepHeight)
+				{
+					if (bIsPlayer)
 					{
 						Player.ViewHeight -=
 							onmo.Origin.z + onmo.Height - Origin.z;
 						Player.DeltaViewHeight =
 							(VIEWHEIGHT - Player.ViewHeight) * 4.0;
-						Origin.z = onmo.Origin.z + onmo.Height;
-						bOnMobj = true;
-						Velocity.z = 0.0;
 					}
-					else
-					{
-						// hit the bottom of the blocking mobj
-						Velocity.z = 0.0;
-					}
+					Origin.z = onmo.Origin.z + onmo.Height;
+					bOnMobj = true;
+					Velocity.z = 0.0;
 				}
 			}
 		}
@@ -4530,6 +4528,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.27  2006/01/12 16:28:22  firebrand_kh
+//  Fixed freezed corpses to get stuck on the player's head
+//
 //  Revision 1.26  2005/12/29 17:32:12  dj_jl
 //  Created level info class, moved action special handling to it.
 //
