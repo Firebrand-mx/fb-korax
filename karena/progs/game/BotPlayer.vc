@@ -137,13 +137,12 @@ void BotTick(float deltaTime)
 	else
 		ally = none;
 
-/*	// [FB] Tag with our allies
-	if (ally)
+	// [FB] Tag with our allies
+	if (ally || (ally && !enemy))
 	{
 		Ally_Tag(deltaTime);
-		return;
 	}
-*/
+
 	// Weed out any bad destinations/enemies
 	CheckStuff();
 
@@ -363,12 +362,9 @@ bool CheckPNodes(Actor node)
 			}
 #endif
 	// [FB] Just check if the actor is really a Path Node and it's reachable
-	if (node.Class == PathNode/* && player.MO.CanSee(node)*/)
+	if (node.Class == PathNode && player.MO.CanSee(node) && prev != node && MobjDist(botmo, node) < 32.0)
 	{
-		/*if(CheckTo(node.Origin))
-		{*/
 			return true;
-		//}
 	}
 	else // [FB] Don't use it if it's not a PathNode then...
 	{
@@ -382,7 +378,7 @@ bool CheckPNodes(Actor node)
 //
 //==========================================================================
 
-void SetEnemy(void)
+void SetEnemy()
 {
 	if (enemy && enemy.Health > 0 && player.MO &&
 		player.MO.CanSee(enemy))
@@ -431,7 +427,7 @@ bool CheckTo(TVec pos)
 //
 //==========================================================================
 
-void CheckStuff(void)
+void CheckStuff()
 {
 	if (item)
 	{
@@ -450,8 +446,8 @@ void CheckStuff(void)
 	{
 		if (!CheckTo(node.Origin) || (MobjDist(botmo, node) < botmo.Radius))
 		{
-			prev = node;
-			node = none;
+			node = prev;
+			prev = none;
 		}
 	}
 
@@ -493,7 +489,7 @@ void CheckStuff(void)
 //
 //==========================================================================
 
-void Scan(void)
+void Scan()
 {
 	Actor actor;
 
@@ -526,6 +522,7 @@ void Scan(void)
 				if (CheckPNodes(actor))
 				{
 					node = actor;
+					prev = node;
 				}
 			}
 		}
@@ -567,7 +564,7 @@ void SetAngle(float an)
 //
 //==========================================================================
 
-float GetAngle(void)
+float GetAngle()
 {
 	return angle;
 }
@@ -920,7 +917,7 @@ bool Check_LOS(Actor to, float vangle)
 //
 //==========================================================================
 
-void BotAim(void)
+void BotAim()
 {
 	float dist;
 	bool right;
@@ -1033,7 +1030,7 @@ void BotAim(void)
 //
 //==========================================================================
 
-Actor FindEnemy(void)
+Actor FindEnemy()
 {
 	float closest_dist, temp;
 	Actor target;
@@ -1143,11 +1140,11 @@ Actor FindEnemy(void)
 //
 //	B_ChooseWeapon
 //
-//	[FB] Decide which weapon would be best to use in out situation
+//	[FB] Decide which weapon would be best to use in our situation
 //
 //==========================================================================
 
-int B_ChooseWeapon(void)
+int B_ChooseWeapon()
 {
 	float dist;
 
@@ -1160,362 +1157,387 @@ int B_ChooseWeapon(void)
 
 		if (dist <= MELEERANGE)
 		{
-			if (player.PClass == PCLASS_FIGHTER)
+			switch(player.PClass)
 			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+				case PCLASS_FIGHTER:
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 			
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
-					return WP_SECOND;
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 50)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 50)
+						return WP_SEVENTH;
 			
-				// Didn't find anything good
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_CLERIC)
-			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+					// Didn't find anything good
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_CLERIC:
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 5)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
-				     && player.MO.Health < player.max_health)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+					     && player.MO.Health < player.max_health)
+						return WP_SIXTH;
 
-				// Didn't find anything good
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MAGE)
-			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+					// Didn't find anything good
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MAGE:
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				// Didn't find anything good
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_HERETIC)
-			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+					// Didn't find anything good
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_HERETIC:
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 			
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+						return WP_FOURTH;
 
-				// Didn't find anything good
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MARINE)
-			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+					// Didn't find anything good
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MARINE:
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 			
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+						return WP_THIRD;
 
-				// Didn't find anything good			
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_WITCHAVEN)
-			{
-				if (player.WeaponOwned[WP_FIRST])
-					return WP_FIRST;
+					// Didn't find anything good			
+					return player.ReadyWeapon;
+					break;
+				}
+				if (player.PClass == PCLASS_WITCHAVEN)
+				{
+					if (player.WeaponOwned[WP_FIRST])
+						return WP_FIRST;
 			
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
-					return WP_SECOND;
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 5)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				// Didn't find anything good
-				return player.ReadyWeapon;
+					// Didn't find anything good
+					return player.ReadyWeapon;
+					break;
+				}
 			}
 		}
 		else if (dist <= 512.0)
 		{
-			if (player.PClass == PCLASS_FIGHTER)
+			switch(player.PClass)
 			{
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
-					return WP_FOURTH;
+				case PCLASS_FIGHTER:
+				{
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 			
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_CLERIC)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_CLERIC:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
-				     && player.MO.Health < player.max_health)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+					     && player.MO.Health < player.max_health)
+						return WP_SIXTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MAGE)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MAGE:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_HERETIC)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+				}
+				case PCLASS_HERETIC:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MARINE)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MARINE:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 			
-				return player.ReadyWeapon;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_WITCHAVEN:
+				{
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
+						return WP_THIRD;
+
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
+						return WP_FOURTH;
+
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
+						return WP_SIXTH;
+
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+						return WP_SEVENTH;
+
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
+
+					return player.ReadyWeapon;
+					break;
+				}
 			}
-			if (player.PClass == PCLASS_WITCHAVEN)
-			{
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
-					return WP_THIRD;
-
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
-					return WP_FOURTH;
-
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
-					return WP_SIXTH;
-
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
-					return WP_SEVENTH;
-
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
-
-				return player.ReadyWeapon;
-			}
-			return player.ReadyWeapon;
 		}
 		else
 		{
-			if (player.PClass == PCLASS_FIGHTER)
+			switch(player.PClass)
 			{
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
-					return WP_FOURTH;
+				case PCLASS_FIGHTER:
+				{
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 2)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 			
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_CLERIC)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_CLERIC:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 5)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 5)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
-				     && player.MO.Health < player.max_health)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 5
+					     && player.MO.Health < player.max_health)
+						return WP_SIXTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MAGE)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MAGE:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 3)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 3)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 7)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_HERETIC)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_HERETIC:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 15)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 15)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 20)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 25)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 
-				return player.ReadyWeapon;
-			}
-			if (player.PClass == PCLASS_MARINE)
-			{
-				if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
-					return WP_SECOND;
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_MARINE:
+				{
+					if (player.WeaponOwned[WP_SECOND] && player.Mana[MANA_1] >= 2)
+						return WP_SECOND;
 
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
-					return WP_THIRD;
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 10)
+						return WP_THIRD;
 
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
-					return WP_FOURTH;
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 3)
+						return WP_FOURTH;
 
-				if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
-					return WP_FIFTH;
+					if (player.WeaponOwned[WP_FIFTH] && player.Mana[MANA_1] >= 10)
+						return WP_FIFTH;
 
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
-					return WP_SIXTH;
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 25)
+						return WP_SIXTH;
 
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
-					return WP_SEVENTH;
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 8)
+						return WP_SEVENTH;
 
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
 			
+					return player.ReadyWeapon;
+					break;
+				}
+				case PCLASS_WITCHAVEN:
+				{
+					if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
+						return WP_THIRD;
+
+					if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
+						return WP_FOURTH;
+
+					if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
+						return WP_SIXTH;
+
+					if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
+						return WP_SEVENTH;
+
+					if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
+						return WP_EIGHTH;
+
+					return player.ReadyWeapon;
+					break;
+				}
 				return player.ReadyWeapon;
 			}
-			if (player.PClass == PCLASS_WITCHAVEN)
-			{
-				if (player.WeaponOwned[WP_THIRD] && player.Mana[MANA_2] >= 20)
-					return WP_THIRD;
-
-				if (player.WeaponOwned[WP_FOURTH] && player.Mana[MANA_3] >= 10)
-					return WP_FOURTH;
-
-				if (player.WeaponOwned[WP_SIXTH] && player.Mana[MANA_2] >= 30)
-					return WP_SIXTH;
-
-				if (player.WeaponOwned[WP_SEVENTH] && player.Mana[MANA_3] >= 20)
-					return WP_SEVENTH;
-
-				if (player.WeaponOwned[WP_EIGHTH] && player.Mana[NUMMANA] >= 100)
-					return WP_EIGHTH;
-
-				return player.ReadyWeapon;
-			}
-			return player.ReadyWeapon;
 		}
 	}
 	return player.ReadyWeapon;
@@ -1530,7 +1552,7 @@ int B_ChooseWeapon(void)
 //
 //==========================================================================
 
-Actor B_SetAlly(void)
+Actor B_SetAlly()
 {
 	float closest_dist, test;
 	Actor target;
@@ -1649,7 +1671,7 @@ Actor B_SetAlly(void)
 //
 //==========================================================================
 
-void Roam(void)
+void Roam()
 {
 	TVec dest;
 
@@ -1692,12 +1714,6 @@ void Roam(void)
 		int r = P_Random();
 		float an = GetAngle();
 		float dist;
-
-		// [FB] Always check for PathNodes
-		if (node)
-		{
-			dest = node.Origin;
-		}
 
 		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
 		{
@@ -1909,16 +1925,6 @@ void Move(float deltaTime)
 		lastpos = enemy.Origin;
 		lastpos_valid = true;
 
-		// [FB] Always check for PathNodes
-		if (node)
-		{
-			if(CheckPNodes(node))
-			{
-				Roam();
-				return;
-			}
-		}
-
 		// Check if we'd rather pick up something than fight
 		if (item)
 		{
@@ -1928,6 +1934,7 @@ void Move(float deltaTime)
 
 			if (bItemIsPowerup ||
 				(bItemIsWeapon && player.ReadyWeapon == WP_FIRST || player.ReadyWeapon == WP_SECOND)
+				|| (enemy.bIsPlayer && bItemIsWeapon && player.ReadyWeapon < enemy.Player.ReadyWeapon)
 				|| ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask
 				|| item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2)))
 				&& itemdist <= GETINCOMBAT)
@@ -1966,7 +1973,7 @@ void Move(float deltaTime)
 	}
 
 	// [FB] Follow our buddy if we're tagging along
-	if (ally)
+	if (ally || (ally && !enemy))
 	{
 		Ally_Tag(deltaTime);
 		return;
@@ -1979,16 +1986,6 @@ void Move(float deltaTime)
 		{
 			sidemove = -sidemove;
 			t_strafe = 2.0;
-		}
-	}
-
-	// [FB] Always check for PathNodes
-	if (node)
-	{
-		if(CheckPNodes(node))
-		{
-			Roam();
-			return;
 		}
 	}
 
@@ -2036,7 +2033,7 @@ void Ally_Tag(float deltaTime)
 //
 //==========================================================================
 
-void Attack(void)
+void Attack()
 {
 	// Still reacting to something or we don't have an enemy to fight
 	if (t_react || !enemy)
@@ -2061,7 +2058,7 @@ void Attack(void)
 //
 //==========================================================================
 
-void Turn(void)
+void Turn()
 {
 	float distance;
 
@@ -2118,7 +2115,7 @@ void Turn(void)
 //
 //==========================================================================
 
-void Pitch(void)
+void Pitch()
 {
 	if (enemy)
 	{
@@ -2199,7 +2196,7 @@ int BotSkill() // [FB] Select the right skill for the player
 //
 //==========================================================================
 
-void OnBeginPlay(void)
+void OnBeginPlay()
 {
 	int bottype = 0;
 	botinfo_t *binfo;
@@ -2400,7 +2397,7 @@ void OnBeginPlay(void)
 //
 //==========================================================================
 
-void OnSpawn(void)
+void OnSpawn()
 {
 	enemy = none;
 }
@@ -2434,6 +2431,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.15  2006/01/12 16:33:11  firebrand_kh
+//  Lots of fixes and improvements
+//
 //  Revision 1.14  2005/12/15 19:22:04  firebrand_kh
 //  Fixed some bot skill checks and functions to calculate it
 //
