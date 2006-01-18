@@ -2097,6 +2097,54 @@ void PlayerInContents()
 
 //==========================================================================
 //
+//  PrevWeapon
+//
+//==========================================================================
+
+void PrevWeapon()
+{
+	int			i;
+	int			NewWeap;
+
+	if (MorphTime)
+		return;
+	for (i = NUMWEAPONS - 1; i > 0; i--)
+	{
+		NewWeap = (ReadyWeapon + i) % NUMWEAPONS;
+		if (WeaponOwned[NewWeap])
+		{
+			PendingWeapon = NewWeap;
+			return;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  NextWeapon
+//
+//==========================================================================
+
+void NextWeapon()
+{
+	int			i;
+	int			NewWeap;
+
+	if (MorphTime)
+		return;
+	for (i = 1; i < NUMWEAPONS; i++)
+	{
+		NewWeap = (ReadyWeapon + i) % NUMWEAPONS;
+		if (WeaponOwned[NewWeap])
+		{
+			PendingWeapon = NewWeap;
+			return;
+		}
+	}
+}
+
+//==========================================================================
+//
 //  PlayerImpulse
 //
 //==========================================================================
@@ -2169,6 +2217,14 @@ void PlayerImpulse()
 */	else if (impulse == 16)
 	{
 		MO.Damage(none, none, 10000);
+	}
+	else if (impulse == 17)
+	{
+		PrevWeapon();
+	}
+	else if (impulse == 18)
+	{
+		NextWeapon();
 	}
 	// Hexen artifact hot keys
 	if (!Arti)
@@ -4643,6 +4699,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.29  2006/01/18 19:15:30  dj_jl
+//  Switch to previous and next weapon.
+//
 //  Revision 1.28  2005/12/29 17:32:12  dj_jl
 //  Created level info class, moved action special handling to it.
 //
