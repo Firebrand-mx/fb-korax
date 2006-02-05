@@ -268,10 +268,6 @@ float yspeed[8] =
 Actor bodyque[BODYQUESIZE];
 int bodyqueslot;
 
-// Corpse queue for monsters - this should be saved out
-Actor corpseQueue[CORPSEQUEUESIZE];
-int corpseQueueSlot;
-
 int MinotaurSpotCount;
 TVec MinotaurSpot[MAX_MINOTAUR_SPOTS];
 float MinotaurSpot_angle[MAX_MINOTAUR_SPOTS];
@@ -666,70 +662,6 @@ TVec ClipVelocity(TVec in, TVec normal, float overbounce)
 	return in - normal * (DotProduct(in, normal) * overbounce);
 }
 
-//============================================================================
-//
-//  P_InitCreatureCorpseQueue
-//
-//============================================================================
-
-void P_InitCreatureCorpseQueue(int corpseScan)
-{
-	Actor mo;
-	int i;
-
-	// Initialize queue
-	corpseQueueSlot = 0;
-	for (i = 0; i < CORPSEQUEUESIZE; i++)
-	{
-		corpseQueue[i] = none;
-	}
-
-	if (!corpseScan)
-		return;
-
-	// Search mobj list for corpses and place them in this queue
-	FOREACH(Actor, mo)
-	{
-		if (!mo.bCorpse)
-			continue;	// Must be a corpse
-		if (mo.bIceCorpse)
-			continue;	// Not ice corpses
-		// Only corpses that call A_QueueCorpse from death routine
-		if (mo.Class == Centaur ||
-			mo.Class == CentaurLeader ||
-			mo.Class == Demon ||
-			mo.Class == Demon2 ||
-			mo.Class == Wraith ||
-			mo.Class == WraithBuried ||
-			mo.Class == Bishop ||
-			mo.Class == Ettin ||
-			mo.Class == Pig ||
-			mo.Class == CentaurShield ||
-			mo.Class == CentaurSword ||
-			mo.Class == DemonChunk1 ||
-			mo.Class == DemonChunk2 ||
-			mo.Class == DemonChunk3 ||
-			mo.Class == DemonChunk4 ||
-			mo.Class == DemonChunk5 ||
-			mo.Class == Demon2Chunk1 ||
-			mo.Class == Demon2Chunk2 ||
-			mo.Class == Demon2Chunk3 ||
-			mo.Class == Demon2Chunk4 ||
-			mo.Class == Demon2Chunk5 ||
-			mo.Class == FireDemonSplotch1 ||
-			mo.Class == FireDemonSplotch2 ||
-			mo.Class == HereticImp ||
-			mo.Class == HereticImpLeader ||
-			mo.Class == HereticMummy ||
-			mo.Class == HereticMummyGhost ||
-			mo.Class == HereticMummyLeader ||
-			mo.Class == HereticMummyLeaderGhost)
-		{
-			mo.A_QueueCorpse();	// Add corpse to queue
-		}
-	}
-}
-
 //==========================================================================
 //
 //  P_Massacre
@@ -761,6 +693,9 @@ int P_Massacre()
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.12  2006/02/05 18:57:00  dj_jl
+//  Moved common utils to level info class or built-in.
+//
 //  Revision 1.11  2005/12/29 17:32:12  dj_jl
 //  Created level info class, moved action special handling to it.
 //
