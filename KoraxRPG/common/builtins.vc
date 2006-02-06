@@ -74,6 +74,12 @@ native float AngleMod360(float angle);
 //  Normalises angle in range -180..180
 native float AngleMod180(float angle);
 
+//  Absolute value
+native int abs(int val);
+
+//  Absolute value
+native float fabs(float val);
+
 //  Sine
 native float sin(float angle);
 
@@ -110,6 +116,19 @@ native void AngleVector(TAVec * angles, TVec * forward);
 
 //  Create angle vector for a vector
 native void VectorAngles(TVec * vec, TAVec * angles);
+
+//  Get z of point with given x and y coords
+// Don't try to use it on a vertical plane
+native float GetPlanePointZ(TPlane * plane, TVec point);
+
+//  Returns side 0 (front) or 1 (back).
+native int PointOnPlaneSide(TVec point, TPlane * plane);
+
+//  Rotates a direction vector
+native TVec RotateDirectionVector(TVec vec, TAVec rot);
+
+//  Rotates vector around Z axis
+native void VectorRotateAroundZ(TVec * vec, float angle);
 
 //
 //  Random numbers
@@ -229,7 +248,7 @@ native string Info_ValueForKey(string info, string key);
 //  Checks if WAD lump is present, used to check for shareware/extended WADs
 native bool WadLumpPresent(string Name);
 
-native Object SpawnObject(classid cid, Object owner);
+native Object SpawnObject(classid cid);
 
 native classid FindClass(name Name);
 
@@ -387,11 +406,11 @@ native opening_t *LineOpenings(line_t * linedef, TVec point);
 native int P_BoxOnLineSide(float *tmbox, line_t * ld);
 
 //
-native bool P_BlockThingsIterator(int x, int y, name FuncName);
+native bool P_BlockThingsIterator(int x, int y, Object SelfObj, name FuncName);
 
 //
 native bool P_PathTraverse(float x1, float y1, float x2, float y2,
-	int flags, name FuncName);
+	int flags, Object SelfObj, name FuncName);
 
 //  Find the best gap that the thing could fit in, given a certain Z
 // position (z1 is foot, z2 is head).
@@ -496,6 +515,11 @@ native void SetHeightSector(sector_t* Sector, sector_t* SrcSector, int Flags);
 native int FindModel(string Name);
 native int GetModelIndex(name Name);
 native int FindSkin(string Name);
+native classid FindClassFromEditorId(int Id);
+native void ChangeMusic(string SongName);
+
+//  Return next sector # that line tag refers to
+native int FindSectorFromTag(int tag, int start);
 
 native void MSG_SelectClientMsg(int msgtype, BasePlayer client);
 
@@ -504,8 +528,23 @@ native void MSG_SelectClientMsg(int msgtype, BasePlayer client);
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.2  2005/11/22 19:20:55  firebrand_kh
-//  Updated to latest Vavoom version
+//  Revision 1.3  2006/02/06 19:29:29  firebrand_kh
+//  Added latest Vavoom changes
+//
+//  Revision 1.59  2006/02/05 18:50:54  dj_jl
+//  Moved common utils to level info class or built-in.
+//
+//  Revision 1.58  2006/01/10 19:47:29  dj_jl
+//  Added builtin for changing the music.
+//
+//  Revision 1.57  2005/12/11 21:31:39  dj_jl
+//  Made path traversal callbacks class members.
+//
+//  Revision 1.56  2005/12/07 22:54:17  dj_jl
+//  Moved compiler generated data out of globals.
+//
+//  Revision 1.55  2005/11/24 20:27:00  dj_jl
+//  Removed unused fields from Object class.
 //
 //  Revision 1.54  2005/11/20 12:40:14  dj_jl
 //  Implemented support for sound sequence extensions.
