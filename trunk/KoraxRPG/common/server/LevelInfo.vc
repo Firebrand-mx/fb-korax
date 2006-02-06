@@ -23,159 +23,9 @@
 //**
 //**************************************************************************
 
-#define MobjCenter(mobj)\
-	(mobj.Origin + vector(0.0, 0.0, mobj.Height * 0.5 - mobj.FloorClip))
-
-#define FOREACH(type, var) \
-	for (var = type(NextThinker(none, type)); var; \
-		var = type(NextThinker(var, type)))
-
-//==========================================================================
-//
-//  abs
-//
-//==========================================================================
-
-int abs(int val)
-{
-	return (val < 0) ? -val : val;
-}
-
-//==========================================================================
-//
-//  fabs
-//
-//==========================================================================
-
-float fabs(float val)
-{
-	return (val < 0.0) ? -val : val;
-}
-
-//==========================================================================
-//
-//  HITDICE
-//
-//  Most damage in HERETIC and HEXEN defined using HITDICE
-//
-//==========================================================================
-
-int HITDICE(int a)
-{
-	return (1 + (P_Random() & 7)) * a;
-}
-
-//==========================================================================
-//
-//  MobjDist
-//
-//==========================================================================
-
-float MobjDist(Entity mo1, Entity mo2)
-{
-	return Length(MobjCenter(mo2) - MobjCenter(mo1));
-}
-
-//==========================================================================
-//
-//  MobjDist2
-//
-//==========================================================================
-
-float MobjDist2(Entity mo1, Entity mo2)
-{
-	TVec dir;
-
-	dir = mo2.Origin - mo1.Origin;
-	dir.z = 0.0;
-	return Length(dir);
-}
-
-//==========================================================================
-//
-//  GetPlanePointZ
-//
-//  Get z of point with given x and y coords
-// Don't try to use it on a vertical plane
-//
-//==========================================================================
-
-float GetPlanePointZ(TPlane * plane, TVec point)
-{
-	return (plane->dist - plane->normal.x * point.x -
-		plane->normal.y * point.y) / plane->normal.z;
-}
-
-//==========================================================================
-//
-//  PointOnPlaneSide
-//
-//  Returns side 0 (front) or 1 (back).
-//
-//==========================================================================
-
-int PointOnPlaneSide(TVec point, TPlane * plane)
-{
-	return DotProduct(point, plane->normal) - plane->dist < 0.0;
-}
-
-//==========================================================================
-//
-//	RotateVector
-//
-//==========================================================================
-
-TVec RotateVector(TVec vec, TAVec rot)
-{
-	TVec v_forward;
-	TVec v_right;
-	TVec v_up;
-	TVec out;
-
-	AngleVectors(&rot, &v_forward, &v_right, &v_up);
-	out.x = DotProduct(vec, v_forward);
-	out.y = -DotProduct(vec, v_right);
-	out.z = DotProduct(vec, v_up);
-	return out;
-}
-
-//==========================================================================
-//
-//	RotateDirectionVector
-//
-//==========================================================================
-
-TVec RotateDirectionVector(TVec vec, TAVec rot)
-{
-	TAVec angles;
-	TVec out;
-
-	VectorAngles(&vec, &angles);
-	angles += rot;
-	AngleVector(&angles, &out);
-	return out;
-}
-
-//==========================================================================
-//
-//  VectorRotateAroundZ
-//
-//==========================================================================
-
-void VectorRotateAroundZ(TVec * vec, float angle)
-{
-	float dstx = vec->x * cos(angle) - vec->y * sin(angle);
-	float dsty = vec->x * sin(angle) + vec->y * cos(angle);
-
-	vec->x = dstx;
-	vec->y = dsty;
-}
-
-//**************************************************************************
-//
-//  TRACE A LINE
-//
-//**************************************************************************
+class LevelInfo : Thinker
+	native
+	abstract;
 
 TVec trace_start;
 TVec trace_end;
@@ -183,6 +33,166 @@ TVec trace_plane_normal;
 
 TVec linestart;
 TVec lineend;
+
+//==========================================================================
+//
+//  SpawnSpecials
+//
+//==========================================================================
+
+void SpawnSpecials()
+{
+}
+
+//==========================================================================
+//
+//  UpdateSpecials
+//
+//==========================================================================
+
+void UpdateSpecials()
+{
+}
+
+//==========================================================================
+//
+//  AfterUnarchiveThinkers
+//
+//==========================================================================
+
+void AfterUnarchiveThinkers()
+{
+	CreateTIDList();
+}
+
+//==========================================================================
+//
+//  FindLine
+//
+//==========================================================================
+
+line_t* FindLine(int lineTag, int *searchPosition)
+{
+	return NULL;
+}
+
+//==========================================================================
+//
+//  PolyThrustMobj
+//
+//==========================================================================
+
+void PolyThrustMobj(Entity A, TVec thrustDir, polyobj_t * po)
+{
+}
+
+//==========================================================================
+//
+//	TagBusy
+//
+//==========================================================================
+
+bool TagBusy(int tag)
+{
+	int sectorIndex;
+
+	for (sectorIndex = FindSectorFromTag(tag, -1); sectorIndex >= 0;
+		sectorIndex = FindSectorFromTag(tag, sectorIndex))
+	{
+		if (XLevel.Sectors[sectorIndex].FloorData ||
+			XLevel.Sectors[sectorIndex].CeilingData)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  PolyBusy
+//
+//==========================================================================
+
+bool PolyBusy(int polyobj)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	ThingCount
+//
+//==========================================================================
+
+int ThingCount(int type, int tid)
+{
+	return 0;
+}
+
+//==========================================================================
+//
+//	FindMobjFromTID
+//
+//==========================================================================
+
+Entity FindMobjFromTID(int tid, int *searchPosition)
+{
+	int i;
+
+	for (i = *searchPosition + 1; TIDList[i] != 0; i++)
+	{
+		if (TIDList[i] == tid)
+		{
+			*searchPosition = i;
+			return TIDMobj[i];
+		}
+	}
+	*searchPosition = -1;
+	return none;
+}
+
+//==========================================================================
+//
+//  ExecuteActionSpecial
+//
+//==========================================================================
+
+bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* line, int side, Entity A)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_ThingProjectile
+//
+//==========================================================================
+
+bool EV_ThingProjectile(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	bool gravity, int newtid)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//  StartPlaneWatcher
+//
+//==========================================================================
+
+void StartPlaneWatcher(Actor it, line_t* line, int lineSide, bool ceiling,
+	int tag, int height, int special, int arg0, int arg1, int arg2, int arg3,
+	int arg4)
+{
+}
+
+//**************************************************************************
+//
+//  TRACE A LINE
+//
+//**************************************************************************
 
 //==========================================================================
 //
@@ -337,7 +347,7 @@ bool TraceLine(TVec start, TVec end)
 
 	linestart = trace_start;
 	if (P_PathTraverse(start.x, start.y, end.x, end.y, PT_ADDLINES,
-			'TraceTraverse'))
+		none, 'TraceTraverse'))
 	{
 		lineend = end;
 		return TraceCheckPlanes(GLevel.PointInSector(end));
@@ -380,28 +390,6 @@ void AddStaticLightRGB(TVec origin, float radius, int color)
 
 //==========================================================================
 //
-//  ArchiveThinker
-//
-//==========================================================================
-
-void ArchiveThinker(Thinker th)
-{
-	th.Archive();
-}
-
-//==========================================================================
-//
-//  UnarchiveThinker
-//
-//==========================================================================
-
-void UnarchiveThinker(Thinker th)
-{
-	th.Unarchive();
-}
-
-//==========================================================================
-//
 //	CreateTIDList
 //
 //==========================================================================
@@ -427,49 +415,6 @@ void CreateTIDList()
 	}
 	//	Add termination marker
 	TIDList[i] = 0;
-}
-
-//==========================================================================
-//
-//	FindMobjFromTID
-//
-//==========================================================================
-
-Entity FindMobjFromTID(int tid, int *searchPosition)
-{
-	int i;
-
-	for (i = *searchPosition + 1; TIDList[i] != 0; i++)
-	{
-		if (TIDList[i] == tid)
-		{
-			*searchPosition = i;
-			return TIDMobj[i];
-		}
-	}
-	*searchPosition = -1;
-	return none;
-}
-
-//==========================================================================
-//
-//	FindState
-//
-//==========================================================================
-
-int FindState(name StateName)
-{
-	int i;
-
-	for (i = 0; i < num_states; i++)
-	{
-		if (states[i].statename == StateName)
-		{
-			return i;
-		}
-	}
-	Error("Can't find state %n", StateName);
-	return 0;
 }
 
 //**************************************************************************
@@ -1188,327 +1133,20 @@ float FindLowestCeilingPoint(sector_t* sec, TVec* v)
 	return height;
 }
 
-//==========================================================================
-//
-//  FindSectorFromTag
-//
-//  RETURN NEXT SECTOR # THAT LINE TAG REFERS TO
-//
-//==========================================================================
-
-int FindSectorFromTag(int tag, int start)
+defaultproperties
 {
-	int i;
-
-	for (i = start + 1; i < GLevel.NumSectors; i++)
-		if (GLevel.Sectors[i].tag == tag)
-			return i;
-
-	return -1;
-}
-
-//==========================================================================
-//
-//	TagBusy
-//
-//==========================================================================
-
-bool TagBusy(int tag)
-{
-	int sectorIndex;
-
-	for (sectorIndex = FindSectorFromTag(tag, -1); sectorIndex >= 0;
-		sectorIndex = FindSectorFromTag(tag, sectorIndex))
-	{
-		if (GLevel.Sectors[sectorIndex].FloorData ||
-			GLevel.Sectors[sectorIndex].CeilingData)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-//**************************************************************************
-//
-//  MOVE FLOOR/CEILING
-//
-//**************************************************************************
-
-//==========================================================================
-//
-//  MovePlane
-//
-//  Move a plane (floor or ceiling) and check for crushing
-//
-//==========================================================================
-
-int MovePlane(sector_t* sector, float amount, float dest, int crush,
-	int floorOrCeiling, int direction, bool StopOnCrush)
-{
-	bool		flag;
-	float		lastpos;
-
-	switch (floorOrCeiling)
-	{
-	case 0:
-		// FLOOR
-		lastpos = sector->floor.dist;
-		switch (direction)
-		{
-		case -1:
-			// DOWN
-			sector->floor.dist -= amount * sector->floor.normal.z;
-			if (sector->floor.dist <= dest)
-			{
-				sector->floor.dist = dest;
-				flag = P_ChangeSector(sector, crush);
-				if (flag)
-				{
-					sector->floor.dist = lastpos;
-					P_ChangeSector(sector, crush);
-				}
-				return RES_PASTDEST;
-			}
-			else
-			{
-				flag = P_ChangeSector(sector, crush);
-				if (flag)
-				{
-					sector->floor.dist = lastpos;
-					P_ChangeSector(sector, crush);
-					return RES_CRUSHED;
-				}
-			}
-			break;
-
-		case 1:
-			// UP
-			// jff 02/04/98 keep floor from moving thru ceilings
-			// [RH] not so easy with arbitrary planes
-			if (!sector->bExtrafloorSource &&
-				!sector->ceiling.normal.x && !sector->ceiling.normal.y &&
-				!sector->floor.normal.x && !sector->floor.normal.y &&
-				dest > -sector->ceiling.dist)
-			{
-				dest = -sector->ceiling.dist;
-			}
-			sector->floor.dist += amount * sector->floor.normal.z;
-			if (sector->floor.dist > dest)
-			{
-				sector->floor.dist = dest;
-				flag = P_ChangeSector(sector, crush);
-				if (flag)
-				{
-					sector->floor.dist = lastpos;
-					P_ChangeSector(sector, crush);
-				}
-				return RES_PASTDEST;
-			}
-			else
-			{
-				// COULD GET CRUSHED
-				flag = P_ChangeSector(sector, crush);
-				if (flag)
-				{
-					if (!crush || StopOnCrush)
-					{
-						sector->floor.dist = lastpos;
-						P_ChangeSector(sector, crush);
-					}
-					return RES_CRUSHED;
-				}
-			}
-			break;
-		}
-		break;
-
-	case 1:
-		// CEILING
-		lastpos = sector->ceiling.dist;
-		switch (direction)
-		{
-		case -1:
-			// DOWN
-			// jff 02/04/98 keep ceiling from moving thru floors
-			// [RH] not so easy with arbitrary planes
-			if (!sector->bExtrafloorSource &&
-				!sector->ceiling.normal.x && !sector->ceiling.normal.y &&
-				sector->floor.normal.x && !sector->floor.normal.y &&
-				-dest < sector->floor.dist)
-			{
-				dest = -sector->floor.dist;
-			}
-			sector->ceiling.dist -= amount * sector->ceiling.normal.z;
-			if (sector->ceiling.dist > dest)
-			{
-				sector->ceiling.dist = dest;
-				flag = P_ChangeSector(sector, crush);
-
-				if (flag)
-				{
-					sector->ceiling.dist = lastpos;
-					P_ChangeSector(sector, crush);
-				}
-				return RES_PASTDEST;
-			}
-			else
-			{
-				// COULD GET CRUSHED
-				flag = P_ChangeSector(sector, crush);
-
-				if (flag)
-				{
-					if (!crush || StopOnCrush)
-					{
-						sector->ceiling.dist = lastpos;
-						P_ChangeSector(sector, crush);
-					}
-					return RES_CRUSHED;
-				}
-			}
-			break;
-
-		case 1:
-			// UP
-			sector->ceiling.dist += amount * sector->ceiling.normal.z;
-			if (sector->ceiling.dist < dest)
-			{
-				sector->ceiling.dist = dest;
-				flag = P_ChangeSector(sector, crush);
-				if (flag)
-				{
-					sector->ceiling.dist = lastpos;
-					P_ChangeSector(sector, crush);
-				}
-				return RES_PASTDEST;
-			}
-			else
-			{
-				flag = P_ChangeSector(sector, crush);
-			}
-			break;
-		}
-		break;
-	}
-	return RES_OK;
 }
 
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.2  2005/11/22 19:20:55  firebrand_kh
-//  Updated to latest Vavoom version
+//  Revision 1.1  2006/02/06 19:29:30  firebrand_kh
+//  Added latest Vavoom changes
 //
-//  Revision 1.37  2005/05/29 11:29:29  dj_jl
-//  Fixed moving extrafloors
+//  Revision 1.2  2006/02/05 18:50:55  dj_jl
+//  Moved common utils to level info class or built-in.
 //
-//  Revision 1.36  2005/03/28 07:48:33  dj_jl
-//  Some Boom line specials.
-//
-//  Revision 1.35  2005/03/01 14:39:23  dj_jl
-//  Big update of line specials.
-//
-//  Revision 1.34  2005/01/25 17:44:36  dj_jl
-//  Constants for common line specials
-//  Updated special utilites.
-//
-//  Revision 1.33  2004/12/27 12:23:09  dj_jl
-//  Multiple small changes for version 1.16
-//
-//  Revision 1.32  2004/11/01 07:38:21  dj_jl
-//  Almost all Hexen line specials are available in all games.
-//
-//  Revision 1.31  2004/08/28 12:35:19  dj_jl
-//  Move general client functions to player class.
-//
-//  Revision 1.30  2003/03/08 12:16:08  dj_jl
-//  Removing class pointers.
-//
-//  Revision 1.29  2002/10/26 16:32:15  dj_jl
-//  New style of defining classes.
-//
-//  Revision 1.28  2002/09/07 16:28:22  dj_jl
-//  Added Level class.
-//
-//  Revision 1.27  2002/08/28 16:36:36  dj_jl
-//  Merged MapObject with Entity, some natives, beautification.
-//
-//  Revision 1.26  2002/06/14 15:44:44  dj_jl
-//  Added state names to the states.
-//
-//  Revision 1.25  2002/04/11 16:48:10  dj_jl
-//  New base classes for sector thinkers, Tick function.
-//
-//  Revision 1.24  2002/03/16 17:51:16  dj_jl
-//  Added function Remove to the Entity class.
-//
-//  Revision 1.23  2002/03/09 17:57:01  dj_jl
-//  Got rid of function pointers, made most of the physics functions native.
-//
-//  Revision 1.22  2002/02/14 19:20:54  dj_jl
-//  Renamed Entity properties to new naming style
-//
-//  Revision 1.21  2002/02/02 19:17:25  dj_jl
-//  Replacing pointers with references, beautification.
-//
-//  Revision 1.20  2002/01/28 18:50:17  dj_jl
-//  Made some functions Actor members.
-//  Replaced some pointers with references.
-//
-//  Revision 1.19  2002/01/15 18:26:58  dj_jl
-//  Some property names with logical words starting with capital letter.
-//  Moved everything from Entity class into Actor class.
-//
-//  Revision 1.18  2002/01/15 08:12:25  dj_jl
-//  Replaced some pointers with references
-//
-//  Revision 1.17  2002/01/12 18:02:47  dj_jl
-//  Replaced some C style casts with dynamic casts
-//
-//  Revision 1.16  2002/01/07 12:19:56  dj_jl
-//  Changed copyright year
-//
-//  Revision 1.15  2001/12/18 18:31:01  dj_jl
-//  Added class SectorThinker
-//
-//  Revision 1.14  2001/12/12 19:15:27  dj_jl
-//  Some little changes for state methods
-//
-//  Revision 1.13  2001/12/01 18:10:10  dj_jl
-//  Started to use class references
-//
-//  Revision 1.12  2001/10/27 07:42:00  dj_jl
-//  Made MapBlock a builtin
-//
-//  Revision 1.11  2001/10/22 17:23:08  dj_jl
-//  Floatification of angles
-//
-//  Revision 1.10  2001/10/18 17:39:33  dj_jl
-//  A lots of changes for Alpha 2
-//
-//  Revision 1.9  2001/10/09 17:38:36  dj_jl
-//  Got rid of mobj addfields
-//
-//  Revision 1.8  2001/10/02 17:42:37  dj_jl
-//  Possibility to declare function's code inside class declaration
-//
-//  Revision 1.7  2001/09/27 17:08:19  dj_jl
-//  Removed spawn functions, added mobj classes
-//
-//  Revision 1.6  2001/09/25 17:13:50  dj_jl
-//  Beautification
-//
-//  Revision 1.5  2001/09/24 17:11:23  dj_jl
-//  Created thinker classes
-//
-//  Revision 1.4  2001/09/20 16:19:59  dj_jl
-//  Start using object-oriented stuff, beautification
-//  
-//  Revision 1.3  2001/08/31 17:17:23  dj_jl
-//  Removed vector macros
-//  
-//  Revision 1.2  2001/07/27 14:27:51  dj_jl
-//  Update with Id-s and Log-s, some fixes
+//  Revision 1.1  2005/12/27 22:22:27  dj_jl
+//  Created level info class, moved action special handling to it.
 //
 //**************************************************************************

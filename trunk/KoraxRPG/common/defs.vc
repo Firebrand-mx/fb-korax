@@ -25,8 +25,8 @@
 
 //  Since version 1.5 compiler defines PROG_VERSION, so we can check that
 // progs are compiled with the right version of compiler
-#if !defined PROG_VERSION || PROG_VERSION != 17
-#error These are version 17 progs
+#if !defined PROG_VERSION || PROG_VERSION != 19
+#error These are version 19 progs
 #endif
 
 enum
@@ -291,6 +291,13 @@ enum
 //**************************************************************************
 
 #ifdef SERVER
+
+#define MobjCenter(mobj)\
+	(mobj.Origin + vector(0.0, 0.0, mobj.Height * 0.5 - mobj.FloorClip))
+
+#define FOREACH(type, var) \
+	for (var = type(NextThinker(none, type)); var; \
+		var = type(NextThinker(var, type)))
 
 enum
 {
@@ -600,8 +607,14 @@ enum
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.2  2005/11/22 19:20:55  firebrand_kh
-//  Updated to latest Vavoom version
+//  Revision 1.3  2006/02/06 19:29:29  firebrand_kh
+//  Added latest Vavoom changes
+//
+//  Revision 1.30  2006/02/05 18:50:54  dj_jl
+//  Moved common utils to level info class or built-in.
+//
+//  Revision 1.29  2005/12/22 19:04:14  dj_jl
+//  Changed version number.
 //
 //  Revision 1.28  2005/11/20 12:40:14  dj_jl
 //  Implemented support for sound sequence extensions.
