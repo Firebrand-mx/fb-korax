@@ -23,17 +23,11 @@
 //**
 //**************************************************************************
 
-// MACROS ------------------------------------------------------------------
+class StatusBarScreen : Window;
 
-// CONSTANTS ---------------------------------------------------------------
+ClientGameBase ClGame;
 
-// TYPES -------------------------------------------------------------------
-
-// FUNCTION PROTOTYPES -----------------------------------------------------
-
-// DATA DECLARATIONS -------------------------------------------------------
-
-int sb_height = 39;
+client_state_t *cl;
 
 int sb_pclass;
 int sb_color;
@@ -136,15 +130,14 @@ int pic_arti[NUMARTIFACTS];
 	"ARTIGER4"	// arti_puzzgear4
 };
 */
-// CODE --------------------------------------------------------------------
 
 //==========================================================================
 //
-//  SB_StartMap
+//  StartMap
 //
 //==========================================================================
 
-void SB_StartMap(void)
+void StartMap()
 {
 	int i;
 	int namebuf[3];
@@ -162,7 +155,7 @@ void SB_StartMap(void)
 	{
 	case PCLASS_FIGHTER:
 		pic_chain = R_RegisterPic("CHAIN", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMF2", PIC_PATCH);
@@ -179,7 +172,7 @@ void SB_StartMap(void)
 		break;
 	case PCLASS_CLERIC:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMC2", PIC_PATCH);
@@ -192,7 +185,7 @@ void SB_StartMap(void)
 		break;
 	case PCLASS_MAGE:
 		pic_chain = R_RegisterPic("CHAIN3", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMM2", PIC_PATCH);
@@ -205,7 +198,7 @@ void SB_StartMap(void)
 		break;
 	case PCLASS_HERETIC:
 		pic_chain = R_RegisterPic("CHAIN4", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
@@ -218,7 +211,7 @@ void SB_StartMap(void)
 		break;
 	case PCLASS_MARINE:
 		pic_chain = R_RegisterPic("CHAIN5", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMD2", PIC_PATCH);
@@ -231,7 +224,7 @@ void SB_StartMap(void)
 		break;
 	case PCLASS_WITCHAVEN:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
-		if (!netgame)
+		if (cl->maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
@@ -640,25 +633,25 @@ void SB_DrawMainBar(void)
 	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
 	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
 	// Frags / health
-	if (deathmatch && deathmatch != 5)
+	if (cl->deathmatch && cl->deathmatch != 5)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl->Frags, 0);
 		*/
 		SB_DrawNumber92(32, 20, cl->Frags, 0);
 
-		if (deathmatch == 2)
+		if (cl->deathmatch == 2)
 		{
 			SB_DrawNumber92(85, 20, cl->TeamFrags, 0);
 		}
 	}
 
-	if (deathmatch == 5)
+	if (cl->deathmatch == 5)
 	{
 		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
 	}
 
-	if (!deathmatch || deathmatch == 5)
+	if (!cl->deathmatch || cl->deathmatch == 5)
 	{
 		SB_DrawNumber92(32, 20, cl->KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl->TotalKills, 0);
@@ -853,11 +846,7 @@ void SB_DrawMainBar(void)
 	}*/
 
 	// Armor
-	SB_DrawNumber9(253, 176, cl->armorpoints/*ftoi((AutoArmorSave[sb_pclass]
-			+ cl->armorpoints[ARMOR_ARMOR]
-			+ cl->armorpoints[ARMOR_SHIELD]
-			+ cl->armorpoints[ARMOR_HELMET]
-			+ cl->armorpoints[ARMOR_AMULET]) / 5.0)*/, 0);
+	SB_DrawNumber9(253, 176, cl->armorpoints, 0);
 }
 
 //==========================================================================
@@ -979,22 +968,22 @@ void SB_DrawFullscreenStats(void)
 	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
 	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
 	//  Frags
-	if (deathmatch && deathmatch != 5)
+	if (cl->deathmatch && cl->deathmatch != 5)
 	{
 		SB_DrawNumber92(32, 20, cl->Frags, 0);
 
-		if (deathmatch == 2)
+		if (cl->deathmatch == 2)
 		{
 			SB_DrawNumber92(85, 20, cl->TeamFrags, 0);
 		}
 	}
 
-	if (deathmatch == 5)
+	if (cl->deathmatch == 5)
 	{
 		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
 	}
 
-	if (!deathmatch || deathmatch == 5)
+	if (!cl->deathmatch || cl->deathmatch == 5)
 	{
 		SB_DrawNumber92(32, 20, cl->KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl->TotalKills, 0);
@@ -1155,7 +1144,7 @@ void SB_DrawIcons(int view)
 		// Wings of wrath
 		if (cl->stats.flags & SBF_POWER_FLIGHT)
 		{
-			frame = (level->tictime / 3) & 15;
+			frame = (ClGame.level->tictime / 3) & 15;
 			if (cl->stats.flags & SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
@@ -1181,26 +1170,26 @@ void SB_DrawIcons(int view)
 		// Speed Boots
 		if (cl->stats.flags & SBF_POWER_SPEED)
 		{
-			R_DrawPic(90, 38, pic_boot[(level->tictime / 3) & 15]);
+			R_DrawPic(90, 38, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
 		if (cl->stats.flags & SBF_POWER_INVULN)
 		{
-			R_DrawPic(520, 38, pic_shld[(level->tictime / 3) & 15]);
+			R_DrawPic(520, 38, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
 		if (cl->stats.flags & SBF_POWER_MINOTAUR)
 		{
-			R_DrawPic(600, 38, pic_mino[(level->tictime / 3) & 15]);
+			R_DrawPic(600, 38, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
 		if (cl->stats.flags & SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
-			R_DrawPic(40, 38, pic_pidm[(level->tictime / 3) & 7]);
+			R_DrawPic(40, 38, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
@@ -1216,7 +1205,7 @@ void SB_DrawIcons(int view)
 		// Wings of wrath
 		if (cl->stats.flags & SBF_POWER_FLIGHT)
 		{
-			frame = (level->tictime / 3) & 15;
+			frame = (ClGame.level->tictime / 3) & 15;
 			if (cl->stats.flags & SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
@@ -1242,26 +1231,26 @@ void SB_DrawIcons(int view)
 		// Speed Boots
 		if (cl->stats.flags & SBF_POWER_SPEED)
 		{
-			R_DrawPic(60, 19, pic_boot[(level->tictime / 3) & 15]);
+			R_DrawPic(60, 19, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
 		if (cl->stats.flags & SBF_POWER_INVULN)
 		{
-			R_DrawPic(260, 19, pic_shld[(level->tictime / 3) & 15]);
+			R_DrawPic(260, 19, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
 		if (cl->stats.flags & SBF_POWER_MINOTAUR)
 		{
-			R_DrawPic(300, 19, pic_mino[(level->tictime / 3) & 15]);
+			R_DrawPic(300, 19, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
 		if (cl->stats.flags & SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
-			R_DrawPic(20, 19, pic_pidm[(level->tictime / 3) & 7]);
+			R_DrawPic(20, 19, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
@@ -1287,7 +1276,7 @@ void SB_DrawPause(int view)
 
 		if (cl->bPaused && GetCvar("draw_pause"))
 		{
-			R_DrawPic(320, netgame ? 140 : 40, pic_paused);
+			R_DrawPic(320, cl->maxclients > 1 ? 140 : 40, pic_paused);
 		}
 
 		// [FB] Return virtual resolution to default for everything else
@@ -1297,7 +1286,7 @@ void SB_DrawPause(int view)
 	{
 		if (cl->bPaused && GetCvar("draw_pause"))
 		{
-			R_DrawPic(160, netgame ? 70 : 20, pic_paused);
+			R_DrawPic(160, cl->maxclients > 1 ? 70 : 20, pic_paused);
 		}
 	}
 }
@@ -1382,85 +1371,28 @@ void SB_UpdateWidgets(void)
 	}
 }
 
+//==========================================================================
+//
+//	VisibilityChanged
+//
+//==========================================================================
+
+void VisibilityChanged(bool bNewVisibility)
+{
+	bTickEnabled = bNewVisibility;
+}
+
+defaultproperties
+{
+	bTickEnabled = true;
+	Width = 320;
+	Height = 200;
+}
+
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.13  2006/01/12 16:26:33  firebrand_kh
-//  Made shaodwphere's icon translucent
-//
-//  Revision 1.12  2005/11/08 14:56:48  firebrand_kh
-//  Removed key bar drawing functions
-//
-//  Revision 1.11  2005/10/18 18:16:58  firebrand_kh
-//  Fixed scores layout
-//
-//  Revision 1.10  2005/10/17 18:03:19  firebrand_kh
-//  Added team frags and kill count scores
-//
-//  Revision 1.9  2005/09/30 15:37:44  firebrand_kh
-//  Added more virtual screen resolution to the fullscreen HUD
-//
-//  Revision 1.8  2005/09/15 16:11:25  firebrand_kh
-//  Fixed the leveling vials and made visual improvements
-//
-//  Revision 1.7  2005/08/26 16:04:07  firebrand_kh
-//  Fixed calculation of max_health values
-//
-//  Revision 1.6  2005/08/26 15:00:24  firebrand_kh
-//  Took out some unused code from the file
-//
-//  Revision 1.5  2005/08/26 14:26:42  firebrand_kh
-//  Fixed health chain movement and alligment
-//
-//  Revision 1.4  2005/08/12 23:02:06  firebrand_kh
-//  Added new artifacts stuff to the game
-//
-//  Revision 1.3  2005/01/06 14:56:38  firebrand_kh
-//  Implemented new fullscreen HUD status for health, armorpoints & mana
-//
-//  Revision 1.2  2004/11/17 16:07:52  firebrand_kh
-//  *** empty log message ***
-//
-//  Revision 1.1  2004/11/16 13:33:20  dj_jl
-//  Initial import.
-//
-//  Revision 1.14  2002/09/07 16:28:25  dj_jl
-//  Added Level class.
-//
-//  Revision 1.13  2002/06/29 15:58:14  dj_jl
-//  Added total frags count.
-//
-//  Revision 1.12  2002/03/16 17:49:35  dj_jl
-//  Beautification.
-//
-//  Revision 1.11  2002/02/02 19:17:25  dj_jl
-//  Replacing pointers with references, beautification.
-//
-//  Revision 1.10  2002/01/28 18:47:02  dj_jl
-//  Fixed blue fighter ligegem
-//
-//  Revision 1.9  2002/01/17 18:15:54  dj_jl
-//  Renamed all map object classes
-//
-//  Revision 1.8  2002/01/11 08:03:13  dj_jl
-//  Renamed 'name' to "Name'
-//
-//  Revision 1.7  2002/01/07 12:25:57  dj_jl
-//  Changed copyright year
-//
-//  Revision 1.6  2001/10/09 17:36:57  dj_jl
-//  Added flags for status bar
-//
-//  Revision 1.5  2001/10/02 17:37:19  dj_jl
-//  Removed status bar widgets
-//
-//  Revision 1.4  2001/09/24 17:24:10  dj_jl
-//  Beautification
-//
-//  Revision 1.3  2001/08/29 17:46:25  dj_jl
-//  Moved view border and message box to progs
-//  
-//  Revision 1.2  2001/07/27 14:27:52  dj_jl
-//  Update with Id-s and Log-s, some fixes
+//  Revision 1.1  2006/02/09 22:34:55  dj_jl
+//  Moved all client game code to classes.
 //
 //**************************************************************************
