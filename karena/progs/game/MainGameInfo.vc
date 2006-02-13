@@ -9,7 +9,7 @@
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2001 JÆnis Legzdi·ý
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -23,33 +23,84 @@
 //**
 //**************************************************************************
 
-// MACROS ------------------------------------------------------------------
+class MainGameInfo : GameInfo;
 
-// CONSTANTS ---------------------------------------------------------------
+classid WeaponClasses[NUMWEAPONS * NUMCLASSES];
 
-// TYPES -------------------------------------------------------------------
+int terrain_contents[6];
+int contents_transluc[6];
 
-// FUNCTION PROTOTYPES -----------------------------------------------------
-
-// DATA DECLARATIONS -------------------------------------------------------
-
+botinfo_t botinfo[NUMTOTALBOTS];
 int botskill;
-int skill;
 
-// CODE --------------------------------------------------------------------
+//==========================================================================
+//
+//	Init
+//
+//==========================================================================
 
-/*
-
-  This section contains the main bot AI. The
-  main bot AI loop, B_Think, is called every tic.
-  Also included are various bot decision-making
-  procedures, such as B_CheckStuff and B_SetEnemy.
-
-*/
-
-botinfo_t botinfo[NUMTOTALBOTS] =
+void Init()
 {
-	{	// 0
+	SetSeqTrans('Platform', 0, SEQ_Platform);
+	SetSeqTrans('Platform', 1, SEQ_Platform);	// a 'heavy' platform is just a platform
+	SetSeqTrans('PlatformMetal', 2, SEQ_Platform);
+	SetSeqTrans('Platform', 3, SEQ_Platform);	// same with a 'creak' platform
+	SetSeqTrans('Silence', 4, SEQ_Platform);
+	SetSeqTrans('Lava', 5, SEQ_Platform);
+	SetSeqTrans('Water', 6, SEQ_Platform);
+	SetSeqTrans('Ice', 7, SEQ_Platform);
+	SetSeqTrans('Earth', 8, SEQ_Platform);
+	SetSeqTrans('PlatformMetal2', 9, SEQ_Platform);
+
+	SetSeqTrans('DoorNormal', 0, SEQ_Door);
+	SetSeqTrans('DoorHeavy', 1, SEQ_Door);
+	SetSeqTrans('DoorMetal', 2, SEQ_Door);
+	SetSeqTrans('DoorCreak', 3, SEQ_Door);
+	SetSeqTrans('Silence', 4, SEQ_Door);
+	SetSeqTrans('Lava', 5, SEQ_Door);
+	SetSeqTrans('Water', 6, SEQ_Door);
+	SetSeqTrans('Ice', 7, SEQ_Door);
+	SetSeqTrans('Earth', 8, SEQ_Door);
+	SetSeqTrans('DoorMetal2', 9, SEQ_Door);
+
+	SetSeqTrans('Wind', 0, SEQ_Environment);
+
+	InitBotTypes();
+}
+
+//==========================================================================
+//
+//  InitNewGame
+//
+//==========================================================================
+
+void InitNewGame(int skill)
+{
+	nomonsters = GetCvar("NoMonsters");
+	fastparm = gameskill == sk_nightmare || GetCvar("Fast");
+	randomclass = GetCvar("RandomClass");
+}
+
+//==========================================================================
+//
+//  CreateLevelInfo
+//
+//==========================================================================
+
+LevelInfo CreateLevelInfo()
+{
+	return NewSpecialThinker(HexenLevelInfo);
+}
+
+//==========================================================================
+//
+//	InitBotTypes
+//
+//==========================================================================
+
+void InitBotTypes()
+{
+	SetBotType(0,
 		"botf11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -57,8 +108,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf11\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 1
+	);
+	SetBotType(1,
 		"botf12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -66,8 +117,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf12\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 2
+	);
+	SetBotType(2,
 		"botf13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -75,8 +126,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf13\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 3
+	);
+	SetBotType(3,
 		"botf14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -84,8 +135,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf14\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 4
+	);
+	SetBotType(4,
 		"botf15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -93,8 +144,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf15\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 5
+	);
+	SetBotType(5,
 		"botf16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -102,8 +153,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf16\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 6
+	);
+	SetBotType(6,
 		"botf17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -111,8 +162,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf17\\color\\0\\class\\0\\model\\\\skin\\"
-	},
-	{	// 7
+	);
+	SetBotType(7,
 		"botf21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -120,8 +171,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf21\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 8
+	);
+	SetBotType(8,
 		"botf22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -129,8 +180,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf22\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 9
+	);
+	SetBotType(9,
 		"botf23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -138,8 +189,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf23\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 10
+	);
+	SetBotType(10,
 		"botf24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -147,8 +198,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf24\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 11
+	);
+	SetBotType(11,
 		"botf25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -156,8 +207,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf25\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 12
+	);
+	SetBotType(12,
 		"botf26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -165,8 +216,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf26\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 13
+	);
+	SetBotType(13,
 		"botf27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -174,8 +225,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf27\\color\\1\\class\\0\\model\\\\skin\\"
-	},
-	{	// 14
+	);
+	SetBotType(14,
 		"botf31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -183,8 +234,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf31\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 15
+	);
+	SetBotType(15,
 		"botf32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -192,8 +243,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf32\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 16
+	);
+	SetBotType(16,
 		"botf33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -201,8 +252,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf33\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 17
+	);
+	SetBotType(17,
 		"botf34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -210,8 +261,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf34\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 18
+	);
+	SetBotType(18,
 		"botf35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -219,8 +270,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf35\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 19
+	);
+	SetBotType(19,
 		"botf36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -228,8 +279,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf36\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 20
+	);
+	SetBotType(20,
 		"botf37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -237,8 +288,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf37\\color\\2\\class\\0\\model\\\\skin\\"
-	},
-	{	// 21
+	);
+	SetBotType(21,
 		"botf41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -246,8 +297,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf41\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 22
+	);
+	SetBotType(22,
 		"botf42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -255,8 +306,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf42\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 23
+	);
+	SetBotType(23,
 		"botf43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -264,8 +315,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf43\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 24
+	);
+	SetBotType(24,
 		"botf44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -273,8 +324,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf44\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 25
+	);
+	SetBotType(25,
 		"botf45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -282,8 +333,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf45\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 26
+	);
+	SetBotType(26,
 		"botf46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -291,8 +342,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf46\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 27
+	);
+	SetBotType(27,
 		"botf47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -300,8 +351,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf47\\color\\3\\class\\0\\model\\\\skin\\"
-	},
-	{	// 28
+	);
+	SetBotType(28,
 		"botf51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -309,8 +360,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf51\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 29
+	);
+	SetBotType(29,
 		"botf52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -318,8 +369,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf52\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 30
+	);
+	SetBotType(30,
 		"botf53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -327,8 +378,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf53\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 31
+	);
+	SetBotType(31,
 		"botf54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -336,8 +387,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf54\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 32
+	);
+	SetBotType(32,
 		"botf55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -345,8 +396,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf55\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 33
+	);
+	SetBotType(33,
 		"botf56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -354,8 +405,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf56\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 34
+	);
+	SetBotType(34,
 		"botf57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -363,8 +414,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf57\\color\\4\\class\\0\\model\\\\skin\\"
-	},
-	{	// 35
+	);
+	SetBotType(35,
 		"botf61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -372,8 +423,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf61\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 36
+	);
+	SetBotType(36,
 		"botf62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -381,8 +432,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf62\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 37
+	);
+	SetBotType(37,
 		"botf63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -390,8 +441,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf63\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 38
+	);
+	SetBotType(38,
 		"botf64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -399,8 +450,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf64\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 39
+	);
+	SetBotType(39,
 		"botf65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -408,8 +459,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf65\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 40
+	);
+	SetBotType(40,
 		"botf66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -417,8 +468,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf66\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 41
+	);
+	SetBotType(41,
 		"botf67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -426,8 +477,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf67\\color\\5\\class\\0\\model\\\\skin\\"
-	},
-	{	// 42
+	);
+	SetBotType(42,
 		"botf71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -435,8 +486,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf71\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 43
+	);
+	SetBotType(43,
 		"botf72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -444,8 +495,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf72\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 44
+	);
+	SetBotType(44,
 		"botf73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -453,8 +504,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf73\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 45
+	);
+	SetBotType(45,
 		"botf74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -462,8 +513,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf74\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 46
+	);
+	SetBotType(46,
 		"botf75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -471,8 +522,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf75\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 47
+	);
+	SetBotType(47,
 		"botf76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -480,8 +531,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf76\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 48
+	);
+	SetBotType(48,
 		"botf77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -489,8 +540,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf77\\color\\6\\class\\0\\model\\\\skin\\"
-	},
-	{	// 49
+	);
+	SetBotType(49,
 		"botf81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -498,8 +549,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botf81\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 50
+	);
+	SetBotType(50,
 		"botf82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -507,8 +558,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botf82\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 51
+	);
+	SetBotType(51,
 		"botf83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -516,8 +567,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botf83\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 52
+	);
+	SetBotType(52,
 		"botf84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -525,8 +576,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botf84\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 53
+	);
+	SetBotType(53,
 		"botf85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -534,8 +585,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botf85\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 54
+	);
+	SetBotType(54,
 		"botf86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -543,8 +594,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botf86\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 55
+	);
+	SetBotType(55,
 		"botf87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -552,8 +603,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botf87\\color\\7\\class\\0\\model\\\\skin\\"
-	},
-	{	// 56
+	);
+	SetBotType(56,
 		"botc11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -561,8 +612,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc11\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 57
+	);
+	SetBotType(57,
 		"botc12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -570,8 +621,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc12\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 58
+	);
+	SetBotType(58,
 		"botc13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -579,8 +630,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc13\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 59
+	);
+	SetBotType(59,
 		"botc14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -588,8 +639,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc14\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 60
+	);
+	SetBotType(60,
 		"botc15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -597,8 +648,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc15\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 61
+	);
+	SetBotType(61,
 		"botc16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -606,8 +657,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc16\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 62
+	);
+	SetBotType(62,
 		"botc17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -615,8 +666,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc17\\color\\0\\class\\1\\model\\\\skin\\"
-	},
-	{	// 63
+	);
+	SetBotType(63,
 		"botc21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -624,8 +675,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc21\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 64
+	);
+	SetBotType(64,
 		"botc22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -633,8 +684,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc22\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 65
+	);
+	SetBotType(65,
 		"botc23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -642,8 +693,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc23\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 66
+	);
+	SetBotType(66,
 		"botc24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -651,8 +702,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc24\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 67
+	);
+	SetBotType(67,
 		"botc25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -660,8 +711,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc25\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 68
+	);
+	SetBotType(68,
 		"botc26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -669,8 +720,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc26\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 69
+	);
+	SetBotType(69,
 		"botc27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -678,8 +729,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc27\\color\\1\\class\\1\\model\\\\skin\\"
-	},
-	{	// 70
+	);
+	SetBotType(70,
 		"botc31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -687,8 +738,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc31\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 71
+	);
+	SetBotType(71,
 		"botc32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -696,8 +747,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc32\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 72
+	);
+	SetBotType(72,
 		"botc33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -705,8 +756,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc33\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 73
+	);
+	SetBotType(73,
 		"botc34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -714,8 +765,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc34\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 74
+	);
+	SetBotType(74,
 		"botc35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -723,8 +774,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc35\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 75
+	);
+	SetBotType(75,
 		"botc36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -732,8 +783,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc36\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 76
+	);
+	SetBotType(76,
 		"botc37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -741,8 +792,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc37\\color\\2\\class\\1\\model\\\\skin\\"
-	},
-	{	// 77
+	);
+	SetBotType(77,
 		"botc41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -750,8 +801,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc41\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 78
+	);
+	SetBotType(78,
 		"botc42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -759,8 +810,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc42\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 79
+	);
+	SetBotType(79,
 		"botc43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -768,8 +819,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc43\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 80
+	);
+	SetBotType(80,
 		"botc44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -777,8 +828,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc44\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 81
+	);
+	SetBotType(81,
 		"botc45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -786,8 +837,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc45\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 82
+	);
+	SetBotType(82,
 		"botc46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -795,8 +846,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc46\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 83
+	);
+	SetBotType(83,
 		"botc47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -804,8 +855,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc47\\color\\3\\class\\1\\model\\\\skin\\"
-	},
-	{	// 84
+	);
+	SetBotType(84,
 		"botc51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -813,8 +864,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc51\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 85
+	);
+	SetBotType(85,
 		"botc52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -822,8 +873,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc52\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 86
+	);
+	SetBotType(86,
 		"botc53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -831,8 +882,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc53\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 87
+	);
+	SetBotType(87,
 		"botc54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -840,8 +891,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc54\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 88
+	);
+	SetBotType(88,
 		"botc55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -849,8 +900,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc55\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 89
+	);
+	SetBotType(89,
 		"botc56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -858,8 +909,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc56\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 90
+	);
+	SetBotType(90,
 		"botc57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -867,8 +918,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc57\\color\\4\\class\\1\\model\\\\skin\\"
-	},
-	{	// 91
+	);
+	SetBotType(91,
 		"botc61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -876,8 +927,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc61\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 92
+	);
+	SetBotType(92,
 		"botc62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -885,8 +936,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc62\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 93
+	);
+	SetBotType(93,
 		"botc63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -894,8 +945,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc63\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 94
+	);
+	SetBotType(94,
 		"botc64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -903,8 +954,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc64\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 95
+	);
+	SetBotType(95,
 		"botc65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -912,8 +963,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc65\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 96
+	);
+	SetBotType(96,
 		"botc66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -921,8 +972,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc66\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 97
+	);
+	SetBotType(97,
 		"botc67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -930,8 +981,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc67\\color\\5\\class\\1\\model\\\\skin\\"
-	},
-	{	// 98
+	);
+	SetBotType(98,
 		"botc71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -939,8 +990,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc71\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 99
+	);
+	SetBotType(99,
 		"botc72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -948,8 +999,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc72\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 100
+	);
+	SetBotType(100,
 		"botc73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -957,8 +1008,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc73\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 101
+	);
+	SetBotType(101,
 		"botc74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -966,8 +1017,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc74\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 102
+	);
+	SetBotType(102,
 		"botc75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -975,8 +1026,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc75\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 103
+	);
+	SetBotType(103,
 		"botc76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -984,8 +1035,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc76\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 104
+	);
+	SetBotType(104,
 		"botc77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -993,8 +1044,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc77\\color\\6\\class\\1\\model\\\\skin\\"
-	},
-	{	// 105
+	);
+	SetBotType(105,
 		"botc81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1002,8 +1053,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botc81\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 106
+	);
+	SetBotType(106,
 		"botc82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1011,8 +1062,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botc82\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 107
+	);
+	SetBotType(107,
 		"botc83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1020,8 +1071,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botc83\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 108
+	);
+	SetBotType(108,
 		"botc84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1029,8 +1080,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botc84\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 109
+	);
+	SetBotType(109,
 		"botc85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1038,8 +1089,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botc85\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 110
+	);
+	SetBotType(110,
 		"botc86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1047,8 +1098,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botc86\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 111
+	);
+	SetBotType(111,
 		"botc87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1056,8 +1107,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botc87\\color\\7\\class\\1\\model\\\\skin\\"
-	},
-	{	// 112
+	);
+	SetBotType(112,
 		"botm11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1065,8 +1116,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm11\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 113
+	);
+	SetBotType(113,
 		"botm12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1074,8 +1125,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm12\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 114
+	);
+	SetBotType(114,
 		"botm13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1083,8 +1134,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm13\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 115
+	);
+	SetBotType(115,
 		"botm14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1092,8 +1143,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm14\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 116
+	);
+	SetBotType(116,
 		"botm15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1101,8 +1152,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm15\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 117
+	);
+	SetBotType(117,
 		"botm16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1110,8 +1161,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm16\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 118
+	);
+	SetBotType(118,
 		"botm17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1119,8 +1170,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm17\\color\\0\\class\\2\\model\\\\skin\\"
-	},
-	{	// 119
+	);
+	SetBotType(119,
 		"botm21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1128,8 +1179,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm21\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 120
+	);
+	SetBotType(120,
 		"botm22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1137,8 +1188,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm22\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 121
+	);
+	SetBotType(121,
 		"botm23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1146,8 +1197,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm23\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 122
+	);
+	SetBotType(122,
 		"botm24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1155,8 +1206,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm24\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 123
+	);
+	SetBotType(123,
 		"botm25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1164,8 +1215,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm25\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 124
+	);
+	SetBotType(124,
 		"botm26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1173,8 +1224,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm26\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 125
+	);
+	SetBotType(125,
 		"botm27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1182,8 +1233,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm27\\color\\1\\class\\2\\model\\\\skin\\"
-	},
-	{	// 126
+	);
+	SetBotType(126,
 		"botm31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1191,8 +1242,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm31\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 127
+	);
+	SetBotType(127,
 		"botm32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1200,8 +1251,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm32\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 128
+	);
+	SetBotType(128,
 		"botm33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1209,8 +1260,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm33\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 129
+	);
+	SetBotType(129,
 		"botm34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1218,8 +1269,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm34\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 130
+	);
+	SetBotType(130,
 		"botm35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1227,8 +1278,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm35\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 131
+	);
+	SetBotType(131,
 		"botm36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1236,8 +1287,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm36\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 132
+	);
+	SetBotType(132,
 		"botm37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1245,8 +1296,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm37\\color\\2\\class\\2\\model\\\\skin\\"
-	},
-	{	// 133
+	);
+	SetBotType(133,
 		"botm41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1254,8 +1305,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm41\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 134
+	);
+	SetBotType(134,
 		"botm42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1263,8 +1314,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm42\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 135
+	);
+	SetBotType(135,
 		"botm43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1272,8 +1323,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm43\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 136
+	);
+	SetBotType(136,
 		"botm44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1281,8 +1332,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm44\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 137
+	);
+	SetBotType(137,
 		"botm45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1290,8 +1341,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm45\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 138
+	);
+	SetBotType(138,
 		"botm46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1299,8 +1350,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm46\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 139
+	);
+	SetBotType(139,
 		"botm47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1308,8 +1359,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm47\\color\\3\\class\\2\\model\\\\skin\\"
-	},
-	{	// 140
+	);
+	SetBotType(140,
 		"botm51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1317,8 +1368,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm51\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 141
+	);
+	SetBotType(141,
 		"botm52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1326,8 +1377,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm52\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 142
+	);
+	SetBotType(142,
 		"botm53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1335,8 +1386,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm53\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 143
+	);
+	SetBotType(143,
 		"botm54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1344,8 +1395,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm54\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 144
+	);
+	SetBotType(144,
 		"botm55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1353,8 +1404,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm55\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 145
+	);
+	SetBotType(145,
 		"botm56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1362,8 +1413,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm56\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 146
+	);
+	SetBotType(146,
 		"botm57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1371,8 +1422,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm57\\color\\4\\class\\2\\model\\\\skin\\"
-	},
-	{	// 147
+	);
+	SetBotType(147,
 		"botm61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1380,8 +1431,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm61\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 148
+	);
+	SetBotType(148,
 		"botm62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1389,8 +1440,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm62\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 149
+	);
+	SetBotType(149,
 		"botm63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1398,8 +1449,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm63\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 150
+	);
+	SetBotType(150,
 		"botm64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1407,8 +1458,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm64\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 151
+	);
+	SetBotType(151,
 		"botm65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1416,8 +1467,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm65\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 152
+	);
+	SetBotType(152,
 		"botm66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1425,8 +1476,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm66\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 153
+	);
+	SetBotType(153,
 		"botm67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1434,8 +1485,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm67\\color\\5\\class\\2\\model\\\\skin\\"
-	},
-	{	// 154
+	);
+	SetBotType(154,
 		"botm71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1443,8 +1494,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm71\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 155
+	);
+	SetBotType(155,
 		"botm72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1452,8 +1503,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm72\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 156
+	);
+	SetBotType(156,
 		"botm73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1461,8 +1512,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm13\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 157
+	);
+	SetBotType(157,
 		"botm74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1470,8 +1521,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm74\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 158
+	);
+	SetBotType(158,
 		"botm75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1479,8 +1530,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm75\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 159
+	);
+	SetBotType(159,
 		"botm76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1488,8 +1539,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm76\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 160
+	);
+	SetBotType(160,
 		"botm77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1497,8 +1548,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm77\\color\\6\\class\\2\\model\\\\skin\\"
-	},
-	{	// 161
+	);
+	SetBotType(161,
 		"botm81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1506,8 +1557,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botm81\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 162
+	);
+	SetBotType(162,
 		"botm82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1515,8 +1566,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botm12\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 163
+	);
+	SetBotType(163,
 		"botm83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1524,8 +1575,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botm83\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 164
+	);
+	SetBotType(164,
 		"botm84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1533,8 +1584,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botm84\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 165
+	);
+	SetBotType(165,
 		"botm85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1542,8 +1593,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botm85\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 166
+	);
+	SetBotType(166,
 		"botm86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1551,8 +1602,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botm86\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 167
+	);
+	SetBotType(167,
 		"botm87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1560,8 +1611,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botm87\\color\\7\\class\\2\\model\\\\skin\\"
-	},
-	{	// 168
+	);
+	SetBotType(168,
 		"both11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1569,8 +1620,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both11\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 169
+	);
+	SetBotType(169,
 		"both12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1578,8 +1629,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both12\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 170
+	);
+	SetBotType(170,
 		"both13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1587,8 +1638,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both13\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 171
+	);
+	SetBotType(171,
 		"both14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1596,8 +1647,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both14\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 172
+	);
+	SetBotType(172,
 		"both15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1605,8 +1656,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both15\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 173
+	);
+	SetBotType(173,
 		"both16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1614,8 +1665,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both16\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 174
+	);
+	SetBotType(174,
 		"both17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1623,8 +1674,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both17\\color\\0\\class\\3\\model\\\\skin\\"
-	},
-	{	// 175
+	);
+	SetBotType(175,
 		"both21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1632,8 +1683,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both21\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 176
+	);
+	SetBotType(176,
 		"both22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1641,8 +1692,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both22\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 177
+	);
+	SetBotType(177,
 		"both23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1650,8 +1701,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both23\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 178
+	);
+	SetBotType(178,
 		"both24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1659,8 +1710,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both24\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 179
+	);
+	SetBotType(179,
 		"both25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1668,8 +1719,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both25\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 180
+	);
+	SetBotType(180,
 		"both26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1677,8 +1728,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both26\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 181
+	);
+	SetBotType(181,
 		"both27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1686,8 +1737,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both27\\color\\1\\class\\3\\model\\\\skin\\"
-	},
-	{	// 182
+	);
+	SetBotType(182,
 		"both31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1695,8 +1746,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both31\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 183
+	);
+	SetBotType(183,
 		"both32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1704,8 +1755,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both32\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 184
+	);
+	SetBotType(184,
 		"both33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1713,8 +1764,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both33\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 185
+	);
+	SetBotType(185,
 		"both34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1722,8 +1773,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both34\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 186
+	);
+	SetBotType(186,
 		"both35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1731,8 +1782,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both35\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 187
+	);
+	SetBotType(187,
 		"both36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1740,8 +1791,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both36\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 188
+	);
+	SetBotType(188,
 		"both37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1749,8 +1800,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both37\\color\\2\\class\\3\\model\\\\skin\\"
-	},
-	{	// 189
+	);
+	SetBotType(189,
 		"both41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1758,8 +1809,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both41\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 190
+	);
+	SetBotType(190,
 		"both42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1767,8 +1818,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both42\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 191
+	);
+	SetBotType(191,
 		"both43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1776,8 +1827,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both43\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 192
+	);
+	SetBotType(192,
 		"both44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1785,8 +1836,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both44\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 193
+	);
+	SetBotType(193,
 		"both45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1794,8 +1845,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both45\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 194
+	);
+	SetBotType(194,
 		"both46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1803,8 +1854,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both46\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 195
+	);
+	SetBotType(195,
 		"both47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1812,8 +1863,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both47\\color\\3\\class\\3\\model\\\\skin\\"
-	},
-	{	// 196
+	);
+	SetBotType(196,
 		"both51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1821,8 +1872,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both51\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 197
+	);
+	SetBotType(197,
 		"both52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1830,8 +1881,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both52\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 198
+	);
+	SetBotType(198,
 		"both53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1839,8 +1890,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both53\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 199
+	);
+	SetBotType(199,
 		"both54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1848,8 +1899,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both54\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 200
+	);
+	SetBotType(200,
 		"both55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1857,8 +1908,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both55\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 201
+	);
+	SetBotType(201,
 		"both56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1866,8 +1917,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both56\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 202
+	);
+	SetBotType(202,
 		"both57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1875,8 +1926,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both57\\color\\4\\class\\3\\model\\\\skin\\"
-	},
-	{	// 203
+	);
+	SetBotType(203,
 		"both61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1884,8 +1935,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both61\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 204
+	);
+	SetBotType(204,
 		"both62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1893,8 +1944,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both62\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 205
+	);
+	SetBotType(205,
 		"both63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1902,8 +1953,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both63\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 206
+	);
+	SetBotType(206,
 		"both64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1911,8 +1962,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both64\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 207
+	);
+	SetBotType(207,
 		"both65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1920,8 +1971,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both65\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 208
+	);
+	SetBotType(208,
 		"both66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1929,8 +1980,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both66\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 209
+	);
+	SetBotType(209,
 		"both67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -1938,8 +1989,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both67\\color\\5\\class\\3\\model\\\\skin\\"
-	},
-	{	// 210
+	);
+	SetBotType(210,
 		"both71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -1947,8 +1998,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both71\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 211
+	);
+	SetBotType(211,
 		"both72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -1956,8 +2007,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both72\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 212
+	);
+	SetBotType(212,
 		"both73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -1965,8 +2016,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both73\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 213
+	);
+	SetBotType(213,
 		"both74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -1974,8 +2025,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both74\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 214
+	);
+	SetBotType(214,
 		"both75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -1983,8 +2034,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both75\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 215
+	);
+	SetBotType(215,
 		"both76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -1992,8 +2043,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both76\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 216
+	);
+	SetBotType(216,
 		"both77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2001,8 +2052,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both77\\color\\6\\class\\3\\model\\\\skin\\"
-	},
-	{	// 217
+	);
+	SetBotType(217,
 		"both81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2010,8 +2061,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\both81\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 218
+	);
+	SetBotType(218,
 		"both82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2019,8 +2070,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\both82\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 219
+	);
+	SetBotType(219,
 		"both83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2028,8 +2079,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\both83\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 220
+	);
+	SetBotType(220,
 		"both84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2037,8 +2088,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\both84\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 221
+	);
+	SetBotType(221,
 		"both85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2046,8 +2097,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\both85\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 222
+	);
+	SetBotType(222,
 		"both86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2055,8 +2106,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\both86\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 223
+	);
+	SetBotType(223,
 		"both87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2064,8 +2115,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\both87\\color\\7\\class\\3\\model\\\\skin\\"
-	},
-	{	// 224
+	);
+	SetBotType(224,
 		"botd11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2073,8 +2124,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd11\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 225
+	);
+	SetBotType(225,
 		"botd12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2082,8 +2133,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd12\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 226
+	);
+	SetBotType(226,
 		"botd13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2091,8 +2142,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd13\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 227
+	);
+	SetBotType(227,
 		"botd14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2100,8 +2151,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd14\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 228
+	);
+	SetBotType(228,
 		"botd15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2109,8 +2160,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd15\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 229
+	);
+	SetBotType(229,
 		"botd16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2118,8 +2169,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd16\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 230
+	);
+	SetBotType(230,
 		"botd17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2127,8 +2178,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd17\\color\\0\\class\\4\\model\\\\skin\\"
-	},
-	{	// 231
+	);
+	SetBotType(231,
 		"botd21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2136,8 +2187,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd21\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 232
+	);
+	SetBotType(232,
 		"botd22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2145,8 +2196,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd22\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 233
+	);
+	SetBotType(233,
 		"botd23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2154,8 +2205,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd23\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 234
+	);
+	SetBotType(234,
 		"botd24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2163,8 +2214,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd24\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 235
+	);
+	SetBotType(235,
 		"botd25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2172,8 +2223,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd25\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 236
+	);
+	SetBotType(236,
 		"botd26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2181,8 +2232,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd26\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 237
+	);
+	SetBotType(237,
 		"botd27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2190,8 +2241,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd27\\color\\1\\class\\4\\model\\\\skin\\"
-	},
-	{	// 238
+	);
+	SetBotType(238,
 		"botd31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2199,8 +2250,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd31\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 239
+	);
+	SetBotType(239,
 		"botd32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2208,8 +2259,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd32\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 240
+	);
+	SetBotType(240,
 		"botd33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2217,8 +2268,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd33\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 241
+	);
+	SetBotType(241,
 		"botd34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2226,8 +2277,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd34\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 242
+	);
+	SetBotType(242,
 		"botd35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2235,8 +2286,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd35\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 243
+	);
+	SetBotType(243,
 		"botd36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2244,8 +2295,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd36\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 244
+	);
+	SetBotType(244,
 		"botd37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2253,8 +2304,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd37\\color\\2\\class\\4\\model\\\\skin\\"
-	},
-	{	// 245
+	);
+	SetBotType(245,
 		"botd41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2262,8 +2313,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd41\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 246
+	);
+	SetBotType(246,
 		"botd42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2271,8 +2322,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd42\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 247
+	);
+	SetBotType(247,
 		"botd43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2280,8 +2331,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd43\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 248
+	);
+	SetBotType(248,
 		"botd44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2289,8 +2340,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd44\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 249
+	);
+	SetBotType(249,
 		"botd45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2298,8 +2349,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd45\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 250
+	);
+	SetBotType(250,
 		"botd46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2307,8 +2358,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd46\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 251
+	);
+	SetBotType(251,
 		"botd47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2316,8 +2367,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd47\\color\\3\\class\\4\\model\\\\skin\\"
-	},
-	{	// 252
+	);
+	SetBotType(252,
 		"botd51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2325,8 +2376,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd51\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 253
+	);
+	SetBotType(253,
 		"botd52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2334,8 +2385,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd52\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 254
+	);
+	SetBotType(254,
 		"botd53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2343,8 +2394,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd53\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 255
+	);
+	SetBotType(255,
 		"botd54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2352,8 +2403,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd54\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 256
+	);
+	SetBotType(256,
 		"botd55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2361,8 +2412,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd55\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 257
+	);
+	SetBotType(257,
 		"botd56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2370,8 +2421,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd56\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 258
+	);
+	SetBotType(258,
 		"botd57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2379,8 +2430,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd57\\color\\4\\class\\4\\model\\\\skin\\"
-	},
-	{	// 259
+	);
+	SetBotType(259,
 		"botd61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2388,8 +2439,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd61\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 260
+	);
+	SetBotType(260,
 		"botd62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2397,8 +2448,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd62\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 261
+	);
+	SetBotType(261,
 		"botd63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2406,8 +2457,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd63\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 262
+	);
+	SetBotType(262,
 		"botd64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2415,8 +2466,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd64\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 263
+	);
+	SetBotType(263,
 		"botd65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2424,8 +2475,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd65\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 264
+	);
+	SetBotType(264,
 		"botd66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2433,8 +2484,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd66\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 265
+	);
+	SetBotType(265,
 		"botd67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2442,8 +2493,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd67\\color\\5\\class\\4\\model\\\\skin\\"
-	},
-	{	// 266
+	);
+	SetBotType(266,
 		"botd71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2451,8 +2502,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd71\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 267
+	);
+	SetBotType(267,
 		"botd72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2460,8 +2511,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd72\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 268
+	);
+	SetBotType(268,
 		"botd73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2469,8 +2520,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd73\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 269
+	);
+	SetBotType(269,
 		"botd74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2478,8 +2529,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd74\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 270
+	);
+	SetBotType(270,
 		"botd75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2487,8 +2538,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd75\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 271
+	);
+	SetBotType(271,
 		"botd76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2496,8 +2547,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd76\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 272
+	);
+	SetBotType(272,
 		"botd77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2505,8 +2556,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd77\\color\\6\\class\\4\\model\\\\skin\\"
-	},
-	{	// 273
+	);
+	SetBotType(273,
 		"botd81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2514,8 +2565,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botd81\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 274
+	);
+	SetBotType(274,
 		"botd82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2523,8 +2574,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botd82\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 275
+	);
+	SetBotType(275,
 		"botd83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2532,8 +2583,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botd83\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 276
+	);
+	SetBotType(276,
 		"botd84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2541,8 +2592,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botd84\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 277
+	);
+	SetBotType(277,
 		"botd85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2550,8 +2601,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botd85\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 278
+	);
+	SetBotType(278,
 		"botd86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2559,8 +2610,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botd86\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 279
+	);
+	SetBotType(279,
 		"botd87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2568,8 +2619,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botd87\\color\\7\\class\\4\\model\\\\skin\\"
-	},
-	{	// 280
+	);
+	SetBotType(280,
 		"botw11",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2577,8 +2628,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw11\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 281
+	);
+	SetBotType(281,
 		"botw12",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2586,8 +2637,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw12\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 282
+	);
+	SetBotType(282,
 		"botw13",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2595,8 +2646,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw13\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 283
+	);
+	SetBotType(283,
 		"botw14",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2604,8 +2655,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw14\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 284
+	);
+	SetBotType(284,
 		"botw15",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2613,8 +2664,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw15\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 285
+	);
+	SetBotType(285,
 		"botw16",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2622,8 +2673,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw16\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 286
+	);
+	SetBotType(286,
 		"botw17",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2631,8 +2682,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw17\\color\\0\\class\\5\\model\\\\skin\\"
-	},
-	{	// 287
+	);
+	SetBotType(287,
 		"botw21",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2640,8 +2691,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw21\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 288
+	);
+	SetBotType(288,
 		"botw22",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2649,8 +2700,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw22\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 289
+	);
+	SetBotType(289,
 		"botw23",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2658,8 +2709,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw23\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 290
+	);
+	SetBotType(290,
 		"botw24",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2667,8 +2718,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw24\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 291
+	);
+	SetBotType(291,
 		"botw25",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2676,8 +2727,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw25\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 292
+	);
+	SetBotType(292,
 		"botw26",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2685,8 +2736,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw26\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 293
+	);
+	SetBotType(293,
 		"botw27",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2694,8 +2745,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw27\\color\\1\\class\\5\\model\\\\skin\\"
-	},
-	{	// 294
+	);
+	SetBotType(294,
 		"botw31",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2703,8 +2754,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw31\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 295
+	);
+	SetBotType(295,
 		"botw32",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2712,8 +2763,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw32\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 296
+	);
+	SetBotType(296,
 		"botw33",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2721,8 +2772,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw33\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 297
+	);
+	SetBotType(297,
 		"botw34",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2730,8 +2781,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw34\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 298
+	);
+	SetBotType(298,
 		"botw35",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2739,8 +2790,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw35\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 299
+	);
+	SetBotType(299,
 		"botw36",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2748,8 +2799,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw36\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 300
+	);
+	SetBotType(300,
 		"botw37",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2757,8 +2808,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw37\\color\\2\\class\\5\\model\\\\skin\\"
-	},
-	{	// 301
+	);
+	SetBotType(301,
 		"botw41",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2766,8 +2817,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw41\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 302
+	);
+	SetBotType(302,
 		"botw42",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2775,8 +2826,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw42\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 303
+	);
+	SetBotType(303,
 		"botw43",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2784,8 +2835,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw43\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 304
+	);
+	SetBotType(304,
 		"botw44",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2793,8 +2844,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw44\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 305
+	);
+	SetBotType(305,
 		"botw45",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2802,8 +2853,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw45\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 306
+	);
+	SetBotType(306,
 		"botw46",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2811,8 +2862,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw46\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 307
+	);
+	SetBotType(307,
 		"botw47",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2820,8 +2871,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw47\\color\\3\\class\\5\\model\\\\skin\\"
-	},
-	{	// 308
+	);
+	SetBotType(308,
 		"botw51",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2829,8 +2880,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw51\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 309
+	);
+	SetBotType(309,
 		"botw52",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2838,8 +2889,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw52\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 310
+	);
+	SetBotType(310,
 		"botw53",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2847,8 +2898,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw53\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 311
+	);
+	SetBotType(311,
 		"botw54",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2856,8 +2907,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw54\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 312
+	);
+	SetBotType(312,
 		"botw55",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2865,8 +2916,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw55\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 313
+	);
+	SetBotType(313,
 		"botw56",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2874,8 +2925,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw56\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 314
+	);
+	SetBotType(314,
 		"botw57",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2883,8 +2934,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw57\\color\\4\\class\\5\\model\\\\skin\\"
-	},
-	{	// 315
+	);
+	SetBotType(315,
 		"botw61",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2892,8 +2943,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw61\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 316
+	);
+	SetBotType(316,
 		"botw62",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2901,8 +2952,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw62\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 317
+	);
+	SetBotType(317,
 		"botw63",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2910,8 +2961,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw63\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 318
+	);
+	SetBotType(318,
 		"botw64",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2919,8 +2970,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw64\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 319
+	);
+	SetBotType(319,
 		"botw65",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2928,8 +2979,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw65\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 320
+	);
+	SetBotType(320,
 		"botw66",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -2937,8 +2988,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw66\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 321
+	);
+	SetBotType(321,
 		"botw67",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -2946,8 +2997,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw67\\color\\5\\class\\5\\model\\\\skin\\"
-	},
-	{	// 322
+	);
+	SetBotType(322,
 		"botw71",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -2955,8 +3006,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw71\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 323
+	);
+	SetBotType(323,
 		"botw72",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -2964,8 +3015,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw72\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 324
+	);
+	SetBotType(324,
 		"botw73",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -2973,8 +3024,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw73\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 325
+	);
+	SetBotType(325,
 		"botw74",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -2982,8 +3033,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw74\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 326
+	);
+	SetBotType(326,
 		"botw75",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -2991,8 +3042,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw75\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 327
+	);
+	SetBotType(327,
 		"botw76",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -3000,8 +3051,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw76\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 328
+	);
+	SetBotType(328,
 		"botw77",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -3009,8 +3060,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw77\\color\\6\\class\\5\\model\\\\skin\\"
-	},
-	{	// 329
+	);
+	SetBotType(329,
 		"botw81",
 		bsk_verypoor, // Accuracy
 		bsk_verypoor, // Intelect
@@ -3018,8 +3069,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_verypoor, // Anticipate "Instant shots"
 		bsk_verypoor, // Reaction Time
 		"\\name\\botw81\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 330
+	);
+	SetBotType(330,
 		"botw82",
 		bsk_poor, // Accuracy
 		bsk_poor, // Intelect
@@ -3027,8 +3078,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_poor, // Anticipate "Instant shots"
 		bsk_poor, // Reaction Time
 		"\\name\\botw82\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 331
+	);
+	SetBotType(331,
 		"botw83",
 		bsk_low, // Accuracy
 		bsk_low, // Intelect
@@ -3036,8 +3087,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_low, // Anticipate "Instant shots"
 		bsk_low, // Reaction Time
 		"\\name\\botw83\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 332
+	);
+	SetBotType(332,
 		"botw84",
 		bsk_medium, // Accuracy
 		bsk_medium, // Intelect
@@ -3045,8 +3096,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_medium, // Anticipate "Instant shots"
 		bsk_medium, // Reaction Time
 		"\\name\\botw84\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 333
+	);
+	SetBotType(333,
 		"botw85",
 		bsk_high, // Accuracy
 		bsk_high, // Intelect
@@ -3054,8 +3105,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_high, // Anticipate "Instant shots"
 		bsk_high, // Reaction Time
 		"\\name\\botw85\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 334
+	);
+	SetBotType(334,
 		"botw86",
 		bsk_excellent, // Accuracy
 		bsk_excellent, // Intelect
@@ -3063,8 +3114,8 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_excellent, // Anticipate "Instant shots"
 		bsk_excellent, // Reaction Time
 		"\\name\\botw86\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-	{	// 335
+	);
+	SetBotType(335,
 		"botw87",
 		bsk_supreme, // Accuracy
 		bsk_supreme, // Intelect
@@ -3072,82 +3123,884 @@ botinfo_t botinfo[NUMTOTALBOTS] =
 		bsk_supreme, // Anticipate "Instant shots"
 		bsk_supreme, // Reaction Time
 		"\\name\\botw87\\color\\7\\class\\5\\model\\\\skin\\"
-	},
-};
+	);
+}
+
+//==========================================================================
+//
+//  SetBotType
+//
+//==========================================================================
+
+void SetBotType(int i, string Name, int accuracy, int intelect, int evade,
+	int anticip, int reaction, string userinfo)
+{
+	botinfo[i].Name = Name;
+	botinfo[i].accuracy = accuracy;
+	botinfo[i].intelect = intelect;
+	botinfo[i].evade = evade;
+	botinfo[i].anticip = anticip;
+	botinfo[i].reaction = reaction;
+	botinfo[i].userinfo = userinfo;
+}
+
+//==========================================================================
+//
+//  MakeFloorSlope
+//
+//==========================================================================
+
+void MakeFloorSlope(Level InLevel, mthing_t * mthing)
+{
+	sector_t *sec;
+	line_t *line;
+	int i;
+
+	sec = InLevel.PointInSector(vector(mthing->x, mthing->y, 0.0));
+	for (i = 0; i < sec->linecount; i++)
+	{
+		line = sec->lines[i];
+		if (mthing->tid == line->arg1)
+		{
+			TVec v1;
+			TVec v2;
+			TVec p1;
+			TVec p2;
+			TVec p3;
+
+			p1 = vector(line->v1->x, line->v1->y, sec->floor.minz);
+			p2 = vector(line->v2->x, line->v2->y, sec->floor.minz);
+			p3 = vector(mthing->x, mthing->y, mthing->height);
+			if (PointOnPlaneSide(p3, line) == 0)
+			{
+				v1 = p2 - p3;
+				v2 = p1 - p3;
+			}
+			else
+			{
+				v1 = p1 - p3;
+				v2 = p2 - p3;
+			}
+			sec->floor.normal = Normalise(CrossProduct(v1, v2));
+			if (sec->floor.normal.z <= 0.0)
+			{
+				Error("Floor with normal.z <= 0.0");
+			}
+			sec->floor.dist = DotProduct(sec->floor.normal, p3);
+			sec->base_floorheight = sec->floor.dist;
+			SendFloorSlope(sec);
+			return;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  MakeCeilingSlope
+//
+//==========================================================================
+
+void MakeCeilingSlope(Level InLevel, mthing_t * mthing)
+{
+	sector_t *sec;
+	line_t *line;
+	int i;
+
+	sec = InLevel.PointInSector(vector(mthing->x, mthing->y, 0.0));
+	for (i = 0; i < sec->linecount; i++)
+	{
+		line = sec->lines[i];
+		if (mthing->tid == line->arg1)
+		{
+			TVec p1;
+			TVec p2;
+			TVec p3;
+			TVec v1;
+			TVec v2;
+
+			p1 = vector(line->v1->x, line->v1->y, sec->ceiling.maxz);
+			p2 = vector(line->v2->x, line->v2->y, sec->ceiling.maxz);
+			p3 = vector(mthing->x, mthing->y, mthing->height);
+			if (PointOnPlaneSide(p3, line) == 0)
+			{
+				v1 = p1 - p3;
+				v2 = p2 - p3;
+			}
+			else
+			{
+				v1 = p2 - p3;
+				v2 = p1 - p3;
+			}
+			sec->ceiling.normal = Normalise(CrossProduct(v1, v2));
+			if (sec->ceiling.normal.z >= 0.0)
+			{
+				Error("Ceiling with normal.z >= 0.0");
+			}
+			sec->ceiling.dist = DotProduct(sec->ceiling.normal, p3);
+			sec->base_ceilingheight = sec->ceiling.dist;
+			SendCeilingSlope(sec);
+			return;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SetVertexHeights
+//
+//==========================================================================
+
+bool SetVertexHeights(Level InLevel, int ThingID)
+{
+	int i;
+	int j;
+	bool ret;
+	mthing_t * mthing;
+	
+	ret = false;
+	//	Clean all
+	for (i = 0; i < InLevel.NumVertexes; i++)
+	{
+		InLevel.Vertexes[i].z = 0.1;
+	}
+	for (j = 0; j < InLevel.NumThings; j++)
+	{
+		mthing = &InLevel.Things[j];
+		if (mthing->type == ThingID)
+		{
+			for (i = 0; i < InLevel.NumVertexes; i++)
+			{
+				if (InLevel.Vertexes[i].x == mthing->x &&
+					InLevel.Vertexes[i].y == mthing->y)
+				{
+					InLevel.Vertexes[i].z = mthing->height;
+					ret = true;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
+//==========================================================================
+//
+//	CleanVertexHeights
+//
+//==========================================================================
+
+void CleanVertexHeights(Level InLevel)
+{
+	int i;
+	
+	for (i = 0; i < InLevel.NumVertexes; i++)
+	{
+		InLevel.Vertexes[i].z = 0.0;
+	}
+}
+
+//==========================================================================
+//
+//	MakeVertexFloorHeights
+//
+//==========================================================================
+
+void MakeVertexFloorHeights(Level InLevel)
+{
+	int i;
+	sector_t *sec;
+	TVec p1;
+	TVec p2;
+	TVec p3;
+	TVec v1;
+	TVec v2;
+	
+	if (!SetVertexHeights(InLevel, 1504))
+	{
+		return;
+	}
+	for (i = 0; i < InLevel.NumSectors; i++)
+	{
+		sec = &InLevel.Sectors[i];
+		if (sec->linecount != 3)
+			continue;
+		p1 = *sec->lines[0]->v1;
+		p2 = *sec->lines[0]->v2;
+		if (sec->lines[1]->v1 == sec->lines[0]->v1 ||
+			sec->lines[1]->v1 == sec->lines[0]->v2)
+		{
+			p3 = *sec->lines[1]->v2;
+		}
+		else
+		{
+			p3 = *sec->lines[1]->v1;
+		}
+		if (p1.z == 0.1 && p2.z == 0.1 && p3.z == 0.1)
+		{
+			continue;
+		}
+		if (p1.z == 0.1)
+		{
+			p1.z = sec->floorheight;
+		}
+		if (p2.z == 0.1)
+		{
+			p2.z = sec->floorheight;
+		}
+		if (p3.z == 0.1)
+		{
+			p3.z = sec->floorheight;
+		}
+		if (PointOnPlaneSide(p3, sec->lines[0]) == 0)
+		{
+			v1 = p2 - p3;
+			v2 = p1 - p3;
+		}
+		else
+		{
+			v1 = p1 - p3;
+			v2 = p2 - p3;
+		}
+		sec->floor.normal = Normalise(CrossProduct(v1, v2));
+		if (sec->floor.normal.z <= 0.0)
+		{
+			Error("Floor with normal.z <= 0.0");
+		}
+		sec->floor.dist = DotProduct(sec->floor.normal, p3);
+		sec->base_floorheight = sec->floor.dist;
+		SendFloorSlope(sec);
+	}
+}
+
+//==========================================================================
+//
+//	MakeVertexCeilingHeights
+//
+//==========================================================================
+
+void MakeVertexCeilingHeights(Level InLevel)
+{
+	int i;
+	sector_t *sec;
+	TVec p1;
+	TVec p2;
+	TVec p3;
+	TVec v1;
+	TVec v2;
+	
+	if (!SetVertexHeights(InLevel, 1505))
+	{
+		return;
+	}
+	for (i = 0; i < InLevel.NumSectors; i++)
+	{
+		sec = &InLevel.Sectors[i];
+		if (sec->linecount != 3)
+			continue;
+		p1 = *sec->lines[0]->v1;
+		p2 = *sec->lines[0]->v2;
+		if (sec->lines[1]->v1 == sec->lines[0]->v1 ||
+			sec->lines[1]->v1 == sec->lines[0]->v2)
+		{
+			p3 = *sec->lines[1]->v2;
+		}
+		else
+		{
+			p3 = *sec->lines[1]->v1;
+		}
+		if (p1.z == 0.1 && p2.z == 0.1 && p3.z == 0.1)
+		{
+			continue;
+		}
+		if (p1.z == 0.1)
+		{
+			p1.z = sec->ceilingheight;
+		}
+		if (p2.z == 0.1)
+		{
+			p2.z = sec->ceilingheight;
+		}
+		if (p3.z == 0.1)
+		{
+			p3.z = sec->ceilingheight;
+		}
+		if (PointOnPlaneSide(p3, sec->lines[0]) == 0)
+		{
+			v1 = p1 - p3;
+			v2 = p2 - p3;
+		}
+		else
+		{
+			v1 = p2 - p3;
+			v2 = p1 - p3;
+		}
+		sec->ceiling.normal = Normalise(CrossProduct(v1, v2));
+		if (sec->ceiling.normal.z >= 0.0)
+		{
+			Error("Ceiling with normal.z >= 0.0");
+		}
+		sec->ceiling.dist = DotProduct(sec->ceiling.normal, p3);
+		sec->base_ceilingheight = sec->ceiling.dist;
+		SendCeilingSlope(sec);
+	}
+}
+
+//==========================================================================
+//
+//	AlignPlane
+//
+//	Set slopes for sectors, based on line specials
+//
+//	Aligns the floor or ceiling of a sector to the corresponding plane
+// on the other side of the reference line. (By definition, line must be
+// two-sided.)
+//
+//	If (which & 1), sets floor.
+//	If (which & 2), sets ceiling.
+//
+//==========================================================================
+
+void AlignPlane(sector_t *sec, line_t *line, int which)
+{
+	sector_t *refsec;
+	float bestdist;
+	TVec *refvert = (*sec->lines)->v1;
+	int i;
+	line_t **probe;
+	float dist;
+	TVec *vert;
+	TVec p, v1, v2, cross;
+	sec_plane_t *refplane;
+	sec_plane_t *srcplane;
+	float srcheight, destheight;
+
+	if (line->backsector == NULL)
+		return;
+
+	//	Find furthest vertex from the reference line. It, along with the two
+	// ends of the line will define the plane.
+	bestdist = 0.0;
+	for (i = sec->linecount * 2, probe = sec->lines; i > 0; i--)
+	{
+		if (i & 1)
+		{
+			vert = (*probe)->v2;
+			probe = &probe[1];
+		}
+		else
+			vert = (*probe)->v1;
+		dist = fabs(DotProduct(*vert, line->normal));
+
+		if (dist > bestdist)
+		{
+			bestdist = dist;
+			refvert = vert;
+		}
+	}
+
+	refsec = line->frontsector == sec ? line->backsector : line->frontsector;
+
+	p = *line->v1;
+	v1 = *line->v2 - *line->v1;
+	v2 = *refvert - *line->v1;
+
+	refplane = (which == 0) ? &refsec->floor : &refsec->ceiling;
+	srcplane = (which == 0) ? &sec->floor : &sec->ceiling;
+	srcheight = (which == 0) ? sec->floorheight : sec->ceilingheight;
+	destheight = (which == 0) ? refsec->floorheight : refsec->ceilingheight;
+
+	p.z = destheight;
+	v1.z = 0.0;
+	v2.z = srcheight - destheight;
+
+	cross = Normalise(CrossProduct(v1, v2));
+
+	// Fix backward normals
+	if ((cross.z < 0.0 && which == 0) || (cross.z > 0.0 && which == 1))
+	{
+		cross = -cross;
+	}
+
+	srcplane->normal = cross;
+	srcplane->dist = DotProduct(cross, p);
+	if (which == 0)
+		SendFloorSlope(sec);
+	else
+		SendCeilingSlope(sec);
+}
+
+//==========================================================================
+//
+//	SetSlopes
+//
+//==========================================================================
+
+void SetSlopes(Level InLevel)
+{
+	int i, s;
+
+	for (i = 0; i < InLevel.NumLines; i++)
+	{
+		if (InLevel.Lines[i].special == LNSPEC_PlaneAlign)
+		{
+			InLevel.Lines[i].special = 0;
+//			InLevel.Lines[i].id = InLevel.Lines[i].args[2];
+			if (InLevel.Lines[i].backsector != NULL)
+			{
+				// args[0] is for floor, args[1] is for ceiling
+				//
+				// As a special case, if args[1] is 0,
+				// then args[0], bits 2-3 are for ceiling.
+				for (s = 0; s < 2; s++)
+				{
+					int bits = (s == 0 ? InLevel.Lines[i].arg1 :
+ 						InLevel.Lines[i].arg2) & 3;
+
+					if (s == 1 && bits == 0)
+						bits = (InLevel.Lines[i].arg1 >> 2) & 3;
+
+					if (bits == 1)			// align front side to back
+						AlignPlane(InLevel.Lines[i].frontsector,
+							&InLevel.Lines[i], s);
+					else if (bits == 2)		// align back side to front
+						AlignPlane(InLevel.Lines[i].backsector,
+							&InLevel.Lines[i], s);
+				}
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  SpawnExtraFloors
+//
+//==========================================================================
+
+void SpawnExtraFloors(Level InLevel, line_t * line)
+{
+	int j;
+
+	for (j = 0; j < InLevel.NumSectors; j++)
+	{
+		if (line->arg1 == InLevel.Sectors[j].tag)
+		{
+			AddExtraFloor(line, &InLevel.Sectors[j]);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  CreateContents
+//
+//==========================================================================
+
+void MakeContents(line_t * line)
+{
+	int contents;
+
+	if (!line->arg1 && !line->arg2 && !line->arg3)
+	{
+		contents =
+			terrain_contents[TerrainType(line->frontsector->floor.pic)];
+		line->frontsector->params.contents = contents;
+		if (line->frontsector->floor.dist == -line->frontsector->ceiling.dist)
+		{
+			line->frontsector->floor.translucency =
+				contents_transluc[contents];
+			line->frontsector->ceiling.translucency =
+				contents_transluc[contents];
+			line->frontsector->ceiling.flags |=
+				SPF_NOBLOCKING | SPF_NOBLOCKSIGHT | SPF_NOBLOCKSHOOT;
+			line->frontsector->floor.flags |=
+				SPF_NOBLOCKING | SPF_NOBLOCKSIGHT | SPF_NOBLOCKSHOOT;
+		}
+	}
+	else
+	{
+		line->frontsector->params.contents = line->arg1;
+
+		line->frontsector->floor.translucency = line->arg2;
+		line->frontsector->ceiling.translucency = line->arg2;
+
+		line->frontsector->ceiling.flags = line->arg3;
+		line->frontsector->floor.flags = line->arg3;
+	}
+}
+
+//==========================================================================
+//
+//  MakeHeightSec
+//
+//	killough 3/7/98:
+//	support for drawn heights coming from different sector
+//
+//==========================================================================
+
+void MakeHeightSec(Level InLevel, line_t* Line)
+{
+	sector_t*	Sec;
+	int			s;
+
+	Sec = Line->frontsector;
+	if (Line->arg2 & 2)
+	{
+		Sec->bFakeFloorOnly = true;
+	}
+	if (Line->arg2 & 4)
+	{
+		Sec->bClipFakePlanes = true;
+	}
+	if (Line->arg2 & 8)
+	{
+		Sec->bUnderWater = true;
+	}
+	if (Line->arg2 & 16)
+	{
+		Sec->bIgnoreHeightSec = true;
+	}
+	if (Line->arg2 & 32)
+	{
+		Sec->bNoFakeLight = true;
+	}
+	for (s = FindSectorFromTag(Line->arg1, -1); s  >= 0;
+		s = FindSectorFromTag(Line->arg1, s))
+	{
+		InLevel.Sectors[s].heightsec = Sec;
+		SetHeightSector(&InLevel.Sectors[s], Sec, Line->arg2);
+	}
+}
+
+//==========================================================================
+//
+//  SetSectorFriction
+//
+//==========================================================================
+
+void SetSectorFriction(Level InLevel, int tag, int amount, bool alterFlag)
+{
+	int			s;
+	int			OldFriction;
+	int			OldMoveFactor;
+	float		Friction;
+	float		MoveFactor;
+
+	// An amount of 100 should result in a friction of
+	// ORIG_FRICTION (0xE800)
+	OldFriction = (0x1EB8 * amount) / 0x80 + 0xD001;
+
+	// killough 8/28/98: prevent odd situations
+	if (OldFriction > 0x10000)
+		OldFriction = 0x10000;
+	if (OldFriction < 0)
+		OldFriction = 0;
+
+	// The following check might seem odd. At the time of movement,
+	// the move distance is multiplied by 'friction/0x10000', so a
+	// higher friction value actually means 'less friction'.
+
+	// [RH] Twiddled these values so that momentum on ice (with
+	//		friction 0xf900) is the same as in Heretic/Hexen.
+	if (OldFriction >= 0xe800)	// ice
+//		movefactor = ((0x10092 - friction)*(0x70))/0x158;
+		OldMoveFactor = ((0x10092 - OldFriction) * 1024) / 4352 + 568;
+	else
+		OldMoveFactor = ((OldFriction - 0xDB34) * (0xA)) / 0x80;
+
+	// killough 8/28/98: prevent odd situations
+	if (OldMoveFactor < 32)
+		OldMoveFactor = 32;
+
+	Friction = (1.0 - itof(OldFriction) / itof(0x10000)) * 35.0;
+	MoveFactor = itof(OldMoveFactor) / itof(0x10000);
+
+	for (s = FindSectorFromTag(tag, -1); s >= 0;
+		s = FindSectorFromTag(tag, s))
+	{
+		// killough 8/28/98:
+		//
+		// Instead of spawning thinkers, which are slow and expensive,
+		// modify the sector's own friction values. Friction should be
+		// a property of sectors, not objects which reside inside them.
+		// Original code scanned every object in every friction sector
+		// on every tic, adjusting its friction, putting unnecessary
+		// drag on CPU. New code adjusts friction of sector only once
+		// at level startup, and then uses this friction value.
+
+		InLevel.Sectors[s].Friction = Friction;
+		InLevel.Sectors[s].MoveFactor = MoveFactor;
+		if (alterFlag)
+		{
+			// When used inside a script, the sectors' friction flags
+			// can be enabled and disabled at will.
+			if (OldFriction == 0xe800)
+			{
+				InLevel.Sectors[s].special &= ~SECSPEC_FRICTION_MASK;
+			}
+			else
+			{
+				InLevel.Sectors[s].special |= SECSPEC_FRICTION_MASK;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  SpawnWorld
+//
+//==========================================================================
+
+void SpawnWorld(Level InLevel)
+{
+	int			i;
+	int			j;
+	int			length;
+	int			SecNum;
+	mthing_t*	mthing;
+
+	//  Spawn slopes first
+	SetSlopes(InLevel);
+	for (i = 0; i < InLevel.NumThings; i++)
+	{
+		mthing = &InLevel.Things[i];
+
+		if (mthing->type == 1500)
+		{
+			MakeFloorSlope(InLevel, mthing);
+			mthing->type = 0;
+			continue;
+		}
+
+		if (mthing->type == 1501)
+		{
+			MakeCeilingSlope(InLevel, mthing);
+			mthing->type = 0;
+			continue;
+		}
+
+		if (mthing->type == PO_SPAWN_TYPE || mthing->type == PO_SPAWNCRUSH_TYPE)
+		{
+			// Polyobj StartSpot Pt.
+			SpawnPolyobj(mthing->x, mthing->y, mthing->angle,
+				(mthing->type == PO_SPAWNCRUSH_TYPE));
+			mthing->type = 0;
+			continue;
+		}
+		if (mthing->type == PO_ANCHOR_TYPE)
+		{
+			// Polyobj Anchor Pt.
+			AddAnchorPoint(mthing->x, mthing->y, mthing->angle);
+			mthing->type = 0;
+			continue;
+		}
+	}
+	MakeVertexFloorHeights(InLevel);
+	MakeVertexCeilingHeights(InLevel);
+	CleanVertexHeights(InLevel);
+
+	//	Initialise initial friction values.
+	for (i = 0; i < InLevel.NumSectors; i++)
+	{
+		InLevel.Sectors[i].Friction = FRICTION_NORMAL;
+	}
+
+	//  Spawn 3D floors
+	for (i = 0; i < InLevel.NumLines; i++)
+	{
+		switch (InLevel.Lines[i].special)
+		{
+		case LNSPEC_3DFloor:
+			SpawnExtraFloors(InLevel, &InLevel.Lines[i]);
+			InLevel.Lines[i].special = 0;
+			break;
+
+		case LNSPEC_Contents:
+			MakeContents(&InLevel.Lines[i]);
+			InLevel.Lines[i].special = 0;
+			break;
+
+		case LNSPEC_TransferFloorLight:
+			for (SecNum = FindSectorFromTag(InLevel.Lines[i].arg1, -1);
+				SecNum >= 0;
+				SecNum = FindSectorFromTag(InLevel.Lines[i].arg1, SecNum))
+			{
+				SetFloorLightSector(&InLevel.Sectors[SecNum],
+					InLevel.Lines[i].frontsector);
+			}
+			InLevel.Lines[i].special = 0;
+			break;
+
+		case LNSPEC_TransferCeilingLight:
+			for (SecNum = FindSectorFromTag(InLevel.Lines[i].arg1, -1);
+				SecNum >= 0;
+				SecNum = FindSectorFromTag(InLevel.Lines[i].arg1, SecNum))
+			{
+				SetCeilingLightSector(&InLevel.Sectors[SecNum],
+					InLevel.Lines[i].frontsector);
+			}
+			InLevel.Lines[i].special = 0;
+			break;
+
+		case LNSPEC_SectorSetFriction:
+			if (InLevel.Lines[i].arg2)
+			{
+				//	Allow setting friction amount from parameter
+				length = InLevel.Lines[i].arg2 <= 200 ?
+					InLevel.Lines[i].arg2 : 200;
+			}
+			else
+			{
+				length = ftoi(Length(*InLevel.Lines[i].v2 -
+					*InLevel.Lines[i].v1));
+			}
+
+			SetSectorFriction(InLevel, InLevel.Lines[i].arg1, length, false);
+			InLevel.Lines[i].special = 0;
+			break;
+
+		case LNSPEC_TransferHeights:
+			MakeHeightSec(InLevel, &InLevel.Lines[i]);
+			break;
+		}
+	}
+
+	TaggedLineCount = 0;
+	for (i = 0; i < InLevel.NumLines; i++)
+	{
+		switch (InLevel.Lines[i].special)
+		{
+		case LNSPEC_LineSetIdentification:
+		case LNSPEC_LineTranslucent:
+		case LNSPEC_TeleportLine:
+			if (InLevel.Lines[i].arg1)
+			{
+				if (TaggedLineCount == MAX_TAGGED_LINES)
+				{
+					Error("P_SpawnSpecials: MAX_TAGGED_LINES exceeded.");
+				}
+				TaggedLines[TaggedLineCount].line = &InLevel.Lines[i];
+				TaggedLines[TaggedLineCount++].lineTag = InLevel.Lines[i].arg1;
+			}
+			if (InLevel.Lines[i].special == LNSPEC_LineSetIdentification)
+			{
+				InLevel.Lines[i].special = 0;
+			}
+			break;
+		}
+	}
+
+	//	Process translucent lines
+	for (i = 0; i < InLevel.NumLines; i++)
+	{
+		if (InLevel.Lines[i].special != 208)
+		{
+			continue;
+		}
+
+		int trans = (255 - InLevel.Lines[i].arg2) * 100 / 255;
+		if (InLevel.Lines[i].arg1)
+		{
+			for (j = 0; j < TaggedLineCount; j++)
+			{
+				if (TaggedLines[j].lineTag == InLevel.Lines[i].arg1)
+				{
+					SetLineTransluc(TaggedLines[j].line, trans);
+				}
+			}
+		}
+		else
+		{
+			SetLineTransluc(&InLevel.Lines[i], trans);
+		}
+		InLevel.Lines[i].special = 0;
+	}
+}
+
+defaultproperties
+{
+// First Weapon	
+	WeaponClasses[0] = WeaponFighterPunch;
+	WeaponClasses[1] = WeaponClericMace;
+	WeaponClasses[2] = WeaponStaff;
+	WeaponClasses[3] = WeaponGauntlets;
+	WeaponClasses[4] = WeaponChainsaw;
+	WeaponClasses[5] = WeaponWitchavenPunch;
+	WeaponClasses[6] = WeaponPigSnout;
+//Second Weapon
+	WeaponClasses[7] = WeaponFighterAxe;
+	WeaponClasses[8] = WeaponClericStaff;
+	WeaponClasses[9] = WeaponMageWandGrey;
+	WeaponClasses[10] = WeaponGoldWand;
+	WeaponClasses[11] = WeaponPistol;
+	WeaponClasses[12] = WeaponWitchavenSSword;
+	WeaponClasses[13] = WeaponPigSnout;
+//Third Weapon
+	WeaponClasses[14] = WeaponDarkness;//WeaponFighterHammerMelee,
+	WeaponClasses[15] = WeaponClericMorningStar;//WeaponHealing,
+	WeaponClasses[16] = WeaponMageWandRed;
+	WeaponClasses[17] = WeaponCrossbow;
+	WeaponClasses[18] = WeaponShotgun;
+	WeaponClasses[19] = WeaponWitchavenMorningStar;
+	WeaponClasses[20] = WeaponPigSnout;
+//Fourth Weapon	
+	WeaponClasses[21] = WeaponBlasterUp;
+	WeaponClasses[22] = WeaponClericFire;
+	WeaponClasses[23] = WeaponMageCone;
+	WeaponClasses[24] = WeaponBlaster;
+	WeaponClasses[25] = WeaponChaingun;
+	WeaponClasses[26] = WeaponWitchavenMissileSpell;
+	WeaponClasses[27] = WeaponPigSnout;
+//Fifth Weapon
+	WeaponClasses[28] = WeaponSkullRod;
+	WeaponClasses[29] = WeaponMageWand;
+	WeaponClasses[30] = WeaponMageLightning;
+	WeaponClasses[31] = WeaponGoldWandUp;
+	WeaponClasses[32] = WeaponMissile;
+	WeaponClasses[33] = WeaponWitchavenLSword;
+	WeaponClasses[34] = WeaponPigSnout;
+//Sixth Weapon
+	WeaponClasses[35] = WeaponFighterHammer;
+	WeaponClasses[36] = WeaponPoisonBreath;
+	WeaponClasses[37] = WeaponWhirlWind;
+	WeaponClasses[38] = WeaponSkullRodUp;
+	WeaponClasses[39] = WeaponSuperShotgun;
+	WeaponClasses[40] = WeaponWitchavenFireballSpell;
+	WeaponClasses[41] = WeaponPigSnout;
+//Seventh Weapon
+	WeaponClasses[42] = WeaponFighterSwordMelee;
+	WeaponClasses[43] = WeaponPhoenixRod;
+	WeaponClasses[44] = WeaponMageStaff;
+	WeaponClasses[45] = WeaponPhoenixRodUp;
+	WeaponClasses[46] = WeaponPlasma;
+	WeaponClasses[47] = WeaponWitchavenLongBow;
+	WeaponClasses[48] = WeaponPigSnout;
+//Eighth Weapon
+	WeaponClasses[49] = WeaponFighterSword;
+	WeaponClasses[50] = WeaponClericHoly;
+	WeaponClasses[51] = WeaponHorriblePain;
+	WeaponClasses[52] = WeaponMaceUp;
+	WeaponClasses[53] = WeaponBFG;
+	WeaponClasses[54] = WeaponWitchavenDisintegrationSpell;
+	WeaponClasses[55] = WeaponPigSnout;
+
+	terrain_contents[0] = CONTENTS_EMPTY;
+	terrain_contents[1] = CONTENTS_EMPTY;
+	terrain_contents[2] = CONTENTS_WATER;
+	terrain_contents[3] = CONTENTS_WATER;
+	terrain_contents[4] = CONTENTS_LAVA;
+	terrain_contents[5] = CONTENTS_SLUDGE;
+
+	contents_transluc[0] = 0;
+	contents_transluc[1] = 50;
+	contents_transluc[2] = 20;
+	contents_transluc[3] = 30;
+}
 
 //**************************************************************************
 //
 //  $Log$
-//  Revision 1.12  2005/12/15 19:20:11  firebrand_kh
-//  Made botskill not declared with initial value
-//
-//  Revision 1.11  2005/12/11 21:37:29  dj_jl
-//  Made path traversal callbacks class members.
-//
-//  Revision 1.10  2005/09/30 15:53:19  firebrand_kh
-//  Numbered bots for bots list
-//
-//  Revision 1.9  2005/09/15 16:38:04  firebrand_kh
-//  Fixed some checks for PTR_PATHTRANSVERSE
-//
-//  Revision 1.8  2005/08/28 18:59:46  firebrand_kh
-//  Removed some unused code from the file and redundant checks
-//
-//  Revision 1.7  2005/08/27 14:17:21  firebrand_kh
-//  Added even more checks for the Transverse Path code
-//
-//  Revision 1.6  2005/08/26 14:44:26  firebrand_kh
-//  Fixed transverse path code for the bots
-//
-//  Revision 1.5  2005/08/14 16:52:23  firebrand_kh
-//  Changed the way the bots are spawned
-//
-//  Revision 1.4  2005/08/12 16:20:23  firebrand_kh
-//  Added some labels for bot attributes
-//
-//  Revision 1.3  2005/05/12 20:57:09  firebrand_kh
-//  Fixed the declaration for dangerous sectors for the bots
-//
-//  Revision 1.2  2004/11/17 16:07:53  firebrand_kh
-//  *** empty log message ***
-//
-//  Revision 1.1  2004/11/16 13:33:23  dj_jl
-//  Initial import.
-//
-//  Revision 1.12  2003/11/12 16:50:47  dj_jl
-//  Changed player structure into a class
-//
-//  Revision 1.11  2003/07/11 16:47:39  dj_jl
-//  Made array of players with pointers
-//
-//  Revision 1.10  2002/11/02 08:24:10  dj_jl
-//  New style classes.
-//
-//  Revision 1.9  2002/09/07 16:28:26  dj_jl
-//  Added Level class.
-//
-//  Revision 1.8  2002/07/13 08:01:49  dj_jl
-//  Moved some functions to the Entity class.
-//
-//  Revision 1.7  2002/04/11 16:49:50  dj_jl
-//  Tick function.
-//
-//  Revision 1.6  2002/03/28 18:15:34  dj_jl
-//  Renamed mo in player_t to MO.
-//
-//  Revision 1.5  2002/03/09 17:57:02  dj_jl
-//  Got rid of function pointers, made most of the physics functions native.
-//
-//  Revision 1.4  2002/02/26 17:49:48  dj_jl
-//  no message
-//
-//  Revision 1.3  2002/02/22 18:00:20  dj_jl
-//  A lots of the renaming, beautification.
-//
-//  Revision 1.2  2002/02/14 19:20:58  dj_jl
-//  Renamed Entity properties to new naming style
-//
-//  Revision 1.1  2002/02/06 17:35:13  dj_jl
-//  Added Hexen bots.
+//  Revision 1.1  2006/02/13 18:44:38  dj_jl
+//  Moved all server progs global functions to classes.
 //
 //**************************************************************************

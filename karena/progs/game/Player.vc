@@ -215,7 +215,7 @@ void SpawnClient()
 	}
 	else
 	{
-		SpawnPlayer(&level->playerstarts[RebornPosition * MAXPLAYERS +
+		SpawnPlayer(&Level.PlayerStarts[RebornPosition * MAXPLAYERS +
 			P_GetPlayerNum(self)]);
 	}
 
@@ -285,11 +285,11 @@ void NetGameReborn()
 	}
 
 	foundSpot = false;
-	if (CheckSpot(&level->playerstarts[RebornPosition * MAXPLAYERS +
+	if (CheckSpot(&Level.PlayerStarts[RebornPosition * MAXPLAYERS +
 		P_GetPlayerNum(self)]))
 	{
 		// Appropriate player start spot is open
-		SpawnPlayer(&level->playerstarts[RebornPosition * MAXPLAYERS +
+		SpawnPlayer(&Level.PlayerStarts[RebornPosition * MAXPLAYERS +
 			P_GetPlayerNum(self)]);
 		foundSpot = true;
 	}
@@ -298,10 +298,10 @@ void NetGameReborn()
 		// Try to spawn at one of the other player start spots
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (CheckSpot(&level->playerstarts[RebornPosition * MAXPLAYERS + i]))
+			if (CheckSpot(&Level.PlayerStarts[RebornPosition * MAXPLAYERS + i]))
 			{
 				// Found an open start spot
-				SpawnPlayer(&level->playerstarts[RebornPosition * MAXPLAYERS + i]);
+				SpawnPlayer(&Level.PlayerStarts[RebornPosition * MAXPLAYERS + i]);
 				foundSpot = true;
 				break;
 			}
@@ -311,7 +311,7 @@ void NetGameReborn()
 	if (!foundSpot)
 	{
 		// Player's going to be inside something
-		SpawnPlayer(&level->playerstarts[RebornPosition * MAXPLAYERS +
+		SpawnPlayer(&Level.PlayerStarts[RebornPosition * MAXPLAYERS +
 			P_GetPlayerNum(self)]);
 	}
 
@@ -452,16 +452,16 @@ void DeathMatchSpawnPlayer()
 
 	for (j = 0; j < 20; j++)
 	{
-		i = P_Random() % level->numdeathmatchstarts;
-		if (CheckSpot(&level->deathmatchstarts[i]))
+		i = P_Random() % Level.NumDeathmatchStarts;
+		if (CheckSpot(&Level.DeathmatchStarts[i]))
 		{
-			SpawnPlayer(&level->deathmatchstarts[i]);
+			SpawnPlayer(&Level.DeathmatchStarts[i]);
 			return;
 		}
 	}
 
 	// no good spot, so the player will probably get stuck 
-	SpawnPlayer(&level->playerstarts[P_GetPlayerNum(self)]);
+	SpawnPlayer(&Level.PlayerStarts[P_GetPlayerNum(self)]);
 }
 
 //==========================================================================
@@ -508,7 +508,7 @@ bool CheckSpot(mthing_t * mthing)
 	sec = GLevel.PointInSector(vector(x, y, 0.0));
 	an = itof(45 * (mthing->angle / 45));
 
-	A = Spawn(TeleportFog, vector(x + 20.0 * cos(an), y + 20.0 * sin(an),
+	A = HexenLevelInfo(Level).Spawn(TeleportFog, vector(x + 20.0 * cos(an), y + 20.0 * sin(an),
 		sec->floorheight + TELEFOGHEIGHT));
 	A.PlaySound('Teleport', CHAN_VOICE);
 
@@ -554,22 +554,22 @@ void SpawnPlayer(mthing_t * mthing)
 	switch (PClass)
 	{
 	case PCLASS_FIGHTER:
-		pp = PlayerPawn(Spawn(PlayerFighter, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerFighter, vector(x, y, z)));
 		break;
 	case PCLASS_CLERIC:
-		pp = PlayerPawn(Spawn(PlayerCleric, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerCleric, vector(x, y, z)));
 		break;
 	case PCLASS_MAGE:
-		pp = PlayerPawn(Spawn(PlayerMage, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMage, vector(x, y, z)));
 		break;
 	case PCLASS_HERETIC:
-		pp = PlayerPawn(Spawn(PlayerHeretic, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerHeretic, vector(x, y, z)));
 		break;
 	case PCLASS_MARINE:
-		pp = PlayerPawn(Spawn(PlayerMarine, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMarine, vector(x, y, z)));
 		break;
 	case PCLASS_WITCHAVEN:
-		pp = PlayerPawn(Spawn(PlayerWitchaven, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerWitchaven, vector(x, y, z)));
 		break;
 	default:
 		Error("P_SpawnPlayer: Unknown class type");
@@ -1570,13 +1570,13 @@ void CheckWaterJump()
 	vforward.z = 0.0;
 	vforward = Normalise(vforward);
 	end = start + vforward * 24.0;
-	if (!MO.Level.TraceLine(start, end))
+	if (!Level.TraceLine(start, end))
 	{
 		// solid at waist
 		start.z = MO.Origin.z + MO.Height;
 		end = start + vforward * 24.0;
-		MoveDir = MO.Level.trace_plane_normal * -50.0;
-		if (MO.Level.TraceLine(start, end))
+		MoveDir = Level.trace_plane_normal * -50.0;
+		if (Level.TraceLine(start, end))
 		{
 			// open at eye level
 			MO.bWaterJump = true;
@@ -1861,7 +1861,7 @@ void PlayerInSpecialSector(float deltaTime)
 			if (level->time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
 				LastSectorDamageTime = level->time;
-				MO.Damage(GLavaInflictor, none, 5);
+				MO.Damage(HexenLevelInfo(Level).GLavaInflictor, none, 5);
 				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
@@ -1870,7 +1870,7 @@ void PlayerInSpecialSector(float deltaTime)
 			if (level->time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
 				LastSectorDamageTime = level->time;
-				MO.Damage(GLavaInflictor, none, 8);
+				MO.Damage(HexenLevelInfo(Level).GLavaInflictor, none, 8);
 				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
@@ -1880,7 +1880,7 @@ void PlayerInSpecialSector(float deltaTime)
 			if (level->time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
 				LastSectorDamageTime = level->time;
-				MO.Damage(GLavaInflictor, none, 5);
+				MO.Damage(HexenLevelInfo(Level).GLavaInflictor, none, 5);
 				MO.HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
@@ -2060,7 +2060,7 @@ void PlayerOnSpecialFlat(int floorType)
 	case FLOOR_LAVA:
 		if (!(level->tictime & 31))
 		{
-			MO.Damage(GLavaInflictor, none, 10);
+			MO.Damage(HexenLevelInfo(Level).GLavaInflictor, none, 10);
 			MO.HitFloorType();
 			MO.PlaySound('LavaSizzle', CHAN_BODY);
 		}
@@ -2087,7 +2087,7 @@ void PlayerInContents()
 	case CONTENTS_LAVA:
 		if (!(level->tictime & 31))
 		{
-			MO.Damage(GLavaInflictor, none, 10);
+			MO.Damage(HexenLevelInfo(Level).GLavaInflictor, none, 10);
 			MO.HitFloorType();
 			MO.PlaySound('LavaSizzle', CHAN_BODY);
 		}
@@ -2336,22 +2336,22 @@ bool UndoPlayerMorph()
 	switch (BaseClass)
 	{
 	case PCLASS_FIGHTER:
-		A = Spawn(PlayerFighter, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerFighter, MO.Origin);
 		break;
 	case PCLASS_CLERIC:
-		A = Spawn(PlayerCleric, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerCleric, MO.Origin);
 		break;
 	case PCLASS_MAGE:
-		A = Spawn(PlayerMage, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerMage, MO.Origin);
 		break;
 	case PCLASS_HERETIC:
-		A = Spawn(PlayerHeretic, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerHeretic, MO.Origin);
 		break;
 	case PCLASS_MARINE:
-		A = Spawn(PlayerMarine, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerMarine, MO.Origin);
 		break;
 	case PCLASS_WITCHAVEN:
-		A = Spawn(PlayerWitchaven, MO.Origin);
+		A = HexenLevelInfo(Level).Spawn(PlayerWitchaven, MO.Origin);
 		break;
 	default:
 		Error("UndoPlayerMorph: Unknown player class %d", BaseClass);
@@ -2381,7 +2381,7 @@ bool UndoPlayerMorph()
 	SetPlayerColor();
 	PostMorphWeapon(MO._Special1);
 
-	fog = Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
+	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
 		20.0 * sin(MO.Angles.yaw), TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
@@ -2629,7 +2629,7 @@ void PlayerTick(float deltaTime)
 		if (Powers[pw_speed] && !(level->tictime & 1) &&
 			Length(MO.Velocity) > 12.0 * 35.0)
 		{
-			speedA = Spawn(PlayerSpeed, MO.Origin);
+			speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
 			if (speedA)
 			{
 				speedA.Angles.yaw = MO.Angles.yaw;
@@ -3478,16 +3478,16 @@ void UseArtiTele()
 
 	if (deathmatch)
 	{
-		i = P_Random() % level->numdeathmatchstarts;
-		destX = level->deathmatchstarts[i].x;
-		destY = level->deathmatchstarts[i].y;
-		destAngle = itof(45 * (level->deathmatchstarts[i].angle / 45));
+		i = P_Random() % Level.NumDeathmatchStarts;
+		destX = Level.DeathmatchStarts[i].x;
+		destY = Level.DeathmatchStarts[i].y;
+		destAngle = itof(45 * (Level.DeathmatchStarts[i].angle / 45));
 	}
 	else
 	{
-		destX = level->playerstarts[0].x;
-		destY = level->playerstarts[0].y;
-		destAngle = itof(45 * (level->playerstarts[0].angle / 45));
+		destX = Level.PlayerStarts[0].x;
+		destY = Level.PlayerStarts[0].y;
+		destAngle = itof(45 * (Level.PlayerStarts[0].angle / 45));
 	}
 	MO.Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true,
 		false);
@@ -3607,7 +3607,7 @@ void UseArtiSummon()
 	TVec dir;
 	Actor fog, newmobj;
 
-	if (!MinotaurSpotCount)
+	if (!HexenLevelInfo(Level).MinotaurSpotCount)
 	{
 		// No spots
 		return;
@@ -3615,19 +3615,17 @@ void UseArtiSummon()
 	i = P_Random();
 
 	i++;
-	x = MinotaurSpot[i % MinotaurSpotCount].x;
-	y = MinotaurSpot[i % MinotaurSpotCount].y;
-	z = MinotaurSpot[i % MinotaurSpotCount].z;
-	dir = MinotaurSpot[i % MinotaurSpotCount] /*-Origin*/;
+	x = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].x;
+	y = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].y;
+	z = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].z;
+	dir = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount] /*-Origin*/;
 	Orig = vector(x, y, z);
 
-	fog = Spawn(TeleportFog, Orig);
+	fog = HexenLevelInfo(Level).Spawn(TeleportFog, Orig);
 	fog.PlaySound('Teleport', CHAN_VOICE);
-	newmobj = Spawn(SummonMissile, Orig);
-	newmobj.Origin.x = MinotaurSpot[i % MinotaurSpotCount].x;
-	newmobj.Origin.y = MinotaurSpot[i % MinotaurSpotCount].y;
-	newmobj.Origin.z = MinotaurSpot[i % MinotaurSpotCount].z;
-	newmobj.Angles.yaw = MinotaurSpot_angle[i % MinotaurSpotCount];
+	newmobj = HexenLevelInfo(Level).Spawn(SummonMissile, Orig);
+	newmobj.Origin = Orig;
+	newmobj.Angles.yaw = HexenLevelInfo(Level).MinotaurSpot_angle[i % HexenLevelInfo(Level).MinotaurSpotCount];
 	newmobj.Velocity.z = 5.0 * 35.0;
 	newmobj.Instigator = MO;
 	newmobj.bTelestomp = true;
@@ -3647,7 +3645,7 @@ void UseArtiBlastRadius()
 	float dist;
 
 	MO.PlaySound('BlastRadius', CHAN_ITEM);
-	NoiseAlert(MO, MO);
+	HexenLevelInfo(Level).NoiseAlert(MO, MO);
 
 	FOREACH(Actor, mo)
 	{
@@ -3711,7 +3709,7 @@ void UseArtiPoisonBag()
 	angle = MO.Angles.yaw;
 	if (PClass == PCLASS_CLERIC || PClass == PCLASS_WITCHAVEN)
 	{
-		bomb = Spawn(PoisonBag, MO.Origin +
+		bomb = HexenLevelInfo(Level).Spawn(PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -3720,7 +3718,7 @@ void UseArtiPoisonBag()
 	}
 	else if (PClass == PCLASS_MAGE || PClass == PCLASS_HERETIC)
 	{
-		bomb = Spawn(FireBomb, MO.Origin +
+		bomb = HexenLevelInfo(Level).Spawn(FireBomb, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -3729,7 +3727,7 @@ void UseArtiPoisonBag()
 	}
 	else	// PCLASS_FIGHTER, obviously (also pig, not so obviously)
 	{
-		bomb = Spawn(ThrowingBomb, MO.Origin +
+		bomb = HexenLevelInfo(Level).Spawn(ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -3826,7 +3824,7 @@ Actor SpawnPlayerMissile2(classid type, bool explode)
 		org.z = MO.Origin.z + 4.0 * 8.0 - tan(MO.Angles.pitch);
 		org.z -= MO.FloorClip;
 	}
-	MissileMobj = Spawn(type, org);
+	MissileMobj = HexenLevelInfo(Level).Spawn(type, org);
 	MissileMobj.Instigator = MO;
 	MissileMobj.Angles = angles;
 	AngleVector(&angles, &vforward);
@@ -3890,7 +3888,7 @@ Actor SpawnPlayerMissileAngle(classid type, float angle)
 	org = MO.Origin;
 	org.z = MO.Origin.z + 4.0 * 8.0 - tan(MO.Angles.pitch);
 	org.z -= MO.FloorClip;
-	th = Spawn(type, org);
+	th = HexenLevelInfo(Level).Spawn(type, org);
 	th.Instigator = MO;
 	th.Angles = angles;
 	AngleVector(&angles, &vforward);
@@ -3932,7 +3930,7 @@ Actor SpawnPlayerMissileAngleXYZ(TVec org, classid type, float angle)
 	}
 	org.z += 4.0 * 8.0 - tan(MO.Angles.pitch);
 	org.z -= MO.FloorClip;
-	th = Spawn(type, org);
+	th = HexenLevelInfo(Level).Spawn(type, org);
 	th.Instigator = MO;
 	th.Angles = angles;
 	AngleVector(&angles, &vforward);
@@ -3986,8 +3984,8 @@ void SetWeapon(int NewWeapon)
 	{
 		ViewEnts[ps_weapon].Destroy();
 	}
-	ViewEnts[ps_weapon] =
-		SpawnObject(WeaponClasses[NewWeapon * NUMCLASSES + PClass]);
+	ViewEnts[ps_weapon] = SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
+		NewWeapon * NUMCLASSES + PClass]);
 	ViewEnts[ps_weapon].Player = self;
 	PSpriteSY = Weapon(ViewEnts[ps_weapon]).PSpriteSY;
 }
@@ -4180,7 +4178,7 @@ void FireWeapon()
 	MO.SetState(MO.MissileState);
 	ViewEnts[ps_weapon].SetState(
 		Weapon(ViewEnts[ps_weapon]).GetAttackState());
-	NoiseAlert(MO, MO);
+	HexenLevelInfo(Level).NoiseAlert(MO, MO);
 }
 
 //==========================================================================
@@ -4257,7 +4255,8 @@ Weapon GetWea(int weapon)
 {
 	Weapon w;
 
-	w = Weapon(SpawnObject(WeaponClasses[weapon * NUMCLASSES + PClass]));
+	w = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
+		weapon * NUMCLASSES + PClass]));
 	w.Player = self;
 	return w;
 }
@@ -4341,7 +4340,7 @@ bool PTR_UseTraverse(intercept_t * in)
 		return line->backsector != NULL;
 	}
 
-	HexenLevelInfo(MO.Level).ActivateLine(line, MO, 0, SPAC_USE);
+	HexenLevelInfo(Level).ActivateLine(line, MO, 0, SPAC_USE);
 
 	//WAS can't use more than one special line in a row
 	//jff 3/21/98 NOW multiple use allowed with enabling line flag
@@ -4588,7 +4587,7 @@ void Cheat_Gimme()
 
 void Cheat_KillAll()
 {
-	cprint(self, "%d MONSTERS KILLED", P_Massacre());
+	cprint(self, "%d MONSTERS KILLED", HexenLevelInfo(Level).P_Massacre());
 }
 
 //==========================================================================
@@ -4699,6 +4698,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.31  2006/02/13 18:44:38  dj_jl
+//  Moved all server progs global functions to classes.
+//
 //  Revision 1.30  2006/02/05 18:57:00  dj_jl
 //  Moved common utils to level info class or built-in.
 //
