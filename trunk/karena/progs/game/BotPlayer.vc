@@ -22,6 +22,13 @@
 //**  GNU General Public License for more details.
 //**
 //**************************************************************************
+//
+//  This section contains the main bot AI. The
+//  main bot AI loop, B_Think, is called every tic.
+//  Also included are various bot decision-making
+//  procedures, such as B_CheckStuff and B_SetEnemy.
+//
+//**************************************************************************
 
 // Main bot class
 class BotPlayer : Object;
@@ -162,7 +169,7 @@ void BotTick(float deltaTime)
 	Pitch();
 
 	// Only walk if we're on skill 0
-	if (!botskill || gameskill == sk_baby)
+	if (!MainGameInfo(player.Level.Game).botskill || gameskill == sk_baby)
 	{
 		if (forwardmove == FORWARDRUN)
 			forwardmove = FORWARDWALK;
@@ -2206,7 +2213,7 @@ void OnBeginPlay()
 	{
 		for (i = 0; i < NUMTOTALBOTS; i++)
 		{
-			if (!stricmp(botinfo[i].Name, ARR2STR(player.PlayerName)))
+			if (!stricmp(MainGameInfo(player.Level.Game).botinfo[i].Name, ARR2STR(player.PlayerName)))
 			{
 				bottype = i;
 				break;
@@ -2222,23 +2229,23 @@ void OnBeginPlay()
 		bottype = P_Random() % NUMBOTTYPES;
 	}
 
-	binfo = &botinfo[bottype];
+	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
 
 	t_strafe = 1.0;
 
-	botskill = BotSkill();
+	MainGameInfo(player.Level.Game).botskill = BotSkill();
 
-	if (botskill > 4)
-		botskill = 4;
-	if (botskill < 0)
-		botskill = 0;
+	if (MainGameInfo(player.Level.Game).botskill > 4)
+		MainGameInfo(player.Level.Game).botskill = 4;
+	if (MainGameInfo(player.Level.Game).botskill < 0)
+		MainGameInfo(player.Level.Game).botskill = 0;
 
 	// Implement skill settings
-	info.accuracy = SkillLower(binfo->accuracy, 4 - botskill);
-	info.intelect = SkillLower(binfo->intelect, 4 - botskill);
-	info.evade = SkillLower(binfo->evade, 4 - botskill);
-	info.anticip = SkillLower(binfo->anticip, 4 - botskill);
-	info.reaction = SkillLower(binfo->reaction, 4 - botskill);
+	info.accuracy = SkillLower(binfo->accuracy, 4 - MainGameInfo(player.Level.Game).botskill);
+	info.intelect = SkillLower(binfo->intelect, 4 - MainGameInfo(player.Level.Game).botskill);
+	info.evade = SkillLower(binfo->evade, 4 - MainGameInfo(player.Level.Game).botskill);
+	info.anticip = SkillLower(binfo->anticip, 4 - MainGameInfo(player.Level.Game).botskill);
+	info.reaction = SkillLower(binfo->reaction, 4 - MainGameInfo(player.Level.Game).botskill);
 	strcpy(ARR2STR(player.UserInfo), binfo->userinfo);
 
 	// Setup combat distance tables
@@ -2431,6 +2438,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.17  2006/02/13 18:44:38  dj_jl
+//  Moved all server progs global functions to classes.
+//
 //  Revision 1.16  2006/02/05 18:57:00  dj_jl
 //  Moved common utils to level info class or built-in.
 //
