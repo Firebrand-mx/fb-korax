@@ -20,5 +20,5 @@ del:
 $(OUTDIR)/clprogs.dat: *.vc cgame/*.vc $(COMMON_DIR)/*.vc $(COMMON_DIR)/shared/*.vc $(COMMON_DIR)/client/*.vc
 	$(VCC) -I$(COMMON_DIR) clprogs.vc $@
 
-$(OUTDIR)/svprogs.dat: *.vc server/*.vc game/*.vc $(COMMON_DIR)/*.vc $(COMMON_DIR)/shared/*.vc $(COMMON_DIR)/server/*.vc
-	$(VCC) -I$(COMMON_DIR) server/svprogs.vc $@
+$(OUTDIR)/svprogs.dat: *.vc game/*.vc $(COMMON_DIR)/*.vc $(COMMON_DIR)/shared/*.vc $(COMMON_DIR)/server/*.vc
+	$(VCC) -I$(COMMON_DIR) svprogs.vc $@

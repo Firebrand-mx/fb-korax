@@ -130,7 +130,7 @@ void BotTick(float deltaTime)
 	}
 
 	// Periodically let out some anger
-	if (!(level->time == 255.0))
+	if (!(player.Level.Game.level->time == 255.0))
 	{
 		if (angerlevel)
 			angerlevel--;
@@ -139,7 +139,8 @@ void BotTick(float deltaTime)
 	}
 
 	// [FB] Set an ally if we're in a mode that has one
-	if (!deathmatch || deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
+	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch == 2 ||
+		player.Level.Game.deathmatch == 3 || player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
 		ally = B_SetAlly();
 	else
 		ally = none;
@@ -169,7 +170,7 @@ void BotTick(float deltaTime)
 	Pitch();
 
 	// Only walk if we're on skill 0
-	if (!MainGameInfo(player.Level.Game).botskill || gameskill == sk_baby)
+	if (!MainGameInfo(player.Level.Game).botskill || player.Level.Game.gameskill == sk_baby)
 	{
 		if (forwardmove == FORWARDRUN)
 			forwardmove = FORWARDWALK;
@@ -310,7 +311,7 @@ bool CheckItem(Actor item)
 		&& !ArtifactPIDamage(item) && !ArtifactTorch(item))
 		return false;
 
-	if (Key(item) && deathmatch)
+	if (Key(item) && player.Level.Game.deathmatch)
 		return false;
 
 	// [FB] Guess we're okay
@@ -1100,31 +1101,32 @@ Actor FindEnemy()
 	// Search for player enemies
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (svvars->Players[i] && svvars->Players[i].MO &&
-			svvars->Players[i].MO.Health > 0 && botmo != svvars->Players[i].MO)
+		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
+			player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
 		{
 			// [FB] Are we on a Team gameplay mode?
-			if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
+			if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
+				player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
 			{
 				// [FB] Don't attack same team players
-				if (svvars->Players[i].Color == player.Color)
+				if (player.Level.Game.Players[i].Color == player.Color)
 					continue;
 			}
-			if (!deathmatch)
+			if (!player.Level.Game.deathmatch)
 			{
 				// [FB] Don't attack fellow players in some gameplay modes
-				if (svvars->Players[i])
+				if (player.Level.Game.Players[i])
 					continue;
 			}
 			//Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
 			//returns false. tought it should be the same checksight as below but.. (below works) something
 			//must be fuckin wierd screded up. 
-			if (Check_LOS(svvars->Players[i].MO, vangle))
+			if (Check_LOS(player.Level.Game.Players[i].MO, vangle))
 			{
-				if (botmo.CanSee(svvars->Players[i].MO))
+				if (botmo.CanSee(player.Level.Game.Players[i].MO))
 				{
-					temp = botmo.DistTo(svvars->Players[i].MO);
-					light = svvars->Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
+					temp = botmo.DistTo(player.Level.Game.Players[i].MO);
+					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
 
 					// [FB] Too dark?
 					if (temp > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
@@ -1133,7 +1135,7 @@ Actor FindEnemy()
 					if (temp < closest_dist)
 					{
 						closest_dist = temp;
-						target = svvars->Players[i].MO;
+						target = player.Level.Game.Players[i].MO;
 					}
 				}
 			}
@@ -1600,19 +1602,20 @@ Actor B_SetAlly()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		// [FB] Set an ally for team game modes
-		if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
+		if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
+			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
 		{
-			if (svvars->Players[i] && svvars->Players[i].Color == player.Color)
+			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].Color == player.Color)
 			{
-				ally = svvars->Players[i].MO;
+				ally = player.Level.Game.Players[i].MO;
 				break;
 			}
 		}
-		else if (!deathmatch) // [FB] Set an ally if we're in a mode that has one
+		else if (!player.Level.Game.deathmatch) // [FB] Set an ally if we're in a mode that has one
 		{
-			if (svvars->Players[i])
+			if (player.Level.Game.Players[i])
 			{
-				ally = svvars->Players[i].MO;
+				ally = player.Level.Game.Players[i].MO;
 				break;
 			}
 		}
@@ -1624,41 +1627,42 @@ Actor B_SetAlly()
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
 		// [FB] Team game modes
-		if (deathmatch == 2 || deathmatch == 3 || deathmatch == 4 || deathmatch == 5)
+		if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
+			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
 		{
-			if ((svvars->Players[j])
-			    && (botmo != svvars->Players[j].MO)
-			    && (svvars->Players[j].Color == player.Color)
-			    && (svvars->Players[j].MO.Health <= botmo.Health / 2))
+			if ((player.Level.Game.Players[j])
+			    && (botmo != player.Level.Game.Players[j].MO)
+			    && (player.Level.Game.Players[j].Color == player.Color)
+			    && (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2))
 			{
-				if (botmo.CanSee(svvars->Players[j].MO))
+				if (botmo.CanSee(player.Level.Game.Players[j].MO))
 				{
-					test = botmo.DistTo(svvars->Players[j].MO);
+					test = botmo.DistTo(player.Level.Game.Players[j].MO);
 
 					if (test < closest_dist)
 					{
 						closest_dist = test;
-						target = svvars->Players[j].MO;
+						target = player.Level.Game.Players[j].MO;
 						ally = target;
 						break;
 					}
 				}
 			}
 		}
-		else if(!deathmatch) // [FB] Other ally gameplay modes (no player color checking)
+		else if(!player.Level.Game.deathmatch) // [FB] Other ally gameplay modes (no player color checking)
 		{
-			if ((svvars->Players[j])
-			    && (botmo != svvars->Players[j].MO)
-			    && (svvars->Players[j].MO.Health <= botmo.Health / 2))
+			if ((player.Level.Game.Players[j])
+			    && (botmo != player.Level.Game.Players[j].MO)
+			    && (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2))
 			{
-				if (botmo.CanSee(svvars->Players[j].MO))
+				if (botmo.CanSee(player.Level.Game.Players[j].MO))
 				{
-					test = botmo.DistTo(svvars->Players[j].MO);
+					test = botmo.DistTo(player.Level.Game.Players[j].MO);
 
 					if (test < closest_dist)
 					{
 						closest_dist = test;
-						target = svvars->Players[j].MO;
+						target = player.Level.Game.Players[j].MO;
 						ally = target;
 						break;
 					}
@@ -2175,19 +2179,19 @@ void Died(Actor killer)
 
 int BotSkill() // [FB] Select the right skill for the player
 {
-	if(gameskill == sk_nightmare)
+	if(player.Level.Game.gameskill == sk_nightmare)
 	{
 		return 4;
 	}
-	else if(gameskill == sk_hard)
+	else if(player.Level.Game.gameskill == sk_hard)
 	{
 		return 3;
 	}
-	else if(gameskill == sk_medium)
+	else if(player.Level.Game.gameskill == sk_medium)
 	{
 		return 2;
 	}
-	else if(gameskill == sk_easy)
+	else if(player.Level.Game.gameskill == sk_easy)
 	{
 		return 1;
 	}
@@ -2251,7 +2255,7 @@ void OnBeginPlay()
 	// Setup combat distance tables
 	//[Korax]
 	//[FB] What a terrible mess!!
-	if (deathmatch)
+	if (player.Level.Game.deathmatch)
 	{
 		float mod = 1.0;
 		/* FIGHTER */
@@ -2438,6 +2442,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.18  2006/02/15 23:37:45  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.17  2006/02/13 18:44:38  dj_jl
 //  Moved all server progs global functions to classes.
 //

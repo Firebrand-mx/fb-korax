@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class LightningMissile:Projectile
+class LightningMissile : Projectile
 	abstract;
 
 LightningMissile LightningLink;
@@ -81,7 +81,7 @@ bool Touch(Entity InOther)
 		Other.Velocity.x += Velocity.x / 16.0;
 		Other.Velocity.y += Velocity.y / 16.0;
 	}
-	if ((!Other.bIsPlayer && !Other.bBoss) || !(level->tictime & 1))
+	if ((!Other.bIsPlayer && !Other.bBoss) || !(Level.Game.level->tictime & 1))
 	{
 		if (Other.Class == Centaur ||
 			Other.Class == CentaurLeader)
@@ -140,7 +140,7 @@ bool Touch(Entity InOther)
 //
 //==========================================================================
 
-void A_LightningClip(void)
+void A_LightningClip()
 {
 	Actor targ;
 	int zigZag;
@@ -202,7 +202,7 @@ void A_LightningClip(void)
 				targ.Origin.x - Origin.x);
 			Velocity.x = 0.0;
 			Velocity.y = 0.0;
-			Thrust(Angles.yaw, Speed * frametime / 2.0);
+			Thrust(Angles.yaw, Speed * Level.Game.frametime / 2.0);
 		}
 	}
 }
@@ -213,7 +213,7 @@ void A_LightningClip(void)
 //
 //==========================================================================
 
-void A_LightningZap(void)
+void A_LightningZap()
 {
 	LightningZap Zap;
 	float deltaZ;
@@ -264,7 +264,7 @@ void A_LightningZap(void)
 //
 //==========================================================================
 
-void A_LightningRemove(void)
+void A_LightningRemove()
 {
 	if (LightningLink)
 	{
@@ -287,6 +287,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2006/02/15 23:37:45  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.3  2006/01/11 20:48:44  firebrand_kh
 //  Fixed lightning missile to clip against extra floors
 //

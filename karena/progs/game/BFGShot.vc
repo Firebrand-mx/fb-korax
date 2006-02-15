@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class BFGShot:Projectile;
+class BFGShot : Projectile;
 
 //===========================================================================
 //
@@ -33,7 +33,7 @@ class BFGShot:Projectile;
 //
 //===========================================================================
 
-void A_BFGSpray(void)
+void A_BFGSpray()
 {
 	int i;
 	int j;
@@ -50,13 +50,13 @@ void A_BFGSpray(void)
 		// target is the originator (player)
 		//  of the missile
 		Instigator.AimLineAttack(&aimAng, 16.0 * 64.0);
-		if (!linetarget)
+		if (!Instigator.linetarget)
 		{
 			continue;
 		}
 
-		emo = Spawn(ExtraBFG, linetarget.Origin +
-			vector(0.0, 0.0, linetarget.Height / 4.0));
+		emo = Spawn(ExtraBFG, Instigator.linetarget.Origin +
+			vector(0.0, 0.0, Instigator.linetarget.Height / 4.0));
 
 		MSG_Select(MSG_SV_DATAGRAM);
 		MSG_WriteByte(svc_explosion2);
@@ -69,7 +69,7 @@ void A_BFGSpray(void)
 		for (j = 0; j < 100; j++)
 			damage += 10; //(P_Random() & 7) + 1;
 
-		linetarget.Damage(Instigator, Instigator, damage);
+		Instigator.linetarget.Damage(Instigator, Instigator, damage);
 	}
 }
 
@@ -101,6 +101,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2006/02/15 23:37:45  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.4  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

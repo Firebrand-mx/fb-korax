@@ -34,7 +34,7 @@ float SwordRange;
 //
 //==========================================================================
 
-void A_WSSwordAttack(void)
+void A_WSSwordAttack()
 {
 	Actor Owner = Player.MO;
 	float power;
@@ -43,6 +43,7 @@ void A_WSSwordAttack(void)
 	int useMana;
 	TAVec angles;
 	TVec vforward;
+	classid PuffType;
 
 	damage = 25; //15 + (P_Random() & 15) + (P_Random() & 7);
 	if (str_mod)
@@ -74,16 +75,16 @@ void A_WSSwordAttack(void)
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, SwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage, PuffType))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			useMana++;
@@ -92,16 +93,16 @@ void A_WSSwordAttack(void)
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, SwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage, PuffType))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			useMana++;
@@ -115,7 +116,7 @@ void A_WSSwordAttack(void)
 		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
 		PuffType = HammerPuff;
-		if (Owner.LineAttack(vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -215,7 +216,7 @@ __states__
 //
 //==========================================================================
 
-int GetUpState(void)
+int GetUpState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -233,7 +234,7 @@ int GetUpState(void)
 //
 //==========================================================================
 
-int GetDownState(void)
+int GetDownState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -251,7 +252,7 @@ int GetDownState(void)
 //
 //==========================================================================
 
-int GetReadyState(void)
+int GetReadyState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -269,7 +270,7 @@ int GetReadyState(void)
 //
 //==========================================================================
 
-int GetAttackState(void)
+int GetAttackState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -319,6 +320,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.8  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

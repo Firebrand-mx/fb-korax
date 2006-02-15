@@ -34,7 +34,7 @@ int PunchCount;
 //
 //==========================================================================
 
-void A_WPunchAttack(void)
+void A_WPunchAttack()
 {
 	Actor Owner = Player.MO;
 	int damage;
@@ -42,6 +42,7 @@ void A_WPunchAttack(void)
 	int i;
 	TAVec angles;
 	TVec vforward;
+	classid PuffType;
 
 	damage = 9; //5 + (P_Random() & 15);
 	if (str_mod)
@@ -62,7 +63,7 @@ void A_WPunchAttack(void)
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, MELEERANGE);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			PunchCount++;
 			if (PunchCount == 3)
@@ -72,7 +73,7 @@ void A_WPunchAttack(void)
 				PuffType = HammerPuff;
 			}
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, MELEERANGE, damage))
+			if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
 			{
 				if (PuffType == HammerPuff)
 				{
@@ -83,9 +84,9 @@ void A_WPunchAttack(void)
 					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 				}
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			break;
@@ -93,7 +94,7 @@ void A_WPunchAttack(void)
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, MELEERANGE);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			PunchCount++;
 			if (PunchCount == 3)
@@ -103,7 +104,7 @@ void A_WPunchAttack(void)
 				PuffType = HammerPuff;
 			}
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, MELEERANGE, damage))
+			if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
 			{
 				if (PuffType == HammerPuff)
 				{
@@ -114,9 +115,9 @@ void A_WPunchAttack(void)
 					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 				}
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			break;
@@ -130,7 +131,7 @@ void A_WPunchAttack(void)
 		angles = Owner.Angles;
 		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 		}
@@ -183,6 +184,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.5  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //
