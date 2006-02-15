@@ -31,7 +31,7 @@ class WeaponChainsaw : Weapon;
 //
 //===========================================================================
 
-void A_Saw(void)
+void A_Saw()
 {
 	float angle;
 	int damage;
@@ -55,9 +55,8 @@ void A_Saw(void)
 	//dir = AimLineAttack(Player.MO, aimAng, MELEERANGE + 0.00001);
 	Player.MO.AimLineAttack(&aimAng, MELEERANGE * 2.0);
 	AngleVector(&aimAng, &dir);
-	Player.MO.LineAttack(dir, MELEERANGE * 2.0, damage);
-	PuffType = DoomPuff;
-	if (!linetarget)
+	Player.MO.LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
+	if (!Player.MO.linetarget)
 	{
 		Player.MO.PlaySound('ChainsawTriggered', CHAN_WEAPON);
 		return;
@@ -65,8 +64,8 @@ void A_Saw(void)
 	Player.MO.PlaySound('ChainsawHit', CHAN_WEAPON);
 
 	// turn to face target
-	angle = atan2(linetarget.Origin.y - Player.MO.Origin.y,
-		linetarget.Origin.x - Player.MO.Origin.x);
+	angle = atan2(Player.MO.linetarget.Origin.y - Player.MO.Origin.y,
+		Player.MO.linetarget.Origin.x - Player.MO.Origin.x);
 	if (AngleMod360(angle - Player.MO.Angles.yaw) > 180.0)
 	{
 		if (AngleMod360(angle - Player.MO.Angles.yaw) < -90.0 / 20.0)
@@ -115,6 +114,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.5  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

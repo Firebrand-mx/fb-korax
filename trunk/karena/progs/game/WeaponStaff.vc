@@ -31,7 +31,7 @@ class WeaponStaff : Weapon;
 //
 //===========================================================================
 
-void A_StaffAttackPL1(void)
+void A_StaffAttackPL1()
 {
 	TAVec angles;
 	int damage;
@@ -54,14 +54,13 @@ void A_StaffAttackPL1(void)
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
 	Owner.AimLineAttack(&angles, 1.5 * MELEERANGE);
-	if (linetarget)
+	if (Owner.linetarget)
 	{
 		AngleVector(&angles, &vforward);
-		PuffType = StaffPuff;
-		Owner.LineAttack(vforward, 1.5 * MELEERANGE, damage);
-		if (linetarget.bCountKill || linetarget.bIsPlayer)
+		Owner.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
+		if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 		{
-			linetarget.Thrust(angles.yaw, 2.0);
+			Owner.linetarget.Thrust(angles.yaw, 2.0);
 		}
 		Player.AdjustPlayerAngle();
 	}
@@ -71,8 +70,7 @@ void A_StaffAttackPL1(void)
 		angles = Player.MO.Angles;
 		Player.MO.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		PuffType = StaffPuff;
-		if (Player.MO.LineAttack(vforward, MELEERANGE, damage))
+		if (Player.MO.LineAttack(vforward, MELEERANGE, damage, StaffPuff))
 		{
 			Player.MO.PlaySound('StaffHit', CHAN_WEAPON);
 		}
@@ -107,6 +105,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.4  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

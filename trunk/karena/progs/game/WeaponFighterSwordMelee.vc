@@ -33,7 +33,7 @@ float SwordRange;
 //
 //==========================================================================
 
-void A_FSwordMeleeAttack(void)
+void A_FSwordMeleeAttack()
 {
 	Actor Owner = Player.MO;
 	float power;
@@ -55,22 +55,21 @@ void A_FSwordMeleeAttack(void)
 		}
 	}
 	power = 0.0;
-	PuffType = AxePuff;
 	for (i = 0; i < 16; i++)
 	{
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, SwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage, AxePuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			UseWeaponMana();
@@ -79,16 +78,16 @@ void A_FSwordMeleeAttack(void)
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, SwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage))
+			if (Owner.LineAttack(vforward, SwordRange, damage, AxePuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			UseWeaponMana();
@@ -101,7 +100,7 @@ void A_FSwordMeleeAttack(void)
 		angles = Owner.Angles;
 		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage, AxePuff))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -150,6 +149,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.5  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

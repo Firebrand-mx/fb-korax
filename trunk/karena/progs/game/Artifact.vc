@@ -35,7 +35,7 @@ int DormantState;
 //
 //==========================================================================
 
-void A_HideThing(void)
+void A_HideThing()
 {
 	bHidden = true;
 }
@@ -46,7 +46,7 @@ void A_HideThing(void)
 //
 //==========================================================================
 
-void A_UnHideThing(void)
+void A_UnHideThing()
 {
 	bHidden = false;
 }
@@ -57,7 +57,7 @@ void A_UnHideThing(void)
 //
 //==========================================================================
 
-void A_RestoreArtifact(void)
+void A_RestoreArtifact()
 {
 	bSpecial = true;
 	SetState(IdleState);
@@ -155,10 +155,10 @@ __states__
 //
 //==========================================================================
 
-void SetDormantArtifact(void)
+void SetDormantArtifact()
 {
 	bSpecial = false;
-	if (deathmatch && !bDropped)
+	if (Level.Game.deathmatch && !bDropped)
 	{
 		SetState(DormantState);
 	}
@@ -211,14 +211,14 @@ void TouchSpecial(Actor Toucher)
 		{
 			SetDormantArtifact();
 			PlaySound('PickupArtifact', CHAN_ITEM);
-			cprint(P.Player, artifactMessages[ArtifactType]);
+			cprint(P.Player, MainGameInfo(Level.Game).artifactMessages[ArtifactType]);
 		}
 		else
 		{
 			// Puzzle item
 			PlayFullVolumeSound('PickupItem', CHAN_ITEM);
-			cprint(P.Player, artifactMessages[ArtifactType]);
-			if (!netgame || deathmatch)
+			cprint(P.Player, MainGameInfo(Level.Game).artifactMessages[ArtifactType]);
+			if (!Level.Game.netgame || Level.Game.deathmatch)
 			{
 				// Remove puzzle items if not cooperative netplay
 				Remove();
@@ -236,6 +236,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2006/02/15 23:37:45  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.3  2005/12/29 17:32:12  dj_jl
 //  Created level info class, moved action special handling to it.
 //

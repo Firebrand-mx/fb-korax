@@ -65,7 +65,7 @@ void TouchSpecial(Actor Toucher)
 	if (P.Player.PClass != PieceClass)
 	{
 		// Wrong class, but try to pick up for mana
-		if (netgame && !deathmatch)
+		if (Level.Game.netgame && !Level.Game.deathmatch)
 		{
 			// Can't pick up wrong-class weapons in coop netplay
 			return;
@@ -78,7 +78,7 @@ void TouchSpecial(Actor Toucher)
 			return;
 		}
 	}
-	else if (netgame && !deathmatch)
+	else if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
 		// Cooperative net-game
 //[Korax]
@@ -87,7 +87,7 @@ void TouchSpecial(Actor Toucher)
 			// Already has the piece
 			return;
 		}*/
-		PieceValue = pieceValueTrans[PieceValue];
+		PieceValue = MainGameInfo(Level.Game).pieceValueTrans[PieceValue];
 		P.Player.GiveMana(MANA_3, 20);
 		remove = false;
 	}
@@ -117,7 +117,7 @@ void TouchSpecial(Actor Toucher)
 	}
 	if (remove)
 	{
-		if (deathmatch && !bDropped)
+		if (Level.Game.deathmatch && !bDropped)
 		{
 			HideSpecial();
 		}
@@ -148,7 +148,7 @@ void TouchSpecial(Actor Toucher)
 	}
 	else
 */	{
-		cprint(P.Player, weaponPieceText[PieceClass]);
+		cprint(P.Player, MainGameInfo(Level.Game).weaponPieceText[PieceClass]);
 		P.PlayFullVolumeSound('PickupWeapon', CHAN_ITEM);	//FIXME must be PickupPiece
 	}
 }
@@ -161,6 +161,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.2  2005/12/29 17:32:12  dj_jl
 //  Created level info class, moved action special handling to it.
 //

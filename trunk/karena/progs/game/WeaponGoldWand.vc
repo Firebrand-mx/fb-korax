@@ -31,14 +31,13 @@ class WeaponGoldWand : Weapon;
 //
 //===========================================================================
 
-void A_FireGoldWandPL1(void)
+void A_FireGoldWandPL1()
 {
 	TAVec angles;
 	int damage;
 	TVec dir;
 
 	UseWeaponMana();
-	PuffType = GoldWandPuff1;
 	damage = 10; //7 + (P_Random() & 7);
 	if (int_mod)
 	{
@@ -59,7 +58,7 @@ void A_FireGoldWandPL1(void)
 	{
 		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
 	}
-	Player.MO.LineAttack(dir, MISSILERANGE, damage);
+	Player.MO.LineAttack(dir, MISSILERANGE, damage, GoldWandPuff1);
 
 	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
 }
@@ -70,7 +69,7 @@ void A_FireGoldWandPL1(void)
 //
 //===========================================================================
 
-void A_FireGoldWandPL2(void)
+void A_FireGoldWandPL2()
 {
 	int i;
 	int damage;
@@ -80,7 +79,6 @@ void A_FireGoldWandPL2(void)
 	Actor mo;
 
 	UseWeaponMana();
-	PuffType = GoldWandPuff2;
 	angles = Player.MO.Angles;
 	Player.MO.AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
@@ -121,7 +119,7 @@ void A_FireGoldWandPL2(void)
 				damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		Player.MO.LineAttack(dir, MISSILERANGE, damage);
+		Player.MO.LineAttack(dir, MISSILERANGE, damage, GoldWandPuff2);
 		VectorRotateAroundZ(&dir, (45.0 / 8.0) / 2.0);
 	}
 	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
@@ -162,6 +160,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.5  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

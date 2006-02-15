@@ -34,7 +34,7 @@ float MorningSRange;
 //
 //============================================================================
 
-void A_WMorningSAttack(void)
+void A_WMorningSAttack()
 {
 	Actor Owner = Player.MO;
 	int damage;
@@ -56,40 +56,39 @@ void A_WMorningSAttack(void)
 		}
 	}
 	power = 3.5;
-	PuffType = HammerPuff;
 	for (i = 0; i < 16; i++)
 	{
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
 		Owner.AimLineAttack(&angles, MorningSRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, MorningSRange, damage))
+			if (Owner.LineAttack(vforward, MorningSRange, damage, HammerPuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
 			Player.AdjustPlayerAngle();
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
 		Owner.AimLineAttack(&angles, MorningSRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, MorningSRange, damage))
+			if (Owner.LineAttack(vforward, MorningSRange, damage, HammerPuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
 			Player.AdjustPlayerAngle();
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
@@ -97,11 +96,10 @@ void A_WMorningSAttack(void)
 	if (i == 16)
 	{
 		// didn't find any targets in meleerange, so set to throw out a fireball
-		PuffSpawned = none;
 		angles = Owner.Angles;
 		Owner.AimLineAttack(&angles, MorningSRange);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, MorningSRange, damage))
+		if (Owner.LineAttack(vforward, MorningSRange, damage, HammerPuff))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -115,7 +113,7 @@ void A_WMorningSAttack(void)
 //
 //============================================================================
 
-void A_WFireballThrow(void)
+void A_WFireballThrow()
 {
 	Actor mo;
 	PlayerPawn playPawn;
@@ -174,6 +172,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.7  2005/12/11 21:37:29  dj_jl
 //  Made path traversal callbacks class members.
 //

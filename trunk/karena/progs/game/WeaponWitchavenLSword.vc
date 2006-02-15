@@ -77,7 +77,7 @@ int A_WLSwordAttack() // This is the shiel action pointer
 //
 //==========================================================================
 
-void A_WLSwordAttack2(void) // This codepointer is the attack itself
+void A_WLSwordAttack2() // This codepointer is the attack itself
 {
 	Actor Owner = Player.MO;
 	float power;
@@ -86,6 +86,7 @@ void A_WLSwordAttack2(void) // This codepointer is the attack itself
 	int useMana;
 	TAVec angles;
 	TVec vforward;
+	classid PuffType;
 
 	damage = 50; //40 + (P_Random() & 15) + (P_Random() & 7);
 	if (str_mod)
@@ -117,16 +118,16 @@ void A_WLSwordAttack2(void) // This codepointer is the attack itself
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, LongSwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, LongSwordRange, damage))
+			if (Owner.LineAttack(vforward, LongSwordRange, damage, PuffType))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			useMana++;
@@ -135,16 +136,16 @@ void A_WLSwordAttack2(void) // This codepointer is the attack itself
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
 		Owner.AimLineAttack(&angles, LongSwordRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, LongSwordRange, damage))
+			if (Owner.LineAttack(vforward, LongSwordRange, damage, PuffType))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			Player.AdjustPlayerAngle();
 			useMana++;
@@ -158,7 +159,7 @@ void A_WLSwordAttack2(void) // This codepointer is the attack itself
 		Owner.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
 		PuffType = HammerPuff;
-		if (Owner.LineAttack(vforward, MELEERANGE, damage))
+		if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -180,7 +181,7 @@ void A_WLSwordAttack2(void) // This codepointer is the attack itself
 //
 //============================================================================
 
-void A_ShieldCheck(void)
+void A_ShieldCheck()
 {
 	// How much hits we got left??
 	if (Shieldcharge > 23)
@@ -211,7 +212,7 @@ void A_ShieldCheck(void)
 //
 //============================================================================
 
-void A_Unprotect(void)
+void A_Unprotect()
 {
 	Player.MO.bInvulnerable = false;
 	// Restart timers
@@ -225,7 +226,7 @@ void A_Unprotect(void)
 //
 //============================================================================
 
-void A_ChargeShield(void) // This codepointer tells the shield to charge for mana
+void A_ChargeShield() // This codepointer tells the shield to charge for mana
 {
 	if(timer2 == 3.0 * 35.0)
 	{
@@ -241,7 +242,7 @@ void A_ChargeShield(void) // This codepointer tells the shield to charge for man
 //
 //============================================================================
 
-void A_WElectricBall(void)
+void A_WElectricBall()
 {
 	TAVec angles;
 	TVec vforward;
@@ -252,15 +253,15 @@ void A_WElectricBall(void)
 
 	angles = pmo.Angles;
 	pmo.AimLineAttack(&angles, 16.0 * 64.0);
-	if (!linetarget)
+	if (!pmo.linetarget)
 	{
 		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
 		pmo.AimLineAttack(&angles, 16.0 * 64.0);
-		if (!linetarget)
+		if (!pmo.linetarget)
 		{
 			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
 			pmo.AimLineAttack(&angles, 16.0 * 64.0);
-			if (!linetarget)
+			if (!pmo.linetarget)
 			{
 				angles.yaw = pmo.Angles.yaw;
 			}
@@ -458,7 +459,7 @@ __states__
 //
 //==========================================================================
 
-int GetUpState(void)
+int GetUpState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -476,7 +477,7 @@ int GetUpState(void)
 //
 //==========================================================================
 
-int GetDownState(void)
+int GetDownState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -494,7 +495,7 @@ int GetDownState(void)
 //
 //==========================================================================
 
-int GetReadyState(void)
+int GetReadyState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -528,7 +529,7 @@ int GetReadyState(void)
 //
 //==========================================================================
 
-int GetAttackState(void)
+int GetAttackState()
 {
 	if (IsWeaponManaUsable())
 	{
@@ -596,6 +597,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.10  2006/02/13 18:44:39  dj_jl
 //  Moved all server progs global functions to classes.
 //

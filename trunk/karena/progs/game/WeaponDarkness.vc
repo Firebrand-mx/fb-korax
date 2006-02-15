@@ -31,7 +31,7 @@ class WeaponDarkness : WeaponFighterHammer;
 //
 //============================================================================
 
-void A_FHammerAttack(void)
+void A_FHammerAttack()
 {
 	Actor Owner = Player.MO;
 	int damage;
@@ -55,40 +55,39 @@ void A_FHammerAttack(void)
 		}
 	}
 	power = 10.0;
-	PuffType = HammerPuff;
 	for (i = 0; i < 16; i++)
 	{
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
 		Owner.AimLineAttack(&angles, HammerRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, HammerRange, damage))
+			if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
 			Player.AdjustPlayerAngle();
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
 		angles = Owner.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
 		Owner.AimLineAttack(&angles, HammerRange);
-		if (linetarget)
+		if (Owner.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, HammerRange, damage))
+			if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
 			Player.AdjustPlayerAngle();
-			if (linetarget.bCountKill || linetarget.bIsPlayer)
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
 			{
-				linetarget.Thrust(angles.yaw, power);
+				Owner.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
@@ -96,11 +95,10 @@ void A_FHammerAttack(void)
 	if (i == 16)
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
-		PuffSpawned = none;
 		angles = Owner.Angles;
 		Owner.AimLineAttack(&angles, HammerRange);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, HammerRange, damage))
+		if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -115,7 +113,7 @@ void A_FHammerAttack(void)
 //
 //============================================================================
 
-void A_FHammerThrow(void)
+void A_FHammerThrow()
 {
 /*	Actor pmo;
 	TVec org;
@@ -141,15 +139,15 @@ void A_FHammerThrow(void)
 
 	angles = pmo.Angles;
 	pmo.AimLineAttack(&angles, 16.0 * 64.0);
-	if (!linetarget)
+	if (!pmo.linetarget)
 	{
 		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
 		pmo.AimLineAttack(&angles, 16.0 * 64.0);
-		if (!linetarget)
+		if (!pmo.linetarget)
 		{
 			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
 			pmo.AimLineAttack(&angles, 16.0 * 64.0);
-			if (!linetarget)
+			if (!pmo.linetarget)
 			{
 				angles.yaw = pmo.Angles.yaw;
 			}
@@ -201,6 +199,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/02/15 23:37:46  dj_jl
+//  Moved all server progs global variables to classes.
+//
 //  Revision 1.6  2006/02/13 18:44:39  dj_jl
 //  Moved all server progs global functions to classes.
 //
