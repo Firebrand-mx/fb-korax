@@ -68,8 +68,6 @@ int max_health;
 int old_maxhealth; // [FB] To decrease the health
 int bak_health; // [FB] To keep an older level health
 
-int pcount; // [FB] counter
-
 //
 //  ----------
 //
@@ -156,6 +154,9 @@ bool inited;
 int PuzzleItemType;
 bool PuzzleActivated;
 TVec PuzzleUseDir;
+
+int pcount; // [FB] counter
+int dam_am; // [FB] Just for the hero's shield
 
 bool onground;
 
@@ -1058,6 +1059,11 @@ bool GiveArtifact(int arti)
 	{
 		return GivePower(pw_damage);
 	}
+	else if (arti == arti_egg)
+	{
+		UseArtiPig();
+		return true;
+	}
 	else
 	{
 		return false;
@@ -1291,7 +1297,7 @@ void PlayerCamping()
 	//	decreasing his experience according his level, so...
 	int limit;
 
-	limit = 3 * 35; // [FB] 3 seconds
+	limit = 17; // [FB] 0.5 seconds
 
 	if(inited && (pcount >= limit) && (pcount % (1 * 35) == 0) && PlayerState == PST_LIVE)
 	{
@@ -1322,6 +1328,20 @@ void PlayerCamping()
 		}
 	}
 }	   
+
+//==========================================================================
+//
+//  Scoreboard
+//
+// [FB] Here we keep a track of everything needed to make KA's scoreboard
+//	for every gameplay mode
+//
+//==========================================================================
+
+void Scoreboard()
+{
+
+}
 
 //==========================================================================
 //
@@ -2216,7 +2236,8 @@ void PlayerImpulse()
 	{
 		InventoryUse();
 	}
-*/	else if (impulse == 16)
+*/
+	else if (impulse == 16)
 	{
 		MO.Damage(none, none, 10000);
 	}
@@ -2231,7 +2252,6 @@ void PlayerImpulse()
 	// Hexen artifact hot keys
 	if (!Arti)
 	{
-//[Korax]
 /*		if (impulse == 11)
 		{
 			Arti = NUMARTIFACTS;
@@ -2240,7 +2260,7 @@ void PlayerImpulse()
 		{
 			Arti = arti_health;
 		}
-		else */if (impulse == 10)
+		else */	if (impulse == 10)
 		{
 			PlayerUseArtifact(arti_poisonbag);
 		}
@@ -2248,7 +2268,6 @@ void PlayerImpulse()
 		{
 			PlayerUseArtifact(arti_blastradius);
 		}
-//[Korax]
 /*
 		else if (impulse == 8)
 		{
@@ -2267,9 +2286,13 @@ void PlayerImpulse()
 			Arti = arti_invulnerability;
 		}
 */
-//[Korax]
+		// [FB] We want to make the scoreboard accesible with a new impulse value
+		else if (impulse == 17)
+		{
+			// [FB] The player is calling the scoreboard!!
+			Scoreboard();
+		}
 	}
-//[Korax]
 /*
 	if (Arti)
 	{
@@ -2288,6 +2311,7 @@ void PlayerImpulse()
 		}
 	}
 */
+//[Korax]
 }
 
 //==========================================================================
@@ -2529,6 +2553,9 @@ void DeathPlayerTick(float deltaTime)
 			PoisonCount--;
 		}
 	}
+
+	// [FB] We also want to show the scoreboard here
+	Scoreboard();
 
 	if (Buttons & BT_USE)
 	{
@@ -3036,18 +3063,41 @@ void PaletteFlash()
 		switch (MO.WaterType)
 		{
 		case CONTENTS_WATER:
-			CShifts[CSHIFT_CONTENTS] = CSHIFT(130, 80, 50, 128);
+			if (BlindCount > 40) // [FB] Black palette for blinding effect
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+			}
+			else
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(130, 80, 50, 128);
+			}
 			break;
 
 		case CONTENTS_SLUDGE:
-			CShifts[CSHIFT_CONTENTS] = CSHIFT(128, 160, 128, 150);
+			if (BlindCount > 40) // [FB] Black palette for blinding effect
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+			}
+			else
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(128, 160, 128, 150);
+			}
 			break;
 
 		case CONTENTS_LAVA:
-			CShifts[CSHIFT_CONTENTS] = CSHIFT(255, 80, 0, 150);
+			if (BlindCount > 40) // [FB] Black palette for blinding effect
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
+			}
+			else
+			{
+				CShifts[CSHIFT_CONTENTS] = CSHIFT(255, 80, 0, 150);
+			}
 			break;
 		}
 	}
+	else if (BlindCount) // [FB] Black palette for blinding effect
+		CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
 
 	if (PoisonCount)
 	{
@@ -3057,16 +3107,6 @@ void PaletteFlash()
 			Palette = NUMPOISONPALS - 1;
 		}
 		Palette += STARTPOISONPALS;
-	}
-	else if (BlindCount) // [FB] Black palette for blinding effect
-	{
-		Palette = (BlindCount + 7) >> 3;
-		CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, 255);
-		if (Palette >= CShifts[CSHIFT_CONTENTS])
-		{
-			CShifts[CSHIFT_CONTENTS] = CSHIFT(0, 0, 0, BlindCount);
-			Palette = CShifts[CSHIFT_CONTENTS];
-		}
 	}
 	else if (DamageFlash)
 	{
@@ -3211,7 +3251,6 @@ void PlayerUseArtifact(int arti)
 		return;
 	}
 //[Korax]
-
 
 	int i;
 
@@ -3508,11 +3547,13 @@ void UseArtiTele()
 
 void UseArtiPig()
 {
-	SpawnPlayerMissile(EggMissile);
-	SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw - 7.5));
-	SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw + 7.5));
-	SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw - 15.0));
-	SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw + 15.0));
+	int i;
+
+	for(i = 0; i < 49; i++)
+	{
+		SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw - 7.5 * itof(i)));
+		SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw + 7.5 * itof(i)));
+	}
 }
 
 //==========================================================================
@@ -3727,7 +3768,7 @@ void UseArtiPoisonBag()
 			bomb.Instigator = MO;
 		}
 	}
-	else	// PCLASS_FIGHTER, obviously (also pig, not so obviously)
+	else	// PCLASS_FIGHTER && PCLASS_MARINE, obviously (also pig, not so obviously)
 	{
 		bomb = HexenLevelInfo(Level).Spawn(ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
@@ -4700,6 +4741,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.33  2006/02/16 17:31:10  firebrand_kh
+//  Lots of changes and fixes
+//
 //  Revision 1.32  2006/02/15 23:37:45  dj_jl
 //  Moved all server progs global variables to classes.
 //
