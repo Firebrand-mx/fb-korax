@@ -25,7 +25,8 @@
 
 class WeaponFighterAxe : Weapon;
 
-int NoMoreManaState;
+//[KORAX]
+//int NoMoreManaState;
 float AxeRange;
 
 //==========================================================================
@@ -58,18 +59,21 @@ void A_FAxeAttack()
 		}
 	}
 	power = 0.0;
-	if (IsWeaponManaUsable())
-	{
+	//[KORAX]
+/*	if (IsWeaponManaUsable())
+	{*/
 		damage <<= 1;
 		power = 6.0;
 		PuffType = AxePuffGlow;
 		useMana = 1;
-	}
+	//[KORAX]
+/*	}
 	else
 	{
 		PuffType = AxePuff;
 		useMana = 0;
-	}
+	}*/
+
 	for (i = 0; i < 16; i++)
 	{
 		angles = Owner.Angles;
@@ -121,19 +125,22 @@ void A_FAxeAttack()
 		}
 	}
 
+	//[KORAX]
 	if (useMana == 2)
 	{
 		UseWeaponMana();
-		if (!IsWeaponManaUsable())
+	//[KORAX]
+/*		if (!IsWeaponManaUsable())
 		{
 			SetState(NoMoreManaState);
-		}
+		}*/
 	}
 }
 
 __states__
 {
-	S_FAXEREADY('FAXE', 0, 1.0 / 35.0, S_FAXEREADY) { A_WeaponReady(); }
+	//[KORAX]
+/*	S_FAXEREADY('FAXE', 0, 1.0 / 35.0, S_FAXEREADY) { A_WeaponReady(); }
 	S_FAXEDOWN('FAXE', 0, 1.0 / 35.0, S_FAXEDOWN) { A_Lower(); }
 	S_FAXEUP('FAXE', 0, 1.0 / 35.0, S_FAXEUP) { A_Raise(); }
 	S_FAXEATK_1('FAXE', 1, 4.0 / 35.0, S_FAXEATK_2) { SX = 15.0; SY = 32.0; }
@@ -149,6 +156,8 @@ __states__
 	S_FAXEATK_11('FAXE', 0, 1.0 / 35.0, S_FAXEATK_12) { SY = 44.0; }
 	S_FAXEATK_12('FAXE', 0, 1.0 / 35.0, S_FAXEATK_13) { SY = 36.0; }
 	S_FAXEATK_13('FAXE', 0, 1.0 / 35.0, S_FAXEREADY) { }
+	*/
+	//[KORAX]
 	S_FAXEREADY_G('FAXE', 11, 1.0 / 35.0, S_FAXEREADY_G1) { A_WeaponReady(); }
 	S_FAXEREADY_G1('FAXE', 11, 1.0 / 35.0, S_FAXEREADY_G2) { A_WeaponReady(); }
 	S_FAXEREADY_G2('FAXE', 11, 1.0 / 35.0, S_FAXEREADY_G3) { A_WeaponReady(); }
@@ -172,6 +181,8 @@ __states__
 	S_FAXEATK_G13('FAXE', 0, 1.0 / 35.0, S_FAXEREADY_G) { }
 }
 
+//[KORAX]
+/*
 //==========================================================================
 //
 //	GetUpState
@@ -253,11 +264,14 @@ int GetAttackState()
 
 void GotMana(int InMana)
 {
+
 	if (InMana == MANA_1 && IsWeaponManaUsable())
 	{
 		SetState(S_FAXEREADY_G);
 	}
 }
+*/
+//[KORAX]
 
 /*SECOND*/
 defaultproperties
@@ -265,12 +279,12 @@ defaultproperties
 	Mana = MANA_1;
 	manause = 5;
 	//needsnomana = true;
-	UpState = S_FAXEUP;
-	DownState = S_FAXEDOWN;
-	ReadyState = S_FAXEREADY;
-	AttackState = S_FAXEATK_1;
-	HoldAttackState = S_FAXEATK_1;
-	NoMoreManaState = S_FAXEATK_5;
+	UpState = S_FAXEUP_G;
+	DownState = S_FAXEDOWN_G;
+	ReadyState = S_FAXEREADY_G;
+	AttackState = S_FAXEATK_G1;
+	HoldAttackState = S_FAXEATK_G1;
+//	NoMoreManaState = S_FAXEATK_5;
 	PSpriteSY = -12.0;
 	AxeRange = 9.0 * MELEERANGE / 4.0;
 	wis_mod = true;
@@ -283,6 +297,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/02/16 17:32:23  firebrand_kh
+//  Removed the mana states checkings
+//
 //  Revision 1.5  2006/02/15 23:37:46  dj_jl
 //  Moved all server progs global variables to classes.
 //

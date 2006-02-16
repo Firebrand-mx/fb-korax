@@ -25,7 +25,7 @@
 
 class WeaponWitchavenSSword : Weapon;
 
-int NoMoreManaState;
+//int NoMoreManaState;
 float SwordRange;
 
 //==========================================================================
@@ -58,18 +58,20 @@ void A_WSSwordAttack()
 		}
 	}
 	power = 0.0;
-	if (IsWeaponManaUsable())
-	{
+// [KORAX]
+/*	if (IsWeaponManaUsable())
+	{*/
 		damage <<= 1;
 		power = 6.0;
 		PuffType = AxePuff;
 		useMana = 1;
-	}
+/*	}
 	else
 	{
 		PuffType = AxePuff;
 		useMana = 0;
-	}
+	}*/
+
 	for (i = 0; i < 16; i++)
 	{
 		angles = Owner.Angles;
@@ -122,18 +124,21 @@ void A_WSSwordAttack()
 		}
 	}
 
+//[KORAX]
 	if (useMana == 2)
 	{
 		UseWeaponMana();
-		if (!IsWeaponManaUsable())
+/*		if (!IsWeaponManaUsable())
 		{
 			SetState(NoMoreManaState);
-		}
+		}*/
 	}
 }
 
 __states__
 {
+//[KORAX]
+/*
 	S_WSSWORDREADY('WSSW', 0, 1.0 / 35.0, S_WSSWORDREADY) { A_WeaponReady(); }
 	S_WSSWORDDOWN('WSSW', 0, 1.0 / 35.0, S_WSSWORDDOWN) { A_Lower(); }
 	S_WSSWORDUP('WSSW', 0, 1.0 / 35.0, S_WSSWORDUP) { A_Raise(); }
@@ -165,6 +170,8 @@ __states__
 	S_WSSWORDATK2_12('WSSW', 13, 2.0 / 35.0, S_WSSWORDATK2_13) { }
 	S_WSSWORDATK2_13('WSSW', 14, 1.0 / 35.0, S_WSSWORDATK2_14) { }
 	S_WSSWORDATK2_14('WSSW', 14, 2.0 / 35.0, S_WSSWORDATK_1) { A_ReFire(); }
+*/
+//[KORAX]
 	// MANA STATES
 	S_WSSWORDREADY_G('WSWF', 0 | FF_FULLBRIGHT, 2.0 / 35.0, S_WSSWORDREADY_G1) { A_WeaponReady(); }
 	S_WSSWORDREADY_G1('WSWF', 0 | FF_FULLBRIGHT, 2.0 / 35.0, S_WSSWORDREADY_G2) { A_WeaponReady(); }
@@ -210,6 +217,8 @@ __states__
 	S_WSSWORDATK2_G14('WSWF', 16 | FF_FULLBRIGHT, 2.0 / 35.0, S_WSSWORDATK_G1) { SX = 0.0; }
 }
 
+//[KORAX]
+/*
 //==========================================================================
 //
 //	GetUpState
@@ -296,6 +305,8 @@ void GotMana(int InMana)
 		SetState(S_WSSWORDREADY_G);
 	}
 }
+*/
+//[KORAX]
 
 /*SECOND*/
 defaultproperties
@@ -303,12 +314,12 @@ defaultproperties
 	Mana = MANA_1;
 	manause = 5;
 	//needsnomana = true;
-	UpState = S_WSSWORDUP;
-	DownState = S_WSSWORDDOWN;
-	ReadyState = S_WSSWORDREADY;
-	AttackState = S_WSSWORDATK2_1;
-	HoldAttackState = S_WSSWORDATK2_1;
-	NoMoreManaState = S_WSSWORDATK_5;
+	UpState = S_WSSWORDUP_G;
+	DownState = S_WSSWORDDOWN_G;
+	ReadyState = S_WSSWORDREADY_G;
+	AttackState = S_WSSWORDATK2_G1;
+	HoldAttackState = S_WSSWORDATK_G1;
+//	NoMoreManaState = S_WSSWORDATK_5;
 	SwordRange = 3.0 * MELEERANGE / 2.0;
 	wis_mod = true;
 	int_mod = false;
@@ -320,6 +331,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.10  2006/02/16 17:32:23  firebrand_kh
+//  Removed the mana states checkings
+//
 //  Revision 1.9  2006/02/15 23:37:46  dj_jl
 //  Moved all server progs global variables to classes.
 //
