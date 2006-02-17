@@ -71,8 +71,8 @@ int pic_wpfull;
 int pic_wppiece[3];
 int wppiecex[3];*/
 int pic_keybar;
-int pic_key[NUMKEYS];
-int pic_armor[NUMARMOR];
+int pic_key[HexenDefs::NUMKEYS];
+int pic_armor[HexenDefs::NUMARMOR];
 
 /*int pic_invbar;
 int pic_selectbox;
@@ -90,7 +90,7 @@ int pic_paused;
 // For the Fullscreen stuff
 int pic_health;
 int pic_armor2;
-//int pic_arti[NUMARTIFACTS];
+//int pic_arti[HexenDefs::NUMARTIFACTS];
 
 /*string arti_pic_names[NUMARTIFACTS] = {
 	"ARTIBOX",	// none
@@ -151,7 +151,7 @@ void StartMap()
 	pic_bar = R_RegisterPic("H2BAR", PIC_PATCH);
 	switch (sb_pclass)
 	{
-	case PCLASS_FIGHTER:
+	case HexenDefs::PCLASS_FIGHTER:
 		pic_chain = R_RegisterPic("CHAIN", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -168,7 +168,7 @@ void StartMap()
 			pic_lifegem = R_RegisterPic(Name, PIC_PATCH);
 		}
 		break;
-	case PCLASS_CLERIC:
+	case HexenDefs::PCLASS_CLERIC:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -181,7 +181,7 @@ void StartMap()
 			pic_lifegem = R_RegisterPic(Name, PIC_PATCH);
 		}
 		break;
-	case PCLASS_MAGE:
+	case HexenDefs::PCLASS_MAGE:
 		pic_chain = R_RegisterPic("CHAIN3", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -194,7 +194,7 @@ void StartMap()
 			pic_lifegem = R_RegisterPic(Name, PIC_PATCH);
 		}
 		break;
-	case PCLASS_HERETIC:
+	case HexenDefs::PCLASS_HERETIC:
 		pic_chain = R_RegisterPic("CHAIN4", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -207,7 +207,7 @@ void StartMap()
 			pic_lifegem = R_RegisterPic(Name, PIC_PATCH);
 		}
 		break;
-	case PCLASS_MARINE:
+	case HexenDefs::PCLASS_MARINE:
 		pic_chain = R_RegisterPic("CHAIN5", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -220,7 +220,7 @@ void StartMap()
 			pic_lifegem = R_RegisterPic(Name, PIC_PATCH);
 		}
 		break;
-	case PCLASS_WITCHAVEN:
+	case HexenDefs::PCLASS_WITCHAVEN:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
 		if (cl->maxclients == 1)
 		{
@@ -719,8 +719,8 @@ void SB_DrawMainBar(void)
 		sb_manaVial5 = 1;
 	}
 	// Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
-	if (readyweapon == WP_FIRST)
+	readyweapon = (cl->SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
+	if (readyweapon == HexenDefs::WP_FIRST)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
@@ -729,7 +729,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 0;
 		sb_manaVial3 = 0;
 	}
-	else if (readyweapon == WP_SECOND)
+	else if (readyweapon == HexenDefs::WP_SECOND)
 	{
 		sb_mana2 = 0;
 		sb_mana3 = 0;
@@ -737,7 +737,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 0;
 		sb_manaVial3 = 0;
 	}
-	else if (readyweapon == WP_THIRD)
+	else if (readyweapon == HexenDefs::WP_THIRD)
 	{
 		sb_mana1 = 0;
 		sb_mana3 = 0;
@@ -745,7 +745,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 1;
 		sb_manaVial3 = 0;
 	}
-	else if (readyweapon == WP_FOURTH)
+	else if (readyweapon == HexenDefs::WP_FOURTH)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
@@ -753,7 +753,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 0;
 		sb_manaVial3 = 1;
 	}
-	else if (readyweapon == WP_FIFTH)
+	else if (readyweapon == HexenDefs::WP_FIFTH)
 	{
 		sb_mana2 = 0;
 		sb_mana3 = 0;
@@ -761,7 +761,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 0;
 		sb_manaVial3 = 0;
 	}
-	else if (readyweapon == WP_SIXTH)
+	else if (readyweapon == HexenDefs::WP_SIXTH)
 	{
 		sb_mana1 = 0;
 		sb_mana3 = 0;
@@ -769,7 +769,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial2 = 1;
 		sb_manaVial3 = 0;
 	}
-	else if (readyweapon == WP_SEVENTH)
+	else if (readyweapon == HexenDefs::WP_SEVENTH)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
@@ -801,11 +801,11 @@ void SB_DrawMainBar(void)
 	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
 	R_DrawPic(231, 165, pic_manavial6);
 	R_DrawPic(238, 165, pic_manavial7);
-	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / MAX_MANA, 31);
-	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / MAX_MANA, 31);
-	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / MAX_MANA, 31);
-	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / MAX_MANA, 31);
-	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / MAX_MANA, 31);
+	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / HexenDefs::MAX_MANA, 31);
 	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / (cl->next_level - cl->old_level), 31);
 	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
 
@@ -862,9 +862,9 @@ void SB_DrawKeyBar(void)
 	R_DrawPic(38, 162, pic_keybar);
 
 	//  Keys
-	for (i = 0, num = 0; i < NUMKEYS && num < 5; i++)
+	for (i = 0, num = 0; i < HexenDefs::NUMKEYS && num < 5; i++)
 	{
-		if (cl->stats.flags & (1 << i))
+		if (cl->SBFlags & (1 << i))
 		{
 			R_DrawPic(46 + num * 20, 164, pic_key[i]);
 			num++;
@@ -1034,39 +1034,39 @@ void SB_DrawFullscreenStats(void)
 		sb_mana5 = 1;
 	}
 	// [FB] Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl->stats.flags & SBF_WPN_MASK) >> SBF_WPN_SHIFT;
-	if (readyweapon == WP_FIRST)
+	readyweapon = (cl->SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
+	if (readyweapon == HexenDefs::WP_FIRST)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
 		sb_mana3 = 0;
 	}
-	else if (readyweapon == WP_SECOND)
+	else if (readyweapon == HexenDefs::WP_SECOND)
 	{
 		sb_mana2 = 0;
 		sb_mana3 = 0;
 	}
-	else if (readyweapon == WP_THIRD)
+	else if (readyweapon == HexenDefs::WP_THIRD)
 	{
 		sb_mana1 = 0;
 		sb_mana3 = 0;
 	}
-	else if (readyweapon == WP_FOURTH)
+	else if (readyweapon == HexenDefs::WP_FOURTH)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
 	}
-	else if (readyweapon == WP_FIFTH)
+	else if (readyweapon == HexenDefs::WP_FIFTH)
 	{
 		sb_mana2 = 0;
 		sb_mana3 = 0;
 	}
-	else if (readyweapon == WP_SIXTH)
+	else if (readyweapon == HexenDefs::WP_SIXTH)
 	{
 		sb_mana1 = 0;
 		sb_mana3 = 0;
 	}
-	else if (readyweapon == WP_SEVENTH)
+	else if (readyweapon == HexenDefs::WP_SEVENTH)
 	{
 		sb_mana1 = 0;
 		sb_mana2 = 0;
@@ -1140,10 +1140,10 @@ void SB_DrawIcons(int view)
 		SetVirtualScreen(640, 400);
 
 		// Wings of wrath
-		if (cl->stats.flags & SBF_POWER_FLIGHT)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 		{
 			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl->stats.flags & SBF_IN_FLIGHT)
+			if (cl->SBFlags & HexenDefs::SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
 				{
@@ -1166,32 +1166,32 @@ void SB_DrawIcons(int view)
 		}
 	
 		// Speed Boots
-		if (cl->stats.flags & SBF_POWER_SPEED)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_SPEED)
 		{
 			R_DrawPic(90, 38, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
-		if (cl->stats.flags & SBF_POWER_INVULN)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_INVULN)
 		{
 			R_DrawPic(520, 38, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
-		if (cl->stats.flags & SBF_POWER_MINOTAUR)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
 		{
 			R_DrawPic(600, 38, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
-		if (cl->stats.flags & SBF_POWER_DAMAGE)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
 			R_DrawPic(40, 38, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
-		if (cl->stats.flags & SBF_POWER_INVISIBILITY)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
 		{
 			R_DrawPic2(200, 38, pic_shsp, 40);
 		}
@@ -1201,10 +1201,10 @@ void SB_DrawIcons(int view)
 	else
 	{
 		// Wings of wrath
-		if (cl->stats.flags & SBF_POWER_FLIGHT)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 		{
 			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl->stats.flags & SBF_IN_FLIGHT)
+			if (cl->SBFlags & HexenDefs::SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
 				{
@@ -1227,32 +1227,32 @@ void SB_DrawIcons(int view)
 		}
 	
 		// Speed Boots
-		if (cl->stats.flags & SBF_POWER_SPEED)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_SPEED)
 		{
 			R_DrawPic(60, 19, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
-		if (cl->stats.flags & SBF_POWER_INVULN)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_INVULN)
 		{
 			R_DrawPic(260, 19, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
-		if (cl->stats.flags & SBF_POWER_MINOTAUR)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
 		{
 			R_DrawPic(300, 19, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
-		if (cl->stats.flags & SBF_POWER_DAMAGE)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
 			R_DrawPic(20, 19, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
-		if (cl->stats.flags & SBF_POWER_INVISIBILITY)
+		if (cl->SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
 		{
 			R_DrawPic2(100, 19, pic_shsp, 40);
 		}
@@ -1390,6 +1390,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.3  2006/02/17 19:16:21  dj_jl
+//  Moved common defs to classes.
+//
 //  Revision 1.2  2006/02/16 17:35:51  firebrand_kh
 //  Some fixes
 //

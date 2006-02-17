@@ -614,9 +614,9 @@ void Died(Actor source)
 
 	// [FB] There's no other decent place to put this...
 	//  Remove muzzle flash
-	if ((Effects & EF_DLIGHT_MASK) == EF_DL_MUZZLEFLASH)
+	if ((Effects & HexenDefs::EF_DLIGHT_MASK) == HexenDefs::EF_DL_MUZZLEFLASH)
 	{
-		Effects &= ~EF_DLIGHT_MASK;
+		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
 	if ((bCountKill || Class == ZBell) && Special)
 	{
@@ -944,7 +944,7 @@ bool MorphPlayer()
 	}
 */
 	Player.ArmorPoints = 0;
-	Player.PClass = PCLASS_PIG;
+	Player.PClass = HexenDefs::PCLASS_PIG;
 	beastMo.bFly = bFly;
 	Player.MorphTime = MORPHTIME;
 	Player.ActivateMorphWeapon();
@@ -1018,12 +1018,12 @@ void AutoUseHealth(int saveHealth)
 	superCount = 0;
 	for (i = 0; i < Player.InventorySlotNum; i++)
 	{
-		if (Player.Inventory[i].type == arti_health)
+		if (Player.Inventory[i].type == HexenDefs::arti_health)
 		{
 			normalSlot = i;
 			normalCount = Player.Inventory[i].count;
 		}
-		else if (Player.Inventory[i].type == arti_superhealth)
+		else if (Player.Inventory[i].type == HexenDefs::arti_superhealth)
 		{
 			superSlot = i;
 			superCount = Player.Inventory[i].count;
@@ -1305,7 +1305,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 			}
 		}
 		if (source && (source.bIsPlayer) &&
-			(source.Player.ReadyWeapon == WP_EIGHTH))
+			(source.Player.ReadyWeapon == HexenDefs::WP_EIGHTH))
 		{
 			// Always extreme death from eighth weapon
 			Health = -5000;
@@ -3493,17 +3493,17 @@ bool ExplodeMissile()
 	{
 		PlaySound(DeathSound, CHAN_VOICE);
 	}
-	if (!(Effects & EF_DL_ROCKET) && (Effects & EF_DLIGHT_MASK))
+	if (!(Effects & HexenDefs::EF_DL_ROCKET) && (Effects & HexenDefs::EF_DLIGHT_MASK))
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(svc_explosion2);
-		MSG_WriteByte(Effects & EF_DLIGHT_MASK);
+		MSG_WriteByte(HexenDefs::svc_explosion2);
+		MSG_WriteByte(Effects & HexenDefs::EF_DLIGHT_MASK);
 		MSG_WriteShort(ftoi(Origin.x));
 		MSG_WriteShort(ftoi(Origin.y));
 		MSG_WriteShort(ftoi(Origin.z));
-		Effects &= ~EF_DLIGHT_MASK;
+		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
-	Effects &= ~EF_DL_ROCKET;
+	Effects &= ~HexenDefs::EF_DL_ROCKET;
 	return true;
 }
 
@@ -4051,7 +4051,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 			if (P_Random() < 192)
 			{
 				MSG_Select(MSG_SV_DATAGRAM);
-				MSG_WriteByte(svc_blood);
+				MSG_WriteByte(HexenDefs::svc_blood);
 				MSG_WriteShort(ftoi(hit_point.x));
 				MSG_WriteShort(ftoi(hit_point.y));
 				MSG_WriteShort(ftoi(hit_point.z));
@@ -4140,8 +4140,8 @@ void SpawnPuff(TVec org, classid PuffType)
 	if (PuffType == GoldWandPuff1)
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(svc_explosion2);
-		MSG_WriteByte(EF_DL_WHITE);
+		MSG_WriteByte(HexenDefs::svc_explosion2);
+		MSG_WriteByte(HexenDefs::EF_DL_WHITE);
 		MSG_WriteShort(ftoi(org.x));
 		MSG_WriteShort(ftoi(org.y));
 		MSG_WriteShort(ftoi(org.z));
@@ -4149,8 +4149,8 @@ void SpawnPuff(TVec org, classid PuffType)
 	if (PuffType == BlasterPuff1)
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(svc_explosion2);
-		MSG_WriteByte(EF_DL_BLUE);
+		MSG_WriteByte(HexenDefs::svc_explosion2);
+		MSG_WriteByte(HexenDefs::EF_DL_BLUE);
 		MSG_WriteShort(ftoi(org.x));
 		MSG_WriteShort(ftoi(org.y));
 		MSG_WriteShort(ftoi(org.z));
@@ -4462,17 +4462,17 @@ void A_Explode()
 		HitFloorType();
 	}
 
-	if ((Effects & EF_DL_ROCKET) && (Effects & EF_DLIGHT_MASK))
+	if ((Effects & HexenDefs::EF_DL_ROCKET) && (Effects & HexenDefs::EF_DLIGHT_MASK))
 	{
 		//  Spawn explosion effects - dynamic light and particles
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(svc_explosion);
+		MSG_WriteByte(HexenDefs::svc_explosion);
 		MSG_WriteShort(ftoi(Origin.x));
 		MSG_WriteShort(ftoi(Origin.y));
 		MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
 
 		//  Clear old dynamic light effect
-		Effects &= ~EF_DLIGHT_MASK;
+		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
 }
 
@@ -4631,6 +4631,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.32  2006/02/17 19:17:49  dj_jl
+//  Moved common defs to classes.
+//
 //  Revision 1.31  2006/02/16 17:30:11  firebrand_kh
 //  Add damage value to a new member of the player class
 //
