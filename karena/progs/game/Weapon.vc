@@ -85,11 +85,11 @@ void SnoutSniff()
 
 bool IsWeaponManaUsable()
 {
-	if (Mana == NUMMANA) 
+	if (Mana == HexenDefs::NUMMANA) 
 	{
-		    return Player.Mana[MANA_1] >= Player.GetWeaponManaUse(self)
-			&& Player.Mana[MANA_2] >= Player.GetWeaponManaUse(self)
-			&& Player.Mana[MANA_3] >= Player.GetWeaponManaUse(self);
+		    return Player.Mana[HexenDefs::MANA_1] >= Player.GetWeaponManaUse(self)
+			&& Player.Mana[HexenDefs::MANA_2] >= Player.GetWeaponManaUse(self)
+			&& Player.Mana[HexenDefs::MANA_3] >= Player.GetWeaponManaUse(self);
 	}
 	else 
 	{
@@ -105,11 +105,11 @@ bool IsWeaponManaUsable()
 
 void UseWeaponMana()
 {
-	if (Mana == NUMMANA)
+	if (Mana == HexenDefs::NUMMANA)
 	{
-		Player.Mana[MANA_1] -= Player.GetWeaponManaUse(self);
-		Player.Mana[MANA_2] -= Player.GetWeaponManaUse(self);
-		Player.Mana[MANA_3] -= Player.GetWeaponManaUse(self);
+		Player.Mana[HexenDefs::MANA_1] -= Player.GetWeaponManaUse(self);
+		Player.Mana[HexenDefs::MANA_2] -= Player.GetWeaponManaUse(self);
+		Player.Mana[HexenDefs::MANA_3] -= Player.GetWeaponManaUse(self);
 	}
 	else 
 	{
@@ -130,7 +130,7 @@ void UseWeaponMana()
 void A_Light0()
 {
 	Player.ExtraLight = 0;
-	Player.MO.Effects &= ~EF_DLIGHT_MASK;
+	Player.MO.Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 }
 
 //==========================================================================
@@ -152,7 +152,7 @@ void A_WeaponReady()
 		Player.MO.SetState(Player.MO.IdleState);
 	}
 	// Put the weapon away if the player has a pending weapon or has died.
-	if (Player.PendingWeapon != wp_nochange || !Player.Health)
+	if (Player.PendingWeapon != HexenDefs::wp_nochange || !Player.Health)
 	{
 		Player.SetPsprite(ps_weapon, GetDownState());
 		return;
@@ -257,7 +257,7 @@ void A_Raise()
 void A_ReFire()
 {
 	if ((Player.Buttons & BT_ATTACK) &&
-		Player.PendingWeapon == wp_nochange && Player.Health)
+		Player.PendingWeapon == HexenDefs::wp_nochange && Player.Health)
 	{
 		Player.Refire++;
 		Player.FireWeapon();
@@ -278,7 +278,7 @@ void A_ReFire()
 void SetFOV(int FOV)
 {
 	MSG_SelectClientMsg(MSG_SV_CLIENT, Player);
-	MSG_WriteByte(svc_fov);
+	MSG_WriteByte(HexenDefs::svc_fov);
 	MSG_WriteByte(FOV);
 }
 
@@ -295,6 +295,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/02/17 19:17:52  dj_jl
+//  Moved common defs to classes.
+//
 //  Revision 1.8  2006/02/15 23:37:46  dj_jl
 //  Moved all server progs global variables to classes.
 //
