@@ -44,7 +44,7 @@ int pic_lifegem;
 int pic_lfedge;
 int pic_rtedge;
 
-int pic_innum[2][10];
+int pic_innum[2 * 10];
 int pic_smallinnum[10];
 int pic_bignum[10];
 int bignumwidth[10];
@@ -240,9 +240,9 @@ void StartMap()
 	for (i = 0; i < 10; i++)
 	{
 		sprint(Name, "IN%d", i);
-		pic_innum[0][i] = R_RegisterPic(Name, PIC_PATCH);
+		pic_innum[i] = R_RegisterPic(Name, PIC_PATCH);
 		sprint(Name, "INRED%d", i);
-		pic_innum[1][i] = R_RegisterPic(Name, PIC_PATCH);
+		pic_innum[10 + i] = R_RegisterPic(Name, PIC_PATCH);
 		sprint(Name, "SMALLIN%d", i);
 		pic_smallinnum[i] = R_RegisterPic(Name, PIC_PATCH);
 		sprint(Name, "FONTB%d", 16 + i);
@@ -471,14 +471,14 @@ void SB_DrawNumber9(int x, int y, int num, int color)
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawPic(x - w, y, pic_innum[color][0]);
+		R_DrawPic(x - w, y, pic_innum[color * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawPic(x, y, pic_innum[color][num % 10]);
+		R_DrawPic(x, y, pic_innum[color * 10 + num % 10]);
 		num /= 10;
 	}
 
@@ -512,14 +512,14 @@ void SB_DrawNumber92(int x, int y, int num, int color)
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawShadowedPic(x - w, y, pic_innum[color][0]);
+		R_DrawShadowedPic(x - w, y, pic_innum[color * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawShadowedPic(x, y, pic_innum[color][num % 10]);
+		R_DrawShadowedPic(x, y, pic_innum[color * 10 + num % 10]);
 		num /= 10;
 	}
 
@@ -1390,6 +1390,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.4  2006/02/19 14:28:44  dj_jl
+//  Some changes because of compiler changes.
+//
 //  Revision 1.3  2006/02/17 19:16:21  dj_jl
 //  Moved common defs to classes.
 //
