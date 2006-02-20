@@ -91,7 +91,7 @@ void Start()
 	ClGame.skipintermission = false;
 	intertime = 0.0;
 
-	if (!ClGame.cl->deathmatch && !HubCount)
+	if (!ClGame.cl.deathmatch && !HubCount)
 	{
 		interstate = 1;
 		cnt = 0.3;
@@ -120,7 +120,7 @@ void Tick(float DeltaTime)
 		return;
 	}
 	intertime += DeltaTime;
-	if (ClGame.skipintermission || (!ClGame.cl->deathmatch && !HubCount))
+	if (ClGame.skipintermission || (!ClGame.cl.deathmatch && !HubCount))
 	{
 		interstate = 1;
 		cnt = 0.3;
@@ -143,7 +143,7 @@ void DrawWindow(GC gc)
 
 	R_DrawPic(0, 0, patchINTERPIC);
 
-	if (!ClGame.cl->deathmatch)
+	if (!ClGame.cl.deathmatch)
 	{
 		if (HubCount)
 		{
@@ -164,7 +164,7 @@ void DrawWindow(GC gc)
 
 void IM_LoadPics(void)
 {
-	if (HubCount || ClGame.cl->deathmatch)
+	if (HubCount || ClGame.cl.deathmatch)
 	{
 		patchINTERPIC = R_RegisterPic("INTERPIC", PIC_RAW);
 		tallytop = R_RegisterPic("tallytop", PIC_PATCH);
@@ -200,7 +200,7 @@ void IM_InitStats(void)
 	int playercount;
 	string msgLumpName;
 
-	if (!ClGame.cl->deathmatch)
+	if (!ClGame.cl.deathmatch)
 	{
 		HubCount = 0.0;
 		if (ClGame.im->leavecluster != ClGame.im->entercluster)
@@ -233,7 +233,7 @@ void IM_InitStats(void)
 			if (ClGame.scores[i].bActive)
 			{
 				playercount++;
-				if (ClGame.cl->deathmatch==2)
+				if (ClGame.cl.deathmatch==2)
 				{
 					string col = Info_ValueForKey(ARR2STR(ClGame.scores[i].userinfo), "color");
 					if (col && col!="")
@@ -399,12 +399,12 @@ void IM_DrawDeathTally(void)
 		for (j = 0; j < MAXPLAYERS; j++, xPos += xDelta)
 		{
 			x = ftoi(xPos);
-			bold = ((i == ClGame.cl->clientnum || j == ClGame.cl->clientnum)&&ClGame.cl->deathmatch!=2)||
+			bold = ((i == ClGame.cl.clientnum || j == ClGame.cl.clientnum)&&ClGame.cl.deathmatch!=2)||
 				(GetCvar("color") == i || GetCvar("color") == j);
-			if ((ClGame.scores[i].bActive && ClGame.scores[j].bActive && ClGame.cl->deathmatch!=2) ||
-				(ClGame.cl->deathmatch==2 && teams[i].bActive && teams[j].bActive))
+			if ((ClGame.scores[i].bActive && ClGame.scores[j].bActive && ClGame.cl.deathmatch!=2) ||
+				(ClGame.cl.deathmatch==2 && teams[i].bActive && teams[j].bActive))
 			{
-				int frr = (ClGame.cl->deathmatch==2?teams[i].frags[j]:ClGame.scores[i].frags[j]);
+				int frr = (ClGame.cl.deathmatch==2?teams[i].frags[j]:ClGame.scores[i].frags[j]);
 				if (bold)
 				{
 					IM_DrawNumberBold(frr, x, y, 100);
@@ -466,6 +466,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.2  2006/02/20 22:55:17  dj_jl
+//  Changed client state structure to class.
+//
 //  Revision 1.1  2006/02/09 22:34:55  dj_jl
 //  Moved all client game code to classes.
 //

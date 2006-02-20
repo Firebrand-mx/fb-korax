@@ -27,7 +27,7 @@ class StatusBarScreen : Window;
 
 ClientGameBase ClGame;
 
-client_state_t *cl;
+MainClientState cl;
 
 int sb_pclass;
 int sb_color;
@@ -153,7 +153,7 @@ void StartMap()
 	{
 	case HexenDefs::PCLASS_FIGHTER:
 		pic_chain = R_RegisterPic("CHAIN", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMF2", PIC_PATCH);
@@ -170,7 +170,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_CLERIC:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMC2", PIC_PATCH);
@@ -183,7 +183,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_MAGE:
 		pic_chain = R_RegisterPic("CHAIN3", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMM2", PIC_PATCH);
@@ -196,7 +196,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_HERETIC:
 		pic_chain = R_RegisterPic("CHAIN4", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
@@ -209,7 +209,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_MARINE:
 		pic_chain = R_RegisterPic("CHAIN5", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMD2", PIC_PATCH);
@@ -222,7 +222,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_WITCHAVEN:
 		pic_chain = R_RegisterPic("CHAIN2", PIC_PATCH);
-		if (cl->maxclients == 1)
+		if (cl.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic("LIFEGMH2", PIC_PATCH);
@@ -393,43 +393,43 @@ void SB_DrawBackground(void)
 	sb_health = HealthMarker;
 
 	// [FB] Calculate the max_health value according the player level
-	if(cl->exp_level == 1)
+	if(cl.exp_level == 1)
 	{
 		m_h = 100;
 	}
-	else if(cl->exp_level == 2)
+	else if(cl.exp_level == 2)
 	{
 		m_h = 109;
 	}
-	else if(cl->exp_level == 3)
+	else if(cl.exp_level == 3)
 	{
 		m_h = 118;
 	}
-	else if(cl->exp_level == 4)
+	else if(cl.exp_level == 4)
 	{
 		m_h = 128;
 	}
-	else if(cl->exp_level == 5)
+	else if(cl.exp_level == 5)
 	{
 		m_h = 139;
 	}
-	else if(cl->exp_level == 6)
+	else if(cl.exp_level == 6)
 	{
 		m_h = 151;
 	}
-	else if(cl->exp_level == 7)
+	else if(cl.exp_level == 7)
 	{
 		m_h = 164;
 	}
-	else if(cl->exp_level == 8)
+	else if(cl.exp_level == 8)
 	{
 		m_h = 178;
 	}
-	else if(cl->exp_level == 9)
+	else if(cl.exp_level == 9)
 	{
 		m_h = 188;
 	}
-	else if(cl->exp_level == 10)
+	else if(cl.exp_level == 10)
 	{
 		m_h = 204;
 	}
@@ -627,49 +627,49 @@ void SB_DrawMainBar(void)
 	//  [FB] Give a higher virtual resolution to these stats
 	SetVirtualScreen(640, 400);
 
-	SB_DrawNumber92(320, 20, cl->exp_level, 1);
-	SB_DrawNumber92(460, 20, cl->experience, 1);
-	SB_DrawNumber92(580, 20, cl->next_level, 1);
+	SB_DrawNumber92(320, 20, cl.exp_level, 1);
+	SB_DrawNumber92(460, 20, cl.experience, 1);
+	SB_DrawNumber92(580, 20, cl.next_level, 1);
 	// Frags / health
-	if (cl->deathmatch && cl->deathmatch != 5)
+	if (cl.deathmatch && cl.deathmatch != 5)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
-		SB_DrawNumber92(40, 176, cl->Frags, 0);
+		SB_DrawNumber92(40, 176, cl.Frags, 0);
 		*/
-		SB_DrawNumber92(32, 20, cl->Frags, 0);
+		SB_DrawNumber92(32, 20, cl.Frags, 0);
 
-		if (cl->deathmatch == 2)
+		if (cl.deathmatch == 2)
 		{
-			SB_DrawNumber92(85, 20, cl->TeamFrags, 0);
+			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
 		}
 	}
 
-	if (cl->deathmatch == 5)
+	if (cl.deathmatch == 5)
 	{
-		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
+		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
 	}
 
-	if (!cl->deathmatch || cl->deathmatch == 5)
+	if (!cl.deathmatch || cl.deathmatch == 5)
 	{
-		SB_DrawNumber92(32, 20, cl->KillsCount, 0);
-		SB_DrawNumber92(138, 20, cl->TotalKills, 0);
+		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
+		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
 	//  [FB] Return virtual screen resolution for everything else
 	SetVirtualScreen(320, 200);
 //	else
 	{
-		if (cl->health >= 25)
+		if (cl.health >= 25)
 		{
-			SB_DrawNumber9(40, 176, cl->health, 0);
+			SB_DrawNumber9(40, 176, cl.health, 0);
 		}
 		else
 		{
-			SB_DrawNumber9(40, 176, cl->health, 1);
+			SB_DrawNumber9(40, 176, cl.health, 1);
 		}
 	}
 
 	//  Mana
-	if (cl->mana[0] == 0)
+	if (cl.mana[0] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -678,7 +678,7 @@ void SB_DrawMainBar(void)
 	{
 		sb_mana1 = 1;
 	}
-	if (cl->mana[1] == 0)
+	if (cl.mana[1] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -687,7 +687,7 @@ void SB_DrawMainBar(void)
 	{
 		sb_mana2 = 1;
 	}
-	if (cl->mana[2] == 0)
+	if (cl.mana[2] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -696,7 +696,7 @@ void SB_DrawMainBar(void)
 	{
 		sb_mana3 = 1;
 	}
-	if (cl->mana[3] == 0)
+	if (cl.mana[3] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -707,7 +707,7 @@ void SB_DrawMainBar(void)
 		sb_mana4 = 1;
 		sb_manaVial4 = 1;
 	}
-	if (cl->mana[4] == 0)
+	if (cl.mana[4] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana5 = 0;
@@ -719,7 +719,7 @@ void SB_DrawMainBar(void)
 		sb_manaVial5 = 1;
 	}
 	// Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl->SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
+	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
 	if (readyweapon == HexenDefs::WP_FIRST)
 	{
 		sb_mana1 = 0;
@@ -784,11 +784,11 @@ void SB_DrawMainBar(void)
 		sb_manaVial3 = 1;
 	}
 
-	SB_DrawMNumber(79, 181, cl->mana[0]);
-	SB_DrawMNumber(109, 181, cl->mana[1]);
-	SB_DrawMNumber(140, 181, cl->mana[2]);
-	SB_DrawMNumber(171, 181, cl->mana[3]);
-	SB_DrawMNumber(202, 181, cl->mana[4]);
+	SB_DrawMNumber(79, 181, cl.mana[0]);
+	SB_DrawMNumber(109, 181, cl.mana[1]);
+	SB_DrawMNumber(140, 181, cl.mana[2]);
+	SB_DrawMNumber(171, 181, cl.mana[3]);
+	SB_DrawMNumber(202, 181, cl.mana[4]);
 	R_DrawPic(77, 164, pic_manadim1[sb_mana1]);
 	R_DrawPic(107, 164, pic_manadim2[sb_mana2]);//+30
 	R_DrawPic(138, 164, pic_manadim3[sb_mana3]);//+31
@@ -801,39 +801,39 @@ void SB_DrawMainBar(void)
 	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
 	R_DrawPic(231, 165, pic_manavial6);
 	R_DrawPic(238, 165, pic_manavial7);
-	R_ShadeRect(95, 165, 3, 22 - (22 * cl->mana[0]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(125, 165, 3, 22 - (22 * cl->mana[1]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(156, 165, 3, 22 - (22 * cl->mana[2]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(187, 165, 3, 22 - (22 * cl->mana[3]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(218, 165, 3, 22 - (22 * cl->mana[4]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, 22 - (22 * (cl->experience - cl->old_level)) / (cl->next_level - cl->old_level), 31);
-	R_ShadeRect(239, 166, 3, 22 - (22 * cl->exp_level) / 10, 31);
+	R_ShadeRect(95, 165, 3, 22 - (22 * cl.mana[0]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(125, 165, 3, 22 - (22 * cl.mana[1]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(156, 165, 3, 22 - (22 * cl.mana[2]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(187, 165, 3, 22 - (22 * cl.mana[3]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(218, 165, 3, 22 - (22 * cl.mana[4]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(232, 166, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 31);
+	R_ShadeRect(239, 166, 3, 22 - (22 * cl.exp_level) / 10, 31);
 
 	// Ready artifact
-/*	if (cl->ArtifactFlash)
+/*	if (cl.ArtifactFlash)
 	{
-		R_DrawPic(148, 164, pic_artiflash[cl->ArtifactFlash]);
+		R_DrawPic(148, 164, pic_artiflash[cl.ArtifactFlash]);
 	}
-	else if (cl->readyArtifact > 0)
+	else if (cl.readyArtifact > 0)
 	{
-		R_DrawPic(143, 163, pic_arti[cl->readyArtifact]);
-		SB_DrawINumber(166, 184, cl->inventory[cl->inv_ptr].count);
+		R_DrawPic(143, 163, pic_arti[cl.readyArtifact]);
+		SB_DrawINumber(166, 184, cl.inventory[cl.inv_ptr].count);
 	}
 */
 	// Weapon Pieces
 	//[Korax]
-	/*if ((cl->stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
+	/*if ((cl.stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
 	{
 		R_DrawPic(190, 162, pic_wpslot);
-		if (cl->stats.flags & SBF_PIECE1)
+		if (cl.stats.flags & SBF_PIECE1)
 		{
 			R_DrawPic(wppiecex[0], 162, pic_wppiece[0]);
 		}
-		if (cl->stats.flags & SBF_PIECE2)
+		if (cl.stats.flags & SBF_PIECE2)
 		{
 			R_DrawPic(wppiecex[1], 162, pic_wppiece[1]);
 		}
-		if (cl->stats.flags & SBF_PIECE3)
+		if (cl.stats.flags & SBF_PIECE3)
 		{
 			R_DrawPic(wppiecex[2], 162, pic_wppiece[2]);
 		}
@@ -844,7 +844,7 @@ void SB_DrawMainBar(void)
 	}*/
 
 	// Armor
-	SB_DrawNumber9(253, 176, cl->armorpoints, 0);
+	SB_DrawNumber9(253, 176, cl.armorpoints, 0);
 }
 
 //==========================================================================
@@ -864,7 +864,7 @@ void SB_DrawKeyBar(void)
 	//  Keys
 	for (i = 0, num = 0; i < HexenDefs::NUMKEYS && num < 5; i++)
 	{
-		if (cl->SBFlags & (1 << i))
+		if (cl.SBFlags & (1 << i))
 		{
 			R_DrawPic(46 + num * 20, 164, pic_key[i]);
 			num++;
@@ -874,16 +874,16 @@ void SB_DrawKeyBar(void)
 	//  Armor
 /*	for (i = 0; i < NUMARMOR; i++)
 	{
-		if (!cl->armorpoints[i])
+		if (!cl.armorpoints[i])
 		{
 			num = 100;
 		}
-		else if (cl->armorpoints[i] <=
+		else if (cl.armorpoints[i] <=
 			(ArmorIncrement[sb_pclass * NUMARMOR + i] / 4.0))
 		{
 			num = 66;
 		}
-		else if (cl->armorpoints[i] <=
+		else if (cl.armorpoints[i] <=
 			(ArmorIncrement[sb_pclass * NUMARMOR + i] / 2.0))
 		{
 			num = 33;
@@ -911,23 +911,23 @@ void SB_DrawInventoryBar(void)
 	R_DrawShadowedPic(38, 162, pic_invbar);
 
 	//  Inventory
-	x = cl->inv_ptr - cl->curpos;
+	x = cl.inv_ptr - cl.curpos;
 	for (i = 0; i < 7; i++)
 	{
-		if (cl->inventorySlotNum > x + i
-			&& cl->inventory[x + i].type != arti_none)
+		if (cl.inventorySlotNum > x + i
+			&& cl.inventory[x + i].type != arti_none)
 		{
-			R_DrawShadowedPic(50 + i * 31, 163, pic_arti[cl->inventory[x + i].type]);
-			SB_DrawINumber(71 + i * 31, 185, cl->inventory[x + i].count);
+			R_DrawShadowedPic(50 + i * 31, 163, pic_arti[cl.inventory[x + i].type]);
+			SB_DrawINumber(71 + i * 31, 185, cl.inventory[x + i].count);
 		}
 	}
 
-	R_DrawShadowedPic(50 + cl->curpos * 31, 163, pic_selectbox);
+	R_DrawShadowedPic(50 + cl.curpos * 31, 163, pic_selectbox);
 	if (x != 0)
 	{
 		R_DrawShadowedPic(42, 163, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
 	}
-	if (cl->inventorySlotNum - x > 7)
+	if (cl.inventorySlotNum - x > 7)
 	{
 		R_DrawShadowedPic(269, 163, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
 	}*/
@@ -954,41 +954,41 @@ void SB_DrawFullscreenStats(void)
 	SetVirtualScreen(640, 400);
 
 	//  [FB] Armorpoints
-	SB_DrawNumber12(10, 340, cl->armorpoints);
+	SB_DrawNumber12(10, 340, cl.armorpoints);
 	R_DrawShadowedPic(67, 380, pic_armor2);
 
 	//  [FB] Health
-	SB_DrawNumber12(10, 360, cl->health);
+	SB_DrawNumber12(10, 360, cl.health);
 	R_DrawShadowedPic(67, 404, pic_health);
 
 //[Korax]
-	SB_DrawNumber92(320, 20, 0+cl->exp_level, 1);
-	SB_DrawNumber92(460, 20, 0+cl->experience, 1);
-	SB_DrawNumber92(580, 20, 0+cl->next_level, 1);
+	SB_DrawNumber92(320, 20, 0+cl.exp_level, 1);
+	SB_DrawNumber92(460, 20, 0+cl.experience, 1);
+	SB_DrawNumber92(580, 20, 0+cl.next_level, 1);
 	//  Frags
-	if (cl->deathmatch && cl->deathmatch != 5)
+	if (cl.deathmatch && cl.deathmatch != 5)
 	{
-		SB_DrawNumber92(32, 20, cl->Frags, 0);
+		SB_DrawNumber92(32, 20, cl.Frags, 0);
 
-		if (cl->deathmatch == 2)
+		if (cl.deathmatch == 2)
 		{
-			SB_DrawNumber92(85, 20, cl->TeamFrags, 0);
+			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
 		}
 	}
 
-	if (cl->deathmatch == 5)
+	if (cl.deathmatch == 5)
 	{
-		SB_DrawNumber92(85, 20, cl->TeamKills, 0);
+		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
 	}
 
-	if (!cl->deathmatch || cl->deathmatch == 5)
+	if (!cl.deathmatch || cl.deathmatch == 5)
 	{
-		SB_DrawNumber92(32, 20, cl->KillsCount, 0);
-		SB_DrawNumber92(138, 20, cl->TotalKills, 0);
+		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
+		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
 
 	//  [FB] Mana Display in Fullscreen
-	if (cl->mana[0] == 0)
+	if (cl.mana[0] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -997,7 +997,7 @@ void SB_DrawFullscreenStats(void)
 	{
 		sb_mana1 = 1;
 	}
-	if (cl->mana[1] == 0)
+	if (cl.mana[1] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -1006,7 +1006,7 @@ void SB_DrawFullscreenStats(void)
 	{
 		sb_mana2 = 1;
 	}
-	if (cl->mana[2] == 0)
+	if (cl.mana[2] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -1015,7 +1015,7 @@ void SB_DrawFullscreenStats(void)
 	{
 		sb_mana3 = 1;
 	}
-	if (cl->mana[3] == 0)
+	if (cl.mana[3] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -1024,7 +1024,7 @@ void SB_DrawFullscreenStats(void)
 	{
 		sb_mana4 = 1;
 	}
-	if (cl->mana[4] == 0)
+	if (cl.mana[4] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana5 = 0;
@@ -1034,7 +1034,7 @@ void SB_DrawFullscreenStats(void)
 		sb_mana5 = 1;
 	}
 	// [FB] Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl->SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
+	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
 	if (readyweapon == HexenDefs::WP_FIRST)
 	{
 		sb_mana1 = 0;
@@ -1080,44 +1080,44 @@ void SB_DrawFullscreenStats(void)
 	R_DrawShadowedPic(360, 350, pic_manadim3[sb_mana3]);
 	R_DrawShadowedPic(420, 350, pic_manadim4[sb_mana4]);
 	R_DrawShadowedPic(480, 350, pic_manadim5[sb_mana5]);
-	SB_DrawNumber92(235, 364, cl->mana[0], 0);
-	SB_DrawNumber92(295, 364, cl->mana[1], 0);
-	SB_DrawNumber92(355, 364, cl->mana[2], 0);
-	SB_DrawNumber92(415, 364, cl->mana[3], 0);
-	SB_DrawNumber92(475, 364, cl->mana[4], 0);
+	SB_DrawNumber92(235, 364, cl.mana[0], 0);
+	SB_DrawNumber92(295, 364, cl.mana[1], 0);
+	SB_DrawNumber92(355, 364, cl.mana[2], 0);
+	SB_DrawNumber92(415, 364, cl.mana[3], 0);
+	SB_DrawNumber92(475, 364, cl.mana[4], 0);
 
 //[Korax]
-/*	if (cl->InventoryTime)
+/*	if (cl.InventoryTime)
 	{
 		//  Inventory
-		x = cl->inv_ptr - cl->curpos;
+		x = cl.inv_ptr - cl.curpos;
 		for (i = 0; i < 7; i++)
 		{
 			R_DrawPic2(50 + i * 31, 168, pic_arti[0], 40);
-			if (cl->inventorySlotNum > x + i
-				&& cl->inventory[x + i].type != arti_none)
+			if (cl.inventorySlotNum > x + i
+				&& cl.inventory[x + i].type != arti_none)
 			{
 				R_DrawShadowedPic(49 + i * 31, 167,
-					pic_arti[cl->inventory[x + i].type]);
-				SB_DrawINumber(69 + i * 31, 188, cl->inventory[x + i].count);
+					pic_arti[cl.inventory[x + i].type]);
+				SB_DrawINumber(69 + i * 31, 188, cl.inventory[x + i].count);
 			}
 		}
-		R_DrawShadowedPic(50 + cl->curpos * 31, 167, pic_selectbox);
+		R_DrawShadowedPic(50 + cl.curpos * 31, 167, pic_selectbox);
 		if (x != 0)
 		{
 			R_DrawShadowedPic(40, 167, pic_invgeml[!(level->tictime & 4) ? 0 : 1]);
 		}
-		if (cl->inventorySlotNum - x > 7)
+		if (cl.inventorySlotNum - x > 7)
 		{
 			R_DrawShadowedPic(268, 167, pic_invgemr[!(level->tictime & 4) ? 0 : 1]);
 		}
 	}
-	else if (cl->readyArtifact > 0)
+	else if (cl.readyArtifact > 0)
 	{
 		//  Ready artifact
 		R_DrawPic2(286, 170, pic_arti[0], 40);
-		R_DrawShadowedPic(284, 169, pic_arti[cl->readyArtifact]);
-		SB_DrawINumber(306, 192, cl->inventory[cl->inv_ptr].count);
+		R_DrawShadowedPic(284, 169, pic_arti[cl.readyArtifact]);
+		SB_DrawINumber(306, 192, cl.inventory[cl.inv_ptr].count);
 	}*/
 
 	//  [FB] Return virtual screen resolution for everything else
@@ -1140,10 +1140,10 @@ void SB_DrawIcons(int view)
 		SetVirtualScreen(640, 400);
 
 		// Wings of wrath
-		if (cl->SBFlags & HexenDefs::SBF_POWER_FLIGHT)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 		{
 			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl->SBFlags & HexenDefs::SBF_IN_FLIGHT)
+			if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
 				{
@@ -1166,32 +1166,32 @@ void SB_DrawIcons(int view)
 		}
 	
 		// Speed Boots
-		if (cl->SBFlags & HexenDefs::SBF_POWER_SPEED)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
 		{
 			R_DrawPic(90, 38, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
-		if (cl->SBFlags & HexenDefs::SBF_POWER_INVULN)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
 		{
 			R_DrawPic(520, 38, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
-		if (cl->SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
 		{
 			R_DrawPic(600, 38, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
-		if (cl->SBFlags & HexenDefs::SBF_POWER_DAMAGE)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
 			R_DrawPic(40, 38, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
-		if (cl->SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
 		{
 			R_DrawPic2(200, 38, pic_shsp, 40);
 		}
@@ -1201,10 +1201,10 @@ void SB_DrawIcons(int view)
 	else
 	{
 		// Wings of wrath
-		if (cl->SBFlags & HexenDefs::SBF_POWER_FLIGHT)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 		{
 			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl->SBFlags & HexenDefs::SBF_IN_FLIGHT)
+			if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
 			{
 				if (hitCenterFrame && frame != 15 && frame != 0)
 				{
@@ -1227,32 +1227,32 @@ void SB_DrawIcons(int view)
 		}
 	
 		// Speed Boots
-		if (cl->SBFlags & HexenDefs::SBF_POWER_SPEED)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
 		{
 			R_DrawPic(60, 19, pic_boot[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Defensive power
-		if (cl->SBFlags & HexenDefs::SBF_POWER_INVULN)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
 		{
 			R_DrawPic(260, 19, pic_shld[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// Minotaur Active
-		if (cl->SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
 		{
 			R_DrawPic(300, 19, pic_mino[(ClGame.level->tictime / 3) & 15]);
 		}
 	
 		// [FB] PI Damage Active
-		if (cl->SBFlags & HexenDefs::SBF_POWER_DAMAGE)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_DAMAGE)
 		{
 			// [FB] This one should appear where the wings of wrath are supposed to do
 			R_DrawPic(20, 19, pic_pidm[(ClGame.level->tictime / 3) & 7]);
 		}
 	
 		// [FB] Invisibility power
-		if (cl->SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
+		if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
 		{
 			R_DrawPic2(100, 19, pic_shsp, 40);
 		}
@@ -1272,9 +1272,9 @@ void SB_DrawPause(int view)
 		// [FB] Give the fullscreen stats a higher virtual resolution
 		SetVirtualScreen(640, 400);
 
-		if (cl->bPaused && GetCvar("draw_pause"))
+		if (cl.bPaused && GetCvar("draw_pause"))
 		{
-			R_DrawPic(320, cl->maxclients > 1 ? 140 : 40, pic_paused);
+			R_DrawPic(320, cl.maxclients > 1 ? 140 : 40, pic_paused);
 		}
 
 		// [FB] Return virtual resolution to default for everything else
@@ -1282,9 +1282,9 @@ void SB_DrawPause(int view)
 	}
 	else
 	{
-		if (cl->bPaused && GetCvar("draw_pause"))
+		if (cl.bPaused && GetCvar("draw_pause"))
 		{
-			R_DrawPic(160, cl->maxclients > 1 ? 70 : 20, pic_paused);
+			R_DrawPic(160, cl.maxclients > 1 ? 70 : 20, pic_paused);
 		}
 	}
 }
@@ -1303,7 +1303,7 @@ void SB_Drawer(int sb_view)
 	{
 		SB_DrawFullscreenStats();
 	}
-	else if (cl->InventoryTime)
+	else if (cl.InventoryTime)
 	{
 		SB_DrawInventoryBar();
 	}
@@ -1335,7 +1335,7 @@ void SB_UpdateWidgets(void)
 	int delta;
 	int curHealth;
 
-	curHealth = cl->health;
+	curHealth = cl.health;
 
 	if (curHealth < 0)
 	{
@@ -1390,6 +1390,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2006/02/20 22:55:17  dj_jl
+//  Changed client state structure to class.
+//
 //  Revision 1.4  2006/02/19 14:28:44  dj_jl
 //  Some changes because of compiler changes.
 //
