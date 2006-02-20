@@ -98,12 +98,12 @@ void RootWindowCreated()
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
 	GTitle.ClGame = self;
-	GSBar.cl = cl;
+	GSBar.cl = MainClientState(cl);
 	GSBar.ClGame = self;
 	GSBar.Hide();
 	GImission.ClGame = self;
 	GImission.Hide();
-	GFinale.cl = cl;
+	GFinale.cl = MainClientState(cl);
 	GFinale.Hide();
 }
 
@@ -747,7 +747,7 @@ void ParseGunShot()
 		p->org = org;
 		c = P_Random() >> 1;
 		p->color = RGB(c, c, c);
-		p->die = cl->time + 0.5 * Random();
+		p->die = cl.time + 0.5 * Random();
 		p->vel.x = 32.0 * (Random() - 0.5);
 		p->vel.y = 32.0 * (Random() - 0.5);
 		p->vel.z = 32.0 * (Random() - 0.5);
@@ -783,7 +783,7 @@ void ParseBlood()
 		p->org = org;
 		c = P_Random() >> 1;
 		p->color = RGB(32 + c, c >> 4, c >> 4);
-		p->die = cl->time + 0.5 * Random();
+		p->die = cl.time + 0.5 * Random();
 		p->vel.x = 32.0 * (Random() - 0.5);
 		p->vel.y = 32.0 * (Random() - 0.5);
 		p->vel.z = 32.0 * (Random() - 0.5);
@@ -813,7 +813,7 @@ void ParseExplosion()
 	dl->origin = org;
 	dl->radius = 350.0;
 	dl->color = ecolors[etype];
-	dl->die = cl->time + 0.5;
+	dl->die = cl.time + 0.5;
 	dl->decay = 300.0;*/
 
 // ORIGINAL FROM DOOM
@@ -831,7 +831,7 @@ void ParseExplosion()
 		p = NewParticle();
 		if (!p)
 			return;
-		p->die = cl->time + 5.0;
+		p->die = cl.time + 5.0;
 		p->color = ramp1[0];
 		p->ramp = Random() * 4.0;
 		if (i & 1)
@@ -854,7 +854,7 @@ void ParseExplosion()
 	dl->origin = org;
 	dl->radius = 350.0;
 	dl->color = 0xffffffff;
-	dl->die = cl->time + 0.5;
+	dl->die = cl.time + 0.5;
 	dl->decay = 300.0;
 
 }
@@ -880,7 +880,7 @@ void ParseExplosion2()
 	dl->origin = org;
 	dl->radius = 350.0;
 	dl->color = ecolors[etype];
-	dl->die = cl->time + 0.5;
+	dl->die = cl.time + 0.5;
 	dl->decay = 300.0;
 }
 
@@ -905,7 +905,7 @@ void ParseIceChunks()
 		p = NewParticle();
 		if (!p)
 			return;
-		p->die = cl->time + 5.0;
+		p->die = cl.time + 5.0;
 		c = P_Random() >> 1; 
 		p->color = RGB(c, c, c);
 		p->ramp = Random() * 4.0;
@@ -1069,7 +1069,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(255, 255, 255);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 		break;
 
 	case HexenDefs::EF_DL_RED:
@@ -1077,7 +1077,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(255, 0, 0);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 		break;
 
 	case HexenDefs::EF_DL_GREEN:
@@ -1085,7 +1085,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(0, 255, 0);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 		break;
 
 	case HexenDefs::EF_DL_BLUE:
@@ -1093,7 +1093,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(0, 0, 255);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 		break;
 
 	case HexenDefs::EF_DL_DARK:
@@ -1101,7 +1101,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(1, 1, 1);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 		break;
 
 	case HexenDefs::EF_DL_ROCKET:
@@ -1109,7 +1109,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->origin = mobj->origin;
 		dl->radius = 200.0;
 		dl->color = RGB(255, 255, 255);
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 
 		count = ftoi(DeltaTime * 256.0);
 		for (i = 0; i < count; i++)
@@ -1121,7 +1121,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 			p->org = mobj->origin;
 			c = P_Random() >> 1;
 			p->color = RGB(c, c, c);
-			p->die = cl->time + 0.5 * Random();
+			p->die = cl.time + 0.5 * Random();
 			p->type = pt_static;
 			p->vel.x = 16.0 * (Random() - 0.5);
 			p->vel.y = 16.0 * (Random() - 0.5);
@@ -1139,7 +1139,7 @@ void UpdateMobj(clmobj_t * mobj, int key, float DeltaTime)
 		dl->radius = 200.0 + Random() * 31.0;
 		dl->color = 0xffffffff;
 		dl->minlight = 32.0;
-		dl->die = cl->time + 0.1;
+		dl->die = cl.time + 0.1;
 	}
 }
 
@@ -1167,6 +1167,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2006/02/20 22:55:17  dj_jl
+//  Changed client state structure to class.
+//
 //  Revision 1.4  2006/02/19 14:28:44  dj_jl
 //  Some changes because of compiler changes.
 //
