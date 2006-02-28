@@ -640,28 +640,15 @@ int ManaFromItem(Actor item)
 
 bool IsDangerous(sector_t *sec)
 {
-	switch (sec->special)
+	switch (sec->special & ~SECSPEC_SECRET_MASK)
 	{
-	case 7:		// Damage_Sludge
-	case 5:		// Damage_LavaWimpy
-	case 16:	// Damage_LavaHefty
 	case 4:		// Scroll_EastLavaDamage
-	case FLOOR_LAVA:
-	case FLOOR_SLUDGE:
+	case 5:		// Damage_LavaWimpy
+	case 7:		// Damage_Sludge
+	case 16:	// Damage_LavaHefty
 		return true;
 	}
 
-	// [FB] Check 3d Floors too!	
-	if(sec->bHasExtrafloors && sec->bUnderWater)
-	{
-		switch (sec->special)
-		{
-			case FLOOR_LAVA:
-			case FLOOR_SLUDGE:
-			return true;
-		}
-	}
-		
 	return false;
 }
 
@@ -670,6 +657,7 @@ bool IsDangerous(sector_t *sec)
 //	PTR_BotPathTraverse
 //
 //	[BC] For the bots
+//	[FB] Additions for 3d floor checks
 //
 //==========================================================================
 
@@ -693,10 +681,6 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
 			return false;
 
-		// [FB] We can't try to use this line
-		if (!ld->special)
-			return false;
-
 		// Line isn't two sided
 		if (!ld->backsector)
 			return false;
@@ -716,9 +700,75 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		if (IsDangerous(back))
 			return false;
 
+		// [FB] Opening isn't big enough on the other side
+		if (back->ceilingheight - front->floorheight <= botmo.Height)
+		{
+			return false;
+		}
+
+		// [FB] Ceiling is too low
+		if (back->ceilingheight - back->floorheight <= botmo.Height)
+		{
+			return false;
+		}
+
+		// --- Special Cases ---
+
+		// [FB] Columns on the front sector
+		if (front->ceilingheight == front->floorheight)
+		{
+			return false;
+		}
+
+		// [FB] Columns on the back sector
+		if (back->ceilingheight == back->floorheight)
+		{
+			return false;
+		}
+
+		// [FB] Now, let's check the 3d Floors!!
+		if(front->bHasExtrafloors)
+		{
+			if(botmo.WaterLevel < 2)
+			{
+				// [FB] Opening isn't big enough on the other side
+				if (back->ceilingheight - front->floorheight <= botmo.Height)
+				{
+					return false;
+				}
+
+				// [FB] Ceiling is too low
+				if (back->ceilingheight - back->floorheight <= botmo.Height)
+				{
+					return false;
+				}
+			}
+
+			// --- Special Cases For Extra Floors ---
+
+			if(botmo.WaterLevel < 2)
+			{
+				// [FB] When the floor height of the floor in an extra floor
+				// in the back sector is equal to the ceiling height of the
+				// front sector with no extra floor
+				if (front->ceilingheight - back->floorheight <= botmo.Height)
+				{
+					return false;
+				}
+	
+				// [FB] When the floor height of the floor in an extra floor
+				// in the front sector is equal to the ceiling height of the
+				// back sector with no extra floor
+				if (back->ceilingheight - front->floorheight <= botmo.Height)
+				{
+					return false;
+				}
+			}
+		}
+
 		// crosses a two sided line
 		open = LineOpenings(ld, hit_point);
-		open = FindOpening(open, hit_point.z  + botmo.Height / 2.0, hit_point.z + botmo.Height);
+		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
 		// No valid openings
 		if (!open)
 		{
@@ -733,52 +783,12 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		diffheight = back->floorheight - front->floorheight;
 
-		// [FB] Opening isn't big enough on the other side
-		if (back->ceilingheight - front->floorheight <= botmo.Height && !front->bHasExtrafloors)
+		// [FB] What, diffheight is negative? Make it positive here
+		if (diffheight < 0.0)
 		{
-			return false;
+			diffheight = -1.0 * diffheight;
 		}
-
-		// [FB] Ceiling is too low
-		if (back->ceilingheight - back->floorheight <= botmo.Height && !back->bHasExtrafloors)
-		{
-			return false;
-		}
-
-		if (diffheight > 0.0 && !front->bHasExtrafloors)
-		{
-			if (diffheight > 48.0 && !front->bHasExtrafloors)
-			{
-			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
-				{
-					return true;
-				}
-				else*/
-					return false;
-			}
-			else if (diffheight <= 48.0 && diffheight >= 24.0 && !front->bHasExtrafloors)
-			{
-				player.Buttons |= BT_JUMP;
-			}
-		}
-
-		// [FB] Now, let's check the 3d Floors!!
-		if(botmo.WaterLevel < 2)
-		{
-			// [FB] Opening isn't big enough on the other side
-			if ((back->ceilingheight - front->floorheight <= botmo.Height) && front->bHasExtrafloors)
-			{
-				return false;
-			}
-
-			// [FB] Ceiling is too low
-			if ((back->ceilingheight - back->floorheight <= botmo.Height) && front->bHasExtrafloors)
-			{
-				return false;
-			}
-		}
-
-		if (diffheight > 0.0 && front->bHasExtrafloors)
+		else if (diffheight > 0.0)
 		{
 			if (diffheight > 48.0)
 			{
@@ -789,48 +799,13 @@ bool PTR_BotPathTraverse(intercept_t *in)
 				else*/
 					return false;
 			}
-			else if (diffheight <= 48.0 && diffheight >= 24.0)
+			else if (diffheight >= 24.0 && diffheight <= 48.0)
 			{
-				player.Buttons |= BT_JUMP;
+				botmo.Player.Buttons |= BT_JUMP;
 			}
 		}
 
-		// --- Special Cases ---
-
-		// [FB] Columns on the front sector
-		if (front->ceilingheight == front->floorheight && !front->bHasExtrafloors)
-		{
-			return false;
-		}
-
-		// [FB] Columns on the back sector
-		if (back->ceilingheight == back->floorheight && !back->bHasExtrafloors)
-		{
-			return false;
-		}
-
-		// --- Special Cases For Extra Floors ---
-
-		if(botmo.WaterLevel < 2)
-		{
-			// [FB] When the floor height of an extra floor in the back sector
-			// is equal to the ceiling height of the front sector with
-			// no extra floor
-			if ((back->floorheight - front->ceilingheight <= botmo.Height) && front->bHasExtrafloors)
-			{
-				return false;
-			}
-	
-			// [FB] When the floor height of an extra floor in the front sector
-			// is equal to the ceiling height of the back sector with
-			// no extra floor
-			if ((front->floorheight - back->ceilingheight <= botmo.Height) && front->bHasExtrafloors)
-			{
-				return false;
-			}
-		}
-
-		return true;			
+		return true;
 	}
 
 	th = Actor(in->Thing);
@@ -845,12 +820,11 @@ bool PTR_BotPathTraverse(intercept_t *in)
 /*	float dheight;
 	dheight = abs(th.Origin.z - shoot_thing.Origin.z);
 
-
-	if (dheight > 0)
+	if (dheight > 0.0)
 	{
-		if (dheight <= 48.0 && dheight >= 24.0)
+		if (dheight >= 24.0 && dheight <= 48.0)
 		{
-			bot.player.Buttons |= BT_JUMP;
+			botmo.Player.Buttons |= BT_JUMP;
 			return true;
 		}
 		else if (dheight <= 24.0)
@@ -858,8 +832,8 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		else
 			return false;
 				
-	}
-*/
+	}*/
+
 	return true;
 }
 
@@ -1040,7 +1014,7 @@ void BotAim()
 
 Actor FindEnemy()
 {
-	float closest_dist, temp;
+	float closest_dist, dist;
 	Actor target;
 	float vangle;
 	int i, light;
@@ -1058,7 +1032,7 @@ Actor FindEnemy()
 	// [FB] Look for monster enemy
 	FOREACH(Actor, actor)
 	{
-		temp = botmo.DistTo(actor);
+		dist = botmo.DistTo(actor);
 
 		if (!(actor.bEnemy))
 			continue;
@@ -1066,7 +1040,29 @@ Actor FindEnemy()
 			continue;
 		if (!botmo.CanSee(actor))
 			continue;
-		if (temp > MAX_MONSTER_TARGET_DIST)
+		// [FB] Don't attack our friendly minotaur in all these cases
+		if (!player.Level.Game.deathmatch)
+		{
+			// [FB] For some gameplay modes, we just only check if it's a minotaur
+			if (actor.Class == Minotaur)
+				continue;
+		}
+		else if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
+			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
+		{
+			// [FB] Check if the minotaur's instigator is same colored as we are
+			for(i=0; i < MAXPLAYERS; i++)
+			{
+				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i] && player.Level.Game.Players[i].Color == player.Color)
+					continue;
+			}
+		}
+
+		// [FB] We spawned the minotaur? we shouldn't attack him then!
+		if (actor.bEnemy && actor.Class == Minotaur && actor.Instigator == botmo)
+			continue;
+
+		if (dist > MAX_MONSTER_TARGET_DIST)
 			continue;
 
 		target = none;
@@ -1077,16 +1073,16 @@ Actor FindEnemy()
 		{
 			if (botmo.CanSee(actor))
 			{
-				temp = botmo.DistTo(actor);
+				dist = botmo.DistTo(actor);
 				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 
 				// [FB] Too dark?
-				if (temp > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
+				if (dist > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
 					continue;
 
-				if (temp < closest_dist)
+				if (dist < closest_dist)
 				{
-					closest_dist = temp;
+					closest_dist = dist;
 					target = actor;
 				}
 			}
@@ -1125,16 +1121,16 @@ Actor FindEnemy()
 			{
 				if (botmo.CanSee(player.Level.Game.Players[i].MO))
 				{
-					temp = botmo.DistTo(player.Level.Game.Players[i].MO);
+					dist = botmo.DistTo(player.Level.Game.Players[i].MO);
 					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
 
 					// [FB] Too dark?
-					if (temp > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
+					if (dist > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
 						continue;
 
-					if (temp < closest_dist)
+					if (dist < closest_dist)
 					{
-						closest_dist = temp;
+						closest_dist = dist;
 						target = player.Level.Game.Players[i].MO;
 					}
 				}
@@ -2209,7 +2205,7 @@ int BotSkill() // [FB] Select the right skill for the player
 
 void OnBeginPlay()
 {
-	int bottype = 0;
+	int bottype;
 	botinfo_t *binfo;
 	int i;
 
@@ -2424,7 +2420,7 @@ void GaveMana(int mana)
 	int i;
 	if (player.ReadyWeapon == HexenDefs::WP_FIRST)
 	{
-		for (i=HexenDefs::NUMWEAPONS-1;i>-1;i--)
+		for (i = HexenDefs::NUMWEAPONS - 1; i > -1; i--)
 		{
 			if (player.WeaponOwned[i]) 
 			{
@@ -2442,6 +2438,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.20  2006/02/28 02:50:46  firebrand_kh
+//  Fixed checks for PTR_BotTransverse
+//
 //  Revision 1.19  2006/02/17 19:17:50  dj_jl
 //  Moved common defs to classes.
 //
