@@ -33,6 +33,48 @@
 // Main bot class
 class BotPlayer : Object;
 
+const float
+	FORWARDWALK				= 200.0,
+	FORWARDRUN				= 400.0,
+	SIDEWALK				= 192.0,
+	SIDERUN					= 320.0,
+
+	MAX_TRAVERSE_DIST		= 1024.0,			//10 meters, used within b_func.c
+	AVOID_DIST				= 512.0,		//Try avoid incoming missiles once they reached this close
+	SAFE_SELF_MISDIST		= 128.0,		//Distance from self to target where it's safe to pull a rocket.
+	FRIEND_DIST				= 128.0,		//To friend.
+	DARK_DIST				= 256.0,		//Distance that bot can see enemies in the dark from.
+	MAX_MONSTER_TARGET_DIST	= 1024.0,		///Too high can slow down the performance, see P_mobj.c
+	ENEMY_SCAN_FOV			= 120.0,
+	MAXMOVEHEIGHT			= 32.0,			//MAXSTEPMOVE but with jumping counted in.
+	GETINCOMBAT				= 512.0,		//Max distance to item if it's due to be picked up in a combat situation.
+	SHOOTFOV				= 60.0,
+	MAXROAM					= (5.0 * 35.0);	//When this time is elapsed the bot will roam after something else.
+const int WHATS_DARK		= 64;			//light value thats classed as dark.
+
+//
+// Bot states
+//
+//struct botstate_t
+enum
+{
+	// Deciding what to do
+	BST_NOTHING,
+	// Bot is "fetching" something (skull, whatever)
+	BST_OFFENSE,
+	// Bot is defending something
+	BST_DEFENSE,
+	// Bot is heading to scoring place
+	BST_RETURN
+};
+
+// The things the bot knows about their enemy
+struct enemyinfo_t
+{
+	int		health;
+	int		weap;
+};
+
 Player player;			// Points to reference player
 Actor botmo;
 
@@ -185,15 +227,16 @@ void BotTick(float deltaTime)
 	player.SideMove = sidemove;
 	player.ForwardMove = forwardmove;
 
-#define DECT(var) \
-	var -= deltaTime; \
-	if (var <= 0.0) \
-	{ \
-		var = 0.0; \
+	t_react -= deltaTime;
+	if (t_react <= 0.0)
+	{
+		t_react = 0.0;
 	}
-	DECT(t_react)
-	DECT(t_anticip)
-#undef DECT
+	t_anticip -= deltaTime;
+	if (t_anticip <= 0.0)
+	{
+		t_anticip = 0.0;
+	}
 }
 
 //==========================================================================
@@ -1160,7 +1203,7 @@ int B_ChooseWeapon()
 	{
 		dist = botmo.DistTo(enemy);
 
-		if (dist <= MELEERANGE)
+		if (dist <= Actor::MELEERANGE)
 		{
 			switch(player.PClass)
 			{
@@ -2211,7 +2254,7 @@ void OnBeginPlay()
 
 	if (strcmp(ARR2STR(player.PlayerName), ""))
 	{
-		for (i = 0; i < NUMTOTALBOTS; i++)
+		for (i = 0; i < MainGameInfo::NUMTOTALBOTS; i++)
 		{
 			if (!stricmp(MainGameInfo(player.Level.Game).botinfo[i].Name, ARR2STR(player.PlayerName)))
 			{
@@ -2226,7 +2269,7 @@ void OnBeginPlay()
 		// If the user doesn't input a name, don't
 		// spawn one of the "special" bots, only one of the
 		// normal ones.
-		bottype = P_Random() % NUMBOTTYPES;
+		bottype = P_Random() % MainGameInfo::NUMBOTTYPES;
 	}
 
 	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
@@ -2438,6 +2481,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.21  2006/02/28 22:49:16  dj_jl
+//  Replaced defines with constants.
+//
 //  Revision 1.20  2006/02/28 02:50:46  firebrand_kh
 //  Fixed checks for PTR_BotTransverse
 //
