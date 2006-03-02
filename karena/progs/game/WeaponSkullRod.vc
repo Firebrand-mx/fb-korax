@@ -36,7 +36,7 @@ void A_FireSkullRodPL1()
 	Actor A;
 
 	UseWeaponMana();
-	A = Player.SpawnPlayerMissile(HornRodMissile1);
+	A = Player(Player).SpawnPlayerMissile(HornRodMissile1);
 	// Randomize the first frame
 	if (A && P_Random() > 128)
 	{
@@ -46,11 +46,11 @@ void A_FireSkullRodPL1()
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	Player.MO.PlaySound('SkullRodFire', CHAN_WEAPON);
@@ -70,7 +70,7 @@ void A_FireSkullRodPL2()
 {
 	Actor MissileMobj;
 	UseWeaponMana();
-	MissileMobj = Player.SpawnPlayerMissile2(HornRodMissile2, false);
+	MissileMobj = Player(Player).SpawnPlayerMissile2(HornRodMissile2, false);
 	// Use MissileMobj instead of the return value from
 	// SpawnPlayerMissile because we need to give info to the mobj
 	// even if it exploded immediately.
@@ -90,16 +90,16 @@ void A_FireSkullRodPL2()
 		{
 			if(!active_damage)
 			{
-				MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player.intelligence / 10;
+				MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player(Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		if (Player.MO.linetarget)
+		if (Actor(Player.MO).linetarget)
 		{
-			MissileMobj.Enemy = Player.MO.linetarget;
+			MissileMobj.Enemy = Actor(Player.MO).linetarget;
 		}
 		MissileMobj.PlaySound('SkullRodFire2', CHAN_WEAPON);
 		if (!MissileMobj.TryMove(MissileMobj.Origin))
@@ -155,6 +155,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.8  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

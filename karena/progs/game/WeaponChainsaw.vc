@@ -53,10 +53,10 @@ void A_Saw()
 
 	// use meleerange + 1 se the puff doesn't skip the flash
 	//dir = AimLineAttack(Player.MO, aimAng, MELEERANGE + 0.00001);
-	Player.MO.AimLineAttack(&aimAng, MELEERANGE * 2.0);
+	Actor(Player.MO).AimLineAttack(&aimAng, MELEERANGE * 2.0);
 	AngleVector(&aimAng, &dir);
-	Player.MO.LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
-	if (!Player.MO.linetarget)
+	Actor(Player.MO).LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
+	if (!Actor(Player.MO).linetarget)
 	{
 		Player.MO.PlaySound('ChainsawTriggered', CHAN_WEAPON);
 		return;
@@ -64,8 +64,8 @@ void A_Saw()
 	Player.MO.PlaySound('ChainsawHit', CHAN_WEAPON);
 
 	// turn to face target
-	angle = atan2(Player.MO.linetarget.Origin.y - Player.MO.Origin.y,
-		Player.MO.linetarget.Origin.x - Player.MO.Origin.x);
+	angle = atan2(Actor(Player.MO).linetarget.Origin.y - Player.MO.Origin.y,
+		Actor(Player.MO).linetarget.Origin.x - Player.MO.Origin.x);
 	if (AngleMod360(angle - Player.MO.Angles.yaw) > 180.0)
 	{
 		if (AngleMod360(angle - Player.MO.Angles.yaw) < -90.0 / 20.0)
@@ -81,7 +81,7 @@ void A_Saw()
 			Player.MO.Angles.yaw += 90.0 / 20.0;
 	}
 	Player.MO.Angles.yaw = AngleMod360(Player.MO.Angles.yaw);
-	Player.MO.bJustAttacked = true;
+	Actor(Player.MO).bJustAttacked = true;
 	Player.bFixAngle = true;
 }
 
@@ -114,6 +114,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.8  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.7  2006/02/17 19:17:51  dj_jl
 //  Moved common defs to classes.
 //

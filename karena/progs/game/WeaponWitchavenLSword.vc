@@ -62,11 +62,11 @@ int A_WLShieldProtect()
 	if ((Shieldcharge > 0.0) && (Player.Buttons & BT_ATTACK)) // Do we still have enough charge?
 	{
 		A_ShieldCheck();
-		hits = (Player.dam_am * (60 + Player.constitution) / 15);
+		hits = (Player(Player).dam_am * (60 + Player(Player).constitution) / 15);
 
 		if(hits > 0)
 		{
-			if(Player.GiveBody(hits))
+			if(Player(Player).GiveBody(hits))
 			{
 				print("Health: %d", hits);
 				print("Shieldcharge a: %f", Shieldcharge);
@@ -105,11 +105,11 @@ void A_WLSwordAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player.strength / 10;
+			damage = damage * Player(Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	power = 0.0;
@@ -134,7 +134,7 @@ void A_WLSwordAttack()
 			{
 				Owner.linetarget.Thrust(angles.yaw, power);
 			}
-			Player.AdjustPlayerAngle();
+			Player(Player).AdjustPlayerAngle();
 			useMana++;
 			break;
 		}
@@ -152,7 +152,7 @@ void A_WLSwordAttack()
 			{
 				Owner.linetarget.Thrust(angles.yaw, power);
 			}
-			Player.AdjustPlayerAngle();
+			Player(Player).AdjustPlayerAngle();
 			useMana++;
 			break;
 		}
@@ -226,14 +226,14 @@ void A_Unprotect()
 
 void A_ChargeShield()
 {
-	if(timer % (3 * 35) == 0 && Shieldcharge < (15.0 * (itof(Player.exp_level) / 0.5)))
+	if(timer % (3 * 35) == 0 && Shieldcharge < (15.0 * (itof(Player(Player).exp_level) / 0.5)))
 	{
 		// [FB] Temporarily change the amount of mana used by the weapon
 		manause = 5;
 		UseWeaponMana();
 		// [FB] Return the default mana use
 		manause = 15;
-		Shieldcharge += ((1.5 * itof(Player.exp_level) / 0.5));
+		Shieldcharge += ((1.5 * itof(Player(Player).exp_level) / 0.5));
 	}
 	A_WeaponReady();
 	timer += 1;
@@ -423,6 +423,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.14  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.13  2006/02/17 19:17:49  dj_jl
 //  Moved common defs to classes.
 //

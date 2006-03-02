@@ -70,18 +70,18 @@ void A_CStaffCheck()
 	TAVec angles;
 	TVec vforward;
 
-	pmo = Player.MO;
+	pmo = Actor(Player.MO);
 	damage = 27; //20 + (P_Random() & 15);
 
 	if (int_mod)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player.intelligence / 10;
+			damage = damage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	for (i = 0; i < 3; i++)
@@ -109,14 +109,14 @@ void A_CStaffCheck()
 		}
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		Player.MO.AimLineAttack(&angles, 3.0 * MELEERANGE / 2.0);
-		if (Player.MO.linetarget)
+		Actor(Player.MO).AimLineAttack(&angles, 3.0 * MELEERANGE / 2.0);
+		if (Actor(Player.MO).linetarget)
 		{
 			AngleVector(&angles, &vforward);
 			pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
-			pmo.Angles.yaw = atan2(Player.MO.linetarget.Origin.y - pmo.Origin.y,
-				Player.MO.linetarget.Origin.x - pmo.Origin.x);
-			if (Player.MO.linetarget.bIsPlayer || Player.MO.linetarget.bCountKill)
+			pmo.Angles.yaw = atan2(Actor(Player.MO).linetarget.Origin.y - pmo.Origin.y,
+				Actor(Player.MO).linetarget.Origin.x - pmo.Origin.x);
+			if (Actor(Player.MO).linetarget.bIsPlayer || Actor(Player.MO).linetarget.bCountKill)
 			{
 				newLife = Player.Health + (damage >> 4);
 				newLife = newLife > 100 ? 100 : newLife;
@@ -144,13 +144,13 @@ void A_CStaffAttack()
 
 	UseWeaponMana();
 	playPawn = PlayerPawn(Player.MO);
-	mo = Player.SpawnPlayerMissileAngle(ClericStaffMissile,
+	mo = Player(Player).SpawnPlayerMissileAngle(ClericStaffMissile,
 		playPawn.Angles.yaw - (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 32;
 	}
-	mo = Player.SpawnPlayerMissileAngle(ClericStaffMissile,
+	mo = Player(Player).SpawnPlayerMissileAngle(ClericStaffMissile,
 		playPawn.Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
@@ -159,11 +159,11 @@ void A_CStaffAttack()
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player.intelligence / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}
@@ -229,6 +229,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.6  2006/02/17 19:17:51  dj_jl
 //  Moved common defs to classes.
 //

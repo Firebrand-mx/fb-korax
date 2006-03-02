@@ -49,20 +49,20 @@ void A_GauntletAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player.strength / 10;
+			damage = damage * Player(Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	dist = MELEERANGE + 0.00001;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	Player.MO.AimLineAttack(&angles, dist);
+	Actor(Player.MO).AimLineAttack(&angles, dist);
 	AngleVector(&angles, &dir);
-	Player.MO.LineAttack(dir, dist, damage, GauntletPuff1);
-	if (!Player.MO.linetarget)
+	Actor(Player.MO).LineAttack(dir, dist, damage, GauntletPuff1);
+	if (!Actor(Player.MO).linetarget)
 	{
 		if (P_Random() > 64)
 		{
@@ -70,9 +70,9 @@ void A_GauntletAttack()
 		}
 		// didn't find any creatures, so try to strike any walls
 		angles = Player.MO.Angles;
-		Player.MO.AimLineAttack(&angles, MELEERANGE);
+		Actor(Player.MO).AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &dir);
-		Player.MO.LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
+		Actor(Player.MO).LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
 		Player.MO.PlaySound('GauntletFull', CHAN_WEAPON);
 		return;
 	}
@@ -89,13 +89,13 @@ void A_GauntletAttack()
 	{
 		Player.ExtraLight = 2;
 	}
-	if (!Player.Refire)
+	if (!Player(Player).Refire)
 		Player.MO.PlaySound('GauntletHit', CHAN_WEAPON);
 	else
 		Player.MO.PlaySound('GauntletUse', CHAN_WEAPON);
 	// turn to face target
-	angle = atan2(Player.MO.linetarget.Origin.y - Player.MO.Origin.y,
-		Player.MO.linetarget.Origin.x - Player.MO.Origin.x);
+	angle = atan2(Actor(Player.MO).linetarget.Origin.y - Player.MO.Origin.y,
+		Actor(Player.MO).linetarget.Origin.x - Player.MO.Origin.x);
 	if (AngleMod360(angle - Player.MO.Angles.yaw) > 180.0)
 	{
 		if (AngleMod360(angle - Player.MO.Angles.yaw) < 360.0 - 90.0 / 20.0)
@@ -110,7 +110,7 @@ void A_GauntletAttack()
 		else
 			Player.MO.Angles.yaw = AngleMod360(Player.MO.Angles.yaw + 90.0 / 20.0);
 	}
-	Player.MO.bJustAttacked = true;
+	Actor(Player.MO).bJustAttacked = true;
 }
 
 __states__
@@ -145,6 +145,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.6  2006/02/17 19:17:51  dj_jl
 //  Moved common defs to classes.
 //

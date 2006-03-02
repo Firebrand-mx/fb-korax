@@ -35,20 +35,20 @@ void MStaffSpawn(float angle)
 {
 	Actor mo;
 
-	mo = Player.SpawnPlayerMissileAngle(MageStaffFX2, angle);
+	mo = Player(Player).SpawnPlayerMissileAngle(MageStaffFX2, angle);
 	if (mo)
 	{
-		mo.Instigator = Player.MO;
+		mo.Instigator = Actor(Player.MO);
 		mo.Enemy = Actor(mo.RoughMonsterSearch(10));
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player.strength / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Player).strength / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}
@@ -71,9 +71,9 @@ void A_MStaffAttack()
 	MStaffSpawn(angle - 5.0);
 	MStaffSpawn(angle + 5.0);
 	Player.MO.PlaySound('MageStaffFire', CHAN_WEAPON);
-	Player.DamageFlash = 0.0;
-	Player.BonusFlash = 0.0;
-	Player.WeaponPalette = Player::STARTSCOURGEPAL;
+	Player(Player).DamageFlash = 0.0;
+	Player(Player).BonusFlash = 0.0;
+	Player(Player).WeaponPalette = Player::STARTSCOURGEPAL;
 }
 
 //==========================================================================
@@ -84,7 +84,7 @@ void A_MStaffAttack()
 
 void A_MStaffPalette1()
 {
-	Player.WeaponPalette = Player::STARTSCOURGEPAL + 1;
+	Player(Player).WeaponPalette = Player::STARTSCOURGEPAL + 1;
 }
 
 //==========================================================================
@@ -95,7 +95,7 @@ void A_MStaffPalette1()
 
 void A_MStaffPalette2()
 {
-	Player.WeaponPalette = Player::STARTSCOURGEPAL + 2;
+	Player(Player).WeaponPalette = Player::STARTSCOURGEPAL + 2;
 }
 
 //==========================================================================
@@ -107,7 +107,7 @@ void A_MStaffPalette2()
 void A_MStaffPalette3()
 {
 	// reset back to original playpal
-	Player.WeaponPalette = 0;
+	Player(Player).WeaponPalette = 0;
 }
 
 __states__
@@ -179,6 +179,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.6  2006/02/28 22:49:17  dj_jl
 //  Replaced defines with constants.
 //

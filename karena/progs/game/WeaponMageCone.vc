@@ -41,7 +41,7 @@ void A_FireConePL1()
 	int conedone = false;
 
 	UseWeaponMana();
-	pmo = Player.MO;
+	pmo = Actor(Player.MO);
 	pmo.PlaySound('MageShardsFire', CHAN_WEAPON);
 
 	damage = 97; //90 + (P_Random() & 15);
@@ -49,11 +49,11 @@ void A_FireConePL1()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player.strength / 10;
+			damage = damage * Player(Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	for (i = 0; i < 16; i++)
@@ -74,18 +74,18 @@ void A_FireConePL1()
 	// didn't find any creatures, so fire projectiles
 	if (!conedone)
 	{
-		mo = ShardMissile(Player.SpawnPlayerMissile(ShardMissile));
+		mo = ShardMissile(Player(Player).SpawnPlayerMissile(ShardMissile));
 		if (mo)
 		{
 			if (int_mod)
 			{
 				if(!active_damage)
 				{
-					damage = damage * Player.strength / 10;
+					damage = damage * Player(Player).strength / 10;
 				}
 				else // [FB] PI Damage
 				{
-					damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+					damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 				}
 			}
 			mo.bShardSpawnLeft = true;
@@ -135,6 +135,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.6  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

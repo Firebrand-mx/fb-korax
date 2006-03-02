@@ -58,16 +58,16 @@ void A_FirePhoenixPL1()
 
 	UseWeaponMana();
 	Player.MO.PlaySound('PhoenixFire', CHAN_WEAPON);
-	A = Player.SpawnPlayerMissile(PhoenixFX1);
+	A = Player(Player).SpawnPlayerMissile(PhoenixFX1);
 	if (A && int_mod)
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	AngleVector(&Player.MO.Angles, &vforward);
@@ -102,7 +102,7 @@ void A_FirePhoenixPL2()
 	{
 		// Out of flame
 		SetState(Attack2ShutdownState);
-		Player.Refire = 0;
+		Player(Player).Refire = 0;
 		return;
 	}
 	org.x = Player.MO.Origin.x + (Random() - Random()) * 2.0;
@@ -114,19 +114,19 @@ void A_FirePhoenixPL2()
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	A.Instigator = Player.MO;
+	A.Instigator = Actor(Player.MO);
 	A.Angles.yaw = Player.MO.Angles.yaw;
 	A.Angles.pitch = Player.MO.Angles.pitch;
 	AngleVector(&A.Angles, &dir);
 	A.Velocity = Player.MO.Velocity + A.Speed * dir;
-	if (!Player.Refire || !(Player.Level.Game.level->tictime % 38))
+	if (!Player(Player).Refire || !(Player.Level.Game.level->tictime % 38))
 	{
 		Player.MO.PlaySound('PhoenixHit2', CHAN_WEAPON);
 	}
