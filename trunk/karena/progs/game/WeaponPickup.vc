@@ -126,15 +126,15 @@ void TouchSpecial(Actor Toucher)
 		{
 			gaveMana = P.Player.GiveMana(MANA_2, 25);
 		}*/
-		if (P.Player.WeaponOwned[WeaponType])
+		if (Player(P.Player).WeaponOwned[WeaponType])
 		{
 			gaveWeapon = false;
-			gaveMana = P.Player.GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25);
+			gaveMana = Player(P.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25);
 			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
 			{
-				mm1 = P.Player.GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = P.Player.GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = P.Player.GiveMana(HexenDefs::MANA_3, 25);
+				mm1 = Player(P.Player).GiveMana(HexenDefs::MANA_1, 25);
+				mm2 = Player(P.Player).GiveMana(HexenDefs::MANA_2, 25);
+				mm3 = Player(P.Player).GiveMana(HexenDefs::MANA_3, 25);
 
 				if (!mm1 && !mm2 && !mm3)
 				{
@@ -149,18 +149,18 @@ void TouchSpecial(Actor Toucher)
 		else
 		{
 			gaveWeapon = true;
-			P.Player.WeaponOwned[WeaponType] = true;
-			if (WeaponType > P.Player.ReadyWeapon)
+			Player(P.Player).WeaponOwned[WeaponType] = true;
+			if (WeaponType > Player(P.Player).ReadyWeapon)
 			{
 				// Only switch to more powerful weapons
-				P.Player.PendingWeapon = WeaponType;
+				Player(P.Player).PendingWeapon = WeaponType;
 			}
-			gaveMana = P.Player.GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25/*manaadding[P.Player.PClass*NUMWEAPONS+WeaponType]*/);
+			gaveMana = Player(P.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25/*manaadding[P.Player.PClass*NUMWEAPONS+WeaponType]*/);
 			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
 			{
-				mm1 = P.Player.GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = P.Player.GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = P.Player.GiveMana(HexenDefs::MANA_3, 25);
+				mm1 = Player(P.Player).GiveMana(HexenDefs::MANA_1, 25);
+				mm2 = Player(P.Player).GiveMana(HexenDefs::MANA_2, 25);
+				mm3 = Player(P.Player).GiveMana(HexenDefs::MANA_3, 25);
 
 				if (!mm1 && !mm2 && !mm3)
 				{
@@ -179,7 +179,7 @@ void TouchSpecial(Actor Toucher)
 		}
 	}
 
-	cprint(P.Player, P.Player.GetWeaponPickupText(WeaponType));
+	cprint(P.Player, Player(P.Player).GetWeaponPickupText(WeaponType));
 	if (Special)
 	{
 		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
@@ -202,7 +202,7 @@ void TouchSpecial(Actor Toucher)
 		}
 	}
 
-	P.Player.BonusFlash += BONUSADD;
+	Player(P.Player).BonusFlash += BONUSADD;
 	P.PlaySound('PickupWeapon', CHAN_ITEM);
 }
 
@@ -214,6 +214,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.10  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

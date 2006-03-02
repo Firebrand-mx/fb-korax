@@ -38,16 +38,16 @@ void A_FirePistol()
 
 	Player.MO.PlaySound('PistolFire', CHAN_WEAPON);
 
-	Player.MO.SetState(Player.MO.MissileState);
+	Player.MO.SetState(Actor(Player.MO).MissileState);
 	UseWeaponMana();
 
-	Player.SetPsprite(ps_flash, FlashState);
+	Player(Player).SetPsprite(ps_flash, FlashState);
 
 	angles = Player.MO.Angles;
-	Player.MO.AimLineAttack(&angles, MISSILERANGE);
+	Actor(Player.MO).AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, 16.0 * 64.0);
-	GunShot(Player.MO, !Player.Refire, dir);
+	GunShot(Actor(Player.MO), !Player(Player).Refire, dir);
 	Player.MO.Effects |= HexenDefs::EF_DL_MUZZLEFLASH;
 }
 
@@ -82,6 +82,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.8  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

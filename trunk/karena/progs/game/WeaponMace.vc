@@ -46,14 +46,14 @@ void A_FireMacePL1B()
 	{
 		if(!active_damage)
 		{
-			ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+			ball.MissileDamage = ball.MissileDamage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			ball.MissileDamage = (ball.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+			ball.MissileDamage = (ball.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	ball.Instigator = Player.MO;
+	ball.Instigator = Actor(Player.MO);
 	ball.Angles.yaw = angle;
 	ball.Origin.z += 173.0 * -tan(Player.MO.Angles.pitch) / 16.0;
 	ball.Velocity.x = Player.MO.Velocity.x / 2.0 + ball.Speed * cos(angle);
@@ -80,8 +80,7 @@ void A_FireMacePL1()
 	UseWeaponMana();
 	SX = Random() * 4.0 - 2.0;
 	SY = WEAPONTOP + Random() * 4.0;
-	ball = Player.
-	SpawnPlayerMissileAngle(MaceFX1,
+	ball = Player(Player).SpawnPlayerMissileAngle(MaceFX1,
 		AngleMod360(Player.MO.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
 	if (ball)
 	{
@@ -89,14 +88,14 @@ void A_FireMacePL1()
 		{
 			if(!active_damage)
 			{
-				ball.MissileDamage = ball.MissileDamage * Player.intelligence / 10;
+				ball.MissileDamage = ball.MissileDamage * Player(Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				ball.MissileDamage = (ball.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				ball.MissileDamage = (ball.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		ball.Instigator = Player.MO;
+		ball.Instigator = Actor(Player.MO);
 		ball._Special1 = 16;	// tics till dropoff
 	}
 }
@@ -112,29 +111,29 @@ void A_FireMacePL2()
 	Actor A;
 
 	UseWeaponMana();
-	A = Player.SpawnPlayerMissile(MaceFX4);
+	A = Player(Player).SpawnPlayerMissile(MaceFX4);
 	if (A)
 	{
-		A.Instigator = Player.MO;
+		A.Instigator = Actor(Player.MO);
 		if (int_mod)
 		{
-			A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
 			if(!active_damage)
 			{
-				A.MissileDamage = A.MissileDamage * Player.intelligence / 10;
+				A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				A.MissileDamage = (A.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 		A.Velocity.x += Player.MO.Velocity.x;
 		A.Velocity.y += Player.MO.Velocity.y;
 		A.Velocity.z =
 			(2.0 + 173.0 * -tan(Player.MO.Angles.pitch) / 32.0) * 35.0;
-		if (Player.MO.linetarget)
+		if (Actor(Player.MO).linetarget)
 		{
-			A.Enemy = Player.MO.linetarget;
+			A.Enemy = Actor(Player.MO).linetarget;
 		}
 	}
 	Player.MO.PlaySound('MaceFire', CHAN_WEAPON);
@@ -182,6 +181,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.7  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.6  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

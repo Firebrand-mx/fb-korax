@@ -35,21 +35,21 @@ void WFireballSpawn(float angle)
 {
 	Actor mo;
 
-	mo = Player.SpawnPlayerMissileAngle(FireBallMissile, angle);
+	mo = Player(Player).SpawnPlayerMissileAngle(FireBallMissile, angle);
 
 	if (mo)
 	{
-		mo.Instigator = Player.MO;
+		mo.Instigator = Actor(Player.MO);
 		mo.Enemy = Actor(mo.RoughMonsterSearch(2));
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player.intelligence / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player.intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}
@@ -68,22 +68,22 @@ void A_WFireballAttack()
 	UseWeaponMana();
 	angle = Player.MO.Angles.yaw;
 
-	if (Player.exp_level >= 1 && Player.exp_level < 3)
+	if (Player(Player).exp_level >= 1 && Player(Player).exp_level < 3)
 	{
 		WFireballSpawn(angle);
 	}
-	if (Player.exp_level >= 3 && Player.exp_level < 4)
+	if (Player(Player).exp_level >= 3 && Player(Player).exp_level < 4)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 	}
-	if (Player.exp_level >= 4 && Player.exp_level < 5)
+	if (Player(Player).exp_level >= 4 && Player(Player).exp_level < 5)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 		WFireballSpawn(angle + 2.5);
 	}
-	if (Player.exp_level >= 5)
+	if (Player(Player).exp_level >= 5)
 	{
 		WFireballSpawn(angle - 5.0);
 		WFireballSpawn(angle - 2.5);
@@ -131,6 +131,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.8  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

@@ -45,7 +45,7 @@ void A_Disintegrate()
 	UseWeaponMana();
 
 	angles = Player.MO.Angles;
-	Player.MO.AimLineAttack(&angles, MISSILERANGE);
+	Actor(Player.MO).AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &aimDir);
 //	aimDir = Aim(Player.MO, 16.0 * 64.0);
 	for (i = 0; i < 20; i++)
@@ -60,14 +60,14 @@ void A_Disintegrate()
 		{
 			if(!active_damage)
 			{
-				damage = damage * Player.strength / 10;
+				damage = damage * Player(Player).strength / 10;
 			}
 			else // [FB] PI Damage
 			{
-				damage = (damage * Player.intelligence / 10) * ftoi(3.1415);
+				damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		Player.MO.LineAttack(dir, MISSILERANGE, damage, DisintegrationPuff);
+		Actor(Player.MO).LineAttack(dir, MISSILERANGE, damage, DisintegrationPuff);
 		//Player.MO.bDisruptDamage = false;
 	}	
 }
@@ -112,6 +112,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.10  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.9  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //

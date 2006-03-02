@@ -74,7 +74,7 @@ int GetReadyState()
 
 int GetAttackState()
 {
-	return Player.Refire ? HoldAttackState : AttackState;
+	return Player(Player).Refire ? HoldAttackState : AttackState;
 }
 
 void GotMana(int InMana)
@@ -96,13 +96,13 @@ bool IsWeaponManaUsable()
 {
 	if (Mana == HexenDefs::NUMMANA) 
 	{
-		    return Player.Mana[HexenDefs::MANA_1] >= Player.GetWeaponManaUse(self)
-			&& Player.Mana[HexenDefs::MANA_2] >= Player.GetWeaponManaUse(self)
-			&& Player.Mana[HexenDefs::MANA_3] >= Player.GetWeaponManaUse(self);
+		    return Player(Player).Mana[HexenDefs::MANA_1] >= Player(Player).GetWeaponManaUse(self)
+			&& Player(Player).Mana[HexenDefs::MANA_2] >= Player(Player).GetWeaponManaUse(self)
+			&& Player(Player).Mana[HexenDefs::MANA_3] >= Player(Player).GetWeaponManaUse(self);
 	}
 	else 
 	{
-		return Player.Mana[Mana] >= Player.GetWeaponManaUse(self);
+		return Player(Player).Mana[Mana] >= Player(Player).GetWeaponManaUse(self);
 	}
 }
 
@@ -116,17 +116,17 @@ void UseWeaponMana()
 {
 	if (Mana == HexenDefs::NUMMANA)
 	{
-		Player.Mana[HexenDefs::MANA_1] -= Player.GetWeaponManaUse(self);
-		Player.Mana[HexenDefs::MANA_2] -= Player.GetWeaponManaUse(self);
-		Player.Mana[HexenDefs::MANA_3] -= Player.GetWeaponManaUse(self);
+		Player(Player).Mana[HexenDefs::MANA_1] -= Player(Player).GetWeaponManaUse(self);
+		Player(Player).Mana[HexenDefs::MANA_2] -= Player(Player).GetWeaponManaUse(self);
+		Player(Player).Mana[HexenDefs::MANA_3] -= Player(Player).GetWeaponManaUse(self);
 	}
 	else 
 	{
-		Player.Mana[Mana] -= Player.GetWeaponManaUse(self);
+		Player(Player).Mana[Mana] -= Player(Player).GetWeaponManaUse(self);
 	}
-	if (Player.Mana[Mana] < 0)
+	if (Player(Player).Mana[Mana] < 0)
 	{
-		Player.Mana[Mana] = 0;
+		Player(Player).Mana[Mana] = 0;
 	}	
 }
 
@@ -155,15 +155,15 @@ void A_WeaponReady()
 	float angle;
 
 	// Change player from attack state
-	if (Player.MO.StateNum >= Player.MO.MissileState &&
+	if (Player.MO.StateNum >= Actor(Player.MO).MissileState &&
 		Player.MO.StateNum <= PlayerPawn(Player.MO).AttackEndState)
 	{
-		Player.MO.SetState(Player.MO.IdleState);
+		Player.MO.SetState(Actor(Player.MO).IdleState);
 	}
 	// Put the weapon away if the player has a pending weapon or has died.
-	if (Player.PendingWeapon != HexenDefs::wp_nochange || !Player.Health)
+	if (Player(Player).PendingWeapon != HexenDefs::wp_nochange || !Player.Health)
 	{
-		Player.SetPsprite(ps_weapon, GetDownState());
+		Player(Player).SetPsprite(ps_weapon, GetDownState());
 		return;
 	}
 
@@ -171,7 +171,7 @@ void A_WeaponReady()
 	if (Player.Buttons & BT_ATTACK)
 	{
 		Player.bAttackDown = true;
-		Player.FireWeapon();
+		Player(Player).FireWeapon();
 		return;
 	}
 	else
@@ -179,16 +179,16 @@ void A_WeaponReady()
 		Player.bAttackDown = false;
 	}
 
-	if (!Player.MorphTime)
+	if (!Player(Player).MorphTime)
 	{
 		// Bob the weapon based on movement speed.
 		angle = AngleMod360(180.0 * Player.Level.Game.level->time);
-		SX = 1.0 + Player.Bob * cos(angle);
+		SX = 1.0 + Player(Player).Bob * cos(angle);
 		if (angle >= 180.0)
 		{
 			angle -= 180.0;
 		}
-		SY = WEAPONTOP + Player.Bob * sin(angle);
+		SY = WEAPONTOP + Player(Player).Bob * sin(angle);
 	}
 }
 
@@ -200,7 +200,7 @@ void A_WeaponReady()
 
 void A_Lower()
 {
-	if (Player.MorphTime)
+	if (Player(Player).MorphTime)
 	{
 		SY = WEAPONBOTTOM;
 	}
@@ -226,11 +226,11 @@ void A_Lower()
 	if (!Player.Health)
 	{
 		// Player is dead, so keep the weapon off screen
-		Player.SetPsprite(ps_weapon, S_NULL);
+		Player(Player).SetPsprite(ps_weapon, S_NULL);
 		return;
 	}
-	Player.SetWeapon(Player.PendingWeapon);
-	Player.BringUpWeapon();
+	Player(Player).SetWeapon(Player(Player).PendingWeapon);
+	Player(Player).BringUpWeapon();
 }
 
 //==========================================================================
@@ -252,7 +252,7 @@ void A_Raise()
 		return;
 	}
 	SY = WEAPONTOP;
-	Player.SetPsprite(ps_weapon, GetReadyState());
+	Player(Player).SetPsprite(ps_weapon, GetReadyState());
 }
 
 //==========================================================================
@@ -266,15 +266,15 @@ void A_Raise()
 void A_ReFire()
 {
 	if ((Player.Buttons & BT_ATTACK) &&
-		Player.PendingWeapon == HexenDefs::wp_nochange && Player.Health)
+		Player(Player).PendingWeapon == HexenDefs::wp_nochange && Player.Health)
 	{
-		Player.Refire++;
-		Player.FireWeapon();
+		Player(Player).Refire++;
+		Player(Player).FireWeapon();
 	}
 	else
 	{
-		Player.Refire = 0;
-		Player.CheckMana();
+		Player(Player).Refire = 0;
+		Player(Player).CheckMana();
 	}
 }
 
@@ -304,6 +304,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.11  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.10  2006/02/28 22:49:17  dj_jl
 //  Replaced defines with constants.
 //

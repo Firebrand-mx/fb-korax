@@ -38,19 +38,19 @@ void A_FireShotgun()
 	TAVec angles;
 
 	Player.MO.PlaySound('ShotgunFire', CHAN_WEAPON);
-	Player.MO.SetState(Player.MO.MissileState);
+	Player.MO.SetState(Actor(Player.MO).MissileState);
 
 	UseWeaponMana();
 
-	Player.SetPsprite(ps_flash, FlashState);
+	Player(Player).SetPsprite(ps_flash, FlashState);
 
 	angles = Player.MO.Angles;
-	Player.MO.AimLineAttack(&angles, MISSILERANGE);
+	Actor(Player.MO).AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, 16.0 * 64.0);
 	for (i = 0; i < 10/*7*/; i++)
 	{
-		GunShot(Player.MO, false, dir);
+		GunShot(Actor(Player.MO), false, dir);
 	}
 	Player.MO.Effects |= HexenDefs::EF_DL_MUZZLEFLASH;
 }
@@ -93,6 +93,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.9  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
 //  Revision 1.8  2006/02/17 19:17:52  dj_jl
 //  Moved common defs to classes.
 //
