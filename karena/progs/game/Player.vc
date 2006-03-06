@@ -688,13 +688,14 @@ void SpawnPlayer(mthing_t * mthing)
 	if(inited && PlayerState == PST_LIVE)
 	{
 		experience -= (200 * exp_level);
+		Actor(MO).experience = experience;
 
 		if(experience < 0)
 		{
 			experience = 0; // [FB] We don't want to have negative experience, right?
 		}
 
-		pp.experience = experience;
+		Actor(MO).experience = experience;
 
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
@@ -703,8 +704,8 @@ void SpawnPlayer(mthing_t * mthing)
 		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
 		{
 			exp_level--; // [FB] Decrese experience level
-			next_level = next_level - 1000; // [FB] Decrease the next to the old_level
-			old_level = old_level - 1000; // [FB] Also decrease the old_level
+			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
+			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 		}
 	}
@@ -1206,9 +1207,9 @@ void GiveExperience(int exp)
 
 	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
 	{
+		old_level = 1000 * (exp_level); // [FB] We need to keep this to compare it
 		exp_level++;
 		next_level = 1000 * exp_level;
-		old_level = 1000 * (exp_level - 1); // [FB] We need to keep this to compare it
 		ActivateLevel(exp_level);
 	}
 }
@@ -2339,7 +2340,7 @@ void PlayerImpulse()
 		}
 */
 		// [FB] We want to make the scoreboard accesible with a new impulse value
-		else if (impulse == 17)
+		else if (impulse == 19)
 		{
 			// [FB] The player is calling the scoreboard!!
 			Scoreboard();
@@ -4780,6 +4781,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.38  2006/03/06 19:41:58  firebrand_kh
+//  Fixed dying penalty with some new code lines
+//
 //  Revision 1.37  2006/03/02 18:40:23  dj_jl
 //  Don't use game specific classes in common.
 //
