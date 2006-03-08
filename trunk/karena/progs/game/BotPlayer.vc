@@ -39,18 +39,18 @@ const float
 	SIDEWALK				= 192.0,
 	SIDERUN					= 320.0,
 
-	MAX_TRAVERSE_DIST		= 1024.0,			//10 meters, used within b_func.c
+	MAX_TRAVERSE_DIST			= 1024.0,		//10 meters, used within b_func.c
 	AVOID_DIST				= 512.0,		//Try avoid incoming missiles once they reached this close
-	SAFE_SELF_MISDIST		= 128.0,		//Distance from self to target where it's safe to pull a rocket.
+	SAFE_SELF_MISDIST			= 128.0,		//Distance from self to target where it's safe to pull a rocket.
 	FRIEND_DIST				= 128.0,		//To friend.
 	DARK_DIST				= 256.0,		//Distance that bot can see enemies in the dark from.
-	MAX_MONSTER_TARGET_DIST	= 1024.0,		///Too high can slow down the performance, see P_mobj.c
-	ENEMY_SCAN_FOV			= 120.0,
-	MAXMOVEHEIGHT			= 32.0,			//MAXSTEPMOVE but with jumping counted in.
+	MAX_MONSTER_TARGET_DIST			= 1024.0,		///Too high can slow down the performance, see P_mobj.c
+	ENEMY_SCAN_FOV				= 120.0,
+	MAXMOVEHEIGHT				= 32.0,			//MAXSTEPMOVE but with jumping counted in.
 	GETINCOMBAT				= 512.0,		//Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
-	MAXROAM					= (5.0 * 35.0);	//When this time is elapsed the bot will roam after something else.
-const int WHATS_DARK		= 64;			//light value thats classed as dark.
+	MAXROAM					= (5.0 * 35.0);		//When this time is elapsed the bot will roam after something else.
+const int WHATS_DARK				= 64;			//light value thats classed as dark.
 
 //
 // Bot states
@@ -271,7 +271,7 @@ bool CheckItem(Actor item)
 
 	bNewItemIsWeapon = false;
 	bNewItemIsPowerup = false;
-//?????
+
 	if (!item)
 		return false;
 	if (!item.bSpecial)
@@ -487,18 +487,12 @@ void CheckStuff()
 			item = none;
 	}
 
-	if (missile)
-	{
-		if (!missile.bMissile || missile.IsDestroyed())
-			missile = none;
-	}
-
 	if (node)
 	{
 		if (!CheckTo(node.Origin) || (botmo.DistTo(node) < botmo.Radius))
 		{
-			node = prev;
-			prev = none;
+			prev = node;
+			node = none;
 		}
 	}
 
@@ -528,6 +522,12 @@ void CheckStuff()
 	{
 		if (enemy.Health <= 0 || !enemy.bShootable)
 			enemy = none;
+	}
+
+	if (missile)
+	{
+		if (!missile.bMissile || missile.IsDestroyed())
+			missile = none;
 	}
 }
 
@@ -563,8 +563,7 @@ void Scan()
 					bItemIsPowerup = bNewItemIsPowerup;
 				}
 			}
-			else if (!missile && actor.bMissile &&
-				(botmo.DistTo(actor) < AVOID_DIST))
+			else if (!missile && actor.bMissile && (botmo.DistTo(actor) < AVOID_DIST))
 			{
 				missile = actor;
 			}
@@ -573,7 +572,6 @@ void Scan()
 				if (CheckPNodes(actor))
 				{
 					node = actor;
-					prev = node;
 				}
 			}
 		}
@@ -769,7 +767,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			return false;
 		}
 
-		// [FB] Now, let's check the 3d Floors!!
+/*		// [FB] Now, let's check the 3d Floors!!
 		if(front->bHasExtrafloors)
 		{
 			if(botmo.WaterLevel < 2)
@@ -807,7 +805,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 					return false;
 				}
 			}
-		}
+		}*/
 
 		// crosses a two sided line
 		open = LineOpenings(ld, hit_point);
@@ -1063,14 +1061,12 @@ Actor FindEnemy()
 	int i, light;
 	Actor actor;
 
-
 	// Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
 		vangle = 360.0;
 	else
 		vangle = ENEMY_SCAN_FOV;
 	bAllRound = false;
-
 
 	// [FB] Look for monster enemy
 	FOREACH(Actor, actor)
@@ -1083,6 +1079,11 @@ Actor FindEnemy()
 			continue;
 		if (!botmo.CanSee(actor))
 			continue;
+
+		// [FB] We spawned the minotaur? we shouldn't attack him then!
+		if (actor.bEnemy && actor.Class == Minotaur && actor.Instigator == botmo)
+			continue;
+
 		// [FB] Don't attack our friendly minotaur in all these cases
 		if (!player.Level.Game.deathmatch)
 		{
@@ -1100,10 +1101,6 @@ Actor FindEnemy()
 					continue;
 			}
 		}
-
-		// [FB] We spawned the minotaur? we shouldn't attack him then!
-		if (actor.bEnemy && actor.Class == Minotaur && actor.Instigator == botmo)
-			continue;
 
 		if (dist > MAX_MONSTER_TARGET_DIST)
 			continue;
@@ -1372,6 +1369,7 @@ int B_ChooseWeapon()
 						return HexenDefs::WP_EIGHTH;
 
 					return player.ReadyWeapon;
+					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
@@ -2212,11 +2210,11 @@ void Died(Actor killer)
 //
 //	BotSkill
 //
-//	[FB] Determine the bot skills depending the game skill, heh!
+//	[FB] Determine the bot skills depending the game skill
 //
 //==========================================================================
 
-int BotSkill() // [FB] Select the right skill for the player
+int BotSkill()
 {
 	if(player.Level.Game.gameskill == sk_nightmare)
 	{
@@ -2299,13 +2297,13 @@ void OnBeginPlay()
 		float mod = 1.0;
 		/* FIGHTER */
 		combatdist[HexenDefs::WP_FIRST]			= 1.0;
-		combatdist[HexenDefs::WP_SECOND]			= 1.0;
+		combatdist[HexenDefs::WP_SECOND]		= 1.0;
 		combatdist[HexenDefs::WP_THIRD]			= 1.0;
-		combatdist[HexenDefs::WP_FOURTH]			= 256.0 / mod;
+		combatdist[HexenDefs::WP_FOURTH]		= 256.0 / mod;
 		combatdist[HexenDefs::WP_FIFTH]			= 384.0 / mod;
 		combatdist[HexenDefs::WP_SIXTH]			= 192.0 / mod;
-		combatdist[HexenDefs::WP_SEVENTH]			= 1.0;
-		combatdist[HexenDefs::WP_EIGHTH]			= 256.0 / mod;
+		combatdist[HexenDefs::WP_SEVENTH]		= 1.0;
+		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 / mod;
 		/* CLERIC */
 		combatdist[8 + HexenDefs::WP_FIRST]		= 1.0;
 		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 / mod;
@@ -2372,13 +2370,13 @@ void OnBeginPlay()
 		float mod = 2.0;
 		/* FIGHTER */
 		combatdist[HexenDefs::WP_FIRST]			= 1.0;
-		combatdist[HexenDefs::WP_SECOND]			= 1.0;
+		combatdist[HexenDefs::WP_SECOND]		= 1.0;
 		combatdist[HexenDefs::WP_THIRD]			= 1.0;
-		combatdist[HexenDefs::WP_FOURTH]			= 256.0 / mod;
+		combatdist[HexenDefs::WP_FOURTH]		= 256.0 / mod;
 		combatdist[HexenDefs::WP_FIFTH]			= 384.0 / mod;
 		combatdist[HexenDefs::WP_SIXTH]			= 192.0 / mod;
-		combatdist[HexenDefs::WP_SEVENTH]			= 1.0;
-		combatdist[HexenDefs::WP_EIGHTH]			= 256.0 / mod;
+		combatdist[HexenDefs::WP_SEVENTH]		= 1.0;
+		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 / mod;
 		/* CLERIC */
 		combatdist[8 + HexenDefs::WP_FIRST]		= 1.0;
 		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 / mod;
@@ -2481,6 +2479,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.23  2006/03/08 03:07:08  firebrand_kh
+//  Fixed a crash in CheckStuff / added missing break to B_ChooseWeapon
+//
 //  Revision 1.22  2006/03/02 18:40:23  dj_jl
 //  Don't use game specific classes in common.
 //
