@@ -148,9 +148,16 @@ void A_SkullRodStorm()
 	y = Origin.y + Random() * 128.0 - 64.0;
 	switch (RainColor)
 	{
-	case 2: rain_type = RainPlayer3; break;
+		case 2:
+		{
+			rain_type = RainPlayer3;
+			break;
+		}
 	}
-	A = Spawn(rain_type, vector(x, y, ONCEILINGZ));
+	if(Sector->bHasExtrafloors && Instigator.Origin.z <= CeilingZ)
+		A = Spawn(rain_type, vector(x, y, CeilingZ - Height));
+	else
+		A = Spawn(rain_type, vector(x, y, ONCEILINGZ));
 	A.Instigator = Instigator;
 	A.Velocity.x = 0.00001;	// Force collision detection
 	A.Velocity.z = -A.Speed;
@@ -196,6 +203,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.6  2006/03/11 19:00:47  firebrand_kh
+//  Added 3d floor checks
+//
 //  Revision 1.5  2006/03/02 18:40:23  dj_jl
 //  Don't use game specific classes in common.
 //
