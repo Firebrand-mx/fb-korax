@@ -25,9 +25,25 @@
 
 class PlayerMarine : PlayerPawn;
 
+//==========================================================================
+//
+//	StopMoving
+//
+//==========================================================================
+
+void StopMoving()
+{
+	// If in a walking frame, stop moving
+	if (State == S_MARPLAY_RUN1 || State == S_MARPLAY_RUN2 ||
+		State == S_MARPLAY_RUN3 || State == S_MARPLAY_RUN4)
+	{
+		SetState(IdleState);
+	}
+}
+
 __states__
 {
-	S_MARPLAY('PLDM', 0, -1.0, S_NULL) { }
+	S_MARPLAY('PLDM', 0, -1.0, none) { }
 	S_MARPLAY_RUN1('PLDM', 0, 4.0 / 35.0, S_MARPLAY_RUN2) { }
 	S_MARPLAY_RUN2('PLDM', 1, 4.0 / 35.0, S_MARPLAY_RUN3) { }
 	S_MARPLAY_RUN3('PLDM', 2, 4.0 / 35.0, S_MARPLAY_RUN4) { }
@@ -42,7 +58,7 @@ __states__
 	S_MARPLAY_DIE4('PLDM', 10, 6.0 / 35.0, S_MARPLAY_DIE5) { }
 	S_MARPLAY_DIE5('PLDM', 11, 6.0 / 35.0, S_MARPLAY_DIE6) { A_NoBlocking(); }
 	S_MARPLAY_DIE6('PLDM', 12, 6.0 / 35.0, S_MARPLAY_DIE7) { }
-	S_MARPLAY_DIE7('PLDM', 13, -1.0, S_NULL) { A_AddPlayerCorpse(); }
+	S_MARPLAY_DIE7('PLDM', 13, -1.0, none) { A_AddPlayerCorpse(); }
 	S_MARPLAY_XDIE1('PLDM', 14, 5.0 / 35.0, S_MARPLAY_XDIE2) { A_Scream(); }
 	S_MARPLAY_XDIE2('PLDM', 15, 5.0 / 35.0, S_MARPLAY_XDIE3) { }
 	S_MARPLAY_XDIE3('PLDM', 17-1, 5.0 / 35.0, S_MARPLAY_XDIE4) { A_NoBlocking(); }
@@ -51,7 +67,7 @@ __states__
 	S_MARPLAY_XDIE6('PLDM', 20-1, 5.0 / 35.0, S_MARPLAY_XDIE7) { }
 	S_MARPLAY_XDIE7('PLDM', 21-1, 5.0 / 35.0, S_MARPLAY_XDIE8) { }
 	S_MARPLAY_XDIE8('PLDM', 22-1, 5.0 / 35.0, S_MARPLAY_XDIE9) { }
-	S_MARPLAY_XDIE9('PLDM', 23-1, -1.0, S_NULL) { A_AddPlayerCorpse(); }
+	S_MARPLAY_XDIE9('PLDM', 23-1, -1.0, none) { A_AddPlayerCorpse(); }
 	S_MARPLAY_ICE('PLDM', 24-1, 5.0 / 35.0, S_MARPLAY_ICE2) { A_FreezeDeath(); }
 	S_MARPLAY_ICE2('PLDM', 24-1, 1.0 / 35.0, S_MARPLAY_ICE2) { A_FreezeDeathChunks(); }
 }
@@ -85,6 +101,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.5  2006/03/12 19:37:09  dj_jl
+//  States as objects, added state variable type.
+//
 //  Revision 1.4  2005/11/19 15:23:21  dj_jl
 //  Renamed sounds.
 //
