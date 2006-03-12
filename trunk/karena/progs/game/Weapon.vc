@@ -38,11 +38,11 @@ const float WEAPONTOP			= 32.0;
 int Mana;
 int manause;
 bool needsnomana;
-int UpState;
-int DownState;
-int ReadyState;
-int AttackState;
-int HoldAttackState;
+state UpState;
+state DownState;
+state ReadyState;
+state AttackState;
+state HoldAttackState;
 float PSpriteSY;		// Y-adjustment value for full screen
 bool dex_mod;
 bool str_mod;
@@ -51,17 +51,17 @@ bool wis_mod;
 bool active_damage; 	// [FB] TRUE if PI Damage is active
 string PickUpMessage;
 
-int GetUpState()
+state GetUpState()
 {
 	return UpState;
 }
 
-int GetDownState()
+state GetDownState()
 {
 	return DownState;
 }
 
-int GetReadyState()
+state GetReadyState()
 {
 	return ReadyState;
 }
@@ -72,7 +72,7 @@ int GetReadyState()
 //
 //==========================================================================
 
-int GetAttackState()
+state GetAttackState()
 {
 	return Player(Player).Refire ? HoldAttackState : AttackState;
 }
@@ -155,8 +155,8 @@ void A_WeaponReady()
 	float angle;
 
 	// Change player from attack state
-	if (Player.MO.StateNum >= Actor(Player.MO).MissileState &&
-		Player.MO.StateNum <= PlayerPawn(Player.MO).AttackEndState)
+	if (Player.MO.State == Actor(Player.MO).MissileState &&
+		Player.MO.State == PlayerPawn(Player.MO).AttackEndState)
 	{
 		Player.MO.SetState(Actor(Player.MO).IdleState);
 	}
@@ -226,7 +226,7 @@ void A_Lower()
 	if (!Player.Health)
 	{
 		// Player is dead, so keep the weapon off screen
-		Player(Player).SetPsprite(ps_weapon, S_NULL);
+		Player(Player).SetPsprite(ps_weapon, none);
 		return;
 	}
 	Player(Player).SetWeapon(Player(Player).PendingWeapon);
@@ -294,7 +294,7 @@ void SetFOV(int FOV)
 // UNUSED
 __states__
 {
-	S_LIGHTDONE('FPCH', 0, 0.0 / 35.0, S_NULL) { A_Light0(); }
+	S_LIGHTDONE('FPCH', 0, 0.0 / 35.0, none) { A_Light0(); }
 }
 
 defaultproperties
@@ -304,6 +304,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.12  2006/03/12 19:37:09  dj_jl
+//  States as objects, added state variable type.
+//
 //  Revision 1.11  2006/03/02 18:40:23  dj_jl
 //  Don't use game specific classes in common.
 //
