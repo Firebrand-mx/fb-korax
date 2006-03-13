@@ -2169,23 +2169,20 @@ void ApplyFriction()
 		Velocity.z > -STOPSPEED && Velocity.z < STOPSPEED &&
 		(!bIsPlayer || (!Player.ForwardMove && !Player.SideMove)))
 	{
-		StopMoving();
+		if (bIsPlayer)
+		{
+			// If in a walking frame, stop moving
+			if (StateIsInRange(State, SeeState, none, 4))
+			{
+				SetState(IdleState);
+			}
+		}
 		Velocity = vector(0.0, 0.0, 0.0);
 	}
 	else
 	{
 		Velocity -= Velocity * (GetFriction() * Level.Game.frametime);
 	}
-}
-
-//==========================================================================
-//
-//	StopMoving
-//
-//==========================================================================
-
-void StopMoving()
-{
 }
 
 //==========================================================================
@@ -4660,6 +4657,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.36  2006/03/13 18:59:49  dj_jl
+//  Made none compatible with classid.
+//
 //  Revision 1.35  2006/03/12 19:37:07  dj_jl
 //  States as objects, added state variable type.
 //
