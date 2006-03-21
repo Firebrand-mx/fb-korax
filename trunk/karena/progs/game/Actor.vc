@@ -768,7 +768,7 @@ void Died(Actor source)
 		if (!source)
 		{
 			// Self-frag
-			if (Level.Game.deathmatch ==2)
+			if (Level.Game.deathmatch == 2)
 			{
 				Player.FragsStats[Player.Color]--;
 			}
@@ -2984,6 +2984,12 @@ bool Physics(float DeltaTime)
 					bOnMobj = true;
 					Velocity.z = 0.0;
 				}
+				else
+				{
+					if (bIsPlayer)
+					{
+						Velocity.z = 0.0;
+				}
 			}
 		}
 		else
@@ -3668,7 +3674,7 @@ bool PIT_RadiusAttack(Entity Other)
 		return true;
 	}
 	// [FB] Fixed??
-	if (fabs((Actor(Other).Origin.z + Actor(Other).Height) - (Origin.z + Height)) > bombdistance)
+	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) - (Origin.z + Height))) > abs(ftoi(Instigator.Origin.z + bombdistance)))
 	{
 		// too high/low
 		return true;
@@ -4657,6 +4663,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.37  2006/03/21 23:16:34  firebrand_kh
+//  Fixes for onmobj checks
+//
 //  Revision 1.36  2006/03/13 18:59:49  dj_jl
 //  Made none compatible with classid.
 //
