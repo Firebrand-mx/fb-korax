@@ -348,6 +348,16 @@ bool CheckItem(Actor item)
 		&& (player.MO.Health >= player.max_health))
 		return false;
 
+	// [FB] For morphed bots health
+	if(player.MorphTime)
+	{
+		if ((item.Class == ItemHealingBottle ||
+			 item.Class == ArtifactHealthFlask ||
+			 item.Class == ArtifactSuperHeal)
+			&& (player.MO.Health >= 30))
+			return false;
+	}
+
 	if (Artifact(item) && !ArtifactBoostArmor(item) &&
 		!ArtifactInvulnerability(item) && !ArtifactSpeedBoots(item)
 		&& !ArtifactBoostMana(item) && !ArtifactInvisibility(item)
@@ -2479,6 +2489,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.24  2006/03/27 21:52:50  firebrand_kh
+//  Fixed the way morphed bots look for health by adapting the max_health value to the correct one
+//
 //  Revision 1.23  2006/03/08 03:07:08  firebrand_kh
 //  Fixed a crash in CheckStuff / added missing break to B_ChooseWeapon
 //
