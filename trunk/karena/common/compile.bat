@@ -4,4 +4,4 @@ vcc svcommon.vc svcommon.dat
 @ECHO OFF
 pause
 vlumpy wad0.ls
-copy wad0.wad "D:\Korax\KArena\basev\common"
+copy wad0.wad "H:\Korax\KArena\basev\common"
