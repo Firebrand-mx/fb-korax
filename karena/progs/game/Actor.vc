@@ -123,6 +123,7 @@ bool bBlaster;
 bool bDamageInvulnerable;	// These inflictors aren't foiled by invulnerability
 bool bNoSplash;			// Things that don't splash
 bool bNoMorph;			// Won't morph into a pig.
+bool bStaticLight;		// Static light source.
 bool bEnemy;			// [FB] A monster enemy for bots to attack
 
 //  Params
@@ -174,6 +175,12 @@ int la_damage;
 TVec shoot_linestart;
 TVec shoot_lineend;
 classid shootPuffType;
+
+// Static light parameters.
+TVec LightOffset;
+int LightColour;
+float LightRadius;
+int ExplodeEffect;
 
 //==========================================================================
 //
@@ -372,6 +379,20 @@ void OnMapSpawn(mthing_t * mthing)
 	else
 	{
 		SetOrigin2(Origin);
+	}
+
+	if (bStaticLight && mthing && !TID)
+	{
+		if (LightColour == 0xffffffff)
+		{
+			Level.AddStaticLight(Origin + LightOffset, mthing->arg1 ?
+				itof(mthing->arg1) * 8.0 : LightRadius);
+		}
+		else
+		{
+			Level.AddStaticLightRGB(Origin + LightOffset, mthing->arg1 ?
+				itof(mthing->arg1) * 8.0 : LightRadius, LightColour);
+		}
 	}
 }
 
@@ -4500,6 +4521,15 @@ void A_Explode()
 		//  Clear old dynamic light effect
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
+	else if (ExplodeEffect)
+	{
+		MSG_Select(MSG_SV_DATAGRAM);
+		MSG_WriteByte(HexenDefs::svc_explosion);
+		MSG_WriteByte(ExplodeEffect);
+		MSG_WriteShort(ftoi(Origin.x));
+		MSG_WriteShort(ftoi(Origin.y));
+		MSG_WriteShort(ftoi(Origin.z));
+	}
 }
 
 //============================================================================
@@ -4652,11 +4682,17 @@ defaultproperties
 {
 	MaxStepHeight = 24.0;
 	SoundClass = 'fighter';
+	LightOffset = vector(0.0, 0.0, 0.0);
+	LightColour = 0xffffffff;
+	LightRadius = 128.0;
 }
 
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.40  2006/04/15 01:18:55  firebrand_kh
+//  Added new static light system and properties
+//
 //  Revision 1.39  2006/03/27 21:48:57  firebrand_kh
 //  Fixed onmobj checks for good
 //

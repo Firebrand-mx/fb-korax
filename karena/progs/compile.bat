@@ -5,5 +5,5 @@ vcc -I../common -P../common svprogs.vc svprogs.dat
 pause
 cd..
 vlumpy wad0.ls
-copy wad0.wad "D:\Korax\KArena\karena\"
+copy wad0.wad "H:\Korax\KArena\karena\"
 cd progs
