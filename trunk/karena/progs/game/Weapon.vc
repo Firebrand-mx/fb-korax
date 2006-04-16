@@ -43,6 +43,7 @@ state DownState;
 state ReadyState;
 state AttackState;
 state HoldAttackState;
+state FlashState;
 float PSpriteSY;		// Y-adjustment value for full screen
 bool dex_mod;
 bool str_mod;
@@ -130,6 +131,19 @@ void UseWeaponMana()
 	}	
 }
 
+//===========================================================================
+//
+//  A_GunFlash
+//
+//===========================================================================
+
+void A_GunFlash()
+{
+	Actor(Player.MO).SetState(Actor(Player.MO).MissileState);
+	Player(Player).SetPsprite(ps_flash, FlashState);
+}
+
+
 //==========================================================================
 //
 //  A_Light0
@@ -138,8 +152,30 @@ void UseWeaponMana()
 
 void A_Light0()
 {
-	Player.ExtraLight = 0;
+	Player(Player).ExtraLight = 0;
 	Player.MO.Effects &= ~HexenDefs::EF_DLIGHT_MASK;
+}
+
+//===========================================================================
+//
+//  A_Light1
+//
+//===========================================================================
+
+void A_Light1()
+{
+	Player(Player).ExtraLight = 1;
+}
+
+//===========================================================================
+//
+//  A_Light2
+//
+//===========================================================================
+
+void A_Light2()
+{
+	Player(Player).ExtraLight = 2;
 }
 
 //==========================================================================
@@ -291,7 +327,82 @@ void SetFOV(int FOV)
 	MSG_WriteByte(FOV);
 }
 
-// UNUSED
+//===========================================================================
+//
+//  GunShot (Used for the pistol)
+//
+//===========================================================================
+
+void GunShot(Actor A, int accurate, TVec dir)
+{
+	int damage;
+
+	//  Make a copy of angles because inacurate shoot will modify them
+	if (!accurate)
+	{
+		TAVec angles;
+
+		VectorAngles(&dir, &angles);
+		angles.yaw = AngleMod360(angles.yaw +
+			(Random() - Random()) * 45.0 / 8.0);
+		AngleVector(&angles, &dir);
+	}
+
+	damage = 10;//5 * (P_Random() % 3 + 1);
+
+	if (int_mod)
+	{
+		if(!active_damage)
+		{
+			damage = damage * Player(Player).strength / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+		}
+	}
+
+	A.LineAttack(dir, MISSILERANGE, damage, DoomPuff);
+}
+
+//===========================================================================
+//
+//  GunShot2 (Used for the chaingun)
+//
+//===========================================================================
+
+void GunShot2(Actor A, int accurate, TVec dir)
+{
+	int damage;
+
+	//  Make a copy of angles because inacurate shoot will modify them
+	if (!accurate)
+	{
+		TAVec angles;
+
+		VectorAngles(&dir, &angles);
+		angles.yaw = AngleMod360(angles.yaw +
+			(Random() - Random()) * 45.0 / 8.0);
+		AngleVector(&angles, &dir);
+	}
+
+	damage = 14;//7 * (P_Random() % 3 + 1);
+
+	if (int_mod)
+	{
+		if(!active_damage)
+		{
+			damage = damage * Player(Player).strength / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+		}
+	}
+
+	A.LineAttack(dir, MISSILERANGE, damage, DoomPuff);
+}
+
 __states__
 {
 	S_LIGHTDONE('FPCH', 0, 0.0 / 35.0, none) { A_Light0(); }
@@ -304,6 +415,9 @@ defaultproperties
 //**************************************************************************
 //
 //  $Log$
+//  Revision 1.14  2006/04/16 15:08:34  firebrand_kh
+//  Fixed a crash with the A_LightX functions with the Doom weapons
+//
 //  Revision 1.13  2006/03/13 18:59:50  dj_jl
 //  Made none compatible with classid.
 //
