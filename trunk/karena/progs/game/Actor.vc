@@ -783,6 +783,14 @@ void Died(Actor source)
 			}
 		}
 	}
+
+	//[CW] If player participated in this death (as victim or instigator),
+	// then update all server clients' scoreboards.
+	if (Player)
+		Player(Player).ScoreboardsUpdate(false);
+	else if (source && source.Player)
+		Player(source.Player).ScoreboardsUpdate(false);
+
 	if (bIsPlayer)
 	{
 		// Player death
