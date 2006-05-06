@@ -81,6 +81,8 @@ struct inventory_t
 //  FIRST FIELDS ARE STATS THAT ARE SENT TO CLIENT FOR STATUS BAR
 //
 
+bool bShowScoreboard; // [CW] True if scoreboard should be visible
+
 int SBFlags;
 
 int ArmorPoints;
@@ -98,10 +100,26 @@ int Mana[HexenDefs::NUMMANA];
 
 // [Korax]
 // [FB] Scores for the different gameplay modes
-int TeamFrags; // [FB] Frags from each team
-int KillsCount; // [FB] How many enemies the player killed
-int TeamKills; // [FB] How many enemies has each team killed
+int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
+int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters (?)
+int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
+
+// [CW] I hate to do this, but it is still only way to sent these params to client.
+// I hope Janis shall develop additional data transition mechanism which will allow
+// copying data directly from Level or GameInfo.
+struct scoreboard_t
+{
+	bool		IsActive;
+	string		plname;		// player name
+	bool		IsBot;		// true if player is bot, false if is human
+	int		team;		// color
+	int		frags;
+	int		nplkills;	// non-player kills
+	int		deaths;
+};
+
+scoreboard_t gamescores[MAXPLAYERS];
 
 // [FB] Player atributes for leveling system
 int experience;
@@ -118,6 +136,11 @@ int constitution;
 //
 int max_health;
 int old_maxhealth; // [FB] To decrease the health
+
+//
+// [CW] Firebrand, take a look at this: check that old_maxhealth is not mentioned in MainClientState class!
+// It has bak_health instead on the place, where old_maxhealth should be. Isn't it a mistake?
+//
 int bak_health; // [FB] To keep an older level health
 
 //
@@ -230,6 +253,9 @@ void PutClientIntoServer()
 		Bot.player = self;
 		Bot.OnBeginPlay();
 	}
+
+	//[CW] update all server clients' scoreboards
+	ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -422,6 +448,9 @@ void DisconnectClient()
 	}
 	bprint("%s left the game\n", ARR2STR(PlayerName));
 	MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
+
+	//[CW] update all server clients' scoreboards
+	ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -437,6 +466,9 @@ void UserinfoChanged()
 		return;
 	}
 	SetPlayerColor();
+
+	//[CW] update all server clients' scoreboards
+	ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -755,6 +787,8 @@ void PlayerReborn()
 	Mana[HexenDefs::MANA_3] = 25;
 	SetWeapon(HexenDefs::WP_SECOND);
 	LocalQuakeHappening = 0;
+
+	Scoreboard(false); // [CW]
 }
 
 //==========================================================================
@@ -1391,9 +1425,65 @@ void PlayerCamping()
 //
 //==========================================================================
 
-void Scoreboard()
+void Scoreboard(bool show)
 {
+	// [CW] If show == true, update scoreboard data first.
+	if (show)
+		ScoreboardsUpdate(true);
+	
+	// [CW] Set bShowScoreboard flag
+	bShowScoreboard = show;
+}
 
+//==========================================================================
+//
+//  ScoreboardsUpdate
+//
+// [CW] Updates shown scoreboards of current or all the players.
+// Used when a client connects to / disconnects from server, when anyone
+// dies and when player info changes.
+//
+//==========================================================================
+
+void ScoreboardsUpdate(bool ThisPlayerOnly)
+{
+	int plnum, i, j;
+	Player pl;
+
+	//[CW] iterate through all connected players
+	for (plnum = 0; plnum < MAXPLAYERS; plnum++)
+	{
+		if (!Level.Game.Players[plnum])
+			return;
+
+		if (ThisPlayerOnly && Level.Game.Players[plnum] != self)
+			continue;
+
+		//[CW] update scoreboard for player number "plnum"
+		pl = Player(Level.Game.Players[plnum]);
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!Level.Game.Players[i])
+				break;
+
+			pl.gamescores[i].IsActive = true;
+			pl.gamescores[i].plname = ARR2STR(Level.Game.Players[i].PlayerName);
+			pl.gamescores[i].IsBot = Level.Game.Players[i].bIsBot;
+			pl.gamescores[i].team = Level.Game.Players[i].Color;
+			pl.gamescores[i].frags = Level.Game.Players[i].Frags;
+			pl.gamescores[i].nplkills = Player(Level.Game.Players[i]).KillsCount;
+			pl.gamescores[i].deaths = 0;
+
+			// [CW] counts times all other players killed this one
+			// (and times he was killed by self/monsters/enviroment)
+			for (j = 0; j < MAXPLAYERS; j++)
+			{
+				if (!Level.Game.Players[j])
+					break;
+				pl.gamescores[i].deaths += Level.Game.Players[j].FragsStats[i];
+			}
+		}
+	}
 }
 
 //==========================================================================
@@ -2343,7 +2433,9 @@ void PlayerImpulse()
 		else if (impulse == 19)
 		{
 			// [FB] The player is calling the scoreboard!!
-			Scoreboard();
+			// [CW] invert (toggle) showscoreboard flag
+			Scoreboard(!bShowScoreboard);
+			dprint("Player::PlayerImpulse : showscoreboard = %d", bShowScoreboard);
 		}
 	}
 /*
@@ -2607,8 +2699,8 @@ void DeathPlayerTick(float deltaTime)
 		}
 	}
 
-	// [FB] We also want to show the scoreboard here
-	Scoreboard();
+	//[CW] Show scoreboard for died player
+	Scoreboard(true);
 
 	if (Buttons & BT_USE)
 	{
