@@ -45,6 +45,7 @@ const int MAX_MENU_STACK		= 32;
 
 TitleScreen			GTitle;
 StatusBarScreen		GSBar;
+ScoreBoardScreen	GScBoard;	// [CW]
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
 
@@ -91,12 +92,19 @@ void RootWindowCreated()
 {
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
+	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));		// [CW]
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
 	GTitle.ClGame = self;
 	GSBar.cl = MainClientState(cl);
 	GSBar.ClGame = self;
 	GSBar.Hide();
+
+	/* scoreboard by [CW]	*/
+	GScBoard.cl = MainClientState(cl);
+	//GScBoard.ClGame = self;
+	GScBoard.Hide();
+
 	GImission.ClGame = self;
 	GImission.Hide();
 	GFinale.cl = MainClientState(cl);
@@ -114,6 +122,7 @@ void Connected()
 	GTitle.Hide();
 	GTitle.StopDemoLoop();
 	GSBar.Show();
+	//GScBoard.Show(); // [CW] remove this later
 	GImission.Hide();
 	GFinale.Hide();
 }
@@ -128,6 +137,7 @@ void Disconnected()
 {
 	GTitle.Show();
 	GSBar.Hide();
+	GScBoard.Hide();	// [CW]
 	GImission.Hide();
 	GFinale.Hide();
 }
@@ -156,6 +166,7 @@ void DemoPlaybackStopped()
 {
 	GTitle.Show();
 	GSBar.Hide();
+	GScBoard.Hide();	// [CW]
 	GImission.Hide();
 	GFinale.Hide();
 }
@@ -227,6 +238,7 @@ void StatusBarUpdateWidgets()
 void IintermissionStart()
 {
 	GSBar.Hide();
+	GScBoard.Hide();	// [CW]
 	GImission.Show();
 	GImission.Start();
 	GFinale.Hide();
@@ -241,6 +253,7 @@ void IintermissionStart()
 void StartFinale()
 {
 	GSBar.Hide();
+	GScBoard.Hide();	// [CW]
 	GImission.Hide();
 	GFinale.Show();
 	GFinale.StartFinale();
