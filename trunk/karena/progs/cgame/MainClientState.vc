@@ -31,9 +31,12 @@ struct inventory_t
 	int count;
 };
 
+
 //
 //  STATS FOR STATUS BAR
 //
+
+bool bshowscoreboard; // [CW] True if scoreboard should be visible
 
 int SBFlags;
 
@@ -52,10 +55,26 @@ int mana[HexenDefs::NUMMANA];
 
 // [Korax]
 // [FB] Scores for the different gameplay modes
-int TeamFrags; // [FB] Frags from each team
-int KillsCount; // [FB] How many enemies the player killed
-int TeamKills; // [FB] How many enemies has each team killed
+int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
+int KillsCount; // [FB] How many enemies the player killed	// [CW] including monsters
+int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
+
+// [CW] I hate to do this, but it is still only way to sent these params to client.
+// I hope Janis shall develop additional data transition mechanism which will allow
+// copying data directly from Level or GameInfo.
+struct scoreboard_t
+{
+	bool		IsActive;
+	string		plname;		// player name
+	bool		IsBot;		// true if player is bot, false if is human
+	int		team;		// color
+	int		frags;
+	int		nplkills;	// non-player kills
+	int		deaths;
+};
+
+scoreboard_t gamescores[MAXPLAYERS];
 
 // [FB] Player atributes for leveling system
 int experience;
@@ -71,7 +90,7 @@ int constitution;
 //  Other stats (for status bar)
 //
 int max_health;
-int bak_health; // [FB] To decrease the health
+int bak_health; // [FB] To keep an older level health
 
 defaultproperties
 {
