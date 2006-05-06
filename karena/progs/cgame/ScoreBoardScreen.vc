@@ -1,0 +1,166 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: StatusBarScreen.vc 418 2006-04-09 10:42:58Z dj_jl $
+//**
+//**    Copyright (C) 1999-2002 JÆnis Legzdi·ý
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+/*	written by [CW]	for Korax Arena		*/
+
+class ScoreBoardScreen : Window;
+
+const int
+	TABLE_LEFT_X		= 48,
+	TABLE_HEAD_Y		= 64,
+	TABLE_TOP_Y		= 96,
+	TABLE_STRING_DELTA	= 24,
+	TABLE_COL2		= 172,
+	TABLE_COL3		= 232,
+	TABLE_COL4		= 316,
+	TABLE_COL5		= 376,
+	TABLE_COL6		= 424,
+	TABLE_VALINDENT4	= 16,
+	TABLE_VALINDENT5	= 12,
+	TABLE_VALINDENT6	= 18;
+
+MainClientState cl;
+//ClientGameBase ClGame;
+
+int colormark[MAXPLAYERS];
+
+//[CW] may be those should be put into some shared resources module
+string colornames[MAXPLAYERS];
+
+
+//==========================================================================
+//
+//  StartMap
+//
+//==========================================================================
+
+void StartMap()
+{
+	//	initialize pics??
+}
+
+//==========================================================================
+//
+//  DrawWindow
+//
+//==========================================================================
+
+void DrawWindow(GC gc)
+{
+	int i, j;
+
+	SetVirtualScreen(520, 400);
+
+	R_ShadeRect(24, 40, 472, 248, 20);
+
+	/*--------------------------------------
+		General Scoring Table
+	--------------------------------------*/
+
+	T_SetFont(font_yellow);
+	T_DrawText(TABLE_LEFT_X, TABLE_HEAD_Y, "player");
+	T_DrawText(TABLE_COL2, TABLE_HEAD_Y, "ctrl");
+	T_DrawText(TABLE_COL3, TABLE_HEAD_Y, "team");
+	T_DrawText(TABLE_COL4, TABLE_HEAD_Y, "frags");
+	T_DrawText(TABLE_COL5, TABLE_HEAD_Y, "kills");
+	T_DrawText(TABLE_COL6, TABLE_HEAD_Y, "deaths");
+	T_SetFont(font_small);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!cl.gamescores[i].IsActive)
+			break;
+
+		//[CW] mark current client with special background color
+		if (cl.clientnum == i)
+			R_FillRect(32, TABLE_TOP_Y + i * TABLE_STRING_DELTA - 6, 456, 22, colormark[cl.gamescores[i].team]);
+
+		// [CW] Player's name
+		T_DrawText(TABLE_LEFT_X, TABLE_TOP_Y + i * TABLE_STRING_DELTA, cl.gamescores[i].plname);
+		// [CW] Player is human/cpu
+		if (cl.gamescores[i].IsBot)
+			T_DrawText(TABLE_COL2, TABLE_TOP_Y + i * TABLE_STRING_DELTA, "bot");
+		else
+			T_DrawText(TABLE_COL2, TABLE_TOP_Y + i * TABLE_STRING_DELTA, "human");
+		// [CW] Player's team (color)
+		// This need to be modified so string (color name) be shown
+		T_DrawText(TABLE_COL3, TABLE_TOP_Y + i * TABLE_STRING_DELTA, colornames[cl.gamescores[i].team]);
+		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].frags));
+		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].nplkills));
+		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].deaths));
+	}
+
+	SetVirtualScreen(320, 200);
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//	Called periodicaly, but only when bTickEnabled is true.
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	// [CW] check scoreboard flag toggle
+	if (cl.bshowscoreboard && !bIsVisible)
+	{
+		dprint("ScoreBoardScreen::Tick :");
+		dprint("          --> Show Scoreboard");
+		Show();
+	}
+	else if (!cl.bshowscoreboard && bIsVisible)
+	{
+		dprint("ScoreBoardScreen::Tick :");
+		dprint("          --> Hide Scoreboard");
+		Hide();
+	}
+}
+
+defaultproperties
+{
+	bTickEnabled = true;
+	Width = 320;
+	Height = 200;
+
+	colormark[0] = 0xff0000aa;
+	colormark[1] = 0xffaa0000;
+	colormark[2] = 0xffaaaa00;
+	colormark[3] = 0xff55aa00;
+	colormark[4] = 0xff008800;
+	colormark[5] = 0xff888888;
+	colormark[6] = 0xff884400;
+	colormark[7] = 0xff880088;
+
+	colornames[0] = "blue";
+	colornames[1] = "red";
+	colornames[2] = "gold";
+	colornames[3] = "light green";
+	colornames[4] = "green";
+	colornames[5] = "gray";
+	colornames[6] = "brown";
+	colornames[7] = "magenta";
+}
