@@ -4865,6 +4865,108 @@ void Cheat_Class()
 	SB_Start();
 }
 
+//==========================================================================
+//
+//  DisplayDeathMessage
+//
+//  [CW] Displays message notificating that player was killed.
+//
+//	Usage:
+//	All of the message strings are members of MainGameInfo. Messages for
+//	Player-specific weapons are listed in PlDeathMessage array. Messages for
+//	weapons belonging to other pawns or pawns' melee attacks are listed in
+//	NPDeathMessage array.
+//
+//
+//	1) if both source & inflictor are null, it was pure enviroment:
+//	slime, lava and such. Use generic messages like "was in wrong place" etc,
+//	with 1 parameter: this player's name.
+//	2) if inflictor has some value and source is null, then use inflictor's
+//	third DeathMessage index with 1 parameter as in p.1.
+//	3) if both inflictor and source has some values, but they are not
+//	equal, that means that either a pawn or player have shot current
+//	player with a missile; use inflictor's first/second DeathMessage index with 2 parameters:
+//	current player name and either pawn name or player's PlayerName.
+//	4) if inflictor and source have equal values (not null), then it might
+//	be melee attack by pawn or player; use either pawn deathmessage first index or
+//	player's PClass and ReadyWeapon combined as index, with 2 parameters as in p.3.
+//
+//==========================================================================
+
+void DisplayDeathMessage(Actor source, Actor inflictor)
+{
+	dprint("Player::DisplayDeathMessage : ");
+	dprint("Player::DisplayDeathMessage : source ptr = %d", source);
+	dprint("Player::DisplayDeathMessage : inflictor ptr = %d", inflictor);
+
+	if(source)
+	{
+		//[CW] p.4: melee attack
+		if(source == inflictor)
+		{
+			dprint("Player::DisplayDeathMessage : source == inflictor");
+			if(source.bIsPlayer)
+			{
+				dprint("Player::DisplayDeathMessage : source is PlayerPawn");
+				bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
+						ARR2STR(PlayerName),
+						ARR2STR(source.Player.PlayerName));
+			}
+			else if(source.IsA('Pawn'))
+			{
+				dprint("Player::DisplayDeathMessage : source is Pawn");
+				bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
+						ARR2STR(PlayerName),
+						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+			}
+		}
+		//[CW] p.3: missile attack
+		else if(inflictor)
+		{
+			dprint("Player::DisplayDeathMessage : source != inflictor");
+			if(source.bIsPlayer)
+			{
+				dprint("Player::DisplayDeathMessage : source is PlayerPawn");
+				if(Player(source.Player) == self)
+				{
+					dprint("Player::DisplayDeathMessage : self frag");
+					bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
+						ARR2STR(PlayerName));
+				}
+				else
+					bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
+						ARR2STR(PlayerName),
+						ARR2STR(source.Player.PlayerName));
+			}
+			else if(source.IsA('Pawn'))
+			{
+				dprint("Player::DisplayDeathMessage : source is Pawn");
+				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
+						ARR2STR(PlayerName),
+						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+			}
+		}
+		//[CW] falling damage
+		else
+		{
+			dprint("Player::DisplayDeathMessage : falling death message");
+			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], ARR2STR(PlayerName));
+		}
+	}
+	//[CW] p.2: fragged by enviromental thing or trap
+	else if(inflictor)
+	{
+		dprint("Player::DisplayDeathMessage : enviromental thing message");
+		bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], ARR2STR(PlayerName));
+	}
+	//[CW] p.1: fragged by pure enviroment
+	else
+	{
+		dprint("Player::DisplayDeathMessage : pure enviroment message");
+		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], ARR2STR(PlayerName));
+	}
+}
+
 defaultproperties
 {
 }
