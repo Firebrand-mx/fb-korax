@@ -182,6 +182,12 @@ int LightColour;
 float LightRadius;
 int ExplodeEffect;
 
+//[CW] Death messages indices; first is used for objects, spawned by player weapon and
+// for pawns' melee attacks, second - for objects, spawned by non-player pawns,
+// third is for enviromental objects, traps etc.
+// Messages themselves are members of MainGameInfo.
+int deathmsgi[3];
+
 //==========================================================================
 //
 //	Spawn
@@ -1328,6 +1334,12 @@ void Damage(Actor inflictor, Actor source, int damage)
 	Health -= damage;
 	if (Health <= 0)
 	{
+		//
+		//[CW] process deathmessage; for players only
+		//
+		if(bIsPlayer)
+			Player(Player).DisplayDeathMessage(source, inflictor);
+
 		// Death
 		if (inflictor)
 		{
