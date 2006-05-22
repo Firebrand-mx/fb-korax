@@ -503,8 +503,14 @@ bool LookForPlayers(bool allaround)
 
 bool StepMove()
 {
-	float tryx;
-	float tryy;
+	float tryx, deltax, origx;
+	float tryy, deltay, origy;
+	float maxmove;
+	int steps;
+	float xspeed;
+	float yspeed;
+	int i;
+	bool try_ok;
 
 	line_t *ld;
 	bool good;
@@ -519,10 +525,52 @@ bool StepMove()
 		Error("Weird actor->MoveDir!");
 #endif
 
-	tryx = Origin.x + StepSpeed * MainGameInfo(Level.Game).xspeed[MoveDir];
-	tryy = Origin.y + StepSpeed * MainGameInfo(Level.Game).yspeed[MoveDir];
+	origx = Origin.x;
+	origy = Origin.y;
+	deltax = StepSpeed * MainGameInfo(Level.Game).xspeed[MoveDir];
+	deltay = StepSpeed * MainGameInfo(Level.Game).yspeed[MoveDir];
+	tryx = origx + deltax;
+	tryy = origy + deltay;
 
-	if (!TryMove(vector(tryx, tryy, Origin.z)))
+	// Like P_XYMovement this should do multiple moves if the step size is too large
+	maxmove = Radius;
+	steps = 1;
+
+	if (maxmove > 0.0)
+	{ 
+		xspeed = fabs(deltax);
+		yspeed = fabs(deltay);
+
+		if (xspeed > yspeed)
+		{
+			if (xspeed > maxmove)
+			{
+				steps = 1 + ftoi(xspeed / maxmove);
+			}
+		}
+		else
+		{
+			if (yspeed > maxmove)
+			{
+				steps = 1 + ftoi(yspeed / maxmove);
+			}
+		}
+	}
+
+	try_ok = true;
+	for(i=1; i < steps; i++)
+	{
+		try_ok = TryMove(vector(origx + (deltax / itof(steps * i)), origy +
+					(deltay / itof(steps * i)), Origin.z));
+		if (!try_ok)
+			break;
+	}
+
+	// killough 3/15/98: don't jump over dropoffs:
+	if (try_ok)
+		try_ok = TryMove (vector(tryx, tryy, Origin.z));
+
+	if (!try_ok)
 	{
 		// open any specials
 		if (bFloat && Level.Game.tmtrace->bFloatOk)
@@ -533,8 +581,12 @@ bool StepMove()
 			else
 				Origin.z -= FLOATSPEED * Level.Game.frametime;
 
-			bInFloat = true;
-			return true;
+			// Check to make sure there's nothing in the way of the float
+			if(TestMobjZ())
+			{
+				bInFloat = true;
+				return true;
+			}
 		}
 
 		if (!Level.Game.tmtrace->NumSpecHit)
@@ -594,24 +646,18 @@ bool TryWalk()
 
 //============================================================================
 //
-//  NewChaseDir
+//  DO_NewChaseDir
 //
 //============================================================================
 
-void NewChaseDir()
+void DO_NewChaseDir(float deltax, float deltay)
 {
-	float deltax, deltay;
 	int d[3];
 	int tdir, olddir, turnaround;
-
-	if (!Enemy)
-		Error("NewChaseDir: called with no target");
 
 	olddir = MoveDir;
 	turnaround = MainGameInfo(Level.Game).opposite[olddir];
 
-	deltax = Enemy.Origin.x - Origin.x;
-	deltay = Enemy.Origin.y - Origin.y;
 	if (deltax > 10.0)
 		d[1] = DI_EAST;
 	else if (deltax < -10.0)
@@ -702,6 +748,61 @@ void NewChaseDir()
 	}
 
 	MoveDir = DI_NODIR;	// can't move
+}
+
+//=============================================================================
+//
+// NewChaseDir
+//
+// killough 9/8/98: Split into two functions
+//
+//=============================================================================
+
+void NewChaseDir()
+{
+	float deltax, deltaxx;
+	float deltay, deltayy;
+	float angle;
+
+	deltax = Enemy.Origin.x - Origin.x;
+	deltay = Enemy.Origin.y - Origin.y;
+	deltaxx = 0.0;
+	deltayy = 0.0;
+
+	if(!Enemy)
+		Error("NewChaseDir: called with no Enemy");
+	
+	// Try to move away from a dropoff
+	if (FloorZ - Level.Game.tmtrace->DropOffZ > MaxDropoffHeight && 
+		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat)
+	{
+		angle = CheckDropOff();
+
+		if (angle)
+		{
+			// [Graf Zahl] I have changed P_TryMove to only apply this logic when
+			// being called from here. AVOIDINGDROPOFF activates the code that
+			// allows monsters to move away from a dropoff. This is different from
+			// MBF which requires unconditional use of the altered logic and therefore
+			// forcing a massive change in the monster behavior to use this.
+
+			// Move away from dropoff at a standard speed.
+			// Multiple contacted linedefs are cumulative (e.g. hanging over corner)
+			deltaxx -= sin(angle) * 32.0;
+			deltayy += cos(angle) * 32.0;
+
+			// use different dropoff movement logic in P_TryMove
+			bAvoidingDropoff = true;
+			DO_NewChaseDir(deltaxx, deltayy);
+			bAvoidingDropoff = false;
+		
+			// If moving away from dropoff, set movecount to 1 so that
+			// small steps are taken to get monster away from dropoff.
+			MoveCount = 1;
+			return;
+		}
+	}
+	DO_NewChaseDir(deltax, deltay);
 }
 
 //==========================================================================
