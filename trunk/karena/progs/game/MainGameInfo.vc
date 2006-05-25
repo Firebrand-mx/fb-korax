@@ -92,6 +92,8 @@ bool randomclass;
 
 Actor PuffSpawned;
 
+PlayerTeam	Teams[MAXPLAYERTEAMS];
+
 //==========================================================================
 //
 //	Init
@@ -3976,6 +3978,70 @@ void SpawnWorld(Level InLevel)
 	}
 }
 
+//==========================================================================
+//
+//  InsertPlayer
+//
+//	[CW] function decides what team this new player shall join
+//
+//==========================================================================
+
+void InsertPlayer(Player pl)
+{
+	int teamnum;
+	teamnum = -1;
+
+	dprint("MainGameInfo::InsertPlayer : ");
+	dprint("MainGameInfo::InsertPlayer : deathmatch : %i", deathmatch);
+	if(deathmatch < HexenDefs::NUMGAMESNOTEAM)
+	{
+		// In no-teams game all players are put into one-for-all team,
+		// which only meaning is to set their right scoretable positions
+		teamnum	= 0;
+		dprint("MainGameInfo::InsertPlayer : NO TEAMS");
+	}
+	else
+	{
+		int i;
+		for (i = 0; i < MAXPLAYERTEAMS; i++)
+		{
+			if (!Teams[i])
+				break;
+			else if (Teams[i].Color == pl.Color)
+			{
+				teamnum = i;
+				break;
+			}
+		}
+
+		if (teamnum == -1)
+		{
+			if (i == MAXPLAYERTEAMS)
+			{
+				// this is unexpected, but player MUST join SOME team
+				bprint("unsufficient allowed teams, new player is added to team 0");
+				teamnum = 0;
+			}
+			else
+				teamnum = i;
+		}
+	}
+
+	// if this team does not exist, create a new one
+	if (!Teams[teamnum])
+	{
+		dprint("MainGameInfo::InsertPlayer : creating a new team %i", teamnum);
+		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
+		Teams[teamnum].Game = self;
+		Teams[teamnum].Color = pl.Color;
+	}
+
+	dprint("MainGameInfo::InsertPlayer : enlisting player in team %i", teamnum);
+
+	Teams[teamnum].EnlistPlayer(pl);
+}
+
+
 defaultproperties
 {
 	num_stats = 1/*NUMARMOR*/ + HexenDefs::NUMMANA + 7 + HexenDefs::NUMARTIFACTS * 2 + HexenDefs::KORAX_STATS + 7 * MAXPLAYERS;
@@ -4175,11 +4241,11 @@ defaultproperties
 	DeathMessage[6] = "%s was sliced by %s's halfquietus";
 	DeathMessage[7] = "%s finally got his quietus from %s";
 // Cleric
-	DeathMessage[8] = "%s had his face smashed in %s";
-	DeathMessage[9] = "%s died of snakebite";
+	DeathMessage[8] = "%s had his face smashed in by %s";
+	DeathMessage[9] = "%s died of %s's snakebite";
 	DeathMessage[10] = "%s saw stars after %s's morning star came out of nowhere";
-	DeathMessage[11] = "%s's thing became a hot dog";
-	DeathMessage[12] = "%s became an ice statue";
+	DeathMessage[11] = "%s's thing became a hot dog (thanks for %s)";
+	DeathMessage[12] = "%s became an ice statue (for %s's pleasure)";
 	DeathMessage[13] = "%s was poisoned to death by %s";
 	DeathMessage[14] = "%s ate %s's phoenix missile";
 	DeathMessage[15] = "%s became a victim of %s's wraith";
@@ -4202,7 +4268,7 @@ defaultproperties
 	DeathMessage[30] = "%s was burnt to ashes by %s's phoenix fire";
 	DeathMessage[31] = "%s was splatted by %s's firemace";
 // Marine
-	DeathMessage[32] = "%s was chopped up for firewood";
+	DeathMessage[32] = "%s was chopped up for firewood by %s";
 	DeathMessage[33] = "%s bit %s's bullet"; 
 	DeathMessage[34] = "%s was gunned by %s";
 	DeathMessage[35] = "%s was machinegunned by %s";
