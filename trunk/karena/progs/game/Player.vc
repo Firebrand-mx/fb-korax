@@ -77,6 +77,22 @@ struct inventory_t
 	int count;
 };
 
+// [CW] I hate to do this, but it is still only way to sent these params to client.
+// I hope Janis shall develop additional data transition mechanism which will allow
+// copying data directly from Level or GameInfo.
+struct scoreboard_t
+{
+	bool		IsActive;
+	string		plname;		// player name
+	int		PClass;
+	int		level;
+	bool		IsBot;		// true if player is bot, false if is human
+	int		team;		// color
+	int		frags;
+	int		nplkills;	// non-player kills
+	int		deaths;
+};
+
 //
 //  FIRST FIELDS ARE STATS THAT ARE SENT TO CLIENT FOR STATUS BAR
 //
@@ -100,24 +116,11 @@ int Mana[HexenDefs::NUMMANA];
 
 // [Korax]
 // [FB] Scores for the different gameplay modes
+int Score;	//[CW] personal player's score value (depends on game mode)
 int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
 int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters (?)
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
-
-// [CW] I hate to do this, but it is still only way to sent these params to client.
-// I hope Janis shall develop additional data transition mechanism which will allow
-// copying data directly from Level or GameInfo.
-struct scoreboard_t
-{
-	bool		IsActive;
-	string		plname;		// player name
-	bool		IsBot;		// true if player is bot, false if is human
-	int		team;		// color
-	int		frags;
-	int		nplkills;	// non-player kills
-	int		deaths;
-};
 
 scoreboard_t gamescores[MAXPLAYERS];
 
@@ -235,6 +238,8 @@ int dam_am; // [FB] Just for the hero's shield
 
 bool onground;
 
+PlayerTeam	Team;	//[CW]
+
 //==========================================================================
 //
 //	PutClientIntoServer
@@ -253,9 +258,6 @@ void PutClientIntoServer()
 		Bot.player = self;
 		Bot.OnBeginPlay();
 	}
-
-	//[CW] update all server clients' scoreboards
-	ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -297,8 +299,11 @@ void SpawnClient()
 	else
 	{
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-			GetPlayerNum()]);
 	}
+
+	//[CW] put player into corresponding team
+	dprint("Player::SpawnClient : inserting player...");
+	MainGameInfo(Level.Game).InsertPlayer(self);
 
 	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
 	{
@@ -367,11 +372,9 @@ void NetGameReborn()
 
 	foundSpot = false;
 	if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-		GetPlayerNum()]))
 	{
 		// Appropriate player start spot is open
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-			GetPlayerNum()]);
 		foundSpot = true;
 	}
 	else
@@ -393,7 +396,6 @@ void NetGameReborn()
 	{
 		// Player's going to be inside something
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-			GetPlayerNum()]);
 	}
 
 	// Restore keys and weapons
@@ -449,8 +451,13 @@ void DisconnectClient()
 	bprint("%s left the game\n", ARR2STR(PlayerName));
 	MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
 
-	//[CW] update all server clients' scoreboards
-	ScoreboardsUpdate(false);
+	//[CW] set leaving player down the competition table
+	// NOTE: for future, should leaving player really loose his/her score?
+	dprint("Player::DisconnectClient : ");
+	PlayerTeam(Team).DiscardPlayer(self);
+
+	//[CW]---------> obsolete	
+	//ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -548,7 +555,6 @@ void DeathMatchSpawnPlayer()
 	}
 
 	// no good spot, so the player will probably get stuck 
-	SpawnPlayer(&Level.PlayerStarts[GetPlayerNum()]);
 }
 
 //==========================================================================
@@ -568,6 +574,7 @@ bool CheckSpot(mthing_t * mthing)
 	float an;
 	Actor A;
 	int i;
+
 
 	if (!MO)
 	{
@@ -758,7 +765,6 @@ void PlayerReborn()
 	B = Bot;
 	if (!inited && Level.Game.deathmatch)
 	{
-		ClearPlayer();
 	}
 	else if (Level.Game.deathmatch)
 	{
@@ -772,6 +778,7 @@ void PlayerReborn()
 		Mana[HexenDefs::MANA_5] = 0;
 		ArmorPoints = 0;
 	}
+
 	Bot = B;
 
 	PClass = BaseClass;
@@ -785,6 +792,7 @@ void PlayerReborn()
 	Mana[HexenDefs::MANA_1] = 25;
 	Mana[HexenDefs::MANA_2] = 25;
 	Mana[HexenDefs::MANA_3] = 25;
+
 	SetWeapon(HexenDefs::WP_SECOND);
 	LocalQuakeHappening = 0;
 
@@ -1295,7 +1303,6 @@ void ActivateLevel(int lvl)
 			MO.Health = Health;
 		}
 
-		cprint("YOU REACHED LEVEL %d", lvl);
 		MO.PlaySound('Chat', CHAN_ITEM);
 	}
 }
@@ -1339,7 +1346,6 @@ void DeactivateLevel(int lvl)
 			MO.Health = Health;
 		}
 
-		cprint("YOU LOWERED TO LEVEL %d", lvl);
 		MO.PlaySound('Chat', CHAN_ITEM);
 	}
 }
@@ -1447,40 +1453,51 @@ void Scoreboard(bool show)
 
 void ScoreboardsUpdate(bool ThisPlayerOnly)
 {
-	int plnum, i, j;
+	int teamnum, plnum, gs, i, j;
 	Player pl;
+	PlayerTeam plteam;
 
 	//[CW] iterate through all connected players
 	for (plnum = 0; plnum < MAXPLAYERS; plnum++)
 	{
 		if (!Level.Game.Players[plnum])
-			return;
+			break;
 
 		if (ThisPlayerOnly && Level.Game.Players[plnum] != self)
-			continue;
+				continue;
 
 		//[CW] update scoreboard for player number "plnum"
 		pl = Player(Level.Game.Players[plnum]);
-		for (i = 0; i < MAXPLAYERS; i++)
+		gs = 0;
+		for (teamnum = 0; teamnum < MAXPLAYERTEAMS; teamnum++)
 		{
-			if (!Level.Game.Players[i])
+			if (!MainGameInfo(Level.Game).Teams[teamnum])
+			   break;
+
+			plteam = MainGameInfo(Level.Game).Teams[teamnum];
+
+			for (i = 0; i < MAXPLAYERS; i++, gs++)
+			{
+			   if (!plteam.Players[i])
 				break;
 
-			pl.gamescores[i].IsActive = true;
-			pl.gamescores[i].plname = ARR2STR(Level.Game.Players[i].PlayerName);
-			pl.gamescores[i].IsBot = Level.Game.Players[i].bIsBot;
-			pl.gamescores[i].team = Level.Game.Players[i].Color;
-			pl.gamescores[i].frags = Level.Game.Players[i].Frags;
-			pl.gamescores[i].nplkills = Player(Level.Game.Players[i]).KillsCount;
-			pl.gamescores[i].deaths = 0;
+			   pl.gamescores[gs].IsActive = true;
+			   pl.gamescores[gs].plname = ARR2STR(plteam.Players[i].PlayerName);
+			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
+			   pl.gamescores[gs].team = plteam.Players[i].Color;
+			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
+			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
+			   pl.gamescores[gs].deaths = 0;
 
-			// [CW] counts times all other players killed this one
-			// (and times he was killed by self/monsters/enviroment)
-			for (j = 0; j < MAXPLAYERS; j++)
-			{
+			   // [CW] counts times all other players killed this one
+			   // (and times he was killed by self/monsters/enviroment)
+			   for (j = 0; j < MAXPLAYERS; j++)
+			   {
 				if (!Level.Game.Players[j])
-					break;
-				pl.gamescores[i].deaths += Level.Game.Players[j].FragsStats[i];
+				   break;
+				dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, P_GetPlayerNum(plteam.Players[i]), Level.Game.Players[j].FragsStats[P_GetPlayerNum(plteam.Players[i])]);
+				pl.gamescores[gs].deaths += Level.Game.Players[j].FragsStats[P_GetPlayerNum(plteam.Players[i])];
+			   }
 			}
 		}
 	}
@@ -1970,7 +1987,6 @@ void PlayerInSpecialSector(float deltaTime)
 		SecretCount++;
 		Level.Game.level->currentsecret++;
 		MO.Sector->special &= ~SECSPEC_SECRET_MASK;
-		centerprint("You found a secret area");
 	}
 
 	if (MO.Sector->special <= SECSPEC_LightFlicker &&
@@ -3637,7 +3653,6 @@ bool UseArtifact(int arti)
 		}
 		else
 		{
-			centerprint("YOU CANNOT USE THIS HERE");
 			return false;
 		}
 		break;
@@ -4308,7 +4323,6 @@ bool CheckMana()
 	{
 		return true;
 	}
-	centerprint("No mana");
 	// out of mana, pick a weapon to change to
 	do
 	{
@@ -4660,11 +4674,9 @@ void Cheat_God()
 	Cheats ^= CF_GODMODE;
 	if (Cheats & CF_GODMODE)
 	{
-		cprint("GOD MODE ON");
 	}
 	else
 	{
-		cprint("GOD MODE OFF");
 	}
 }
 
@@ -4679,11 +4691,9 @@ void Cheat_NoClip()
 	Cheats ^= CF_NOCLIP;
 	if (Cheats & CF_NOCLIP)
 	{
-		cprint("NO CLIPPING ON");
 	}
 	else
 	{
-		cprint("NO CLIPPING OFF");
 	}
 }
 
@@ -4714,7 +4724,6 @@ void Cheat_Gimme()
 			Mana[i] = HexenDefs::MAX_MANA;
 		}
 //		Pieces = 7;
-		cprint("ALL WEAPONS");
 	}
 	if (Cmd_CheckParm("health"))
 	{
@@ -4728,12 +4737,10 @@ void Cheat_Gimme()
 			MO.Health = max_health;
 			Health = MO.Health;
 		}
-		cprint("FULL HEALTH");
 	}
 	if (Cmd_CheckParm("keys"))
 	{
 		Keys = 2047;
-		cprint("ALL KEYS");
 	}
 	if (Cmd_CheckParm("artifacts"))
 	{
@@ -4747,7 +4754,6 @@ void Cheat_Gimme()
 				GiveArtifact(i);
 			}
 		}
-		cprint("ALL ARTIFACTS");
 	}
 	if (Cmd_CheckParm("puzzles"))
 	{
@@ -4757,12 +4763,10 @@ void Cheat_Gimme()
 		{
 			GiveArtifact(i);
 		}
-		cprint("ALL ARTIFACTS");
 	}
 	if (Cmd_CheckParm("exp"))
 	{
 		GiveExperience(10000);
-		cprint("LOTS OF EXP");
 	}
 }
 
@@ -4774,7 +4778,6 @@ void Cheat_Gimme()
 
 void Cheat_KillAll()
 {
-	cprint("%d MONSTERS KILLED", HexenLevelInfo(Level).P_Massacre());
 }
 
 //==========================================================================
@@ -4793,7 +4796,6 @@ void Cheat_Morph()
 	{
 		Actor(MO).MorphPlayer();
 	}
-	cprint("SQUEAL!!");
 }
 
 //==========================================================================
@@ -4816,7 +4818,6 @@ void Cheat_NoWeapons()
 	}
 	PendingWeapon = HexenDefs::WP_FIRST;
 //	Pieces = 0;
-	cprint("CHEATER - YOU DON'T DESERVE WEAPONS");
 }
 
 //==========================================================================
@@ -4849,7 +4850,6 @@ void Cheat_Class()
 		pclass = HexenDefs::PCLASS_WITCHAVEN;
 	else
 	{
-		cprint("INVALID PLAYER CLASS");
 		return;
 	}
 	PClass = pclass;
@@ -4867,16 +4867,158 @@ void Cheat_Class()
 
 //==========================================================================
 //
+//  UpdateScore
+//
+//  [CW] Updates current player's score.
+//	 Scoring event list is defined in 'hexndefs.vc'.
+//
+//==========================================================================
+
+void UpdateScore(int event)
+{
+	int mod;
+	dprint("Player::UpdateScore :");
+	dprint("Player::UpdateScore : event = %i", event);
+
+	switch(event)
+	{
+	case HexenDefs::scoreevent_PlayerDiscard:
+		for (mod = 0; mod < MAXPLAYERS; mod++)
+		{
+			if (!Team.Players[mod] ||
+					mod == MAXPLAYERS - 1)
+			{
+				if (mod)
+				   mod = Team.Players[mod - 1].Score - Score - 1;
+				else
+				   mod = 0;
+				break;
+			}
+		}
+		break;
+	case HexenDefs::scoreevent_Reset:
+		mod = -Score; break;	// this should always set Score to 0
+	case HexenDefs::scoreevent_Frag:
+	case HexenDefs::scoreevent_Kill:
+		mod = 1; break;
+	case HexenDefs::scoreevent_FtbGoal:
+		mod = 5; break;
+	case HexenDefs::scoreevent_SelfFrag:
+	case HexenDefs::scoreevent_TeamFrag:
+		mod = -1; break;
+	}	
+
+
+	Score += mod;
+
+	dprint("Player::UpdateScore : score total now = %d", Score);
+
+	UpdateCompetition();
+	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+	{
+		Team.UpdateScore(event);
+		// update team stats for clientstate
+		TeamFrags = Team.Frags;
+		TeamKills = Team.Kills;
+	}
+	ScoreboardsUpdate(false);
+}
+
+//==========================================================================
+//
+//  UpdateCompetition
+//
+//  [CW] Updates player's position in inner team table.
+//
+//==========================================================================
+
+void UpdateCompetition()
+{
+	bool bPositionShifted;
+	int i, j;
+	Player pl2;
+
+	dprint("Player::UpdateCompetition : ");
+	dprint("Player::UpdateCompetition : searching for current player's index in his team");
+	dprint("Player::UpdateCompetition : current player's Team ptr = %d", Team);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		dprint("Player::UpdateCompetition : current player ptr = %d, team %ith player ptr = %d", self, i, Team.Players[i]);
+		if(Team.Players[i] == self)
+		   break; 
+	}
+
+	dprint("Player::UpdateCompetition : updating competition for player %i", i);
+
+
+	// first see if previous players has lower score now
+	if (i != 0)
+	{
+		dprint("Player::UpdateCompetition : checking previous players");
+
+		j = i-1;
+		while (j >= 0)
+		{
+			pl2 = Team.Players[j];
+			dprint("Player::UpdateCompetition : comparing with player %i", j);
+			dprint("Player::UpdateCompetition : player %i's score = %i", i, Score);
+			dprint("Player::UpdateCompetition : player %i's score = %i", j, pl2.Score);
+
+			if (pl2.Score < Score)
+			{
+				
+				bPositionShifted = true;
+				Team.Players[j] = self;
+				Team.Players[i] = pl2;
+				dprint("Player::UpdateCompetition : player %i is now on %ith place",i,j);
+				dprint("Player::UpdateCompetition : player %i is now on %ith place",j,i);
+
+
+				i = j;
+			}
+			else
+				break;
+			j--;
+		}
+	}
+	// secondly (in other case) see if next players has higher score (in case score gone down)
+	if (!bPositionShifted && i != MAXPLAYERS - 1)
+	{
+		dprint("Player::UpdateCompetition : checking next players");
+
+		j = i+1;
+		while (j < MAXPLAYERS && Team.Players[j])
+		{
+			pl2 = Team.Players[j];
+			dprint("Player::UpdateCompetition : comparing with player %i", j);
+			dprint("Player::UpdateCompetition : player %i's score = %i", i, Score);
+			dprint("Player::UpdateCompetition : player %i's score = %i", j, pl2.Score);
+
+			if (pl2.Score > Score)
+			{
+				Team.Players[j] = self;
+				Team.Players[i] = pl2;
+				dprint("Player::UpdateCompetition : player %i is now on %ith place",i,j);
+				dprint("Player::UpdateCompetition : player %i is now on %ith place",j,i);
+
+				i = j;
+			}
+			else
+				break;
+			j++;
+		}
+	}
+}
+
+//==========================================================================
+//
 //  DisplayDeathMessage
 //
 //  [CW] Displays message notificating that player was killed.
 //
 //	Usage:
-//	All of the message strings are members of MainGameInfo. Messages for
-//	Player-specific weapons are listed in PlDeathMessage array. Messages for
-//	weapons belonging to other pawns or pawns' melee attacks are listed in
-//	NPDeathMessage array.
-//
+//	All of the message strings are members of MainGameInfo.
 //
 //	1) if both source & inflictor are null, it was pure enviroment:
 //	slime, lava and such. Use generic messages like "was in wrong place" etc,
@@ -4970,3 +5112,137 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 defaultproperties
 {
 }
+
+//**************************************************************************
+//
+//  $Log$
+//  Revision 1.42  2006/04/09 10:42:58  dj_jl
+//  For some builtins changed string arguments to names.
+//
+//  Revision 1.41  2006/04/05 18:24:50  dj_jl
+//  Fixed initial speed of throwing bomb.
+//
+//  Revision 1.40  2006/03/19 17:27:15  dj_jl
+//  Added explicit type casts.
+//
+//  Revision 1.39  2006/03/12 19:37:09  dj_jl
+//  States as objects, added state variable type.
+//
+//  Revision 1.38  2006/03/06 19:41:58  firebrand_kh
+//  Fixed dying penalty with some new code lines
+//
+//  Revision 1.37  2006/03/02 18:40:23  dj_jl
+//  Don't use game specific classes in common.
+//
+//  Revision 1.36  2006/02/28 22:49:16  dj_jl
+//  Replaced defines with constants.
+//
+//  Revision 1.35  2006/02/26 20:57:39  dj_jl
+//  Proper serialisation of level and players.
+//
+//  Revision 1.34  2006/02/17 19:17:51  dj_jl
+//  Moved common defs to classes.
+//
+//  Revision 1.33  2006/02/16 17:31:10  firebrand_kh
+//  Lots of changes and fixes
+//
+//  Revision 1.32  2006/02/15 23:37:45  dj_jl
+//  Moved all server progs global variables to classes.
+//
+//  Revision 1.31  2006/02/13 18:44:38  dj_jl
+//  Moved all server progs global functions to classes.
+//
+//  Revision 1.30  2006/02/05 18:57:00  dj_jl
+//  Moved common utils to level info class or built-in.
+//
+//  Revision 1.29  2006/01/18 19:15:30  dj_jl
+//  Switch to previous and next weapon.
+//
+//  Revision 1.28  2005/12/29 17:32:12  dj_jl
+//  Created level info class, moved action special handling to it.
+//
+//  Revision 1.27  2005/12/14 20:52:07  dj_jl
+//  State names belong to a class.
+//
+//  Revision 1.26  2005/12/12 02:17:10  firebrand_kh
+//  Some more fixes
+//
+//  Revision 1.25  2005/12/11 21:37:29  dj_jl
+//  Made path traversal callbacks class members.
+//
+//  Revision 1.24  2005/11/24 20:27:54  dj_jl
+//  Removed unused fields from Object class.
+//
+//  Revision 1.23  2005/11/19 15:23:21  dj_jl
+//  Renamed sounds.
+//
+//  Revision 1.22  2005/10/17 18:18:10  firebrand_kh
+//  Temporal Invulnerability, scores, and other fixes added
+//
+//  Revision 1.21  2005/09/30 15:45:15  firebrand_kh
+//  Lots of changes and additions
+//
+//  Revision 1.20  2005/08/28 20:10:47  firebrand_kh
+//  Added update of the old_level value when decreasing levels
+//
+//  Revision 1.19  2005/08/27 14:15:04  firebrand_kh
+//  Removed an incorrect check for the PoisonDamage & unused code
+//
+//  Revision 1.18  2005/08/26 14:40:09  firebrand_kh
+//  Lots of fixes
+//
+//  Revision 1.17  2005/08/14 16:51:01  firebrand_kh
+//  Added new artifacts, fixed some stuff
+//
+//  Revision 1.16  2005/08/12 16:23:01  firebrand_kh
+//  Added new artifacts & made some fixes
+//
+//  Revision 1.15  2005/08/08 20:07:46  firebrand_kh
+//  Fixed Blind count to reset when the player is spawned
+//
+//  Revision 1.14  2005/08/03 00:56:38  firebrand_kh
+//  New leveling system
+//
+//  Revision 1.13  2005/07/29 13:44:04  firebrand_kh
+//  Fixed moving speed to be affected by attributes, level req's for weapons
+//
+//  Revision 1.12  2005/07/16 10:16:08  dj_jl
+//  Increased jump velocity.
+//
+//  Revision 1.11  2005/05/09 22:49:29  firebrand_kh
+//  Fixed Weapon of Darkness to blind the Player
+//
+//  Revision 1.10  2005/03/28 07:58:56  dj_jl
+//  Latest Vavoom updates.
+//
+//  Revision 1.9  2005/02/11 16:17:01  firebrand_kh
+//  Fixed witchavens translations
+//
+//  Revision 1.8  2005/02/03 01:05:06  firebrand_kh
+//  Fixed Doom Guy weapon bug with the new effects
+//
+//  Revision 1.7  2004/12/30 01:56:48  firebrand_kh
+//  Modified for the Witchaven Guy translations
+//
+//  Revision 1.6  2004/12/27 12:30:01  dj_jl
+//  Vavoom version 1.16 changes.
+//
+//  Revision 1.5  2004/12/09 00:07:08  firebrand_kh
+//  Added code for the Witchaven player class
+//
+//  Revision 1.4  2004/11/25 16:17:16  firebrand_kh
+//  Fixed some stuff for the Witchaven class
+//
+//  Revision 1.3  2004/11/23 12:50:27  dj_jl
+//  Added support for many sector specials.
+//
+//  Revision 1.2  2004/11/17 16:07:53  firebrand_kh
+//  *** empty log message ***
+//
+//  Revision 1.1  2004/11/16 13:33:22  dj_jl
+//  Initial import.
+//
+//  Revision 1.1  2003/11/12 16:50:47  dj_jl
+//  Changed player structure into a class
+//
+//**************************************************************************
