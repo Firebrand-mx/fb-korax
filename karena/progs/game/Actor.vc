@@ -55,7 +55,6 @@ const float FRICTION_WATER		= 3.0;
 const float MONS_LOOK_RANGE 	= (16.0 * 64.0);
 const int MONS_LOOK_LIMIT 		= 64;
 
-//	STATES
 state IdleState;
 state SeeState;
 state PainState;
@@ -67,27 +66,23 @@ state GibsDeathState;
 state IceDeathState;
 state BurnDeathState;
 
-//	SOUNDS
 name SightSound;
 name ActiveSound;
 name AttackSound;
 name PainSound;
 name DeathSound;
 
-//	FLAGS
 bool bSpecial;			// call P_SpecialThing when touched
 bool bShootable;		// Can be hit.
 bool bAmbush;
 bool bJustHit;			// try to attack right back
 bool bJustAttacked;		// take at least one step before attacking
 bool bSpawnCeiling;		// hang from ceiling instead of floor
-//	MOVEMENT FLAGS
 bool bPickUp;			// for players to pick up items
 bool bMissile;			// don't hit same species, explode on block
 bool bNoBlood;			// don't bleed when shot (use puff)
 bool bCorpse;			// don't stop moving halfway off a step
 bool bInFloat;			// floating to a height for a move, don't
-				// auto float to target's height
 bool bSkullFly;			// skull in flight
 bool bCountKill;		// count towards intermission kill total
 bool bIceCorpse;		// a frozen corpse (for blasting)
@@ -95,7 +90,6 @@ bool bWindThrust;		// gets pushed around by the wind specials
 bool bFloorBounce;		// bounces off the floor
 bool bSpawnFloat;		// spawn random float z
 bool bNoTeleport;		// does not teleport
-bool bRip;			// missile rips through solid targets
 bool bPushable;			// can be pushed by other moving mobjs
 bool bSlide;			// slides against walls
 bool bCannotPush;		// cannot push other pushable mobjs
@@ -125,13 +119,11 @@ bool bNoMorph;			// Won't morph into a pig.
 bool bStaticLight;		// Static light source.
 bool bEnemy;			// [FB] A monster enemy for bots to attack
 
-//	PARAMETERS
 float Speed;
 float PainChance;
 int SpawnHealth;
 int GibsHealth;
 
-//[Korax]
 int experience;
 
 // Thing being chased/attacked (or none).
@@ -175,7 +167,6 @@ TVec shoot_linestart;
 TVec shoot_lineend;
 classid shootPuffType;
 
-//	STATIC LIGHT PARAMETERS
 TVec LightOffset;
 int LightColour;
 float LightRadius;
@@ -707,7 +698,11 @@ void Died(Actor source)
 			source.Player.KillCount++;
 			Player(source.Player).KillsCount++;
 
-			// [FB} Increase team kills count too
+			//[CW] update player's score
+			Player(source.Player).UpdateScore(HexenDefs::scoreevent_Kill);
+
+			/*// [FB] Increase team kills count too
+			//[CW] Team score is updated automatically now
 			if (Level.Game.deathmatch == 5)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
@@ -718,7 +713,7 @@ void Died(Actor source)
 						Player(Level.Game.Players[i]).TeamKills++;
 					}
 				}
-			}
+			}*/
 		}
 	
 		// Check for frag changes
@@ -737,17 +732,22 @@ void Died(Actor source)
 			if (self == source)
 			{
 				// Self-frag
-				if (Level.Game.deathmatch == 2)
+				//[CW] fixed
+				/*if (Level.Game.deathmatch == 2)
 				{
 					Player.FragsStats[Player.Color]--;
 				}
 				else
 				{
-					Player.FragsStats[Player.GetPlayerNum()]--;
-				}
+					Player.FragsStats[P_GetPlayerNum(Player)]--;
+				}*/
+				Player.FragsStats[P_GetPlayerNum(Player)]--;
 				Player.Frags--;
 
-				// [FB] We also want to increase the team frags count here too
+				Player(Player).UpdateScore(HexenDefs::scoreevent_SelfFrag);
+
+				/*// [FB] We also want to increase the team frags count here too
+				//[CW] Team score is updated automatically now
 				if (Level.Game.deathmatch == 2)
 				{
 					for (i = 0; i < MAXPLAYERS; i++)
@@ -758,22 +758,28 @@ void Died(Actor source)
 							Player(Level.Game.Players[i]).TeamFrags--;
 						}
 					}
-				}
+				}*/
 			}
 			else
 			{
-				if (Level.Game.deathmatch == 2)
+				//[CW] fixed
+				/*if (Level.Game.deathmatch == 2)
 				{
 					source.Player.FragsStats[Player.Color]++;
 				}
 				else
 				{
-					source.Player.FragsStats[Player.GetPlayerNum()]++;
-				}
+					source.Player.FragsStats[P_GetPlayerNum(Player)]++;
+				}*/
+				source.Player.FragsStats[P_GetPlayerNum(Player)]++;
+				dprint("-----grant frag: killer %i, ded %i, frags %i", P_GetPlayerNum(source.Player),P_GetPlayerNum(Player), source.Player.FragsStats[P_GetPlayerNum(Player)]);
 				source.Player.Frags++;
 				Player(source.Player).GiveExperience(500 + (500 * (Player(Player).exp_level - 1) / 10));
 
-				// [FB] We also want to increase the team frags count here too
+				Player(source.Player).UpdateScore(HexenDefs::scoreevent_Frag);
+
+				/*// [FB] We also want to increase the team frags count here too
+				//[CW] Team score is updated automatically now
 				if (Level.Game.deathmatch == 2)
 				{
 					for (i = 0; i < MAXPLAYERS; i++)
@@ -784,17 +790,23 @@ void Died(Actor source)
 							Player(Level.Game.Players[i]).TeamFrags++;
 						}
 					}
-				}
+				}*/
 			}
 		}
 	}
 
-	//[CW] If player participated in this death (as victim or instigator),
+	//[CW] ------->
+	//
+	// probably this code is not needed now;
+	// ScoreboardUpdate is called from UpdateCompetition, which happens each
+	// time after UpdateScore is called.
+	//
+	/*//[CW] If player participated in this death (as victim or instigator),
 	// then update all server clients' scoreboards.
 	if (Player)
 		Player(Player).ScoreboardsUpdate(false);
 	else if (source && source.Player)
-		Player(source.Player).ScoreboardsUpdate(false);
+		Player(source.Player).ScoreboardsUpdate(false);*/
 
 	if (bIsPlayer)
 	{
@@ -808,7 +820,7 @@ void Died(Actor source)
 			}
 			else
 			{
-				Player.FragsStats[Player.GetPlayerNum()]--;
+				Player.FragsStats[P_GetPlayerNum(Player)]--;
 			}
 			Player.Frags--;
 		}
