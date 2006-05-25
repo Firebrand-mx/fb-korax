@@ -1,0 +1,267 @@
+/*	written by [CW]	for Korax Arena		*/
+
+class PlayerTeam : Object;
+
+MainGameInfo	Game;
+
+int		Score;
+int		Color;	// team definition
+int		Frags;	// player kills
+int		Kills;	// monster kills
+int		Goals;
+int		playercount;
+Player		Players[MAXPLAYERS];
+
+string ColorNames[MAXPLAYERTEAMS];
+
+
+//==========================================================================
+//
+//	EnlistPlayer
+//
+//==========================================================================
+
+void EnlistPlayer(Player pl)
+{
+	int i;
+
+	dprint("PlayerTeam::EnlistPlayer : ");
+	// first check if player already has reference to this team
+	if (pl.Team == self)
+		return;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		// We should also check whether player is listed in team's player table,
+		// in case player was reborn and his Team reference was just erased.
+		// Due program logic (at least I hope so) this may happen
+		// only if player was reborn; since he is already enlisted,
+		// we simply need to re-assign Team reference for him.
+		if (Players[i] == pl)
+		{
+			pl.Team = self;
+			return;
+		}
+
+		if (!Players[i])
+		{
+			dprint("PlayerTeam::EnlistPlayer : enlisting at %i", i);
+			if (pl.Team)
+			{
+				dprint("PlayerTeam::EnlistPlayer : player must be discarded from previous team first");
+				pl.Team.DiscardPlayer(pl);
+			}
+			pl.Team = self;
+			Players[i] = pl;
+			playercount++;
+
+			// This should be taken into account:
+			// player, who changes team, looses his score!!
+			//
+			pl.UpdateScore(HexenDefs::scoreevent_Reset);
+
+			if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+			{
+			   string playername;
+			   playername = ARR2STR(pl.PlayerName);
+			   bprint("%s joins %s team", playername, ColorNames[Color]);
+			}
+			return;
+		}
+	}
+}
+
+
+//==========================================================================
+//
+//	DiscardPlayer
+//
+//==========================================================================
+
+void DiscardPlayer(Player pl)
+{
+	int i;
+
+	dprint("PlayerTeam::DiscardPlayer : ");
+
+	// first check if player is in team
+	if (pl.Team != self)
+		return;
+
+	// push player down the competition table
+	pl.UpdateScore(HexenDefs::scoreevent_TeamDiscard);
+
+	// old code ----- not needed probably
+	/*for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i] == pl)
+		{
+			int j;
+			for (j = i; j < MAXPLAYERS - 1; j++)
+				Players[j] = Players[j+1];
+		}
+	}*/
+
+	pl.Team = none;
+	playercount--;
+
+	if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+	{
+		string playername;
+		playername = ARR2STR(pl.PlayerName);
+		bprint("%s has left %s team", playername, ColorNames[Color]);
+	}
+
+	// if there's no players, team is gone...
+	if (!playercount)
+	{
+		UpdateScore(HexenDefs::scoreevent_TeamDiscard);
+		for (i = 0; i < MAXPLAYERTEAMS; i++)
+		{
+			if (Game.Teams[i] == self)
+				Game.Teams[i] = none;
+		}
+
+		if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		   bprint("team %s is no longer in competition", ColorNames[Color]);
+
+		Destroy();
+	}
+}
+
+//==========================================================================
+//
+//  UpdateScore
+//
+//  [CW] Updates current team's score.
+//	 Scoring event list is defined in 'hexndefs.vc'.
+//
+//==========================================================================
+
+void UpdateScore(int event)
+{
+	int mod;
+	dprint("PlayerTeam::UpdateScore :");
+	dprint("PlayerTeam::UpdateScore : event = %i", event);
+
+	switch(event)
+	{
+	case HexenDefs::scoreevent_TeamDiscard:
+		for (mod = 0; mod < MAXPLAYERTEAMS; mod++)
+		{
+			if (!Game.Teams[mod] || mod == MAXPLAYERTEAMS - 1)
+			{
+				if (mod)
+				   mod = Game.Teams[mod - 1].Score - Score - 1;
+				else
+				   mod = 0;
+				break;
+			}
+		}
+		break;
+	case HexenDefs::scoreevent_Reset:
+		Frags = 0;
+		Kills = 0;
+		Goals = 0;
+		mod = -Score;	// this should always set score to 0
+		break;
+	case HexenDefs::scoreevent_Frag:
+		Frags++;
+		mod = 1;
+		break;
+	case HexenDefs::scoreevent_Kill:
+		Kills++;
+		break;
+	case HexenDefs::scoreevent_FtbGoal:
+		Goals++;
+		break;
+	case HexenDefs::scoreevent_SelfFrag:
+		Frags--;
+		mod = -1;
+		break;
+	case HexenDefs::scoreevent_TeamFrag:
+		Frags--;
+		mod = -1;
+		break;
+	}
+
+
+	Score += mod;
+
+	dprint("Team::UpdateScore : score total now = %d", Score);
+
+	UpdateCompetition();
+}
+
+//==========================================================================
+//
+//  UpdateCompetition
+//
+//  [CW] Updates team's position in general game table.
+//
+//==========================================================================
+
+void UpdateCompetition()
+{
+	bool bPositionShifted;
+	int i, j;
+	PlayerTeam plteam2;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if(Game.Teams[i] == self)
+		   break; 
+	}
+
+	// first see if previous players has lower score now
+	if (i != 0)
+	{
+		j = i-1;
+		while (j >= 0)
+		{
+			plteam2 = Game.Teams[j];
+			if (plteam2.Score < Score)
+			{
+				
+				bPositionShifted = true;
+				Game.Teams[j] = self;
+				Game.Teams[i] = plteam2;
+				i = j;
+			}
+			else
+				break;
+			j--;
+		}
+	}
+	// secondly (in other case) see if next players has higher score (in case score gone down)
+	if (!bPositionShifted && i != MAXPLAYERTEAMS - 1)
+	{
+		j = i+1;
+		while (j < MAXPLAYERTEAMS && Game.Teams[j])
+		{
+			plteam2 = Game.Teams[j];
+			if (plteam2.Score > Score)
+			{
+				Game.Teams[j] = self;
+				Game.Teams[i] = plteam2;
+				i = j;
+			}
+			else
+				break;
+			j++;
+		}
+	}
+}
+
+
+defaultproperties
+{
+	ColorNames[0] = "blue";
+	ColorNames[1] = "red";
+	ColorNames[2] = "gold";
+	ColorNames[3] = "light green";
+	ColorNames[4] = "green";
+	ColorNames[5] = "gray";
+	ColorNames[6] = "brown";
+	ColorNames[7] = "magenta";
+}
