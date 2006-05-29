@@ -1302,6 +1302,7 @@ void ActivateLevel(int lvl)
 			MO.Health = Health;
 		}
 
+		cprint("YOU REACHED LEVEL %d", lvl);
 		MO.PlaySound('Chat', CHAN_ITEM);
 	}
 }
@@ -1345,6 +1346,7 @@ void DeactivateLevel(int lvl)
 			MO.Health = Health;
 		}
 
+		cprint("YOU LOWERED TO LEVEL %d", lvl);
 		MO.PlaySound('Chat', CHAN_ITEM);
 	}
 }
@@ -1986,6 +1988,7 @@ void PlayerInSpecialSector(float deltaTime)
 		SecretCount++;
 		Level.Game.level->currentsecret++;
 		MO.Sector->special &= ~SECSPEC_SECRET_MASK;
+		centerprint("You found a secret area");
 	}
 
 	if (MO.Sector->special <= SECSPEC_LightFlicker &&
@@ -3652,6 +3655,7 @@ bool UseArtifact(int arti)
 		}
 		else
 		{
+			centerprint("YOU CANNOT USE THIS HERE");
 			return false;
 		}
 		break;
@@ -4322,6 +4326,7 @@ bool CheckMana()
 	{
 		return true;
 	}
+	centerprint("No mana");
 	// out of mana, pick a weapon to change to
 	do
 	{
@@ -4673,9 +4678,11 @@ void Cheat_God()
 	Cheats ^= CF_GODMODE;
 	if (Cheats & CF_GODMODE)
 	{
+		cprint("GOD MODE ON");
 	}
 	else
 	{
+		cprint("GOD MODE OFF");
 	}
 }
 
@@ -4690,9 +4697,11 @@ void Cheat_NoClip()
 	Cheats ^= CF_NOCLIP;
 	if (Cheats & CF_NOCLIP)
 	{
+		cprint("NO CLIPPING ON");
 	}
 	else
 	{
+		cprint("NO CLIPPING OFF");
 	}
 }
 
@@ -4723,6 +4732,7 @@ void Cheat_Gimme()
 			Mana[i] = HexenDefs::MAX_MANA;
 		}
 //		Pieces = 7;
+		cprint("ALL WEAPONS");
 	}
 	if (Cmd_CheckParm("health"))
 	{
@@ -4736,10 +4746,12 @@ void Cheat_Gimme()
 			MO.Health = max_health;
 			Health = MO.Health;
 		}
+		cprint("FULL HEALTH");
 	}
 	if (Cmd_CheckParm("keys"))
 	{
 		Keys = 2047;
+		cprint("ALL KEYS");
 	}
 	if (Cmd_CheckParm("artifacts"))
 	{
@@ -4753,6 +4765,7 @@ void Cheat_Gimme()
 				GiveArtifact(i);
 			}
 		}
+		cprint("ALL ARTIFACTS");
 	}
 	if (Cmd_CheckParm("puzzles"))
 	{
@@ -4762,10 +4775,12 @@ void Cheat_Gimme()
 		{
 			GiveArtifact(i);
 		}
+		cprint("ALL ARTIFACTS");
 	}
 	if (Cmd_CheckParm("exp"))
 	{
 		GiveExperience(10000);
+		cprint("LOTS OF EXP");
 	}
 }
 
@@ -4777,6 +4792,7 @@ void Cheat_Gimme()
 
 void Cheat_KillAll()
 {
+	cprint("%d MONSTERS KILLED", HexenLevelInfo(Level).P_Massacre());
 }
 
 //==========================================================================
@@ -4795,6 +4811,7 @@ void Cheat_Morph()
 	{
 		Actor(MO).MorphPlayer();
 	}
+	cprint("SQUEAL!!");
 }
 
 //==========================================================================
@@ -4817,6 +4834,7 @@ void Cheat_NoWeapons()
 	}
 	PendingWeapon = HexenDefs::WP_FIRST;
 //	Pieces = 0;
+	cprint("CHEATER - YOU DON'T DESERVE WEAPONS");
 }
 
 //==========================================================================
@@ -4849,6 +4867,7 @@ void Cheat_Class()
 		pclass = HexenDefs::PCLASS_WITCHAVEN;
 	else
 	{
+		cprint("INVALID PLAYER CLASS");
 		return;
 	}
 	PClass = pclass;
