@@ -713,7 +713,7 @@ struct line_t:TPlane
 	int arg4;
 	int arg5;
 
-	addfields 5;
+	int		LineTag;
 };
 
 //
@@ -838,7 +838,22 @@ struct sector_t
 	bool		bIgnoreHeightSec;	//	heightsec is only for triggering sector actions
 	bool		bUnderWater;		//	Sector is underwater
 
-	addfields 14;
+	// 0 = untraversed, 1,2 = sndlines -1
+	int		soundtraversed;
+
+	// thing that made a sound (or null)
+	Entity		SoundTarget;
+
+	// Thinker for reversable actions
+	Thinker		FloorData;
+	Thinker		CeilingData;
+	Thinker		LightingData;
+	Thinker		AffectorData;
+
+	int		Damage;
+
+	float		Friction;
+	float		MoveFactor;
 };
 
 //
@@ -862,7 +877,7 @@ struct polyobj_t
 	float __base_y;
 	float __base_angle;
 	int __changed;
-	addfields 3;
+	Thinker SpecialData;    // pointer a thinker, if the poly is moving
 };
 
 //
@@ -919,12 +934,12 @@ struct RogueConChoice
 	int NeedAmount3;	//	Amount of item 3
 	int Text[32/4];		//	Text of the answer
 	int TextOK[80/4];	//	Message displayed on success
-	int Next;			//	Dialog to go on success, negative values to go
-						// here immediately
+	int Next;		//	Dialog to go on success, negative values to go
+				// 	here immediately
 	int Objectives;		//	Mission objectives, LOGxxxx lump
 	int TextNo[80/4];	//	Message displayed on failure (player doesn't
-						// have needed thing, it haves enough health/ammo,
-						// item is not ready, quest is not completed)
+				// 	have needed thing, it haves enough health/ammo,
+				// 	item is not ready, quest is not completed)
 };
 
 struct RogueConSpeech
@@ -962,8 +977,8 @@ struct level_t
 
 	int			sky1Texture;
 	int			sky2Texture;
-	float		sky1ScrollDelta;
-	float		sky2ScrollDelta;
+	float			sky1ScrollDelta;
+	float			sky2ScrollDelta;
 	int			doubleSky;
 	int			lightning;
 	int			skybox[8];
@@ -998,40 +1013,10 @@ struct opening_t
 
 struct intercept_t
 {
-	float frac;	// along trace line
+	float frac;				// along trace line
 	bool bIsALine;
 	Entity Thing;
 	line_t *line;
-};
-
-addfields sector_t
-{
-	// 0 = untraversed, 1,2 = sndlines -1
-	int			soundtraversed;
-
-	// thing that made a sound (or null)
-	Entity		SoundTarget;
-
-	// Thinker for reversable actions
-	Thinker		FloorData;
-	Thinker		CeilingData;
-	Thinker		LightingData;
-	Thinker		AffectorData;
-
-	int			Damage;
-
-	float		Friction;
-	float		MoveFactor;
-};
-
-addfields polyobj_t
-{
-	Thinker SpecialData;	// pointer a thinker, if the poly is moving
-};
-
-addfields line_t
-{
-	int			LineTag;
 };
 
 const int MAXSPECIALCROSS	= 32;
@@ -1047,8 +1032,8 @@ struct tmtrace_t
 	sec_plane_t *Floor;
 	sec_plane_t *Ceiling;
 
-	bool bFloatOk;	// if true, move would be ok if
-					// within tmtrace.FloorZ - tmtrace.CeilingZ
+	bool bFloatOk;				// if true, move would be ok if
+						// within tmtrace.FloorZ - tmtrace.CeilingZ
 
 	// keep track of the line that lowers the ceiling,
 	// so missiles don't explode against sky hack walls
@@ -1157,7 +1142,8 @@ struct particle_t
 	particle_t *next;
 	TVec vel;
 	float die;
-	addfields 7;
+	int type;
+	float ramp;
 };
 
 struct ClipRect
@@ -1169,12 +1155,6 @@ struct ClipRect
 	float ClipY;		// Topmost edge of rectangle relative to origin
 	float ClipWidth;	// Width of rectangle
 	float ClipHeight;	// Height of rectangle
-};
-
-addfields particle_t
-{
-	int type;
-	float ramp;
 };
 
 //**************************************************************************
@@ -1875,62 +1855,3 @@ native static final int FindSectorFromTag(int tag, int start);
 defaultproperties
 {
 }
-
-//**************************************************************************
-//
-//  $Log$
-//  Revision 1.19  2006/04/09 18:43:26  firebrand_kh
-//  Added latest common progs
-//
-//  Revision 1.17  2006/04/06 21:50:22  dj_jl
-//  For some builtins changed string arguments to names.
-//
-//  Revision 1.16  2006/03/26 12:56:30  dj_jl
-//  Moved added fields to Object.
-//
-//  Revision 1.15  2006/03/23 23:11:50  dj_jl
-//  Added support for final methods.
-//
-//  Revision 1.14  2006/03/19 17:19:38  dj_jl
-//  Added explicit type casts.
-//
-//  Revision 1.13  2006/03/13 21:24:53  dj_jl
-//  Added support for read-only, private and transient fields.
-//
-//  Revision 1.12  2006/03/13 18:33:52  dj_jl
-//  Added function to check if a state is in the range.
-//
-//  Revision 1.11  2006/03/12 20:02:31  dj_jl
-//  States as objects, added state variable type.
-//
-//  Revision 1.10  2006/03/06 13:13:55  dj_jl
-//  Client now uses entity class.
-//
-//  Revision 1.9  2006/02/28 22:43:14  dj_jl
-//  Replaced defines with constants.
-//
-//  Revision 1.8  2006/02/25 17:15:55  dj_jl
-//  Implemented proper serialisation of the objects.
-//
-//  Revision 1.7  2006/02/20 22:57:16  dj_jl
-//  Changed client state structure to class.
-//
-//  Revision 1.6  2006/02/19 20:37:42  dj_jl
-//  Made true and false keywords.
-//
-//  Revision 1.5  2006/02/19 14:17:10  dj_jl
-//  Some changes because of compiler changes.
-//
-//  Revision 1.4  2006/02/17 19:06:51  dj_jl
-//  Moved common defs to classes.
-//
-//  Revision 1.3  2005/12/14 20:52:32  dj_jl
-//  State names belong to a class.
-//
-//  Revision 1.2  2005/11/24 20:27:00  dj_jl
-//  Removed unused fields from Object class.
-//
-//  Revision 1.1  2002/10/26 16:32:17  dj_jl
-//  New style of defining classes.
-//
-//**************************************************************************
