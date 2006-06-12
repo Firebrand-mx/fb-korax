@@ -447,7 +447,7 @@ void DisconnectClient()
 			ViewEnts[i] = none;
 		}
 	}
-	bprint("%s left the game\n", ARR2STR(PlayerName));
+	bprint("%s left the game\n", PlayerName);
 	MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
 
 	//[CW] set leaving player down the competition table
@@ -1483,7 +1483,7 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 				break;
 
 			   pl.gamescores[gs].IsActive = true;
-			   pl.gamescores[gs].plname = ARR2STR(plteam.Players[i].PlayerName);
+			   pl.gamescores[gs].plname = plteam.Players[i].PlayerName;
 			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
 			   pl.gamescores[gs].team = plteam.Players[i].Color;
 			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
@@ -5078,14 +5078,14 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			{
 				dprint("Player::DisplayDeathMessage : source is PlayerPawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
-						ARR2STR(PlayerName),
-						ARR2STR(source.Player.PlayerName));
+						PlayerName,
+						source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
 				dprint("Player::DisplayDeathMessage : source is Pawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
-						ARR2STR(PlayerName),
+						PlayerName,
 						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
@@ -5100,18 +5100,18 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 				{
 					dprint("Player::DisplayDeathMessage : self frag");
 					bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
-						ARR2STR(PlayerName));
+						PlayerName);
 				}
 				else
 					bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
-						ARR2STR(PlayerName),
-						ARR2STR(source.Player.PlayerName));
+						PlayerName,
+						source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
 				dprint("Player::DisplayDeathMessage : source is Pawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
-						ARR2STR(PlayerName),
+						PlayerName,
 						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
@@ -5119,20 +5119,20 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		else
 		{
 			dprint("Player::DisplayDeathMessage : falling death message");
-			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], ARR2STR(PlayerName));
+			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
 		}
 	}
 	//[CW] p.2: fragged by enviromental thing or trap
 	else if(inflictor)
 	{
 		dprint("Player::DisplayDeathMessage : enviromental thing message");
-		bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], ARR2STR(PlayerName));
+		bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
 	{
 		dprint("Player::DisplayDeathMessage : pure enviroment message");
-		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], ARR2STR(PlayerName));
+		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
 	}
 }
 
