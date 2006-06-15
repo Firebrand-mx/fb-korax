@@ -25,6 +25,9 @@
 
 class StatusBarScreen : Window;
 
+const int BAR_X = 160;
+const int BAR_Y = 441;
+
 ClientGameBase ClGame;
 
 MainClientState cl;
@@ -318,11 +321,11 @@ void SB_DrawBackground()
 	else if (sb_health > m_h)
 		sb_health = m_h;
 
-	R_DrawPic(0, 134, pic_bar);
-	R_DrawPic(28 + ((((sb_health) * 196) / 100) % 9), 193, pic_chain);
-	R_DrawPic(7 + (((sb_health * 100 / m_h) * 11) / 5), 193, pic_lifegem);
-	R_DrawPic(0, 193, pic_lfedge);
-	R_DrawPic(277, 193, pic_rtedge);
+	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
+	R_DrawPic(BAR_X + 28 + (((sb_health * 196) / 100) % 9), BAR_Y + 32, pic_chain);
+	R_DrawPic(BAR_X + 7 + ((sb_health * 11) / 5), BAR_Y + 32, pic_lifegem);
+	R_DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
+	R_DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
 }
 
 //==========================================================================
@@ -496,12 +499,9 @@ void SB_DrawMainBar()
 	int readyweapon;
 
 	SB_DrawBackground();
-	R_DrawPic(38, 162, pic_statbar);
+	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
 
 //[Korax]
-	//  [FB] Give a higher virtual resolution to these stats
-	SetVirtualScreen(640, 400);
-
 	SB_DrawNumber92(320, 20, cl.exp_level, 1);
 	SB_DrawNumber92(460, 20, cl.experience, 1);
 	SB_DrawNumber92(580, 20, cl.next_level, 1);
@@ -529,17 +529,15 @@ void SB_DrawMainBar()
 		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
-	//  [FB] Return virtual screen resolution for everything else
-	SetVirtualScreen(320, 200);
 //	else
 	{
 		if (cl.health >= 25)
 		{
-			SB_DrawNumber9(40, 176, cl.health, 0);
+			SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
 		}
 		else
 		{
-			SB_DrawNumber9(40, 176, cl.health, 1);
+			SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 1);
 		}
 	}
 
@@ -659,30 +657,30 @@ void SB_DrawMainBar()
 		sb_manaVial3 = 1;
 	}
 
-	SB_DrawMNumber(79, 181, cl.mana[0]);
-	SB_DrawMNumber(109, 181, cl.mana[1]);
-	SB_DrawMNumber(140, 181, cl.mana[2]);
-	SB_DrawMNumber(171, 181, cl.mana[3]);
-	SB_DrawMNumber(202, 181, cl.mana[4]);
-	R_DrawPic(77, 164, pic_manadim1[sb_mana1]);
-	R_DrawPic(107, 164, pic_manadim2[sb_mana2]);//+30
-	R_DrawPic(138, 164, pic_manadim3[sb_mana3]);//+31
-	R_DrawPic(169, 164, pic_manadim4[sb_mana4]);//+31
-	R_DrawPic(200, 164, pic_manadim5[sb_mana5]);//+31
-	R_DrawPic(94, 164, pic_manavial1[sb_manaVial1]);
-	R_DrawPic(124, 164, pic_manavial2[sb_manaVial2]);
-	R_DrawPic(155, 164, pic_manavial3[sb_manaVial3]);
-	R_DrawPic(186, 164, pic_manavial4[sb_manaVial4]);
-	R_DrawPic(217, 164, pic_manavial5[sb_manaVial5]);
-	R_DrawPic(231, 165, pic_manavial6);
-	R_DrawPic(238, 165, pic_manavial7);
-	R_ShadeRect(95, 165, 3, 22 - (22 * cl.mana[0]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(125, 165, 3, 22 - (22 * cl.mana[1]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(156, 165, 3, 22 - (22 * cl.mana[2]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(187, 165, 3, 22 - (22 * cl.mana[3]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(218, 165, 3, 22 - (22 * cl.mana[4]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(232, 166, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 31);
-	R_ShadeRect(239, 166, 3, 22 - (22 * cl.exp_level) / 10, 31);
+	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.mana[0]);
+	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.mana[1]);
+	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.mana[2]);
+	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.mana[3]);
+	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.mana[4]);
+	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
+	R_DrawPic(BAR_X + 107, BAR_Y + 3, pic_manadim2[sb_mana2]);//+30
+	R_DrawPic(BAR_X + 138, BAR_Y + 3, pic_manadim3[sb_mana3]);//+31
+	R_DrawPic(BAR_X + 169, BAR_Y + 3, pic_manadim4[sb_mana4]);//+31
+	R_DrawPic(BAR_X + 200, BAR_Y + 3, pic_manadim5[sb_mana5]);//+31
+	R_DrawPic(BAR_X + 94, BAR_Y + 3, pic_manavial1[sb_manaVial1]);
+	R_DrawPic(BAR_X + 124, BAR_Y + 3, pic_manavial2[sb_manaVial2]);
+	R_DrawPic(BAR_X + 155, BAR_Y + 3, pic_manavial3[sb_manaVial3]);
+	R_DrawPic(BAR_X + 186, BAR_Y + 3, pic_manavial4[sb_manaVial4]);
+	R_DrawPic(BAR_X + 217, BAR_Y + 3, pic_manavial5[sb_manaVial5]);
+	R_DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
+	R_DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
+	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * cl.mana[0]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * cl.mana[1]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * cl.mana[2]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * cl.mana[3]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * cl.mana[4]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 31);
+	R_ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 31);
 
 	// Ready artifact
 /*	if (cl.ArtifactFlash)
@@ -719,7 +717,7 @@ void SB_DrawMainBar()
 	}*/
 
 	// Armor
-	SB_DrawNumber9(253, 176, cl.armorpoints, 0);
+	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, cl.armorpoints, 0);
 }
 
 //==========================================================================
@@ -734,14 +732,14 @@ void SB_DrawKeyBar()
 	int num;
 
 	SB_DrawBackground();
-	R_DrawPic(38, 162, pic_keybar);
+	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
 
 	//  Keys
 	for (i = 0, num = 0; i < HexenDefs::NUMKEYS && num < 5; i++)
 	{
 		if (cl.SBFlags & (1 << i))
 		{
-			R_DrawPic(46 + num * 20, 164, pic_key[i]);
+			R_DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3, pic_key[i]);
 			num++;
 		}
 	}
@@ -824,9 +822,6 @@ void SB_DrawFullscreenStats()
 	int sb_mana4;
 	int sb_mana5;
 	int readyweapon;
-
-	//  [FB] Give the fullscreen stats a higher virtual resolution
-	SetVirtualScreen(640, 400);
 
 	//  [FB] Armorpoints
 	SB_DrawNumber12(10, 340, cl.armorpoints);
@@ -994,9 +989,6 @@ void SB_DrawFullscreenStats()
 		R_DrawShadowedPic(284, 169, pic_arti[cl.readyArtifact]);
 		SB_DrawINumber(306, 192, cl.inventory[cl.inv_ptr].count);
 	}*/
-
-	//  [FB] Return virtual screen resolution for everything else
-	SetVirtualScreen(320, 200);
 }
 
 //==========================================================================
@@ -1009,128 +1001,61 @@ void SB_DrawIcons(int view)
 {
 	int frame;
 
-	if(view == SB_VIEW_FULLSCREEN)
+	// Wings of wrath
+	if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 	{
-		// [FB] Give the fullscreen stats a higher virtual resolution
-		SetVirtualScreen(640, 400);
-
-		// Wings of wrath
-		if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
+		frame = (ClGame.level->tictime / 3) & 15;
+		if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
 		{
-			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
+			if (hitCenterFrame && frame != 15 && frame != 0)
 			{
-				if (hitCenterFrame && frame != 15 && frame != 0)
-				{
-					frame = 15;
-				}
-				else
-				{
-					hitCenterFrame = false;
-				}
+				frame = 15;
 			}
 			else
 			{
-				if (hitCenterFrame || frame == 15 || frame == 0)
-				{
-					frame = 15;
-					hitCenterFrame = true;
-				}
+				hitCenterFrame = false;
 			}
-			R_DrawPic(40, 38, pic_fly[frame]);
 		}
-	
-		// Speed Boots
-		if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
+		else
 		{
-			R_DrawPic(90, 38, pic_boot[(ClGame.level->tictime / 3) & 15]);
+			if (hitCenterFrame || frame == 15 || frame == 0)
+			{
+				frame = 15;
+				hitCenterFrame = true;
+			}
 		}
-	
-		// Defensive power
-		if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
-		{
-			R_DrawPic(520, 38, pic_shld[(ClGame.level->tictime / 3) & 15]);
-		}
-	
-		// Minotaur Active
-		if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
-		{
-			R_DrawPic(600, 38, pic_mino[(ClGame.level->tictime / 3) & 15]);
-		}
-	
-		// [FB] PI Damage Active
-		if (cl.SBFlags & HexenDefs::SBF_POWER_DAMAGE)
-		{
-			// [FB] This one should appear where the wings of wrath are supposed to do
-			R_DrawPic(40, 38, pic_pidm[(ClGame.level->tictime / 3) & 7]);
-		}
-	
-		// [FB] Invisibility power
-		if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
-		{
-			R_DrawPic2(200, 38, pic_shsp, 40);
-		}
-		// [FB] Return Virtual resolution for everything else
-		SetVirtualScreen(320, 200);
+		R_DrawPic(40, 38, pic_fly[frame]);
 	}
-	else
+
+	// Speed Boots
+	if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
 	{
-		// Wings of wrath
-		if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
-		{
-			frame = (ClGame.level->tictime / 3) & 15;
-			if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
-			{
-				if (hitCenterFrame && frame != 15 && frame != 0)
-				{
-					frame = 15;
-				}
-				else
-				{
-					hitCenterFrame = false;
-				}
-			}
-			else
-			{
-				if (hitCenterFrame || frame == 15 || frame == 0)
-				{
-					frame = 15;
-					hitCenterFrame = true;
-				}
-			}
-			R_DrawPic(20, 19, pic_fly[frame]);
-		}
-	
-		// Speed Boots
-		if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
-		{
-			R_DrawPic(60, 19, pic_boot[(ClGame.level->tictime / 3) & 15]);
-		}
-	
-		// Defensive power
-		if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
-		{
-			R_DrawPic(260, 19, pic_shld[(ClGame.level->tictime / 3) & 15]);
-		}
-	
-		// Minotaur Active
-		if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
-		{
-			R_DrawPic(300, 19, pic_mino[(ClGame.level->tictime / 3) & 15]);
-		}
-	
-		// [FB] PI Damage Active
-		if (cl.SBFlags & HexenDefs::SBF_POWER_DAMAGE)
-		{
-			// [FB] This one should appear where the wings of wrath are supposed to do
-			R_DrawPic(20, 19, pic_pidm[(ClGame.level->tictime / 3) & 7]);
-		}
-	
-		// [FB] Invisibility power
-		if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
-		{
-			R_DrawPic2(100, 19, pic_shsp, 40);
-		}
+		R_DrawPic(90, 38, pic_boot[(ClGame.level->tictime / 3) & 15]);
+	}
+
+	// Defensive power
+	if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
+	{
+		R_DrawPic(520, 38, pic_shld[(ClGame.level->tictime / 3) & 15]);
+	}
+
+	// Minotaur Active
+	if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
+	{
+		R_DrawPic(600, 38, pic_mino[(ClGame.level->tictime / 3) & 15]);
+	}
+
+	// [FB] PI Damage Active
+	if (cl.SBFlags & HexenDefs::SBF_POWER_DAMAGE)
+	{
+		// [FB] This one should appear where the wings of wrath are supposed to do
+		R_DrawPic(40, 38, pic_pidm[(ClGame.level->tictime / 3) & 7]);
+	}
+
+	// [FB] Invisibility power
+	if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
+	{
+		R_DrawPic2(200, 38, pic_shsp, 40);
 	}
 }
 
@@ -1142,25 +1067,9 @@ void SB_DrawIcons(int view)
 
 void SB_DrawPause(int view)
 {
-	if(view == SB_VIEW_FULLSCREEN)
+	if (cl.bPaused && GetCvar('draw_pause'))
 	{
-		// [FB] Give the fullscreen stats a higher virtual resolution
-		SetVirtualScreen(640, 400);
-
-		if (cl.bPaused && GetCvar('draw_pause'))
-		{
-			R_DrawPic(320, cl.maxclients > 1 ? 140 : 40, pic_paused);
-		}
-
-		// [FB] Return virtual resolution to default for everything else
-		SetVirtualScreen(320, 200);
-	}
-	else
-	{
-		if (cl.bPaused && GetCvar('draw_pause'))
-		{
-			R_DrawPic(160, cl.maxclients > 1 ? 70 : 20, pic_paused);
-		}
+		R_DrawPic(320, cl.maxclients > 1 ? 140 : 40, pic_paused);
 	}
 }
 
@@ -1258,6 +1167,6 @@ void VisibilityChanged(bool bNewVisibility)
 defaultproperties
 {
 	bTickEnabled = true;
-	Width = 320;
-	Height = 200;
+	Width = 640;
+	Height = 480;
 }
