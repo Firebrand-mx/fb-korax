@@ -33,9 +33,9 @@ class BotSpawner : Actor
 //
 //  	To use this object, we must spawn it using ThingSpawn in a map with
 //  	ACS Script, then define a new TID # to it, that will be used as the
-//  	argument of which bot we wish to spawn, sounds easy, huh?
+//  	argument of which bot we wish to spawn, sounds easy, right?
 //
-//  args[0]     Bot #1 <-- Bot to Spawn
+//  	args[0]   <--   Bot # to Spawn
 //
 //===========================================================================
 
@@ -44,6 +44,8 @@ int SpawnCount;
 //===========================================================================
 //
 //  A_BotSpawnInit
+//
+//  [FB] We must initialize the Spawn Count before anything
 //
 //===========================================================================
 
@@ -56,6 +58,8 @@ void A_BotSpawnInit()
 //
 //  A_BotSpawn
 //
+//  [FB] Search for a bot and spawn it
+//
 //===========================================================================
 
 void A_BotSpawn()
@@ -64,35 +68,29 @@ void A_BotSpawn()
 	int i;
 	string Bot;
 
-/*	if (SpawnCount < 5) // [FB] Remaining bots
-	{*/
-		// [FB] Look for the bot specified in the arguments in the
-		//	bots list
-		for(i = 0; i < MainGameInfo::NUMTOTALBOTS; i++)
+	// [FB] Look for the bot specified in the arguments in the
+	//	bots list
+	for(i = 0; i < MainGameInfo::NUMTOTALBOTS; i++)
+	{
+		// [FB] Is the bot there??
+		if(i == Args[0])
 		{
-			// [FB] Is the bot there??
-			if(i == Args[0])
-			{
-				// [FB] Found the bot!
-				Bot = MainGameInfo(Level.Game).botinfo[i].Name;
-			}
+			// [FB] Found the bot!
+			Bot = MainGameInfo(Level.Game).botinfo[i].Name;
 		}
-		// [FB] Spawn the bot
-		CmdBuf_AddText("Addbot %s\n", Bot);
-		print("Bot %s entered to the game.", Bot);
-/*	}
-	else
-	{*/
-		// [FB] We finished spawning bots, deactivate & destroy spawner
-		Deactivate();
-/*	}
-	SpawnCount++; // [FB] Increase spawn count*/
+	}
+	// [FB] Spawn the bot
+	CmdBuf_AddText("Addbot %s\n", Bot);
+	bprint("%s has entered to the game.", Bot);
+
+	// [FB] We finished spawning bots, so destroy spawner
+	Remove();
 }
 
 __states__
 {
 	S_SPAWNBOTS1('', 0, 2.0 / 35.0, S_SPAWNBOTS2) { }
-	S_SPAWNBOTS2('', 0, 2.0 / 35.0, S_SPAWNBOTS3) { /*A_BotSpawnInit();*/ }
+	S_SPAWNBOTS2('', 0, 2.0 / 35.0, S_SPAWNBOTS3) { A_BotSpawnInit(); }
 	S_SPAWNBOTS3('', 0, 175.0 / 35.0, S_SPAWNBOTS3) { A_BotSpawn(); }
 	S_SPAWNBOTS_OFF('', 0, -1.0, none) { }
 }
@@ -132,31 +130,5 @@ defaultproperties
 	bNoBlockmap = true;
 	bNoGravity = true;
 	bNoPassMobj = true;
-	IdleState = S_SPAWNBOTS1;
+	IdleState = S_SPAWNBOTS_OFF;
 }
-
-//**************************************************************************
-//
-//  $Log$
-//  Revision 1.5  2006/03/12 19:37:08  dj_jl
-//  States as objects, added state variable type.
-//
-//  Revision 1.4  2006/02/28 22:49:16  dj_jl
-//  Replaced defines with constants.
-//
-//  Revision 1.3  2006/02/15 23:37:45  dj_jl
-//  Moved all server progs global variables to classes.
-//
-//  Revision 1.2  2006/02/13 18:44:38  dj_jl
-//  Moved all server progs global functions to classes.
-//
-//  Revision 1.1  2005/09/30 15:49:12  firebrand_kh
-//  Initial Import
-//
-//  Revision 1.1  2004/11/16 13:33:20  dj_jl
-//  Initial import.
-//
-//  Revision 1.1  2002/10/26 16:32:26  dj_jl
-//  New style of defining classes.
-//
-//**************************************************************************
