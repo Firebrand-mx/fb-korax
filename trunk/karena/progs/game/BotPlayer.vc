@@ -39,40 +39,39 @@ const float
 	SIDEWALK				= 192.0,
 	SIDERUN					= 320.0,
 
-	MAX_TRAVERSE_DIST			= 1024.0,		//10 meters, used within b_func.c
-	AVOID_DIST				= 512.0,		//Try avoid incoming missiles once they reached this close
-	SAFE_SELF_MISDIST			= 128.0,		//Distance from self to target where it's safe to pull a rocket.
-	FRIEND_DIST				= 128.0,		//To friend.
-	DARK_DIST				= 256.0,		//Distance that bot can see enemies in the dark from.
-	MAX_MONSTER_TARGET_DIST			= 1024.0,		///Too high can slow down the performance, see P_mobj.c
+	MAX_TRAVERSE_DIST			= 1024.0,		// 10 meters, used within b_func.c
+	AVOID_DIST				= 512.0,		// Try avoid incoming missiles once they reached this close
+	SAFE_SELF_MISDIST			= 128.0,		// Distance from self to target where it's safe to pull a rocket.
+	FRIEND_DIST				= 128.0,		// To friend.
+	DARK_DIST				= 256.0,		// Distance that bot can see enemies in the dark from.
+	MAX_MONSTER_TARGET_DIST			= 1024.0,		// Too high can slow down the performance, see P_mobj.c
 	ENEMY_SCAN_FOV				= 120.0,
-	MAXMOVEHEIGHT				= 32.0,			//MAXSTEPMOVE but with jumping counted in.
-	GETINCOMBAT				= 512.0,		//Max distance to item if it's due to be picked up in a combat situation.
+	MAXMOVEHEIGHT				= 32.0,			// MAXSTEPMOVE but with jumping counted in.
+	GETINCOMBAT				= 512.0,		// Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
-	MAXROAM					= (5.0 * 35.0);		//When this time is elapsed the bot will roam after something else.
-const int WHATS_DARK				= 64;			//light value thats classed as dark.
+	MAXROAM					= (5.0 * 35.0);		// When this time is elapsed the bot will roam after something else.
+const int WHATS_DARK				= 64;			// light value thats classed as dark.
 
 //
-// Bot states
-//
-//struct botstate_t
-enum
-{
-	// Deciding what to do
-	BST_NOTHING,
-	// Bot is "fetching" something (skull, whatever)
-	BST_OFFENSE,
-	// Bot is defending something
-	BST_DEFENSE,
-	// Bot is heading to scoring place
-	BST_RETURN
-};
-
 // The things the bot knows about their enemy
+//
 struct enemyinfo_t
 {
 	int		health;
 	int		weap;
+};
+
+//
+// Bot states
+//
+struct botstate_t
+{
+	// [FB] OK, this is how this is supposed to work:
+	// 	if botstate == 0 -> Bot is deciding what to do
+	// 	if botstate == 1 -> Bot is "fetching" something (offense)
+	// 	if botstate == 2 -> Bot is defending something
+	// 	if botstate == 3 -> Bot is heading to scoring place
+	int BState;
 };
 
 Player player;			// Points to reference player
@@ -98,8 +97,7 @@ Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
 				// necessary.
 
 enemyinfo_t enemyinfo;		// Things we know about our enemy
-
-//botstate_t state;		// What we're doing in teamgame mode
+botstate_t botstate;		// What we're doing in teamgame mode
 
 float	lastx;			// Last known x location of bot's enemy (go there if enemy goes out of sight)
 float	lasty;			// Last known y location of bot's enemy
@@ -129,7 +127,7 @@ bool bNewItemIsPowerup;
 
 chatline_t	*chatline;	// For when t_chat expires
 
-/*bottype_t	bottype;	// Bot type*/
+//bottype_t	bottype;	// Bot type
 botinfo_t info;			// Aiming, name, perfection, yadda yadda
 
 int angerlevel;
@@ -142,102 +140,6 @@ float count;			// [FB] Roam Count
 
 float bottracerange;
 TVec bottracedir;
-
-//==========================================================================
-//
-//	BotTick
-//
-//  Main bot function
-//
-//==========================================================================
-
-void BotTick(float deltaTime)
-{
-	botmo = Actor(player.MO);
-
-	player.ForwardMove = 0.0;
-	player.SideMove = 0.0;
-	player.FlyMove = 0.0;
-	player.Buttons = 0;
-
-	// Don't do anything if we're talking
-//	if (B_Chat())
-//		return;
-
-	// We're dead, so hit space to respawn
-	if (!player.Health)
-	{
-		player.Buttons |= BT_USE;
-		return;
-	}
-
-	// Periodically let out some anger
-	if (!(player.Level.Game.level->time == 255.0))
-	{
-		if (angerlevel)
-			angerlevel--;
-		else if (angerlevel < 0)
-			angerlevel = 0;
-	}
-
-	// [FB] Set an ally if we're in a mode that has one
-	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch == 2 ||
-		player.Level.Game.deathmatch == 3 || player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
-		ally = B_SetAlly();
-	else
-		ally = none;
-
-	// [FB] Tag with our allies
-	if (ally || (ally && !enemy))
-	{
-		Ally_Tag(deltaTime);
-	}
-
-	// Weed out any bad destinations/enemies
-	CheckStuff();
-
-	// Destination setting...
-	SetEnemy();
-	Scan();
-
-	// Turning towards destination...
-	BotAim();
-	Turn();
-
-	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
-
-	Attack();
-	Move(deltaTime);
-
-	Pitch();
-
-	// Only walk if we're on skill 0
-	if (!MainGameInfo(player.Level.Game).botskill || player.Level.Game.gameskill == sk_baby)
-	{
-		if (forwardmove == FORWARDRUN)
-			forwardmove = FORWARDWALK;
-		if (forwardmove == -FORWARDRUN)
-			forwardmove = -FORWARDWALK;
-		if (sidemove == SIDERUN)
-			sidemove = SIDEWALK;
-		if (sidemove == -SIDERUN)
-			sidemove = -SIDEWALK;
-	}
-
-	player.SideMove = sidemove;
-	player.ForwardMove = forwardmove;
-
-	t_react -= deltaTime;
-	if (t_react <= 0.0)
-	{
-		t_react = 0.0;
-	}
-	t_anticip -= deltaTime;
-	if (t_anticip <= 0.0)
-	{
-		t_anticip = 0.0;
-	}
-}
 
 //==========================================================================
 //
@@ -381,56 +283,59 @@ bool CheckItem(Actor item)
 
 bool CheckPNodes(Actor node)
 {
-#if 0 // [FB] This is all we will need to check for team games! WOW!!
-			else if (!bot->node && actor->flags3 & MF3_NODE)// && P_CheckSight(MO, actor, false) && (bot->prev != actor && P_AproxDistance(MO->x - actor->x, MO->y - actor->y) <= 32*FRACUNIT))
+	if (player.MO.CanSee(node) && (prev != node && botmo.DistTo(node) <= 32.0))
+	{
+		if (player.Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
+			player.Level.Game.deathmatch == 2 && node.Class == PathNode
+			/*|| node.Class == SniperSpot*/)
+		{
+			return true;
+		}
+		else if (player.Team && player.Level.Game.deathmatch != 2)
+		{
+			// [FB] Node checking routine for team game
+			// [FB] Blue Team
+			if (player.Team.Color == 0)
 			{
-				if (actor->Class == MT_BOTPATH || actor->Class == MT_BOTSNIPE)
-					bot->node = actor;
-				else if (teamgame.value && bot->player->team != TM_NONE)
+				// [FB] Defense
+				if (botstate.BState == 2 && node.Class == BlueGuardSpot)
 				{
-					if (bot->player->team == TM_BLUE)
-					{
-						if (bot->state == BST_DEFENSE && ((int)actor->Class == (int)MT_BOTBLUEGUARD))
-						{
-							bot->node = actor;
-						}
-						else if (bot->state == BST_OFFENSE && ((int)actor->Class == (int)MT_BOTBLUEPATH))
-						{
-							bot->node = actor;
-						}
-						else if (bot->state == BST_RETURN && actor->Class == MT_BOTBLUEGOAL)
-						{
-							bot->node = actor;
-						}
-					}
-					if (bot->player->team == TM_RED)
-					{
-						if (bot->state == BST_DEFENSE && ((int)actor->Class == (int)MT_BOTREDGUARD))
-	
-						{
-							bot->node = actor;
-						}
-						else if (bot->state == BST_OFFENSE && ((int)actor->Class == MT_BOTREDPATH))
-						{
-							bot->node = actor;
-						}
-						else if (bot->state == BST_RETURN && ((int)actor->Class == MT_BOTREDGOAL))
-						{
-							bot->node = actor;
-						}
-					}
+					return true;
+				}
+				// [FB] Offense
+				else if (botstate.BState == 1 && node.Class == BlueNode)
+				{
+					return true;
+				}
+				// [FB] Return
+				else if (botstate.BState == 3 && node.Class == BlueGoalSpot)
+				{
+					return true;
 				}
 			}
-#endif
-	// [FB] Just check if the actor is really a Path Node and it's reachable
-	if (node.Class == PathNode && player.MO.CanSee(node) && (prev != node && botmo.DistTo(node) <= 32.0))
-	{
-			return true;
+			// [FB] Red Team
+			if (player.Team.Color == 1)
+			{
+				// [FB] Defense
+				if (botstate.BState == 2 && node.Class == RedGuardSpot)
+				{
+					return true;
+				}
+				// [FB] Offense
+				else if (botstate.BState == 1 && node.Class == RedNode)
+				{
+					return true;
+				}
+				// [FB] Return
+				else if (botstate.BState == 3 && node.Class == RedGoalSpot)
+				{
+					return true;
+				}
+			}
+		}
 	}
-	else // [FB] Don't use it if it's not a valid PathNode
-	{
-		return false;
-	}
+
+	return false;
 }
 
 //==========================================================================
@@ -460,6 +365,255 @@ void SetEnemy()
 
 //==========================================================================
 //
+//	SetAction
+//
+//	Decide what to do in teamgame (defend, whatever)
+//
+//==========================================================================
+
+void SetAction()
+{
+	int i;
+	int defenders = 0;
+	int attackers = 0;
+
+	if (!player.Team)
+		return;
+
+	// [FB] We are deciding what to do
+	if (botstate.BState == 0)
+	{
+		// Let's see what the other bots on our
+		// team are doing, and decide our action based
+		// off on that
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO && 
+				Player(player.Level.Game.Players[i]).bIsBot && 
+				player.Level.Game.Players[i].Color == player.Color)
+			{
+				// [FB] Is this bot in Offense?
+				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == 1)
+					attackers++;
+				// [FB] Is this bot in Defense?
+				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == 2)
+					defenders++;
+			}
+		}
+
+		// Defense wins championships...
+		if (defenders <= attackers)
+			// [FB] Then get on defense
+			botstate.BState = 2;
+		else
+			// [FB] Then get on offense
+			botstate.BState = 1;
+	}
+}
+
+//==========================================================================
+//
+//	IsDangerous
+//
+//	Checks if a sector is dangerous.
+//
+//==========================================================================
+
+bool IsDangerous(sector_t *sec)
+{
+	switch (sec->special & ~SECSPEC_SECRET_MASK)
+	{
+	case 4:		// Scroll_EastLavaDamage
+	case 5:		// Damage_LavaWimpy
+	case 7:		// Damage_Sludge
+	case 16:	// Damage_LavaHefty
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	PTR_BotPathTraverse
+//
+//	[BC] For the bots
+//	[FB] Additions for 3d floor checks
+//
+//==========================================================================
+
+bool PTR_BotPathTraverse(intercept_t *in)
+{
+	Actor th;
+	line_t *ld;
+	TVec hit_point;
+	sector_t *back;
+	sector_t *front;
+	opening_t *open;
+	float diffheight, dheight;
+
+	if (in->bIsALine)
+	{
+		ld = in->line;	// This linedef
+		hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
+
+		// Line is impassible
+		if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
+		{
+			return false;
+		}
+
+		// Line isn't two sided
+		if (!ld->backsector)
+		{
+			return false;
+		}
+
+		if (!PointOnPlaneSide(botmo.Origin, ld))
+		{
+			back = ld->backsector;
+			front = ld->frontsector;
+		}
+		else
+		{
+			back = ld->frontsector;
+			front = ld->backsector;
+		}
+
+		// Sector is dangerous
+		if (IsDangerous(back))
+		{
+			return false;
+		}
+
+		// [FB] Opening isn't big enough on the other side
+		if (back->ceilingheight - front->ceilingheight <= botmo.Height)
+		{
+			return false;
+		}
+
+		// [FB] Ceiling is too low
+		if (back->ceilingheight - back->floorheight <= botmo.Height)
+		{
+			return false;
+		}
+
+		// crosses a two sided line
+		open = LineOpenings(ld, hit_point);
+		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
+
+		// No valid openings
+		if (!open)
+		{
+			return false;
+		}
+
+		// [FB] We don't want to die by falling off a larger cliff
+		if ((front->floorheight - back->floorheight) > 384.0)
+		{
+			return false;
+		}
+
+		// No cliff jumping unless we're going after something
+		if ((front->floorheight - back->floorheight) > 32.0 && !enemy)
+		{
+			return false;
+		}
+
+		// [FB] Determine if it's wise to jump up to a floor
+		diffheight = back->floorheight - front->floorheight;
+
+		if (diffheight < 0.0)
+		{
+			diffheight *= -1.0;
+		}
+		else if (diffheight > 0.0)
+		{
+			if (diffheight > 48.0)
+			{
+			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
+				{
+					return true;
+				}
+				else*/
+				{
+					return false;
+				}
+			}
+			else if (diffheight >= 24.0 && diffheight <= 48.0)
+			{
+				botmo.Player.Buttons |= BT_JUMP;
+			}
+		}
+
+		// [FB] Use lines
+		player.P_UseLines();
+//		return true;
+	}
+
+	if (in->Thing)
+	{
+		th = Actor(in->Thing);
+
+		if (th == botmo)
+		{
+			return true;
+		}
+
+		if (th.bSolid)
+		{
+			return false;
+		}
+
+		// [FB] Jump to reach a thing
+		dheight = th.Origin.z - /*shoot_thing*/botmo.Origin.z;
+
+		if (dheight > 0.0)
+		{
+			if (dheight >= 24.0 && dheight <= 48.0)
+			{
+				botmo.Player.Buttons |= BT_JUMP;
+				return true;
+			}
+			else if (dheight < 24.0)
+				return true;
+			else
+				return false;
+		}
+	}
+
+	return true;
+}
+
+//==========================================================================
+//
+//	CheckPath
+//
+//	Checks for obstructions at a certain angle and distance. Returns true if
+// the path is clear, and false is the path is blocked.
+//
+//==========================================================================
+
+bool CheckPath(float ang, float dist)
+{
+	float x1, y1, x2, y2;
+
+	bottracerange = dist;
+	bottracedir.x = cos(ang);
+	bottracedir.y = sin(ang);
+	x1 = botmo.Origin.x;
+	y1 = botmo.Origin.y;
+ 	x2 = x1 + dist * bottracedir.x;
+ 	y2 = y1 + dist * bottracedir.y;
+
+	if (!P_PathTraverse(x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_BotPathTraverse'))
+		return false;
+	else
+		return true;
+}
+
+//==========================================================================
+//
 //	CheckTo
 //
 //	Checks if a location is reachable
@@ -474,9 +628,11 @@ bool CheckTo(TVec pos)
 	dist = Length(botmo.Origin - pos);
 	an = GetAngle();
 
-	if (!CheckPath(an, dist))
+	// [FB] We need to check for Z component of the position somewhere,
+	//	 I didn't found a decent place to put the check but here...
+	if (!CheckPath(an, dist) || pos.z >= botmo.Origin.z + botmo.Height + 48.0)
 		return false;
-	
+
 	return true;
 }
 
@@ -539,6 +695,33 @@ void CheckStuff()
 		if (!missile.bMissile || missile.IsDestroyed())
 			missile = none;
 	}
+}
+
+//==========================================================================
+//
+//	Check_LOS
+//
+//	Doesn't check LOS, checks visibility with a set view angle.
+//	B_Checksight checks LOS (straight line)
+//
+//	Check if mo1 has free line to mo2 and if mo2 is within mo1 viewangle
+// (vangle) given with normal degrees. If these conditions are true, the
+// function returns true. GOOD TO KNOW is that the players view angle in
+// doom is 90 degrees infront.
+//
+//==========================================================================
+
+bool Check_LOS(Actor to, float vangle)
+{
+	if (!botmo.CanSee(to))
+		return false; // out of sight
+	if (vangle == 360.0)
+		return true;
+	if (vangle == 0.0)
+		return false; // Looker seems to be blind.
+
+	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
+		vangle / 2.0;
 }
 
 //==========================================================================
@@ -668,7 +851,7 @@ int WeapPieceFromItem(Actor item)
 //	ManaFromItem
 //
 //
-// Returns a mana type from an actor
+// 	Returns a mana type from an actor
 //
 //==========================================================================
 
@@ -679,269 +862,6 @@ int ManaFromItem(Actor item)
 		return Mana(item).ManaType;
 	}
 	return -1;
-}
-
-//==========================================================================
-//
-//	IsDangerous
-//
-//	Checks if a sector is dangerous.
-//
-//==========================================================================
-
-bool IsDangerous(sector_t *sec)
-{
-	switch (sec->special & ~SECSPEC_SECRET_MASK)
-	{
-	case 4:		// Scroll_EastLavaDamage
-	case 5:		// Damage_LavaWimpy
-	case 7:		// Damage_Sludge
-	case 16:	// Damage_LavaHefty
-		return true;
-	}
-
-	return false;
-}
-
-//==========================================================================
-//
-//	PTR_BotPathTraverse
-//
-//	[BC] For the bots
-//	[FB] Additions for 3d floor checks
-//
-//==========================================================================
-
-bool PTR_BotPathTraverse(intercept_t *in)
-{
-	Actor th;
-	line_t *ld;
-	TVec hit_point;
-
-	if (in->bIsALine)
-	{
-		sector_t *back;
-		sector_t *front;
-		opening_t *open;
-		float diffheight;
-
-		ld = in->line;	// This linedef
-		hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
-
-		// Line is impassible
-		if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
-			return false;
-
-		// Line isn't two sided
-		if (!ld->backsector)
-			return false;
-
-		if (!PointOnPlaneSide(botmo.Origin, ld))
-		{
-			back = ld->backsector;
-			front = ld->frontsector;
-		}
-		else
-		{
-			back = ld->frontsector;
-			front = ld->backsector;
-		}
-
-		// Sector is dangerous
-		if (IsDangerous(back))
-			return false;
-
-		// [FB] Opening isn't big enough on the other side
-		if (back->ceilingheight - front->floorheight <= botmo.Height)
-		{
-			return false;
-		}
-
-		// [FB] Ceiling is too low
-		if (back->ceilingheight - back->floorheight <= botmo.Height)
-		{
-			return false;
-		}
-
-		// --- Special Cases ---
-
-		// [FB] Columns on the front sector
-		if (front->ceilingheight == front->floorheight)
-		{
-			return false;
-		}
-
-		// [FB] Columns on the back sector
-		if (back->ceilingheight == back->floorheight)
-		{
-			return false;
-		}
-
-/*		// [FB] Now, let's check the 3d Floors!!
-		if(front->bHasExtrafloors)
-		{
-			if(botmo.WaterLevel < 2)
-			{
-				// [FB] Opening isn't big enough on the other side
-				if (back->ceilingheight - front->floorheight <= botmo.Height)
-				{
-					return false;
-				}
-
-				// [FB] Ceiling is too low
-				if (back->ceilingheight - back->floorheight <= botmo.Height)
-				{
-					return false;
-				}
-			}
-
-			// --- Special Cases For Extra Floors ---
-
-			if(botmo.WaterLevel < 2)
-			{
-				// [FB] When the floor height of the floor in an extra floor
-				// in the back sector is equal to the ceiling height of the
-				// front sector with no extra floor
-				if (front->ceilingheight - back->floorheight <= botmo.Height)
-				{
-					return false;
-				}
-	
-				// [FB] When the floor height of the floor in an extra floor
-				// in the front sector is equal to the ceiling height of the
-				// back sector with no extra floor
-				if (back->ceilingheight - front->floorheight <= botmo.Height)
-				{
-					return false;
-				}
-			}
-		}*/
-
-		// crosses a two sided line
-		open = LineOpenings(ld, hit_point);
-		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
-		// No valid openings
-		if (!open)
-		{
-			return false;
-		}
-
-		// No cliff jumping unless we're going after something
-		if ((front->floorheight - back->floorheight) > 32.0 && !enemy)
-		{
-			return false;
-		}
-
-		diffheight = back->floorheight - front->floorheight;
-
-		// [FB] What, diffheight is negative? Make it positive here
-		if (diffheight < 0.0)
-		{
-			diffheight = -1.0 * diffheight;
-		}
-		else if (diffheight > 0.0)
-		{
-			if (diffheight > 48.0)
-			{
-			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
-				{
-					return true;
-				}
-				else*/
-					return false;
-			}
-			else if (diffheight >= 24.0 && diffheight <= 48.0)
-			{
-				botmo.Player.Buttons |= BT_JUMP;
-			}
-		}
-
-		return true;
-	}
-
-	th = Actor(in->Thing);
-
-	if (th == botmo)
-		return true;
-
-	if (th.bSolid)
-		return false;
-
-	// [FB] What's this, huh?
-/*	float dheight;
-	dheight = abs(th.Origin.z - shoot_thing.Origin.z);
-
-	if (dheight > 0.0)
-	{
-		if (dheight >= 24.0 && dheight <= 48.0)
-		{
-			botmo.Player.Buttons |= BT_JUMP;
-			return true;
-		}
-		else if (dheight <= 24.0)
-			return true;
-		else
-			return false;
-				
-	}*/
-
-	return true;
-}
-
-//==========================================================================
-//
-//	CheckPath
-//
-//	Checks for obstructions at a certain angle and distance. Returns true if
-// the path is clear, and false is the path is blocked.
-//
-//==========================================================================
-
-bool CheckPath(float ang, float dist)
-{
-	float x1, y1, x2, y2;
-
-	bottracerange = dist;
-	bottracedir.x = cos(ang);
-	bottracedir.y = sin(ang);
-	x1 = botmo.Origin.x;
-	y1 = botmo.Origin.y;
- 	x2 = x1 + dist * bottracedir.x;
- 	y2 = y1 + dist * bottracedir.y;
-
-	player.P_UseLines();
-
-	if (!P_PathTraverse(x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_BotPathTraverse'))
-		return false;
-	else
-		return true;
-}
-
-//==========================================================================
-//
-//	Check_LOS
-//
-//	Doesn't check LOS, checks visibility with a set view angle.
-//	B_Checksight checks LOS (straight line)
-//
-//	Check if mo1 has free line to mo2 and if mo2 is within mo1 viewangle
-// (vangle) given with normal degrees. If these conditions are true, the
-// function returns true. GOOD TO KNOW is that the players view angle in
-// doom is 90 degrees infront.
-//
-//==========================================================================
-
-bool Check_LOS(Actor to, float vangle)
-{
-	if (!botmo.CanSee(to))
-		return false; // out of sight
-	if (vangle == 360.0)
-		return true;
-	if (vangle == 0.0)
-		return false; // Looker seems to be blind.
-
-	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
-		vangle / 2.0;
 }
 
 //==========================================================================
@@ -982,12 +902,21 @@ void BotAim()
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if (((player.PClass == HexenDefs::PCLASS_FIGHTER && player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_CLERIC && player.ReadyWeapon == HexenDefs::WP_SECOND || player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_MAGE && player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_SEVENTH ||  player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_HERETIC && player.ReadyWeapon == HexenDefs::WP_THIRD || player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_MARINE && player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_WITCHAVEN && player.ReadyWeapon == HexenDefs::WP_THIRD || player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_SEVENTH)))
+	if (((player.PClass == HexenDefs::PCLASS_FIGHTER && player.ReadyWeapon == HexenDefs::WP_FIFTH ||
+			player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
+	    (player.PClass == HexenDefs::PCLASS_CLERIC && player.ReadyWeapon == HexenDefs::WP_SECOND ||
+			player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
+	    (player.PClass == HexenDefs::PCLASS_MAGE && player.ReadyWeapon == HexenDefs::WP_FOURTH ||
+			player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+			player.ReadyWeapon == HexenDefs::WP_SEVENTH ||  player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
+	    (player.PClass == HexenDefs::PCLASS_HERETIC && player.ReadyWeapon == HexenDefs::WP_THIRD ||
+			player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+			player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
+	    (player.PClass == HexenDefs::PCLASS_MARINE && player.ReadyWeapon == HexenDefs::WP_FIFTH ||
+			player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
+	    (player.PClass == HexenDefs::PCLASS_WITCHAVEN && player.ReadyWeapon == HexenDefs::WP_THIRD ||
+			player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+			player.ReadyWeapon == HexenDefs::WP_SEVENTH)))
 	{
 		// Projectile weapons
 		switch (info.intelect)
@@ -1101,13 +1030,13 @@ Actor FindEnemy()
 			if (actor.Class == Minotaur)
 				continue;
 		}
-		else if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
-			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
+		else if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			// [FB] Check if the minotaur's instigator is same colored as we are
-			for(i=0; i < MAXPLAYERS; i++)
+			for(i = 0; i < MAXPLAYERS; i++)
 			{
-				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i] && player.Level.Game.Players[i].Color == player.Color)
+				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i]
+					&& player.Level.Game.Players[i].Color == player.Color)
 					continue;
 			}
 		}
@@ -1118,7 +1047,9 @@ Actor FindEnemy()
 		target = none;
 		closest_dist = 99999.0;
 
-		 //Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always returns false. tought it should be the same checksight as below but.. (below works) something must be fuckin wierd screded up. 
+		 // Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
+		 // returns false. tought it should be the same checksight as below but.. (below works) something
+		 // must be fuckin wierd screded up.
 		if (Check_LOS(actor, vangle))
 		{
 			if (botmo.CanSee(actor))
@@ -1151,8 +1082,7 @@ Actor FindEnemy()
 			player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
 		{
 			// [FB] Are we on a Team gameplay mode?
-			if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
-				player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
+			if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				// [FB] Don't attack same team players
 				if (player.Level.Game.Players[i].Color == player.Color)
@@ -1164,15 +1094,16 @@ Actor FindEnemy()
 				if (player.Level.Game.Players[i])
 					continue;
 			}
-			//Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
-			//returns false. tought it should be the same checksight as below but.. (below works) something
-			//must be fuckin wierd screded up. 
+			// Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost
+			// always returns false. tought it should be the same checksight as below but.. (below
+			// works) something must be fuckin wierd screded up.
 			if (Check_LOS(Actor(player.Level.Game.Players[i].MO), vangle))
 			{
 				if (botmo.CanSee(player.Level.Game.Players[i].MO))
 				{
 					dist = botmo.DistTo(player.Level.Game.Players[i].MO);
-					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel; // [FB] Detect the light level
+					// [FB] Detect the light level
+					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
 
 					// [FB] Too dark?
 					if (dist > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
@@ -1649,8 +1580,7 @@ Actor B_SetAlly()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		// [FB] Set an ally for team game modes
-		if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
-			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
+		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].Color == player.Color)
 			{
@@ -1674,8 +1604,7 @@ Actor B_SetAlly()
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
 		// [FB] Team game modes
-		if (player.Level.Game.deathmatch == 2 || player.Level.Game.deathmatch == 3 || 
-			player.Level.Game.deathmatch == 4 || player.Level.Game.deathmatch == 5)
+		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
@@ -2462,6 +2391,106 @@ void OnSpawn()
 
 //==========================================================================
 //
+//	BotTick
+//
+//  Main bot function
+//
+//==========================================================================
+
+void BotTick(float deltaTime)
+{
+	botmo = Actor(player.MO);
+
+	player.ForwardMove = 0.0;
+	player.SideMove = 0.0;
+	player.FlyMove = 0.0;
+	player.Buttons = 0;
+
+	// Don't do anything if we're talking
+//	if (B_Chat())
+//		return;
+
+	// We're dead, so hit space to respawn
+	if (!player.Health)
+	{
+		player.Buttons |= BT_USE;
+		return;
+	}
+
+	// Periodically let out some anger
+	if (!(player.Level.Game.level->time == 255.0))
+	{
+		if (angerlevel)
+			angerlevel--;
+		else if (angerlevel < 0)
+			angerlevel = 0;
+	}
+	
+	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+	{
+		// [FB] Set an ally if we're in a mode that has one...
+		ally = B_SetAlly();
+		// [FB] and decide what action we'll take
+		if (player.Level.Game.deathmatch != 2)
+			SetAction();
+	}
+	else
+		ally = none;
+
+	// [FB] Tag with our allies
+	if (ally || (ally && !enemy))
+	{
+		Ally_Tag(deltaTime);
+	}
+
+	// Weed out any bad destinations/enemies
+	CheckStuff();
+
+	// Destination setting...
+	SetEnemy();
+	Scan();
+
+	// Turning towards destination...
+	BotAim();
+	Turn();
+
+	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
+
+	Attack();
+	Move(deltaTime);
+
+	Pitch();
+
+	// Only walk if we're on skill 0
+	if (!MainGameInfo(player.Level.Game).botskill || player.Level.Game.gameskill == sk_baby)
+	{
+		if (forwardmove == FORWARDRUN)
+			forwardmove = FORWARDWALK;
+		if (forwardmove == -FORWARDRUN)
+			forwardmove = -FORWARDWALK;
+		if (sidemove == SIDERUN)
+			sidemove = SIDEWALK;
+		if (sidemove == -SIDERUN)
+			sidemove = -SIDEWALK;
+	}
+
+	player.SideMove = sidemove;
+	player.ForwardMove = forwardmove;
+
+	t_react -= deltaTime;
+	if (t_react <= 0.0)
+	{
+		t_react = 0.0;
+	}
+	t_anticip -= deltaTime;
+	if (t_anticip <= 0.0)
+	{
+		t_anticip = 0.0;
+	}
+}
+
+//==========================================================================
+//
 //	GaveMana
 //
 //==========================================================================
@@ -2485,92 +2514,3 @@ void GaveMana(int mana)
 defaultproperties
 {
 }
-    
-//**************************************************************************
-//
-//  $Log$
-//  Revision 1.25  2006/04/09 18:43:27  firebrand_kh
-//  Added latest common progs
-//
-//  Revision 1.24  2006/03/27 21:52:50  firebrand_kh
-//  Fixed the way morphed bots look for health by adapting the max_health value to the correct one
-//
-//  Revision 1.23  2006/03/08 03:07:08  firebrand_kh
-//  Fixed a crash in CheckStuff / added missing break to B_ChooseWeapon
-//
-//  Revision 1.22  2006/03/02 18:40:23  dj_jl
-//  Don't use game specific classes in common.
-//
-//  Revision 1.21  2006/02/28 22:49:16  dj_jl
-//  Replaced defines with constants.
-//
-//  Revision 1.20  2006/02/28 02:50:46  firebrand_kh
-//  Fixed checks for PTR_BotTransverse
-//
-//  Revision 1.19  2006/02/17 19:17:50  dj_jl
-//  Moved common defs to classes.
-//
-//  Revision 1.18  2006/02/15 23:37:45  dj_jl
-//  Moved all server progs global variables to classes.
-//
-//  Revision 1.17  2006/02/13 18:44:38  dj_jl
-//  Moved all server progs global functions to classes.
-//
-//  Revision 1.16  2006/02/05 18:57:00  dj_jl
-//  Moved common utils to level info class or built-in.
-//
-//  Revision 1.15  2006/01/12 16:33:11  firebrand_kh
-//  Lots of fixes and improvements
-//
-//  Revision 1.14  2005/12/15 19:22:04  firebrand_kh
-//  Fixed some bot skill checks and functions to calculate it
-//
-//  Revision 1.13  2005/12/11 21:37:29  dj_jl
-//  Made path traversal callbacks class members.
-//
-//  Revision 1.12  2005/11/30 23:53:37  dj_jl
-//  Switch statement requires integer.
-//
-//  Revision 1.11  2005/10/16 22:43:33  firebrand_kh
-//  Fixed ally tracking and added more checks for it
-//
-//  Revision 1.10  2005/09/15 16:24:08  firebrand_kh
-//  Made bots able to recognize allies and monster enemies, some other fixes
-//
-//  Revision 1.9  2005/08/27 14:11:51  firebrand_kh
-//  Some fixes
-//
-//  Revision 1.8  2005/08/26 14:29:24  firebrand_kh
-//  Bots now recognize and follow path nodes
-//
-//  Revision 1.7  2005/08/14 16:57:17  firebrand_kh
-//  Made bots pickup new artifacts
-//
-//  Revision 1.6  2005/08/12 16:17:14  firebrand_kh
-//  Fixes for bot skills depending the game skill of the game
-//
-//  Revision 1.5  2005/07/29 13:39:47  firebrand_kh
-//  Changed level requirements for the weapon pickups
-//
-//  Revision 1.4  2005/07/27 21:17:13  firebrand_kh
-//  Added lots of code and fixed some other
-//
-//  Revision 1.3  2005/05/18 15:41:41  firebrand_kh
-//  Fixed bad definition for the new classes on the combat distance
-//
-//  Revision 1.2  2005/05/12 20:54:06  firebrand_kh
-//  Fixed and made a small check for the combat distance for bots
-//
-//  Revision 1.1  2004/11/16 13:33:21  dj_jl
-//  Initial import.
-//
-//  Revision 1.3  2003/11/12 16:50:47  dj_jl
-//  Changed player structure into a class
-//
-//  Revision 1.2  2003/07/11 16:47:39  dj_jl
-//  Made array of players with pointers
-//
-//  Revision 1.1  2002/10/26 16:32:26  dj_jl
-//  New style of defining classes.
-//
-//**************************************************************************

@@ -117,13 +117,19 @@ void A_FiredChase()
 		Threshold--;
 
 	// Float up and down
-	Origin.z += Level.Game.FloatBobOffsets[WeaveIndex];
+	if(TestMobjZ())
+	{
+		Origin.z += Level.Game.FloatBobOffsets[WeaveIndex];
+	}
 	WeaveIndex = (WeaveIndex + 2) & 63;
 
 	// Insure it stays above certain height
 	if (Origin.z < FloorZ + 64.0)
 	{
-		Origin.z += 2.0;
+		if(TestMobjZ())
+		{
+			Origin.z += 2.0;
+		}
 	}
 
 	if (!Enemy || !Enemy.bShootable)
@@ -241,6 +247,9 @@ void A_FiredSplotch()
 //
 // A_LetKick
 //
+// [FB] The Fired Demon acts like a ball for the Football gameplay mode, this is
+// the method that makes the players "kick" the ball.
+//
 //============================================================================
 
 void A_LetKick()
@@ -249,21 +258,27 @@ void A_LetKick()
 	float an;
 	Player P;
 	float dist;
-	if (TID!=199)
+
+	// [FB] Check the "ball" tid
+	if (TID != 199)
 		return;
-	for (i=0;i<MAXPLAYERS;i++)
+
+	for (i=0; i<MAXPLAYERS; i++)
 	{
 		P = Player(Level.Game.Players[i]);
+
 		if (!P || !P.bSpawned || !P.MO)
-			continue;	//  not spawned yet
+			continue;	// [FB] Can't kick the ball if not playing!
 		if (P.Health <= 0)
-			continue;	// dead
+			continue;	// [FB] Dead meat can't kick balls!
+
 		an = AngleMod360(atan2(P.MO.Origin.y - Origin.y,
 			P.MO.Origin.x - Origin.x));
 		dist = DistTo(P.MO);
-		if (dist<= MELEERANGE && P.JumpTime > 0.0)
+
+		if (dist <= MELEERANGE && P.JumpTime > 0.0)
 		{
-			an += (an<180.0?180.0:-180.0);
+			an += (an < 180.0 ? 180.0 : -180.0);
 			Thrust(an, 48.0);
 		}
 	}
@@ -271,10 +286,32 @@ void A_LetKick()
 
 __states__
 {
-	S_FIRED_SPAWN1('FDMN', 23 | FF_FULLBRIGHT, 5.0 / 35.0, S_FIRED_LOOK1) { if (TID==199) A_LetKick(); }
-	S_FIRED_LOOK1('FDMN', 4 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK2) { if (TID!=199) A_Look(); else A_LetKick(); }
-	S_FIRED_LOOK2('FDMN', 5 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK3) { if (TID!=199) A_Look(); else A_LetKick(); }
-	S_FIRED_LOOK3('FDMN', 6 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK1) { if (TID!=199) A_Look(); else A_LetKick(); }
+	S_FIRED_SPAWN1('FDMN', 23 | FF_FULLBRIGHT, 5.0 / 35.0, S_FIRED_LOOK1) {
+		// [FB] Are we really a ball?
+		if (TID==199)
+			A_LetKick();
+	}
+	S_FIRED_LOOK1('FDMN', 4 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK2) {
+		// [FB] Are we really a ball?
+		if (TID!=199)
+			A_Look();
+		else
+			A_LetKick();
+	}
+	S_FIRED_LOOK2('FDMN', 5 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK3) {
+		// [FB] Are we really a ball?
+		if (TID!=199)
+			A_Look();
+		else
+			A_LetKick();
+	}
+	S_FIRED_LOOK3('FDMN', 6 | FF_FULLBRIGHT, 10.0 / 35.0, S_FIRED_LOOK1) {
+		// [FB] Are we really a ball?
+		if (TID!=199)
+			A_Look();
+		else
+			A_LetKick();
+	}
 	S_FIRED_LOOK4('FDMN', 4 | FF_FULLBRIGHT, 8.0 / 35.0, S_FIRED_LOOK5) { }
 	S_FIRED_LOOK5('FDMN', 5 | FF_FULLBRIGHT, 6.0 / 35.0, S_FIRED_LOOK6) { }
 	S_FIRED_LOOK6('FDMN', 6 | FF_FULLBRIGHT, 5.0 / 35.0, S_FIRED_LOOK7) { }
@@ -312,7 +349,7 @@ defaultproperties
 	Mass = 75.0;
 	StepSpeed = 13.0;
 	PainChance = 0.00390625;
-	AttackRange	 = 512.0;
+	AttackRange = 512.0;
 	MissileDamage = 1;
 	bNoGravity = true;
 	bDropOff = true;
@@ -336,32 +373,3 @@ defaultproperties
 	//[CW]
 	pawnname = 8;
 }
-
-//**************************************************************************
-//
-//  $Log$
-//  Revision 1.7  2006/03/12 19:37:08  dj_jl
-//  States as objects, added state variable type.
-//
-//  Revision 1.6  2006/03/02 18:40:23  dj_jl
-//  Don't use game specific classes in common.
-//
-//  Revision 1.5  2006/02/17 19:17:50  dj_jl
-//  Moved common defs to classes.
-//
-//  Revision 1.4  2006/02/15 23:37:45  dj_jl
-//  Moved all server progs global variables to classes.
-//
-//  Revision 1.3  2006/02/05 18:57:00  dj_jl
-//  Moved common utils to level info class or built-in.
-//
-//  Revision 1.2  2005/09/15 16:22:08  firebrand_kh
-//  Added flag to recognize monster enemies for bots
-//
-//  Revision 1.1  2004/11/16 13:33:21  dj_jl
-//  Initial import.
-//
-//  Revision 1.1  2002/10/26 16:32:26  dj_jl
-//  New style of defining classes.
-//
-//**************************************************************************
