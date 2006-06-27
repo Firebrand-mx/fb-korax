@@ -5,7 +5,7 @@ vcc -I../common -P../common ../common/svcommon.vc ../common/svcommon.dat
 cd..
 cd common
 vlumpy wad0.ls
-copy wad0.wad "H:\Korax\KArena\basev\common\"
+copy wad0.wad "D:\Korax\KArena\basev\common\"
 cd..
 cd progs
 @ECHO ON
@@ -17,5 +17,5 @@ vcc -I../common -P../common svprogs.vc svprogs.dat
 pause
 cd..
 vlumpy wad0.ls
-copy wad0.wad "H:\Korax\KArena\karena\"
+copy wad0.wad "D:\Korax\KArena\karena\"
 cd progs
