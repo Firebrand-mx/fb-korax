@@ -9,7 +9,7 @@
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 1999-2006 Janis Legzdins
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -84,10 +84,11 @@ struct scoreboard_t
 {
 	bool		IsActive;
 	string		plname;		// player name
-	int		PClass;
+	int		plclass;
 	int		level;
 	bool		IsBot;		// true if player is bot, false if is human
 	int		team;		// color
+	int		score;		// player score (game mode dependent)
 	int		frags;
 	int		nplkills;	// non-player kills
 	int		deaths;
@@ -122,7 +123,10 @@ int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
 
-scoreboard_t gamescores[MAXPLAYERS];
+string		targetnamehint;
+int		table_thisplayer;	// this player's index in gamescores array
+scoreboard_t	gamescores[MAXPLAYERS];
+int		teamscores[HexenDefs::MAXPLAYERTEAMS];
 
 // [FB] Player atributes for leveling system
 int experience;
@@ -234,6 +238,8 @@ int dam_am; // [FB] Just for the hero's shield
 bool onground;
 
 PlayerTeam	Team;	//[CW]
+
+int targetnamehint_counter;	//[CW]
 
 //==========================================================================
 //
@@ -1465,7 +1471,7 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			break;
 
 		if (ThisPlayerOnly && Level.Game.Players[plnum] != self)
-				continue;
+			continue;
 
 		//[CW] update scoreboard for player number "plnum"
 		pl = Player(Level.Game.Players[plnum]);
@@ -1477,15 +1483,23 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 
 			plteam = MainGameInfo(Level.Game).Teams[teamnum];
 
+			pl.teamscores[teamnum] = plteam.Score;
+
 			for (i = 0; i < MAXPLAYERS; i++, gs++)
 			{
 			   if (!plteam.Players[i])
 				break;
 
+			   if (plteam.Players[i] == self)
+			      table_thisplayer = gs;
+
 			   pl.gamescores[gs].IsActive = true;
 			   pl.gamescores[gs].plname = plteam.Players[i].PlayerName;
+			   pl.gamescores[gs].plclass = plteam.Players[i].PClass;
+			   pl.gamescores[gs].level = plteam.Players[i].exp_level;
 			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
 			   pl.gamescores[gs].team = plteam.Players[i].Color;
+			   pl.gamescores[gs].score = plteam.Players[i].Score;
 			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
 			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
 			   pl.gamescores[gs].deaths = 0;
@@ -2782,6 +2796,30 @@ void PlayerTick(float deltaTime)
 
 	WorldTimer++;
 	InventoryTick(deltaTime);
+
+	//
+	//[CW] "Targeted enemy hint" feature
+	//
+	if (PlayerState != PST_DEAD)
+	{
+		TAVec angles;
+		angles = MO.Angles;
+		Actor(MO).AimLineAttack(&angles, 16.0 * 64.0);
+		if (Actor(MO).linetarget)
+		{
+			if (Actor(MO).linetarget.Player)
+				targetnamehint = Actor(MO).linetarget.Player.PlayerName;
+			else
+				targetnamehint = "";	//[CW] leave this so?
+			targetnamehint_counter = 40;	//[CW] this should use real time, i think
+		}
+		
+	}
+	if (targetnamehint_counter < 0)
+		targetnamehint = "";
+	else
+		targetnamehint_counter--;
+
 
 	if (PlayerState == PST_DEAD)
 	{
