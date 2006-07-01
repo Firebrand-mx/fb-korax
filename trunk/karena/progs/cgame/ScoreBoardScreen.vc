@@ -3,15 +3,24 @@
 class ScoreBoardScreen : Window;
 
 const int
+	SHADE_LEFT		= 24,
+	SHADE_TOP		= 40,
+	SHADE_WIDTH		= 592,
+	SHADE_HEIGHT		= 400,
+
+	PORTRAIT_HEIGHT		= 25,
+
 	TABLE_LEFT_X		= 48,
-	TABLE_HEAD_Y		= 64,
-	TABLE_TOP_Y		= 96,
-	TABLE_STRING_DELTA	= 24,
-	TABLE_COL2		= 172,
-	TABLE_COL3		= 232,
-	TABLE_COL4		= 316,
-	TABLE_COL5		= 376,
-	TABLE_COL6		= 424,
+	TABLE_DATA_LEFT_X	= 96,
+	TABLE_HEAD_Y		= 48,
+	TABLE_TOP_Y		= 82,
+	TABLE_STRING_DELTA	= 14,
+	TABLE_ENTRY_DELTA	= 28,
+	TABLE_COL2		= 240,
+	TABLE_COL3		= 302,
+	TABLE_COL4		= 386,
+	TABLE_COL5		= 446,
+	TABLE_COL6		= 494,
 	TABLE_VALINDENT4	= 16,
 	TABLE_VALINDENT5	= 12,
 	TABLE_VALINDENT6	= 18;
@@ -23,6 +32,11 @@ int colormark[HexenDefs::MAXPLAYERTEAMS];
 
 //[CW] may be those should be put into some shared resources module
 string colornames[HexenDefs::MAXPLAYERTEAMS];
+string gamemodenames[HexenDefs::NUMGAMES];
+string playerclassnames[HexenDefs::NUMCLASSES];
+
+int pic_portraits[6];
+int pic_portraits_heights[6];
 
 
 //==========================================================================
@@ -33,7 +47,16 @@ string colornames[HexenDefs::MAXPLAYERTEAMS];
 
 void StartMap()
 {
-	//	initialize pics??
+	//	initialize pics
+	int i;
+	picinfo_t info;
+
+	for (i = 0; i < 6; i++)
+	{
+		pic_portraits[i] = R_RegisterPic(StrToName(va("icon0%d", i)));
+		R_GetPicInfo(pic_portraits[i], &info);
+		pic_portraits_heights[i] = info.height;
+	}
 }
 
 //==========================================================================
@@ -44,45 +67,108 @@ void StartMap()
 
 void DrawWindow(GC gc)
 {
-	int i, j;
+	int i, j, y;
+	int gamemode;
+	int current_team;
+	int current_team_idx;
+	string tmp;
 
-	R_ShadeRect(24, 40, 472, 248, 20);
+	R_ShadeRect(SHADE_LEFT, SHADE_TOP, SHADE_WIDTH, SHADE_HEIGHT, 20);
+
+	// Game mode
+
+	gamemode = GetCvar('deathmatch');
+	T_SetFont(font_yellow);
+	T_DrawText(TABLE_LEFT_X, TABLE_HEAD_Y , va("game mode:   %s", gamemodenames[gamemode]));
 
 	/*--------------------------------------
 		General Scoring Table
 	--------------------------------------*/
 
-	T_SetFont(font_yellow);
-	T_DrawText(TABLE_LEFT_X, TABLE_HEAD_Y, "player");
-	T_DrawText(TABLE_COL2, TABLE_HEAD_Y, "ctrl");
-	T_DrawText(TABLE_COL3, TABLE_HEAD_Y, "team");
-	T_DrawText(TABLE_COL4, TABLE_HEAD_Y, "frags");
-	T_DrawText(TABLE_COL5, TABLE_HEAD_Y, "kills");
-	T_DrawText(TABLE_COL6, TABLE_HEAD_Y, "deaths");
+	/* Table Head		*/
+
+	T_DrawText(TABLE_LEFT_X, TABLE_HEAD_Y + TABLE_STRING_DELTA , "player");
+	T_DrawText(TABLE_COL2, TABLE_HEAD_Y + TABLE_STRING_DELTA, "score");
+	T_DrawText(TABLE_COL3, TABLE_HEAD_Y + TABLE_STRING_DELTA, "ctrl");
+
+	// Those are mode dependent
+	T_DrawText(TABLE_COL4, TABLE_HEAD_Y + TABLE_STRING_DELTA, "frags");
+	T_DrawText(TABLE_COL5, TABLE_HEAD_Y + TABLE_STRING_DELTA, "kills");
+	T_DrawText(TABLE_COL6, TABLE_HEAD_Y + TABLE_STRING_DELTA, "deaths");
+	//
+
 	T_SetFont(font_small);
+
+	y = TABLE_TOP_Y;
+	current_team = -1;
+	current_team_idx = -1;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!cl.gamescores[i].IsActive)
 			break;
 
-		//[CW] mark current client with special background color
-		if (cl.clientnum == i)
-			R_FillRect(32, TABLE_TOP_Y + i * TABLE_STRING_DELTA - 6, 456, 22, colormark[cl.gamescores[i].team]);
+		// Insert team string if a new team encountered
+		if (gamemode >= HexenDefs::NUMGAMESNOTEAM && cl.gamescores[i].team != current_team)
+		{
+			if (current_team != -1)
+				y += 6;
+			current_team_idx++;
+			R_FillRect(SHADE_LEFT + 8, y - 6, SHADE_WIDTH - 16, 22, colormark[cl.gamescores[i].team]);
+			T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colornames[cl.gamescores[i].team],
+								cl.teamscores[current_team_idx]));
+			y += TABLE_STRING_DELTA;
+			current_team = cl.gamescores[i].team;
+		}
 
-		// [CW] Player's name
-		T_DrawText(TABLE_LEFT_X, TABLE_TOP_Y + i * TABLE_STRING_DELTA, cl.gamescores[i].plname);
-		// [CW] Player is human/cpu
+		// Mark current client with special background color
+		// FIXME!!! - bad thing, need some other marking style for team mode!
+		if (cl.table_thisplayer == i)
+		{
+			if (gamemode < HexenDefs::NUMGAMESNOTEAM)
+				R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colormark[cl.gamescores[i].team]);
+			else
+			{	// ???				
+			}
+		}
+
+		// Player portrait
+		R_DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[cl.gamescores[i].plclass]) >> 1),
+							pic_portraits[cl.gamescores[i].plclass]);
+
+		y += 6;
+
+		// Player's name
+		T_DrawText(TABLE_DATA_LEFT_X, y, cl.gamescores[i].plname);
+
+		// Level + class
+		switch (cl.gamescores[i].level)
+		{
+		case 1: tmp = "st"; break;
+		case 2: tmp = "nd"; break;
+		case 3: tmp = "rd"; break;
+		default: tmp = "th";
+		}
+		T_DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
+			cl.gamescores[i].level, tmp, playerclassnames[cl.gamescores[i].plclass]));
+
+		y += TABLE_STRING_DELTA >> 1;
+
+		// Player's score
+		T_DrawText(TABLE_COL2, y, va("%d", cl.gamescores[i].score));
+
+		// Player is human/cpu
 		if (cl.gamescores[i].IsBot)
-			T_DrawText(TABLE_COL2, TABLE_TOP_Y + i * TABLE_STRING_DELTA, "bot");
+			T_DrawText(TABLE_COL3, y, "bot");
 		else
-			T_DrawText(TABLE_COL2, TABLE_TOP_Y + i * TABLE_STRING_DELTA, "human");
-		// [CW] Player's team (color)
-		// This need to be modified so string (color name) be shown
-		T_DrawText(TABLE_COL3, TABLE_TOP_Y + i * TABLE_STRING_DELTA, colornames[cl.gamescores[i].team]);
-		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].frags));
-		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].nplkills));
-		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, TABLE_TOP_Y + i * TABLE_STRING_DELTA, va("%d", cl.gamescores[i].deaths));
+			T_DrawText(TABLE_COL3, y, "hum");
+
+		// Those are mode dependent
+		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", cl.gamescores[i].frags));
+		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", cl.gamescores[i].nplkills));
+		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", cl.gamescores[i].deaths));
+
+		y += TABLE_ENTRY_DELTA - (TABLE_STRING_DELTA >> 1);
 	}
 }
 
@@ -134,4 +220,20 @@ defaultproperties
 	colornames[5] = "gray";
 	colornames[6] = "brown";
 	colornames[7] = "magenta";
+
+	gamemodenames[0] = "castle sweep";
+	gamemodenames[1] = "deathmatch";
+	gamemodenames[2] = "team deathmatch";
+	gamemodenames[3] = "capture the flag";
+	gamemodenames[4] = "football";
+	gamemodenames[5] = "team castle sweep";
+	gamemodenames[6] = "castle sweep";
+
+	playerclassnames[0] = "fighter";
+	playerclassnames[1] = "cleric";
+	playerclassnames[2] = "mage";
+	playerclassnames[3] = "heretic";
+	playerclassnames[4] = "marine";
+	playerclassnames[5] = "witchaven";
+	playerclassnames[6] = "pig";
 }
