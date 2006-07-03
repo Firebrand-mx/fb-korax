@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -486,48 +486,32 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			return false;
 		}
 
-		// [FB] Opening isn't big enough on the other side
-		if (back->ceilingheight - front->ceilingheight <= botmo.Height)
-		{
-			return false;
-		}
-
-		// [FB] Ceiling is too low
-		if (back->ceilingheight - back->floorheight <= botmo.Height)
-		{
-			return false;
-		}
-
 		// crosses a two sided line
 		open = LineOpenings(ld, hit_point);
 		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
 
 		// No valid openings
-		if (!open)
+		if (!open || open->range <= botmo.Height)
 		{
 			return false;
 		}
 
 		// [FB] We don't want to die by falling off a larger cliff
-		if ((front->floorheight - back->floorheight) > 384.0)
+		if ((open->lowfloor - open->bottom) > 384.0)
 		{
 			return false;
 		}
 
 		// No cliff jumping unless we're going after something
-		if ((front->floorheight - back->floorheight) > 32.0 && !enemy)
+		if ((open->lowfloor - open->bottom) > 32.0 && !enemy)
 		{
 			return false;
 		}
 
 		// [FB] Determine if it's wise to jump up to a floor
-		diffheight = back->floorheight - front->floorheight;
+		diffheight = open->bottom - open->lowfloor;
 
-		if (diffheight < 0.0)
-		{
-			diffheight *= -1.0;
-		}
-		else if (diffheight > 0.0)
+		if (diffheight > 0.0)
 		{
 			if (diffheight > 48.0)
 			{
@@ -548,7 +532,24 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		// [FB] Use lines
 		player.P_UseLines();
-//		return true;
+	}
+
+	// [FB] Order of actors response precedence
+	if (goal)
+	{
+		in->Thing = goal;
+	}
+	else if (node)
+	{
+		in->Thing = node;
+	}
+	else if (item)
+	{
+		in->Thing = item;
+	}
+	else if (enemy)
+	{
+		in->Thing = enemy;
 	}
 
 	if (in->Thing)
@@ -566,19 +567,18 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		}
 
 		// [FB] Jump to reach a thing
-		dheight = th.Origin.z - /*shoot_thing*/botmo.Origin.z;
+		dheight = th.Origin.z + th.Height - botmo.Origin.z;
 
-		if (dheight > 0.0)
+		if (dheight >= 24.0)
 		{
-			if (dheight >= 24.0 && dheight <= 48.0)
+			if (dheight <= 48.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
-				return true;
 			}
-			else if (dheight < 24.0)
-				return true;
 			else
+			{
 				return false;
+			}
 		}
 	}
 
@@ -628,9 +628,7 @@ bool CheckTo(TVec pos)
 	dist = Length(botmo.Origin - pos);
 	an = GetAngle();
 
-	// [FB] We need to check for Z component of the position somewhere,
-	//	 I didn't found a decent place to put the check but here...
-	if (!CheckPath(an, dist) || pos.z >= botmo.Origin.z + botmo.Height + 48.0)
+	if (!CheckPath(an, dist) || (pos.z - botmo.Origin.z) >= 48.0)
 		return false;
 
 	return true;
