@@ -1,0 +1,153 @@
+/*	written by [CW]	for Korax Arena		*/
+
+class SoccerBall : Actor
+	__mobjinfo__(15021);
+
+const int	MINFRAMES_NOKICK			= 4;
+const int	MAXFRAMES_TARGETTING		= 9;
+const float VELPOWER_MULTIPLIER			= 4.0;
+const float STRENGTHPOWER_MULTIPLIER	= 100.0;
+
+int		nokick_timer;				// free fly time (to avoid repeatable touch bug)
+Player	Owner;						// a player who kicked the ball last
+//int		targeter_tick[MAXPLAYERS];
+
+
+//==========================================================================
+//
+//	IsTouched
+//
+//	[CW]
+//
+//==========================================================================
+
+bool IsTouched(Entity Toucher)
+{
+	if(!nokick_timer && Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+		DoKick(Player(Toucher.Player));
+	return true;
+}
+
+//==========================================================================
+//
+//	DoKick
+//
+//	[CW]
+//
+//==========================================================================
+
+void DoKick(Player Kicker)
+{
+	int i;
+	int	playernum;
+	float an;
+	float van;
+	float velpower;
+	float strpower;
+
+	Owner = Kicker;
+	playernum = Kicker.GetPlayerNum();
+	an = AngleMod360(atan2(Kicker.MO.Origin.y - Origin.y,
+			Kicker.MO.Origin.x - Origin.x));
+	an += (an < 180.0 ? 180.0 : -180.0);
+	van = itof(/*targeter_tick[playernum]*/ Kicker.use_power * 10);
+	velpower = VELPOWER_MULTIPLIER * Length(Kicker.MO.Velocity)/100.0;
+	if (/*targeter_tick[playernum]*/ Kicker.use_power)
+		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength)/100.0;
+	else
+		strpower = 0.0;
+
+	Thrust3d2(an, velpower + strpower * cos(van),
+					strpower * sin(van));
+
+	nokick_timer = MINFRAMES_NOKICK;
+	//targeter_tick[playernum] = 0;
+	Kicker.use_power = 0;
+}
+
+//============================================================================
+//
+// A_LetKick
+//
+// [CW] Using modified Firebrand's original function --->
+// [FB] ...the method that makes the players "kick" the ball.
+//
+//============================================================================
+
+void A_LetKick()
+{
+	int i;
+	Player P;
+	int	playernum;
+	float dist;
+
+	if (nokick_timer)
+	{
+		nokick_timer--;
+		return;
+	}
+
+	for (i=0; i<MAXPLAYERS; i++)
+	{
+		P = Player(Level.Game.Players[i]);
+
+		if (!P || !P.bSpawned || !P.MO)
+			continue;	// [FB] Can't kick the ball if not playing!
+		if (P.Health <= 0)
+			continue;	// [FB] Dead meat can't kick balls!
+					    // [CW]... and asses as well =)
+
+		playernum = P.GetPlayerNum();
+		dist = DistTo(P.MO);
+
+		if (dist <= MELEERANGE * 6.0)
+		{
+			//
+			//[CW]
+			//
+			if (dist <= MELEERANGE && 
+				(!(P.Buttons & BT_USE) && /*targeter_tick[playernum]*/P.use_power > 0 ||
+				/*targeter_tick[playernum]*/ P.use_power >= MAXFRAMES_TARGETTING))
+			{
+				DoKick(P);
+				return;
+			}
+				
+			if (P.Buttons & BT_USE && /*targeter_tick[playernum]*/ P.use_power < MAXFRAMES_TARGETTING)
+				//targeter_tick[playernum]++;
+				P.use_power++;
+			else if (!(P.Buttons & BT_USE) && /*targeter_tick[playernum]*/ P.use_power > 0)
+				//targeter_tick[playernum] = 0;
+				P.use_power = 0;
+		}
+		else
+			//targeter_tick[playernum] = 0;
+			P.use_power = 0;
+	}
+}
+
+
+__states__
+{
+	S_SOCCERBALL_IDLE1('FDMN', 23 | FF_FULLBRIGHT, 1.5 / 35.0, S_SOCCERBALL_IDLE1) { A_LetKick(); }
+}
+
+defaultproperties
+{
+	Health = 1000;
+	Radius = 20.0;
+	Height = 68.0;
+	Mass = 40.0;
+
+	bSolid = true;
+	bShootable = true;
+	bNoBlood = true;
+	bPushable = true;
+	bFloorBounce = true;		//[CW] ?? why it does not work????
+	bActivatePushWall = true;
+	bActivateMCross = true;
+	bInvulnerable = true;
+	bNoMorph = true;	
+
+	IdleState = S_SOCCERBALL_IDLE1;
+}
