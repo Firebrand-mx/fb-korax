@@ -25,6 +25,20 @@
 
 class HexenLevelInfo : LevelInfo;
 
+// [KORAX]
+// [CW] Action specials, recommended to use only through map ACS
+//	(in order not to mix these with common line specials,
+//	their ids should be greater than 255)
+enum
+{
+	ACTSPEC_Thing_Thrust3d			= 256,
+	ACTSPEC_AdvancedGame_BeginState,
+	ACTSPEC_AdvancedGame_EndState,
+	ACTSPEC_AdvancedGame_HandleEvent,
+	ACTSPEC_AdvancedGame_SetGameObject,
+	ACTSPEC_Last
+};
+
 const int MAX_MINOTAUR_SPOTS = 8; // [FB] Limit the number of Minotaur Spots in a level
 
 //
@@ -1018,6 +1032,55 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	// LNSPEC_PointPushSetForce:
 
 	// Inert Line specials
+
+
+	case ACTSPEC_Thing_Thrust3d:
+		if(Arg1 > 0)
+		{
+			buttonSuccess = EV_Thing3dThrust(Arg1, Arg2, Arg3, Arg4, none);
+		}
+		else if(A)
+		{
+			buttonSuccess = EV_Thing3dThrust(0, Arg2, Arg3, Arg4, A);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_BeginState:
+		if (MainGameInfo(Game).GameMode)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameMode.BeginState(Arg1);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_EndState:
+		if (MainGameInfo(Game).GameMode)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameMode.EndCurrentState(Arg1);
+			}
+		break;
+	case ACTSPEC_AdvancedGame_HandleEvent:
+		if (MainGameInfo(Game).GameMode)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameMode.HandleGameEvent(A, Arg1, Arg2, Arg3, Arg4, Arg5);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_SetGameObject:
+		if(Arg1 > 0)
+		{
+			buttonSuccess = EV_SetAdvancedGameObject(Arg1, Arg2, Arg3, Arg4, Arg5, none);
+		}
+		else if(A)
+		{
+			buttonSuccess = EV_SetAdvancedGameObject(0, Arg2, Arg3, Arg4, Arg5, A);
+		}
+		/*if (MainGameInfo(Game).GameMode)
+		{
+			// [CW] TODO: seek for obj using Arg1 as TID...
+			MainGameInfo(Game).GameMode.SetGameObject(A, Arg2, Arg3, Arg4, Arg5);
+		}*/
+		break;
+
 	default:
 		break;
 	}
@@ -3790,6 +3853,40 @@ bool EV_ThingDestroy(int tid)
 	return success;
 }
 
+//==========================================================================
+//
+//  EV_Thing3dThrust
+//
+//  [CW] A three-dimensional vector variant of ThingThrust action special
+//
+//==========================================================================
+
+bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, Actor a)
+{
+	if (tid)
+	{
+		Actor A;
+		int searcher;
+
+		searcher = -1;
+		for (A = Actor(FindMobjFromTID(tid, &searcher)); A;
+			A = Actor(FindMobjFromTID(tid, &searcher)))
+		{
+			if (A)
+			{
+			   A.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+			   return true;
+			}
+		}
+	}
+	else if (a)
+	{
+		a.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+		return true;
+	}
+	return false;
+}
+
 //===========================================================================
 // Quake variables
 //
@@ -3879,6 +3976,49 @@ bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
 				return true;
 			}
 		}
+	}
+	return false;
+}
+
+//**************************************************************************
+//
+//  Advanced game mode specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_SetAdvancedGameObject
+//
+//	[CW]
+//
+//==========================================================================
+
+bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, Actor a)
+{
+	if (!MainGameInfo(Game).GameMode)
+		return false;
+
+	if (tid)
+	{
+		Actor A;
+		int searcher;
+
+		searcher = -1;
+		for (A = Actor(FindMobjFromTID(tid, &searcher)); A;
+			A = Actor(FindMobjFromTID(tid, &searcher)))
+		{
+			if (A)
+			{
+			   MainGameInfo(Game).GameMode.SetGameObject(A, Arg2, Arg3, Arg4, Arg5);
+			   return true;
+			}
+		}
+	}
+	else if (a)
+	{
+		MainGameInfo(Game).GameMode.SetGameObject(a, Arg2, Arg3, Arg4, Arg5);
+		return true;
 	}
 	return false;
 }
