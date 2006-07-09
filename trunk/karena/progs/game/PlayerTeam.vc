@@ -25,7 +25,6 @@ void EnlistPlayer(Player pl)
 {
 	int i;
 
-	dprint("PlayerTeam::EnlistPlayer : ");
 	// first check if player already has reference to this team
 	if (pl.Team == self)
 		return;
@@ -45,10 +44,8 @@ void EnlistPlayer(Player pl)
 
 		if (!Players[i])
 		{
-			dprint("PlayerTeam::EnlistPlayer : enlisting at %i", i);
 			if (pl.Team)
 			{
-				dprint("PlayerTeam::EnlistPlayer : player must be discarded from previous team first");
 				pl.Team.DiscardPlayer(pl);
 			}
 			pl.Team = self;
@@ -58,7 +55,7 @@ void EnlistPlayer(Player pl)
 			// This should be taken into account:
 			// player, who changes team, looses his score!!
 			//
-			pl.UpdateScore(HexenDefs::scoreevent_Reset);
+			pl.UpdateScore(HexenDefs::scoreevent_PlayerReset);
 
 			if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 			{
@@ -79,8 +76,6 @@ void EnlistPlayer(Player pl)
 void DiscardPlayer(Player pl)
 {
 	int i;
-
-	dprint("PlayerTeam::DiscardPlayer : ");
 
 	// first check if player is in team
 	if (pl.Team != self)
@@ -155,7 +150,7 @@ void UpdateScore(int event)
 			}
 		}
 		break;
-	case HexenDefs::scoreevent_Reset:
+	case HexenDefs::scoreevent_TeamReset:
 		Frags = 0;
 		Kills = 0;
 		Goals = 0;
@@ -163,28 +158,33 @@ void UpdateScore(int event)
 		break;
 	case HexenDefs::scoreevent_Frag:
 		Frags++;
-		mod = 1;
+		if (Game.deathmatch != HexenDefs::game_football)
+			mod = 1;
 		break;
 	case HexenDefs::scoreevent_Kill:
 		Kills++;
 		break;
 	case HexenDefs::scoreevent_FtbGoal:
+	case HexenDefs::scoreevent_FtbOpSelfGoal:
 		Goals++;
+		mod = 1;
 		break;
 	case HexenDefs::scoreevent_SelfFrag:
 		Frags--;
-		mod = -1;
+		if (Game.deathmatch != HexenDefs::game_football)
+			mod = -1;
 		break;
 	case HexenDefs::scoreevent_TeamFrag:
 		Frags--;
-		mod = -1;
+		if (Game.deathmatch != HexenDefs::game_football)
+			mod = -1;
 		break;
 	}
 
 
 	Score += mod;
 
-	dprint("Team::UpdateScore : score total now = %d", Score);
+	dprint("PlayerTeam::UpdateScore : score total now = %d", Score);
 
 	UpdateCompetition();
 }

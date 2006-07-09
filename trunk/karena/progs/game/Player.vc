@@ -145,6 +145,9 @@ int max_health;
 int old_maxhealth; // [FB] To decrease the health
 int bak_health; // [FB] To keep an older level health
 
+int use_power;	// [CW] is needed for some advanced game modes (football);
+		//	stores time USE button was held pressed
+
 //
 //  ----------
 //
@@ -292,6 +295,9 @@ void SpawnClient()
 		playerWasReborn = (PlayerState == PST_REBORN);
 	}
 
+	//[CW] put player into corresponding team
+	MainGameInfo(Level.Game).InsertPlayer(self);
+
 	//  Spawn player
 	if (Level.Game.deathmatch)
 	{
@@ -302,10 +308,6 @@ void SpawnClient()
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
 				GetPlayerNum()]);
 	}
-
-	//[CW] put player into corresponding team
-	dprint("Player::SpawnClient : inserting player...");
-	MainGameInfo(Level.Game).InsertPlayer(self);
 
 	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
 	{
@@ -458,8 +460,7 @@ void DisconnectClient()
 
 	//[CW] set leaving player down the competition table
 	// NOTE: for future, should leaving player really loose his/her score?
-	dprint("Player::DisconnectClient : ");
-	PlayerTeam(Team).DiscardPlayer(self);
+	Team.DiscardPlayer(self);
 
 	//[CW]---------> obsolete	
 	//ScoreboardsUpdate(false);
@@ -753,6 +754,10 @@ void SpawnPlayer(mthing_t * mthing)
 			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
 		}
 	}
+
+	// [CW] if there is advanced game mode initiated, notify it of player spawn
+	if (MainGameInfo(Level.Game).GameMode)
+		MainGameInfo(Level.Game).GameMode.NotifySpawnPlayer(self);
 }
 
 //==========================================================================
@@ -1510,7 +1515,7 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			   {
 				if (!Level.Game.Players[j])
 				   break;
-				dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, plteam.Players[i].GetPlayerNum(), Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()]);
+				//dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, plteam.Players[i].GetPlayerNum(), Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()]);
 				pl.gamescores[gs].deaths += Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
 			   }
 			}
@@ -2429,7 +2434,6 @@ void PlayerImpulse()
 		// [FB] The player is calling the scoreboard!!
 		// [CW] invert (toggle) showscoreboard flag
 		Scoreboard(!bShowScoreboard);
-		dprint("Player::PlayerImpulse : showscoreboard = %d", bShowScoreboard);
 	}
 
 	// Hexen artifact hot keys
@@ -2804,7 +2808,7 @@ void PlayerTick(float deltaTime)
 	{
 		TAVec angles;
 		angles = MO.Angles;
-		Actor(MO).AimLineAttack(&angles, 16.0 * 64.0);
+		Actor(MO).AimLineAttack(&angles, 64.0 * 64.0);
 		if (Actor(MO).linetarget)
 		{
 			if (Actor(MO).linetarget.Player)
@@ -4939,7 +4943,7 @@ void UpdateScore(int event)
 	switch(event)
 	{
 		case HexenDefs::scoreevent_PlayerDiscard:
-		{
+		
 			for (mod = 0; mod < MAXPLAYERS; mod++)
 			{
 				if (!Team.Players[mod] || mod == MAXPLAYERS - 1)
@@ -4951,29 +4955,24 @@ void UpdateScore(int event)
 				}
 			}
 			break;
-		}
-		case HexenDefs::scoreevent_Reset:
-		{
+		
+		case HexenDefs::scoreevent_PlayerReset:
 			mod = -Score;
 			break;	// this should always set Score to 0
-		}
 		case HexenDefs::scoreevent_Frag:
 		case HexenDefs::scoreevent_Kill:
-		{
 			mod = 1;
 			break;
-		}
 		case HexenDefs::scoreevent_FtbGoal:
-		{
 			mod = 5;
 			break;
-		}
+		case HexenDefs::scoreevent_FtbSelfGoal:
+			mod = -5;
+			break;
 		case HexenDefs::scoreevent_SelfFrag:
 		case HexenDefs::scoreevent_TeamFrag:
-		{
 			mod = -1;
 			break;
-		}
 	}
 
 	Score += mod;
@@ -5005,41 +5004,25 @@ void UpdateCompetition()
 	int i, j;
 	Player pl2;
 
-	dprint("Player::UpdateCompetition : ");
-	dprint("Player::UpdateCompetition : searching for current player's index in his team");
-	dprint("Player::UpdateCompetition : current player's Team ptr = %d", Team);
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		dprint("Player::UpdateCompetition : current player ptr = %d, team %ith player ptr = %d", self, i, Team.Players[i]);
 		if(Team.Players[i] == self)
 		   break; 
 	}
 
-	dprint("Player::UpdateCompetition : updating competition for player %i", i);
-
-
 	// first see if previous players has lower score now
 	if (i != 0)
 	{
-		dprint("Player::UpdateCompetition : checking previous players");
-
 		j = i-1;
 		while (j >= 0)
 		{
 			pl2 = Team.Players[j];
-			dprint("Player::UpdateCompetition : comparing with player %i", j);
-			dprint("Player::UpdateCompetition : player %i's score = %i", i, Score);
-			dprint("Player::UpdateCompetition : player %i's score = %i", j, pl2.Score);
 
 			if (pl2.Score < Score)
 			{
 				bPositionShifted = true;
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
-				dprint("Player::UpdateCompetition : player %i is now on %ith place",i,j);
-				dprint("Player::UpdateCompetition : player %i is now on %ith place",j,i);
-
 				i = j;
 			}
 			else
@@ -5050,23 +5033,15 @@ void UpdateCompetition()
 	// secondly (in other case) see if next players has higher score (in case score gone down)
 	if (!bPositionShifted && i != MAXPLAYERS - 1)
 	{
-		dprint("Player::UpdateCompetition : checking next players");
-
 		j = i+1;
 		while (j < MAXPLAYERS && Team.Players[j])
 		{
 			pl2 = Team.Players[j];
-			dprint("Player::UpdateCompetition : comparing with player %i", j);
-			dprint("Player::UpdateCompetition : player %i's score = %i", i, Score);
-			dprint("Player::UpdateCompetition : player %i's score = %i", j, pl2.Score);
-
+	
 			if (pl2.Score > Score)
 			{
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
-				dprint("Player::UpdateCompetition : player %i is now on %ith place",i,j);
-				dprint("Player::UpdateCompetition : player %i is now on %ith place",j,i);
-
 				i = j;
 			}
 			else
@@ -5102,26 +5077,19 @@ void UpdateCompetition()
 
 void DisplayDeathMessage(Actor source, Actor inflictor)
 {
-	dprint("Player::DisplayDeathMessage : ");
-	dprint("Player::DisplayDeathMessage : source ptr = %d", source);
-	dprint("Player::DisplayDeathMessage : inflictor ptr = %d", inflictor);
-
 	if(source)
 	{
 		//[CW] p.4: melee attack
 		if(source == inflictor)
 		{
-			dprint("Player::DisplayDeathMessage : source == inflictor");
 			if(source.bIsPlayer)
 			{
-				dprint("Player::DisplayDeathMessage : source is PlayerPawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
 						PlayerName,
 						source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
-				dprint("Player::DisplayDeathMessage : source is Pawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
 						PlayerName,
 						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
@@ -5130,13 +5098,10 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		//[CW] p.3: missile attack
 		else if(inflictor)
 		{
-			dprint("Player::DisplayDeathMessage : source != inflictor");
 			if(source.bIsPlayer)
 			{
-				dprint("Player::DisplayDeathMessage : source is PlayerPawn");
 				if(Player(source.Player) == self)
 				{
-					dprint("Player::DisplayDeathMessage : self frag");
 					bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
 						PlayerName);
 				}
@@ -5147,7 +5112,6 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			}
 			else if(source.IsA('Pawn'))
 			{
-				dprint("Player::DisplayDeathMessage : source is Pawn");
 				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
 						PlayerName,
 						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
@@ -5156,20 +5120,17 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		//[CW] falling damage
 		else
 		{
-			dprint("Player::DisplayDeathMessage : falling death message");
 			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
 		}
 	}
 	//[CW] p.2: fragged by enviromental thing or trap
 	else if(inflictor)
 	{
-		dprint("Player::DisplayDeathMessage : enviromental thing message");
 		bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
 	{
-		dprint("Player::DisplayDeathMessage : pure enviroment message");
 		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
 	}
 }
