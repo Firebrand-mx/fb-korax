@@ -93,6 +93,7 @@ bool randomclass;
 Actor PuffSpawned;
 
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
+Game		GameMode;			// [CW] for advanced game modes
 
 //==========================================================================
 //
@@ -140,6 +141,18 @@ void InitNewGame(int skill)
 	nomonsters = GetCvar('NoMonsters');
 	fastparm = gameskill == sk_nightmare || GetCvar('Fast');
 	randomclass = GetCvar('RandomClass');
+
+	// init GameMode
+	// [CW]		Currently I have created game mode class for football only.
+	//		If needed, similar classes can be created for some other modes.
+	if (GameMode)
+		GameMode.Destroy();
+	//[CW] we must use GetCvar here because deathmatch param
+	//	   is not initialized yet at this point
+	if (GetCvar('deathmatch') == HexenDefs::game_football)
+		GameMode = Game(SpawnObject(GameFootball));
+	if (GameMode)
+		GameMode.Init(self);
 }
 
 //==========================================================================
@@ -150,7 +163,16 @@ void InitNewGame(int skill)
 
 LevelInfo CreateLevelInfo()
 {
-	return LevelInfo(NewSpecialThinker(HexenLevelInfo));
+	//[CW] ---> maybe temporal:
+	dprint("MainGameInfo::CreateLevelInfo : ");
+	HexenLevelInfo levelinfo = HexenLevelInfo(NewSpecialThinker(HexenLevelInfo));
+	if (GameMode)
+		GameMode.Level = levelinfo;
+	return LevelInfo(levelinfo);
+	
+	
+	// [CW] ---> original code:
+	//return LevelInfo(NewSpecialThinker(HexenLevelInfo));
 }
 
 //==========================================================================
@@ -3991,14 +4013,11 @@ void InsertPlayer(Player pl)
 	int teamnum;
 	teamnum = -1;
 
-	dprint("MainGameInfo::InsertPlayer : ");
-	dprint("MainGameInfo::InsertPlayer : deathmatch : %i", deathmatch);
 	if(deathmatch < HexenDefs::NUMGAMESNOTEAM)
 	{
 		// In no-teams game all players are put into one-for-all team,
 		// which only meaning is to set their right scoretable positions
 		teamnum	= 0;
-		dprint("MainGameInfo::InsertPlayer : NO TEAMS");
 	}
 	else
 	{
@@ -4034,12 +4053,36 @@ void InsertPlayer(Player pl)
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Color = pl.Color;
+
+		// if an advanced game mode is running, notify it that it should
+		// update its team references, since a new team object is created
+		if (GameMode)
+			GameMode.NotifyUpdateTeams();
 	}
 
 	dprint("MainGameInfo::InsertPlayer : enlisting player in team %i", teamnum);
 
 	Teams[teamnum].EnlistPlayer(pl);
 }
+
+//==========================================================================
+//
+//  bcenterprint
+//
+//	[CW] broadcast centerprint
+//
+//==========================================================================
+
+void bcenterprint(string msg)
+{
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i])
+			Players[i].centerprint(msg);
+	}
+}
+
 
 
 defaultproperties
