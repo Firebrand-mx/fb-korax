@@ -540,6 +540,36 @@ void Thrust(float angle, float move)
 
 //==========================================================================
 //
+//  Thrust3d
+//
+//	[CW] A three-dimensional vector variant of Thrust, that
+//		 uses vector angles and single vector length.
+//
+//==========================================================================
+
+void Thrust3d(float angle2d, float angle3, float move)
+{
+	Thrust(angle2d, move * cos(angle3));
+	Velocity.z += move * sin(angle3) * 35.0;
+}
+
+//==========================================================================
+//
+//  Thrust3d2
+//
+//	[CW] Variant of Thrust3d, that allows velocity vectors of
+//		 different lengths.
+//
+//==========================================================================
+
+void Thrust3d2(float angle2d, float move2d, float move3)
+{
+	Thrust(angle2d, move2d);
+	Velocity.z += move3 * 35.0;
+}
+
+//==========================================================================
+//
 //  FaceActor
 //
 //  Returns 1 if 'source' needs to turn clockwise, or 0 if 'source' needs
@@ -1923,6 +1953,10 @@ bool Touch(Entity InOther)
 	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
 		return true;
 
+	//[CW]
+	if (Other.IsTouched(self))
+		return !Other.bSolid;
+
 	// Check for skulls slamming into things
 	if (bSkullFly)
 	{
@@ -2055,6 +2089,19 @@ bool Touch(Entity InOther)
 		return !solid;
 	}
 	return !Other.bSolid;
+}
+
+//==========================================================================
+//
+//	IsTouched
+//
+//	[CW]
+//
+//==========================================================================
+
+bool IsTouched(Entity Toucher)
+{
+	return false;
 }
 
 //===========================================================================
