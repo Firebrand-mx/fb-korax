@@ -1,0 +1,223 @@
+/*	written by [CW]	for Korax Arena		*/
+
+class GameFootball : Game;
+
+enum
+{
+	state_preparematch,
+	state_kickoff,
+	state_freeplay,
+	state_finished,
+	state_waitforplayerspawn
+};
+
+enum
+{
+	event_goal,
+	event_offside
+};
+
+enum
+{
+	object_ballspot,
+	object_playerspot,
+	object_ball
+};
+
+SoccerBall	Ball;
+MapSpot		spot_ball;
+struct spot_players_t
+{
+	MapSpot	ms[MAXPLAYERS];
+};
+spot_players_t spot_players[2];
+PlayerTeam	Teams[2];
+
+int delay;	// [CW] TODO!!! - how in hell i should use it here??
+
+
+/*void Init(MainGameInfo game)
+{
+	::Init(game);
+}*/
+
+void BeginState(int newstate)
+{
+	int i;
+
+	dprint("GameFootball::BeginState : newstate = %i", newstate);
+	switch(newstate)
+	{
+	case state_preparematch:
+		//UpdateTeams();
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Teams[0] && Teams[0].Players[i])
+			   Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			if (Teams[1] && Teams[1].Players[i])
+			   Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+		}
+		if (Teams[0])
+			Teams[0].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		if (Teams[1])
+			Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		EndCurrentState(state_kickoff);
+		break;
+	case state_kickoff:
+		if (spot_ball)
+		{ 
+			if (Ball)
+				Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
+			else
+				Ball = SoccerBall(Level.Spawn(SoccerBall, spot_ball.Origin));
+		}
+		if (!spot_ball && !Ball)
+		{
+			dprint("GameFootball::BeginState : state_kickoff : there's no ball or ball_spot");
+			EndCurrentState(state_finished);
+		}
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Teams[0] && Teams[0].Players[i] && spot_players[0].ms[i])
+			   Actor(Teams[0].Players[i].MO).Teleport(spot_players[0].ms[i].Origin, spot_players[0].ms[i].Angles.yaw, true, true, false);
+			if (Teams[1] && Teams[1].Players[i] && spot_players[1].ms[i])
+			   Actor(Teams[1].Players[i].MO).Teleport(spot_players[1].ms[i].Origin, spot_players[1].ms[i].Angles.yaw, true, true, false);
+		}
+		EndCurrentState(state_freeplay);
+		break;
+	case state_freeplay:
+	case state_finished:
+	case state_waitforplayerspawn:
+		break;
+	default:
+		::BeginState(0);
+	};
+
+	State = newstate;
+}
+
+void EndCurrentState(int nextstate)
+{
+	dprint("GameFootball::EndCurrentState : nextstate = %i", nextstate);
+
+	/*if (nextstate == state_finished && Ball)
+		Ball.Destroy();*/
+
+	BeginState(nextstate);
+}
+
+void NotifyUpdateTeams()
+{
+	//[CW] Actually (and hypothetically) more than 2 teams may
+	//     participate in game, but that's the question of future updates
+	//     (if there'll be any).
+
+	bool playingteamschange = false;
+	dprint("GameFootball::TeamUpdate : ");
+	dprint("%d,%d <----> %d,%d", Teams[0],Teams[1],Game.Teams[0],Game.Teams[1]);
+	if (State >= 0 && (Teams[0] != Game.Teams[0] ||
+								Teams[1] != Game.Teams[1]))
+	{
+		dprint("GameFootball::TeamUpdate : must restart match");
+		playingteamschange = true;
+	}
+	Teams[0] = Game.Teams[0];
+	Teams[1] = Game.Teams[1];
+	if (playingteamschange)
+		EndCurrentState(state_waitforplayerspawn);
+}
+
+void NotifySpawnPlayer(Player pl)
+{
+	if (State == state_waitforplayerspawn)
+		EndCurrentState(state_preparematch);
+}
+
+void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
+{
+	dprint("GameFootball::HandleGameEvent : event = %i", Event);
+
+	switch (Event)
+	{
+	case event_goal:
+		if (!A || A != Ball)
+			break;
+		// arg1 is a team, in which gates a ball was thrown
+		if (arg1 >= 0 && arg1 < 2 && Teams[arg1])
+		{
+			if (Ball.Owner && Teams[arg1] == Ball.Owner.Team)
+			{
+				// 'self-goal'
+				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbSelfGoal);
+				// opponent team is getting aware of happening
+				// (in case special score should be provided for it)
+				if (arg1 && Teams[0])
+				   Teams[0].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
+				else if (!arg1 && Teams[1])
+				   Teams[1].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
+				Game.bcenterprint(va("YAHOO! Team %d kicked a ball into their own gates!", arg1));
+			}
+			else
+			{
+				// normal goal
+				if (Ball.Owner)
+				{
+					Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
+					Game.bcenterprint(va("WHOA! Team %d scores a goal!", arg1 ? 0 : 1));
+				}
+			}
+		}
+		EndCurrentState(state_kickoff);
+		break;
+	case event_offside:
+
+		//[CW] continue from kickoff maybe??
+		// need timer here though, since there should be delay
+		// before players are repositioned
+
+		break;
+	}
+}
+
+void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
+{
+	dprint("GameFootball::SetGameObject : object = %i, args = %i,%i,%i", object, arg1, arg2, arg3);
+
+	if ((object == object_ballspot || object == object_playerspot) &&
+			!A.IsA('MapSpot'))
+	{
+		dprint("GameFootball::SetGameObject : A is not of MapSpot class");
+		return;
+	}
+
+	switch (object)
+	{
+	case object_ballspot:
+		spot_ball = MapSpot(A);
+		break;
+	case object_playerspot:
+		if (arg1 >= 0 && arg1 < 2 && arg2 >= 0 && arg2 < MAXPLAYERS)
+			spot_players[arg1].ms[arg2] = MapSpot(A);
+		else
+			dprint("GameFootball::SetGameObject : bad argument(s) for playerspot");
+		break;
+	case object_ball:
+		if (!A.IsA('SoccerBall'))
+		{
+			dprint("GameFootball::SetGameObject : A is not of Ball class");
+			return;
+		}
+		Ball = SoccerBall(A);
+	}
+}
+
+void End()
+{
+	dprint("GameFootball::End : ");
+	EndCurrentState(state_finished);
+	::End();
+}
+
+defaultproperties
+{
+}
