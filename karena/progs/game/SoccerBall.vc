@@ -10,7 +10,6 @@ const float STRENGTHPOWER_MULTIPLIER	= 100.0;
 
 int		nokick_timer;				// free fly time (to avoid repeatable touch bug)
 Player	Owner;						// a player who kicked the ball last
-//int		targeter_tick[MAXPLAYERS];
 
 
 //==========================================================================
@@ -50,9 +49,9 @@ void DoKick(Player Kicker)
 	an = AngleMod360(atan2(Kicker.MO.Origin.y - Origin.y,
 			Kicker.MO.Origin.x - Origin.x));
 	an += (an < 180.0 ? 180.0 : -180.0);
-	van = itof(/*targeter_tick[playernum]*/ Kicker.use_power * 10);
+	van = itof(Kicker.use_power * 10);
 	velpower = VELPOWER_MULTIPLIER * Length(Kicker.MO.Velocity)/100.0;
-	if (/*targeter_tick[playernum]*/ Kicker.use_power)
+	if (Kicker.use_power)
 		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength)/100.0;
 	else
 		strpower = 0.0;
@@ -61,7 +60,6 @@ void DoKick(Player Kicker)
 					strpower * sin(van));
 
 	nokick_timer = MINFRAMES_NOKICK;
-	//targeter_tick[playernum] = 0;
 	Kicker.use_power = 0;
 }
 
@@ -106,22 +104,19 @@ void A_LetKick()
 			//[CW]
 			//
 			if (dist <= MELEERANGE && 
-				(!(P.Buttons & BT_USE) && /*targeter_tick[playernum]*/P.use_power > 0 ||
-				/*targeter_tick[playernum]*/ P.use_power >= MAXFRAMES_TARGETTING))
+				(!(P.Buttons & BT_USE) && P.use_power > 0 ||
+					P.use_power >= MAXFRAMES_TARGETTING))
 			{
 				DoKick(P);
 				return;
 			}
 				
-			if (P.Buttons & BT_USE && /*targeter_tick[playernum]*/ P.use_power < MAXFRAMES_TARGETTING)
-				//targeter_tick[playernum]++;
+			if (P.Buttons & BT_USE && P.use_power < MAXFRAMES_TARGETTING)
 				P.use_power++;
-			else if (!(P.Buttons & BT_USE) && /*targeter_tick[playernum]*/ P.use_power > 0)
-				//targeter_tick[playernum] = 0;
+			else if (!(P.Buttons & BT_USE) && P.use_power > 0)
 				P.use_power = 0;
 		}
 		else
-			//targeter_tick[playernum] = 0;
 			P.use_power = 0;
 	}
 }
