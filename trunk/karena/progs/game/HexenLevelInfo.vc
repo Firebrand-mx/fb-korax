@@ -1037,11 +1037,11 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_Thing_Thrust3d:
 		if(Arg1 > 0)
 		{
-			buttonSuccess = EV_Thing3dThrust(Arg1, Arg2, Arg3, Arg4, none);
+			buttonSuccess = EV_Thing3dThrust(Arg1, Arg2, Arg3, Arg4, Arg5, none);
 		}
 		else if(A)
 		{
-			buttonSuccess = EV_Thing3dThrust(0, Arg2, Arg3, Arg4, A);
+			buttonSuccess = EV_Thing3dThrust(0, Arg2, Arg3, Arg4, Arg5, A);
 		}
 		break;
 	case ACTSPEC_AdvancedGame_BeginState:
@@ -3861,7 +3861,7 @@ bool EV_ThingDestroy(int tid)
 //
 //==========================================================================
 
-bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, Actor a)
+bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Actor a)
 {
 	if (tid)
 	{
@@ -3874,14 +3874,20 @@ bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, Actor a)
 		{
 			if (A)
 			{
-			   A.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+			      if (angle3)
+			         A.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+			      else
+			         A.Thrust3d2(itof(angle2d), itof(move), itof(move2));
 			   return true;
 			}
 		}
 	}
 	else if (a)
 	{
-		a.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+		if (angle3)
+			a.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+		else
+			a.Thrust3d2(itof(angle2d), itof(move), itof(move2));
 		return true;
 	}
 	return false;
