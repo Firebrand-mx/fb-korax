@@ -717,7 +717,7 @@ void Died(Actor source)
 	if (bCountKill)
 	{
 		Level.Game.level->currentkills++;
-		if (!Level.Game.deathmatch || Level.Game.deathmatch == 5)
+		if (!Level.Game.deathmatch || Level.Game.deathmatch == HexenDefs::game_sweepteam)
 		{
 			// [FB] Update total kills if needed
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -740,7 +740,7 @@ void Died(Actor source)
 
 			/*// [FB] Increase team kills count too
 			//[CW] Team score is updated automatically now
-			if (Level.Game.deathmatch == 5)
+			if (Level.Game.deathmatch == HexenDefs::game_sweepteam)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
@@ -770,7 +770,7 @@ void Died(Actor source)
 			{
 				// Self-frag
 				//[CW] fixed
-				/*if (Level.Game.deathmatch == 2)
+				/*if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 				{
 					Player.FragsStats[Player.Color]--;
 				}
@@ -785,7 +785,7 @@ void Died(Actor source)
 
 				/*// [FB] We also want to increase the team frags count here too
 				//[CW] Team score is updated automatically now
-				if (Level.Game.deathmatch == 2)
+				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 				{
 					for (i = 0; i < MAXPLAYERS; i++)
 					{
@@ -800,7 +800,7 @@ void Died(Actor source)
 			else
 			{
 				//[CW] fixed
-				/*if (Level.Game.deathmatch == 2)
+				/*if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 				{
 					source.Player.FragsStats[Player.Color]++;
 				}
@@ -817,7 +817,7 @@ void Died(Actor source)
 
 				/*// [FB] We also want to increase the team frags count here too
 				//[CW] Team score is updated automatically now
-				if (Level.Game.deathmatch == 2)
+				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 				{
 					for (i = 0; i < MAXPLAYERS; i++)
 					{
@@ -851,7 +851,7 @@ void Died(Actor source)
 		if (!source)
 		{
 			// Self-frag
-			if (Level.Game.deathmatch == 2)
+			if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 			{
 				Player.FragsStats[Player.Color]--;
 			}
@@ -1286,7 +1286,8 @@ void Damage(Actor inflictor, Actor source, int damage)
 		}
 
 		// [FB] Don't do damage to teammates in team game modes
-		if ((Level.Game.deathmatch == 2 || Level.Game.deathmatch == 3 || Level.Game.deathmatch == 4 || Level.Game.deathmatch == 5)
+		//if ((Level.Game.deathmatch == 2 || Level.Game.deathmatch == 3 || Level.Game.deathmatch == 4 || Level.Game.deathmatch == 5)
+		if ((Level.Game.deathmatch >= NUMGAMESNOTEAM)
 		    && (source && ((source.bIsPlayer) || (source.Instigator
 		    && source.Instigator.bIsPlayer))))
 		{
