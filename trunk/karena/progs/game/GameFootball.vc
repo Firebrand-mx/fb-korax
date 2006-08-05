@@ -63,13 +63,14 @@ struct spot_players_t
 spot_players_t spot_players[2];
 PlayerTeam	Teams[2];
 
-int delay;	// [CW] TODO!!! - how in hell i should use it here??
 
-
-/*void Init(MainGameInfo game)
-{
-	::Init(game);
-}*/
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
 
 void BeginState(int newstate)
 {
@@ -92,19 +93,20 @@ void BeginState(int newstate)
 		if (Teams[1])
 			Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
 		EndCurrentState(state_kickoff);
-		break;
+		return;
 	case state_kickoff:
 		if (spot_ball)
 		{ 
 			if (Ball)
 				Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
 			else
-				Ball = SoccerBall(Level.Spawn(SoccerBall, spot_ball.Origin));
+				Ball = SoccerBall(HexenLevelInfo(Level).Spawn(SoccerBall, spot_ball.Origin));
 		}
 		if (!spot_ball && !Ball)
 		{
 			dprint("GameFootball::BeginState : state_kickoff : there's no ball or ball_spot");
 			EndCurrentState(state_finished);
+			return;
 		}
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -114,27 +116,40 @@ void BeginState(int newstate)
 			   Actor(Teams[1].Players[i].MO).Teleport(spot_players[1].ms[i].Origin, spot_players[1].ms[i].Angles.yaw, true, true, false);
 		}
 		EndCurrentState(state_freeplay);
-		break;
+		return;
 	case state_freeplay:
 	case state_finished:
 	case state_waitforplayerspawn:
 		break;
-	default:
-		::BeginState(0);
 	};
 
 	State = newstate;
 }
 
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
+
 void EndCurrentState(int nextstate)
 {
 	dprint("GameFootball::EndCurrentState : nextstate = %i", nextstate);
 
+	// FIXME! - destroy ball only if it was spawned by GameFootball
 	/*if (nextstate == state_finished && Ball)
 		Ball.Destroy();*/
 
 	BeginState(nextstate);
 }
+
+//==========================================================================
+//
+//	NotifyUpdateTeams
+//
+//==========================================================================
 
 void NotifyUpdateTeams()
 {
@@ -157,11 +172,25 @@ void NotifyUpdateTeams()
 		EndCurrentState(state_waitforplayerspawn);
 }
 
-void NotifySpawnPlayer(Player pl)
+//==========================================================================
+//
+//	NotifyPlayerSpawn
+//
+//==========================================================================
+
+void NotifyPlayerSpawn(Player pl)
 {
 	if (State == state_waitforplayerspawn)
 		EndCurrentState(state_preparematch);
 }
+
+//==========================================================================
+//
+//	HandleGameEvent
+//
+//	ACS callable
+//
+//==========================================================================
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
@@ -209,6 +238,14 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 	}
 }
 
+//==========================================================================
+//
+//	SetGameObject
+//
+//	ACS callable
+//
+//==========================================================================
+
 void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 {
 	dprint("GameFootball::SetGameObject : object = %i, args = %i,%i,%i", object, arg1, arg2, arg3);
@@ -240,6 +277,12 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 		Ball = SoccerBall(A);
 	}
 }
+
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
 
 void End()
 {
