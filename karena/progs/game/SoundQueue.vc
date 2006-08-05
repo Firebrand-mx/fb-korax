@@ -1,0 +1,80 @@
+/*	written by crimson wizard for Korax Arena*/
+
+class SoundQueue : Sequencer;
+
+const int MAX_SOUNDS		= 20;
+
+name	Sounds[MAX_SOUNDS];		// dammit, need dynamic array here!!!
+bool	as_sequence[MAX_SOUNDS];
+int		delay;
+int		delay_limit;
+int		count;
+
+
+//==========================================================================
+//
+//	Continue
+//
+//==========================================================================
+
+void Continue()
+{
+	if (count && !IsLocalSoundPlaying(Sounds[0]))
+	{
+		if (as_sequence[count - 1])
+			delay = delay_limit - 1;
+		PlayNextSound();
+	}
+}
+
+//==========================================================================
+//
+//	NextSound
+//
+//==========================================================================
+
+void PlayNextSound()
+{
+	if (delay < delay_limit)
+		delay++;
+	else if (count)
+	{
+		int i;
+		delay = -1;
+
+		LocalSound(Sounds[0]);
+
+		for (i = 0; i < count; i++)
+		{
+			if (i == MAX_SOUNDS - 1)
+				Sounds[i] = '';
+			else
+				Sounds[i] = Sounds[i + 1];
+		}
+
+		count--;
+	}
+}
+
+//==========================================================================
+//
+//	QueueSound
+//
+//==========================================================================
+
+void QueueSound(name sndName, bool _as_sequence)
+{
+	if (count < MAX_SOUNDS)
+	{
+		Sounds[count] = sndName;
+		as_sequence[count] = _as_sequence;
+		count++;
+	}
+}
+
+
+defaultproperties
+{
+	delay = -1;
+	delay_limit = 0;
+}
