@@ -1,0 +1,341 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: template.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class GameKTH : Game;
+
+enum
+{
+	state_preparegame,
+	state_freeramble,
+	state_heresiarch,
+	state_finished,
+	state_birthsequence,
+	state_deathsequence,
+	state_rebornsequence
+};
+
+enum
+{
+	event_heresiarchspawn,
+	event_heresiarchdead,
+	event_playdeathsequence,
+	event_playbirthsequence
+};
+
+
+Player				plHeresiarch;
+TVec				DeathSpot;
+
+GameSequencer		deathSequencer;
+GameSequencer		birthSequencer;
+
+int		deathsequence_state;
+int		birthsequence_state;
+
+name	originalMusic;
+
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void BeginState(int newstate)
+{
+	dprint("GameKTH::BeginState : newstate = %i", newstate);
+	switch(newstate)
+	{
+	case state_preparegame:
+		EndCurrentState(state_freeramble);
+		return;
+	case state_freeramble:
+		if (Game.Announcer)
+			Game.Announcer.QueueSound('KTH_AwaitingForHeresiarch', false); // awaiting sound here
+		Game.bcenterprint("first fragger shall become heresiarch");
+		break;
+	case state_heresiarch:
+	case state_finished:
+		break;
+	case state_birthsequence:
+	case state_deathsequence:
+	case state_rebornsequence:
+		originalMusic = Game.level->SongLump;
+		deathsequence_state = 0;
+		birthsequence_state = 0;
+		break;
+	};
+
+	State = newstate;
+}
+
+//==========================================================================
+//
+//	TeamFactor
+//
+//==========================================================================
+
+int TeamFactor(Pawn p1, Pawn p2)
+{
+	if (State == state_heresiarch && p1.bIsPlayer && p2.bIsPlayer &&
+				p1 != plHeresiarch.MO && p2 != plHeresiarch.MO)
+		return teamfactor_coop;
+	return teamfactor_any;
+}
+
+//==========================================================================
+//
+//	NotifySpawnPlayer
+//
+//==========================================================================
+
+void NotifyPlayerSpawn(Player pl)
+{
+	// If the game hasn't been started yet and
+	// if there's at least 2 players in game, begin free ramble mode
+	if (State < 0 && pl.GetPlayerNum() > 0)
+		BeginState(state_preparegame);
+}
+
+//==========================================================================
+//
+//	NotifyPlayerDeath
+//
+//==========================================================================
+
+void NotifyPlayerDeath(Player pl, Actor source)
+{
+	dprint("GameKTH::NotifyPlayerDeath");
+	dprint("GameKTH::NotifyPlayerDeath : state = %i", State);
+
+	// For missiles: switch to missile's instigator
+	if (source && source.Instigator)
+	{
+		dprint("GameKTH::NotifyPlayerDeath : switching to missile's instigator");
+		source = source.Instigator;
+	}
+
+	switch (State)
+	{
+	case state_freeramble:
+		dprint("GameKTH::NotifyPlayerDeath : state free ramble");
+		// First fragger becomes Heresiarch
+		if (source && source.bIsPlayer)
+		{
+			dprint("GameKTH::NotifyPlayerDeath : begin birth sequence");
+			plHeresiarch = Player(source.Player);
+			EndCurrentState(state_birthsequence);
+
+			birthSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
+			if (birthSequencer)
+			{
+				birthSequencer.time_limit = 0.2;
+				birthSequencer.event_id = event_playbirthsequence;
+			}
+		}
+		break;
+	case state_heresiarch:
+		dprint("GameKTH::NotifyPlayerDeath : state heresiarch");
+		// Handle Heresiarch death
+		if (pl == plHeresiarch)
+		{
+			dprint("GameKTH::NotifyPlayerDeath : begin reborn sequence");
+
+			DeathSpot = plHeresiarch.MO.Origin;
+			if (source && source.bIsPlayer)
+			{
+				plHeresiarch = Player(source.Player);
+				EndCurrentState(state_rebornsequence);
+
+				deathSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
+				if (deathSequencer)
+				{
+					deathSequencer.time_limit = 0.2;
+					deathSequencer.event_id = event_playdeathsequence;
+				}
+				birthSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
+				if (birthSequencer)
+				{
+					birthSequencer.time_limit = 0.2;
+					birthSequencer.event_id = event_playbirthsequence;
+				}
+			}
+			else
+			{
+				dprint("GameKTH::NotifyPlayerDeath : begin death sequence");
+				plHeresiarch = none;
+				EndCurrentState(state_deathsequence);
+				
+				deathSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
+				if (deathSequencer)
+				{
+					deathSequencer.time_limit = 0.2;
+					deathSequencer.event_id = event_playdeathsequence;
+				}
+			}
+		}
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	HandleGameEvent
+//
+//	ACS callable
+//
+//==========================================================================
+
+void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
+{
+	dprint("GameKTH::HandleGameEvent : event = %i", Event);
+
+	switch (Event)
+	{
+	case event_heresiarchspawn:
+		if (Game.Announcer)
+			Game.Announcer.QueueSound((State == state_rebornsequence ?
+						(P_Random() > 127 ? 'KTH_HeresiarchIsReborn' : 'KTH_HeresiarchIsHere') : 'KTH_HeresiarchIsHere'),
+						false);
+		EndCurrentState(state_heresiarch);
+		break;
+	case event_heresiarchdead:
+		if (Game.Announcer)
+			Game.Announcer.QueueSound((State == state_rebornsequence ?
+						(P_Random() > 127 ? 'KTH_HeresiarchIsDefeated' : 'KTH_HeresiarchIsDown') : 'KTH_HeresiarchIsDown'),
+						false);
+		if (!plHeresiarch)
+			EndCurrentState(state_freeramble);
+		break;
+	case event_playdeathsequence:
+		PlayDeathSequence();
+		break;
+	case event_playbirthsequence:
+		PlayBirthSequence();
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
+void End()
+{
+	dprint("GameKTH::End : ");
+	EndCurrentState(state_finished);
+	::End();
+}
+
+//==========================================================================
+//
+//	PlayDeathSequence
+//
+//==========================================================================
+
+void PlayDeathSequence()
+{
+	dprint("GameKTH::PlayDeathSequence");
+	dprint("----> seq_state = %i", deathsequence_state);
+	switch(deathsequence_state)
+	{
+	case 0:
+		// do some animation here
+		ChangeMusic(va("%n", 'kth_mus1'));
+		break;
+	case 30:
+		HandleGameEvent(none, event_heresiarchdead, 0,0,0,0);
+	default:
+		if (deathsequence_state >= 38)
+		{
+			if (deathSequencer)
+			{
+				RemoveSpecialThinker(deathSequencer);
+				deathSequencer = none;
+			}
+			if (State != state_rebornsequence)
+				ChangeMusic(va("%n", originalMusic));
+			break;
+		}
+	}
+	deathsequence_state++;
+}
+
+//==========================================================================
+//
+//	PlayBirthSequence
+//
+//==========================================================================
+
+void PlayBirthSequence()
+{
+	dprint("GameKTH::PlayBirthSequence");
+	dprint("----> seq_state = %i", birthsequence_state);
+	switch(birthsequence_state)
+	{
+	case 0:
+		// Make heresiarch-morphing player invulnerable & immobile for the period
+		// of birth sequence
+		//plHeresiarch.MO.Deactivate();
+		plHeresiarch.Powers[pw_invulnerability] = 10.0;
+		if (State != state_rebornsequence)
+			birthsequence_state = 39;	// skip waiting for death sequence completion
+		break;
+	case 40:
+		ChangeMusic(va("%n", 'kth_mus2'));
+		break;
+	case 70:
+		HandleGameEvent(none, event_heresiarchspawn, 0,0,0,0);
+		break;
+	default:
+		if (birthsequence_state >= 78)
+		{
+			if (birthSequencer)
+			{
+				RemoveSpecialThinker(birthSequencer);
+				birthSequencer = none;
+			}
+			plHeresiarch.Powers[pw_invulnerability] = 0.0;
+			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_PIG, PlayerPig, false, true);
+			ChangeMusic(va("%n", originalMusic));
+			break;
+		}
+	}
+	birthsequence_state++;
+}
+
+defaultproperties
+{
+}
