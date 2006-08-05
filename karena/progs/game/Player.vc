@@ -84,6 +84,14 @@ struct inventory_t
 	int count;
 };
 
+struct morph_t
+{
+	bool bMorphed;
+	bool bTimer;
+	bool bUntilDeath;
+	float MorphTime;	// player is a pig if > 0
+};
+
 // [CW] I hate to do this, but it is still only way to sent these params to client.
 // I hope Janis shall develop additional data transition mechanism which will allow
 // copying data directly from Level or GameInfo.
@@ -217,7 +225,11 @@ int NewTorch;	// used in the torch flicker effect.
 int NewTorchDelta;
 
 int WeaponPalette;
-float MorphTime;	// player is a pig if > 0
+
+//
+//float MorphTime;	// player is a pig if > 0
+//
+morph_t	Morph;
 
 TVec MoveDir;
 
@@ -696,7 +708,11 @@ void SpawnPlayer(mthing_t * mthing)
 	BonusFlash = 0.0;
 	PoisonCount = 0;
 	BlindCount = 0; // [FB] Reset the blind count too!
-	MorphTime = 0.0;
+	//MorphTime = 0.0;
+	Morph.bMorphed = false;
+	Morph.bTimer = false;
+	Morph.bUntilDeath = false;
+	Morph.MorphTime = 0.0;
 	ExtraLight = 0;
 	FixedColormap = 0;
 	LastSectorDamageTime = 0.0;
@@ -764,7 +780,7 @@ void SpawnPlayer(mthing_t * mthing)
 
 	// [CW] if there is advanced game mode initiated, notify it of player spawn
 	if (MainGameInfo(Level.Game).GameMode)
-		MainGameInfo(Level.Game).GameMode.NotifySpawnPlayer(self);
+		MainGameInfo(Level.Game).GameMode.NotifyPlayerSpawn(self);
 }
 
 //==========================================================================
@@ -857,10 +873,13 @@ void PlayerExitMap(bool clusterChange)
 		}
 	}
 
-	if (MorphTime)
+	if (Morph.bMorphed/*MorphTime*/)
 	{
 		SetWeapon(Actor(MO)._Special1);	// Restore weapon
-		MorphTime = 0.0;
+		Morph.bMorphed = false;
+		Morph.bTimer = false;
+		Morph.bUntilDeath = false;
+		Morph.MorphTime = 0.0;
 	}
 	MO.Angles.pitch = 0.0;
 	MO.Translucency = 0;	// Remove invisibility
@@ -933,7 +952,7 @@ bool GiveBody(int num)
 	int max;
 
 	max = max_health;
-	if (MorphTime)
+	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 	{
 		max = MAXMORPHHEALTH;
 	}
@@ -1672,7 +1691,7 @@ void MovePlayer(float deltaTime)
 		break;
 	}
 
-	if (Powers[pw_speed] && !MorphTime)
+	if (Powers[pw_speed] && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		// Adjust for a player with a speed artifact
 		forward *= 1.5;
@@ -1747,7 +1766,7 @@ void MovePlayer(float deltaTime)
 	}
 	if ((Buttons & BT_JUMP) && onground && !JumpTime)
 	{
-		if (MorphTime)
+		if (PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
 			MO.Velocity.z = 6.5 * 35.0;
 		}
@@ -1841,7 +1860,7 @@ void WaterMove(float deltaTime)
 		break;
 	}
 
-	if (Powers[pw_speed] && !MorphTime)
+	if (Powers[pw_speed] && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		// Adjust for a player with a speed artifact
 		forward *= 1.5;
@@ -1967,7 +1986,7 @@ void CalcHeight(float deltaTime)
 				DeltaViewHeight = 0.00001;
 		}
 	}
-	if (MorphTime)
+	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 	{
 		ViewOrg.z = MO.Origin.z + ViewHeight - 20.0;
 	}
@@ -2315,7 +2334,7 @@ void PrevWeapon()
 	int			i;
 	int			NewWeap;
 
-	if (MorphTime)
+	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 		return;
 	for (i = HexenDefs::NUMWEAPONS - 1; i > 0; i--)
 	{
@@ -2339,7 +2358,7 @@ void NextWeapon()
 	int			i;
 	int			NewWeap;
 
-	if (MorphTime)
+	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 		return;
 	for (i = 1; i < HexenDefs::NUMWEAPONS; i++)
 	{
@@ -2373,12 +2392,12 @@ void PlayerImpulse()
 		// psprite can do it (A_WeaponReady), so it doesn't happen in
 		// the middle of an attack.
 		if (WeaponOwned[impulse - 1] &&
-			impulse - 1 != ReadyWeapon && !MorphTime)
+			impulse - 1 != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
 			PendingWeapon = impulse - 1;
 		}
 	}
-	else if (impulse == 13 && !MorphTime)
+	else if (impulse == 13 && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
 		newWeapon = ReadyWeapon;
@@ -2394,7 +2413,7 @@ void PlayerImpulse()
 			PendingWeapon = newWeapon;
 		}		
 	}
-	else if (impulse == 14 && !MorphTime)
+	else if (impulse == 14 && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
 		newWeapon = ReadyWeapon;
@@ -2509,7 +2528,7 @@ void PlayerImpulse()
 void MorphPlayerThink()
 {
 	//FIXME this sucks
-	if (ftoi(32.0 * MorphTime) & 15)
+	if (ftoi(32.0 * Morph.MorphTime) & 15)
 	{
 		return;
 	}
@@ -2573,7 +2592,7 @@ bool UndoPlayerMorph()
 		// Didn't fit
 		A.Remove();
 		MO.LinkToWorld();
-		MorphTime = 2.0;
+		Morph.MorphTime = 2.0;
 		return false;
 	}
 	MO.LinkToWorld();
@@ -2586,7 +2605,7 @@ bool UndoPlayerMorph()
 		A.bFly = true;
 		A.bNoGravity = true;
 	}
-	MorphTime = 0.0;
+	Morph.MorphTime = 0.0;
 	A.Health = max_health;
 	Health = A.Health;
 	PClass = BaseClass;
@@ -2741,6 +2760,7 @@ void DeathPlayerTick(float deltaTime)
 	}
 
 	//[CW] Show scoreboard for died player
+	// FIXME!!!	do it really need to be here? playertick is called multiple times!
 	Scoreboard(true);
 
 	if (Buttons & BT_USE)
@@ -2844,7 +2864,7 @@ void PlayerTick(float deltaTime)
 		if (JumpTime <= 0.0)
 			JumpTime = 0.0;
 	}
-	if (MorphTime)
+	if (Morph.bTimer && Morph.MorphTime)
 	{
 		MorphPlayerThink();
 	}
@@ -2905,7 +2925,7 @@ void PlayerTick(float deltaTime)
 	PlayerInContents();
 
 	if (MO.Velocity.z <= -35.0 * 35.0 && MO.Velocity.z >= -40.0 * 35.0 &&
-		!MorphTime && !GetSoundPlayingInfo(MO, GetSoundID('*falling')))
+		/*!MorphTime*/ PClass != HexenDefs::PCLASS_PIG && !GetSoundPlayingInfo(MO, GetSoundID('*falling')))
 	{
 		MO.PlaySound('*falling', CHAN_VOICE);
 	}
@@ -2931,13 +2951,13 @@ void PlayerTick(float deltaTime)
 	}
 
 	// Morph counter
-	if (MorphTime)
+	if (Morph.bTimer && Morph.MorphTime)
 	{
-		MorphTime -= deltaTime;
-		if (MorphTime <= 0.0)
+		Morph.MorphTime -= deltaTime;
+		if (Morph.MorphTime <= 0.0)
 		{
 			// Attempt to undo the pig
-			MorphTime = 0.0;
+			Morph.MorphTime = 0.0;
 			UndoPlayerMorph();
 		}
 	}
@@ -3742,7 +3762,7 @@ void UseArtiTele()
 	}
 	Actor(MO).Teleport(vector(destX, destY, Actor::ONFLOORZ), destAngle, true, true,
 		false);
-	if (MorphTime)
+	if (Morph.bMorphed && PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 	{
 		// Teleporting away will undo any morph effects (pig)
 		UndoPlayerMorph();
@@ -4563,7 +4583,7 @@ bool PTR_UseTraverse(intercept_t * in)
 			hit_point.z + MO.Height);
 		if (!open)
 		{
-			if (MorphTime)
+			if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 			{
 				MO.PlaySound('PigActive1', CHAN_VOICE);
 			}
@@ -4576,7 +4596,7 @@ bool PTR_UseTraverse(intercept_t * in)
 		pheight = MO.Origin.z + MO.Height / 2.0;
 		if ((open->top < pheight) || (open->bottom > pheight))
 		{
-			if (MorphTime)
+			if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 			{
 				MO.PlaySound('PigActive1', CHAN_VOICE);
 			}
@@ -4785,7 +4805,7 @@ void Cheat_Gimme()
 	}
 	if (Cmd_CheckParm("health"))
 	{
-		if (MorphTime)
+		if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
 		{
 			MO.Health = MAXMORPHHEALTH;
 			Health = MO.Health;
@@ -4852,13 +4872,13 @@ void Cheat_KillAll()
 
 void Cheat_Morph()
 {
-	if (MorphTime)
+	if (Morph.bMorphed/*MorphTime*/)
 	{
 		UndoPlayerMorph();
 	}
 	else
 	{
-		Actor(MO).MorphPlayer();
+		Actor(MO).MorphPlayer(HexenDefs::PCLASS_PIG, PlayerPig, false, false);
 	}
 	cprint("SQUEAL!!");
 }
@@ -4873,7 +4893,7 @@ void Cheat_NoWeapons()
 {
 	int i;
 
-	if (MorphTime)
+	if (Morph.bMorphed/*MorphTime*/)
 	{
 		return;
 	}
@@ -4897,7 +4917,7 @@ void Cheat_Class()
 	int i;
 	int pclass;
 
-	if (MorphTime)
+	if (Morph.bMorphed/*MorphTime*/)
 	{
 		// don't change class if the player is morphed
 		return;

@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -832,21 +832,12 @@ void Died(Actor source)
 		}
 	}
 
-	//[CW] ------->
-	//
-	// probably this code is not needed now;
-	// ScoreboardUpdate is called from UpdateCompetition, which happens each
-	// time after UpdateScore is called.
-	//
-	/*//[CW] If player participated in this death (as victim or instigator),
-	// then update all server clients' scoreboards.
-	if (Player)
-		Player(Player).ScoreboardsUpdate(false);
-	else if (source && source.Player)
-		Player(source.Player).ScoreboardsUpdate(false);*/
-
 	if (bIsPlayer)
 	{
+		//[CW] notify advanced game mode
+		if (MainGameInfo(Level.Game).GameMode)
+			MainGameInfo(Level.Game).GameMode.NotifyPlayerDeath(Player(Player), source);
+
 		// Player death
 		if (!source)
 		{
@@ -1018,11 +1009,11 @@ void TouchWhirlwind(Actor Other)
 //
 //  MorphPlayer
 //
-//  Returns true if the player gets turned into a pig
+//  [CW] Morph player into... err... something
 //
 //==========================================================================
 
-bool MorphPlayer()
+bool MorphPlayer(int pclass, classid moclass, bool timed, bool until_death)
 {
 	Actor fog;
 	Actor beastMo;
@@ -1033,7 +1024,7 @@ bool MorphPlayer()
 		// Immune when invulnerable
 		return (false);
 	}
-	if (Player(Player).MorphTime)
+	if (Player(Player).Morph.bMorphed/*MorphTime*/)
 	{
 		// Player is already a beast
 		return false;
@@ -1042,7 +1033,7 @@ bool MorphPlayer()
 	fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
-	beastMo = Spawn(PlayerPig, Origin);
+	beastMo = Spawn(/*PlayerPig*/moclass, Origin);
 	beastMo._Special1 = Player(Player).ReadyWeapon;
 	beastMo.Angles = Angles;
 	beastMo.Player = Player;
@@ -1056,9 +1047,13 @@ bool MorphPlayer()
 	}
 */
 	Player(Player).ArmorPoints = 0;
-	Player.PClass = HexenDefs::PCLASS_PIG;
+	Player.PClass = pclass/*HexenDefs::PCLASS_PIG*/;
 	beastMo.bFly = bFly;
-	Player(Player).MorphTime = Player::MORPHTIME;
+	Player(Player).Morph.bMorphed = true;
+	Player(Player).Morph.bTimer = timed;
+	Player(Player).Morph.bUntilDeath = until_death;
+	if (timed)
+		Player(Player).Morph.MorphTime = Player::MORPHTIME;
 	Player(Player).ActivateMorphWeapon();
 
 	SetState(S_FREETARGMOBJ);
@@ -1287,7 +1282,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 
 		// [FB] Don't do damage to teammates in team game modes
 		//if ((Level.Game.deathmatch == 2 || Level.Game.deathmatch == 3 || Level.Game.deathmatch == 4 || Level.Game.deathmatch == 5)
-		if ((Level.Game.deathmatch >= NUMGAMESNOTEAM)
+		if ((Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		    && (source && ((source.bIsPlayer) || (source.Instigator
 		    && source.Instigator.bIsPlayer))))
 		{
@@ -1355,7 +1350,8 @@ void Damage(Actor inflictor, Actor source, int damage)
 			Player(Player).ArmorPoints = 0; // [FB] No negative armor points
 		}
 		if (damage >= Player.Health
-			&& ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) && !Player(Player).MorphTime)
+			&& ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
+			Player(Player).PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
 		{
 			// Try to use some inventory health
 			AutoUseHealth(damage - Health + 1);
@@ -1395,7 +1391,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 			// check for special fire damage or ice damage deaths
 			if (inflictor.bFireDamage)
 			{
-				if (bIsPlayer && !Player(Player).MorphTime)
+				if (bIsPlayer && Player(Player).PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
 				{
 					// Check for flame death
 					if (Health > -50 && damage > 25)
@@ -1597,7 +1593,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 		return;
 	}
 	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		!Player(Player).MorphTime)
+		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
 		AutoUseHealth(damage - Player.Health + 1);
@@ -1617,7 +1613,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		// Death
 		_Special1 = damage;
-		if (bIsPlayer && inflictor && !Player(Player).MorphTime)
+		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
 			if (inflictor.bFireDamage && (Health > -50) && (damage > 25))
@@ -1691,7 +1687,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 		return;
 	}
 	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		!Player(Player).MorphTime)
+		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
 		AutoUseHealth(damage - Player.Health + 1);
@@ -1711,7 +1707,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		// Death
 		_Special1 = damage;
-		if (bIsPlayer && inflictor && !Player(Player).MorphTime)
+		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
 			if (inflictor.bFireDamage && (Health > -50) && (damage > 25))
@@ -2660,12 +2656,12 @@ bool HitFloor()
 					FallingDamage();
 					HexenLevelInfo(Level).NoiseAlert(self, self);
 				}
-				else if (vdot < -DEFAULT_GRAVITY * 0.375 && !Player(Player).MorphTime)
+				else if (vdot < -DEFAULT_GRAVITY * 0.375 && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 				{
 					PlaySound('*land', CHAN_BODY);
 					PlaySound('*grunt', CHAN_VOICE);
 				}
-				else if (GetFloorType() < FLOOR_LIQUID && !Player(Player).MorphTime)
+				else if (GetFloorType() < FLOOR_LIQUID && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 				{
 					PlaySound('*land', CHAN_BODY);
 				}
@@ -2845,12 +2841,12 @@ void PlayerLandedOnThing()
 		FallingDamage();
 		HexenLevelInfo(Level).NoiseAlert(self, self);
 	}
-	else if (Velocity.z < -DEFAULT_GRAVITY * 0.375 && !Player(Player).MorphTime)
+	else if (Velocity.z < -DEFAULT_GRAVITY * 0.375 && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		PlaySound('*land', CHAN_BODY);
 		PlaySound('*grunt', CHAN_VOICE);
 	}
-	else if (!Player(Player).MorphTime)
+	else if (/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		PlaySound('*land', CHAN_BODY);
 	}
@@ -4361,7 +4357,7 @@ void A_UnSetInvulnerable()
 
 void A_Pain()
 {
-	if (bIsPlayer && !Player(Player).MorphTime)
+	if (bIsPlayer && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		if (Health < 25)
 		{
@@ -4422,7 +4418,7 @@ void A_Scream()
 	StopSound(CHAN_AUTO);
 	if (bIsPlayer)
 	{
-		if (Player(Player).MorphTime)
+		if (/*Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			PlaySound(DeathSound, CHAN_VOICE);
 		}
