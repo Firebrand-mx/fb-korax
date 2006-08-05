@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -58,6 +58,9 @@ int TaggedLineCount;
 float AutoArmorSave[HexenDefs::NUMCLASSES];
 float ArmorIncrement[HexenDefs::NUMCLASSES * HexenDefs::NUMARMOR];
 
+// Color names
+string ColorNames[HexenDefs::MAXPLAYERTEAMS];
+
 //
 //  Pickup messages
 //
@@ -102,6 +105,8 @@ Actor PuffSpawned;
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
 Game		GameMode;			// [CW] for advanced game modes
 
+SoundQueue	Announcer;			// [CW] my damn-good sound queue in action 8]
+
 //==========================================================================
 //
 //	Init
@@ -145,19 +150,25 @@ void Init()
 
 void InitNewGame(int skill)
 {
+	int mode;
+
 	nomonsters = GetCvar('NoMonsters');
 	fastparm = gameskill == sk_nightmare || GetCvar('Fast');
 	randomclass = GetCvar('RandomClass');
 
 	// init GameMode
-	// [CW]		Currently I have created game mode class for football only.
-	//		If needed, similar classes can be created for some other modes.
 	if (GameMode)
-		GameMode.Destroy();
+		GameMode.End();
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
-	if (GetCvar('deathmatch') == HexenDefs::game_football)
-		GameMode = Game(SpawnObject(GameFootball));
+	mode = GetCvar('deathmatch');
+	switch (mode)
+	{
+	case HexenDefs::game_football:
+		GameMode = Game(SpawnObject(GameFootball)); break;
+	case HexenDefs::game_kth:
+		GameMode = Game(SpawnObject(GameKTH)); break;
+	}
 	if (GameMode)
 		GameMode.Init(self);
 }
@@ -170,16 +181,14 @@ void InitNewGame(int skill)
 
 LevelInfo CreateLevelInfo()
 {
-	//[CW] ---> maybe temporal:
-	dprint("MainGameInfo::CreateLevelInfo : ");
+	//return LevelInfo(NewSpecialThinker(HexenLevelInfo));
+
+	//[CW]
 	HexenLevelInfo levelinfo = HexenLevelInfo(NewSpecialThinker(HexenLevelInfo));
+	Announcer = SoundQueue(NewSpecialThinker(SoundQueue));
 	if (GameMode)
 		GameMode.Level = levelinfo;
 	return LevelInfo(levelinfo);
-	
-	
-	// [CW] ---> original code:
-	//return LevelInfo(NewSpecialThinker(HexenLevelInfo));
 }
 
 //==========================================================================
@@ -4190,6 +4199,15 @@ defaultproperties
 	ArmorIncrement[16] = 20.0; ArmorIncrement[17] = 15.0; ArmorIncrement[18] = 10.0; ArmorIncrement[19] = 5.0; // Marine Class
 	ArmorIncrement[20] = 10.0; ArmorIncrement[21] = 25.0; ArmorIncrement[22] = 15.0; ArmorIncrement[23] = 5.0; // Witchaven Class
 	ArmorIncrement[24] = 0.0; ArmorIncrement[25] = 0.0; ArmorIncrement[26] = 0.0; ArmorIncrement[27] = 0.0;
+
+	ColorNames[0] = "blue";
+	ColorNames[1] = "red";
+	ColorNames[2] = "gold";
+	ColorNames[3] = "lime";
+	ColorNames[4] = "green";
+	ColorNames[5] = "gray";
+	ColorNames[6] = "brown";
+	ColorNames[7] = "magenta";
 
 	fourthWeaponText[0] = "QUIETUS ASSEMBLED";
 	fourthWeaponText[1] = "WRAITHVERGE ASSEMBLED";
