@@ -318,15 +318,21 @@ void StartMap()
 
 void SB_DrawBackground()
 {
-	sb_health = HealthMarker;
-
 	// [FB] Calculate the max_health value according the player level
 	m_h = cl.max_health;
+	sb_health = HealthMarker;
 
 	if (sb_health < 0)
+	{
 		sb_health = 0;
+	}
 	else if (sb_health > m_h)
+	{
 		sb_health = m_h;
+	}
+
+	// draw something in the blank spaces
+	R_FillRectWithFlat(0, 441, 640, 39, 'f_022');
 
 	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
 	R_DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
