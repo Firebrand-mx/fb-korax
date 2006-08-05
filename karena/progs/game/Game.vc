@@ -33,13 +33,29 @@
 // Class Game, parent class for advanced game modes
 //
 
-class Game : Object;
+class Game : Object
+	abstract;
 
-MainGameInfo	Game;
-HexenLevelInfo	Level;
+// team factors
+enum
+{
+	teamfactor_any,			// do not influence pawn relations at all
+	teamfactor_coop,
+	teamfactor_neutral,
+	teamfactor_enemy
+};
+
+MainGameInfo		Game;
+HexenLevelInfo		Level;
 
 int		State;		// current game state
 
+
+//==========================================================================
+//
+//	Init
+//
+//==========================================================================
 
 void Init(MainGameInfo game)
 {
@@ -47,47 +63,141 @@ void Init(MainGameInfo game)
 	Game = game;
 }
 
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
+
 void BeginState(int newstate)
 {
 	dprint("Game::BeginState : possibly unknown state is set");
 }
+
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
 
 void EndCurrentState(int nextstate)
 {
 	BeginState(nextstate);
 }
 
-bool ConfirmAddTeam()	//????????
+//==========================================================================
+//
+//	ConfirmAddTeam
+//
+//==========================================================================
+
+bool ConfirmAddTeam()	//???????? need this?
 {
+	return false;
 }
 
-bool ConfirmAddPlayer()	//????????
+//==========================================================================
+//
+//	ConfirmAddPlayer
+//
+//==========================================================================
+
+bool ConfirmAddPlayer()	//???????? need this?
 {
+	return false;
 }
+
+//==========================================================================
+//
+//	TeamFactor
+//
+//==========================================================================
+
+int TeamFactor(Pawn p1, Pawn p2)
+{
+	return teamfactor_neutral;
+}
+
+//==========================================================================
+//
+//	NotifyUpdateTeams
+//
+//==========================================================================
 
 void NotifyUpdateTeams()
 {
 }
 
-void NotifySpawnPlayer(Player pl)
+//==========================================================================
+//
+//	NotifySpawnPlayer
+//
+//==========================================================================
+
+void NotifyPlayerSpawn(Player pl)
 {
 }
+
+//==========================================================================
+//
+//	NotifyPlayerDeath
+//
+//==========================================================================
+
+void NotifyPlayerDeath(Player pl, Actor source)
+{
+}
+
+//==========================================================================
+//
+//	HandleGameEvent
+//
+//	ACS callable
+//
+//==========================================================================
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
 }
 
+//==========================================================================
+//
+//	SetGameObject
+//
+//	ACS callable
+//
+//==========================================================================
+
 void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 {
 }
+
+//==========================================================================
+//
+//	SetGameObjective
+//
+//	ACS callable
+//
+//==========================================================================
 
 void SetGameObjective(int objective, int arg2, int arg3, int arg4, int arg5)
 {
 }
 
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
 void End()
 {
 	dprint("Game::End : ");
+	Game.GameMode = none;
 	Destroy();
 }
 
