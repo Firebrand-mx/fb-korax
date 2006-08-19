@@ -33,6 +33,7 @@
 class PoisonCloud : Effect;
 
 int LifeCount;
+int SpawnChildren;	// [CW] advanced ability
 int BobIndex;
 
 //==========================================================================
@@ -131,6 +132,34 @@ void A_PoisonBagCheck()
 	}
 }
 
+//===========================================================================
+//
+//  A_SpawnChildren
+//
+// [CW] Advanced ability (for Cleric's 6th weapon)
+//
+//===========================================================================
+
+void A_SpawnChildren()
+{
+	if (SpawnChildren > 0)
+	{
+		int i;
+		for (i = 0; i < SpawnChildren; i++)
+		{
+			PoisonCloud pc = PoisonCloud(HexenLevelInfo(Level).Spawn(PoisonCloud,
+								Origin + vector((Random() - 0.5) * 256.0, (Random() - 0.5) * 256.0,
+													(Random() - 0.5) * 64.0)));
+			if (pc)
+			{
+				pc.InitMeCloud(Instigator);
+				pc.LifeCount >> 2;
+				pc.Velocity.x = 0.00001;
+			}
+		}
+	}
+}
+
 __states__
 {
 	S_POISONCLOUD1('PSBG', 3, 2.0 / 35.0, S_POISONCLOUD2) { }
@@ -151,7 +180,7 @@ __states__
 	S_POISONCLOUD16('PSBG', 8, 2.0 / 35.0, S_POISONCLOUD17) { A_PoisonBagDamage(); }
 	S_POISONCLOUD17('PSBG', 8, 1.0 / 35.0, S_POISONCLOUD18) { A_PoisonBagDamage(); }
 	S_POISONCLOUD18('PSBG', 8, 1.0 / 35.0, S_POISONCLOUD4) { A_PoisonBagCheck(); }
-	S_POISONCLOUD_X1('PSBG', 7, 7.0 / 35.0, S_POISONCLOUD_X2) { }
+	S_POISONCLOUD_X1('PSBG', 7, 7.0 / 35.0, S_POISONCLOUD_X2) { A_SpawnChildren(); }
 	S_POISONCLOUD_X2('PSBG', 6, 7.0 / 35.0, S_POISONCLOUD_X3) { }
 	S_POISONCLOUD_X3('PSBG', 5, 6.0 / 35.0, S_POISONCLOUD_X4) { }
 	S_POISONCLOUD_X4('PSBG', 3, 6.0 / 35.0, none) { }
