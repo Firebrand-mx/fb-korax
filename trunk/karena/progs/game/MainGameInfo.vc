@@ -79,6 +79,10 @@ string SelfFragDeathMessage[3];
 string FallingDeathMessage[3];
 string DeathMessage[HexenDefs::NUMWEAPONS * HexenDefs::NUMCLASSES + 17];  // increase if needed
 
+//[CW] Prizes
+string TrophyText[HexenDefs::NUMTROPHIES];
+name TrophyVoice[HexenDefs::NUMTROPHIES];
+
 //[CW] Pawn names
 string PawnName[25];		// increase if needed
 
@@ -4099,12 +4103,27 @@ void bcenterprint(string msg)
 	}
 }
 
+//==========================================================================
+//
+//  BroadcastLocalSound
+//
+//	[CW]					WARNING!!! FUNCTION INCOMPLETED! DO NOT USE!
+//
+//==========================================================================
+
+void BroadcastLocalSound(int sound, bool put_in_queue, bool as_sequence)
+{
+	MSG_Select(MSG_SV_DATAGRAM);
+	MSG_WriteByte(HexenDefs::svc_localsound);
+	MSG_WriteShort(sound);
+
+	// FIXME FIXME FIXME ---------------------
+}
 
 
 defaultproperties
 {
 	num_stats = 1/*NUMARMOR*/ + HexenDefs::NUMMANA + 7 + HexenDefs::NUMARTIFACTS * 2 + HexenDefs::KORAX_STATS + 7 * MAXPLAYERS;
-	// [CW] check this later!!!
 
 // First Weapon	
 	WeaponClasses[0] = WeaponFighterPunch;
@@ -4149,7 +4168,7 @@ defaultproperties
 //Sixth Weapon
 	WeaponClasses[35] = WeaponFighterHammer;
 	WeaponClasses[36] = WeaponPoisonBreath;
-	WeaponClasses[37] = WeaponWhirlWind;
+	WeaponClasses[37] = WeaponMageStaff;//WeaponWhirlWind;
 	WeaponClasses[38] = WeaponSkullRodUp;
 	WeaponClasses[39] = WeaponSuperShotgun;
 	WeaponClasses[40] = WeaponWitchavenFireballSpell;
@@ -4157,7 +4176,7 @@ defaultproperties
 //Seventh Weapon
 	WeaponClasses[42] = WeaponFighterSwordMelee;
 	WeaponClasses[43] = WeaponPhoenixRod;
-	WeaponClasses[44] = WeaponMageStaff;
+	WeaponClasses[44] = WeaponMageWhyvern;//WeaponMageStaff;
 	WeaponClasses[45] = WeaponPhoenixRodUp;
 	WeaponClasses[46] = WeaponPlasma;
 	WeaponClasses[47] = WeaponWitchavenLongBow;
@@ -4323,8 +4342,8 @@ defaultproperties
 	DeathMessage[18] = "%s was enlightened by %s's firewand";
 	DeathMessage[19] = "%s was frozen by %s";
 	DeathMessage[20] = "%s was electrocuted by %s";
-	DeathMessage[21] = "%s was blown away by %s's will";
-	DeathMessage[22] = "%s was fragged by %s's bloodscourge";
+	DeathMessage[21] = "%s was fragged by %s's bloodscourge";	//"%s was blown away by %s's will";
+	DeathMessage[22] = "%s was burnt by %s's whyvern breath";	//"%s was fragged by %s's bloodscourge";
 	DeathMessage[23] = "%s painfully suffered to death by %s's will";
 // Heretic
 	DeathMessage[24] = "%s was necrocuted by %s";
@@ -4382,6 +4401,19 @@ defaultproperties
 	DeathMessage[71] = "%s fell in %s's claws";		// stalker melee
 	DeathMessage[72] = "%s's life was drained by a %s";	// wraith melee
 	
+	TrophyText[0] = "double kill!";
+	TrophyText[1] = "tripple kill!";
+	TrophyText[2] = "quadrupple kill!";
+	TrophyText[3] = "multiple kill!";
+	TrophyText[4] = "impossible kill!";
+	TrophyText[5] = "good hunt!";
+	TrophyText[6] = "massacre!";
+	TrophyText[7] = "devastation!";
+	TrophyText[8] = "elimination!";
+	TrophyText[9] = "%i frags in a row!";
+	TrophyText[10] = "%i kills in a row!";
+	TrophyText[11] = "%i deaths in a row!";
+	TrophyText[12] = "accuracy!";
 
 	//
 	//[CW] Pawn names
