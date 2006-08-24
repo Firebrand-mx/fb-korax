@@ -81,7 +81,6 @@ string DeathMessage[HexenDefs::NUMWEAPONS * HexenDefs::NUMCLASSES + 17];  // inc
 
 //[CW] Prizes
 string TrophyText[HexenDefs::NUMTROPHIES];
-name TrophyVoice[HexenDefs::NUMTROPHIES];
 
 //[CW] Pawn names
 string PawnName[25];		// increase if needed
@@ -109,7 +108,7 @@ Actor PuffSpawned;
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
 Game		GameMode;			// [CW] for advanced game modes
 
-SoundQueue	Announcer;			// [CW] my damn-good sound queue in action 8]
+//SoundQueue	Announcer;		-- moved to client side
 
 //==========================================================================
 //
@@ -189,7 +188,7 @@ LevelInfo CreateLevelInfo()
 
 	//[CW]
 	HexenLevelInfo levelinfo = HexenLevelInfo(NewSpecialThinker(HexenLevelInfo));
-	Announcer = SoundQueue(NewSpecialThinker(SoundQueue));
+	//////////Announcer = SoundQueue(NewSpecialThinker(SoundQueue));
 	if (GameMode)
 		GameMode.Level = levelinfo;
 	return LevelInfo(levelinfo);
@@ -4107,17 +4106,17 @@ void bcenterprint(string msg)
 //
 //  BroadcastLocalSound
 //
-//	[CW]					WARNING!!! FUNCTION INCOMPLETED! DO NOT USE!
+//	[CW]
 //
 //==========================================================================
 
-void BroadcastLocalSound(int sound, bool put_in_queue, bool as_sequence)
+void BroadcastLocalSound(int sound, bool put_in_queue, float delay)
 {
 	MSG_Select(MSG_SV_DATAGRAM);
 	MSG_WriteByte(HexenDefs::svc_localsound);
-	MSG_WriteShort(sound);
-
-	// FIXME FIXME FIXME ---------------------
+	MSG_WriteByte(sound);
+	MSG_WriteByte(put_in_queue);
+	MSG_WriteShort(ftoi(delay * 100.0));
 }
 
 

@@ -84,6 +84,20 @@ struct inventory_t
 	int count;
 };
 
+struct trophies_t
+{
+	int		frags_at_once;
+	int		kills_at_once;
+	float	fao_timer;
+	float	kao_timer;
+	bool	deathrow;
+	int		frags_row;		// used for death rows as well
+	int		kills_row;
+	int		hit_per_shot;
+	int		damage_per_shot;
+	TVec	shot_position;	// for accuracy trophy
+};
+
 struct morph_t
 {
 	bool bMorphed;
@@ -263,6 +277,9 @@ PlayerTeam	Team;	//[CW]
 
 int targetnamehint_counter;	//[CW]
 
+// [CW] for trophy announcements
+trophies_t	Trophies;
+
 //==========================================================================
 //
 //	PutClientIntoServer
@@ -353,6 +370,16 @@ void SpawnClient()
 
 	// Destroy all things touching players
 	Actor(MO).TeleportMove(MO.Origin);
+
+	// [CW] check trophies
+	if (Trophies.fao_timer > 0.0)
+		ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
+	if (Trophies.kao_timer > 0.0)
+		ConfirmTrophy(HexenDefs::trophycl_killsatonce);
+	if (Trophies.frags_row > 0)
+		ConfirmTrophy(HexenDefs::trophycl_fragsrow);
+	if (Trophies.kills_row > 0)
+		ConfirmTrophy(HexenDefs::trophycl_killsrow);
 }
 
 //==========================================================================
@@ -2858,6 +2885,9 @@ void PlayerTick(float deltaTime)
 		return;
 	}
 
+	//[CW] trophies timed update
+	UpdateTimedTrophies(deltaTime);
+
 	if (JumpTime)
 	{
 		JumpTime -= deltaTime;
@@ -4954,6 +4984,23 @@ void Cheat_Class()
 
 //==========================================================================
 //
+//  CallLocalSound
+//
+//	[CW]
+//
+//==========================================================================
+
+void CallLocalSound(int sound, bool put_in_queue, float delay)
+{
+	SelectClientMsg(MSG_SV_CLIENT);
+	MSG_WriteByte(HexenDefs::svc_localsound);
+	MSG_WriteByte(sound);
+	MSG_WriteByte(put_in_queue);
+	MSG_WriteShort(ftoi(delay * 100.0));
+}
+
+//==========================================================================
+//
 //  UpdateScore
 //
 //  [CW] Updates current player's score.
@@ -5161,6 +5208,156 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
 	}
 }
+
+//==========================================================================
+//
+//  ConfirmTrophy
+//
+//	[CW]
+//
+//==========================================================================
+
+void ConfirmTrophy(int type)
+{
+	int a, announcement;
+	int value;
+
+	if (type >= HexenDefs::NUMTROPHIES)
+		return;
+
+	switch (type)
+	{
+	case HexenDefs::trophycl_killsatonce:
+		a = -1;
+		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_HUNT) a++;
+		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_MASSACRE) a++;
+		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_DEVASTATION) a++;
+		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_ELIMINATION) a++;
+		if (a < 0)
+		{
+			Trophies.kills_at_once = 0;
+			return;
+		}
+		announcement = HexenDefs::trophy_hunt + a;
+		value = Trophies.kills_at_once;
+		break;
+	case HexenDefs::trophycl_fragsatonce:
+		if (Trophies.frags_at_once < 2)
+		{
+			Trophies.frags_at_once = 0;
+			return;
+		}
+		announcement = HexenDefs::trophy_doublekill + Trophies.frags_at_once - 2;
+		if (announcement > HexenDefs::trophy_LAST_fao)
+			announcement = HexenDefs::trophy_LAST_fao;
+		value = Trophies.frags_at_once;
+		break;
+	case HexenDefs::trophycl_fragsrow:
+		if (Trophies.frags_row < HexenDefs::TROPHY_FRAGSROW_LIMIT)
+		{
+			Trophies.frags_row = 0;
+			return;
+		}
+		announcement = HexenDefs::trophy_frags_row;
+		value = Trophies.frags_row;
+		break;
+	case HexenDefs::trophycl_killsrow:
+		if (Trophies.kills_row < HexenDefs::TROPHY_KILLSROW_LIMIT)
+		{
+			Trophies.kills_row = 0;
+			return;
+		}
+		announcement = HexenDefs::trophy_kills_row;
+		value = Trophies.kills_row;
+		break;
+	case HexenDefs::trophycl_accuracy:
+		announcement = HexenDefs::trophy_accuracy; break;
+	default:
+		return;
+	}
+
+	centerprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
+	//////////////MainGameInfo(Level.Game).Announcer.QueueSound(MainGameInfo(Level.Game).TrophyVoice[announcement], false);
+	CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
+
+
+	// [CW] if the trophy data should be stored, do it here
+
+
+
+	switch (type)
+	{
+	case HexenDefs::trophycl_killsatonce:
+		Trophies.kills_at_once = 0;
+		Trophies.kao_timer = 0.0;
+		break;
+	case HexenDefs::trophycl_fragsatonce:
+		Trophies.frags_at_once = 0;
+		Trophies.fao_timer = 0.0;
+		break;
+	case HexenDefs::trophycl_fragsrow:
+		Trophies.frags_row = 0; break;
+	case HexenDefs::trophycl_killsrow:
+		Trophies.kills_row = 0; break;
+	}
+}
+
+//==========================================================================
+//
+//  UpdateQueuedTrophy
+//
+//	[CW] Queued trophies are trophies that depend on number
+//		 of specific events occured in a sequence (there's a
+//		 split for timed and non-timed).
+//
+//==========================================================================
+
+void UpdateQueuedTrophy(int type, int value)
+{
+	if (type >= HexenDefs::NUMTROPHIES)
+		return;
+
+	switch (type)
+	{
+	case HexenDefs::trophycl_killsatonce:
+		Trophies.kills_at_once += value;
+		Trophies.kao_timer = HexenDefs::TROPHY_KAO_TIME;
+		break;
+	case HexenDefs::trophycl_fragsatonce:
+		Trophies.frags_at_once += value;
+		Trophies.kao_timer = HexenDefs::TROPHY_FAO_TIME;
+		break;
+	case HexenDefs::trophycl_fragsrow:
+		Trophies.frags_at_once += value; break;
+	case HexenDefs::trophycl_killsrow:
+		Trophies.kills_at_once += value; break;
+	}
+}
+
+//==========================================================================
+//
+//  UpdateTimedTrophies
+//
+//	[CW]
+//
+//==========================================================================
+
+void UpdateTimedTrophies(float deltaTime)
+{
+	if (Trophies.kao_timer > 0.0)
+	{
+		Trophies.kao_timer -= deltaTime;
+		if (Trophies.kao_timer <= 0.0)
+			ConfirmTrophy(HexenDefs::trophycl_killsatonce);
+	}
+	if (Trophies.fao_timer > 0.0)
+	{
+		Trophies.fao_timer -= deltaTime;
+		if (Trophies.fao_timer <= 0.0)
+			ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
+	}
+}
+
 
 defaultproperties
 {

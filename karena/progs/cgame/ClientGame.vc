@@ -56,6 +56,8 @@ ScoreBoardScreen	GScBoard;	// [CW]
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
 
+LocalSoundQueue		Announcer;		// [CW]
+
 MenuScreen menu_stack[MAX_MENU_STACK];
 int menu_sp;
 
@@ -102,6 +104,7 @@ void RootWindowCreated()
 	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));		// [CW]
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
+	Announcer = LocalSoundQueue(SpawnObject(LocalSoundQueue));
 	GTitle.ClGame = self;
 	GSBar.cl = MainClientState(cl);
 	GSBar.ClGame = self;
@@ -235,6 +238,9 @@ void StatusBarDrawer(int sb_view)
 void StatusBarUpdateWidgets()
 {
 	GSBar.SB_UpdateWidgets();
+
+	if(Announcer)
+		Announcer.Continue(cl.time - cl.oldtime);
 }
 
 //==========================================================================
@@ -945,6 +951,36 @@ void ParseIceChunks()
 
 //==========================================================================
 //
+//  ParseLocalSound
+//
+//==========================================================================
+
+void ParseLocalSound()
+{
+	bool put_in_queue;
+	name sndName;
+
+	switch(MSG_ReadByte())
+	{
+	case HexenDefs::lsid_kth_an_awaiting: sndName = 'KTH_AwaitingForHeresiarch'; break;
+	case HexenDefs::lsid_kth_an_ishere: sndName = 'KTH_HeresiarchIsHere'; break;
+	case HexenDefs::lsid_kth_an_hasreborn: sndName = 'KTH_HeresiarchIsReborn'; break;
+	case HexenDefs::lsid_kth_an_isdown: sndName = 'KTH_HeresiarchIsDown'; break;
+	case HexenDefs::lsid_kth_an_isdefeated: sndName = 'KTH_HeresiarchIsDefeated'; break;
+
+	default: sndName = 'Chat'; break;
+	}
+
+	put_in_queue = MSG_ReadByte();
+
+	if (put_in_queue && Announcer)
+		Announcer.QueueSound(sndName, itof(MSG_ReadShort()) / 100.0);
+	else
+		LocalSound(sndName);
+}
+
+//==========================================================================
+//
 //  ParseServerCommand
 //
 //==========================================================================
@@ -975,6 +1011,17 @@ bool ParseServerCommand(int cmd_type)
 
 	case HexenDefs::svc_fov:
 		SetCvar('FOV', MSG_ReadByte());
+		break;
+
+// [Korax]
+	case HexenDefs::svc_teamselect:
+		break;
+
+	case HexenDefs::svc_scoreboard:
+		break;
+
+	case HexenDefs::svc_localsound:
+		ParseLocalSound();
 		break;
 
 	default:

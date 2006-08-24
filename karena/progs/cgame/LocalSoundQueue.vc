@@ -1,0 +1,83 @@
+/*	written by crimson wizard for Korax Arena*/
+
+class LocalSoundQueue : Object;
+
+const int MAX_SOUNDS		= 20;
+
+name	Sounds[MAX_SOUNDS];		// dammit, need dynamic array here!!!
+/////////////////////////bool	as_sequence[MAX_SOUNDS];
+float		delay[MAX_SOUNDS];
+/////////////////////////int		delay_limit;
+int		count;
+
+
+//==========================================================================
+//
+//	Continue
+//
+//==========================================================================
+
+void Continue(float deltaTime)
+{
+	if (count && !IsLocalSoundPlaying(Sounds[0]))
+	{
+		/*if (as_sequence[count - 1])
+			delay = delay_limit - 1;*/
+		delay[0] -= deltaTime;
+		if (delay[0] <= 0.0)
+			PlayNextSound();
+	}
+}
+
+//==========================================================================
+//
+//	PlayNextSound
+//
+//==========================================================================
+
+void PlayNextSound()
+{
+	if (count)
+	{
+		int i;
+
+		LocalSound(Sounds[0]);
+
+		for (i = 0; i < count; i++)
+		{
+			if (i == MAX_SOUNDS - 1)
+			{
+				Sounds[i] = '';
+				delay[i] = 0.0;
+			}
+			else
+			{
+				Sounds[i] = Sounds[i + 1];
+				delay[i] = delay[i + 1];
+			}
+		}
+
+		count--;
+	}
+}
+
+//==========================================================================
+//
+//	QueueSound
+//
+//==========================================================================
+
+void QueueSound(name sndName, float _delay)
+{
+	if (count < MAX_SOUNDS)
+	{
+		Sounds[count] = sndName;
+		delay[count] = _delay;
+		count++;
+	}
+}
+
+
+defaultproperties
+{
+}
