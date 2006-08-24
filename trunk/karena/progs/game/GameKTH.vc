@@ -80,8 +80,10 @@ void BeginState(int newstate)
 		EndCurrentState(state_freeramble);
 		return;
 	case state_freeramble:
-		if (Game.Announcer)
-			Game.Announcer.QueueSound('KTH_AwaitingForHeresiarch', false); // awaiting sound here
+		/*if (Game.Announcer)
+			Game.Announcer.QueueSound('KTH_AwaitingForHeresiarch', false);*/
+		// awaiting sound here
+		Game.BroadcastLocalSound(HexenDefs::lsid_kth_an_awaiting, true, HexenDefs::STANDART_LSQ_DELAY);
 		Game.bcenterprint("first fragger shall become heresiarch");
 		break;
 	case state_heresiarch:
@@ -223,17 +225,23 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 	switch (Event)
 	{
 	case event_heresiarchspawn:
-		if (Game.Announcer)
+		/*if (Game.Announcer)
 			Game.Announcer.QueueSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? 'KTH_HeresiarchIsReborn' : 'KTH_HeresiarchIsHere') : 'KTH_HeresiarchIsHere'),
-						false);
+						false);*/
+		Game.BroadcastLocalSound((State == state_rebornsequence ?
+						(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
+						true, HexenDefs::STANDART_LSQ_DELAY);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
-		if (Game.Announcer)
+		/*if (Game.Announcer)
 			Game.Announcer.QueueSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? 'KTH_HeresiarchIsDefeated' : 'KTH_HeresiarchIsDown') : 'KTH_HeresiarchIsDown'),
-						false);
+						false);*/
+		Game.BroadcastLocalSound((State == state_rebornsequence ?
+						(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
+						true, HexenDefs::STANDART_LSQ_DELAY);
 		if (!plHeresiarch)
 			EndCurrentState(state_freeramble);
 		break;
