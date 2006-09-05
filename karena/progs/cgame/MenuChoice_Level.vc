@@ -58,31 +58,33 @@ void InitMapList(int GameType)
 	}
 	MaxValue = count;
 #else
+	dprint("client::LEVEL::InitMapList : game = %i", GameType);
 	Idx = 0;
 	for (i = 1; i <= 99 && Idx < 32; i++)
 	{
-		switch (GameType)
+		switch (GameType + 1)
 		{
 		case HexenDefs::game_sweep:	//	Castle Sweep
+		case HexenDefs::game_sweepteam:	//	Team Castle Sweep
+			dprint("client::LEVEL::InitMapList : map_");
 			if (!MapPrefixIs(i, "map"))
 				continue;
 			break;
 		case HexenDefs::game_kth:
 		case HexenDefs::game_dm:	//	Deathmatch
 		case HexenDefs::game_dmteam:	//	Team deathmatch.
+			dprint("client::LEVEL::InitMapList : dm_");
 			if (!MapPrefixIs(i, "dm_"))
 				continue;
 			break;
 		case HexenDefs::game_ctf: //	Capture the Flag
+			dprint("client::LEVEL::InitMapList : cf_");
 			if (!MapPrefixIs(i, "cf_"))
 				continue;
 			break;
 		case HexenDefs::game_football: //	Football
+			dprint("client::LEVEL::InitMapList : fb_");
 			if (!MapPrefixIs(i, "fb_"))
-				continue;
-			break;
-		case HexenDefs::game_sweepteam:	//	Team Castle Sweep
-			if (!MapPrefixIs(i, "map"))
 				continue;
 			break;
 		}
@@ -98,7 +100,7 @@ void InitMapList(int GameType)
 void InitWindow()
 {
 	::InitWindow();
-	InitMapList(1);
+	InitMapList(HexenDefs::game_dm - 1);
 }
 
 defaultproperties
