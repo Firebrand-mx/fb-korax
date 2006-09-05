@@ -51,6 +51,8 @@ int contents_transluc[6];
 botinfo_t botinfo[NUMTOTALBOTS];
 int botskill;
 
+int bots_autospawn;	//[CW]
+
 tagged_line_t TaggedLines[MAX_TAGGED_LINES];
 int TaggedLineCount;
 
@@ -153,11 +155,13 @@ void Init()
 
 void InitNewGame(int skill)
 {
+	int i;
 	int mode;
 
 	nomonsters = GetCvar('NoMonsters');
 	fastparm = gameskill == sk_nightmare || GetCvar('Fast');
 	randomclass = GetCvar('RandomClass');
+	bots_autospawn = GetCvar('BotsAutoSpawn');
 
 	// init GameMode
 	if (GameMode)
@@ -165,6 +169,9 @@ void InitNewGame(int skill)
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
 	mode = GetCvar('deathmatch');
+	dprint("MGI::ING : pre dm = %i", mode);
+	SetCvar('deathmatch', ++mode);	//[CW] single player hack
+	dprint("MGI::ING : post dm = %i", GetCvar('deathmatch'));
 	switch (mode)
 	{
 	case HexenDefs::game_football:
@@ -174,6 +181,9 @@ void InitNewGame(int skill)
 	}
 	if (GameMode)
 		GameMode.Init(self);
+
+	for (i = 0; i < bots_autospawn; i++)
+		CmdBuf_AddText("Addbot");
 }
 
 //==========================================================================
@@ -188,7 +198,6 @@ LevelInfo CreateLevelInfo()
 
 	//[CW]
 	HexenLevelInfo levelinfo = HexenLevelInfo(NewSpecialThinker(HexenLevelInfo));
-	//////////Announcer = SoundQueue(NewSpecialThinker(SoundQueue));
 	if (GameMode)
 		GameMode.Level = levelinfo;
 	return LevelInfo(levelinfo);

@@ -99,6 +99,9 @@ int ecolors[8];
 
 void RootWindowCreated()
 {
+	//[CW]
+	CreateCvar('BotsAutoSpawn', "0", 0);
+
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
 	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));		// [CW]
@@ -132,7 +135,6 @@ void Connected()
 	GTitle.Hide();
 	GTitle.StopDemoLoop();
 	GSBar.Show();
-	//GScBoard.Show(); // [CW] remove this later
 	GImission.Hide();
 	GFinale.Hide();
 }
@@ -1018,6 +1020,10 @@ bool ParseServerCommand(int cmd_type)
 		break;
 
 	case HexenDefs::svc_scoreboard:
+		if (MSG_ReadByte())
+			GScBoard.Show();
+		else
+			GScBoard.Hide();
 		break;
 
 	case HexenDefs::svc_localsound:
