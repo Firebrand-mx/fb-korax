@@ -124,8 +124,6 @@ struct scoreboard_t
 //  FIRST FIELDS ARE STATS THAT ARE SENT TO CLIENT FOR STATUS BAR
 //
 
-bool bShowScoreboard; // [CW] True if scoreboard should be visible
-
 int SBFlags;
 
 int ArmorPoints;
@@ -177,6 +175,8 @@ int use_power;	// [CW] is needed for some advanced game modes (football);
 //
 //  ----------
 //
+
+bool bShowScoreboard; // [CW] True if scoreboard should be visible
 
 int Keys;
 
@@ -1501,6 +1501,9 @@ void Scoreboard(bool show)
 	
 	// [CW] Set bShowScoreboard flag
 	bShowScoreboard = show;
+	SelectClientMsg(MSG_SV_CLIENT);
+	MSG_WriteByte(HexenDefs::svc_scoreboard);
+	MSG_WriteByte(bShowScoreboard);
 }
 
 //==========================================================================
@@ -2785,7 +2788,7 @@ void DeathPlayerTick(float deltaTime)
 
 	//[CW] Show scoreboard for died player
 	// FIXME!!!	do it really need to be here? playertick is called multiple times!
-	Scoreboard(true);
+	////////////////////////Scoreboard(true);
 
 	if (Buttons & BT_USE)
 	{
