@@ -50,29 +50,33 @@ void Continue()
 	int i;
 	string Bot;
 
-	// [FB] Look for the bot specified in the arguments in the
-	//	bots list
-
-	if (BotIndices[NextBot] >= 0)
+	// [FB] We first need to check for a SpawnCount > 0 (i.e. Player wants bots in the game)
+	if (SpawnCount > 0)
 	{
-		for(i = 0; i < MainGameInfo::NUMTOTALBOTS; i++)
+		// [FB] Look for the bot specified in the arguments in the
+		//	bots list
+
+		if (BotIndices[NextBot] >= 0)
 		{
-			// [FB] Is the bot there??
-			if (i == BotIndices[NextBot])
+			for(i = 0; i <= MainGameInfo::NUMTOTALBOTS; i++)
 			{
-				// [FB] Found the bot!
-				Bot = MainGameInfo(Level.Game).botinfo[i].Name;
+				// [FB] Is the bot there??
+				if (i == BotIndices[NextBot])
+				{
+					// [FB] Found the bot!
+					Bot = MainGameInfo(Level.Game).botinfo[i].Name;
+				}
 			}
 		}
+
+		// [FB] Spawn the bot
+		CmdBuf_AddText("Addbot %s\n", Bot);
+		////bprint("%s has entered to the game.", Bot); //[CW] do we need this here?
+
+		NextBot++;
+		if (NextBot == SpawnCount)
+			RemoveSpecialThinker(self);
 	}
-
-	// [FB] Spawn the bot
-	CmdBuf_AddText("Addbot %s\n", Bot);
-	////bprint("%s has entered to the game.", Bot); //[CW] do we need this here?
-
-	NextBot++;
-	if (NextBot == SpawnCount)
-		RemoveSpecialThinker(self);
 }
 
 defaultproperties
