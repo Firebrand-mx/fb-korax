@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -25,6 +25,13 @@
 
 class IntermissionScreen : Window;
 
+enum
+{
+	IMS_Stats,
+	IMS_Text,
+	IMS_Done
+};
+
 ClientGameBase ClGame;
 
 const float
@@ -44,6 +51,8 @@ const int
 
 float TextSpeed;
 float TextWait;
+name TextFlat;
+int TextPic;
 
 // specifies current state
 int interstate;
@@ -200,21 +209,11 @@ void IM_InitStats()
 
 	if (!ClGame.cl.deathmatch)
 	{
-		HubCount = 0.0;
-		if (ClGame.im->leavecluster != ClGame.im->entercluster)
+		if (!ClGame.im->bNoIntermission)
 		{
-			if (ClGame.im->leavecluster >= 1 && ClGame.im->leavecluster <= 5)
-			{
-				msgLumpName = ClusMsgLumpNames[ClGame.im->leavecluster - 1];
-				HubText = LoadTextLump(msgLumpName);
-				HubCount = itof(strlen(HubText)) * TextSpeed + TextWait;
-#ifdef FIXME
-				S_StartSong("hub", P_GetCDIntermissionTrack(), true);
-#else
-				CmdBuf_AddText("music loop hub\n");
-#endif
-			}
+			print("Single player stats are not implemented");
 		}
+		IM_InitHubText();
 	}
 	else
 	{
@@ -283,6 +282,56 @@ void IM_InitStats()
 #else
 		CmdBuf_AddText("music loop hub\n");
 #endif
+	}
+}
+
+//========================================================================
+//
+//  IM_InitHubText
+//
+//  Initializes the stats for single player mode
+//
+//========================================================================
+
+void IM_InitHubText()
+{
+	interstate = IMS_Text;
+	HubCount = 0.0;
+	if (ClGame.im->Text)
+	{
+		if (ClGame.im->bTextIsLump)
+		{
+			HubText = LoadTextLump(StrToName(ClGame.im->Text));
+		}
+		else
+		{
+			HubText = ClGame.im->Text;
+		}
+		HubCount = itof(strlen(HubText)) * TextSpeed + TextWait;
+
+		TextFlat = '';
+		TextPic = 0;
+		if (ClGame.im->TextPic)
+		{
+			TextPic = R_RegisterPic(ClGame.im->TextPic);
+		}
+		else if (ClGame.im->TextFlat)
+		{
+			TextFlat = ClGame.im->TextFlat;
+		}
+
+		if (ClGame.im->TextMusic)
+		{
+			CmdBuf_AddText(va("music loop %n\n", ClGame.im->TextMusic));
+		}
+		else
+		{
+#ifdef FIXME
+			S_StartSong("hub", P_GetCDIntermissionTrack(), true);
+#else
+			CmdBuf_AddText("music loop hub\n");
+#endif
+		}
 	}
 }
 
