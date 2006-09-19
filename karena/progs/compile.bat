@@ -16,6 +16,6 @@ vcc -I../common -P../common svprogs.vc svprogs.dat
 @ECHO OFF
 pause
 cd..
-vlumpy basepak.ls.in
+vlumpy basepak.ls
 copy basepak.pk3 "D:\Korax\KArena\karena\"
 cd progs
