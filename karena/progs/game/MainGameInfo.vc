@@ -185,6 +185,7 @@ void InitNewGame(int skill)
 
 LevelInfo CreateLevelInfo()
 {
+	int bots_count;
 	BotSpawner	botSpawner;
 
 	//[CW]
@@ -192,11 +193,15 @@ LevelInfo CreateLevelInfo()
 	if (GameMode)
 		GameMode.Level = levelinfo;
 	
-	botSpawner = BotSpawner(NewSpecialThinker(BotSpawner));
-	if (botSpawner)
+	bots_count = GetCvar('BotsAutoSpawn');
+	if (bots_count > 0)
 	{
-		botSpawner.time_limit = 1.5;
-		botSpawner.SpawnCount = GetCvar('BotsAutoSpawn');
+		botSpawner = BotSpawner(NewSpecialThinker(BotSpawner));
+		if (botSpawner)
+		{
+			botSpawner.time_limit = 1.5;
+			botSpawner.SpawnCount = bots_count;
+		}
 	}
 
 	return LevelInfo(levelinfo);
