@@ -535,6 +535,26 @@ void FloorBounceMissile()
 
 //==========================================================================
 //
+//  FloorBounceMissile2
+//
+//  [FB] New variant for soccer ball
+//
+//==========================================================================
+
+void FloorBounceMissile2()
+{
+	Velocity.z = Velocity.z * -0.7;
+	Velocity.x = 2.0 * Velocity.x / 3.0;
+	Velocity.y = 2.0 * Velocity.y / 3.0;
+	if (SightSound)
+	{
+		PlaySound(SightSound, CHAN_VOICE);
+	}
+}
+
+
+//==========================================================================
+//
 //  Thrust
 //
 //==========================================================================
@@ -2346,6 +2366,27 @@ void HitMobj(Entity Other)
 	}
 	else
 	{
+		// [FB] Added behaiviour for soccer ball
+		if (bFloorBounce)
+		{
+			float speed;
+
+			angle = AngleMod360(atan2(Origin.y - Other.Origin.y,
+				Origin.x - Other.Origin.x) + Random() * 16.0 - 8.0);
+			speed = Length(Velocity);
+			speed = speed * 0.75;
+			Angles.yaw = angle;
+			Velocity.x = speed * cos(angle);
+			Velocity.y = speed * sin(angle);
+			if (SightSound)
+			{
+				PlaySound(SightSound, CHAN_VOICE);
+			}
+
+			// [FB]
+			return;
+		}
+
 		if (bSlide)
 		{
 			// Try to slide along it
@@ -2437,6 +2478,19 @@ void HitLine(tmtrace_t* tmtrace)
 	}
 	else
 	{
+		// [FB] Added behaiviour for soccer ball
+		if (bFloorBounce)
+		{
+			// Struck a wall
+			BounceWall(1.5);
+			if (SightSound)
+			{
+				PlaySound(SightSound, CHAN_VOICE);
+			}
+
+			return;
+		}
+
 		if (bSlide)
 		{
 			// Try to slide along it
@@ -2606,6 +2660,12 @@ bool HitFloor()
 		HitFloorType();
 	}
 	Origin.z = FloorZ;
+	// [FB] for soccer ball
+	if (bFloorBounce)
+	{
+		FloorBounceMissile2();
+		return true;
+	}
 	if (vdot < -0.1)
 	{
 		if (bIceDamage && vdot < -DEFAULT_GRAVITY * 0.25)
@@ -2714,6 +2774,17 @@ bool HitCeiling()
 			return true;
 		}
 		return ExplodeMissile();
+	}
+	// [FB] For soccer ball
+	if (bFloorBounce)
+	{
+		// Reverse momentum here for ceiling bounce
+		Velocity -= vdot * Ceiling->normal;
+
+		if (SightSound)
+		{
+			PlaySound(SightSound, CHAN_VOICE);
+		}
 	}
 	if (bSkullFly)
 	{
