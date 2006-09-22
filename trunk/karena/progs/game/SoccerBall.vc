@@ -33,13 +33,13 @@
 class SoccerBall : Actor
 	__mobjinfo__(15021);
 
-const int	MINFRAMES_NOKICK			= 4;
+const int	MINFRAMES_NOKICK		= 4;
 const int	MAXFRAMES_TARGETTING		= 9;
-const float VELPOWER_MULTIPLIER			= 4.0;
-const float STRENGTHPOWER_MULTIPLIER	= 100.0;
+const float 	VELPOWER_MULTIPLIER		= 4.0;
+const float 	STRENGTHPOWER_MULTIPLIER	= 100.0;
 
-int		nokick_timer;				// free fly time (to avoid repeatable touch bug)
-Player	Owner;						// a player who kicked the ball last
+int	nokick_timer;				// free fly time (to avoid repeatable touch bug)
+Player	Owner;					// a player who kicked the ball last
 
 
 //==========================================================================
@@ -76,18 +76,16 @@ void DoKick(Player Kicker)
 
 	Owner = Kicker;
 	playernum = Kicker.GetPlayerNum();
-	an = AngleMod360(atan2(Kicker.MO.Origin.y - Origin.y,
-			Kicker.MO.Origin.x - Origin.x));
+	an = AngleMod360(atan2(Kicker.MO.Origin.y - Origin.y, Kicker.MO.Origin.x - Origin.x));
 	an += (an < 180.0 ? 180.0 : -180.0);
 	van = itof(Kicker.use_power * 10);
-	velpower = VELPOWER_MULTIPLIER * Length(Kicker.MO.Velocity)/100.0;
+	velpower = VELPOWER_MULTIPLIER * Length(Kicker.MO.Velocity) / 100.0;
 	if (Kicker.use_power)
-		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength)/100.0;
+		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength) / 100.0;
 	else
 		strpower = 0.0;
 
-	Thrust3d2(an, velpower + strpower * cos(van),
-					strpower * sin(van));
+	Thrust3d2(an, velpower + strpower * cos(van), strpower * sin(van));
 
 	nokick_timer = MINFRAMES_NOKICK;
 	Kicker.use_power = 0;
@@ -115,7 +113,7 @@ void A_LetKick()
 		return;
 	}
 
-	for (i=0; i<MAXPLAYERS; i++)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		P = Player(Level.Game.Players[i]);
 
@@ -123,7 +121,7 @@ void A_LetKick()
 			continue;	// [FB] Can't kick the ball if not playing!
 		if (P.Health <= 0)
 			continue;	// [FB] Dead meat can't kick balls!
-					    // [CW]... and asses as well =)
+					// [CW]... and asses as well =)
 
 		playernum = P.GetPlayerNum();
 		dist = DistTo(P.MO);
@@ -133,8 +131,7 @@ void A_LetKick()
 			//
 			//[CW]
 			//
-			if (dist <= MELEERANGE && 
-				(!(P.Buttons & BT_USE) && P.use_power > 0 ||
+			if (dist <= MELEERANGE && (!(P.Buttons & BT_USE) && P.use_power > 0 ||
 					P.use_power >= MAXFRAMES_TARGETTING))
 			{
 				DoKick(P);
@@ -168,8 +165,7 @@ defaultproperties
 	bShootable = true;
 	bNoBlood = true;
 	bPushable = true;
-	bMissile = true;
-	bFloorBounce = true;		//[CW] ?? why it does not work????
+	bFloorBounce = true;
 	bActivatePushWall = true;
 	bActivateMCross = true;
 	bInvulnerable = true;
