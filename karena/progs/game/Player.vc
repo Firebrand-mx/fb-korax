@@ -1569,7 +1569,7 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			   {
 				if (!Level.Game.Players[j])
 				   break;
-				//dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, plteam.Players[i].GetPlayerNum(), Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()]);
+				dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, plteam.Players[i].GetPlayerNum(), Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()]);
 				pl.gamescores[gs].deaths += Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
 			   }
 			}
@@ -5039,8 +5039,6 @@ void CallLocalSound(int sound, bool put_in_queue, float delay)
 void UpdateScore(int event)
 {
 	int mod;
-	dprint("Player::UpdateScore :");
-	dprint("Player::UpdateScore : event = %i", event);
 
 	switch(event)
 	{
@@ -5078,8 +5076,6 @@ void UpdateScore(int event)
 	}
 
 	Score += mod;
-
-	dprint("Player::UpdateScore : score total now = %d", Score);
 
 	UpdateCompetition();
 	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
@@ -5253,8 +5249,6 @@ void ConfirmTrophy(int type)
 	if (type >= HexenDefs::NUMTROPHIES)
 		return;
 
-	dprint("Player::ConfirmTrophy : type = %i", type);
-
 	switch (type)
 	{
 	case HexenDefs::trophycl_killsatonce:
@@ -5263,7 +5257,6 @@ void ConfirmTrophy(int type)
 		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_MASSACRE) a++;
 		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_DEVASTATION) a++;
 		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_ELIMINATION) a++;
-		dprint("killsatonce: kao = %i, result = %i", Trophies.kills_at_once, a);
 		if (a < 0)
 		{
 			Trophies.kills_at_once = 0;
@@ -5310,7 +5303,6 @@ void ConfirmTrophy(int type)
 	}
 
 	centerprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
-	//////////////MainGameInfo(Level.Game).Announcer.QueueSound(MainGameInfo(Level.Game).TrophyVoice[announcement], false);
 	//////////////CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
 
 
@@ -5323,7 +5315,6 @@ void ConfirmTrophy(int type)
 	case HexenDefs::trophycl_killsatonce:
 		Trophies.kills_at_once = 0;
 		Trophies.kao_timer = 0.0;
-		dprint("reset: kao = %i, timer = %f", Trophies.kills_at_once, Trophies.kao_timer);
 		break;
 	case HexenDefs::trophycl_fragsatonce:
 		Trophies.frags_at_once = 0;
@@ -5351,14 +5342,11 @@ void UpdateQueuedTrophy(int type, int value)
 	if (type >= HexenDefs::NUMTROPHIES)
 		return;
 
-	dprint("Player::UpdateQueuedTrophy");
-
 	switch (type)
 	{
 	case HexenDefs::trophycl_killsatonce:
 		Trophies.kills_at_once += value;
 		Trophies.kao_timer = HexenDefs::TROPHY_KAO_TIME;
-		dprint("killsatonce: +value = %i, kao = %i, timer = %f", value, Trophies.kills_at_once, Trophies.kao_timer);
 		break;
 	case HexenDefs::trophycl_fragsatonce:
 		Trophies.frags_at_once += value;
@@ -5384,7 +5372,6 @@ void UpdateTimedTrophies(float deltaTime)
 	if (Trophies.kao_timer > 0.0)
 	{
 		Trophies.kao_timer -= deltaTime;
-		dprint("kao timer = %f", Trophies.kao_timer);
 		if (Trophies.kao_timer <= 0.0)
 			ConfirmTrophy(HexenDefs::trophycl_killsatonce);
 	}

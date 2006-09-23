@@ -73,7 +73,6 @@ name	originalMusic;
 
 void BeginState(int newstate)
 {
-	dprint("GameKTH::BeginState : newstate = %i", newstate);
 	switch(newstate)
 	{
 	case state_preparegame:
@@ -137,24 +136,18 @@ void NotifyPlayerSpawn(Player pl)
 
 void NotifyPlayerDeath(Player pl, Actor source)
 {
-	dprint("GameKTH::NotifyPlayerDeath");
-	dprint("GameKTH::NotifyPlayerDeath : state = %i", State);
-
 	// For missiles: switch to missile's instigator
 	if (source && source.Instigator)
 	{
-		dprint("GameKTH::NotifyPlayerDeath : switching to missile's instigator");
 		source = source.Instigator;
 	}
 
 	switch (State)
 	{
 	case state_freeramble:
-		dprint("GameKTH::NotifyPlayerDeath : state free ramble");
 		// First fragger becomes Heresiarch
 		if (source && source.bIsPlayer)
 		{
-			dprint("GameKTH::NotifyPlayerDeath : begin birth sequence");
 			plHeresiarch = Player(source.Player);
 			EndCurrentState(state_birthsequence);
 
@@ -164,12 +157,9 @@ void NotifyPlayerDeath(Player pl, Actor source)
 		}
 		break;
 	case state_heresiarch:
-		dprint("GameKTH::NotifyPlayerDeath : state heresiarch");
 		// Handle Heresiarch death
 		if (pl == plHeresiarch)
 		{
-			dprint("GameKTH::NotifyPlayerDeath : begin reborn sequence");
-
 			DeathSpot = plHeresiarch.MO.Origin;
 			if (source && source.bIsPlayer)
 			{
@@ -185,7 +175,6 @@ void NotifyPlayerDeath(Player pl, Actor source)
 			}
 			else
 			{
-				dprint("GameKTH::NotifyPlayerDeath : begin death sequence");
 				plHeresiarch = none;
 				EndCurrentState(state_deathsequence);
 				
@@ -208,8 +197,6 @@ void NotifyPlayerDeath(Player pl, Actor source)
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
-	dprint("GameKTH::HandleGameEvent : event = %i", Event);
-
 	switch (Event)
 	{
 	case event_heresiarchspawn:
@@ -250,7 +237,6 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 
 void End()
 {
-	dprint("GameKTH::End : ");
 	EndCurrentState(state_finished);
 	::End();
 }
@@ -263,8 +249,6 @@ void End()
 
 void PlayDeathSequence()
 {
-	dprint("GameKTH::PlayDeathSequence");
-	dprint("----> seq_state = %i", deathsequence_state);
 	switch(deathsequence_state)
 	{
 	case 0:
@@ -297,8 +281,6 @@ void PlayDeathSequence()
 
 void PlayBirthSequence()
 {
-	dprint("GameKTH::PlayBirthSequence");
-	dprint("----> seq_state = %i", birthsequence_state);
 	switch(birthsequence_state)
 	{
 	case 0:

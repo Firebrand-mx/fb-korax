@@ -27,39 +27,23 @@ class MenuChoice_DeathMatch : MenuChoiceEnum;
 
 MenuChoice Level;
 MenuChoice Monsters;
-/////////int previous;
 
 int GetInitialValue()
 {
-	/////////previous = HexenDefs::game_dm;
 	return HexenDefs::game_dm - 1;
 }
 
 bool SetNewValue(int newValue)
 {
-	dprint("client::DM::SetNewValue : %i", newValue);
-	/*if (!newValue)
-	{
-		dprint("client::DM::SetNewValue : check prev = %i", previous);
-		if (previous == 1)
-			newValue = HexenDefs::NUMGAMES - 1;
-		else
-			newValue = 1;
-		dprint("client::DM::SetNewValue : now value = %i", newValue);
-		return SetNewValue(newValue);
-	}*/
-
 	if (Level)
 		MenuChoice_Level(Level).InitMapList(newValue);
 	MenuChoice_Monsters(Monsters).InitMonsters(newValue);
-	/////////////previous = newValue;
 	return ::SetNewValue(newValue);
 }
 
 defaultproperties
 {
 	Text = "Game type";
-	///////////EnumNames[HexenDefs::game_unused] = "UNUSED GAME MODE";
 	EnumNames[HexenDefs::game_sweep - 1] = "Castle Sweep";
 	EnumNames[HexenDefs::game_kth - 1] = "Kill the Heresiarch";
 	EnumNames[HexenDefs::game_dm - 1] = "Deathmatch";
