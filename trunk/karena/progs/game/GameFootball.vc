@@ -76,7 +76,6 @@ void BeginState(int newstate)
 {
 	int i;
 
-	dprint("GameFootball::BeginState : newstate = %i", newstate);
 	switch(newstate)
 	{
 	case state_preparematch:
@@ -136,8 +135,6 @@ void BeginState(int newstate)
 
 void EndCurrentState(int nextstate)
 {
-	dprint("GameFootball::EndCurrentState : nextstate = %i", nextstate);
-
 	// FIXME! - destroy ball only if it was spawned by GameFootball
 	/*if (nextstate == state_finished && Ball)
 		Ball.Destroy();*/
@@ -158,12 +155,9 @@ void NotifyUpdateTeams()
 	//     (if there'll be any).
 
 	bool playingteamschange = false;
-	dprint("GameFootball::TeamUpdate : ");
-	dprint("%d,%d <----> %d,%d", Teams[0],Teams[1],Game.Teams[0],Game.Teams[1]);
 	if (State >= 0 && (Teams[0] != Game.Teams[0] ||
 								Teams[1] != Game.Teams[1]))
 	{
-		dprint("GameFootball::TeamUpdate : must restart match");
 		playingteamschange = true;
 	}
 	Teams[0] = Game.Teams[0];
@@ -194,8 +188,6 @@ void NotifyPlayerSpawn(Player pl)
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
-	dprint("GameFootball::HandleGameEvent : event = %i", Event);
-
 	switch (Event)
 	{
 	case event_goal:
@@ -248,8 +240,6 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 
 void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 {
-	dprint("GameFootball::SetGameObject : object = %i, args = %i,%i,%i", object, arg1, arg2, arg3);
-
 	if ((object == object_ballspot || object == object_playerspot) &&
 			!A.IsA('MapSpot'))
 	{
@@ -286,7 +276,6 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 
 void End()
 {
-	dprint("GameFootball::End : ");
 	EndCurrentState(state_finished);
 	::End();
 }
