@@ -40,13 +40,13 @@ ClientGameBase ClGame;
 MainClientState cl;
 
 int sb_pclass;
-int sb_color;
+int sb_colour;
 
 int HealthMarker;
 int sb_health;
 int m_h;
 
-bool hitCenterFrame;
+bool hitCentreFrame;
 
 int pic_bar;
 int pic_chain;
@@ -151,7 +151,7 @@ void StartMap()
 	picinfo_t info;
 
 	sb_pclass = GetCvar('class');
-	sb_color = GetCvar('color');
+	sb_colour = GetCvar('colour');
 
 	//
 	//  COMMON BAR
@@ -166,14 +166,14 @@ void StartMap()
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmf2');
 		}
-		else if (!sb_color)
+		else if (!sb_colour)
 		{
 			pic_lifegem = R_RegisterPic('lifegem');
 		}
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmf%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	case HexenDefs::PCLASS_CLERIC:
@@ -186,7 +186,7 @@ void StartMap()
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmc%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	case HexenDefs::PCLASS_MAGE:
@@ -199,7 +199,7 @@ void StartMap()
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmm%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	case HexenDefs::PCLASS_HERETIC:
@@ -212,7 +212,7 @@ void StartMap()
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmh%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	case HexenDefs::PCLASS_MARINE:
@@ -225,7 +225,7 @@ void StartMap()
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmd%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	case HexenDefs::PCLASS_WITCHAVEN:
@@ -238,7 +238,7 @@ void StartMap()
 		else
 		{
 			pic_lifegem = R_RegisterPic(StrToName(va("lifegmh%d",
-				sb_color + 1)));
+				sb_colour + 1)));
 		}
 		break;
 	}
@@ -347,7 +347,7 @@ void SB_DrawBackground()
 //
 //==========================================================================
 
-void SB_DrawNumber9(int x, int y, int num, int color)
+void SB_DrawNumber9(int x, int y, int num, int colour)
 {
 	int w = 9;
 	int neg = num < 0;
@@ -362,14 +362,14 @@ void SB_DrawNumber9(int x, int y, int num, int color)
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawPic(x - w, y, pic_innum[color * 10]);
+		R_DrawPic(x - w, y, pic_innum[colour * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawPic(x, y, pic_innum[color * 10 + num % 10]);
+		R_DrawPic(x, y, pic_innum[colour * 10 + num % 10]);
 		num /= 10;
 	}
 
@@ -388,7 +388,7 @@ void SB_DrawNumber9(int x, int y, int num, int color)
 //
 //==========================================================================
 
-void SB_DrawNumber92(int x, int y, int num, int color)
+void SB_DrawNumber92(int x, int y, int num, int colour)
 {
 	int w = 9;
 	int neg = num < 0;
@@ -403,14 +403,14 @@ void SB_DrawNumber92(int x, int y, int num, int color)
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawShadowedPic(x - w, y, pic_innum[color * 10]);
+		R_DrawShadowedPic(x - w, y, pic_innum[colour * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawShadowedPic(x, y, pic_innum[color * 10 + num % 10]);
+		R_DrawShadowedPic(x, y, pic_innum[colour * 10 + num % 10]);
 		num /= 10;
 	}
 
@@ -1019,21 +1019,21 @@ void SB_DrawIcons(int view)
 		frame = (ClGame.level->tictime / 3) & 15;
 		if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
 		{
-			if (hitCenterFrame && frame != 15 && frame != 0)
+			if (hitCentreFrame && frame != 15 && frame != 0)
 			{
 				frame = 15;
 			}
 			else
 			{
-				hitCenterFrame = false;
+				hitCentreFrame = false;
 			}
 		}
 		else
 		{
-			if (hitCenterFrame || frame == 15 || frame == 0)
+			if (hitCentreFrame || frame == 15 || frame == 0)
 			{
 				frame = 15;
-				hitCenterFrame = true;
+				hitCentreFrame = true;
 			}
 		}
 		R_DrawShadowedPic(20, 19, pic_fly[frame]);
@@ -1123,7 +1123,7 @@ void SB_Drawer(int sb_view)
 	// (don't know where to put it if not here)
 	if (sb_view != SB_VIEW_AUTOMAP && strlen(cl.targetnamehint))
 	{
-		T_SetAlign(hcenter, vcenter);
+		T_SetAlign(hcentre, vcentre);
 		T_SetFont(font_small);
 		T_DrawText(320, 240, cl.targetnamehint);
 	}

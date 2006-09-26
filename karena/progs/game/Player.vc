@@ -112,7 +112,7 @@ struct scoreboard_t
 	int		plclass;
 	int		level;
 	bool		IsBot;		// true if player is bot, false if is human
-	int		team;		// color
+	int		team;		// colour
 	int		score;		// player score (game mode dependent)
 	int		frags;
 	int		nplkills;	// non-player kills
@@ -527,7 +527,7 @@ void UserinfoChanged()
 	{
 		return;
 	}
-	SetPlayerColor();
+	SetPlayerColour();
 
 	//[CW] update all server clients' scoreboards
 	ScoreboardsUpdate(false);
@@ -535,53 +535,53 @@ void UserinfoChanged()
 
 //==========================================================================
 //
-//  SetPlayerColor
+//  SetPlayerColour
 //
 //==========================================================================
 
-void SetPlayerColor()
+void SetPlayerColour()
 {
 	MO.Translation = 0;
 	if (PClass == HexenDefs::PCLASS_WITCHAVEN)
 	{
 		// [FB] The first type should be blue, and the second should be the
-		// Witchaven's original red color
-		if (Color == 0)
+		// Witchaven's original red colour
+		if (Colour == 0)
 			MO.Translation = 1 + PClass * (MAXPLAYERS - 1);
-		else if (Color != 1)
-			MO.Translation = Color + PClass * (MAXPLAYERS - 1);
+		else if (Colour != 1)
+			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
 	}
 	else if (PClass == HexenDefs::PCLASS_FIGHTER)
 	{
 		// The first type should be blue, and the third should be the
-		// Fighter's original gold color
-		if (Color == 0)
+		// Fighter's original gold colour
+		if (Colour == 0)
 		{
 			MO.Translation = 2;
 		}
-		else if (Color != 2)
+		else if (Colour != 2)
 		{
-			MO.Translation = Color;
+			MO.Translation = Colour;
 		}
 	}
 	else if (PClass == HexenDefs::PCLASS_HERETIC)
 	{
-		if (Color == 0)
+		if (Colour == 0)
 			MO.Translation = 3 + PClass * (MAXPLAYERS - 1);
-		else if (Color != 3)
-			MO.Translation = Color + PClass * (MAXPLAYERS - 1);
+		else if (Colour != 3)
+			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
 	}
 	else if (PClass == HexenDefs::PCLASS_MARINE)
 	{
-		if (Color == 0)
+		if (Colour == 0)
 			MO.Translation = 4 + PClass * (MAXPLAYERS - 1);
-		else if (Color != 4)
-			MO.Translation = Color + PClass * (MAXPLAYERS - 1);
+		else if (Colour != 4)
+			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
 	}
-	else if (Color)
+	else if (Colour)
 	{
-		// Set color translation bits for player sprites
-		MO.Translation = PClass * (MAXPLAYERS - 1) + Color;
+		// Set colour translation bits for player sprites
+		MO.Translation = PClass * (MAXPLAYERS - 1) + Colour;
 	}
 }
 
@@ -744,7 +744,7 @@ void SpawnPlayer(mthing_t * mthing)
 	Morph.bUntilDeath = false;
 	Morph.MorphTime = 0.0;
 	ExtraLight = 0;
-	FixedColormap = 0;
+	FixedColourmap = 0;
 	LastSectorDamageTime = 0.0;
 	LastHazardTime = 0.0;
 	ViewHeight = VIEWHEIGHT;
@@ -776,7 +776,7 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	SetPlayerColor();
+	SetPlayerColour();
 	if (bIsBot)
 	{
 		Bot.OnSpawn();
@@ -817,7 +817,7 @@ void SpawnPlayer(mthing_t * mthing)
 //
 //  PlayerReborn
 //
-//  Called after a player dies almost everything is cleared and initialized
+//  Called after a player dies almost everything is cleared and initialised
 //
 //==========================================================================
 
@@ -914,7 +914,7 @@ void PlayerExitMap(bool clusterChange)
 	MO.Angles.pitch = 0.0;
 	MO.Translucency = 0;	// Remove invisibility
 	ExtraLight = 0;	// Remove weapon flashes
-	FixedColormap = 0;	// Remove torch
+	FixedColourmap = 0;	// Remove torch
 	DamageFlash = 0.0;	// No palette changes
 	BonusFlash = 0.0;
 	PoisonCount = 0;
@@ -1562,7 +1562,7 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			   pl.gamescores[gs].plclass = plteam.Players[i].PClass;
 			   pl.gamescores[gs].level = plteam.Players[i].exp_level;
 			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
-			   pl.gamescores[gs].team = plteam.Players[i].Color;
+			   pl.gamescores[gs].team = plteam.Players[i].Colour;
 			   pl.gamescores[gs].score = plteam.Players[i].Score;
 			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
 			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
@@ -1765,7 +1765,7 @@ void MovePlayer(float deltaTime)
 	fly = FlyMove / 16.0;
 	if (fly && Powers[pw_flight])
 	{
-		if (FlyMove != TOCENTER)
+		if (FlyMove != TOCENTRE)
 		{
 			FlyHeight = fly * 2.0;
 			if (!MO.bFly)
@@ -2066,7 +2066,7 @@ void PlayerInSpecialSector(float deltaTime)
 		SecretCount++;
 		Level.Game.level->currentsecret++;
 		MO.Sector->special &= ~SECSPEC_SECRET_MASK;
-		centerprint("You found a secret area");
+		centreprint("You found a secret area");
 	}
 
 	if (MO.Sector->special <= SECSPEC_LightFlicker &&
@@ -2642,7 +2642,7 @@ bool UndoPlayerMorph()
 	A.Health = max_health;
 	Health = A.Health;
 	PClass = BaseClass;
-	SetPlayerColor();
+	SetPlayerColour();
 	PostMorphWeapon(Actor(MO)._Special1);
 
 	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
@@ -3204,7 +3204,7 @@ void PlayerTick(float deltaTime)
 			Powers[pw_flight] = 0.0;
 			if (MO.Origin.z != MO.FloorZ)
 			{
-//FIXME             		player->centering = true;
+//FIXME             		player->centreing = true;
 			}
 			MO.bFly = false;
 			MO.bNoGravity = false;
@@ -3284,45 +3284,45 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	// Handling colormaps.
+	// Handling colourmaps.
 	if (Powers[pw_infrared])
 	{
 		if (Powers[pw_infrared] <= BLINKTHRESHOLD)
 		{
 			if (ftoi(Powers[pw_infrared] * 35.0) & 8)
 			{
-				FixedColormap = 0;
+				FixedColourmap = 0;
 			}
 			else
 			{
-				FixedColormap = 1;
+				FixedColourmap = 1;
 			}
 		}
 		else if (!(Level.Game.level->tictime & 16))
 		{
 			if (NewTorch)
 			{
-				if (FixedColormap + NewTorchDelta > 7 ||
-					FixedColormap + NewTorchDelta < 1 ||
-					FixedColormap == NewTorch)
+				if (FixedColourmap + NewTorchDelta > 7 ||
+					FixedColourmap + NewTorchDelta < 1 ||
+					FixedColourmap == NewTorch)
 				{
 					NewTorch = 0;
 				}
 				else
 				{
-					FixedColormap += NewTorchDelta;
+					FixedColourmap += NewTorchDelta;
 				}
 			}
 			else
 			{
 				NewTorch = (P_Random() & 7) + 1;
-				NewTorchDelta = (NewTorch == FixedColormap) ? 0 :
-					((NewTorch > FixedColormap) ? 1 : -1);
+				NewTorchDelta = (NewTorch == FixedColourmap) ? 0 :
+					((NewTorch > FixedColourmap) ? 1 : -1);
 			}
 		}
 	}
 	else
-		FixedColormap = 0;
+		FixedColourmap = 0;
 
 	if((MO.Velocity.x == 0.0) || (MO.Velocity.y == 0.0)) // [FB] Check for the player camping
 	{
@@ -3783,7 +3783,7 @@ bool UseArtifact(int arti)
 		}
 		else
 		{
-			centerprint("YOU CANNOT USE THIS HERE");
+			centreprint("YOU CANNOT USE THIS HERE");
 			return false;
 		}
 		break;
@@ -4454,7 +4454,7 @@ bool CheckMana()
 	{
 		return true;
 	}
-	centerprint("No mana");
+	centreprint("No mana");
 	// out of mana, pick a weapon to change to
 	do
 	{
@@ -4510,7 +4510,7 @@ void FireWeapon()
 	}
 
 	//[CW] store attack position for possible accuracy trophy
-	Trophies.shot_position = MobjCenter(self.MO);
+	Trophies.shot_position = MobjCentre(self.MO);
 
 	MO.SetState(Actor(MO).MissileState);
 	ViewEnts[ps_weapon].SetState(
@@ -5307,7 +5307,7 @@ void ConfirmTrophy(int type)
 		return;
 	}
 
-	centerprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
+	centreprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
 	//////////////CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
 
 

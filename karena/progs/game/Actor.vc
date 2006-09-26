@@ -752,7 +752,7 @@ void Died(Actor source)
 		// [CW] check for "accuracy" trophy
 		if (bCountKill || bIsPlayer)
 		{
-			if (Length(Player(source.Player).Trophies.shot_position - MobjCenter(self)) >=
+			if (Length(Player(source.Player).Trophies.shot_position - MobjCentre(self)) >=
 					HexenDefs::ACCURATE_SHOT_DISTANCE)
 				Player(source.Player).ConfirmTrophy(HexenDefs::trophycl_accuracy);
 		}
@@ -833,7 +833,7 @@ void Died(Actor source)
 			// Self-frag
 			if (Level.Game.deathmatch == HexenDefs::game_dmteam)
 			{
-				Player.FragsStats[Player.Color]--;
+				Player.FragsStats[Player.Colour]--;
 			}
 			else
 			{
@@ -1253,7 +1253,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		float thrust;
 
 		thrust = itof(damage) / Mass * 656.25;
-		dir = Normalise(MobjCenter(self) - MobjCenter(inflictor));
+		dir = Normalise(MobjCentre(self) - MobjCentre(inflictor));
 		Velocity += dir * thrust;
 	}
 
@@ -1275,8 +1275,8 @@ void Damage(Actor inflictor, Actor source, int damage)
 		    && (source && ((source.bIsPlayer) || (source.Instigator
 		    && source.Instigator.bIsPlayer))))
 		{
-			int col = (source.bIsPlayer?source.Player.Color:source.Instigator.Player.Color);
-			if (col == Player.Color && damage < 1000)
+			int col = (source.bIsPlayer?source.Player.Colour:source.Instigator.Player.Colour);
+			if (col == Player.Colour && damage < 1000)
 				return;
 		}
 
@@ -2695,7 +2695,7 @@ bool HitFloor()
 				{
 					PlaySound('*land', CHAN_BODY);
 				}
-//FIXME				Player.centering = true;
+//FIXME				Player.centreing = true;
 			}
 		}
 		else if (Class == Pottery1 || Class == Pottery2 || Class == Pottery3)
@@ -2891,7 +2891,7 @@ void PlayerLandedOnThing()
 	{
 		PlaySound('*land', CHAN_BODY);
 	}
-//FIXME Player.centering = true;
+//FIXME Player.centreing = true;
 }
 
 //==========================================================================
@@ -3664,11 +3664,14 @@ bool ExplodeMissile()
 	if (!(Effects & HexenDefs::EF_DL_ROCKET) && (Effects & HexenDefs::EF_DLIGHT_MASK))
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_explosion2);
-		MSG_WriteByte(Effects & HexenDefs::EF_DLIGHT_MASK);
-		MSG_WriteShort(ftoi(Origin.x));
-		MSG_WriteShort(ftoi(Origin.y));
-		MSG_WriteShort(ftoi(Origin.z));
+		if (MSG_CheckSpace(8))
+		{
+			MSG_WriteByte(HexenDefs::svc_explosion2);
+			MSG_WriteByte(Effects & HexenDefs::EF_DLIGHT_MASK);
+			MSG_WriteShort(ftoi(Origin.x));
+			MSG_WriteShort(ftoi(Origin.y));
+			MSG_WriteShort(ftoi(Origin.z));
+		}
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
 	Effects &= ~HexenDefs::EF_DL_ROCKET;
@@ -3799,7 +3802,7 @@ bool PIT_RadiusAttack(Entity Other)
 		// don't damage the source of the explosion
 		return true;
 	}
-	dist = Length(MobjCenter(Other) - MobjCenter(self)) - Other.Radius;
+	dist = Length(MobjCentre(Other) - MobjCentre(self)) - Other.Radius;
 	if (dist < 0.0)
 	{
 		dist = 0.0;
@@ -4219,11 +4222,14 @@ bool PTR_ShootTraverse(intercept_t * in)
 			if (P_Random() < 192)
 			{
 				MSG_Select(MSG_SV_DATAGRAM);
-				MSG_WriteByte(HexenDefs::svc_blood);
-				MSG_WriteShort(ftoi(hit_point.x));
-				MSG_WriteShort(ftoi(hit_point.y));
-				MSG_WriteShort(ftoi(hit_point.z));
-				MSG_WriteByte(la_damage > 255 ? 255 : la_damage);
+				if (MSG_CheckSpace(8))
+				{
+					MSG_WriteByte(HexenDefs::svc_blood);
+					MSG_WriteShort(ftoi(hit_point.x));
+					MSG_WriteShort(ftoi(hit_point.y));
+					MSG_WriteShort(ftoi(hit_point.z));
+					MSG_WriteByte(la_damage > 255 ? 255 : la_damage);
+				}
 
 				th.SpawnBloodSplatter(hit_point);
 			}
@@ -4308,20 +4314,26 @@ void SpawnPuff(TVec org, classid PuffType)
 	if (PuffType == GoldWandPuff1)
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_explosion2);
-		MSG_WriteByte(HexenDefs::EF_DL_WHITE);
-		MSG_WriteShort(ftoi(org.x));
-		MSG_WriteShort(ftoi(org.y));
-		MSG_WriteShort(ftoi(org.z));
+		if (MSG_CheckSpace(8))
+		{
+			MSG_WriteByte(HexenDefs::svc_explosion2);
+			MSG_WriteByte(HexenDefs::EF_DL_WHITE);
+			MSG_WriteShort(ftoi(org.x));
+			MSG_WriteShort(ftoi(org.y));
+			MSG_WriteShort(ftoi(org.z));
+		}
 	}
 	if (PuffType == BlasterPuff1)
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_explosion2);
-		MSG_WriteByte(HexenDefs::EF_DL_BLUE);
-		MSG_WriteShort(ftoi(org.x));
-		MSG_WriteShort(ftoi(org.y));
-		MSG_WriteShort(ftoi(org.z));
+		if (MSG_CheckSpace(8))
+		{
+			MSG_WriteByte(HexenDefs::svc_explosion2);
+			MSG_WriteByte(HexenDefs::EF_DL_BLUE);
+			MSG_WriteShort(ftoi(org.x));
+			MSG_WriteShort(ftoi(org.y));
+			MSG_WriteShort(ftoi(org.z));
+		}
 	}
 
 	MainGameInfo(Level.Game).PuffSpawned = puff;
@@ -4634,10 +4646,13 @@ void A_Explode()
 	{
 		//  Spawn explosion effects - dynamic light and particles
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_explosion);
-		MSG_WriteShort(ftoi(Origin.x));
-		MSG_WriteShort(ftoi(Origin.y));
-		MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+		if (MSG_CheckSpace(7))
+		{
+			MSG_WriteByte(HexenDefs::svc_explosion);
+			MSG_WriteShort(ftoi(Origin.x));
+			MSG_WriteShort(ftoi(Origin.y));
+			MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+		}
 
 		//  Clear old dynamic light effect
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
@@ -4645,11 +4660,14 @@ void A_Explode()
 	else if (ExplodeEffect)
 	{
 		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_explosion);
-		MSG_WriteByte(ExplodeEffect);
-		MSG_WriteShort(ftoi(Origin.x));
-		MSG_WriteShort(ftoi(Origin.y));
-		MSG_WriteShort(ftoi(Origin.z));
+		if (MSG_CheckSpace(8))
+		{
+			MSG_WriteByte(HexenDefs::svc_explosion);
+			MSG_WriteByte(ExplodeEffect);
+			MSG_WriteShort(ftoi(Origin.x));
+			MSG_WriteShort(ftoi(Origin.y));
+			MSG_WriteShort(ftoi(Origin.z));
+		}
 	}
 }
 
