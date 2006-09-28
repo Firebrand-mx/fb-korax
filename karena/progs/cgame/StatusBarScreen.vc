@@ -37,7 +37,7 @@ const int BAR_Y = 441;
 
 ClientGameBase ClGame;
 
-MainClientState cl;
+Player cl;
 
 int sb_pclass;
 int sb_colour;
@@ -161,7 +161,7 @@ void StartMap()
 	{
 	case HexenDefs::PCLASS_FIGHTER:
 		pic_chain = R_RegisterPic('chain');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmf2');
@@ -178,7 +178,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_CLERIC:
 		pic_chain = R_RegisterPic('chain2');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmc2');
@@ -191,7 +191,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_MAGE:
 		pic_chain = R_RegisterPic('chain3');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmm2');
@@ -204,7 +204,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_HERETIC:
 		pic_chain = R_RegisterPic('chain4');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmh2');
@@ -217,7 +217,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_MARINE:
 		pic_chain = R_RegisterPic('chain5');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmd2');
@@ -230,7 +230,7 @@ void StartMap()
 		break;
 	case HexenDefs::PCLASS_WITCHAVEN:
 		pic_chain = R_RegisterPic('chain2');
-		if (cl.maxclients == 1)
+		if (ClGame.maxclients == 1)
 		{
 			// single player game uses red life gem (the second gem)
 			pic_lifegem = R_RegisterPic('lifegmh2');
@@ -519,31 +519,31 @@ void SB_DrawMainBar()
 	SB_DrawNumber92(460, 20, cl.experience, 1);
 	SB_DrawNumber92(580, 20, cl.next_level, 1);
 	// Frags / health
-	if (cl.deathmatch && cl.deathmatch != HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch && ClGame.deathmatch != HexenDefs::game_sweepteam)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl.Frags, 0);
 		*/
 		SB_DrawNumber92(32, 20, cl.Frags, 0);
 
-		if (cl.deathmatch == HexenDefs::game_dmteam)
+		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
 			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
 		}
 	}
 
-	if (cl.deathmatch == HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
 	}
 
-	if (!cl.deathmatch || cl.deathmatch == HexenDefs::game_sweepteam)
+	if (!ClGame.deathmatch || ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
 
-	if (cl.health >= 25)
+	if (cl.Health >= 25)
 	{
 		SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
 	}
@@ -553,7 +553,7 @@ void SB_DrawMainBar()
 	}
 
 	//  Mana
-	if (cl.mana[0] == 0)
+	if (cl.Mana[0] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -562,7 +562,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana1 = 1;
 	}
-	if (cl.mana[1] == 0)
+	if (cl.Mana[1] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -571,7 +571,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana2 = 1;
 	}
-	if (cl.mana[2] == 0)
+	if (cl.Mana[2] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -580,7 +580,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.mana[3] == 0)
+	if (cl.Mana[3] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -591,7 +591,7 @@ void SB_DrawMainBar()
 		sb_mana4 = 1;
 		sb_manaVial4 = 1;
 	}
-	if (cl.mana[4] == 0)
+	if (cl.Mana[4] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana5 = 0;
@@ -668,11 +668,11 @@ void SB_DrawMainBar()
 		sb_manaVial3 = 1;
 	}
 
-	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.mana[0]);
-	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.mana[1]);
-	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.mana[2]);
-	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.mana[3]);
-	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.mana[4]);
+	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.Mana[0]);
+	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.Mana[1]);
+	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.Mana[2]);
+	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.Mana[3]);
+	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.Mana[4]);
 	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
 	R_DrawPic(BAR_X + 107, BAR_Y + 3, pic_manadim2[sb_mana2]);//+30
 	R_DrawPic(BAR_X + 138, BAR_Y + 3, pic_manadim3[sb_mana3]);//+31
@@ -685,11 +685,11 @@ void SB_DrawMainBar()
 	R_DrawPic(BAR_X + 217, BAR_Y + 3, pic_manavial5[sb_manaVial5]);
 	R_DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
 	R_DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
-	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * cl.mana[0]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * cl.mana[1]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * cl.mana[2]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * cl.mana[3]) / HexenDefs::MAX_MANA, 31);
-	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * cl.mana[4]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * cl.Mana[0]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * cl.Mana[1]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * cl.Mana[2]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * cl.Mana[3]) / HexenDefs::MAX_MANA, 31);
+	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * cl.Mana[4]) / HexenDefs::MAX_MANA, 31);
 	R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 31);
 	R_ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 31);
 
@@ -729,7 +729,7 @@ void SB_DrawMainBar()
 */
 
 	// Armor
-	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, cl.armorpoints, 0);
+	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, cl.ArmorPoints, 0);
 }
 
 //==========================================================================
@@ -836,11 +836,11 @@ void SB_DrawFullscreenStats()
 	int readyweapon;
 
 	//  [FB] Armorpoints
-	SB_DrawNumber12(50, 430, cl.armorpoints);
+	SB_DrawNumber12(50, 430, cl.ArmorPoints);
 	R_DrawShadowedPic(30, 470, pic_armor2);
 
 	//  [FB] Health
-	SB_DrawNumber12(50, 450, cl.health);
+	SB_DrawNumber12(50, 450, cl.Health);
 	R_DrawShadowedPic(30, 494, pic_health);
 
 //[Korax]
@@ -848,29 +848,29 @@ void SB_DrawFullscreenStats()
 	SB_DrawNumber92(460, 20, 0+cl.experience, 1);
 	SB_DrawNumber92(580, 20, 0+cl.next_level, 1);
 	//  Frags
-	if (cl.deathmatch && cl.deathmatch != HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch && ClGame.deathmatch != HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(32, 20, cl.Frags, 0);
 
-		if (cl.deathmatch == HexenDefs::game_dmteam)
+		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
 			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
 		}
 	}
 
-	if (cl.deathmatch == HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
 	}
 
-	if (!cl.deathmatch || cl.deathmatch == HexenDefs::game_sweepteam)
+	if (!ClGame.deathmatch || ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
 
 	//  [FB] Mana Display in Fullscreen
-	if (cl.mana[0] == 0)
+	if (cl.Mana[0] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -879,7 +879,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana1 = 1;
 	}
-	if (cl.mana[1] == 0)
+	if (cl.Mana[1] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -888,7 +888,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana2 = 1;
 	}
-	if (cl.mana[2] == 0)
+	if (cl.Mana[2] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -897,7 +897,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.mana[3] == 0)
+	if (cl.Mana[3] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -906,7 +906,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana4 = 1;
 	}
-	if (cl.mana[4] == 0)
+	if (cl.Mana[4] == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana5 = 0;
@@ -962,11 +962,11 @@ void SB_DrawFullscreenStats()
 	R_DrawShadowedPic(360, 440, pic_manadim3[sb_mana3]);
 	R_DrawShadowedPic(420, 440, pic_manadim4[sb_mana4]);
 	R_DrawShadowedPic(480, 440, pic_manadim5[sb_mana5]);
-	SB_DrawNumber92(235, 454, cl.mana[0], 0);
-	SB_DrawNumber92(295, 454, cl.mana[1], 0);
-	SB_DrawNumber92(355, 454, cl.mana[2], 0);
-	SB_DrawNumber92(415, 454, cl.mana[3], 0);
-	SB_DrawNumber92(475, 454, cl.mana[4], 0);
+	SB_DrawNumber92(235, 454, cl.Mana[0], 0);
+	SB_DrawNumber92(295, 454, cl.Mana[1], 0);
+	SB_DrawNumber92(355, 454, cl.Mana[2], 0);
+	SB_DrawNumber92(415, 454, cl.Mana[3], 0);
+	SB_DrawNumber92(475, 454, cl.Mana[4], 0);
 
 //[Korax]
 /*	if (cl.InventoryTime)
@@ -1079,9 +1079,9 @@ void SB_DrawIcons(int view)
 
 void SB_DrawPause(int view)
 {
-	if (cl.bPaused && GetCvar('draw_pause'))
+	if (ClGame.bPaused && GetCvar('draw_pause'))
 	{
-		R_DrawShadowedPic(320, cl.maxclients > 1 ? 140 : 40, pic_paused);
+		R_DrawShadowedPic(320, ClGame.maxclients > 1 ? 140 : 40, pic_paused);
 	}
 }
 
@@ -1146,7 +1146,7 @@ void SB_UpdateWidgets()
 	int delta;
 	int curHealth;
 
-	curHealth = cl.health;
+	curHealth = cl.Health;
 
 	if (curHealth < 0)
 	{

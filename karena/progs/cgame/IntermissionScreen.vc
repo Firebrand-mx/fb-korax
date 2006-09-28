@@ -98,7 +98,7 @@ void Start()
 	ClGame.skipintermission = false;
 	intertime = 0.0;
 
-	if (!ClGame.cl.deathmatch && !HubCount)
+	if (!ClGame.deathmatch && !HubCount)
 	{
 		interstate = 1;
 		cnt = 0.3;
@@ -127,7 +127,7 @@ void Tick(float DeltaTime)
 		return;
 	}
 	intertime += DeltaTime;
-	if (ClGame.skipintermission || (!ClGame.cl.deathmatch && !HubCount))
+	if (ClGame.skipintermission || (!ClGame.deathmatch && !HubCount))
 	{
 		interstate = 1;
 		cnt = 0.3;
@@ -150,7 +150,7 @@ void DrawWindow(GC gc)
 
 	gc.DrawFullScreenPic(patchINTERPIC);
 
-	if (!ClGame.cl.deathmatch)
+	if (!ClGame.deathmatch)
 	{
 		if (HubCount)
 		{
@@ -171,7 +171,7 @@ void DrawWindow(GC gc)
 
 void IM_LoadPics()
 {
-	if (HubCount || ClGame.cl.deathmatch)
+	if (HubCount || ClGame.deathmatch)
 	{
 		patchINTERPIC = R_RegisterPic('interpic');
 		tallytop = R_RegisterPic('tallytop');
@@ -207,7 +207,7 @@ void IM_InitStats()
 	int playercount;
 	name msgLumpName;
 
-	if (!ClGame.cl.deathmatch)
+	if (!ClGame.deathmatch)
 	{
 		if (!ClGame.im->bNoIntermission)
 		{
@@ -228,7 +228,7 @@ void IM_InitStats()
 			if (ClGame.scores[i].bActive)
 			{
 				playercount++;
-				if (ClGame.cl.deathmatch==2)
+				if (ClGame.deathmatch==2)
 				{
 					string col = Info_ValueForKey(ClGame.scores[i].userinfo, "colour");
 					if (col)
@@ -448,12 +448,12 @@ void IM_DrawDeathTally()
 		for (j = 0; j < MAXPLAYERS; j++, xPos += xDelta)
 		{
 			x = ftoi(xPos);
-			bold = ((i == ClGame.cl.clientnum || j == ClGame.cl.clientnum)&&ClGame.cl.deathmatch!=2)||
+			bold = ((i == ClGame.cl.ClientNum || j == ClGame.cl.ClientNum)&&ClGame.deathmatch!=2)||
 				(GetCvar('colour') == i || GetCvar('colour') == j);
-			if ((ClGame.scores[i].bActive && ClGame.scores[j].bActive && ClGame.cl.deathmatch!=2) ||
-				(ClGame.cl.deathmatch==2 && teams[i].bActive && teams[j].bActive))
+			if ((ClGame.scores[i].bActive && ClGame.scores[j].bActive && ClGame.deathmatch!=2) ||
+				(ClGame.deathmatch==2 && teams[i].bActive && teams[j].bActive))
 			{
-				int frr = (ClGame.cl.deathmatch==2?teams[i].frags[j]:ClGame.scores[i].frags[j]);
+				int frr = (ClGame.deathmatch==2?teams[i].frags[j]:ClGame.scores[i].frags[j]);
 				if (bold)
 				{
 					IM_DrawNumberBold(frr, x, y, 100);
