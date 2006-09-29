@@ -163,7 +163,7 @@ void InitNewGame(int skill)
 	if (GameMode)
 		GameMode.End();
 	//[CW] we must use GetCvar here because deathmatch param
-	//	   is not initialised yet at this point
+	//	   is not initialized yet at this point
 	////////////////////mode = GetCvar('deathmatch');
 	////////////////////SetCvar('deathmatch', ++mode);	//[CW] single player hack
 	switch (mode)
@@ -4054,7 +4054,7 @@ void InsertPlayer(Player pl)
 	else
 	{
 		int i;
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)		//[CW] FIXME!!! -- call get corresponding num
 		{
 			if (!Teams[i])
 				break;
@@ -4067,10 +4067,10 @@ void InsertPlayer(Player pl)
 
 		if (teamnum == -1)
 		{
-			if (i == HexenDefs::MAXPLAYERTEAMS)
+			if (i == HexenDefs::MAXTEAMSINGAME)
 			{
-				// this is unexpected, but player MUST join SOME team
 				bprint("unsufficient allowed teams, new player is added to team 0");
+				pl.Colour = Teams[0].Colour;
 				teamnum = 0;
 			}
 			else
@@ -4081,6 +4081,8 @@ void InsertPlayer(Player pl)
 	// if this team does not exist, create a new one
 	if (!Teams[teamnum])
 	{
+		int i;
+
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Colour = pl.Colour;
@@ -4089,6 +4091,22 @@ void InsertPlayer(Player pl)
 		// update its team references, since a new team object is created
 		if (GameMode)
 			GameMode.NotifyUpdateTeams();
+
+		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+			bprint("team %s enters competition", ColourNames[Teams[teamnum].Colour]);
+
+		// update team selection menus for all non-spawned human players
+		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (Players[i] && !Players[i].bIsBot &&
+						Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait)
+				{
+					Player(Players[i]).SelectPlayerTeam(true);
+				}
+			}
+		}
 	}
 
 	Teams[teamnum].EnlistPlayer(pl);

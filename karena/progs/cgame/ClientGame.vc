@@ -56,6 +56,8 @@ ScoreBoardScreen	GScBoard;	// [CW]
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
 
+MenuScreenTeamSelect	TeamSelectScreen;	//[CW]
+
 LocalSoundQueue		Announcer;		// [CW]
 
 MenuScreen menu_stack[MAX_MENU_STACK];
@@ -100,6 +102,7 @@ int ecolours[8];
 void RootWindowCreated()
 {
 	//[CW]
+	////////////////CreateCvar('TeamSelection', "0", 0);
 	CreateCvar('BotsAutoSpawn', "0", 0);
 
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
@@ -494,6 +497,10 @@ void PopMenu()
 	if (menu_sp < 0)
 		FatalError("PopMenu: menu stack underflow");
 
+	//[CW]
+	if (CurrentMenuScreen == TeamSelectScreen)
+		TeamSelectScreen.OnCancel();
+
 	menu_stack[menu_sp].Destroy();
 	if (menu_sp)
 	{
@@ -518,6 +525,10 @@ void PopMenu()
 void ForceMenuOff()
 {
 	int i;
+
+	//[CW]
+	if (CurrentMenuScreen == TeamSelectScreen)
+		TeamSelectScreen.OnCancel();
 
 	for (i = 0; i < menu_sp; i++)
 	{
@@ -953,6 +964,44 @@ void ParseIceChunks()
 
 //==========================================================================
 //
+//  ParseTeamSelect
+//
+//==========================================================================
+
+void ParseTeamSelect()
+{
+	int i;
+	bool created;
+	created = false;
+
+	//////////////////SetCvar('TeamSelection', HexenDefs::teamselection_wait);
+
+	if (TeamSelectScreen == none)
+	{
+		TeamSelectScreen = MenuScreenTeamSelect(SpawnMenu(MenuScreenTeamSelect));
+		created = true;
+	}
+	TeamSelectScreen.maxTeams = MSG_ReadByte();
+	TeamSelectScreen.activeTeams = MSG_ReadByte();
+
+	for (i = 0; i < TeamSelectScreen.activeTeams; i++)
+	{
+		TeamSelectScreen.Teams[i] = MSG_ReadByte();
+	}
+
+	if (created)
+	{
+		TeamSelectScreen.curSelection = MSG_ReadByte();
+		TeamSelectScreen.Ready = true;
+		TeamSelectScreen.CreateChoices();
+		PushMenuScreen(TeamSelectScreen);
+	}
+	else
+		TeamSelectScreen.ReInit();
+}
+
+//==========================================================================
+//
 //  ParseLocalSound
 //
 //==========================================================================
@@ -1017,6 +1066,7 @@ bool ParseServerCommand(int cmd_type)
 
 // [Korax]
 	case HexenDefs::svc_teamselect:
+		ParseTeamSelect();
 		break;
 
 	case HexenDefs::svc_scoreboard:
