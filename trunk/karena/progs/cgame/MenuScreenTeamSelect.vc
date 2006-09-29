@@ -1,0 +1,180 @@
+﻿//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: MenuScreenTeamSelect.vc 527 2006-08-23 23:20:54Z firebrand_kh $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class MenuScreenTeamSelect : MenuScreen;
+
+bool Ready;
+string	TeamNames[HexenDefs::MAXPLAYERTEAMS];
+int	Teams[HexenDefs::MAXTEAMSINGAME];
+int	maxTeams;
+int activeTeams;
+int	curSelection;
+
+void CreateChoices()
+{
+	int i, y;
+	MenuStaticText staticText;
+	MenuChoice_Team newChoice;
+	bool teams_active[HexenDefs::MAXPLAYERTEAMS];
+
+	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		teams_active[i] = false;
+
+	if (!Ready)
+		return;
+
+
+	y = ChoicesStartY;
+	if (activeTeams > 0)
+	{
+		staticText = MenuStaticText(NewChild(MenuStaticText));
+		staticText.Text = "ACTIVE TEAMS";
+		staticText.SetPos(ChoicesStartX, y);
+		y += 24;
+	
+		// Active Teams
+		for (i = 0; i < activeTeams && i < HexenDefs::MAXTEAMSINGAME; i++)
+		{
+			//if (Teams[i] == -1)
+			//	break;
+
+			newChoice = MenuChoice_Team(NewChild(MenuChoice_Team));
+			newChoice.SetPos(ChoicesStartX, y);
+			newChoice.Text = TeamNames[Teams[i]];
+			newChoice.Team = Teams[i];
+			teams_active[Teams[i]] = true;
+			y += 18;
+		}
+		y += 24;
+	}
+
+	// Available Teams
+	if (activeTeams < maxTeams && activeTeams < HexenDefs::MAXTEAMSINGAME)
+	{
+		staticText = MenuStaticText(NewChild(MenuStaticText));
+		staticText.Text = "AVAILABLE TEAMS";
+		staticText.SetPos(ChoicesStartX, y);
+		y += 24;
+		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		{
+			if (teams_active[i])
+			{
+				continue;
+			}
+			newChoice = MenuChoice_Team(NewChild(MenuChoice_Team));
+			newChoice.SetPos(ChoicesStartX, y);
+			newChoice.Text = TeamNames[i];
+			newChoice.Team = i;
+			y += 18;
+		}
+	}
+
+	SetHeight(y);
+
+	SetDefaultChoice();
+}
+
+void ReInit()
+{
+	//DestroyAllChildren();
+	int i;
+	for (i = 1; i < NumItems; i++)
+	{
+		Items[i].Destroy();
+		Items[i] = none;
+	}
+	NumItems = 1;
+	CreateChoices();
+
+	//////// re-position selection
+	////////SetDefaultChoice();
+}
+
+void OnCancel()
+{
+	SetCvar('Color', curSelection);
+}
+
+void SetDefaultChoice()
+{
+//	::SetDefaultChoice();
+//	CycleNextChoice();
+//	CycleNextChoice();
+
+	int i;
+	int firstSensitive;
+
+	CursorPos = -1;
+	firstSensitive = -1;
+
+	for (i = 0; i < NumItems; i++)
+	{
+		if (Items[i].IsSensitive())
+		{
+			if (firstSensitive == -1)
+				firstSensitive = i;
+			if (!Items[i].IsA('MenuChoice_Team'))
+				continue;
+			if (MenuChoice_Team(Items[i]).Team == curSelection)
+			{
+				CursorPrev = -1;
+				CursorPos = i;
+				CursorMoved();
+				break;
+			}
+		}
+	}
+	if (CursorPos == -1)
+	{
+		CursorPrev = -1;
+		CursorPos = firstSensitive;
+		CursorMoved();
+	}
+}
+
+defaultproperties
+{
+	TeamNames[0] = "blue";
+	TeamNames[1] = "red";
+	TeamNames[2] = "gold";
+	TeamNames[3] = "lime";
+	TeamNames[4] = "green";
+	TeamNames[5] = "gray";
+	TeamNames[6] = "brown";
+	TeamNames[7] = "magenta";
+
+	Teams[0] = 0;
+	Teams[1] = 1;
+	Teams[2] = 2;
+	Teams[3] = 3;
+
+	maxTeams = HexenDefs::MAXTEAMSINGAME;
+	curSelection = 0;
+
+	ChoicesStartX = 120;
+	ChoicesStartY = 44;
+	SelectorType = MenuSelector_SmallRight;
+	Title = "SELECT A TEAM TO JOIN:";
+}

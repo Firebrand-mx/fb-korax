@@ -109,6 +109,7 @@ struct morph_t
 struct scoreboard_t
 {
 	bool		IsActive;
+	string		plname;		// player name
 	int		plclass;
 	int		level;
 	bool		IsBot;		// true if player is bot, false if is human
@@ -146,6 +147,7 @@ int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
 
+string		targetnamehint;
 int		table_thisplayer;	// this player's index in gamescores array
 scoreboard_t	gamescores[MAXPLAYERS];
 int		teamscores[HexenDefs::MAXPLAYERTEAMS];
@@ -273,6 +275,8 @@ int dam_am; // [FB] Just for the hero's shield
 
 bool onground;
 
+int	TeamSelection;	//[CW] team selection process state
+////////await_team_selection;
 PlayerTeam	Team;	//[CW]
 
 int targetnamehint_counter;	//[CW]
@@ -301,6 +305,7 @@ void PutClientIntoServer()
 		Bot.player = self;
 		Bot.OnBeginPlay();
 	}
+	TeamSelection = HexenDefs::teamselection_none;
 }
 
 //==========================================================================
@@ -333,9 +338,6 @@ void SpawnClient()
 		}
 		playerWasReborn = (PlayerState == PST_REBORN);
 	}
-
-	//[CW] put player into corresponding team
-	MainGameInfo(Level.Game).InsertPlayer(self);
 
 	//  Spawn player
 	if (Level.Game.deathmatch)
@@ -510,9 +512,6 @@ void DisconnectClient()
 	//[CW] set leaving player down the competition table
 	// NOTE: for future, should leaving player really loose his/her score?
 	Team.DiscardPlayer(self);
-
-	//[CW]---------> obsolete	
-	//ScoreboardsUpdate(false);
 }
 
 //==========================================================================
@@ -582,6 +581,57 @@ void SetPlayerColour()
 	{
 		// Set colour translation bits for player sprites
 		MO.Translation = PClass * (MAXPLAYERS - 1) + Colour;
+	}
+
+	// [CW] re-select team... huh... hope this will work
+	if (TeamSelection == HexenDefs::teamselection_wait)
+	{
+		///////await_team_selection = false;
+		TeamSelection = HexenDefs::teamselection_done;
+		MO.Remove();
+		SpawnClient();
+	}
+}
+
+//==========================================================================
+//
+//  SelectPlayerTeam
+//
+//==========================================================================
+
+void SelectPlayerTeam(bool call_update)
+{
+	if (bIsBot)
+	{
+		///////////SetCvar('TeamSelection', HexenDefs::teamselection_done);
+		TeamSelection = HexenDefs::teamselection_done;
+	}
+	else
+	{
+
+	int i1, i2;
+	SelectClientMsg(MSG_SV_CLIENT);
+	MSG_WriteByte(HexenDefs::svc_teamselect);
+	MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);	// [CW] FIXME!!!
+	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
+	{
+		if (MainGameInfo(Level.Game).Teams[i1] == none)
+			break;
+	}
+	MSG_WriteByte(i1);
+	
+	
+	for (i2 = 0; i2 < i1; i2++)
+	{
+		MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
+	}
+
+	if (!call_update)
+		MSG_WriteByte(Colour);
+
+	////////await_team_selection = true;
+	TeamSelection = HexenDefs::teamselection_wait;
+
 	}
 }
 
@@ -683,6 +733,7 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		PlayerReborn();
 	}
+
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
 	{
 		PClass = P_Random() % 6;
@@ -697,6 +748,21 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		PClass = BaseClass;
 	}
+
+	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM &&
+								TeamSelection == HexenDefs::teamselection_none)
+	{
+		SelectPlayerTeam(false);
+	}
+	
+	//[CW] put player into corresponding team
+	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
+		TeamSelection == HexenDefs::teamselection_done)
+	{
+		MainGameInfo(Level.Game).InsertPlayer(self);
+	}
+
+
 	x = mthing->x;
 	y = mthing->y;
 	z = Actor::ONFLOORZ;
@@ -776,7 +842,8 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	SetPlayerColour();
+	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM)
+		SetPlayerColour();
 	if (bIsBot)
 	{
 		Bot.OnSpawn();
@@ -1574,7 +1641,6 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			   {
 				if (!Level.Game.Players[j])
 				   break;
-				dprint("----counting deaths: gs = %i, killer = %i, ded = %i, frags = %i", gs, j, plteam.Players[i].GetPlayerNum(), Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()]);
 				pl.gamescores[gs].deaths += Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
 			   }
 			}
@@ -2791,10 +2857,6 @@ void DeathPlayerTick(float deltaTime)
 			PoisonCount--;
 		}
 	}
-
-	//[CW] Show scoreboard for died player
-	// FIXME!!!	do it really need to be here? playertick is called multiple times!
-	////////////////////////Scoreboard(true);
 
 	if (Buttons & BT_USE)
 	{
