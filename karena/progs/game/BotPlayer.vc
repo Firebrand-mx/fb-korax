@@ -122,6 +122,9 @@ struct chatinfo_t
 	chatline_t		special[20];
 };
 
+enum { NUMTOTALBOTS = 336 };
+enum { NUMBOTTYPES = 336 };
+
 //
 // The things the bot knows about their enemy
 //
@@ -165,6 +168,7 @@ Actor ally;			// Ally to tag along with
 Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
 				// pointed to by this. Allows bot to roam to it if
 				// necessary.
+Actor ball;			// Active Soccer Ball ingame
 
 enemyinfo_t enemyinfo;		// Things we know about our enemy
 botstate_t botstate;		// What we're doing in teamgame mode
@@ -362,9 +366,9 @@ bool CheckPNodes(Actor node)
 		{
 			return true;
 		}
+		// [FB] Node checking routine for team game
 		else if (player.Team && player.Level.Game.deathmatch != HexenDefs::game_dmteam)
 		{
-			// [FB] Node checking routine for team game
 			// [FB] Blue Team
 			if (player.Team.Colour == 0)
 			{
@@ -432,6 +436,33 @@ void SetEnemy()
 	// Double check the validity of the enemy
 	if (!enemy.bShootable)
 		enemy = none;
+}
+
+//==========================================================================
+//
+//	CheckActiveBall
+//
+//	[FB] As the name suggests, it checks for the active ball in game
+//
+//==========================================================================
+
+bool CheckActiveBall(Actor check)
+{
+	// [FB] Are we in football gameplay mode?
+	if(MainGameInfo(player.Level.Game).GameMode && player.Level.Game.deathmatch == HexenDefs::game_football)
+ 	{
+		// [FB] Check for an active ball
+		if (GameFootball(MainGameInfo(player.Level.Game).GameMode).Ball &&
+		    check == GameFootball(MainGameInfo(player.Level.Game).GameMode).Ball)
+		{
+			if (player.MO.CanSee(check) && botmo.DistTo(check) <= 32.0)
+ 			{
+				return true;
+			}
+		}
+	}
+
+	return false;		
 }
 
 //==========================================================================
@@ -604,13 +635,17 @@ bool PTR_BotPathTraverse(intercept_t *in)
 	{
 		in->Thing = goal;
 	}
+	else if (item)
+	{
+		in->Thing = item;
+	}
 	else if (node)
 	{
 		in->Thing = node;
 	}
-	else if (item)
+	else if (ball)
 	{
-		in->Thing = item;
+		in->Thing = ball;
 	}
 	else if (enemy)
 	{
@@ -725,6 +760,14 @@ void CheckStuff()
 		}
 	}
 
+	if (ball)
+	{
+		if (!CheckTo(ball.Origin))
+		{
+			ball = none;
+		}
+	}
+
 	if (posdest_valid)
 	{
 		TVec dir;
@@ -819,16 +862,23 @@ void Scan()
 					bItemIsPowerup = bNewItemIsPowerup;
 				}
 			}
-			else if (!missile && actor.bMissile && (botmo.DistTo(actor) < AVOID_DIST))
-			{
-				missile = actor;
-			}
-			else if(!node)
+			else if (!node)
 			{
 				if (CheckPNodes(actor))
 				{
 					node = actor;
 				}
+			}
+			else if (!ball)
+			{
+				if (CheckActiveBall(actor))
+				{
+					ball = actor;
+				}
+			}
+			else if (!missile && actor.bMissile && (botmo.DistTo(actor) <= AVOID_DIST))
+			{
+				missile = actor;
 			}
 		}
 	}
@@ -1240,10 +1290,6 @@ int B_ChooseWeapon()
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_THIRD;
 
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5
-					     && player.MO.Health < player.max_health)
-						return HexenDefs::WP_SIXTH;
-
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
@@ -1342,8 +1388,7 @@ int B_ChooseWeapon()
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
 						return HexenDefs::WP_FIFTH;
 
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5
-					     && player.MO.Health < player.max_health)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_SIXTH;
 
 					return player.ReadyWeapon;
@@ -1481,8 +1526,7 @@ int B_ChooseWeapon()
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
 						return HexenDefs::WP_FIFTH;
 
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5
-					     && player.MO.Health < player.max_health)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_SIXTH;
 
 					return player.ReadyWeapon;
@@ -1742,17 +1786,21 @@ void Roam()
 	{
 		dest = goal.Origin;
 	}
-	else if (lastpos_valid)
+	else if (item)
 	{
-		dest = lastpos;
+		dest = item.Origin;
 	}
 	else if (node)
 	{
 		dest = node.Origin;
 	}
-	else if (item)
+	else if (ball)
 	{
-		dest = item.Origin;
+		dest = ball.Origin;
+	}
+	else if (lastpos_valid)
+	{
+		dest = lastpos;
 	}
 	else if (posdest_valid)
 	{
@@ -2002,7 +2050,7 @@ void Move(float deltaTime)
 
 		if (!CheckPath(an, 48.0)) // We're blocked, so go the other way!
 		{
-			an += (an>180.0?-180.0:180.0);
+			an += (an > 180.0 ? -180.0 : 180.0);
 			if (CheckPath(an, 48.0))
 				sidemove = -sidemove;
 			else
@@ -2029,6 +2077,20 @@ void Move(float deltaTime)
 		return;
 	}
 
+	// [FB] We cover ball movement here too
+	if (ball)
+	{
+		float balldist;
+
+		balldist = botmo.DistTo(ball);
+
+		// [FB] We are close enough to kick the ball
+		if (CheckTo(ball.Origin) && dist <= Actor::MELEERANGE * 6.0)
+		{
+			botmo.Player.Buttons |= BT_USE;
+		}
+	}
+	
 	if (t_strafe)
 	{
 		t_strafe -= deltaTime;
@@ -2220,11 +2282,11 @@ int BotSkill()
 {
 	if(player.Level.Game.gameskill == sk_nightmare)
 	{
-		return 4;
+		return 0;
 	}
 	else if(player.Level.Game.gameskill == sk_hard)
 	{
-		return 3;
+		return 1;
 	}
 	else if(player.Level.Game.gameskill == sk_medium)
 	{
@@ -2232,11 +2294,11 @@ int BotSkill()
 	}
 	else if(player.Level.Game.gameskill == sk_easy)
 	{
-		return 1;
+		return 3;
 	}
 	else
 	{
-		return 0;
+		return 4;
 	}
 }
 
