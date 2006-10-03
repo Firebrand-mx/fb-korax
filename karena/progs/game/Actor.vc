@@ -153,6 +153,7 @@ TVec teleport_pos;
 
 int bombdamage;
 float bombdistance;
+TVec bombspot;
 bool DamageSource;
 
 // Height if not aiming up or down
@@ -535,13 +536,13 @@ void FloorBounceMissile()
 
 //==========================================================================
 //
-//  FloorBounceMissile2
+//  FloorBounceActor
 //
 //  [FB] New variant for soccer ball
 //
 //==========================================================================
 
-void FloorBounceMissile2()
+void FloorBounceActor()
 {
 	Velocity.z = Velocity.z * -0.7;
 	Velocity.x = 2.0 * Velocity.x / 3.0;
@@ -1723,9 +1724,19 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 //
 //==========================================================================
 
-void SpawnBloodSplatter(TVec org)
+void SpawnBloodSplatter(TVec org, int damage)
 {
 	Actor mo;
+
+	MSG_Select(MSG_SV_DATAGRAM);
+	if (MSG_CheckSpace(8))
+	{
+		MSG_WriteByte(HexenDefs::svc_blood);
+		MSG_WriteShort(ftoi(org.x));
+		MSG_WriteShort(ftoi(org.y));
+		MSG_WriteShort(ftoi(org.z));
+		MSG_WriteByte(damage > 255 ? 255 : damage);
+	}
 
 	mo = Spawn(BloodSplatter, org);
 	mo.Instigator = self;
@@ -2062,7 +2073,7 @@ bool Touch(Entity InOther)
 				!(Class == TeleportOtherFX4) &&
 				!(Class == TeleportOtherFX5) && (P_Random() < 192))
 			{
-				Other.SpawnBloodSplatter(Origin);
+				Other.SpawnBloodSplatter(Origin, damage);
 			}
 			Other.Damage(self, Instigator, damage);
 		}
@@ -2663,7 +2674,7 @@ bool HitFloor()
 	// [FB] for soccer ball
 	if (bFloorBounce)
 	{
-		FloorBounceMissile2();
+		FloorBounceActor();
 		return true;
 	}
 	if (vdot < -0.1)
@@ -3646,16 +3657,17 @@ bool ExplodeMissile()
 	{
 		return false;
 	}
-	//mo->tics -= P_Random()&3;
+
+//	mo->tics -= P_Random() & 3;
 	bMissile = false;
 
 	if (SorcererBall(self))
 	{
-		PlayFullVolumeSound('SorcererBigBallExplode', CHAN_AUTO);
+		PlaySound('SorcererBigBallExplode', CHAN_AUTO, 1.0, ATTN_NONE);
 	}
 	else if (SorcererFX1(self))
 	{
-		PlayFullVolumeSound('SorcererHeadScream', CHAN_AUTO);
+		PlaySound('SorcererHeadScream', CHAN_AUTO, 1.0, ATTN_NONE);
 	}
 	else if (DeathSound)
 	{
@@ -3674,7 +3686,9 @@ bool ExplodeMissile()
 		}
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
-	Effects &= ~HexenDefs::EF_DL_ROCKET;
+	if (Effects & HexenDefs::EF_DL_ROCKET)
+		Effects &= ~HexenDefs::EF_DL_ROCKET;
+
 	return true;
 }
 
@@ -3791,7 +3805,7 @@ bool PIT_RadiusAttack(Entity Other)
 	{
 		return true;
 	}
-	// [FB] Enabled for KA!
+	// [FB] Enable for KA!
 	if (Actor(Other).bBoss)
 	{
 		// Bosses take no damage from PIT_RadiusAttack
@@ -3812,8 +3826,8 @@ bool PIT_RadiusAttack(Entity Other)
 		// Out of range
 		return true;
 	}
-	// [FB] Fixed??
-	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) - (Origin.z + Height))) > abs(ftoi(Instigator.Origin.z + bombdistance)))
+	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) -
+			(Actor(self).Origin.z + Actor(self).Height))) > abs(ftoi(bombspot.z + bombdistance)))
 	{
 		// too high/low
 		return true;
@@ -3850,6 +3864,7 @@ void P_RadiusAttack(int damage, float distance, bool damageSource)
 	xl = MapBlock(Origin.x - distance - XLevel.BlockMapOrgX);
 	bombdamage = damage;
 	bombdistance = distance;
+	bombspot = Origin;
 	DamageSource = damageSource;
 	for (y = yl; y <= yh; y++)
 	{
@@ -4221,17 +4236,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 			}
 			if (P_Random() < 192)
 			{
-				MSG_Select(MSG_SV_DATAGRAM);
-				if (MSG_CheckSpace(8))
-				{
-					MSG_WriteByte(HexenDefs::svc_blood);
-					MSG_WriteShort(ftoi(hit_point.x));
-					MSG_WriteShort(ftoi(hit_point.y));
-					MSG_WriteShort(ftoi(hit_point.z));
-					MSG_WriteByte(la_damage > 255 ? 255 : la_damage);
-				}
-
-				th.SpawnBloodSplatter(hit_point);
+				th.SpawnBloodSplatter(hit_point, la_damage);
 			}
 		}
 		if (shootPuffType == FlamePuff2)
@@ -4330,6 +4335,17 @@ void SpawnPuff(TVec org, classid PuffType)
 		{
 			MSG_WriteByte(HexenDefs::svc_explosion2);
 			MSG_WriteByte(HexenDefs::EF_DL_BLUE);
+			MSG_WriteShort(ftoi(org.x));
+			MSG_WriteShort(ftoi(org.y));
+			MSG_WriteShort(ftoi(org.z));
+		}
+	}
+	if (PuffType == DoomPuff)
+	{
+		MSG_Select(MSG_SV_DATAGRAM);
+		if (MSG_CheckSpace(7))
+		{
+			MSG_WriteByte(HexenDefs::svc_gun_shot);
 			MSG_WriteShort(ftoi(org.x));
 			MSG_WriteShort(ftoi(org.y));
 			MSG_WriteShort(ftoi(org.z));
