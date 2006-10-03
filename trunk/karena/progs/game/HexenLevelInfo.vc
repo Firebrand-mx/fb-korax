@@ -432,6 +432,28 @@ int ThingCount(int type, int tid)
 
 //==========================================================================
 //
+//  SetSectorGravity
+//
+//==========================================================================
+
+void SetSectorGravity(int tag, float integer, float fraction)
+{
+	int SecNum;
+	float gravity;
+
+	if (fraction > 99.0)
+		fraction = 99.0;
+
+	gravity = integer + fraction * 0.01;
+
+	for (SecNum = XLevel.FindSectorFromTag(tag, -1);
+		SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(tag, SecNum))
+		XLevel.Sectors[SecNum].Gravity = gravity;
+}
+
+//==========================================================================
+//
 //  ExecuteActionSpecial
 //
 //==========================================================================

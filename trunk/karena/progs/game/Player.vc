@@ -505,7 +505,7 @@ void DisconnectClient()
 		}
 	}
 	bprint("%s left the game\n", PlayerName);
-	MO.PlayFullVolumeSound('Chat', CHAN_AUTO);
+	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
 
 	//[CW] set leaving player down the competition table
 	// NOTE: for future, should leaving player really loose his/her score?
@@ -1435,7 +1435,7 @@ void ActivateLevel(int lvl)
 		}
 
 		cprint("YOU REACHED LEVEL %d", lvl);
-		MO.PlaySound('Chat', CHAN_ITEM);
+		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 }
 
@@ -1479,7 +1479,7 @@ void DeactivateLevel(int lvl)
 		}
 
 		cprint("YOU LOWERED TO LEVEL %d", lvl);
-		MO.PlaySound('Chat', CHAN_ITEM);
+		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 }
 
@@ -5248,14 +5248,12 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			if(source.bIsPlayer)
 			{
 				bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
-						PlayerName,
-						source.Player.PlayerName);
+						PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
 				bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
-						PlayerName,
-						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
 		//[CW] p.3: missile attack
@@ -5270,14 +5268,12 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 				}
 				else
 					bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
-						PlayerName,
-						source.Player.PlayerName);
+						PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
 				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
-						PlayerName,
-						MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
 		//[CW] falling damage
