@@ -25,7 +25,7 @@ del:
 $(OUTDIR)/shared.dat: *.vc $(COMMON_DIR)/*.vc $(COMMON_PROGS_DIR)/engine.dat
 	$(VCC) -I$(COMMON_DIR) -P$(COMMON_PROGS_DIR) -P$(OUTDIR) hexndefs.vc $@
 
-$(OUTDIR)/svprogs.dat: game/*.vc $(COMMON_DIR)/server/*.vc $(OUTDIR)/shared.dat
+$(OUTDIR)/svprogs.dat: game/*.vc $(OUTDIR)/shared.dat $(COMMON_PROGS_DIR)/linespec.dat
 	$(VCC) -I$(COMMON_DIR) -P$(COMMON_PROGS_DIR) -P$(OUTDIR) svprogs.vc $@
 
 $(OUTDIR)/clprogs.dat: cgame/*.vc $(OUTDIR)/shared.dat $(OUTDIR)/svprogs.dat
