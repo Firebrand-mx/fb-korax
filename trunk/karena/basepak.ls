@@ -23,6 +23,9 @@ sndinfo.txt			scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
 terrains.txt			scripts/terrains.txt
 
+//	Language strings
+language.en				language.en
+
 $load 				palette.pcx
 rgbtable.dat			rgbtable
 translat.dat			raw 0 0 256 43
