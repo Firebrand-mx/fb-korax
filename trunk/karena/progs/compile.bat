@@ -3,7 +3,7 @@ vcc -I../common -P../common ../common/linespec/classes.vc ../common/linespec.dat
 @ECHO OFF
 cd..
 cd common
-vlumpy basepak.ls.in
+vlumpy basepak.ls
 copy basepak.pk3 "D:\Korax\KArena\basev\common\"
 cd..
 cd progs
