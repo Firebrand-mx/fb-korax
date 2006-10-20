@@ -151,7 +151,6 @@ TVec teleport_pos;
 
 int bombdamage;
 float bombdistance;
-TVec bombspot;
 bool DamageSource;
 
 // Height if not aiming up or down
@@ -3990,12 +3989,6 @@ bool PIT_RadiusAttack(Entity Other)
 		// Out of range
 		return true;
 	}
-	if (abs(ftoi((Actor(Other).Origin.z + Actor(Other).Height) -
-			(Actor(self).Origin.z + Actor(self).Height))) > abs(ftoi(bombspot.z + bombdistance)))
-	{
-		// too high/low
-		return true;
-	}
 	if (Other.CanSee(self))
 	{
 		// OK to damage, target is in direct path
@@ -4028,7 +4021,6 @@ void P_RadiusAttack(int damage, float distance, bool damageSource)
 	xl = MapBlock(Origin.x - distance - XLevel.BlockMapOrgX);
 	bombdamage = damage;
 	bombdistance = distance;
-	bombspot = Origin;
 	DamageSource = damageSource;
 	for (y = yl; y <= yh; y++)
 	{
