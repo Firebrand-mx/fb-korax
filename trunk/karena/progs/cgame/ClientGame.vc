@@ -617,7 +617,7 @@ bool MessageBoxResponder(event_t * event)
 			break;
 		}
 
-//      S_StartSound(sfx1_swtchx);
+//	      S_StartSound(sfx1_swtchx);
 		return true;
 	}
 	return false;
@@ -753,7 +753,7 @@ void DrawBorder(int x, int y, int w, int h)
 
 void DrawViewBorder(int x, int y, int w, int h)
 {
-	R_FillRectWithFlat(0, 0, 640, 480/* - 39*/, 'f_022');
+	R_FillRectWithFlat(0, 0, 640, 480, 'f_022');
 	DrawBorder(x, y, w, h);
 }
 
@@ -1019,7 +1019,7 @@ void ParseLocalSound()
 	case HexenDefs::lsid_kth_an_isdown: sndName = 'KTH_HeresiarchIsDown'; break;
 	case HexenDefs::lsid_kth_an_isdefeated: sndName = 'KTH_HeresiarchIsDefeated'; break;
 
-	default: sndName = 'Chat'; break;
+	default: sndName = 'misc/chat'; break;
 	}
 
 	put_in_queue = MSG_ReadByte();
@@ -1051,6 +1051,7 @@ bool ParseServerCommand(int cmd_type)
 	case HexenDefs::svc_explosion:
 		ParseExplosion();
 		break;
+// [Korax]
 
 	case HexenDefs::svc_explosion2:
 		ParseExplosion2();
@@ -1064,7 +1065,6 @@ bool ParseServerCommand(int cmd_type)
 		SetCvar('FOV', MSG_ReadByte());
 		break;
 
-// [Korax]
 	case HexenDefs::svc_teamselect:
 		ParseTeamSelect();
 		break;
@@ -1097,13 +1097,13 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 	float time1, time2, time3;
 	float dvel;
 	float grav;
-	int i, c;
+	int c;
 	
 	time1 = DeltaTime * 5.0;
 	time2 = DeltaTime * 10.0;	// 15;
 	time3 = DeltaTime * 15.0;
 
-	dvel = 4.0 * DeltaTime;
+	dvel = DeltaTime * 4.0;
 	grav = DeltaTime * 1.0 * 0.05; //frametime * sv_gravity.value * 0.05;
 
 	switch (p->type)
@@ -1142,9 +1142,9 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 		else
 		c = P_Random() >> 1; 
 		p->colour = RGB(c, c, c);
-		p->vel.x += p->vel.x * (dvel / 2.0);
-		p->vel.y += p->vel.y * (dvel / 2.0);
-		p->vel.z += p->vel.z * (dvel / 2.0);
+		p->vel.x += p->vel.x * dvel / 2.0;
+		p->vel.y += p->vel.y * dvel / 2.0;
+		p->vel.z += p->vel.z * dvel / 2.0;
 		p->vel.z -= grav;
 		break;
 
@@ -1154,10 +1154,10 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 			p->die = -1.0;
 		else
 		c = P_Random() >> 1;
-		p->colour = RGB(c, c, c); //ramp2[ftoi(p->ramp)];
-		p->vel.x -= p->vel.x * (DeltaTime / 2.0);
-		p->vel.y -= p->vel.y * (DeltaTime / 2.0);
-		p->vel.z -= p->vel.z * (DeltaTime / 2.0);
+		p->colour = RGB(c, c, c);
+		p->vel.x -= p->vel.x * DeltaTime / 2.0;
+		p->vel.y -= p->vel.y * DeltaTime / 2.0;
+		p->vel.z -= p->vel.z * DeltaTime / 2.0;
 		p->vel.z -= grav;
 		break;
 	}
@@ -1173,11 +1173,8 @@ void UpdateMobj(Entity mobj, int key, float DeltaTime)
 {
 	dlight_t *dl;
 	TVec fv;
-	int i;
+	int i, c, count;
 	particle_t *p;
-	int c;
-	int count;
-
 
 	switch (mobj.Effects & HexenDefs::EF_DLIGHT_MASK)
 	{
