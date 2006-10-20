@@ -38,7 +38,7 @@ class WeaponPoisonBreath : Weapon;
 //
 //============================================================================
 
-void A_PoisonBreathFire()
+void A_PoisonBreathFire(bool use_mana, int Children)
 {
 	TAVec angles;
 	TVec vforward;
@@ -72,7 +72,7 @@ void A_PoisonBreathFire()
 	mo.Angles = angles;
 	AngleVector(&angles, &vforward);
 
-	mo.Speed = 256.0;//90.0;
+	mo.Speed = 320.0;//90.0;
 	mo.bMissile = true;
 	mo.bRip = true;
 	vforward.z = 0.0;
@@ -83,10 +83,11 @@ void A_PoisonBreathFire()
 
 	PoisonCloud pc = PoisonCloud(mo);
 	pc.InitMeCloud(pmo);
-	pc.SpawnChildren = 4;	// [CW] advanced feature for Cleric weapon
+	pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
 	pc.LifeCount = 1;
-	
-	UseWeaponMana();
+
+	if (use_mana)	
+		UseWeaponMana();
 }
 
 __states__
@@ -98,23 +99,27 @@ __states__
 	S_PCPOISONATK_2('CPOI', 1, 1.0 / 35.0, S_PCPOISONATK_3) { SY = 50.0; }
 	S_PCPOISONATK_3('CPOI', 1, 1.0 / 35.0, S_PCPOISONATK_4) { SY = 36.0; }
 	S_PCPOISONATK_4('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_5) { }
-	S_PCPOISONATK_5('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_6) { A_PoisonBreathFire(); }
-	S_PCPOISONATK_6('CPOI', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_7) { SX = 0.0; }
-	S_PCPOISONATK_7('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_8) { SX = 0.0; SY = 40.0; }
-	S_PCPOISONATK_8('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_9) { SX = 0.0; SY = 55.0; }
-	S_PCPOISONATK_9('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_10) { SX = 0.0; SY = 60.0; }
-	S_PCPOISONATK_10('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_11) { SX = 0.0; SY = 75.0; }
-	S_PCPOISONATK_11('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_12) { SX = 0.0; SY = 80.0; }
-	S_PCPOISONATK_12('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_13) { SX = 0.0; SY = 95.0; }
-	S_PCPOISONATK_13('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_14) { SX = 0.0; SY = 100.0; }
-	S_PCPOISONATK_14('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_15) { SX = 0.0; SY = 115.0; }
-	S_PCPOISONATK_15('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_16) { SX = 0.0; SY = 120.0; }
-	S_PCPOISONATK_16('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_17) { SX = 0.0; SY = 135.0; }
-	S_PCPOISONATK_17('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_18) { SX = 0.0; SY = 140.0; }
-	S_PCPOISONATK_18('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_19) { SX = 0.0; SY = 155.0; }
-	S_PCPOISONATK_19('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_20) { SX = 0.0; SY = 160.0; }
-	S_PCPOISONATK_20('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_21) { SX = 0.0; SY = 175.0; }
-	S_PCPOISONATK_21('CPOI', 3, 1.0 / 35.0, S_PCPOISONREADY) { SX = 0.0; SY = 180.0; }
+	S_PCPOISONATK_5('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_6) { A_PoisonBreathFire(true, 3); }
+	S_PCPOISONATK_6('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_7) { A_PoisonBreathFire(false, 2); }
+	S_PCPOISONATK_7('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_8) { A_PoisonBreathFire(false, 1); }
+	S_PCPOISONATK_8('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_9) { A_PoisonBreathFire(false, 0); }
+	S_PCPOISONATK_9('CPOI', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_10) { A_PoisonBreathFire(false, 0); }
+	S_PCPOISONATK_10('CPOI', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_PCPOISONATK_11) { SX = 0.0; }
+	S_PCPOISONATK_11('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_12) { SX = 0.0; SY = 40.0; }
+	S_PCPOISONATK_12('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_13) { SX = 0.0; SY = 55.0; }
+	S_PCPOISONATK_13('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_14) { SX = 0.0; SY = 60.0; }
+	S_PCPOISONATK_14('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_15) { SX = 0.0; SY = 75.0; }
+	S_PCPOISONATK_15('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_16) { SX = 0.0; SY = 80.0; }
+	S_PCPOISONATK_16('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_17) { SX = 0.0; SY = 95.0; }
+	S_PCPOISONATK_17('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_18) { SX = 0.0; SY = 100.0; }
+	S_PCPOISONATK_18('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_19) { SX = 0.0; SY = 115.0; }
+	S_PCPOISONATK_19('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_20) { SX = 0.0; SY = 120.0; }
+	S_PCPOISONATK_20('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_21) { SX = 0.0; SY = 135.0; }
+	S_PCPOISONATK_21('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_22) { SX = 0.0; SY = 140.0; }
+	S_PCPOISONATK_22('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_23) { SX = 0.0; SY = 155.0; }
+	S_PCPOISONATK_23('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_24) { SX = 0.0; SY = 160.0; }
+	S_PCPOISONATK_24('CPOI', 3, 1.0 / 35.0, S_PCPOISONATK_25) { SX = 0.0; SY = 175.0; }
+	S_PCPOISONATK_25('CPOI', 3, 1.0 / 35.0, S_PCPOISONREADY) { SX = 0.0; SY = 180.0; }
 }
 
 /*SIXTH*/
@@ -134,13 +139,3 @@ defaultproperties
 	str_mod = false;
 	PickUpMessage = "POISON BREATH";
 }
-
-//**************************************************************************
-//
-//  Revision 1.2  2003/11/12 16:50:47  dj_jl
-//  Changed player structure into a class
-//
-//  Revision 1.1  2002/10/26 16:32:27  dj_jl
-//  New style of defining classes.
-//
-//**************************************************************************
