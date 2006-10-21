@@ -59,7 +59,7 @@ void InitMapList(int GameType)
 	MaxValue = count;
 #else
 	Idx = 0;
-	for (i = 1; i <= 99 && Idx < 32; i++)
+	for (i = 0; i <= 99 && Idx < 32; i++)
 	{
 		switch (GameType + 1)
 		{
@@ -83,6 +83,12 @@ void InitMapList(int GameType)
 				continue;
 			break;
 		}
+
+		// If the lump found after any others is the first possible map, it means
+		// no appropriate lump may be found any more, so cycle should end here 
+		if (i > 0 && P_GetMapLumpName(i) == P_GetMapLumpName(0))
+			break;
+
 		EnumNames[Idx] = P_GetMapName(i);
 		MapLumpNames[Idx] = P_GetMapLumpName(i);
 		Idx++;
