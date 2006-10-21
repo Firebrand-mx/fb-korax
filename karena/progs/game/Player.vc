@@ -167,7 +167,7 @@ string		targetnamehint;
 string		PlayerNames[MAXPLAYERS];		// player names
 
 //
-//  ----------
+//  ----------------------------------------------------------------------
 //
 
 int Keys;
@@ -262,8 +262,7 @@ int dam_am; // [FB] Just for the hero's shield
 
 bool onground;
 
-int	TeamSelection;	//[CW] team selection process state
-////////await_team_selection;
+int		TeamSelection;	//[CW] team selection process state
 PlayerTeam	Team;	//[CW]
 
 int targetnamehint_counter;	//[CW]
@@ -272,7 +271,8 @@ int targetnamehint_counter;	//[CW]
 trophies_t	Trophies;
 
 bool bShowScoreboard; // [CW] True if scoreboard should be visible
-			// This SHOULD NOT be for client any more, people! :)
+
+bool bUnControllable; //[CW] Ignore user/AI commands (move/attack etc)
 
 //==========================================================================
 //
@@ -313,6 +313,8 @@ void SpawnClient()
 	Attacker = none;
 	Poisoner = none;
 	Blinder = none;
+
+	bUnControllable = false;
 
 	if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
@@ -573,7 +575,6 @@ void SetPlayerColour()
 	// [CW] re-select team... huh... hope this will work
 	if (TeamSelection == HexenDefs::teamselection_wait)
 	{
-		///////await_team_selection = false;
 		TeamSelection = HexenDefs::teamselection_done;
 		MO.Remove();
 		SpawnClient();
@@ -590,7 +591,6 @@ void SelectPlayerTeam(bool call_update)
 {
 	if (bIsBot)
 	{
-		///////////SetCvar('TeamSelection', HexenDefs::teamselection_done);
 		TeamSelection = HexenDefs::teamselection_done;
 	}
 	else
@@ -599,7 +599,10 @@ void SelectPlayerTeam(bool call_update)
 	int i1, i2;
 	SelectClientMsg(MSG_SV_CLIENT);
 	MSG_WriteByte(HexenDefs::svc_teamselect);
-	MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);	// [CW] FIXME!!!
+	if (MainGameInfo(Level.Game).GameMode)
+		MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
+	else
+		MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
 	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
 	{
 		if (MainGameInfo(Level.Game).Teams[i1] == none)
@@ -616,8 +619,8 @@ void SelectPlayerTeam(bool call_update)
 	if (!call_update)
 		MSG_WriteByte(Colour);
 
-	////////await_team_selection = true;
 	TeamSelection = HexenDefs::teamselection_wait;
+	SetControllable(false);
 
 	}
 }
@@ -741,14 +744,6 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		SelectPlayerTeam(false);
 	}
-	
-	//[CW] put player into corresponding team
-	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
-		TeamSelection == HexenDefs::teamselection_done)
-	{
-		MainGameInfo(Level.Game).InsertPlayer(self);
-	}
-
 
 	x = mthing->x;
 	y = mthing->y;
@@ -862,6 +857,16 @@ void SpawnPlayer(mthing_t * mthing)
 		}
 	}
 
+	if (bUnControllable)
+		MO.Deactivate();
+
+	//[CW] put player into corresponding team
+	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
+		TeamSelection == HexenDefs::teamselection_done)
+	{
+		MainGameInfo(Level.Game).InsertPlayer(self);
+	}
+
 	// [CW] if there is advanced game mode initiated, notify it of player spawn
 	if (MainGameInfo(Level.Game).GameMode)
 		MainGameInfo(Level.Game).GameMode.NotifyPlayerSpawn(self);
@@ -973,6 +978,30 @@ void PlayerExitMap(bool clusterChange)
 	BonusFlash = 0.0;
 	PoisonCount = 0;
 	BlindCount = 0; // [FB] Reset the blind count too!
+}
+
+//==========================================================================
+//
+//  SetControllable
+//
+//  [CW] toggles UnControllable mode on/off
+//
+//==========================================================================
+
+void SetControllable(bool Mode)
+{
+	if (Mode)
+	{
+		bUnControllable = false;
+		if (MO)
+			MO.Activate();
+	}
+	else
+	{
+		bUnControllable = true;
+		if (MO)
+			MO.Deactivate();		
+	}
 }
 
 //==========================================================================
@@ -1608,8 +1637,8 @@ void ScoreboardsUpdate(bool ThisPlayerOnly)
 			   if (!plteam.Players[i])
 				break;
 
-			   if (plteam.Players[i] == self)
-			      table_thisplayer = gs;
+			   if (plteam.Players[i] == pl/*self*/)
+			      pl.table_thisplayer = gs;
 
 			   pl.gamescores[gs].IsActive = true;
 			   pl.PlayerNames[gs] = plteam.Players[i].PlayerName;
@@ -1754,6 +1783,12 @@ void MovePlayer(float deltaTime)
 	TVec vright;
 	TVec vup;
 	TVec wishvel;
+
+	if (bUnControllable)
+	{
+		ForwardMove = 0.0;
+		SideMove = 0.0;
+	}
 
 	forward = ForwardMove;
 	side = SideMove;
@@ -2508,6 +2543,14 @@ void PlayerImpulse()
 	Impulse = 0;
 	Arti = 0;
 
+	if (bUnControllable)
+	{
+		// Player can do almost nothing when immobile
+		if (impulse != 16 /*KILL COMMAND*/ &&
+					impulse != 19 /*SCOREBOARD COMMAND*/ )
+			return;
+	}
+
 	if (impulse <= HexenDefs::NUMWEAPONS)
 	{
 		// The actual changing of the weapon is done when the weapon
@@ -2912,7 +2955,10 @@ void PlayerTick(float deltaTime)
 	int newweapon;
 	Actor speedA;
 
-	if (bIsBot)
+	// Deny to do anything while immobile
+	if (bUnControllable)
+		Buttons = 0;
+	else if (bIsBot)
 	{
 		Bot.BotTick(deltaTime);
 	}
@@ -2921,7 +2967,8 @@ void PlayerTick(float deltaTime)
 	experience = Actor(MO).experience;
 
 	// Copy view angles
-	MO.Angles = ViewAngles;
+	if (!bUnControllable)
+		MO.Angles = ViewAngles;
 
 	// fixme: do this in the cheat code
 	if (Cheats & CF_NOCLIP)
@@ -3408,12 +3455,12 @@ void PlayerTick(float deltaTime)
 	else
 		FixedColourmap = 0;
 
-	if((MO.Velocity.x == 0.0) || (MO.Velocity.y == 0.0)) // [FB] Check for the player camping
+	if(MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
 	{
 		pcount++;
 		PlayerCamping();
 	}
-	else if((MO.Velocity.x != 0.0) || (MO.Velocity.y != 0.0)) // [FB] The player is moving
+	else
 	{
 		pcount = 0;
 	}
