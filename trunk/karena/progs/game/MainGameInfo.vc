@@ -164,11 +164,11 @@ void InitNewGame(int skill)
 		GameMode.End();
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
-	////////////////////mode = GetCvar('deathmatch');
-	////////////////////SetCvar('deathmatch', ++mode);	//[CW] single player hack
+	mode = GetCvar('deathmatch');
 	switch (mode)
 	{
 	case HexenDefs::game_football:
+		dprint("Spawn Football");
 		GameMode = Game(SpawnObject(GameFootball)); break;
 	case HexenDefs::game_kth:
 		GameMode = Game(SpawnObject(GameKTH)); break;
@@ -4053,8 +4053,14 @@ void InsertPlayer(Player pl)
 	}
 	else
 	{
-		int i;
-		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)		//[CW] FIXME!!! -- call get corresponding num
+		int i, maxteams;
+
+		if (GameMode)
+			maxteams = GameMode.AllowedTeams();
+		else
+			maxteams = HexenDefs::MAXTEAMSINGAME;
+
+		for (i = 0; i < maxteams; i++)
 		{
 			if (!Teams[i])
 				break;
@@ -4067,7 +4073,7 @@ void InsertPlayer(Player pl)
 
 		if (teamnum == -1)
 		{
-			if (i == HexenDefs::MAXTEAMSINGAME)
+			if (i == maxteams)
 			{
 				bprint("unsufficient allowed teams, new player is added to team 0");
 				pl.Colour = Teams[0].Colour;

@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: template.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**    $Id: GameFootball.vc 508 2006-07-10 19:02:43Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -66,6 +66,17 @@ PlayerTeam	Teams[2];
 
 //==========================================================================
 //
+//	AllowedTeams
+//
+//==========================================================================
+
+int AllowedTeams()
+{
+	return 2;
+}
+
+//==========================================================================
+//
 //	BeginState
 //
 //	ACS callable
@@ -76,15 +87,19 @@ void BeginState(int newstate)
 {
 	int i;
 
+	dprint("BeginState: %i", newstate);
+
 	switch(newstate)
 	{
 	case state_preparematch:
 		//UpdateTeams();
-		if (!Teams[0] && !Teams[1])
+		if (!Teams[0] || !Teams[1])
 		{
+			dprint("GameFootball : not enouph teams, delay start");
 			State = -1;
 			return;
 		}
+		dprint("Preparing match");
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (Teams[0] && Teams[0].Players[i])
