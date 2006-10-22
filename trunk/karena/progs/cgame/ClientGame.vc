@@ -974,8 +974,6 @@ void ParseTeamSelect()
 	bool created;
 	created = false;
 
-	//////////////////SetCvar('TeamSelection', HexenDefs::teamselection_wait);
-
 	if (TeamSelectScreen == none)
 	{
 		TeamSelectScreen = MenuScreenTeamSelect(SpawnMenu(MenuScreenTeamSelect));
@@ -1032,6 +1030,29 @@ void ParseLocalSound()
 
 //==========================================================================
 //
+//  ParseDynamicLightEx
+//
+//	[CW] Full data dlight parsing
+//
+//==========================================================================
+
+void ParseDynamicLightEx()
+{
+	dlight_t *dl;
+
+	dl = AllocDlight(0);
+
+	dl->colour = MSG_ReadLong();
+	dl->origin.x = itof(MSG_ReadShort());
+	dl->origin.y = itof(MSG_ReadShort());
+	dl->origin.z = itof(MSG_ReadShort());
+	dl->radius = itof(MSG_ReadShort());
+	dl->die = time + itof(MSG_ReadShort()) * 0.01;
+	dl->decay = itof(MSG_ReadShort()) * 0.01;
+}
+
+//==========================================================================
+//
 //  ParseServerCommand
 //
 //==========================================================================
@@ -1078,6 +1099,13 @@ bool ParseServerCommand(int cmd_type)
 
 	case HexenDefs::svc_localsound:
 		ParseLocalSound();
+		break;
+
+	case HexenDefs::svc_dlight:			// currently unused
+		break;
+
+	case HexenDefs::svc_dlightex:
+		ParseDynamicLightEx();
 		break;
 
 	default:
