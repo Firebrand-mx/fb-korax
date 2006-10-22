@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: template.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**    $Id: GameKTH.vc 508 2006-07-10 19:02:43Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -53,7 +53,7 @@ enum
 
 
 Player				plHeresiarch;
-TVec				DeathSpot;
+Actor				DeathSpot;
 
 GameSequencer		deathSequencer;
 GameSequencer		birthSequencer;
@@ -62,6 +62,13 @@ int		deathsequence_state;
 int		birthsequence_state;
 
 name	originalMusic;
+
+// Animated sequences stuff
+int		dlDelay1, dlDelay2;	// dynamic lighting delays
+int		dmDelay;			// darkness missiles' delay
+TVec	CircularPosition;	// used to form a revolving vector
+
+
 
 //==========================================================================
 //
@@ -79,8 +86,6 @@ void BeginState(int newstate)
 		EndCurrentState(state_freeramble);
 		return;
 	case state_freeramble:
-		/*if (Game.Announcer)
-			Game.Announcer.QueueSound('KTH_AwaitingForHeresiarch', false);*/
 		// awaiting sound here
 		Game.BroadcastLocalSound(HexenDefs::lsid_kth_an_awaiting, true, HexenDefs::STANDART_LSQ_DELAY);
 		Game.bcentreprint("first fragger shall become heresiarch");
@@ -160,7 +165,7 @@ void NotifyPlayerDeath(Player pl, Actor source)
 		// Handle Heresiarch death
 		if (pl == plHeresiarch)
 		{
-			DeathSpot = plHeresiarch.MO.Origin;
+			DeathSpot = Actor(plHeresiarch.MO);
 			if (source && source.bIsPlayer)
 			{
 				plHeresiarch = Player(source.Player);
@@ -200,20 +205,12 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 	switch (Event)
 	{
 	case event_heresiarchspawn:
-		/*if (Game.Announcer)
-			Game.Announcer.QueueSound((State == state_rebornsequence ?
-						(P_Random() > 127 ? 'KTH_HeresiarchIsReborn' : 'KTH_HeresiarchIsHere') : 'KTH_HeresiarchIsHere'),
-						false);*/
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
 						true, HexenDefs::STANDART_LSQ_DELAY);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
-		/*if (Game.Announcer)
-			Game.Announcer.QueueSound((State == state_rebornsequence ?
-						(P_Random() > 127 ? 'KTH_HeresiarchIsDefeated' : 'KTH_HeresiarchIsDown') : 'KTH_HeresiarchIsDown'),
-						false);*/
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
 						true, HexenDefs::STANDART_LSQ_DELAY);
@@ -252,12 +249,70 @@ void PlayDeathSequence()
 	switch(deathsequence_state)
 	{
 	case 0:
-		// do some animation here
+		dlDelay1 = 2;
+		CircularPosition.x = 64.0;
+		CircularPosition.y = 64.0;
+		CircularPosition.z = 0.0;
 		ChangeMusic(va("%n", 'kth_mus1'));
+		break;
+	case 13:
+		{
+			FlameLargeTemp flame;
+			flame = FlameLargeTemp(Level.Spawn(FlameLargeTemp, DeathSpot.Origin));
+			if (flame) flame.Args[0] = 8;
+		}
 		break;
 	case 30:
 		HandleGameEvent(none, event_heresiarchdead, 0,0,0,0);
+		break;
 	default:
+
+		if (dlDelay1)
+			dlDelay1--;
+		else
+		{
+			TVec vec;
+			dlDelay1 = 7;
+
+			vec.x = (Random() - 0.5) * 128.0;
+			vec.y = (Random() - 0.5) * 128.0;
+			vec.z = (Random() - 0.25) * 32.0;
+
+			Game.SpawnDynamicLight(RGB(255, 32, 32), MobjCentre(DeathSpot) + vec, 512, 200, 5000);
+		}
+
+		if (deathsequence_state > 0 && deathsequence_state < 13)
+		{
+			int i;
+			FlameSmallTemp flame;
+			for (i = 0; i < 3; i++)
+			{
+				flame = FlameSmallTemp(Level.Spawn(FlameSmallTemp, DeathSpot.Origin + CircularPosition));
+				if (flame)
+				{
+					flame.Origin.z = flame.FloorZ;
+					flame.Args[0] = 12;
+				}
+				VectorRotateAroundZ(&CircularPosition, 10.0);
+			}
+		}
+		if (deathsequence_state > 8)
+		{
+			TVec vec;
+			AxePuffGlow	ax;
+			vec.x = (Random() - 0.5) * 16.0;
+			vec.y = (Random() - 0.5) * 16.0;
+			vec.z = (Random()) * 16.0;
+			ax = AxePuffGlow(Level.Spawn(AxePuffGlow, DeathSpot.Origin + vec));
+			if (ax)
+			{
+				ax.bMissile = true;
+				ax.bRip = true;
+				ax.Velocity.z = (Random() - 0.5) * 5.0;
+				ax.Velocity.z = (Random() - 0.5) * 5.0;
+				ax.Velocity.z = Random() * 15.0;
+			}
+		}
 		if (deathsequence_state >= 38)
 		{
 			if (deathSequencer)
@@ -281,23 +336,134 @@ void PlayDeathSequence()
 
 void PlayBirthSequence()
 {
+	plHeresiarch.MO.Velocity = vector(0.0,0.0,plHeresiarch.MO.Velocity.z);
+
 	switch(birthsequence_state)
 	{
 	case 0:
 		// Make heresiarch-morphing player invulnerable & immobile for the period
 		// of birth sequence
-		//plHeresiarch.MO.Deactivate();
-		plHeresiarch.Powers[pw_invulnerability] = 10.0;
+		dlDelay2 = 0;
+		dmDelay = 0;
+		plHeresiarch.SetControllable(false);
+		Actor(plHeresiarch.MO).SetState(Actor(plHeresiarch.MO).PainState);
 		if (State != state_rebornsequence)
 			birthsequence_state = 39;	// skip waiting for death sequence completion
 		break;
 	case 40:
-		ChangeMusic(va("%n", 'kth_mus2'));
+		// Spawn Sorcerer's balls
+		{
+			Actor ball;
+			TVec org;
+			plHeresiarch.MO.Args[0] = 0;	// Currently no defense
+			plHeresiarch.MO.Args[2] = Sorcerer::SORCBALL_INITIAL_SPEED;	// target speed
+			plHeresiarch.MO.Args[3] = Sorcerer::SORC_NORMAL;
+			plHeresiarch.MO.Args[4] = Sorcerer::SORCBALL_INITIAL_SPEED;	// Initial orbit speed
+			Actor(plHeresiarch.MO).Special1f = 1.0;
+			org = plHeresiarch.MO.Origin;
+			org.z = plHeresiarch.MO.Origin.z - plHeresiarch.MO.FloorClip + plHeresiarch.MO.Height;
+			ball = Level.Spawn(SorcererBall1, org);
+			if (ball)
+			{
+				ball.Instigator = Actor(plHeresiarch.MO);
+				ball._Special2 = Sorcerer::SORCFX4_RAPIDFIRE_TIME;
+			}
+			ball = Level.Spawn(SorcererBall2, org);
+			if (ball)
+				ball.Instigator = Actor(plHeresiarch.MO);
+			ball = Level.Spawn(SorcererBall3, org);
+			if (ball)
+				ball.Instigator = Actor(plHeresiarch.MO);
+
+			plHeresiarch.MO.bNoGravity = true;
+			plHeresiarch.MO.Velocity.z = 8.0;
+			ChangeMusic(va("%n", 'kth_mus2'));
+		}
 		break;
+/*	case 44:
+		plHeresiarch.MO.Args[2] = Sorcerer::SORCBALL_TERMINAL_SPEED;	// target speed
+		plHeresiarch.MO.Args[3] = Sorcerer::SORC_ACCELERATE;	// speed mode
+		break;*/
 	case 70:
+		plHeresiarch.MO.Velocity.z = 0.0;
+		CircularPosition.x = 128.0;
+		CircularPosition.y = 128.0;
 		HandleGameEvent(none, event_heresiarchspawn, 0,0,0,0);
 		break;
 	default:
+		if (birthsequence_state > 12)
+		{
+			if (dlDelay2)
+				dlDelay2--;
+			else
+			{
+				TVec vec;
+				dlDelay2 = 7;
+
+				vec.x = (Random() - 0.5) * 128.0;
+				vec.y = (Random() - 0.5) * 128.0;
+				vec.z = (Random() - 0.25) * 32.0;
+
+				Game.SpawnDynamicLight(RGB(255, 32, 32), MobjCentre(plHeresiarch.MO) + vec, 512, 500, 5000);
+			}
+		}
+		if (birthsequence_state > 0 && birthsequence_state < 13)
+		{
+			int i;
+			FlameSmallTemp flame;
+			for (i = 0; i < 3; i++)
+			{
+				VectorRotateAroundZ(&CircularPosition, -10.0);
+				flame = FlameSmallTemp(Level.Spawn(FlameSmallTemp, plHeresiarch.MO.Origin + CircularPosition));
+				if (flame)
+				{
+					flame.Origin.z = flame.FloorZ;
+					flame.Args[0] = 12;
+				}
+				VectorRotateAroundZ(&CircularPosition, 10.0);
+			}
+		}
+		if (birthsequence_state > 12 && birthsequence_state < 39)
+		{
+			DarknessMissile dm;
+
+			if (dmDelay)
+				dmDelay--;
+			else
+			{
+				dmDelay = 2;
+
+				dm = DarknessMissile(Level.Spawn(DarknessMissile, MobjCentre(DeathSpot)));
+				if (dm)
+				{
+					TVec dist;
+					dist = MobjCentre(plHeresiarch.MO) - MobjCentre(DeathSpot);
+					dm.bColideWithWorld = false;
+					dm.bMissile = true;
+					dm.bRip = true;
+					dm.Velocity = Normalise(dist) * 128.0;
+					dm.LifeCount = ftoi((Length(dist) / Length(dm.Velocity)) / (12.0 / 35.0)) - 1;
+				}
+			}
+		}
+		if (birthsequence_state > 70 && birthsequence_state < 78)
+		{
+			int i;
+			DarknessMissile dm;
+			for (i = 0; i < 3; i++)
+			{
+				CircularPosition.z = (Random() - 0.25) * 32.0;
+				dm = DarknessMissile(Level.Spawn(DarknessMissile, MobjCentre(plHeresiarch.MO)));
+				if (dm)
+				{
+					dm.bMissile = true;
+					dm.bRip = true;
+					dm.Velocity = CircularPosition;
+					dm.InitMe(Actor(plHeresiarch.MO));
+				}
+				VectorRotateAroundZ(&CircularPosition, Random() * 360.0);
+			}
+		}
 		if (birthsequence_state >= 78)
 		{
 			if (birthSequencer)
@@ -305,8 +471,8 @@ void PlayBirthSequence()
 				RemoveSpecialThinker(birthSequencer);
 				birthSequencer = none;
 			}
-			plHeresiarch.Powers[pw_invulnerability] = 0.0;
 			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_PIG, PlayerPig, false, true);
+			plHeresiarch.SetControllable(true);
 			ChangeMusic(va("%n", originalMusic));
 			break;
 		}
