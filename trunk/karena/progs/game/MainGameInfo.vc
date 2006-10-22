@@ -4153,6 +4153,31 @@ void BroadcastLocalSound(int sound, bool put_in_queue, float delay)
 	MSG_WriteShort(ftoi(delay * 100.0));
 }
 
+//==========================================================================
+//
+//  SpawnDynamicLight
+//
+//	[CW]
+//
+//	NOTES:		colour is interpreted as ARGB format (0xAARRGGBB);
+//				lifetime and decay are treated as 1/100 parts of second
+//					(i.e. lifetime = 1250 actually means 12.5 secs)
+//
+//==========================================================================
+
+void SpawnDynamicLight(int colour, TVec org, int radius, int lifetime, int decay)
+{
+	MSG_Select(MSG_SV_DATAGRAM);
+	MSG_WriteByte(HexenDefs::svc_dlightex);
+	MSG_WriteLong(colour);
+	MSG_WriteShort(ftoi(org.x));
+	MSG_WriteShort(ftoi(org.y));
+	MSG_WriteShort(ftoi(org.z));
+	MSG_WriteShort(radius);
+	MSG_WriteShort(lifetime);
+	MSG_WriteShort(decay);
+}
+
 
 defaultproperties
 {
