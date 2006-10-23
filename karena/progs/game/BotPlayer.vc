@@ -434,7 +434,7 @@ void SetEnemy()
 		return;
 	
 	// Double check the validity of the enemy
-	if (!enemy.bShootable)
+	if (!enemy.bShootable || enemy.bDormant)
 		enemy = none;
 }
 
@@ -792,7 +792,7 @@ void CheckStuff()
 
 	if (enemy)
 	{
-		if (enemy.Health <= 0 || !enemy.bShootable)
+		if (enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
 			enemy = none;
 	}
 
@@ -1120,7 +1120,7 @@ Actor FindEnemy()
 		vangle = ENEMY_SCAN_FOV;
 	bAllRound = false;
 
-	// [FB] Look for monster enemy
+	// [FB] Search for monster enemies
 	FOREACH(Actor, actor)
 	{
 		dist = botmo.DistTo(actor);
@@ -1131,11 +1131,9 @@ Actor FindEnemy()
 			continue;
 		if (!botmo.CanSee(actor))
 			continue;
-
 		// [FB] We spawned the minotaur? we shouldn't attack him then!
-		if (actor.bEnemy && actor.Class == Minotaur && actor.Instigator == botmo)
+		if (actor.Class == Minotaur && actor.Instigator == botmo)
 			continue;
-
 		// [FB] Don't attack our friendly minotaur in all these cases
 		if (!player.Level.Game.deathmatch)
 		{
@@ -1153,7 +1151,6 @@ Actor FindEnemy()
 					continue;
 			}
 		}
-
 		if (dist > MAX_MONSTER_TARGET_DIST)
 			continue;
 
@@ -1169,11 +1166,9 @@ Actor FindEnemy()
 			{
 				dist = botmo.DistTo(actor);
 				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
-
 				// [FB] Too dark?
-				if (dist > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
+				if (light < WHATS_DARK && dist > DARK_DIST && !player.Powers[pw_infrared])
 					continue;
-
 				if (dist < closest_dist)
 				{
 					closest_dist = dist;
@@ -1181,8 +1176,7 @@ Actor FindEnemy()
 				}
 			}
 		}
-
-		return actor;
+		return target;
 	}
 
 	target = none;
@@ -1217,11 +1211,9 @@ Actor FindEnemy()
 					dist = botmo.DistTo(player.Level.Game.Players[i].MO);
 					// [FB] Detect the light level
 					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
-
 					// [FB] Too dark?
-					if (dist > DARK_DIST && light < WHATS_DARK && !player.Powers[pw_infrared])
+					if (light < WHATS_DARK && dist > DARK_DIST && !player.Powers[pw_infrared])
 						continue;
-
 					if (dist < closest_dist)
 					{
 						closest_dist = dist;
@@ -1686,6 +1678,23 @@ Actor B_SetAlly()
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		int teamfactor;
+		teamfactor = Game::teamfactor_any;	// [FB] set default value
+
+		if (MainGameInfo(player.Level.Game).GameMode) // [FB] Check if an advanced game mode is active
+		{
+			if (player.Level.Game.Players[i])
+			{
+				teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
+						Actor(player.Level.Game.Players[i].MO));
+				// [FB] We've got a team factor, just check if it's an ally or not
+				if (teamfactor == Game::teamfactor_coop)
+				{
+					ally = Actor(player.Level.Game.Players[i].MO);
+				}
+			}
+		}
+
 		// [FB] Set an ally for team game modes
 		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
@@ -2282,11 +2291,11 @@ int BotSkill()
 {
 	if(player.Level.Game.gameskill == sk_nightmare)
 	{
-		return 0;
+		return 4;
 	}
 	else if(player.Level.Game.gameskill == sk_hard)
 	{
-		return 1;
+		return 3;
 	}
 	else if(player.Level.Game.gameskill == sk_medium)
 	{
@@ -2294,11 +2303,11 @@ int BotSkill()
 	}
 	else if(player.Level.Game.gameskill == sk_easy)
 	{
-		return 3;
+		return 1;
 	}
 	else
 	{
-		return 4;
+		return 0;
 	}
 }
 
@@ -2550,10 +2559,11 @@ void BotTick(float deltaTime)
 		else if (angerlevel < 0)
 			angerlevel = 0;
 	}
-	
-	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+
+	// [FB] Set an ally if we're in a mode that has one...
+	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM || 
+		MainGameInfo(player.Level.Game).GameMode)
 	{
-		// [FB] Set an ally if we're in a mode that has one...
 		ally = B_SetAlly();
 		// [FB] and decide what action we'll take
 		if (player.Level.Game.deathmatch != HexenDefs::game_dmteam)
