@@ -44,6 +44,7 @@ struct tagged_line_t
 };
 
 classid WeaponClasses[HexenDefs::NUMWEAPONS * HexenDefs::NUMCLASSES];
+int		AltWeaponModeCount[HexenDefs::NUM_ALTFIRE];
 
 int terrain_contents[6];
 int contents_transluc[6];
@@ -77,6 +78,7 @@ string TextKeyMessages[HexenDefs::NUMKEYS];
 string GenericDeathMessage[3];
 string SelfFragDeathMessage[3];
 string FallingDeathMessage[3];
+string SuicideDeathMessage[3];
 string DeathMessage[HexenDefs::NUMWEAPONS * HexenDefs::NUMCLASSES + 17];  // increase if needed
 
 //[CW] Prizes
@@ -107,8 +109,6 @@ Actor PuffSpawned;
 
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
 Game		GameMode;			// [CW] for advanced game modes
-
-//SoundQueue	Announcer;		-- moved to client side
 
 //==========================================================================
 //
@@ -4120,6 +4120,78 @@ void InsertPlayer(Player pl)
 
 //==========================================================================
 //
+//  ScoreboardsUpdate
+//
+// [CW] Updates shown scoreboards of single or all the players.
+// Used when a client connects to / disconnects from server, when anyone
+// dies and when player info changes.
+//
+//==========================================================================
+
+void ScoreboardsUpdate(Player thisPlayer)
+{
+	int teamnum, plnum, gs, i, j;
+	Player pl;
+	PlayerTeam plteam;
+
+	//[CW] iterate through all connected players
+	for (plnum = 0; plnum < MAXPLAYERS; plnum++)
+	{
+		if (!Players[plnum])
+			break;
+
+		if (thisPlayer && Players[plnum] != thisPlayer)
+			continue;
+
+		//[CW] update scoreboard for player number "plnum"
+		pl = Player(Players[plnum]);
+		gs = 0;
+		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
+		{
+			if (!Teams[teamnum])
+			   break;
+
+			plteam = Teams[teamnum];
+
+			pl.teamscores[teamnum] = plteam.Score;
+
+			for (i = 0; i < MAXPLAYERS; i++, gs++)
+			{
+			   if (!plteam.Players[i])
+				break;
+
+			   if (plteam.Players[i] == pl)
+			      pl.table_thisplayer = gs;
+
+			   pl.gamescores[gs].IsActive = true;
+			   pl.PlayerNames[gs] = plteam.Players[i].PlayerName;
+			   pl.gamescores[gs].plclass = plteam.Players[i].PClass;
+			   pl.gamescores[gs].level = plteam.Players[i].exp_level;
+			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
+			   pl.gamescores[gs].team = plteam.Players[i].Colour;
+			   pl.gamescores[gs].score = plteam.Players[i].Score;
+			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
+			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
+			   pl.gamescores[gs].deaths = 0;
+
+			   // [CW] counts times all other players killed this one
+			   // (and times he was killed by self/monsters/enviroment)
+			   for (j = 0; j < MAXPLAYERS; j++)
+			   {
+				if (!Players[j])
+				   break;
+				if (Players[j] == plteam.Players[i])
+					pl.gamescores[gs].deaths -= Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
+				else
+					pl.gamescores[gs].deaths += Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
+			   }
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
 //  bcentreprint
 //
 //	[CW] broadcast centreprint
@@ -4249,6 +4321,9 @@ defaultproperties
 	WeaponClasses[54] = WeaponWitchavenDisintegrationSpell;
 	WeaponClasses[55] = WeaponPigSnout;
 
+	AltWeaponModeCount[HexenDefs::ALTFIRE_BLASTRADIUS] = HexenDefs::ALTFIRE_BLASTRADIUS_MODES;
+	AltWeaponModeCount[HexenDefs::ALTFIRE_POISONBAG] = HexenDefs::ALTFIRE_POISONBAG_MODES;
+
 	terrain_contents[0] = CONTENTS_EMPTY;
 	terrain_contents[1] = CONTENTS_EMPTY;
 	terrain_contents[2] = CONTENTS_WATER;
@@ -4376,6 +4451,11 @@ defaultproperties
 	FallingDeathMessage[1] = "%s made a fatal mistake";
 	FallingDeathMessage[2] = "%s forgot he cannot fly";
 
+	// suicide
+	SuicideDeathMessage[0] = "%s died from anger";
+	SuicideDeathMessage[1] = "%s decided to leg it";
+	SuicideDeathMessage[2] = "%s commited a suicide";
+
 	// player-specific weaponry (some of them are used by monsters too)
 // Fighter
 	DeathMessage[0] = "%s was knocked out by %s";
@@ -4401,8 +4481,8 @@ defaultproperties
 	DeathMessage[18] = "%s was enlightened by %s's firewand";
 	DeathMessage[19] = "%s was frozen by %s";
 	DeathMessage[20] = "%s was electrocuted by %s";
-	DeathMessage[21] = "%s was fragged by %s's bloodscourge";	//"%s was blown away by %s's will";
-	DeathMessage[22] = "%s was burnt by %s's wyvern breath";	//"%s was fragged by %s's bloodscourge";
+	DeathMessage[21] = "%s was fragged by %s's bloodscourge";
+	DeathMessage[22] = "%s was burnt by %s's wyvern breath";
 	DeathMessage[23] = "%s painfully suffered to death by %s's will";
 // Heretic
 	DeathMessage[24] = "%s was necrocuted by %s";
@@ -4441,7 +4521,7 @@ defaultproperties
 	DeathMessage[54] = DeathMessage[48];
 	DeathMessage[55] = DeathMessage[48];
 
-	// non-player weaponry, enviromental stuff, traps, etc
+	// non-player weaponry or extra weapon abilities, enviromental stuff, traps, etc
 	DeathMessage[56] = "%s was dispelled by a %s";		// bishop melee & missile
 	DeathMessage[57] = "%s was slashed by a %s";		// centaur melee
 	DeathMessage[58] = "%s was fragged by a %s's magic bolt";	// generic missile
@@ -4457,8 +4537,10 @@ defaultproperties
 	DeathMessage[68] = "%s was lit bright by %s's fire";	// generic fire attack
 	DeathMessage[69] = "%s died in poison cloud";
 	DeathMessage[70] = "%s died of poisoned dart";
-	DeathMessage[71] = "%s fell in %s's claws";		// stalker melee
+	DeathMessage[71] = "%s felt in %s's claws";		// stalker melee
 	DeathMessage[72] = "%s's life was drained by a %s";	// wraith melee
+
+	DeathMessage[73] = "%s was devoured by darkness (frag goes to %s)"; // alt fighter's hammer
 	
 	TrophyText[0] = "double kill!";
 	TrophyText[1] = "tripple kill!";

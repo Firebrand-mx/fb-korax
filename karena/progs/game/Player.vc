@@ -89,18 +89,15 @@ struct morph_t
 	bool bMorphed;
 	bool bTimer;
 	bool bUntilDeath;
-	float MorphTime;	// player is a pig if > 0
+	float MorphTime;
 };
 
-// [CW] I hate to do this, but it is still only way to sent these params to client.
-// I hope Janis shall develop additional data transition mechanism which will allow
-// copying data directly from Level or GameInfo.
 struct scoreboard_t
 {
-	bool		IsActive;
+	bool	IsActive;
 	int		plclass;
 	int		level;
-	bool		IsBot;		// true if player is bot, false if is human
+	bool	IsBot;		// true if player is bot, false if is human
 	int		team;		// colour
 	int		score;		// player score (game mode dependent)
 	int		frags;
@@ -158,6 +155,9 @@ int bak_health; // [FB] To keep an older level health
 
 int use_power;	// [CW] is needed for some advanced game modes (football);
 		//	stores time USE button was held pressed
+
+int		altWeapon;
+int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
 
 //
 //  Strings must go here
@@ -518,7 +518,7 @@ void UserinfoChanged()
 	SetPlayerColour();
 
 	//[CW] update all server clients' scoreboards
-	ScoreboardsUpdate(false);
+	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 }
 
 //==========================================================================
@@ -1586,82 +1586,13 @@ void Scoreboard(bool show)
 {
 	// [CW] If show == true, update scoreboard data first.
 	if (show)
-		ScoreboardsUpdate(true);
+		MainGameInfo(Level.Game).ScoreboardsUpdate(self);
 	
 	// [CW] Set bShowScoreboard flag
 	bShowScoreboard = show;
 	SelectClientMsg(MSG_SV_CLIENT);
 	MSG_WriteByte(HexenDefs::svc_scoreboard);
 	MSG_WriteByte(bShowScoreboard);
-}
-
-//==========================================================================
-//
-//  ScoreboardsUpdate
-//
-// [CW] Updates shown scoreboards of current or all the players.
-// Used when a client connects to / disconnects from server, when anyone
-// dies and when player info changes.
-//
-//==========================================================================
-
-void ScoreboardsUpdate(bool ThisPlayerOnly)
-{
-	int teamnum, plnum, gs, i, j;
-	Player pl;
-	PlayerTeam plteam;
-
-	//[CW] iterate through all connected players
-	for (plnum = 0; plnum < MAXPLAYERS; plnum++)
-	{
-		if (!Level.Game.Players[plnum])
-			break;
-
-		if (ThisPlayerOnly && Level.Game.Players[plnum] != self)
-			continue;
-
-		//[CW] update scoreboard for player number "plnum"
-		pl = Player(Level.Game.Players[plnum]);
-		gs = 0;
-		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
-		{
-			if (!MainGameInfo(Level.Game).Teams[teamnum])
-			   break;
-
-			plteam = MainGameInfo(Level.Game).Teams[teamnum];
-
-			pl.teamscores[teamnum] = plteam.Score;
-
-			for (i = 0; i < MAXPLAYERS; i++, gs++)
-			{
-			   if (!plteam.Players[i])
-				break;
-
-			   if (plteam.Players[i] == pl/*self*/)
-			      pl.table_thisplayer = gs;
-
-			   pl.gamescores[gs].IsActive = true;
-			   pl.PlayerNames[gs] = plteam.Players[i].PlayerName;
-			   pl.gamescores[gs].plclass = plteam.Players[i].PClass;
-			   pl.gamescores[gs].level = plteam.Players[i].exp_level;
-			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
-			   pl.gamescores[gs].team = plteam.Players[i].Colour;
-			   pl.gamescores[gs].score = plteam.Players[i].Score;
-			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
-			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
-			   pl.gamescores[gs].deaths = 0;
-
-			   // [CW] counts times all other players killed this one
-			   // (and times he was killed by self/monsters/enviroment)
-			   for (j = 0; j < MAXPLAYERS; j++)
-			   {
-				if (!Level.Game.Players[j])
-				   break;
-				pl.gamescores[gs].deaths += Level.Game.Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
-			   }
-			}
-		}
-	}
 }
 
 //==========================================================================
@@ -2545,9 +2476,8 @@ void PlayerImpulse()
 
 	if (bUnControllable)
 	{
-		// Player can do almost nothing when immobile
-		if (impulse != 16 /*KILL COMMAND*/ &&
-					impulse != 19 /*SCOREBOARD COMMAND*/ )
+		// Player can do almost nothing when uncontrollable
+		if (impulse != HexenDefs::IMPULSE__SUICIDE && impulse != HexenDefs::IMPULSE__SCOREBOARD)
 			return;
 	}
 
@@ -2562,7 +2492,7 @@ void PlayerImpulse()
 			PendingWeapon = impulse - 1;
 		}
 	}
-	else if (impulse == 13 && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
 		newWeapon = ReadyWeapon;
@@ -2576,9 +2506,9 @@ void PlayerImpulse()
 		if (newWeapon != ReadyWeapon)
 		{
 			PendingWeapon = newWeapon;
-		}		
+		}
 	}
-	else if (impulse == 14 && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
 		newWeapon = ReadyWeapon;
@@ -2607,9 +2537,9 @@ void PlayerImpulse()
 	{
 		InventoryUse();
 	}*/
-	else if (impulse == 16)
+	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
 	{
-		Actor(MO).Damage(none, none, 10000);
+		Actor(MO).Damage(none, Actor(self.MO), 10000);
 	}
 	else if (impulse == 17)
 	{
@@ -2620,16 +2550,29 @@ void PlayerImpulse()
 		NextWeapon();
 	}
 	// [FB] We want to make the scoreboard accesible with a new impulse value
-	else if (impulse == 19)
+	else if (impulse == HexenDefs::IMPULSE__SCOREBOARD)
 	{
 		// [FB] The player is calling the scoreboard!!
-		// [CW] invert (toggle) showscoreboard flag
 		Scoreboard(!bShowScoreboard);
 	}
-
-	// Hexen artifact hot keys
-	if (!Arti)
+	else if (impulse == HexenDefs::IMPULSE__ATTACK2)
 	{
+		AlternateAttack();
+	}
+	else if (impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD)
+	{
+		ToggleAltAttack(HexenDefs::ALTFIRE_BLASTRADIUS);
+		//PlayerUseArtifact(HexenDefs::arti_blastradius);
+	}
+	else if (impulse == HexenDefs::IMPULSE__TOGGLE_POSIONBAG)
+	{
+		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
+		//PlayerUseArtifact(HexenDefs::arti_poisonbag);
+	}
+
+	///// Hexen artifact hot keys
+///	if (!Arti)
+///	{
 /*		if (impulse == 11)
 		{
 			Arti = NUMARTIFACTS;
@@ -2638,14 +2581,9 @@ void PlayerImpulse()
 		{
 			Arti = arti_health;
 		}
-		else */	if (impulse == 10)
-		{
-			PlayerUseArtifact(HexenDefs::arti_poisonbag);
-		}
-		else if (impulse == 9)
-		{
-			PlayerUseArtifact(HexenDefs::arti_blastradius);
-		}/*
+		else */
+		
+		/*
 		else if (impulse == 8)
 		{
 			Arti = arti_teleport;
@@ -2662,7 +2600,7 @@ void PlayerImpulse()
 		{
 			Arti = arti_invulnerability;
 		}*/
-	}
+//	}
 /*
 	if (Arti)
 	{
@@ -2683,6 +2621,47 @@ void PlayerImpulse()
 */
 //[Korax]
 }
+
+//==========================================================================
+//
+//  ToggleAltAttack
+//
+//==========================================================================
+
+void ToggleAltAttack(int weapon)
+{
+	dprint("TAA weapon = %i", weapon);
+	if (altWeapon == weapon)
+	{
+		if (altWeaponMode[altWeapon] == MainGameInfo(Level.Game).AltWeaponModeCount[altWeapon] - 1)
+			altWeaponMode[altWeapon] = 0;
+		else
+			altWeaponMode[altWeapon]++;
+	}
+
+	altWeapon = weapon;
+}
+
+//==========================================================================
+//
+//  AlternateAttack
+//
+//==========================================================================
+
+void AlternateAttack()
+{
+	switch (altWeapon)
+	{
+	case HexenDefs::ALTFIRE_BLASTRADIUS:
+		PlayerUseArtifact(HexenDefs::arti_blastradius);
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG:
+		PlayerUseArtifact(HexenDefs::arti_poisonbag);
+		break;
+	}
+}
+
+
 
 //==========================================================================
 //
@@ -3656,7 +3635,7 @@ void PlayerUseArtifact(int arti)
 //[Korax]
 	if (arti == HexenDefs::arti_poisonbag)
 	{
-		int manause = 20;
+		int manause = 10;
 		manause = manause * 10 / wisdom;
 		if (Mana[HexenDefs::MANA_5] >= manause)
 		{
@@ -3667,7 +3646,7 @@ void PlayerUseArtifact(int arti)
 	}
 	else if (arti == HexenDefs::arti_blastradius)
 	{
-		int manause = 20;
+		int manause = 10;
 		manause = manause * 10 / wisdom;
 		if (Mana[HexenDefs::MANA_4] >= manause)
 		{
@@ -4116,51 +4095,57 @@ void UseArtiBlastRadius()
 	MO.PlaySound('BlastRadius', CHAN_ITEM);
 	HexenLevelInfo(Level).NoiseAlert(Actor(MO), Actor(MO));
 
-	FOREACH(Actor, mo)
+	switch(altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
 	{
-		if ((mo == MO) || mo.bBoss)
+	case HexenDefs::ALTFIRE_BLASTRADIUS_DEFAULT:
+
+		FOREACH(Actor, mo)
 		{
-			// Not a valid monster
-			continue;
+			if ((mo == MO) || mo.bBoss)
+			{
+				// Not a valid monster
+				continue;
+			}
+			if ((mo.Class == PoisonCloud) ||	// poison cloud
+				(mo.Class == HolyFX) ||		// holy fx
+				mo.bIceCorpse)			// frozen corpse
+			{
+				// Let these special cases go
+			}
+			else if (mo.bCountKill && (mo.Health <= 0))
+			{
+				continue;
+			}
+			else if (!mo.bCountKill && !mo.bIsPlayer && !mo.bMissile)
+			{
+				// Must be monster, player, or missile
+				continue;
+			}
+			if (mo.bDormant)
+			{
+				continue;	// no dormant creatures
+			}
+			if ((mo.Class == WraithBuried) && mo.bHidden)
+			{
+				continue;	// no underground wraiths
+			}
+			if ((mo.Class == SplashBase) || (mo.Class == Splash))
+			{
+				continue;
+			}
+			if (mo.Class == Serpent || mo.Class == SerpentLeader)
+			{
+				continue;
+			}
+			dist = MO.DistTo(mo);
+			if (dist > BLAST_RADIUS_DIST)
+			{
+				// Out of range
+				continue;
+			}
+			mo.Blast(Actor(MO), BLAST_FULLSTRENGTH);
 		}
-		if ((mo.Class == PoisonCloud) ||	// poison cloud
-			(mo.Class == HolyFX) ||		// holy fx
-			mo.bIceCorpse)			// frozen corpse
-		{
-			// Let these special cases go
-		}
-		else if (mo.bCountKill && (mo.Health <= 0))
-		{
-			continue;
-		}
-		else if (!mo.bCountKill && !mo.bIsPlayer && !mo.bMissile)
-		{
-			// Must be monster, player, or missile
-			continue;
-		}
-		if (mo.bDormant)
-		{
-			continue;	// no dormant creatures
-		}
-		if ((mo.Class == WraithBuried) && mo.bHidden)
-		{
-			continue;	// no underground wraiths
-		}
-		if ((mo.Class == SplashBase) || (mo.Class == Splash))
-		{
-			continue;
-		}
-		if (mo.Class == Serpent || mo.Class == SerpentLeader)
-		{
-			continue;
-		}
-		dist = MO.DistTo(mo);
-		if (dist > BLAST_RADIUS_DIST)
-		{
-			// Out of range
-			continue;
-		}
-		mo.Blast(Actor(MO), BLAST_FULLSTRENGTH);
+		break;
 	}
 }
 
@@ -4176,26 +4161,38 @@ void UseArtiPoisonBag()
 	Actor bomb;
 
 	angle = MO.Angles.yaw;
-	if (PClass == HexenDefs::PCLASS_CLERIC || PClass == HexenDefs::PCLASS_WITCHAVEN)
+
+	switch(altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
+	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:		
+	
+	/*if (PClass == HexenDefs::PCLASS_CLERIC || PClass == HexenDefs::PCLASS_WITCHAVEN)
+	{*/
 		bomb = HexenLevelInfo(Level).Spawn(PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
 			bomb.Instigator = Actor(MO);
 		}
-	}
+		break;
+		
+	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+	
+	/*}
 	else if (PClass == HexenDefs::PCLASS_MAGE || PClass == HexenDefs::PCLASS_HERETIC)
-	{
+	{*/
 		bomb = HexenLevelInfo(Level).Spawn(FireBomb, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
 			bomb.Instigator = Actor(MO);
 		}
-	}
+		break;
+
+	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:	
+	/*}
 	else	// PCLASS_FIGHTER && PCLASS_MARINE, obviously (also pig, not so obviously)
-	{
+	{*/
 		bomb = HexenLevelInfo(Level).Spawn(ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
 		if (bomb)
@@ -4213,6 +4210,7 @@ void UseArtiPoisonBag()
 			bomb.StateTime -= Random() * 0.1;
 			bomb.CheckMissileSpawn();
 		}
+		break;
 	}
 }
 
@@ -5227,7 +5225,7 @@ void UpdateScore(int event)
 		TeamFrags = Team.Frags;
 		TeamKills = Team.Kills;
 	}
-	ScoreboardsUpdate(false);
+	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 }
 
 //==========================================================================
@@ -5352,6 +5350,11 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
+		}
+		//[CW] suicide
+		else if (source.bIsPlayer && Player(source.Player) == self)
+		{
+			bprint(MainGameInfo(Level.Game).SuicideDeathMessage[P_Random() % 3], PlayerName);
 		}
 		//[CW] falling damage
 		else
@@ -5488,7 +5491,7 @@ void UpdateQueuedTrophy(int type, int value)
 		break;
 	case HexenDefs::trophycl_fragsatonce:
 		Trophies.frags_at_once += value;
-		Trophies.kao_timer = HexenDefs::TROPHY_FAO_TIME;
+		Trophies.fao_timer = HexenDefs::TROPHY_FAO_TIME;
 		break;
 	case HexenDefs::trophycl_fragsrow:
 		Trophies.frags_row += value; break;
