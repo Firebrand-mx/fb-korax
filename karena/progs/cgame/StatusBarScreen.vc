@@ -67,7 +67,7 @@ int pic_manadim1[2];
 int pic_manadim2[2];
 int pic_manadim3[2];
 int pic_manadim4[2];
-int pic_manadim5[2];
+int pic_manadim5[6];
 int pic_manavial1[2];
 int pic_manavial2[2];
 int pic_manavial3[2];
@@ -305,6 +305,10 @@ void StartMap()
 	pic_manadim4[1] = R_RegisterPic('manabrt4');
 	pic_manadim5[0] = R_RegisterPic('manadim5');
 	pic_manadim5[1] = R_RegisterPic('manabrt5');
+	pic_manadim5[2] = R_RegisterPic('manadim6');
+	pic_manadim5[3] = R_RegisterPic('manabrt6');
+	pic_manadim5[4] = R_RegisterPic('manadim7');
+	pic_manadim5[5] = R_RegisterPic('manabrt7');
 	pic_manavial1[0] = R_RegisterPic('manavl1d');
 	pic_manavial1[1] = R_RegisterPic('manavl1');
 	pic_manavial2[0] = R_RegisterPic('manavl2d');
@@ -671,7 +675,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.Mana[3] == 0)
+	if (cl.Mana[3] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -682,16 +686,45 @@ void SB_DrawMainBar()
 		sb_mana4 = 1;
 		sb_manaVial4 = 1;
 	}
-	if (cl.Mana[4] == 0)
+	if (cl.Mana[4] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
 	{
 		// Draw Dim Mana icon
-		sb_mana5 = 0;
-		sb_manaVial5 = 0;
+		// [FB] Choose correct mana type to display
+
+		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+			sb_mana5 = 0;
+			sb_manaVial5 = 0;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+			sb_mana5 = 2;
+			sb_manaVial5 = 0;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+			sb_mana5 = 4;
+			sb_manaVial5 = 0;
+			break;
+		}
 	}
 	else
 	{
-		sb_mana5 = 1;
-		sb_manaVial5 = 1;
+		// [FB] Choose correct mana type to display
+		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+			sb_mana5 = 1;
+			sb_manaVial5 = 1;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+			sb_mana5 = 3;
+			sb_manaVial5 = 1;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+			sb_mana5 = 5;
+			sb_manaVial5 = 1;
+			break;
+		}
 	}
 	// Update mana graphics based upon mana count/weapon type
 	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
@@ -988,7 +1021,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.Mana[3] == 0)
+	if (cl.Mana[3] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -997,14 +1030,38 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana4 = 1;
 	}
-	if (cl.Mana[4] == 0)
+	if (cl.Mana[4] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
 	{
 		// Draw Dim Mana icon
-		sb_mana5 = 0;
+		// [FB] Choose correct mana type to display
+		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+			sb_mana5 = 0;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+			sb_mana5 = 2;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+			sb_mana5 = 4;
+			break;
+		}
 	}
 	else
 	{
-		sb_mana5 = 1;
+		// [FB] Choose correct mana type to display
+		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+			sb_mana5 = 1;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+			sb_mana5 = 3;
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+			sb_mana5 = 5;
+			break;
+		}
 	}
 	// [FB] Update mana graphics based upon mana count/weapon type
 	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
