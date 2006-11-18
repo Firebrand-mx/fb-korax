@@ -45,8 +45,8 @@ const float
 	INVISTIME				= 40.0,
 	DAMAGETIME				= 40.0;
 
-const int MAXMORPHHEALTH	= 30;
-const float VIEWHEIGHT 		= 48.0;
+//const int MAXMORPHHEALTH	= 30;		//[CW] this may be obsolete
+//const float VIEWHEIGHT 		= 48.0;
 
 //
 // Player internal flags, for cheats and debug.
@@ -105,6 +105,12 @@ struct scoreboard_t
 	int		deaths;
 };
 
+enum
+{
+	targethint_noshoot,
+	targethint_shoot
+};
+
 //
 //  FIRST FIELDS ARE STATS THAT ARE SENT TO CLIENT FOR STATUS BAR
 //
@@ -132,9 +138,9 @@ int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
 
-int		table_thisplayer;	// this player's index in gamescores array
+int				table_thisplayer;	// this player's index in gamescores array
 scoreboard_t	gamescores[MAXPLAYERS];
-int		teamscores[HexenDefs::MAXPLAYERTEAMS];
+int				teamscores[HexenDefs::MAXPLAYERTEAMS];
 
 // [FB] Player atributes for leveling system
 int experience;
@@ -149,12 +155,14 @@ int constitution;
 //
 //  Other stats (for status bar)
 //
+int HealthBig;		// [CW] to subst original BasePlayer::Health which oes not allow health > 255
 int max_health;
-int old_maxhealth; // [FB] To decrease the health
-int bak_health; // [FB] To keep an older level health
+int old_maxhealth;	// [FB] To decrease the health
+int bak_health;		// [FB] To keep an older level health
 
-int use_power;	// [CW] is needed for some advanced game modes (football);
-		//	stores time USE button was held pressed
+int use_power;				// [CW] is needed for some advanced game modes (football);
+							//	stores time USE button was held pressed
+int	targetnamehint_type;
 
 int		altWeapon;
 int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
@@ -273,6 +281,8 @@ trophies_t	Trophies;
 bool bShowScoreboard; // [CW] True if scoreboard should be visible
 
 bool bUnControllable; //[CW] Ignore user/AI commands (move/attack etc)
+
+bool bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player respawn
 
 //==========================================================================
 //
@@ -778,7 +788,7 @@ void SpawnPlayer(mthing_t * mthing)
 	pp.Angles.yaw = itof(45 * (mthing->angle / 45));
 	pp.Player = self;
 	pp.bIsPlayer = true;
-	pp.Health = Health;
+	pp.Health = /*Health*/HealthBig;
 	MO = pp;
 	PlayerState = PST_LIVE;
 	Refire = 0;
@@ -795,7 +805,7 @@ void SpawnPlayer(mthing_t * mthing)
 	FixedColourmap = 0;
 	LastSectorDamageTime = 0.0;
 	LastHazardTime = 0.0;
-	ViewHeight = VIEWHEIGHT;
+	ViewHeight = pp.ViewHeight;	//VIEWHEIGHT;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
 	pcount = 0; // [FB] Reset counter
@@ -834,6 +844,17 @@ void SpawnPlayer(mthing_t * mthing)
 	// [FB] There's a penalty for dying; you lost some experience
 	if(inited && PlayerState == PST_LIVE)
 	{
+		// [CW] recalc attributes if needed
+		if (bRecalculateLevelOnRespawn)
+		{
+			int bak_level;
+
+			bRecalculateLevelOnRespawn = false;
+			bak_level = exp_level;
+			InitiateLevel();
+			ActivateLevel(bak_level, false);
+		}
+
 		experience -= (200 * exp_level);
 		Actor(MO).experience = experience;
 
@@ -850,10 +871,10 @@ void SpawnPlayer(mthing_t * mthing)
 		//	our current one
 		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
 		{
-			exp_level--; // [FB] Decrese experience level
+			/*exp_level--; // [FB] Decrese experience level
 			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
-			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
-			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
+			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level*/
+			DeactivateLevel(exp_level - 1, true); // [FB] Update Stats accordingly
 		}
 	}
 
@@ -908,7 +929,8 @@ void PlayerReborn()
 	bUseDown = true;	// don't do anything immediately
 	bAttackDown = true;
 	PlayerState = PST_LIVE;
-	Health = max_health;
+	HealthBig = max_health;
+	Health = HealthBig > 0xff ? 0xff : HealthBig;
 	WeaponOwned[HexenDefs::WP_FIRST] = true;
 	WeaponOwned[HexenDefs::WP_SECOND] = true;
 	Mana[HexenDefs::MANA_1] = 25;
@@ -1065,20 +1087,22 @@ bool GiveBody(int num)
 	int max;
 
 	max = max_health;
-	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
+	/*if (PClass == HexenDefs::PCLASS_PIG)
 	{
 		max = MAXMORPHHEALTH;
-	}
-	if (Health >= max)
+	}*/
+	if (/*Health*/HealthBig >= max)
 	{
 		return false;
 	}
-	Health += num;
-	if (Health > max)
+	HealthBig += num;
+	Health = HealthBig > 0xff ? 0xff : HealthBig;
+	if (/*Health*/HealthBig > max)
 	{
-		Health = max;
+		HealthBig = max;
+		Health = HealthBig > 0xff ? 0xff : HealthBig;
 	}
-	MO.Health = Health;
+	MO.Health = HealthBig;
 	return true;
 }
 
@@ -1398,10 +1422,10 @@ void GiveExperience(int exp)
 
 	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
 	{
-		old_level = 1000 * (exp_level); // [FB] We need to keep this to compare it
+		/*old_level = 1000 * (exp_level); // [FB] We need to keep this to compare it
 		exp_level++;
-		next_level = 1000 * exp_level;
-		ActivateLevel(exp_level);
+		next_level = 1000 * exp_level;*/
+		ActivateLevel(exp_level + 1, true);
 	}
 }
 
@@ -1413,13 +1437,17 @@ void GiveExperience(int exp)
 //
 //============================================================================
 
-void ActivateLevel(int lvl)
+void ActivateLevel(int to_lvl, bool message)
 {
 	int addhealth;
 	int i;
 
-	if(exp_level < 11) // [FB] MAX Level it's 10
+	while (exp_level < 11 && exp_level < to_lvl) // [FB] MAX Level it's 10
 	{
+		old_level = 1000 * (exp_level); // [FB] We need to keep this to compare it
+		exp_level++;
+		next_level = 1000 * exp_level;
+
 		strength += strength * 25 / 100;
 		constitution += constitution * 25 / 100;
 		dexterity += dexterity * 25 / 100;
@@ -1428,31 +1456,36 @@ void ActivateLevel(int lvl)
 		old_maxhealth = max_health;
 		bak_health = old_maxhealth - old_maxhealth * 9 / 100; // Save a previous level's health
 
-		if (old_maxhealth == 212)
+		/*if (old_maxhealth == 212)
 		{
 			//	Don't do anything
 			addhealth = 0;
 		}
 		else
-		{
-			if ((max_health + max_health * 9 / 100) >= 212)
+		{*/
+		/*	if ((max_health + max_health * 9 / 100) >= 212)
 			{
 				addhealth = 212 - max_health;
 			}
 			else
-			{
+			{*/
 				addhealth = max_health * 9 / 100;
-			}
-		}
+			//}
+		//}
 
-		if (addhealth > 0)
-		{
+		//if (addhealth > 0)
+		//{
 			max_health += addhealth;
-			Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
-			MO.Health = Health;
-		}
+			HealthBig = ftoi(itof(HealthBig) / itof(old_maxhealth) * itof(max_health));
+			Health = HealthBig > 0xff ? 0xff : HealthBig;
+			MO.Health = HealthBig;
+		//}
 
-		cprint("YOU REACHED LEVEL %d", lvl);
+	}
+
+	if (message)
+	{
+		cprint("YOU REACHED LEVEL %d", exp_level);
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 }
@@ -1465,13 +1498,17 @@ void ActivateLevel(int lvl)
 //
 //============================================================================
 
-void DeactivateLevel(int lvl)
+void DeactivateLevel(int to_lvl, bool message)
 {
 	int addhealth;
 	int i;
 
-	if(exp_level >= 1)
+	while(exp_level > 1 && exp_level > to_lvl)
 	{
+		exp_level--; // [FB] Decrese experience level
+		next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
+		old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level
+
 		strength -= strength * 25 / 100;
 		constitution -= constitution * 25 / 100;
 		dexterity -= dexterity * 25 / 100;
@@ -1479,24 +1516,28 @@ void DeactivateLevel(int lvl)
 		wisdom -= wisdom * 25 / 100;
 
 		// [FB] We already calculated the bak_health value
-		if (old_maxhealth < 100)
+		/*if (old_maxhealth < 100)
 		{
 			// Don't do anything
 			addhealth = 0;
 		}
 		else
-		{
+		{*/
 			addhealth = old_maxhealth * 9 / 100;
-		}
+		//}
 
-		if (addhealth > 0)
-		{
+		//if (addhealth > 0)
+		//{
 			max_health -= addhealth;
-			Health = max_health; // [FB] Just make it the same as the max_health value
-			MO.Health = Health;
-		}
+			HealthBig = max_health; // [FB] Just make it the same as the max_health value
+			Health = HealthBig > 0xff ? 0xff : HealthBig;
+			MO.Health = HealthBig;
+		//}
+	}
 
-		cprint("YOU LOWERED TO LEVEL %d", lvl);
+	if (message)
+	{
+		cprint("YOU LOWERED TO LEVEL %d", exp_level);
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 }
@@ -1509,14 +1550,15 @@ void DeactivateLevel(int lvl)
 
 void InitiateLevel()
 {
-	max_health = 100;
+	max_health = PlayerPawn(MO).SpawnHealth;	//100;
 
 	exp_level = 1;
 	next_level =  1000 * exp_level;
 	old_level = 1000 * (exp_level - 1);
 	Actor(MO).experience = 0;
-	Health = max_health;
-	MO.Health = Health;
+	HealthBig = max_health;
+	Health = HealthBig > 0xff ? 0xff : HealthBig;
+	MO.Health = HealthBig;
 
 	strength = PlayerPawn(MO).InitialStrength;
 	wisdom = PlayerPawn(MO).InitialWisdom;
@@ -1565,10 +1607,10 @@ void PlayerCamping()
 		//	our current one
 		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
 		{
-			exp_level--; // [FB] Decrese experience level
+			/*exp_level--; // [FB] Decrese experience level
 			next_level = next_level - 1000; // [FB] Decrease the next to the old_level
-			old_level = old_level - 1000; // [FB] Also decrease the old_level
-			DeactivateLevel(exp_level); // [FB] Update Stats accordingly
+			old_level = old_level - 1000; // [FB] Also decrease the old_level*/
+			DeactivateLevel(exp_level - 1, true); // [FB] Update Stats accordingly
 		}
 	}
 }	   
@@ -2018,15 +2060,15 @@ void CalcHeight(float deltaTime)
 	{
 		ViewHeight += DeltaViewHeight * deltaTime;
 
-		if (ViewHeight > VIEWHEIGHT)
+		if (ViewHeight > PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/)
 		{
-			ViewHeight = VIEWHEIGHT;
+			ViewHeight = PlayerPawn(MO).ViewHeight;	//VIEWHEIGHT;
 			DeltaViewHeight = 0.0;
 		}
 
-		if (ViewHeight < VIEWHEIGHT / 2.0)
+		if (ViewHeight < PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/ / 2.0)
 		{
-			ViewHeight = VIEWHEIGHT / 2.0;
+			ViewHeight = PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/ / 2.0;
 			if (DeltaViewHeight <= 0.0)
 				DeltaViewHeight = 0.00001;
 		}
@@ -2132,7 +2174,7 @@ void PlayerInSpecialSector(float deltaTime)
 				Actor(MO).Damage(none, none, 20);
 			}
 	
-			if (Health <= 10)
+			if (HealthBig <= 10)
 			{
 				G_ExitLevel(0);
 			}
@@ -2577,7 +2619,7 @@ void PlayerImpulse()
 		{
 			Arti = NUMARTIFACTS;
 		}
-		else if (impulse == 12 && (Health < max_health))
+		else if (impulse == 12 && (HealthBig < max_health))
 		{
 			Arti = arti_health;
 		}
@@ -2706,6 +2748,7 @@ bool UndoPlayerMorph()
 {
 	Actor fog;
 	Actor A;
+	int bak_level;
 
 	MO.UnlinkFromWorld();
 	switch (BaseClass)
@@ -2751,7 +2794,8 @@ bool UndoPlayerMorph()
 	}
 	Morph.MorphTime = 0.0;
 	A.Health = max_health;
-	Health = A.Health;
+	HealthBig = A.Health;
+	Health = HealthBig > 0xff ? 0xff : HealthBig;
 	PClass = BaseClass;
 	SetPlayerColour();
 	PostMorphWeapon(Actor(MO)._Special1);
@@ -2762,6 +2806,13 @@ bool UndoPlayerMorph()
 
 	MO.SetState(Actor::S_FREETARGMOBJ);
 	MO = A;
+
+	// [CW] recalc attributes
+	bak_level = exp_level;
+	InitiateLevel();
+	ActivateLevel(bak_level, false);
+	bRecalculateLevelOnRespawn = false;
+
 	return true;
 }
 
@@ -2982,10 +3033,24 @@ void PlayerTick(float deltaTime)
 		if (Actor(MO).linetarget)
 		{
 			if (Actor(MO).linetarget.Player)
+			{
+				int teamfactor = Game::teamfactor_any;
 				targetnamehint = Actor(MO).linetarget.Player.PlayerName;
+				if (MainGameInfo(Level.Game).GameMode)
+					teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Actor(MO), Actor(MO).linetarget);
+				if (teamfactor == Game::teamfactor_any)
+				{
+					if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM)
+						targetnamehint_type = targethint_shoot;
+					else
+						targetnamehint_type = (Colour == Actor(MO).linetarget.Player.Colour) ? targethint_noshoot : targethint_shoot;
+				}
+				else
+					targetnamehint_type = teamfactor == Game::teamfactor_coop ? targethint_noshoot : targethint_shoot;
+			}
 			else
 				targetnamehint = "";	//[CW] leave this so?
-			targetnamehint_counter = 40;	//[CW] this should use real time, i think
+			targetnamehint_counter = 30;	//[CW] this should use real time, i think
 		}
 		
 	}
@@ -3339,6 +3404,9 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
+	// [CW]
+	if (PoisonCount && Actor(MO).bDormant)
+		PoisonCount = 0;
 
 	if (PoisonCount && Level.Game.level->time - LastPoisonTime >= 0.5)
 	{
@@ -3434,10 +3502,14 @@ void PlayerTick(float deltaTime)
 	else
 		FixedColourmap = 0;
 
-	if(MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
+	if(!bUnControllable && MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
 	{
-		pcount++;
-		PlayerCamping();
+		// [CW] No need for camping processing when player has lost all experience
+		if (experience > 0)
+		{
+			pcount++;
+			PlayerCamping();
+		}
 	}
 	else
 	{
@@ -5003,16 +5075,17 @@ void Cheat_Gimme()
 	}
 	if (Cmd_CheckParm("health"))
 	{
-		if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
+		/*if (PClass == HexenDefs::PCLASS_PIG)
 		{
 			MO.Health = MAXMORPHHEALTH;
 			Health = MO.Health;
 		}
 		else
-		{
+		{*/
 			MO.Health = max_health;
-			Health = MO.Health;
-		}
+			HealthBig = MO.Health;
+			Health = HealthBig > 0xff ? 0xff : HealthBig;
+		//}
 		cprint("FULL HEALTH");
 	}
 	if (Cmd_CheckParm("keys"))
@@ -5178,7 +5251,7 @@ void CallLocalSound(int sound, bool put_in_queue, float delay)
 
 void UpdateScore(int event)
 {
-	int mod;
+	int mod = 0;
 
 	switch(event)
 	{
@@ -5201,6 +5274,7 @@ void UpdateScore(int event)
 			break;	// this should always set Score to 0
 		case HexenDefs::scoreevent_Frag:
 		case HexenDefs::scoreevent_Kill:
+		case HexenDefs::scoreevent_KthHeresiarchDeath:
 			mod = 1;
 			break;
 		case HexenDefs::scoreevent_FtbGoal:
@@ -5213,11 +5287,25 @@ void UpdateScore(int event)
 		case HexenDefs::scoreevent_TeamFrag:
 			mod = -1;
 			break;
+		case HexenDefs::scoreevent_KthHeresiarchFrag:
+			// [CW] This is an interesting case: whoever this called Player is,
+			//		frag should go to Heresiarch and no one else!
+			if (MainGameInfo(Level.Game).GameMode && MainGameInfo(Level.Game).GameMode.IsA('GameKTH'))
+			{
+				Player plH = GameKTH(MainGameInfo(Level.Game).GameMode).plHeresiarch;
+				if (self == plH)
+					mod = 1;
+				else
+					plH.UpdateScore(HexenDefs::scoreevent_KthHeresiarchFrag);
+			}
+			break;
 	}
 
 	Score += mod;
 
-	UpdateCompetition();
+	if (mod > 0)
+		UpdateCompetition();
+
 	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 	{
 		Team.UpdateScore(event);
