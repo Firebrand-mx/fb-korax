@@ -1,0 +1,129 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponHeresiarchPRay.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHeresiarchPRay : Weapon;
+
+
+float		PRayDeltaIndex;
+
+
+//==========================================================================
+//
+//  A_PRayAttack
+//
+//==========================================================================
+
+void A_PRayAttack()
+{	
+	float ang1;
+	SorcererFX4 mo;
+	float delta;
+
+	if (PRayDeltaIndex == 0.0)
+		Player.MO.PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
+
+	delta = sin(PRayDeltaIndex * 360.0 / 256.0) * 10.0;
+	PRayDeltaIndex += 15.0;
+	ang1 = AngleMod360(Player.MO.Angles.yaw + delta);
+	mo = SorcererFX4(Player(Player).SpawnPlayerMissileAngle(SorcererFX4, ang1));
+	if (mo)
+	{
+		mo._Special2 = 35 * 10 / 2;	// 5 seconds
+		mo.Velocity.x *= 2.0;
+		mo.Velocity.y *= 2.0;
+		mo.Velocity.z *= 2.0;
+		mo.Instigator = Actor(Player.MO);
+
+		if (int_mod)
+		{
+			if(!active_damage)
+			{
+				mo.ExplodeDamage = mo.ExplodeDamage * Player(Player).intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				mo.ExplodeDamage = (mo.ExplodeDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			}
+		}
+	}	
+
+	Player.MO.PlaySound('SorcererBallWoosh', CHAN_VOICE, 1.0, ATTN_NONE);
+	UseWeaponMana();
+}
+
+
+__states__
+{
+	S_HPRAYREADY1('CFLM', 0, 1.0 / 35.0, S_HPRAYREADY2) { A_WeaponReady(); }
+	S_HPRAYREADY2('CFLM', 0, 1.0 / 35.0, S_HPRAYREADY3) { A_WeaponReady(); }
+	S_HPRAYREADY3('CFLM', 0, 1.0 / 35.0, S_HPRAYREADY4) { A_WeaponReady(); }
+	S_HPRAYREADY4('CFLM', 0, 1.0 / 35.0, S_HPRAYREADY5) { A_WeaponReady(); }
+	S_HPRAYREADY5('CFLM', 1, 1.0 / 35.0, S_HPRAYREADY6) { A_WeaponReady(); }
+	S_HPRAYREADY6('CFLM', 1, 1.0 / 35.0, S_HPRAYREADY7) { A_WeaponReady(); }
+	S_HPRAYREADY7('CFLM', 1, 1.0 / 35.0, S_HPRAYREADY8) { A_WeaponReady(); }
+	S_HPRAYREADY8('CFLM', 1, 1.0 / 35.0, S_HPRAYREADY9) { A_WeaponReady(); }
+	S_HPRAYREADY9('CFLM', 2, 1.0 / 35.0, S_HPRAYREADY10) { A_WeaponReady(); }
+	S_HPRAYREADY10('CFLM', 2, 1.0 / 35.0, S_HPRAYREADY11) { A_WeaponReady(); }
+	S_HPRAYREADY11('CFLM', 2, 1.0 / 35.0, S_HPRAYREADY12) { A_WeaponReady(); }
+	S_HPRAYREADY12('CFLM', 2, 1.0 / 35.0, S_HPRAYREADY1) { A_WeaponReady(); }
+	S_HPRAYDOWN('CFLM', 0, 1.0 / 35.0, S_HPRAYDOWN) { A_Lower(); }
+	S_HPRAYUP('CFLM', 0, 1.0 / 35.0, S_HPRAYUP) { A_Raise(); }
+	S_HPRAYATK_1('CFLM', 0, 2.0 / 35.0, S_HPRAYATK_2) { SY = 40.0; PRayDeltaIndex = 0.0; }
+	S_HPRAYATK_2('CFLM', 3, 2.0 / 35.0, S_HPRAYATK_3) { SY = 50.0; }
+	S_HPRAYATK_3('CFLM', 3, 2.0 / 35.0, S_HPRAYATK_4) { SY = 36.0; }
+	S_HPRAYATK_4('CFLM', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HPRAYATK_5) { }
+	S_HPRAYATK_5('CFLM', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_HPRAYATK_6) { A_PRayAttack(); }
+	S_HPRAYATK_6('CFLM', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HPRAYATK_7) { }
+	S_HPRAYATK_7('CFLM', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_HPRAYATK_8) { A_ReFire(); }
+	S_HPRAYATK_8('CFLM', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HPRAYATK_9) { }
+	S_HPRAYATK_9('CFLM', 6, 2.0 / 35.0, S_HPRAYATK_10) { SY = 40.0; }
+	S_HPRAYATK_10('CFLM', 6, 2.0 / 35.0, S_HPRAYREADY1) { }
+}
+
+/* SECOND HERESIARCH */
+defaultproperties
+{
+	Mana = HexenDefs::MANA_1;
+	manause = 8;
+	UpState = S_HPRAYUP;
+	DownState = S_HPRAYDOWN;
+	ReadyState = S_HPRAYREADY1;
+	AttackState = S_HPRAYATK_1;
+	HoldAttackState = S_HPRAYATK_4;
+	///PRayEndFireState = S_HPRAYATK_8;
+	PSpriteSY = 10.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "PURPLE RAY";	// [CW] Eh? Anyone has better idea?
+}

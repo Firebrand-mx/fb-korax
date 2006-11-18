@@ -1,0 +1,92 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: PlayerHeresiarch.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerHeresiarch : PlayerPawn;
+
+__states__
+{
+	S_HPLAY('SORC', 0, -1.0, none) { }
+	S_HPLAY_RUN1('SORC', 0, 4.0 / 35.0, S_HPLAY_RUN2) { }
+	S_HPLAY_RUN2('SORC', 1, 4.0 / 35.0, S_HPLAY_RUN3) { }
+	S_HPLAY_RUN3('SORC', 2, 4.0 / 35.0, S_HPLAY_RUN4) { }
+	S_HPLAY_RUN4('SORC', 3, 4.0 / 35.0, S_HPLAY_RUN1) { }
+	S_HPLAY_ATK1('SORC', 5, 8.0 / 35.0, S_HPLAY_ATK2) { }
+	S_HPLAY_ATK2('SORC', 4, 8.0 / 35.0, S_HPLAY) { }
+	S_HPLAY_PAIN('SORC', 6, 4.0 / 35.0, S_HPLAY_PAIN2) { }
+	S_HPLAY_PAIN2('SORC', 6, 4.0 / 35.0, S_HPLAY) { A_Pain(); }
+	S_HPLAY_DIE1('SORC', 7 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE2) { }
+	S_HPLAY_DIE2('SORC', 8 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE3) { A_FaceTarget(); }
+	S_HPLAY_DIE3('SORC', 9 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE4) { A_Scream(); }
+	S_HPLAY_DIE4('SORC', 10 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE5) { }
+	S_HPLAY_DIE5('SORC', 11 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE6) { }
+	S_HPLAY_DIE6('SORC', 12 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE7) { }
+	S_HPLAY_DIE7('SORC', 13 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE8) { }
+	S_HPLAY_DIE8('SORC', 14 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE9) { }
+	S_HPLAY_DIE9('SORC', 15 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE0) { }
+	S_HPLAY_DIE0('SORC', 16 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEA) { }
+	S_HPLAY_DIEA('SORC', 17 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEB) { }
+	S_HPLAY_DIEB('SORC', 18 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEC) { }
+	S_HPLAY_DIEC('SORC', 19 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIED) { }
+	S_HPLAY_DIED('SORC', 20 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEE) { A_NoBlocking(); }
+	S_HPLAY_DIEE('SORC', 21 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEF) { }
+	S_HPLAY_DIEF('SORC', 22 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEG) { }
+	S_HPLAY_DIEG('SORC', 23 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEH) { }
+	S_HPLAY_DIEH('SORC', 24 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEI) { }
+	S_HPLAY_DIEI('SORC', 25 | FF_FULLBRIGHT, -1.0, none) { A_AddPlayerCorpse(); }
+}
+
+defaultproperties
+{
+	Health = 800;
+	GibsHealth = -50;
+	Radius = 40.0;
+	Height = 110.0;
+	ViewHeight = 82.5;
+	Mass = 100.0;
+	PainChance = 1.0;
+	bPickUp = true;
+	IdleState = S_HPLAY;
+	SeeState = S_HPLAY_RUN1;
+	MissileState = S_HPLAY_ATK1;
+	AttackEndState = S_HPLAY_ATK2;
+	PainState = S_HPLAY_PAIN;
+	DeathState = S_HPLAY_DIE1;
+	GibsDeathState = S_HPLAY_DIE1;
+	IceDeathState = S_HPLAY_DIE1;
+	BurnDeathState = S_HPLAY_DIE1;
+	SoundClass = 'heresiarch';
+	InitialStrength = 15;
+	InitialWisdom = 15;
+	InitialDexterity = 15;
+	InitialConstitution = 15;
+	InitialIntelligence = 15;
+}
