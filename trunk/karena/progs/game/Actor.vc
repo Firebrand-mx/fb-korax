@@ -199,6 +199,57 @@ Actor Spawn(classid type, TVec position)
 	return A;
 }
 
+//==========================================================================
+//
+//	MoveToFreePosition
+//
+//	[CW]
+//
+//==========================================================================
+
+bool MoveToFreePosition()
+{
+	TVec bak_org;
+	float test_ang;
+	TVec test_dir;
+	float test_dist;
+
+	bak_org = Origin;
+	test_dir = vector(1.0, 0.0, 0.0);
+
+	dprint("MoveToFreePosition :: Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
+	dprint("MoveToFreePosition :: START ----------");
+
+	for (test_dist = 0.0; test_dist <= 512.0; test_dist += 64.0)
+	{
+		dprint("MoveToFreePosition :: test_distance = %f", test_dist);
+		for (test_ang = 0.0; test_ang < 360.0; test_ang += 45.0)
+		{
+			dprint("MoveToFreePosition :: test_angle = %f", test_ang);
+			VectorRotateAroundZ(&test_dir, test_ang);
+			Origin = bak_org + test_dir * test_dist;
+
+			dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
+
+			if (TestLocation())
+			{
+				dprint("MoveToFreePosition :: SUCCEED ----------");
+				dprint("MoveToFreePosition :: Free Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
+				return true;
+			}
+
+			if (test_dist == 0.0)
+				break;
+		}
+		dprint("MoveToFreePosition :: test location distance failed, next?");
+	};
+
+	dprint("MoveToFreePosition :: FAILED ----------");
+
+	Origin = bak_org;
+	return false;
+}
+
 //===========================================================================
 //
 //  SetInstigator
@@ -944,6 +995,9 @@ void Died(Actor source)
 	}
 	if (source && source.bIsPlayer)
 	{
+		if (Player(Player).Morph.bMorphed)
+			Player(Player).bRecalculateLevelOnRespawn = true;
+
 		// [CW] check for "accuracy" trophy
 		if (bCountKill || bIsPlayer)
 		{
@@ -992,11 +1046,16 @@ void Died(Actor source)
 			}
 			else
 			{
+				int se = HexenDefs::scoreevent_Frag;
+
 				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
 				Player(source.Player).GiveExperience(500 + (500 * (Player(Player).exp_level - 1) / 10));
 
-				Player(source.Player).UpdateScore(HexenDefs::scoreevent_Frag);
+				if (MainGameInfo(Level.Game).GameMode)
+					se = MainGameInfo(Level.Game).GameMode.GetFragScoreEvent(Player(source.Player), Player(self.Player));
+
+				Player(source.Player).UpdateScore(se);
 
 				//[CW] update frag trophies
 				Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
@@ -1201,6 +1260,7 @@ bool MorphPlayer(int pclass, classid moclass, bool timed, bool until_death)
 	Actor fog;
 	Actor beastMo;
 	int i;
+	int bak_level;
 
 	if (Player(Player).Powers[pw_invulnerability])
 	{
@@ -1221,8 +1281,9 @@ bool MorphPlayer(int pclass, classid moclass, bool timed, bool until_death)
 	beastMo.Angles = Angles;
 	beastMo.Player = Player;
 	beastMo.bIsPlayer = true;
-	beastMo.Health = Player::MAXMORPHHEALTH;
-	Player.Health = beastMo.Health;
+	////////////////////beastMo.Health = beastMo.SpawnHealth;	////Player::MAXMORPHHEALTH;
+	Player(Player).HealthBig = beastMo.Health;
+	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;
 	Player.MO = beastMo;
 /*	for (i = 0; i < NUMARMOR; i++)
 	{
@@ -1238,6 +1299,20 @@ bool MorphPlayer(int pclass, classid moclass, bool timed, bool until_death)
 	if (timed)
 		Player(Player).Morph.MorphTime = Player::MORPHTIME;
 	Player(Player).ActivateMorphWeapon();
+
+	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
+	if (Actor(Player.MO).MoveToFreePosition())
+	{
+		fog = Spawn(TeleportFog, Player.MO.Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
+		fog.PlaySound('Teleport', CHAN_VOICE);
+	}
+
+	dprint("MorphPlayer: after MTFP: MO.Origin = %f, %f, %f", Player.MO.Origin.x, Player.MO.Origin.y, Player.MO.Origin.z);
+
+	// [CW] Recalc attributes based on the new player's body
+	bak_level = Player(Player).exp_level;
+	Player(Player).InitiateLevel();
+	Player(Player).ActivateLevel(bak_level, false);
 
 	SetState(S_FREETARGMOBJ);
 
@@ -1358,7 +1433,8 @@ void AutoUseHealth(int saveHealth)
 			Player(Player).PlayerRemoveArtifact(normalSlot);
 		}
 	}
-	Player.Health = Health;
+	Player(Player).HealthBig = Health;
+	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
 }
 
 //==========================================================================
@@ -1463,8 +1539,17 @@ void Damage(Actor inflictor, Actor source, int damage)
 			damage = Health - 1;
 		}
 
+		// [CW] Check advanced game Team Factor
+		if (source && (source.bIsPlayer || source.Instigator && source.Instigator.bIsPlayer) &&
+							MainGameInfo(Level.Game).GameMode)
+		{
+			int teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(self,
+										source.bIsPlayer ? source : source.Instigator);
+			if (teamfactor == Game::teamfactor_coop)
+				return;
+		}
+
 		// [FB] Don't do damage to teammates in team game modes
-		//if ((Level.Game.deathmatch == 2 || Level.Game.deathmatch == 3 || Level.Game.deathmatch == 4 || Level.Game.deathmatch == 5)
 		if ((Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		    && (source && ((source.bIsPlayer) || (source.Instigator
 		    && source.Instigator.bIsPlayer))))
@@ -1532,16 +1617,18 @@ void Damage(Actor inflictor, Actor source, int damage)
 		{
 			Player(Player).ArmorPoints = 0; // [FB] No negative armor points
 		}
-		if (damage >= Player.Health
+		if (damage >= Player(Player).HealthBig
 			&& ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
 			Player(Player).PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
 		{
 			// Try to use some inventory health
 			AutoUseHealth(damage - Health + 1);
 		}
-		Player.Health -= damage;	// mirror mobj health here for Dave
-		if (Player.Health < 0)
+		Player(Player).HealthBig -= damage;	// mirror mobj health here for Dave
+		Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
+		if (Player(Player).HealthBig < 0)
 		{
+			Player(Player).HealthBig = 0;
 			Player.Health = 0;
 		}
 		Player(Player).Attacker = source;
@@ -1775,15 +1862,17 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
+	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
 		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
-		AutoUseHealth(damage - Player.Health + 1);
+		AutoUseHealth(damage - Player(Player).HealthBig + 1);
 	}
-	Player.Health -= damage;	// mirror mobj health here for Dave
-	if (Player.Health < 0)
+	Player(Player).HealthBig -= damage;	// mirror mobj health here for Dave
+	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
+	if (Player(Player).HealthBig < 0)
 	{
+		Player(Player).HealthBig = 0;
 		Player.Health = 0;
 	}
 	Player(Player).Attacker = source;
@@ -1869,15 +1958,17 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
+	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
 		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
-		AutoUseHealth(damage - Player.Health + 1);
+		AutoUseHealth(damage - Player(Player).HealthBig + 1);
 	}
-	Player.Health -= damage;	// mirror mobj health here for Dave
-	if (Player.Health < 0)
+	Player(Player).HealthBig -= damage;	// mirror mobj health here for Dave
+	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
+	if (Player(Player).HealthBig < 0)
 	{
+		Player(Player).HealthBig = 0;
 		Player.Health = 0;
 	}
 	Player(Player).Attacker = source;
@@ -2121,16 +2212,23 @@ bool TestLocation()
 	if (!bColideWithThings && !bColideWithWorld)
 		return true;
 
+	dprint("TestLocation : in");
+
 	if (CheckPosition(Origin))
 	{
+		dprint("TestLocation : xy ok");
+
 		// XY is ok, now check Z
 		if ((Origin.z < FloorZ) || (Origin.z + Height > CeilingZ))
 		{
 			// Bad Z
+			dprint("TestLocation : z failed");
 			return false;
 		}
+		dprint("TestLocation : z ok");
 		return true;
 	}
+	dprint("TestLocation : xy failed");
 	return false;
 }
 
@@ -3015,7 +3113,7 @@ bool ZMovement(float DeltaTime)
 	if (bIsPlayer && Origin.z < FloorZ)
 	{
 		Player(Player).ViewHeight -= FloorZ - Origin.z;
-		Player(Player).DeltaViewHeight = (Player::VIEWHEIGHT - Player(Player).ViewHeight) * 4.0;
+		Player(Player).DeltaViewHeight = (PlayerPawn(self).ViewHeight/*Player::VIEWHEIGHT*/ - Player(Player).ViewHeight) * 4.0;
 	}
 
 	//
@@ -3312,7 +3410,7 @@ bool Physics(float DeltaTime)
 					Player(Player).ViewHeight -=
 						onmo.Origin.z + onmo.Height - Origin.z;
 					Player(Player).DeltaViewHeight =
-						(Player::VIEWHEIGHT - Player(Player).ViewHeight) * 4.0;
+						(PlayerPawn(self).ViewHeight/*Player::VIEWHEIGHT*/ - Player(Player).ViewHeight) * 4.0;
 				}
 				Origin.z = onmo.Origin.z + onmo.Height;
 			}
@@ -3728,6 +3826,10 @@ Actor SpawnMissileAngle(classid type, float angle, float momz)
 	else if (type == MageStaffFX2)
 	{
 		org.z = Origin.z + 40.0;
+	}
+	else if (IsA('PlayerHeresiarch'))
+	{
+		org.z = Origin.z + (Height / 2.0);
 	}
 	else
 	{
@@ -4783,8 +4885,17 @@ void A_Explode()
 	}
 	else if (Class == SorcererFX4)
 	{
-		// Sorcerer spell 4
-		damage = 20;
+		// PlayerHeresiarch'es fire
+		if (Instigator && Instigator.bIsPlayer)
+		{
+			damage = SorcererFX4(self).ExplodeDamage;
+			damageSelf = false;
+		}
+		else
+		{
+			// Sorcerer spell 4
+			damage = 20;
+		}
 	}
 	else if (Class == TreeDestructible)
 	{
