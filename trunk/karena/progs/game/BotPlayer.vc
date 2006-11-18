@@ -1188,6 +1188,20 @@ Actor FindEnemy()
 		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
 			player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
 		{
+			if (MainGameInfo(player.Level.Game).GameMode) // [CW] Check if an advanced game mode is active
+			{
+				int teamfactor;
+				if (player.Level.Game.Players[i])
+				{
+					teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
+						Actor(player.Level.Game.Players[i].MO));
+					// [CW] We've got a team factor, check if it can be an enemy
+					if (teamfactor != Game::teamfactor_any &&
+							teamfactor != Game::teamfactor_enemy)
+						continue;
+				}
+			}
+
 			// [FB] Are we on a Team gameplay mode?
 			if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 			{
@@ -1678,11 +1692,9 @@ Actor B_SetAlly()
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		int teamfactor;
-		teamfactor = Game::teamfactor_any;	// [FB] set default value
-
 		if (MainGameInfo(player.Level.Game).GameMode) // [FB] Check if an advanced game mode is active
 		{
+			int teamfactor;
 			if (player.Level.Game.Players[i])
 			{
 				teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
