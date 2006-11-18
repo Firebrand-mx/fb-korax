@@ -638,7 +638,7 @@ void SB_DrawMainBar()
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
 	}
 
-	if (cl.Health >= 25)
+	if (Player(cl).HealthBig >= 25)
 	{
 		SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
 	}
@@ -964,7 +964,7 @@ void SB_DrawFullscreenStats()
 	R_DrawShadowedPic(30, 470, pic_armor2);
 
 	//  [FB] Health
-	SB_DrawNumber12(50, 450, cl.Health);
+	SB_DrawNumber12(50, 450, Player(cl).HealthBig);
 	R_DrawShadowedPic(30, 494, pic_health);
 
 //[Korax]
@@ -1272,7 +1272,7 @@ void SB_Drawer(int sb_view)
 	if (sb_view != SB_VIEW_AUTOMAP && strlen(cl.targetnamehint))
 	{
 		T_SetAlign(hcentre, vcentre);
-		T_SetFont(font_small);
+		T_SetFont((cl.targetnamehint_type == Player::targethint_shoot) ? font_small : font_yellow);
 		T_DrawText(320, 240, cl.targetnamehint);
 	}
 
@@ -1294,7 +1294,7 @@ void SB_UpdateWidgets()
 	int delta;
 	int curHealth;
 
-	curHealth = cl.Health;
+	curHealth = Player(cl).HealthBig;
 
 	if (curHealth < 0)
 	{
