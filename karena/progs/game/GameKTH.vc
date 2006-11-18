@@ -116,8 +116,10 @@ void BeginState(int newstate)
 
 int TeamFactor(Actor a1, Actor a2)
 {
-	if (State == state_heresiarch && a1.bIsPlayer && a2.bIsPlayer &&
-				a1 != plHeresiarch.MO && a2 != plHeresiarch.MO)
+	if ( ( State == state_heresiarch || State == state_birthsequence ||
+				State == state_deathsequence || State == state_rebornsequence )	&&
+				a1.bIsPlayer && a2.bIsPlayer &&
+				( plHeresiarch == none || (a1 != plHeresiarch.MO && a2 != plHeresiarch.MO) ) )
 		return teamfactor_coop;
 	return teamfactor_any;
 }
@@ -154,9 +156,10 @@ void NotifyPlayerDeath(Player pl, Actor source)
 	{
 	case state_freeramble:
 		// First fragger becomes Heresiarch
-		if (source && source.bIsPlayer && Player(source.Player) != pl)
+		if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
 		{
 			plHeresiarch = Player(source.Player);
+			plHeresiarch.SetControllable(false);
 			EndCurrentState(state_birthsequence);
 
 			birthSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
@@ -170,9 +173,10 @@ void NotifyPlayerDeath(Player pl, Actor source)
 		{
 			DeathSpot = Actor(plHeresiarch.MO);
 			oldHeresiarchName = plHeresiarch.PlayerName;
-			if (source && source.bIsPlayer && Player(source.Player) != pl)
+			if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
 			{
 				plHeresiarch = Player(source.Player);
+				plHeresiarch.SetControllable(false);
 				EndCurrentState(state_rebornsequence);
 
 				deathSequencer = GameSequencer(NewSpecialThinker(GameSequencer));
@@ -194,6 +198,44 @@ void NotifyPlayerDeath(Player pl, Actor source)
 		}
 		break;
 	}
+}
+
+//==========================================================================
+//
+//	GetFragScoreEvent
+//
+//	[CW] This function considers only normal frags (no self-fragging)
+//
+//==========================================================================
+
+int GetFragScoreEvent(Player plFragger, Player plFragged)
+{
+	switch (State)
+	{
+	case state_deathsequence:
+		return HexenDefs::scoreevent_NoScore;	// [CW] It is an interesting precedent;
+												//		Heresiarch is dying, however there's no
+												//		new Heresiarch (old one probably killed himself).
+												//		In this case, I assume, we should make a
+												//		score-less period in the game for awhile.
+
+	case state_birthsequence:
+	case state_rebornsequence:
+	case state_heresiarch:
+
+		// [CW] H. is fragged
+		if (plFragged == plHeresiarch)
+			return HexenDefs::scoreevent_KthHeresiarchDeath;
+		else
+			return HexenDefs::scoreevent_KthHeresiarchFrag;	// [CW] We assume that any player frag
+															// (except for H.'es death) occured when
+															// a H. is alive or even while he's rising
+															// (birth / reborn sequence) should add a score to H.
+
+	default:
+		return HexenDefs::scoreevent_Frag;
+	}
+
 }
 
 //==========================================================================
@@ -357,7 +399,6 @@ void PlayBirthSequence()
 		// of birth sequence
 		dlDelay2 = 0;
 		dmDelay = 0;
-		plHeresiarch.SetControllable(false);
 		Actor(plHeresiarch.MO).SetState(Actor(plHeresiarch.MO).PainState);
 		if (State != state_rebornsequence)
 			birthsequence_state = 39;	// skip waiting for death sequence completion
@@ -489,7 +530,8 @@ void PlayBirthSequence()
 				RemoveSpecialThinker(birthSequencer);
 				birthSequencer = none;
 			}
-			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_PIG, PlayerPig, false, true);
+			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch, false, true);
+			plHeresiarch.GivePower(pw_invulnerability2);
 			plHeresiarch.SetControllable(true);
 			ChangeMusic(va("%n", originalMusic));
 			break;
