@@ -1,0 +1,85 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: LightningSpark.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class LightningSpark : Projectile;
+
+//==========================================================================
+//
+//  A_ContMobjSound
+//
+//==========================================================================
+
+void A_ContMobjSound()
+{
+	PlaySound('MageLightningContinuous', CHAN_VOICE);
+}
+
+//==========================================================================
+//
+//  A_CheckHealth
+//
+//==========================================================================
+
+void A_CheckHealth()
+{
+	Health--;
+	MissileDamage--;
+	if (Health <= 0)
+		SetState(DeathState);
+}
+
+__states__
+{
+	S_LIGHTNINGSPARK_GLOW1('FAXE', 17 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW2) { }
+	S_LIGHTNINGSPARK_GLOW2('FAXE', 18 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW3) { A_ContMobjSound(); }
+	S_LIGHTNINGSPARK_GLOW3('FAXE', 19 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW4) { A_CheckHealth(); }
+	S_LIGHTNINGSPARK_GLOW4('FAXE', 20 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW2) { A_CheckHealth();}
+	S_LIGHTNINGSPARK_GLOW5('FAXE', 21 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW6) { }
+	S_LIGHTNINGSPARK_GLOW6('FAXE', 22 | FF_FULLBRIGHT, 4.0 / 35.0, S_LIGHTNINGSPARK_GLOW7) { }
+	S_LIGHTNINGSPARK_GLOW7('FAXE', 23 | FF_FULLBRIGHT, 4.0 / 35.0, none) { }
+}
+
+defaultproperties
+{
+	Radius = 16.0;
+	Height = 20.0;
+	Speed = 600.0;
+	bRip = true;
+	MissileDamage = 12;
+	IdleState = S_LIGHTNINGSPARK_GLOW1;
+	DeathState = S_LIGHTNINGSPARK_GLOW5;
+	DeathSound = 'MageLightningContinuous';
+	Effects = HexenDefs::EF_DL_BLUE;
+
+	//[CW]
+	deathmsgi[0] = 58;
+}

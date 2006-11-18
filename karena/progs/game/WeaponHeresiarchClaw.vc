@@ -1,0 +1,187 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponHeresiarchClaw.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHeresiarchClaw : Weapon;
+
+////////state Attack2State;
+////////int PunchCount;
+
+//==========================================================================
+//
+//  A_HClawAttack
+//
+//==========================================================================
+
+void A_HClawAttack()
+{
+	Actor Owner = Actor(Player.MO);
+	int damage;
+	float power;
+	int i;
+	TAVec angles;
+	TVec vforward;
+	classid PuffType;
+
+	damage = 25; //40 + (P_Random() & 15);
+	if (str_mod)
+	{
+		if(!active_damage)
+		{
+			damage = damage * Player(Player).strength / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+		}
+	}
+	power = 2.0;
+	PuffType = PunchPuff;
+	for (i = 0; i < 16; i++)
+	{
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
+		Owner.AimLineAttack(&angles, 2.0 * MELEERANGE);
+		if (Owner.linetarget)
+		{
+			/////////PunchCount++;
+			////////if (PunchCount == 3)
+			////////{
+				damage <<= 1;
+				power = 6.0;
+				PuffType = HammerPuff;
+			////////}
+			AngleVector(&angles, &vforward);
+			if (Owner.LineAttack(vforward, 2.0 * MELEERANGE, damage, PuffType))
+			{
+				if (PuffType == HammerPuff)
+				{
+					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				}
+				else
+				{
+					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+				}
+			}
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			{
+				Owner.linetarget.Thrust(angles.yaw, power);
+			}
+			Player(Player).AdjustPlayerAngle();
+			break;
+		}
+		angles = Owner.Angles;
+		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
+		Owner.AimLineAttack(&angles, 2.0 * MELEERANGE);
+		if (Owner.linetarget)
+		{
+			////////PunchCount++;
+			////////if (PunchCount == 3)
+			////////{
+				damage <<= 1;
+				power = 6.0;
+				PuffType = HammerPuff;
+			////////}
+			AngleVector(&angles, &vforward);
+			if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
+			{
+				if (PuffType == HammerPuff)
+				{
+					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				}
+				else
+				{
+					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+				}
+			}
+			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			{
+				Owner.linetarget.Thrust(angles.yaw, power);
+			}
+			Player(Player).AdjustPlayerAngle();
+			break;
+		}
+	}
+	if (i == 16)
+	{
+		// didn't find any creatures, so try to strike any walls
+		///////////PunchCount = 0;
+
+		angles = Owner.Angles;
+		Owner.AimLineAttack(&angles, MELEERANGE);
+		AngleVector(&angles, &vforward);
+		if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		{
+			Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+		}
+	}
+
+	////////if (PunchCount == 3)
+	////////{
+	////////	PunchCount = 0;
+	////////	SetState(Attack2State);
+	////////	Owner.PlaySound('*fistgrunt', CHAN_VOICE);
+	////////}
+}
+
+__states__
+{
+	S_HCLAWREADY('FPCH', 0, 1.0 / 35.0, S_HCLAWREADY) { A_WeaponReady(); }
+	S_HCLAWDOWN('FPCH', 0, 1.0 / 35.0, S_HCLAWDOWN) { A_Lower(); }
+	S_HCLAWUP('FPCH', 0, 1.0 / 35.0, S_HCLAWUP) { A_Raise(); }
+	S_HCLAWATK1_1('FPCH', 1, 5.0 / 35.0, S_HCLAWATK1_2) { }
+	S_HCLAWATK1_2('FPCH', 2, 4.0 / 35.0, S_HCLAWATK1_3) { }
+	S_HCLAWATK1_3('FPCH', 3, 4.0 / 35.0, S_HCLAWATK1_4) { A_HClawAttack(); HoldAttackState = S_HCLAWATK2_1; }
+	S_HCLAWATK1_4('FPCH', 2, 4.0 / 35.0, S_HCLAWATK1_5) { }
+	S_HCLAWATK1_5('FPCH', 1, 5.0 / 35.0, S_HCLAWREADY) { A_ReFire(); }
+	S_HCLAWATK2_1('FPCH', 1, 4.0 / 35.0, S_HCLAWATK2_2) { }
+	S_HCLAWATK2_2('FPCH', 2, 4.0 / 35.0, S_HCLAWATK2_3) { }
+	S_HCLAWATK2_3('FPCH', 3, 4.0 / 35.0, S_HCLAWATK2_4) { A_HClawAttack(); HoldAttackState = S_HCLAWATK1_1; }
+	S_HCLAWATK2_4('FPCH', 2, 4.0 / 35.0, S_HCLAWATK2_5) { }
+	S_HCLAWATK2_5('FPCH', 1, 5.0 / 35.0, S_HCLAWREADY) { A_ReFire(); }
+}
+
+/*FIRST HERESIARCH*/
+defaultproperties
+{
+	Mana = HexenDefs::MANA_NONE;
+	UpState = S_HCLAWUP;
+	DownState = S_HCLAWDOWN;
+	ReadyState = S_HCLAWREADY;
+	AttackState = S_HCLAWATK1_1;
+	////////Attack2State = S_PUNCHATK2_1;
+	HoldAttackState = S_HCLAWATK1_1;
+	PSpriteSY = 0.0;
+	wis_mod = false;
+	int_mod = false;
+	dex_mod = true;
+	str_mod = true;
+}

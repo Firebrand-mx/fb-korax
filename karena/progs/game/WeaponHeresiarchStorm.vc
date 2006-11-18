@@ -1,0 +1,198 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponHeresiarchStorm.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHeresiarchStorm : Weapon;
+
+//==========================================================================
+//
+//  A_HStormReady
+//
+//==========================================================================
+
+void A_HStormReady()
+{
+	A_WeaponReady();
+	if (P_Random() < 160)
+	{
+		Player.MO.PlaySound('MageLightningReady', CHAN_WEAPON);
+	}
+}
+
+//==========================================================================
+//
+//  A_HStormAttack
+//
+//	[CW] ...something really bad's going to happen... =)
+//
+//==========================================================================
+
+void A_HStormAttack(int attack)
+{
+	// [CW] Heresiarch Storm launches 3 lightning missiles in 3 directions
+	//		( those missiles have very limited lifetime ),
+	//		plus a dozen of long-life sparks with lesser damage values.
+
+	int ang;
+	float fang;
+
+	if (attack == 0)
+	{
+		LightningFloor fmo;
+		LightningCeiling cmo;		
+
+		for (ang = -30; ang < 60; ang += 30)
+		{
+			fang = AngleMod360(Player.MO.Angles.yaw + itof(ang));
+			fmo = LightningFloor(Player(Player).SpawnPlayerMissileAngle(LightningFloor, fang));
+			cmo = LightningCeiling(Player(Player).SpawnPlayerMissileAngle(LightningCeiling, fang));
+			if (fmo)
+			{
+				fmo.ZigZagCount = 0;
+				fmo.LightningLink = cmo;
+				fmo.Health = 12;
+				fmo.DamageBonus = 4;
+				fmo.A_LightningZap();
+			}
+			if (cmo)
+			{
+				cmo.Enemy = none;	// mobj that it will track
+				cmo.LightningLink = fmo;
+				cmo.Health = 12;
+				cmo.DamageBonus = 4;
+				cmo.A_LightningZap();
+			}
+		}
+	}
+	else
+	{
+		LightningSpark ls;
+
+		dprint("Spawn Sparks");
+
+		if (attack == 1)
+			ang = -80;
+		else
+			ang = -45;
+
+		for (; ang < ((attack == 1) ? 90 : 60) ; ang += (attack == 1) ? 10 : 15)
+		{
+			dprint("Spawn Sparks : ang = %i", ang);
+			fang = AngleMod360(Player.MO.Angles.yaw + itof(ang));
+			ls = LightningSpark(Player(Player).SpawnPlayerMissileAngle(LightningSpark, fang));
+			if (ls)
+			{
+				ls.Health = 4 + P_Random() % 8;
+				if (int_mod)
+				{
+					if(!active_damage)
+					{
+						ls.MissileDamage = ls.MissileDamage * Player(Player).intelligence / 10;
+					}
+					else // [FB] PI Damage
+					{
+						ls.MissileDamage = (ls.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+					}
+				}
+			}
+		}
+	}
+
+	Player.MO.PlaySound('MageLightningFire', CHAN_WEAPON);
+	UseWeaponMana();
+}
+
+__states__
+{
+	S_HSTORMREADY('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY2) { A_WeaponReady(); }
+	S_HSTORMREADY2('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY3) { A_WeaponReady(); }
+	S_HSTORMREADY3('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY4) { A_WeaponReady(); }
+	S_HSTORMREADY4('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY5) { A_WeaponReady(); }
+	S_HSTORMREADY5('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY6) { A_WeaponReady(); }
+	S_HSTORMREADY6('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY7) { A_HStormReady(); }
+	S_HSTORMREADY7('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY8) { A_WeaponReady(); }
+	S_HSTORMREADY8('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY9) { A_WeaponReady(); }
+	S_HSTORMREADY9('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY10) { A_WeaponReady(); }
+	S_HSTORMREADY10('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY11) { A_WeaponReady(); }
+	S_HSTORMREADY11('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY12) { A_WeaponReady(); }
+	S_HSTORMREADY12('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY13) { A_WeaponReady(); }
+	S_HSTORMREADY13('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY14) { A_WeaponReady(); }
+	S_HSTORMREADY14('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY15) { A_WeaponReady(); }
+	S_HSTORMREADY15('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY16) { A_WeaponReady(); }
+	S_HSTORMREADY16('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY17) { A_WeaponReady(); }
+	S_HSTORMREADY17('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY18) { A_WeaponReady(); }
+	S_HSTORMREADY18('MLNG', 2 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY19) { A_HStormReady(); }
+	S_HSTORMREADY19('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY20) { A_WeaponReady(); }
+	S_HSTORMREADY20('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY21) { A_WeaponReady(); }
+	S_HSTORMREADY21('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY22) { A_WeaponReady(); }
+	S_HSTORMREADY22('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY23) { A_WeaponReady(); }
+	S_HSTORMREADY23('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY24) { A_WeaponReady(); }
+	S_HSTORMREADY24('MLNG', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMREADY) { A_WeaponReady(); }
+	S_HSTORMDOWN('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMDOWN) { A_Lower(); }
+	S_HSTORMUP('MLNG', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HSTORMUP) { A_Raise(); }
+	S_HSTORMATK_1('MLNG', 3 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_2) { }
+	S_HSTORMATK_2('MLNG', 4 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_3) { }
+	S_HSTORMATK_3('MLNG', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_HSTORMATK_4) { A_HStormAttack(0); }
+	S_HSTORMATK_4('MLNG', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_HSTORMATK_5) { }
+	S_HSTORMATK_5('MLNG', 7 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_6) { }
+	S_HSTORMATK_6('MLNG', 8 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_7) { }
+	S_HSTORMATK_7('MLNG', 7 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_8) { }
+	S_HSTORMATK_8('MLNG', 6 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_9) { A_HStormAttack(1); }
+	S_HSTORMATK_9('MLNG', 7 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_10) { }
+	S_HSTORMATK_10('MLNG', 8 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_11) { }
+	S_HSTORMATK_11('MLNG', 7 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_12) { }
+	S_HSTORMATK_12('MLNG', 6 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_13) { A_HStormAttack(2); }
+	S_HSTORMATK_13('MLNG', 7 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_14) { }
+	S_HSTORMATK_14('MLNG', 8 | FF_FULLBRIGHT, 3.0 / 35.0, S_HSTORMATK_15) { }
+	S_HSTORMATK_15('MLNG', 8 | FF_FULLBRIGHT, 6.0 / 35.0, S_HSTORMATK_16) { SY = 199.0; }
+	S_HSTORMATK_16('MLNG', 2 | FF_FULLBRIGHT, 2.0 / 35.0, S_HSTORMATK_17) { SY = 55.0; }
+	S_HSTORMATK_17('MLNG', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_HSTORMATK_18) { SY = 50.0; }
+	S_HSTORMATK_18('MLNG', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_HSTORMATK_19) { SY = 45.0; }
+	S_HSTORMATK_19('MLNG', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_HSTORMREADY) { SY = 40.0; }
+}
+
+/* HERESIARCH THIRD */
+defaultproperties
+{
+	Mana = HexenDefs::MANA_2;
+	manause = 40;
+	UpState = S_HSTORMUP;
+	DownState = S_HSTORMDOWN;
+	ReadyState = S_HSTORMREADY;
+	AttackState = S_HSTORMATK_1;
+	HoldAttackState = S_HSTORMATK_1;
+	PSpriteSY = 20.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "LIGHTNING STORM";
+}
