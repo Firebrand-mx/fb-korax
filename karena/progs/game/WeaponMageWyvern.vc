@@ -58,7 +58,7 @@ void A_FireWyvernBreath(bool use_mana)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
@@ -83,9 +83,19 @@ void A_FireWyvernBreath(bool use_mana)
 	// didn't find any creatures, so fire projectiles
 	if (!flamedone)
 	{
-
 		//[CW] put damage modifiers here
 		mo = DragonMissile(Player(Player).SpawnPlayerMissile(DragonMissile));
+		if (mo)
+		{
+			if(!active_damage)
+			{
+				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			}
+		}
 	}
 }
 
