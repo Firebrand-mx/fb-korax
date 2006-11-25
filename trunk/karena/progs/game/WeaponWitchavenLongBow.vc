@@ -32,6 +32,8 @@
 
 class WeaponWitchavenLongBow : Weapon;
 
+int FOV;
+
 //==========================================================================
 //
 //  A_WBowAttack1
@@ -40,20 +42,24 @@ class WeaponWitchavenLongBow : Weapon;
 
 void A_WBowAttack1()
 {
-	int FOV = 90, i;
+	/////int FOV = 90, i;
 	// Check for the player pushing the attack button to make a zoom
-	if (Player.Buttons & BT_ATTACK && Player.PlayerState != PST_DEAD && FOV >= 45)
+	if (Player.Buttons & BT_ATTACK && Player.PlayerState != PST_DEAD && FOV > 45)
 	{
-		for (i = 90; i >= 45; i--)
+		// [CW] I'm sorry, but this is stupid... and senseless
+		/*for (i = 90; i >= 45; i--)
 		{
 			FOV = i;
 			SetFOV(FOV);
-		}
+		}*/
+
+		FOV--;
+		Player(Player).SetFOV(FOV);
 	}
-	else
+	/*else
 	{
 		SetFOV(90);
-	}
+	}*/
 }
 
 //==========================================================================
@@ -67,7 +73,8 @@ void A_WBowAttack2()
 	Actor mo;
 
 	UseWeaponMana();
-	SetFOV(90);
+	FOV = 90;
+	Player(Player).SetFOV(FOV);
 	mo = Player(Player).SpawnPlayerMissile(WitchavenArrow);
 
 	if (mo && int_mod)
@@ -83,35 +90,40 @@ void A_WBowAttack2()
 	}
 }
 
+
+
 __states__
 {
 	S_WBOWREADY('WBOW', 0, 1.0 / 35.0, S_WBOWREADY) { A_WeaponReady(); }
 	S_WBOWDOWN('WBOW', 0, 1.0 / 35.0, S_WBOWDOWN) { A_Lower(); }
 	S_WBOWUP('WBOW', 0, 1.0 / 35.0, S_WBOWUP) { A_Raise(); }
 	S_WBOWATK_1('WBOW', 1, 2.0 / 35.0, S_WBOWATK_2) { SY = -21.0;}
-	S_WBOWATK_2('WBOW', 2, 2.0 / 35.0, S_WBOWATK_2_2) { SY = -21.0; }
-	S_WBOWATK_2_2('WBOW', 2, 2.0 / 35.0, S_WBOWATK_2_3) { SY = -21.0; A_WBowAttack1(); }
-	S_WBOWATK_2_3('WBOW', 2, 2.0 / 35.0, S_WBOWATK_3) { SY = -21.0; A_ReFire();}
-	S_WBOWATK_3('WBOW', 2, 2.0 / 35.0, S_WBOWATK_4) {  SY = -21.0; }
+	S_WBOWATK_2('WBOW', 2, 0.25 / 35.0, S_WBOWATK_2_2) { SY = -21.0; }
+	S_WBOWATK_2_2('WBOW', 2, 0.25 / 35.0, S_WBOWATK_2_3) { SY = -21.0; A_WBowAttack1(); }
+	S_WBOWATK_2_3('WBOW', 2, 0.25 / 35.0, S_WBOWATK_3) { SY = -21.0; A_ReFire();}
+	S_WBOWATK_3('WBOW', 2, 2.0 / 35.0, S_WBOWATK_4) {  SY = -21.0; A_WBowAttack2(); }
 	S_WBOWATK_4('WBOW', 3, 2.0 / 35.0, S_WBOWATK_5) {  SY = -21.0; }
 	S_WBOWATK_5('WBOW', 4, 2.0 / 35.0, S_WBOWATK_6) { SY = -21.0; }
-	S_WBOWATK_6('WBOW', 5, 2.0 / 35.0, S_WBOWATK_7) { SY = -21.0; A_WBowAttack2(); }
+	S_WBOWATK_6('WBOW', 5, 2.0 / 35.0, S_WBOWATK_7) { SY = -21.0; /*A_WBowAttack2();*/ }
 	S_WBOWATK_7('WBOW', 6, 4.0 / 35.0, S_WBOWATK_8) { SY = 10.0; }
 	S_WBOWATK_8('WBOW', 7, 4.0 / 35.0, S_WBOWATK_9) { SY = 10.0; }
 	S_WBOWATK_9('WBOW', 8, 5.0 / 35.0, S_WBOWATK_10) { SY = -21.0; }
 	S_WBOWATK_10('WBOW', 9, 5.0 / 35.0, S_WBOWREADY) { SY = -21.0; }
+
 }
 
 /*SEVENTH*/
 defaultproperties
 {
+	FOV = 90;
+
 	Mana = HexenDefs::MANA_3;
 	manause = 20;
 	UpState = S_WBOWUP;
 	DownState = S_WBOWDOWN;
 	ReadyState = S_WBOWREADY;
 	AttackState = S_WBOWATK_1;
-	HoldAttackState = S_WBOWATK_1;
+	HoldAttackState = S_WBOWATK_2;
 	PSpriteSY = 20.0;
 	wis_mod = true;
 	int_mod = true;
