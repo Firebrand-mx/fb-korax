@@ -1,0 +1,171 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponHeresiarchHand.vc 601 2006-10-16 19:59:15Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHeresiarchHand : Weapon;
+
+//==========================================================================
+//
+//  A_HHandAttack
+//
+//==========================================================================
+
+void A_HHandAttack()
+{
+	InfernalHandFX mo;
+	UseWeaponMana();
+
+	mo = InfernalHandFX(Player(Player).SpawnPlayerMissile(InfernalHandFX));
+	if (mo)
+	{
+		mo.Instigator = Actor(Player.MO);
+		mo.Enemy = Actor(mo.RoughMonsterSearch(10));
+		if (int_mod)
+		{
+			if(!active_damage)
+			{
+				mo.ExplodeDamage = mo.ExplodeDamage * Player(Player).intelligence / 10;
+				mo.BlastDamage = mo.ExplodeDamage * Player(Player).intelligence / 10;
+				mo.ExplodeDistance = mo.ExplodeDistance * 0.5 * itof( Player(Player).intelligence / 10 );
+			}
+			else // [FB] PI Damage
+			{
+				mo.ExplodeDamage = (mo.ExplodeDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.BlastDamage = (mo.BlastDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.ExplodeDistance = mo.ExplodeDistance * 0.5 * itof( Player(Player).intelligence / 10 ) * 3.1415;		
+			}
+		}
+	}
+	Player.MO.PlaySound('MageStaffFire', CHAN_WEAPON);
+	Player(Player).DamageFlash = 0.0;
+	Player(Player).BonusFlash = 0.0;
+	Player(Player).WeaponCShift = CSHIFT(255, 187, 4, 76);
+}
+
+//==========================================================================
+//
+//  A_HHandPalette1
+//
+//==========================================================================
+
+void A_HHandPalette1()
+{
+	Player(Player).WeaponCShift = CSHIFT(255, 187, 4, 63);
+}
+
+//==========================================================================
+//
+//  A_HHandPalette2
+//
+//==========================================================================
+
+void A_HHandPalette2()
+{
+	Player(Player).WeaponCShift = CSHIFT(255, 187, 4, 51);
+}
+
+//==========================================================================
+//
+//  A_HHandPalette3
+//
+//==========================================================================
+
+void A_HHandPalette3()
+{
+	// reset back to original playpal
+	Player(Player).WeaponCShift = 0;
+}
+
+__states__
+{
+	S_HHANDREADY('MSTF', 0, 1.0 / 35.0, S_HHANDREADY2) { A_WeaponReady(); }
+	S_HHANDREADY2('MSTF', 0, 1.0 / 35.0, S_HHANDREADY3) { A_WeaponReady(); }
+	S_HHANDREADY3('MSTF', 0, 1.0 / 35.0, S_HHANDREADY4) { A_WeaponReady(); }
+	S_HHANDREADY4('MSTF', 0, 1.0 / 35.0, S_HHANDREADY5) { A_WeaponReady(); }
+	S_HHANDREADY5('MSTF', 0, 1.0 / 35.0, S_HHANDREADY6) { A_WeaponReady(); }
+	S_HHANDREADY6('MSTF', 0, 1.0 / 35.0, S_HHANDREADY7) { A_WeaponReady(); }
+	S_HHANDREADY7('MSTF', 1, 1.0 / 35.0, S_HHANDREADY8) { A_WeaponReady(); }
+	S_HHANDREADY8('MSTF', 1, 1.0 / 35.0, S_HHANDREADY9) { A_WeaponReady(); }
+	S_HHANDREADY9('MSTF', 1, 1.0 / 35.0, S_HHANDREADY10) { A_WeaponReady(); }
+	S_HHANDREADY10('MSTF', 1, 1.0 / 35.0, S_HHANDREADY11) { A_WeaponReady(); }
+	S_HHANDREADY11('MSTF', 1, 1.0 / 35.0, S_HHANDREADY12) { A_WeaponReady(); }
+	S_HHANDREADY12('MSTF', 1, 1.0 / 35.0, S_HHANDREADY13) { A_WeaponReady(); }
+	S_HHANDREADY13('MSTF', 2, 1.0 / 35.0, S_HHANDREADY14) { A_WeaponReady(); }
+	S_HHANDREADY14('MSTF', 2, 1.0 / 35.0, S_HHANDREADY15) { A_WeaponReady(); }
+	S_HHANDREADY15('MSTF', 2, 1.0 / 35.0, S_HHANDREADY16) { A_WeaponReady(); }
+	S_HHANDREADY16('MSTF', 2, 1.0 / 35.0, S_HHANDREADY17) { A_WeaponReady(); }
+	S_HHANDREADY17('MSTF', 2, 1.0 / 35.0, S_HHANDREADY18) { A_WeaponReady(); }
+	S_HHANDREADY18('MSTF', 2, 1.0 / 35.0, S_HHANDREADY19) { A_WeaponReady(); }
+	S_HHANDREADY19('MSTF', 3, 1.0 / 35.0, S_HHANDREADY20) { A_WeaponReady(); }
+	S_HHANDREADY20('MSTF', 3, 1.0 / 35.0, S_HHANDREADY21) { A_WeaponReady(); }
+	S_HHANDREADY21('MSTF', 3, 1.0 / 35.0, S_HHANDREADY22) { A_WeaponReady(); }
+	S_HHANDREADY22('MSTF', 3, 1.0 / 35.0, S_HHANDREADY23) { A_WeaponReady(); }
+	S_HHANDREADY23('MSTF', 3, 1.0 / 35.0, S_HHANDREADY24) { A_WeaponReady(); }
+	S_HHANDREADY24('MSTF', 3, 1.0 / 35.0, S_HHANDREADY25) { A_WeaponReady(); }
+	S_HHANDREADY25('MSTF', 4, 1.0 / 35.0, S_HHANDREADY26) { A_WeaponReady(); }
+	S_HHANDREADY26('MSTF', 4, 1.0 / 35.0, S_HHANDREADY27) { A_WeaponReady(); }
+	S_HHANDREADY27('MSTF', 4, 1.0 / 35.0, S_HHANDREADY28) { A_WeaponReady(); }
+	S_HHANDREADY28('MSTF', 4, 1.0 / 35.0, S_HHANDREADY29) { A_WeaponReady(); }
+	S_HHANDREADY29('MSTF', 4, 1.0 / 35.0, S_HHANDREADY30) { A_WeaponReady(); }
+	S_HHANDREADY30('MSTF', 4, 1.0 / 35.0, S_HHANDREADY31) { A_WeaponReady(); }
+	S_HHANDREADY31('MSTF', 5, 1.0 / 35.0, S_HHANDREADY32) { A_WeaponReady(); }
+	S_HHANDREADY32('MSTF', 5, 1.0 / 35.0, S_HHANDREADY33) { A_WeaponReady(); }
+	S_HHANDREADY33('MSTF', 5, 1.0 / 35.0, S_HHANDREADY34) { A_WeaponReady(); }
+	S_HHANDREADY34('MSTF', 5, 1.0 / 35.0, S_HHANDREADY35) { A_WeaponReady(); }
+	S_HHANDREADY35('MSTF', 5, 1.0 / 35.0, S_HHANDREADY) { A_WeaponReady(); }
+	S_HHANDDOWN('MSTF', 0, 1.0 / 35.0, S_HHANDDOWN) { A_Lower(); }
+	S_HHANDUP('MSTF', 0, 1.0 / 35.0, S_HHANDUP) { A_Raise(); }
+	S_HHANDATK_1('MSTF', 6, 4.0 / 35.0, S_HHANDATK_2) { SY = 40.0; }
+	S_HHANDATK_2('MSTF', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_HHANDATK_3) { SY = 48.0; A_HHandAttack(); }
+	S_HHANDATK_3('MSTF', 7 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHANDATK_4) { SY = 48.0; A_HHandPalette1(); }
+	S_HHANDATK_4('MSTF', 8, 2.0 / 35.0, S_HHANDATK_5) { SY = 48.0; A_HHandPalette2(); }
+	S_HHANDATK_5('MSTF', 8, 2.0 / 35.0, S_HHANDATK_6) { SY = 48.0; A_HHandPalette3(); }
+	S_HHANDATK_6('MSTF', 8, 1.0 / 35.0, S_HHANDATK_7) { SY = 40.0; }
+	S_HHANDATK_7('MSTF', 9, 5.0 / 35.0, S_HHANDREADY) { SY = 36.0; }
+}
+
+/* THIRD HERESIARCH */
+defaultproperties
+{
+	Mana = HexenDefs::MANA_3;
+	manause = 20;
+	UpState = S_HHANDUP;
+	DownState = S_HHANDDOWN;
+	ReadyState = S_HHANDREADY;
+	AttackState = S_HHANDATK_1;
+	HoldAttackState = S_HHANDATK_1;
+	PSpriteSY = 20.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "INFERNAL HAND";
+}
