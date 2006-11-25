@@ -227,11 +227,13 @@ bool MoveToFreePosition()
 		{
 			dprint("MoveToFreePosition :: test_angle = %f", test_ang);
 			VectorRotateAroundZ(&test_dir, test_ang);
+			UnlinkFromWorld();
 			Origin = bak_org + test_dir * test_dist;
+			LinkToWorld();
 
 			dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
 
-			if (TestLocation())
+			if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
 			{
 				dprint("MoveToFreePosition :: SUCCEED ----------");
 				dprint("MoveToFreePosition :: Free Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
@@ -246,7 +248,9 @@ bool MoveToFreePosition()
 
 	dprint("MoveToFreePosition :: FAILED ----------");
 
+	UnlinkFromWorld();
 	Origin = bak_org;
+	LinkToWorld();
 	return false;
 }
 
@@ -995,9 +999,6 @@ void Died(Actor source)
 	}
 	if (source && source.bIsPlayer)
 	{
-		if (Player(Player).Morph.bMorphed)
-			Player(Player).bRecalculateLevelOnRespawn = true;
-
 		// [CW] check for "accuracy" trophy
 		if (bCountKill || bIsPlayer)
 		{
@@ -1080,6 +1081,9 @@ void Died(Actor source)
 		//[CW] Show scoreboard for died player
 		Player(Player).Scoreboard(true);
 
+		if (Player(Player).Morph.bMorphed)
+			Player(Player).bRecalculateLevelOnRespawn = true;
+
 		// Player death
 		if (!source)
 		{
@@ -1098,6 +1102,7 @@ void Died(Actor source)
 		bFly = false;
 		Player(Player).Powers[pw_flight] = 0.0;
 		Player.PlayerState = PST_DEAD;
+		Player(Player).SetFOV(HexenDefs::DEFAULT_FOV);
 		Player(Player).DropWeapon();
 		if (bFireDamage && BurnDeathState)
 		{
@@ -2306,12 +2311,14 @@ bool Touch(Entity InOther)
 				return false;
 			}
 		}
-		if (Class == MageStaffFX2 && Other != Instigator)
+		if ((Class == MageStaffFX2 || Class == InfernalHandFX) && Other != Instigator)
 		{
 			// Class bosses not flagged boss so they can be blasted
-			if (!Other.bIsPlayer && !Other.bBoss && !ClassBoss(Other))
+			// [CW] InfernalHandFX CAN blast Players
+			if ((Class == InfernalHandFX || !Other.bIsPlayer) && !Other.bBoss && !ClassBoss(Other))
 			{
-				Other.Damage(self, Instigator, 10);
+				Other.Damage(self, Instigator, (Class == InfernalHandFX) ?
+												InfernalHandFX(self).BlastDamage : 10);
 				return true;
 			}
 		}
@@ -3823,7 +3830,7 @@ Actor SpawnMissileAngle(classid type, float angle, float momz)
 		// Secondary Projectiles of the Ice Guy
 		org.z = Origin.z + 3.0;
 	}
-	else if (type == MageStaffFX2)
+	else if (type == MageStaffFX2 || type == InfernalHandFX)
 	{
 		org.z = Origin.z + 40.0;
 	}
@@ -4026,7 +4033,7 @@ void Blast(Actor source, float strength)
 				// don't blast sorcerer balls
 				return;
 			}
-			else if (MageStaffFX2(self))
+			else if (MageStaffFX2(self) || InfernalHandFX(self))
 			{
 				// Reflect to originator
 				Enemy = Instigator;
@@ -4949,6 +4956,13 @@ void A_Explode()
 			damage = damage * Player(Instigator.Player).intelligence / 10;
 		}
 	}
+	else if (Class == InfernalHandFX)
+	{
+		damageSelf = false;
+		damage = InfernalHandFX(self).ExplodeDamage;
+		distance = InfernalHandFX(self).ExplodeDistance;
+	}
+
 	P_RadiusAttack(damage, distance, damageSelf);
 	if (Origin.z <= FloorZ + distance)
 	{
@@ -4975,7 +4989,7 @@ void A_Explode()
 		MSG_Select(MSG_SV_DATAGRAM);
 		if (MSG_CheckSpace(8))
 		{
-			MSG_WriteByte(HexenDefs::svc_explosion);
+			MSG_WriteByte(HexenDefs::svc_explosion2);
 			MSG_WriteByte(ExplodeEffect);
 			MSG_WriteShort(ftoi(Origin.x));
 			MSG_WriteShort(ftoi(Origin.y));
