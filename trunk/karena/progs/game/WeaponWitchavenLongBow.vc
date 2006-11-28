@@ -42,24 +42,13 @@ int FOV;
 
 void A_WBowAttack1()
 {
-	/////int FOV = 90, i;
+	int i;
 	// Check for the player pushing the attack button to make a zoom
 	if (Player.Buttons & BT_ATTACK && Player.PlayerState != PST_DEAD && FOV > 45)
 	{
-		// [CW] I'm sorry, but this is stupid... and senseless
-		/*for (i = 90; i >= 45; i--)
-		{
-			FOV = i;
-			SetFOV(FOV);
-		}*/
-
-		FOV--;
 		Player(Player).SetFOV(FOV);
+		FOV--;
 	}
-	/*else
-	{
-		SetFOV(90);
-	}*/
 }
 
 //==========================================================================
@@ -101,8 +90,8 @@ __states__
 	S_WBOWATK_2('WBOW', 2, 0.25 / 35.0, S_WBOWATK_2_2) { SY = -21.0; }
 	S_WBOWATK_2_2('WBOW', 2, 0.25 / 35.0, S_WBOWATK_2_3) { SY = -21.0; A_WBowAttack1(); }
 	S_WBOWATK_2_3('WBOW', 2, 0.25 / 35.0, S_WBOWATK_3) { SY = -21.0; A_ReFire();}
-	S_WBOWATK_3('WBOW', 2, 2.0 / 35.0, S_WBOWATK_4) {  SY = -21.0; A_WBowAttack2(); }
-	S_WBOWATK_4('WBOW', 3, 2.0 / 35.0, S_WBOWATK_5) {  SY = -21.0; }
+	S_WBOWATK_3('WBOW', 2, 2.0 / 35.0, S_WBOWATK_4) {  SY = -21.0; }
+	S_WBOWATK_4('WBOW', 3, 2.0 / 35.0, S_WBOWATK_5) {  SY = -21.0;  A_WBowAttack2(); }
 	S_WBOWATK_5('WBOW', 4, 2.0 / 35.0, S_WBOWATK_6) { SY = -21.0; }
 	S_WBOWATK_6('WBOW', 5, 2.0 / 35.0, S_WBOWATK_7) { SY = -21.0; /*A_WBowAttack2();*/ }
 	S_WBOWATK_7('WBOW', 6, 4.0 / 35.0, S_WBOWATK_8) { SY = 10.0; }
@@ -116,7 +105,6 @@ __states__
 defaultproperties
 {
 	FOV = 90;
-
 	Mana = HexenDefs::MANA_3;
 	manause = 20;
 	UpState = S_WBOWUP;
