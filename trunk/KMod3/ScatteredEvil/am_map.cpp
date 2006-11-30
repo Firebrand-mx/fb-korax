@@ -27,8 +27,8 @@ static int grid = 0;
 static int leveljuststarted = 1; // kluge until AM_LevelInit() is called
 
 boolean    automapactive = false;
-static int finit_width = SCREENWIDTH/2;
-static int finit_height = SCREENHEIGHT*200/480-SBARHEIGHT/*-3*/;
+static int finit_width = SCREENWIDTH;
+static int finit_height = SCREENHEIGHT-SBARHEIGHT;
 static int f_x, f_y; // location of window on screen
 static int f_w, f_h; // size of window on screen
 static int lightlev; // used for funky strobing effect
@@ -675,7 +675,7 @@ void AM_clearFB(int color)
 boolean AM_clipMline(mline_t *ml, fline_t *fl)
 {
   enum { LEFT=1, RIGHT=2, BOTTOM=4, TOP=8 };
-  register outcode1 = 0, outcode2 = 0, outside;
+  register int outcode1 = 0, outcode2 = 0, outside;
   fpoint_t tmp;
   int dx, dy;
 
@@ -1318,7 +1318,7 @@ void AM_Drawer (void)
 	DD_GameUpdate(DDUF_FULLSCREEN);
 
 	// Update the height.
-	finit_height = SCREENHEIGHT*200/480-SBARHEIGHT;
+	finit_height = SCREENHEIGHT-SBARHEIGHT;
 
 	AM_clearFB(BACKGROUND);
 
@@ -1340,7 +1340,7 @@ void AM_Drawer (void)
 
 	AM_OGL_RestoreState();
 
-	MN_DrTextA(P_GetMapName(gamemap), 38, 144);
+	MN_DrTextA(P_GetMapName(gamemap), 38, 384);
 
     if(netgame) //	if(ShowKills && netgame && deathmatch)
 	{

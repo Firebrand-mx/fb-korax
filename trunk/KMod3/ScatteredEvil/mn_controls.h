@@ -19,13 +19,13 @@ static Control_t controls[] =
 	// Actions (must be first so the H2A_* constants can be used).
 	"left",			CLF_ACTION,		DDKEY_LEFTARROW, 0, 0,
 	"right",		CLF_ACTION,		DDKEY_RIGHTARROW, 0, 0,
-	"forward",		CLF_ACTION,		DDKEY_UPARROW, 0, 0,
-	"backward",		CLF_ACTION,		DDKEY_DOWNARROW, 0, 0,
-	"strafel",		CLF_ACTION,		',', 0, 0,
-	"strafer",		CLF_ACTION,		'.', 0, 0,
-	"jump",			CLF_ACTION,		'/', 2, 5,
+	"forward",		CLF_ACTION,		'w', 0, 0,
+	"backward",		CLF_ACTION,		's', 0, 0,
+	"strafel",		CLF_ACTION,		'a', 0, 0,
+	"strafer",		CLF_ACTION,		'd', 0, 0,
+	"jump",			CLF_ACTION,		' ', 0, 5,
 	"fire",			CLF_ACTION,		DDKEY_RCTRL, 1, 1,
-	"use",			CLF_ACTION,		' ', 0, 4,
+	"use",			CLF_ACTION,		'e', 2, 4,
 	"strafe",		CLF_ACTION,		DDKEY_RALT, 3, 2,
 	
 	"speed",		CLF_ACTION,		DDKEY_RSHIFT, 0, 3,
@@ -39,8 +39,8 @@ static Control_t controls[] =
 	"mlook",		CLF_ACTION,		'm', 0, 0,
 	"jlook",		CLF_ACTION,		'j', 0, 0,
 	
-	"nextwpn",		CLF_ACTION,		0, 0, 0,
-	"prevwpn",		CLF_ACTION,		0, 0, 0,
+	"nextwpn",		CLF_ACTION,		0, DDMB_MWHEELDOWN, 0,
+	"prevwpn",		CLF_ACTION,		0, DDMB_MWHEELUP, 0,
 	"weapon1",		CLF_ACTION,		'1', 0, 0,
 	"weapon2",		CLF_ACTION,		'2', 0, 0,
 	"weapon3",		CLF_ACTION,		'3', 0, 0,
@@ -61,16 +61,16 @@ static Control_t controls[] =
 	"egg",			CLF_ACTION,		'6', 0, 0,
 	"demostop",		CLF_ACTION,		'o', 0, 0,
 	"duck",		    CLF_ACTION,		'c', 0, 0,
-	"spell1",		CLF_ACTION,		'q', 0, 0,
-	"spell2",		CLF_ACTION,		'w', 0, 0,
-	"spell3",		CLF_ACTION,		'e', 0, 0,
-	"spell4",		CLF_ACTION,		'r', 0, 0,
-	"spell5",		CLF_ACTION,		't', 0, 0,
-	"spell6",		CLF_ACTION,		'y', 0, 0,
-	"spell7",		CLF_ACTION,		'u', 0, 0,
-	"spell8",		CLF_ACTION,		'i', 0, 0,
-/*t	"sell",		    CLF_ACTION,		's', 0, 0,
-	"reply",	    CLF_ACTION,		'r', 0, 0,*/
+	"spell1",		CLF_ACTION,		DDKEY_NUMPAD1, 0, 0,
+	"spell2",		CLF_ACTION,		DDKEY_NUMPAD2, 0, 0,
+	"spell3",		CLF_ACTION,		DDKEY_NUMPAD3, 0, 0,
+	"spell4",		CLF_ACTION,		DDKEY_NUMPAD4, 0, 0,
+	"spell5",		CLF_ACTION,		DDKEY_NUMPAD5, 0, 0,
+	"spell6",		CLF_ACTION,		DDKEY_NUMPAD6, 0, 0,
+	"spell7",		CLF_ACTION,		DDKEY_NUMPAD7, 0, 0,
+	"spell8",		CLF_ACTION,		DDKEY_NUMPAD8, 0, 0,
+/*	"sell",		    CLF_ACTION,		0, 0, 0,
+	"reply",	    CLF_ACTION,		0, 0, 0,*/
 
 	// Menu hotkeys (default: F1 - F12).
 	"infoscreen",	0,				DDKEY_F1, 0, 0,
@@ -372,8 +372,8 @@ class KMenuScreenControls:public KMenuScreen
 		AddControl("PORKELATOR :", H2A_EGG);
 		CreateItem(NULL);
 		CreateItem("INVENTORY");
-		AddControl("INVENTORY LEFT :", NUM_ACTIONS+12);
-		AddControl("INVENTORY RIGHT :", NUM_ACTIONS+13);
+		AddControl("INVENTORY LEFT :", NUM_ACTIONS+10);
+		AddControl("INVENTORY RIGHT :", NUM_ACTIONS+11);
 		AddControl("USE ARTIFACT :", H2A_USEARTIFACT);
 		CreateItem(NULL);
 		CreateItem("MENU HOTKEYS");
@@ -381,22 +381,22 @@ class KMenuScreenControls:public KMenuScreen
 		AddControl("SOUND MENU :", NUM_ACTIONS+3);
 		AddControl("LOAD GAME :", NUM_ACTIONS+1);
 		AddControl("SAVE GAME :", NUM_ACTIONS+2);
-		AddControl("QUICK LOAD :", NUM_ACTIONS+8);
+		AddControl("QUICK LOAD :", NUM_ACTIONS+6);
 		AddControl("QUICK SAVE :", NUM_ACTIONS+5);
 		AddControl("SUICIDE :", NUM_ACTIONS+4);
-		AddControl("END GAME :", NUM_ACTIONS+6);
-		AddControl("QUIT :", NUM_ACTIONS+9);
-		AddControl("MESSAGES ON/OFF:", NUM_ACTIONS+7);
-		AddControl("GAMMA CORRECTION :", NUM_ACTIONS+10);
-		AddControl("SPY MODE :", NUM_ACTIONS+11);
+//		AddControl("END GAME :", NUM_ACTIONS+6);
+		AddControl("QUIT :", NUM_ACTIONS+7);
+//		AddControl("MESSAGES ON/OFF:", NUM_ACTIONS+7);
+		AddControl("GAMMA CORRECTION :", NUM_ACTIONS+8);
+		AddControl("SPY MODE :", NUM_ACTIONS+9);
 		CreateItem(NULL);
 		CreateItem("SCREEN");
-		AddControl("SMALLER VIEW :", NUM_ACTIONS+15);
-		AddControl("LARGER VIEW :", NUM_ACTIONS+14);
+		AddControl("SMALLER VIEW :", NUM_ACTIONS+13);
+		AddControl("LARGER VIEW :", NUM_ACTIONS+12);
 		CreateItem(NULL);
 		CreateItem("MISCELLANEOUS");
 		AddControl("STOP DEMO :", H2A_STOPDEMO);
-		AddControl("PAUSE :", NUM_ACTIONS+16);
+		AddControl("PAUSE :", NUM_ACTIONS+14);
 /*		AddControl("DUCK :", H2A_DUCK);
 		AddControl("SELL :", H2A_SELL);
 		AddControl("REPLY :", H2A_REPLY);*/

@@ -177,7 +177,7 @@ cvar_t engineCVars[] =
 	"bglight",			0,			CVT_INT,	&consoleLight,	0, 100,	"Console background light level.",
 	"borderupd",		0,			CVT_INT,	&borderUpd,		0, 1,	"1=Continuous screen border redrawing.",
 	"completionmode",	0,			CVT_INT,	&conCompMode,	0, 1,	"How to complete words when pressing Tab:\n0=Show completions, 1=Cycle through them.",
-	"consoledump",		0,			CVT_BYTE,	&consoleDump,	0, 1,	"1=Dump all console messages to ScatteredEvil.log.",
+	"consoledump",		0,			CVT_BYTE,	&consoleDump,	0, 1,	"1=Dump all console messages to KMod3.log.",
 	"silentcvars",		0,			CVT_BYTE,	&conSilentCVars,0, 1,	"1=Don't show the value of a cvar when setting it.",
 	"dlblend",			0,			CVT_INT,	&dlBlend,		0, 3,	"Dynamic lights color blending mode:\n0=normal, 1=additive, 2=no blending.",
 	"dlclip",			0,			CVT_INT,	&clipLights,	0, 1,	"1=Clip dynamic lights (try using with dlblend 2).",
@@ -1739,7 +1739,7 @@ int CCmdConsole(int argc, char **argv)
 		else
 		{
 			CON_Printf("\n");
-			CON_FPrintf(CBLF_YELLOW, " --- This is the Scattered Evil console ---\n");
+			CON_FPrintf(CBLF_YELLOW, " --- This is the Korax Mod console ---\n");
 			CON_Printf( "Use the tilde key to open and close it.\n");
 			CON_Printf( "Page up/down scrolls up/down a line.\n");
 			CON_Printf( "Ins moves the console up a bit, Del moves it down.\n");

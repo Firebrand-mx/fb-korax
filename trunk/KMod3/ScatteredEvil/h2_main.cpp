@@ -160,7 +160,7 @@ void H2_PostInit(void)
 {
 	int			pClass, p;
 
-	ST_Message("--- Scattered Evil Init ---\n%s\n", VERSIONTEXT);
+	ST_Message("--- Korax Mod Init ---\n%s\n", VERSIONTEXT);
 
 	H2_DefaultBindings();
 //	R_LoadTextureTypes();

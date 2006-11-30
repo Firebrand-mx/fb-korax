@@ -78,7 +78,7 @@ extern int bufferLines;
 boolean startupScreen = false;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
-static fonthgt = 8;	// Height of the font.
+static int fonthgt = 8;	// Height of the font.
 static DGLuint bgflat, startupLogo;
 char *bitmap = NULL;
 
