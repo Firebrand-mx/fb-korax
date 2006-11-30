@@ -667,7 +667,7 @@ void MUS_SetMasterVolume(int vol)
 	if(vol > 255) vol = 255;
 	// Straighen the volume curve.
 	vol <<= 8;	// Make it a word.
-	vol = (int) (255.9980469 * sqrt(vol));
+	vol = (int) ((255.9980469 * sqrt((float)vol)));
 	midiOutSetVolume( (HMIDIOUT) midiStr, vol+(vol<<16));	// Expand to a dword.
 }
 

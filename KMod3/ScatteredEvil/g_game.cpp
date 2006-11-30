@@ -889,7 +889,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 void G_DoLoadLevel (void)
 {
-    static firstFragReset = 1;
+    static int firstFragReset = 1;
 	int             i;
 	action_t		*act;
 	

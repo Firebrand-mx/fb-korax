@@ -162,7 +162,7 @@ ccmd_t gameCCmds[] =
 	"suicide",		CCmdMenuAction,			"Kill yourself. What did you think?",
 	"quickSave",	CCmdMenuAction,			"Quicksave the game.",
 	"quickLoad",	CCmdMenuAction,			"Load the last quicksaved game.",
-	"quit",			CCmdMenuAction,			"Quit Scattered Evil.",
+	"quit",			CCmdMenuAction,			"Quit Korax Mod.",
 	"toggleGamma",	CCmdMenuAction,			"Change the gamma correction level.",
 	
 	NULL

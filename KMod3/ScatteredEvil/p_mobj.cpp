@@ -796,7 +796,7 @@ void P_XYMovement(mobj_t *mo)
 						case MT_CENTAURLEADER:
 						case MT_POSS_CENTAUR:
 						case MT_POSS_CENTAURL:
-							if ( abs(angle-BlockingMobj->angle)>>24 > 45)
+							if ( abs((int)angle-(int)BlockingMobj->angle)>>24 > 45)
 								goto explode;
 							if (mo->type == MT_HOLY_FX)
 								goto explode;

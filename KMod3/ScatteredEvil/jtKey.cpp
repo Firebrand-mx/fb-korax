@@ -84,6 +84,7 @@ void jtKeyShutdown()
 // Get the keyboard events.
 int jtKeyGetEvents(jtkeyevent_t *evbuf, int bufsize)
 {
+	int i;
 	DWORD num = JTKINBUFSIZE;
 	
 	if(FAILED(hres = didKeyb->GetDeviceData(sizeof(DIDEVICEOBJECTDATA), devdat, &num, 0)))
@@ -99,7 +100,7 @@ int jtKeyGetEvents(jtkeyevent_t *evbuf, int bufsize)
 
 	// Let's put the data into the caller's buffer.
 	// Num is unsigned, so we cast it to int to shut up the compiler warning.
-	for(int i=0; i<(int)num && i<bufsize; i++)
+	for(i=0; i<(int)num && i<bufsize; i++)
 	{
 		evbuf[i].event = (devdat[i].dwData & 0x80)? JTKE_KEY_DOWN : JTKE_KEY_UP;
 		evbuf[i].code = (unsigned char) devdat[i].dwOfs;
