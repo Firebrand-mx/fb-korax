@@ -152,9 +152,20 @@ void A_SpawnChildren()
 													(Random() - 0.5) * 64.0)));
 			if (pc)
 			{
+				// [FB] Check to see if the new children's z value is above the
+				//      ceiling of its new sector, or below the floor. If so, kill it.
+				if ((pc.Origin.z > (pc.CeilingZ - pc.Height)) ||
+			        (pc.Origin.z < pc.FloorZ))
+				{
+					// kill it immediately
+					pc.LifeCount = 0;
+					return;
+				}
+
 				pc.InitMeCloud(Instigator);
 				pc.LifeCount >> 2;
 				pc.Velocity.x = 0.00001;
+				pc.TryMove(pc.Origin + pc.Velocity);
 			}
 		}
 	}
