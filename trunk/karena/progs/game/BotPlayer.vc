@@ -97,10 +97,9 @@ struct botinfo_t
 //	char *gender;		// Male/female/it :)
 //	char *skin;		// Skin
 	int railcolour;		// Railgun trail colour
-//	bool revealed;		// Hidden bots must be revealed*/
+//	bool revealed;		// Hidden bots must be revealed */
 	string userinfo;
 };
-
 
 struct chatline_t
 {
@@ -214,6 +213,18 @@ float count;			// [FB] Roam Count
 
 float bottracerange;
 TVec bottracedir;
+
+// [FB] Copy of certain affected stats for Darkness
+int old_intelect;
+int old_anticip;
+int old_evade;
+int old_accuracy;
+
+// [FB] Used to determine if stats have been reduced
+bool accuracy_r;
+bool intelect_r;
+bool evade_r;
+bool anticip_r;
 
 //==========================================================================
 //
@@ -609,7 +620,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		if (diffheight > 0.0)
 		{
-			if (diffheight > 48.0)
+			if (diffheight > 56.0)
 			{
 			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
 				{
@@ -620,7 +631,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 					return false;
 				}
 			}
-			else if (diffheight >= 24.0 && diffheight <= 48.0)
+			else if (diffheight >= 24.0 && diffheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
 			}
@@ -671,7 +682,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		if (dheight >= 24.0)
 		{
-			if (dheight <= 48.0)
+			if (dheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
 			}
@@ -2533,6 +2544,10 @@ void OnBeginPlay()
 void OnSpawn()
 {
 	enemy = none;
+	accuracy_r = false;
+	intelect_r = false;
+	evade_r = false;
+	anticip_r = false;
 }
 
 //==========================================================================
@@ -2563,6 +2578,74 @@ void BotTick(float deltaTime)
 		return;
 	}
 
+	// [FB] Check if we are blind by darkness!!
+	if (player.BlindCount == 50 && !accuracy_r)
+	{
+		old_accuracy = info.accuracy;
+		// [FB] Make sure this stat isn't zero
+		if (info.accuracy)
+			info.accuracy--;
+		// [FB] We don't want to get here, but anyway...
+		else if (info.accuracy < 0)
+			info.accuracy = 0;
+
+		accuracy_r = true;
+	}
+	else if (player.BlindCount == 100 && !intelect_r)
+	{
+		old_intelect = info.intelect;
+		if (info.intelect)
+			info.intelect--;
+		else if (info.intelect < 0)
+			info.intelect = 0;
+
+		intelect_r = true;
+	}
+	else if (player.BlindCount == 150 && !evade_r)
+	{
+		old_evade = info.evade;
+		if (info.evade)
+			info.evade--;
+		else if (info.evade < 0)
+			info.evade = 0;
+
+		evade_r = true;
+	}
+	else if (player.BlindCount == 200 && !anticip_r)
+	{
+		old_anticip = info.anticip;
+		if (info.anticip)
+			info.anticip--;
+		else if (info.anticip < 0)
+			info.anticip = 0;
+
+		anticip_r = true;
+	}
+	else if (player.BlindCount < 0)
+	{
+		//[FB] Darkness effects faded out, now restore everything back!
+		if (anticip_r)
+		{
+			info.anticip = old_anticip;
+			anticip_r = false;
+		}
+		if (evade_r)
+		{
+			info.evade = old_evade;
+			evade_r = false;
+		}
+		if (intelect_r)
+		{
+			info.intelect = old_intelect;
+			intelect_r = false;
+		}
+		if (accuracy_r)
+		{
+			info.accuracy = old_accuracy;
+			accuracy_r = false;
+		}
+	}
+
 	// Periodically let out some anger
 	if (!(player.Level.Game.level->time == 255.0))
 	{
@@ -2577,7 +2660,7 @@ void BotTick(float deltaTime)
 		MainGameInfo(player.Level.Game).GameMode)
 	{
 		ally = B_SetAlly();
-		// [FB] and decide what action we'll take
+		// [FB] ...and decide what action we'll take
 		if (player.Level.Game.deathmatch != HexenDefs::game_dmteam)
 			SetAction();
 	}
