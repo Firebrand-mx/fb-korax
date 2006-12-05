@@ -17,10 +17,26 @@ class KMenuScreenInfo:public KMenuScreen
 
 	void DrawWindow(KGC *gc)
 	{
-		static char *InfoPages[] ={ "HELP1", "HELP2", "CREDIT" };
+		player_t *player;
+		player = &players[consoleplayer];
+		static char *InfoPages[4][3] ={	"HELP1F", "HELP2", "CREDIT",
+										"HELP1C", "HELP2", "CREDIT",
+										"HELP1M", "HELP2", "CREDIT",
+										"HELP1", "HELP2", "CREDIT"};
 
 		GL_SetFilter(0);
-		gc->GetCanvas()->DrawRawScreen(W_GetNumForName(InfoPages[InfoType]));
+		if (gameexpmod < 0.5)
+		{
+			gc->GetCanvas()->DrawRawScreen(W_GetNumForName(InfoPages[3][InfoType]));
+		}
+		else if (player->pclass < 3)
+		{
+			gc->GetCanvas()->DrawRawScreen(W_GetNumForName(InfoPages[player->pclass][InfoType]));
+		}
+		else
+		{
+			gc->GetCanvas()->DrawRawScreen(W_GetNumForName(InfoPages[3][InfoType]));
+		}
 	}
 
 	bool KeyPressed(int key)

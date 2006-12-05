@@ -1052,6 +1052,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (P_UseArtifact(player,arti_blastradius)) 
 				{
+					player->currentspell = 1;
 					player->sp_power-=5;
 					P_SetMessage(player, "REPULSION SPELL ACTIVATED", false);
 					S_StartSound(NULL, SFX_ARTIFACT_USE);
@@ -1060,6 +1061,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (P_GiveBody(player, 5+xpl))
 				{
+					player->currentspell = 8;
 					player->sp_power-=2;
 					P_SetMessage(player, "HEALING SPELL ACTIVATED", false);
 					S_StartSound(NULL, SFX_ARTIFACT_USE);
@@ -1068,6 +1070,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (!player->berserkTics && player->sp_power>=6)
 				{
+					player->currentspell = 12;
 					player->sp_power -= 5;
 					player->berserkTics += 1+(player->sp_power*80);
 					
@@ -1093,6 +1096,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (cl==PCLASS_MAGE && player->sp_power>=2)
 			{
+				player->currentspell = 2;
 				boolean bm = P_GiveMana(player, MANA_1,5+player->exp_level);
 				boolean gm = P_GiveMana(player, MANA_2,5+player->exp_level);
 				if (bm && gm)
@@ -1123,12 +1127,14 @@ void P_PlayerThink(player_t *player)
 			{
 				if (P_UseArtifact(player,arti_invulnerability)) 
 				{
+					player->currentspell = 3;
 					player->sp_power-=40;
 					P_SetMessage(player, "DEFENSIVE SPELL ACTIVATED", false);
 					S_StartSound(NULL, SFX_ARTIFACT_USE);
 				}
 			}else if (cl==PCLASS_CLERIC && player->sp_power>=10)
 			{
+				player->currentspell = 9;
 				player->sp_power -= 5;
 				if (P_SpellSpiritsWithin(player))
 					P_SetMessage(player, "SPIRITS WITHIN ACTIVATED", false);
@@ -1142,6 +1148,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (P_UseArtifact(player,arti_speed)) 
 				{
+					player->currentspell = 4;
 					player->sp_power-=25;
 					P_SetMessage(player, "SPEED SPELL ACTIVATED", false);
 					S_StartSound(NULL, SFX_ARTIFACT_USE);
@@ -1150,6 +1157,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (P_UseArtifact(player,arti_teleportother)) 
 				{
+					player->currentspell = 10;
 					player->sp_power-=30;
 					P_SetMessage(player, "BANISHMENT SPELL ACTIVATED", false);
 					S_StartSound(NULL, SFX_ARTIFACT_USE);
@@ -1160,6 +1168,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (cl==PCLASS_MAGE && player->sp_power>=25 && xpl>7)
 			{
+				player->currentspell = 5;
 				mo=P_SpawnPlayerMissile(player->mo, MT_SUMMONMONSTER);
 				if (mo)
 				{
@@ -1171,6 +1180,7 @@ void P_PlayerThink(player_t *player)
 				P_NoiseAlert(player->mo, player->mo);				
 			} else if (cl==PCLASS_CLERIC && player->sp_power>=50 && xpl>8)
 			{
+				player->currentspell = 11;
 				P_WeakenIt(player, 1);
 				player->sp_power-=50;
 				P_SetMessage(player, "WRATH OF THE GODS ACTIVATED", false);
@@ -1181,6 +1191,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (cl==PCLASS_MAGE && player->sp_power>=70)
 			{
+				player->currentspell = 6;
 				player->sp_power -= 70;
 				mo=P_SpawnPlayerMissile(player->mo, MT_POSS_PROJECTILE);
 				if (mo)
@@ -1197,6 +1208,7 @@ void P_PlayerThink(player_t *player)
 		{
 			if (cl==PCLASS_MAGE && player->sp_power>=50 && xpl>9)
 			{
+				player->currentspell = 7;
 				test = player->sp_power/50;
 				P_WeakenIt(player, test);
 				player->sp_power -= test*50;

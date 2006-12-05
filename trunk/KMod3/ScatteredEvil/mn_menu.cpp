@@ -533,6 +533,7 @@ static void SCQuitGame(int option)
 {
 	CON_Open(false);
 	MenuActive = false;
+	ForceMenuOff();
 	askforquit = true;
 	typeofask = 1; //quit game
 	if(!netgame && !demoplayback)

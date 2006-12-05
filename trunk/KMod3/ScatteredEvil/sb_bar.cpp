@@ -99,6 +99,7 @@ static int PatchNumINVLFGEM1;
 static int PatchNumINVLFGEM2;
 static int PatchNumINVRTGEM1;
 static int PatchNumINVRTGEM2;
+static int PatchNumEXPLVL;
 
 // CODE --------------------------------------------------------------------
 
@@ -133,6 +134,7 @@ void SB_Init(void)
 	PatchNumINVLFGEM2 = W_GetNumForName("invgeml2");
 	PatchNumINVRTGEM1 = W_GetNumForName("invgemr1");
 	PatchNumINVRTGEM2 = W_GetNumForName("invgemr2");
+	PatchNumEXPLVL = W_GetNumForName("EXPLVL");
 
 	startLump = W_GetNumForName("IN0");
 	for(i = 0; i < 10; i++)
@@ -430,6 +432,23 @@ char patcharti[][10] =
 	{ "ARTIGER4" },		// arti_puzzgear4
 };
 
+char hudspell[][7] =
+{
+	{ "SPLA" },    	// none
+	{ "SPLM1" },	// Repulsion
+	{ "SPLM2" },	// Mana Creation
+	{ "SPLM3" },	// Defence
+	{ "SPLM4" },	// Speed
+	{ "SPLM5" },	// Summon Monster
+	{ "SPLM6" },	// Possession
+	{ "SPLM7" },	// Horrible Pain
+	{ "SPLC1" },	// Healing
+	{ "SPLC2" },	// Spirits Within
+	{ "SPLC3" },	// Banishment
+	{ "SPLC4" },	// Wrath of the Gods
+	{ "SPLF1" },	// Beserk
+};
+
 int SB_state = -1;
 static int oldarti = 0;
 static int oldartiCount = 0;
@@ -461,7 +480,6 @@ void SB_Drawer(void)
 	}
 	else
 	{
-     	if (CPlayer->pclass<PCLASS_ETTIN) DrRedINumber(CPlayer->sp_power, 600 , 13);
 		GCanvas->SetOrigin(160, 280);
 		GCanvas->DrawPatch1(0, 134, PatchNumH2BAR);
 		DrawCommonBar();
@@ -695,6 +713,7 @@ void DrawMainBar(void)
 	int i;
 	int temp;
 	int manaPatchNum1, manaPatchNum2, manaVialPatchNum1, manaVialPatchNum2;
+	int explvl_width = 91-(91*CPlayer->experience)/CPlayer->next_level;
 
 	manaPatchNum1 = manaPatchNum2 = manaVialPatchNum1 = manaVialPatchNum2 = -1;
 
@@ -825,6 +844,21 @@ void DrawMainBar(void)
 	DrINumber(FixedDiv(temp, 5*FRACUNIT)>>FRACBITS, 250, 176);
 	// Weapon Pieces
 	DrawWeaponPieces();
+	// Level
+	temp = CPlayer->exp_level;
+	DrINumber(temp, -125, 141);
+	// EXP Bar
+	GCanvas->DrawPatch1(-120, 155, PatchNumEXPLVL);
+	GL_SetNoTexture();
+	GCanvas->DrawRect(-120+(91-explvl_width), 156, explvl_width, 3, 0,0,0,1);
+	// Money
+	temp = CPlayer->money;
+	DrINumber(temp, -125, 164);
+	// SP Power
+	temp = CPlayer->sp_power;
+	DrINumber(temp, 385, 141);
+	// Selected Spell
+	GCanvas->DrawPatch1(430, 156, W_GetNumForName(hudspell[CPlayer->currentspell]));
 }
 
 //==========================================================================

@@ -767,6 +767,7 @@ struct player_t
 	unsigned int sp_power;
 	unsigned int sp_power_old;
 	int speed;
+	unsigned int currentspell; // Used for HUD
 
 	// -JL- Added to player struct
 	int boringmessage; //Remi: "YOU NEED TO BE LEVEL whatever TO USE MANA" boring message timer
