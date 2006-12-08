@@ -154,11 +154,11 @@ void A_SpawnChildren()
 			{
 				// [FB] Check to see if the new children's z value is above the
 				//      ceiling of its new sector, or below the floor. If so, kill it.
-				if ((pc.Origin.z > (pc.CeilingZ - pc.Height)) ||
-			        (pc.Origin.z < pc.FloorZ))
+				if (!TestLocation() && (pc.Origin.z < pc.FloorZ ||
+				    pc.Origin.z > (pc.CeilingZ - pc.Height)))
 				{
-					// kill it immediately
-					pc.LifeCount = 0;
+					// [FB] but make sure it doesn't spawns childs
+					SetState(S_POISONCLOUD_X2);
 					return;
 				}
 
