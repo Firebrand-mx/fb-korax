@@ -36,7 +36,8 @@ enum
 {
 	MB_None,
 	MB_Control,
-	MB_Quit
+	MB_Quit,
+	MB_EndGame
 };
 
 enum
@@ -93,6 +94,9 @@ int ramp1[16];
 int ramp2[16];
 int ecolours[8];
 
+
+bool IsInGame;
+
 //==========================================================================
 //
 //  RootWindowCreated
@@ -102,8 +106,10 @@ int ecolours[8];
 void RootWindowCreated()
 {
 	//[CW]
-	////////////////CreateCvar('TeamSelection', "0", 0);
-	CreateCvar('BotsAutoSpawn', "0", 0);
+	CreateCvar('BodyQueSize', "0", CVAR_ARCHIVE);
+	CreateCvar('CorpseQueSize', "0", CVAR_ARCHIVE);
+	CreateCvar('BotsAutoSpawn', "0", CVAR_ARCHIVE);
+	CreateCvar('TargetNameHint', "1", CVAR_ARCHIVE | CVAR_USERINFO);
 
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
@@ -118,7 +124,6 @@ void RootWindowCreated()
 
 	/* scoreboard by [CW]	*/
 	GScBoard.cl = Player(cl);
-	//GScBoard.ClGame = self;
 	GScBoard.Hide();
 
 	GImission.ClGame = self;
@@ -140,6 +145,8 @@ void Connected()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
+
+	IsInGame = true;
 }
 
 //==========================================================================
@@ -155,6 +162,8 @@ void Disconnected()
 	GScBoard.Hide();	// [CW]
 	GImission.Hide();
 	GFinale.Hide();
+
+	IsInGame = false;
 }
 
 //==========================================================================
@@ -313,7 +322,8 @@ bool MenuResponder(event_t * event)
 		// Pop-up menu?
 		if (event->type == ev_keydown && event->data1 == K_ESCAPE)
 		{
-			PushMenuScreen(SpawnMenu(MenuScreenMain));
+			//PushMenuScreen(SpawnMenu(MenuScreenMain));
+			SpawnMainMenu();
 			return true;
 		}
 
@@ -348,7 +358,8 @@ void SetMenu(string Name)
 {
 	if (!stricmp(Name, "Main"))
 	{
-		PushMenuScreen(SpawnMenu(MenuScreenMain));
+		//PushMenuScreen(SpawnMenu(MenuScreenMain));
+		SpawnMainMenu();
 		return;
 	}
 	/*if (!stricmp(Name, "Save"))
@@ -411,7 +422,8 @@ void SetMenu(string Name)
 		menu_quit();
 		return;
 	}
-	PushMenuScreen(SpawnMenu(MenuScreenMain));
+	//PushMenuScreen(SpawnMenu(MenuScreenMain));
+	SpawnMainMenu();
 }
 
 //==========================================================================
@@ -427,6 +439,21 @@ MenuScreen SpawnMenu(classid CID)
 	m = MenuScreen(GRoot.NewChild(CID));
 	m.ClGame = self;
 	return m;
+}
+
+//==========================================================================
+//
+//	SpawnMainMenu
+//
+//	[CW]
+//
+//==========================================================================
+
+void SpawnMainMenu()
+{
+	MenuScreenMain mm = MenuScreenMain(SpawnMenu(MenuScreenMain));
+	mm.InitWindow();
+	PushMenuScreen(mm);
 }
 
 //**************************************************************************
@@ -614,7 +641,9 @@ bool MessageBoxResponder(event_t * event)
 			ControlResponse(event->data1);
 			break;
 		case MB_Quit:
-			QuitResponse(event->data1);
+		case MB_EndGame:
+			QuitResponse(messageType, event->data1);
+			break;
 			break;
 		}
 
@@ -653,12 +682,20 @@ void menu_quit()
 //
 //==========================================================================
 
-void QuitResponse(int ch)
+void QuitResponse(int type, int ch)
 {
 	if (ch != K_y)
 		return;
 
-	CmdBuf_AddText("Quit\n");
+	switch (type)
+	{
+	case MB_Quit:
+		CmdBuf_AddText("Quit\n");
+		break;
+	case MB_EndGame:
+		CmdBuf_AddText("Disconnect\n");
+		break;
+	};
 }
 
 //==========================================================================
