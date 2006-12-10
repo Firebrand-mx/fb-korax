@@ -55,7 +55,10 @@ void EnlistPlayer(Player pl)
 
 	// first check if player already has reference to this team
 	if (pl.Team == self)
+	{
+		dprint("EnlistPlayer : already in team, skip...");
 		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -66,6 +69,7 @@ void EnlistPlayer(Player pl)
 		// we simply need to re-assign Team reference for him.
 		if (Players[i] == pl)
 		{
+			dprint("EnlistPlayer : reattach team reference, done...");
 			pl.Team = self;
 			return;
 		}
@@ -74,15 +78,18 @@ void EnlistPlayer(Player pl)
 		{
 			if (pl.Team)
 			{
+				dprint("EnlistPlayer : discard player from previous team...");
 				pl.Team.DiscardPlayer(pl);
 			}
 			pl.Team = self;
 			Players[i] = pl;
 			playercount++;
+			dprint("EnlistPlayer : add player to current team as no %i, done...", i);
 
 			// This should be taken into account:
 			// player, who changes team, looses his score!!
 			//
+			dprint("EnlistPlayer : reset player's score");
 			pl.UpdateScore(HexenDefs::scoreevent_PlayerReset);
 
 			if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
@@ -111,23 +118,23 @@ void DiscardPlayer(Player pl)
 
 	// first check if player is in team
 	if (pl.Team != self)
-		return;
-
-	// push player down the competition table
-	pl.UpdateScore(HexenDefs::scoreevent_TeamDiscard);
-
-	// old code ----- not needed probably
-	/*for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (Players[i] == pl)
-		{
-			int j;
-			for (j = i; j < MAXPLAYERS - 1; j++)
-				Players[j] = Players[j+1];
-		}
-	}*/
+		dprint("DiscardPlayer : no such player in the team, cancel!");
+		return;
+	}
+
+	dprint("DiscardPlayer : push player down the table...");
+	// push player down the competition table
+	pl.UpdateScore(HexenDefs::scoreevent_PlayerDiscard);
 
 	pl.Team = none;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i] == pl)
+			Players[i] = none;
+
+		dprint("DiscardPlayer : removed player with index %i", i);
+	}
 	playercount--;
 
 	if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
@@ -138,12 +145,15 @@ void DiscardPlayer(Player pl)
 	// if there's no players, team is gone...
 	if (!playercount)
 	{
+		dprint("DiscardPlayer : team has no more players...");
+		dprint("DiscardPlayer : push team down the table...");
 		UpdateScore(HexenDefs::scoreevent_TeamDiscard);
 		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 		{
 			if (Game.Teams[i] == self)
 				Game.Teams[i] = none;
 		}
+		dprint("DiscardPlayer : removed team with index %i", i);
 
 		if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		   bprint("team %s is no longer in competition", Game.ColourNames[Colour]);
