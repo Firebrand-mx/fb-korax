@@ -162,6 +162,7 @@ TVec aim_dir;
 float aim_topslope;
 float aim_bottomslope;	// slopes to top and bottom of target
 float aim_range2d;
+TVec hit_point;
 Actor linetarget;	// who got hit (or none)
 
 float shoot_range;
@@ -170,6 +171,7 @@ TVec shoot_dir;
 int la_damage;
 TVec shoot_linestart;
 TVec shoot_lineend;
+
 classid shootPuffType;
 
 TVec LightOffset;
@@ -4197,7 +4199,7 @@ bool PTR_AimTraverse(intercept_t * in)
 
 	if (in->bIsALine)
 	{
-		TVec hit_point;
+		//TVec hit_point;
 
 		li = in->line;
 
@@ -4422,7 +4424,7 @@ bool ShootCheckPlanes(sector_t * sec)
 
 bool PTR_ShootTraverse(intercept_t * in)
 {
-	TVec hit_point;
+	//TVec hit_point;
 	line_t *li;
 	Actor th;
 
@@ -4522,6 +4524,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 	hit_point -= 10.0 * shoot_dir;
 
 	SpawnPuff(hit_point, shootPuffType);
+
 	if (la_damage)
 	{
 		if (!th.bNoBlood && !th.bInvulnerable)
@@ -4591,6 +4594,9 @@ int LineAttack(TVec dir, float distance, int damage, classid PuffType)
 void SpawnPuff(TVec org, classid PuffType)
 {
 	Actor puff;
+
+	if (!PuffType)
+		return;
 
 	org.z += (Random() - Random()) * 4.0;
 	puff = Spawn(PuffType, org);
@@ -5018,12 +5024,12 @@ void A_NoBlocking()
 
 void A_AddPlayerCorpse()
 {
-	if (HexenLevelInfo(Level).bodyqueslot >= HexenLevelInfo::BODYQUESIZE)
+	if (HexenLevelInfo(Level).bodyqueslot >= /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize)
 	{
 		// Too many player corpses - remove an old one
-		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo::BODYQUESIZE].Remove();
+		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize].Remove();
 	}
-	HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo::BODYQUESIZE] = self;
+	HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize] = self;
 	HexenLevelInfo(Level).bodyqueslot++;
 }
 
@@ -5053,14 +5059,14 @@ void A_QueueCorpse()
 {
 	Actor corpse;
 
-	if (HexenLevelInfo(Level).corpseQueueSlot >= HexenLevelInfo::CORPSEQUEUESIZE)
+	if (HexenLevelInfo(Level).corpseQueueSlot >= /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize)
 	{
 		// Too many corpses - remove an old one
-		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo::CORPSEQUEUESIZE];
+		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize];
 		if (corpse)
 			corpse.Remove();
 	}
-	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo::CORPSEQUEUESIZE] = self;
+	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize] = self;
 	HexenLevelInfo(Level).corpseQueueSlot++;
 }
 
@@ -5076,7 +5082,7 @@ void A_DeQueueCorpse()
 {
 	int slot;
 
-	for (slot = 0; slot < HexenLevelInfo::CORPSEQUEUESIZE; slot++)
+	for (slot = 0; slot < /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize; slot++)
 	{
 		if (HexenLevelInfo(Level).corpseQueue[slot] == self)
 		{
