@@ -85,21 +85,27 @@ bool RoughCheckThing(Entity Other)
 void A_Explode()
 {
 	// Spawn 8 random explosion effects in the bounds of explosion radius
-	
+	TVec pos;
+
 	int i;
 	for (i = 0; i < 8; i++)
 	{
 		dprint("A_Explode : expl");
-		InfernalHandFX2 ihfx2 =
-			InfernalHandFX2(HexenLevelInfo(Level).Spawn(InfernalHandFX2, Origin +
-												vector( ( Random() - 0.5 ) * ExplodeDistance * 2.0,
-														( Random() - 0.5 ) * ExplodeDistance * 2.0,
-														( Random() - 0.5 ) * 32.0 )));
-		if (ihfx2)
+		pos = vector(( Random() - 0.5 ) * ExplodeDistance * 2.0,
+				( Random() - 0.5 ) * ExplodeDistance * 2.0,
+					( Random() - 0.5 ) * 32.0 );
+		if (CheckPosition(pos))
 		{
-			dprint("A_Explode : is at %f, %f, %f", ihfx2.Origin.x, ihfx2.Origin.y, ihfx2.Origin.z);
-			ihfx2.Translucency = ftoi(Length(ihfx2.Origin - Origin) / ExplodeDistance) * 66;
-			dprint("A_Explode : transluc = %i", ihfx2.Translucency);
+			InfernalHandFX2 ihfx2 =
+				InfernalHandFX2(HexenLevelInfo(Level).Spawn(InfernalHandFX2, Origin + pos));
+			if (ihfx2)
+			{
+				if (!CanSee(ihfx2))
+					ihfx2.Remove();
+				dprint("A_Explode : is at %f, %f, %f", ihfx2.Origin.x, ihfx2.Origin.y, ihfx2.Origin.z);
+				ihfx2.Translucency = ftoi(Length(ihfx2.Origin - Origin) / ExplodeDistance) * 66;
+				dprint("A_Explode : transluc = %i", ihfx2.Translucency);
+			}
 		}
 	}
 
