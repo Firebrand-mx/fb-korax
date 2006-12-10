@@ -107,6 +107,8 @@ bool randomclass;
 
 Actor PuffSpawned;
 
+bool		bFirstLevelInited;
+
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
 Game		GameMode;			// [CW] for advanced game modes
 
@@ -155,15 +157,19 @@ void InitNewGame(int skill)
 {
 	int mode;
 
+	dprint("MainGameInfo::InitNewGame : GO");
+
 	nomonsters = GetCvar('NoMonsters');
 	fastparm = gameskill == sk_nightmare || GetCvar('Fast');
 	randomclass = GetCvar('RandomClass');
 
-	// init GameMode
+	// Destroy old game mode (if exists)
 	if (GameMode)
 		GameMode.End();
+
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
+	// init GameMode
 	mode = GetCvar('deathmatch');
 	switch (mode)
 	{
@@ -175,6 +181,8 @@ void InitNewGame(int skill)
 	}
 	if (GameMode)
 		GameMode.Init(self);
+
+	bFirstLevelInited = false;
 }
 
 //==========================================================================
@@ -185,24 +193,62 @@ void InitNewGame(int skill)
 
 LevelInfo CreateLevelInfo()
 {
-	int bots_count;
-	BotSpawner	botSpawner;
+	dprint("MainGameInfo::CreateLevelInfo : GO");
 
 	//[CW]
 	HexenLevelInfo levelinfo = HexenLevelInfo(NewSpecialThinker(HexenLevelInfo));
 	if (GameMode)
 		GameMode.Level = levelinfo;
 	
-	bots_count = GetCvar('BotsAutoSpawn');
-	if (bots_count > 0)
+	levelinfo.BodyQueSize = GetCvar('BodyQueSize');
+	levelinfo.CorpseQueSize = GetCvar('CorpseQueSize');
+
+	dprint("CreateLevelInfo : BQS = %i",levelinfo.BodyQueSize);
+	dprint("CreateLevelInfo : CQS = %i",levelinfo.CorpseQueSize);
+
+	if (bFirstLevelInited)
 	{
-		botSpawner = BotSpawner(NewSpecialThinker(BotSpawner));
-		if (botSpawner)
+		int i;
+		// Reset everyone's score
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			botSpawner.time_limit = 1.5;
-			botSpawner.SpawnCount = bots_count;
+			if (Players[i])
+			{
+				Player(Players[i]).UpdateScore(HexenDefs::scoreevent_PlayerReset);
+				Player(Players[i]).TeamFrags = 0;
+				Player(Players[i]).KillsCount = 0;
+				Player(Players[i]).TeamKills = 0;
+				Player(Players[i]).TotalKills = 0;
+			}
+		}
+		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		{
+			if (Teams[i])
+			{
+				Teams[i].UpdateScore(HexenDefs::scoreevent_TeamReset);
+				Teams[i].Frags = 0;
+				Teams[i].Kills = 0;
+				Teams[i].Goals = 0;
+			}
 		}
 	}
+	else
+	{
+		int bots_count;
+		BotSpawner	botSpawner;
+		bots_count = GetCvar('BotsAutoSpawn');
+		if (bots_count > 0)
+		{
+			botSpawner = BotSpawner(NewSpecialThinker(BotSpawner));
+			if (botSpawner)
+			{
+				botSpawner.time_limit = 1.5;
+				botSpawner.SpawnCount = bots_count;
+			}
+		}
+	}
+
+	bFirstLevelInited = true;
 
 	return LevelInfo(levelinfo);
 }
@@ -4140,18 +4186,24 @@ void ScoreboardsUpdate(Player thisPlayer)
 		if (!Players[plnum])
 			break;
 
+		// no need to update scoreboards for bots
+		if (Players[plnum].bIsBot)
+			continue;
+
 		if (thisPlayer && Players[plnum] != thisPlayer)
 			continue;
 
 		//[CW] update scoreboard for player number "plnum"
 		pl = Player(Players[plnum]);
 		gs = 0;
+		dprint("SU : update scores for human player with index %i", plnum);
 		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
 		{
 			if (!Teams[teamnum])
 			   break;
 
 			plteam = Teams[teamnum];
+			dprint("SU : write Team %i", teamnum);
 
 			pl.teamscores[teamnum] = plteam.Score;
 
@@ -4159,6 +4211,8 @@ void ScoreboardsUpdate(Player thisPlayer)
 			{
 			   if (!plteam.Players[i])
 				break;
+
+				dprint("SU : write player %i in slot number %i", i, gs);
 
 			   if (plteam.Players[i] == pl)
 			      pl.table_thisplayer = gs;
@@ -4187,7 +4241,15 @@ void ScoreboardsUpdate(Player thisPlayer)
 			   }
 			}
 		}
+
+		// Set all unused scoreboard slots by "not active" flags
+		for (i = gs; i < MAXPLAYERS; i++)
+		{
+			pl.gamescores[gs].IsActive = false;
+		}
 	}
+
+	dprint("SU : end");
 }
 
 //==========================================================================
@@ -4300,7 +4362,7 @@ defaultproperties
 	WeaponClasses[36] = WeaponMissile;
 	WeaponClasses[37] = WeaponWitchavenLSword;
 	WeaponClasses[38] = WeaponPigSnout;
-	WeaponClasses[39] = WeaponHeresiarchPRay;
+	WeaponClasses[39] = WeaponHereisarchHoly;
 //Sixth Weapon
 	WeaponClasses[40] = WeaponFighterHammer;
 	WeaponClasses[41] = WeaponPoisonBreath;
@@ -4309,7 +4371,7 @@ defaultproperties
 	WeaponClasses[44] = WeaponSuperShotgun;
 	WeaponClasses[45] = WeaponWitchavenFireballSpell;
 	WeaponClasses[46] = WeaponPigSnout;
-	WeaponClasses[47] = WeaponHeresiarchStorm;
+	WeaponClasses[47] = WeaponHereisarchHoly;
 //Seventh Weapon
 	WeaponClasses[48] = WeaponFighterSwordMelee;
 	WeaponClasses[49] = WeaponPhoenixRod;
@@ -4318,7 +4380,7 @@ defaultproperties
 	WeaponClasses[52] = WeaponPlasma;
 	WeaponClasses[53] = WeaponWitchavenLongBow;
 	WeaponClasses[54] = WeaponPigSnout;
-	WeaponClasses[55] = WeaponHeresiarchHand;
+	WeaponClasses[55] = WeaponHereisarchHoly;
 //Eighth Weapon
 	WeaponClasses[56] = WeaponFighterSword;
 	WeaponClasses[57] = WeaponClericHoly;
@@ -4327,7 +4389,7 @@ defaultproperties
 	WeaponClasses[60] = WeaponBFG;
 	WeaponClasses[61] = WeaponWitchavenDisintegrationSpell;
 	WeaponClasses[62] = WeaponPigSnout;
-	WeaponClasses[63] = WeaponHeresiarchPRay;//WeaponHeresiarchZZZ;
+	WeaponClasses[63] = WeaponHereisarchHoly;
 
 	AltWeaponModeCount[HexenDefs::ALTFIRE_BLASTRADIUS] = HexenDefs::ALTFIRE_BLASTRADIUS_MODES;
 	AltWeaponModeCount[HexenDefs::ALTFIRE_POISONBAG] = HexenDefs::ALTFIRE_POISONBAG_MODES;
@@ -4533,10 +4595,10 @@ defaultproperties
 	DeathMessage[57] = "%s was purple-fireballed by %s the heresiarch";
 	DeathMessage[58] = "%s was lightningstormed by %s the heresiarch";
 	DeathMessage[59] = "%s was touched by %s the heresiarch'es infernal hand";
-	DeathMessage[60] = DeathMessage[56];
-	DeathMessage[61] = DeathMessage[56];
-	DeathMessage[62] = DeathMessage[56];
-	DeathMessage[63] = DeathMessage[56];
+	DeathMessage[60] = "%s became a victim of %s the heresiarch'es dark wraith";
+	DeathMessage[61] = DeathMessage[60];
+	DeathMessage[62] = DeathMessage[60];
+	DeathMessage[63] = DeathMessage[60];
 
 
 	// non-player weaponry or extra weapon abilities, enviromental stuff, traps, etc
