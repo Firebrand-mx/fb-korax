@@ -27,29 +27,54 @@ class MenuScreenMain : MenuScreen;
 
 void CreateTitle()
 {
-	MenuStaticAnim newAnim;
+	if (!ClGame)
+		return;
 
-	NewChild(MenuMainTitleImage);
+	if (!ClGame.IsInGame)
+	{
+		MenuStaticAnim newAnim;
+		NewChild(MenuMainTitleImage);
 
-	newAnim = MenuStaticAnim(NewChild(MenuMainAnim));
-	newAnim.SetPos(37, 190);
-	newAnim.StartFrame = 2;
+		newAnim = MenuStaticAnim(NewChild(MenuMainAnim));
+		newAnim.SetPos(37, 190);
+		newAnim.StartFrame = 2;
 
-	newAnim = MenuStaticAnim(NewChild(MenuMainAnim));
-	newAnim.SetPos(278, 190);
+		newAnim = MenuStaticAnim(NewChild(MenuMainAnim));
+		newAnim.SetPos(278, 190);
+	}
+}
+
+void InitWindow()
+{
+	if (!ClGame)
+		return;
+
+	ChoicesStartX = 110;
+	if (ClGame.IsInGame)
+	{
+		int i = 0;
+
+		ChoicesStartY = 40;
+		if (GetCvar('DeathMatch') >= HexenDefs::NUMGAMESNOTEAM)
+			Choices[i++] = MenuChoice_SelectTeam;
+		Choices[i++] = MenuChoice_AddBot;
+		//Choices[i++] = MenuChoice_RemoveBot;
+		Choices[i++] = MenuChoice_Options;
+		Choices[i++] = MenuChoice_LeaveArena;
+		Choices[i++] = MenuChoice_QuitGame;
+	}
+	else
+	{
+		ChoicesStartY = 120;//56;
+		Choices[0] = MenuChoice_Multiplayer;
+		Choices[1] = MenuChoice_Options;
+		Choices[2] = MenuChoice_QuitGame;
+	}
+
+	::InitWindow();
 }
 
 defaultproperties
 {
-/*	Choices[0] = MenuChoice_SinglePlayer;
-	Choices[1] = MenuChoice_Multiplayer;
-	Choices[2] = MenuChoice_Options;
-	Choices[3] = MenuChoice_Help;
-	Choices[4] = MenuChoice_QuitGame;*/
-	Choices[0] = MenuChoice_Multiplayer;
-	Choices[1] = MenuChoice_Options;
-	Choices[2] = MenuChoice_QuitGame;
-	ChoicesStartX = 110;
-	ChoicesStartY = 120;//56;
 	SelectorType = MenuSelector_BigArrow;
 }
