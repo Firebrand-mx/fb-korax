@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**			##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -63,7 +63,7 @@ GameSequencer		birthSequencer;
 int		deathsequence_state;
 int		birthsequence_state;
 
-name	originalMusic;
+////////name	originalMusic;
 
 // Animated sequences stuff
 int				dlDelay1, dlDelay2;	// dynamic lighting delays
@@ -97,9 +97,10 @@ void BeginState(int newstate)
 	case state_finished:
 		break;
 	case state_birthsequence:
+		Game.bcentreprint("first fragger is determined");
 	case state_deathsequence:
 	case state_rebornsequence:
-		originalMusic = Game.level->SongLump;
+		////////originalMusic = Game.level->SongLump;
 		deathsequence_state = 0;
 		birthsequence_state = 0;
 		break;
@@ -252,14 +253,14 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 	{
 	case event_heresiarchspawn:
 		if (plHeresiarch)
-			Game.bcentreprint(va("%s is now The Heresiarch", plHeresiarch.PlayerName));
+			Game.bcentreprint(va("%s is now the heresiarch", plHeresiarch.PlayerName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
 						false, 0.0);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
-		Game.bcentreprint(va("%s The Heresiarch is dead", oldHeresiarchName));
+		Game.bcentreprint(va("%s the heresiarch is dead", oldHeresiarchName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 						(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
 						false, 0.0);
@@ -304,7 +305,7 @@ void PlayDeathSequence()
 		CircularPosition.x = 64.0;
 		CircularPosition.y = 64.0;
 		CircularPosition.z = 0.0;
-		ChangeMusic(va("%n", 'kth_mus1'));
+		////////ChangeMusic(va("%n", 'kth_mus1'));
 		break;
 	case 13:
 		{
@@ -374,8 +375,8 @@ void PlayDeathSequence()
 				RemoveSpecialThinker(deathSequencer);
 				deathSequencer = none;
 			}
-			if (State != state_rebornsequence)
-				ChangeMusic(va("%n", originalMusic));
+			/*if (State != state_rebornsequence)
+				ChangeMusic(va("%n", originalMusic));*/
 			break;
 		}
 	}
@@ -430,7 +431,7 @@ void PlayBirthSequence()
 
 			plHeresiarch.MO.bNoGravity = true;
 			plHeresiarch.MO.Velocity.z = 8.0;
-			ChangeMusic(va("%n", 'kth_mus2'));
+			////////ChangeMusic(va("%n", 'kth_mus2'));
 		}
 		break;
 	case 44:
@@ -533,7 +534,7 @@ void PlayBirthSequence()
 			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch, false, true);
 			plHeresiarch.GivePower(pw_invulnerability2);
 			plHeresiarch.SetControllable(true);
-			ChangeMusic(va("%n", originalMusic));
+			////////ChangeMusic(va("%n", originalMusic));
 			break;
 		}
 	}
