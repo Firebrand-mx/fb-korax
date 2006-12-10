@@ -1,0 +1,157 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponHereisarchHoly.vc 601 2006-10-16 19:59:15Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponHereisarchHoly : Weapon;
+
+int flashrate;
+
+//============================================================================
+//
+//  A_HHolyAttack
+//
+//============================================================================
+
+void A_HHolyAttack()
+{
+	int damage;
+	float range;
+	TVec dir;
+	TVec endpoint;
+	TAVec angles;
+	Actor mo;
+	Pawn pawn;
+
+	Player(Player).WeaponCShift = 0;
+
+	UseWeaponMana();
+	Player(Player).DamageFlash = 0.0;
+	Player(Player).BonusFlash = 0.0;
+
+
+	mo = Actor(Player.MO);
+
+	damage = 5;
+	range = 512.0;
+	if (int_mod)
+	{
+		if(!active_damage)
+		{
+			damage = damage * Player(Player).intelligence / 10;
+		}
+		else // [FB] PI Damage
+		{
+			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+		}
+
+		range += 128.0 * itof(Player(Player).intelligence / 10);
+	}
+	
+
+	angles = mo.Angles;
+	AngleVector(&angles, &dir);
+	if (mo.LineAttack(dir, range, 0, none))
+	{
+		endpoint = mo.hit_point;
+		range = Length(endpoint - mo.Origin);
+	}
+	else
+	{
+		endpoint = mo.Origin + dir * range;
+	}
+
+	// Everything is prepared, do attack
+	while (range > 64.0)
+	{
+		TVec flashpoint;
+
+		range -= 64.0;
+		flashpoint = mo.Origin + dir * range;
+		MainGameInfo(Player.Level.Game).SpawnDynamicLight(0x00ff0000,
+												flashpoint,
+												192,
+												50,
+												0);
+		FOREACH(Pawn, pawn)
+		{
+			if (Length(pawn.Origin - flashpoint) < 128.0)
+			{
+				pawn.Damage(mo, mo, damage);
+			}
+		}
+
+		range -= 64.0;
+	}
+
+	if (flashrate == 0)
+	{
+		Player(Player).WeaponCShift = CSHIFT(255, 0, 0, 66);
+		Player(Player).MO.PlaySound('SpiritActive', CHAN_WEAPON);
+		flashrate = 30;
+	}
+	else
+		flashrate--;
+}
+
+
+__states__
+{
+	S_HHOLYREADY('CHLY', 0, 1.0 / 35.0, S_HHOLYREADY) { A_WeaponReady(); }
+	S_HHOLYDOWN('CHLY', 0, 1.0 / 35.0, S_HHOLYDOWN) { A_Lower(); }
+	S_HHOLYUP('CHLY', 0, 1.0 / 35.0, S_HHOLYUP) { A_Raise(); }
+	S_HHOLYATK_1('CHLY', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_2) { SY = 40.0; }
+	S_HHOLYATK_2('CHLY', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_3) { SY = 40.0; }
+	S_HHOLYATK_3('CHLY', 2 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_4) { SY = 43.0; }
+	S_HHOLYATK_4('CHLY', 3 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_5) { SY = 43.0; }
+	S_HHOLYATK_5('CHLY', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_6) { SY = 45.0; flashrate = 0; }
+	S_HHOLYATK_6('CHLY', 5 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_7) { SY = 48.0; A_HHolyAttack(); }
+	S_HHOLYATK_7('CHLY', 5 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_8) { SY = 48.0; Player(Player).WeaponCShift = 0; A_ReFire(); }
+	S_HHOLYATK_8('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_9) { SY = 40.0; }
+	S_HHOLYATK_9 ('CHLY', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_HHOLYREADY) { SY = 36.0; }
+}
+
+/* FIFTH (FINAL) HERESIARCH */
+defaultproperties
+{
+	Mana = HexenDefs::NUMMANA;
+	manause = 10;
+	UpState = S_HHOLYUP;
+	DownState = S_HHOLYDOWN;
+	ReadyState = S_HHOLYREADY;
+	AttackState = S_HHOLYATK_1;
+	HoldAttackState = S_HHOLYATK_6;
+	PSpriteSY = 0.0;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	PickUpMessage = "UNHOLY SIGN";
+}
