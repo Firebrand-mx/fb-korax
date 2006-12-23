@@ -610,11 +610,13 @@ void SB_DrawMainBar()
 	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
 
 //[Korax]
-	SB_DrawNumber92(320, 20, cl.exp_level, 1);
+/*	SB_DrawNumber92(320, 20, cl.exp_level, 1);
 	SB_DrawNumber92(460, 20, cl.experience, 1);
-	SB_DrawNumber92(580, 20, cl.next_level, 1);
-	// Frags / health
-	if (ClGame.deathmatch && ClGame.deathmatch != HexenDefs::game_sweepteam)
+	SB_DrawNumber92(580, 20, cl.next_level, 1);*/
+
+	// Frags
+	if (ClGame.deathmatch == HexenDefs::game_dm ||
+	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
 /*		R_DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl.Frags, 0);
@@ -627,15 +629,15 @@ void SB_DrawMainBar()
 		}
 	}
 
-	if (ClGame.deathmatch == HexenDefs::game_sweepteam)
-	{
-		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
-	}
-
-	if (!ClGame.deathmatch || ClGame.deathmatch == HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch == HexenDefs::game_sweep ||
+	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
+		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
+		{
+			SB_DrawNumber92(85, 20, cl.TeamKills, 0);
+		}
 	}
 
 	if (Player(cl).HealthBig >= 25)
@@ -968,12 +970,17 @@ void SB_DrawFullscreenStats()
 	R_DrawShadowedPic(30, 494, pic_health);
 
 //[Korax]
-	SB_DrawNumber92(320, 20, 0+cl.exp_level, 1);
+/*	SB_DrawNumber92(320, 20, 0+cl.exp_level, 1);
 	SB_DrawNumber92(460, 20, 0+cl.experience, 1);
-	SB_DrawNumber92(580, 20, 0+cl.next_level, 1);
-	//  Frags
-	if (ClGame.deathmatch && ClGame.deathmatch != HexenDefs::game_sweepteam)
+	SB_DrawNumber92(580, 20, 0+cl.next_level, 1);*/
+
+	// Frags
+	if (ClGame.deathmatch == HexenDefs::game_dm ||
+	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
+/*		R_DrawPic(38, 162, pic_kills);
+		SB_DrawNumber92(40, 176, cl.Frags, 0);
+		*/
 		SB_DrawNumber92(32, 20, cl.Frags, 0);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
@@ -982,15 +989,15 @@ void SB_DrawFullscreenStats()
 		}
 	}
 
-	if (ClGame.deathmatch == HexenDefs::game_sweepteam)
-	{
-		SB_DrawNumber92(85, 20, cl.TeamKills, 0);
-	}
-
-	if (!ClGame.deathmatch || ClGame.deathmatch == HexenDefs::game_sweepteam)
+	if (ClGame.deathmatch == HexenDefs::game_sweep ||
+	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber92(32, 20, cl.KillsCount, 0);
 		SB_DrawNumber92(138, 20, cl.TotalKills, 0);
+		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
+		{
+			SB_DrawNumber92(85, 20, cl.TeamKills, 0);
+		}
 	}
 
 	//  [FB] Mana Display in Fullscreen
@@ -1115,6 +1122,10 @@ void SB_DrawFullscreenStats()
 	SB_DrawNumber92(355, 454, cl.Mana[2], 0);
 	SB_DrawNumber92(415, 454, cl.Mana[3], 0);
 	SB_DrawNumber92(475, 454, cl.Mana[4], 0);
+	R_DrawShadowedPic(534, 439, pic_manavial6);
+	R_DrawShadowedPic(546, 439, pic_manavial7);
+	R_ShadeRect(535, 440, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 31);
+	R_ShadeRect(547, 440, 3, 22 - (22 * cl.exp_level) / 10, 31);
 
 //[Korax]
 /*	if (cl.InventoryTime)
