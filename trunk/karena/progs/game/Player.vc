@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -295,10 +295,8 @@ bool bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 
 void PutClientIntoServer()
 {
-	ViewEnts[ps_weapon] = Weapon(SpawnObject(Weapon));
-	ViewEnts[ps_weapon].Player = self;
-	ViewEnts[ps_flash] = Weapon(SpawnObject(Weapon));
-	ViewEnts[ps_flash].Player = self;
+	ViewEnt = Weapon(SpawnObject(Weapon));
+	ViewEnt.Player = self;
 	if (bIsBot)
 	{
 		Bot = BotPlayer(SpawnObject(BotPlayer));
@@ -510,13 +508,10 @@ void DisconnectClient()
 		MO.bIsPlayer = false;
 		Actor(MO).Damage(none, none, 10000);
 	}
-	for (i = 0; i < NUMPSPRITES; i++)
+	if (ViewEnt)
 	{
-		if (ViewEnts[i])
-		{
-			ViewEnts[i].Destroy();
-			ViewEnts[i] = none;
-		}
+		ViewEnt.Destroy();
+		ViewEnt = none;
 	}
 	bprint("%s left the game\n", PlayerName);
 	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
@@ -1124,7 +1119,7 @@ bool GiveMana(int mana, int count)
 	}
 	if (prevMana <= 0)
 	{
-		Weapon(ViewEnts[ps_weapon]).GotMana(mana);
+		Weapon(ViewEnt).GotMana(mana);
 	}
 	if (Bot)
 	{
@@ -1334,7 +1329,7 @@ bool GivePower(int power)
 			return false;
 		}
 		Powers[power] = DAMAGETIME;
-		Weapon(ViewEnts[ps_weapon]).active_damage = 1; // [FB] Adjust weapon damage
+		Weapon(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
 		return true;
 	}
 	if (Powers[power])
@@ -2782,7 +2777,7 @@ void MorphPlayerThink()
 	if (!(MO.Velocity.x + MO.Velocity.y) && P_Random() < 64)
 	{
 		// Snout sniff
-		Weapon(ViewEnts[ps_weapon]).SnoutSniff();
+		Weapon(ViewEnt).SnoutSniff();
 		MO.PlaySound('PigActive1', CHAN_VOICE);	// snort
 		return;
 	}
@@ -2905,7 +2900,7 @@ void DeathPlayerTick(float deltaTime)
 	float delta;
 	int lookDelta;
 
-	MovePsprites();
+	MovePsprites(deltaTime);
 	if (MO.WaterLevel > 1)
 	{
 		MO.Velocity.z -= 60.0;	// drift towards bottom
@@ -3260,7 +3255,7 @@ void PlayerTick(float deltaTime)
 	}
 
 	// cycle psprites
-	MovePsprites();
+	MovePsprites(deltaTime);
 
 	// Counters, time dependend power ups.
 	if (Powers[pw_invulnerability])
@@ -3463,7 +3458,7 @@ void PlayerTick(float deltaTime)
 		if (Powers[pw_damage] <= 0.0)
 		{
 			Powers[pw_damage] = 0.0;
-			Weapon(ViewEnts[ps_weapon]).active_damage = 0; // [FB] Return to using normal damage
+			Weapon(ViewEnt).active_damage = 0; // [FB] Return to using normal damage
 		}
 	}
 
@@ -4583,25 +4578,14 @@ void SetWeapon(int NewWeapon)
 	ReadyWeapon = NewWeapon;
 	PendingWeapon = HexenDefs::wp_nochange;
 
-	if (ViewEnts[ps_weapon])
+	if (ViewEnt)
 	{
-		ViewEnts[ps_weapon].Destroy();
+		ViewEnt.Destroy();
 	}
-	ViewEnts[ps_weapon] = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
+	ViewEnt = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
 		NewWeapon * HexenDefs::NUMCLASSES + PClass]));
-	ViewEnts[ps_weapon].Player = self;
-	PSpriteSY = Weapon(ViewEnts[ps_weapon]).PSpriteSY;
-}
-
-//===========================================================================
-//
-//  SetPsprite
-//
-//===========================================================================
-
-void SetPsprite(int position, state stnum)
-{
-	ViewEnts[position].SetState(stnum);
+	ViewEnt.Player = self;
+	PSpriteSY = Weapon(ViewEnt).PSpriteSY;
 }
 
 //===========================================================================
@@ -4615,8 +4599,8 @@ void SetPsprite(int position, state stnum)
 void BringUpWeapon()
 {
 	PendingWeapon = HexenDefs::wp_nochange;
-	ViewEnts[ps_weapon].SY = Weapon::WEAPONBOTTOM;
-	ViewEnts[ps_weapon].SetState(Weapon(ViewEnts[ps_weapon]).GetUpState());
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetUpState());
 }
 
 //==========================================================================
@@ -4629,7 +4613,7 @@ void BringUpWeapon()
 
 void DropWeapon()
 {
-	ViewEnts[ps_weapon].SetState(Weapon(ViewEnts[ps_weapon]).GetDownState());
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetDownState());
 }
 
 //==========================================================================
@@ -4647,7 +4631,7 @@ void SetupPsprites()
 	// Remove all psprites
 	for (i = 0; i < NUMPSPRITES; i++)
 	{
-		ViewEnts[i].State = none;
+		SetViewState(i, none);
 	}
 	// Spawn the ready weapon
 	BringUpWeapon();
@@ -4661,47 +4645,23 @@ void SetupPsprites()
 //
 //==========================================================================
 
-void MovePsprites()
+void MovePsprites(float deltaTime)
 {
-	int i;
-	ViewEntity e;
-
-	for (i = 0; i < NUMPSPRITES; i++)
-	{
-		e = ViewEnts[i];
-		if (e.State)	// a null state means not active
-		{
-			// drop tic count and possibly change state
-			if (e.StateTime != -1.0)	// a -1 tic count never changes
-			{
 //[Korax]
-				if (Weapon(e).dex_mod)
-				{
-					if (dexterity < 6)
-						e.StateTime -= Level.Game.frametime * 0.8;
-					else if (dexterity > 34)
-						e.StateTime -= Level.Game.frametime * 3.5;
-					else if (dexterity > 24)
-						e.StateTime -= Level.Game.frametime * 2.5;
-					else if (dexterity > 14)
-						e.StateTime -= Level.Game.frametime * 1.5;
-					else
-						e.StateTime -= Level.Game.frametime;
-				}
-				else
-				{
-					e.StateTime -= Level.Game.frametime;
-				}
-				if (e.StateTime <= 0.0)
-				{
-					e.StateTime = 0.0;
-					e.SetState(e.NextState);
-				}
-			}
-		}
+	if (Weapon(ViewEnt).dex_mod)
+	{
+		if (dexterity < 6)
+			deltaTime *= 0.8;
+		else if (dexterity > 34)
+			deltaTime *= 3.5;
+		else if (dexterity > 24)
+			deltaTime *= 2.5;
+		else if (dexterity > 14)
+			deltaTime *= 1.5;
 	}
-	ViewEnts[ps_flash].SX = ViewEnts[ps_weapon].SX;
-	ViewEnts[ps_flash].SY = ViewEnts[ps_weapon].SY;
+	AdvanceViewStates(deltaTime);
+	ViewStates[ps_flash].SX = ViewStates[ps_weapon].SX;
+	ViewStates[ps_flash].SY = ViewStates[ps_weapon].SY;
 }
 
 //==========================================================================
@@ -4717,7 +4677,7 @@ bool CheckMana()
 {
 	/*Weapon cur_weap;
 
-	cur_weap = Weapon(player.ViewEnts[ps_weapon]);
+	cur_weap = Weapon(player.ViewEnt);
 	if (cur_weap.Mana == MANA_NONE || cur_weap.needsnomana 
 		|| IsWeaponManaUsable(player, cur_weap))*/
 	if (GetWeaponMUse(ReadyWeapon))
@@ -4762,7 +4722,7 @@ bool CheckMana()
 		}
 	}
 	while (PendingWeapon == HexenDefs::wp_nochange);
-	SetPsprite(ps_weapon, Weapon(ViewEnts[ps_weapon]).GetDownState());
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetDownState());
 	return false;
 }
 
@@ -4783,8 +4743,7 @@ void FireWeapon()
 	Trophies.shot_position = MobjCentre(self.MO);
 
 	MO.SetState(Actor(MO).MissileState);
-	ViewEnts[ps_weapon].SetState(
-		Weapon(ViewEnts[ps_weapon]).GetAttackState());
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetAttackState());
 	HexenLevelInfo(Level).NoiseAlert(Actor(MO), Actor(MO));
 }
 
@@ -4817,9 +4776,9 @@ void ActivateMorphWeapon()
 		break;
 	}
 
-	ViewEnts[ps_weapon].SY = Weapon::WEAPONTOP;
+	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
 	SetWeapon(HexenDefs::WP_FIRST);
-	SetPsprite(ps_weapon, Weapon(ViewEnts[ps_weapon]).ReadyState);
+	SetViewState(ps_weapon, Weapon(ViewEnt).ReadyState);
 }
 
 //==========================================================================
@@ -4831,8 +4790,8 @@ void ActivateMorphWeapon()
 void PostMorphWeapon(int weapon)
 {
 	SetWeapon(weapon);
-	ViewEnts[ps_weapon].SY = Weapon::WEAPONBOTTOM;
-	SetPsprite(ps_weapon, Weapon(ViewEnts[ps_weapon]).UpState);
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).UpState);
 }
 
 //==========================================================================

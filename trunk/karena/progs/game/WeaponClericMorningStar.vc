@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -133,7 +133,7 @@ void A_CMSAttack()
 		UseWeaponMana();
 		if (!IsWeaponManaUsable())
 		{
-			SetState(NoMoreManaState);
+			Player.SetViewState(ps_weapon, NoMoreManaState);
 		}
 	}
 }
@@ -146,17 +146,17 @@ __states__
 	S_CMSREADY4('WMSB', 0, 1.0 / 35.0, S_CMSREADY1) { A_WeaponReady(); }
 	S_CMSDOWN('WMST', 0, 1.0 / 35.0, S_CMSDOWN) { A_Lower(); }
 	S_CMSUP('WMSB', 0, 1.0 / 35.0, S_CMSUP) { A_Raise(); }
-	S_CMSATK_1('WMST', 1, 6.0 / 35.0, S_CMSATK_2) { SX = 0.0; }
-	S_CMSATK_2('WMST', 2, 3.0 / 35.0, S_CMSATK_3) { SX = 0.0; }
-	S_CMSATK_3('WMST', 3, 3.0 / 35.0, S_CMSATK_4) { SX = 0.0; }
+	S_CMSATK_1('WMST', 1, 6.0 / 35.0, S_CMSATK_2) { }
+	S_CMSATK_2('WMST', 2, 3.0 / 35.0, S_CMSATK_3) { }
+	S_CMSATK_3('WMST', 3, 3.0 / 35.0, S_CMSATK_4) { }
 	S_CMSATK_4('WMST', 4, 2.0 / 35.0, S_CMSATK_5) { }
-	S_CMSATK_5('WMST', 4, 3.0 / 35.0, S_CMSATK_6) { SX = -25.0; }
+	S_CMSATK_5('WMST', 4, 3.0 / 35.0, S_CMSATK_6, -25, 0) { }
 	S_CMSATK_6('WMST', 5, 2.0 / 35.0, S_CMSATK_7) { A_CMSAttack(); }
 	S_CMSATK_7('WMST', 6, 3.0 / 35.0, S_CMSATK_8) { }
-	S_CMSATK_8('WMSB', 0, 1.0 / 35.0, S_CMSATK_9) { SY = 60.0; A_ReFire(); }
-	S_CMSATK_9('WMST', 0, 1.0 / 35.0, S_CMSATK_10) { SY = 52.0; }
-	S_CMSATK_10('WMSB', 0, 1.0 / 35.0, S_CMSATK_11) { SY = 44.0; }
-	S_CMSATK_11('WMST', 0, 1.0 / 35.0, S_CMSREADY1) { SY = 36.0; }
+	S_CMSATK_8('WMSB', 0, 1.0 / 35.0, S_CMSATK_9, 0, 60) { A_ReFire(); }
+	S_CMSATK_9('WMST', 0, 1.0 / 35.0, S_CMSATK_10, 0, 52) { }
+	S_CMSATK_10('WMSB', 0, 1.0 / 35.0, S_CMSATK_11, 0, 44) { }
+	S_CMSATK_11('WMST', 0, 1.0 / 35.0, S_CMSREADY1, 0, 36) { }
 }
 
 //==========================================================================
@@ -242,7 +242,7 @@ void GotMana(int InMana)
 {
 	if (InMana == HexenDefs::MANA_1 && IsWeaponManaUsable())
 	{
-		SetState(S_CMSREADY1);
+		Player.SetViewState(ps_weapon, S_CMSREADY1);
 	}
 }
 
