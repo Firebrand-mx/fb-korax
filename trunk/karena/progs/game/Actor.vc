@@ -135,7 +135,7 @@ int _Special1;	// Special info
 int _Special2;	// Special info
 float Special1f;
 float Special2f;
-classid SpecialCID;
+class<Actor> SpecialCID;
 
 int MissileDamage;	// For missiles
 
@@ -167,7 +167,7 @@ int la_damage;
 TVec shoot_linestart;
 TVec shoot_lineend;
 
-classid shootPuffType;
+class<Actor> shootPuffType;
 
 TVec LightOffset;
 int LightColour;
@@ -186,7 +186,7 @@ int deathmsgi[3];
 //
 //==========================================================================
 
-Actor Spawn(classid type, TVec position)
+Actor Spawn(class<Actor> type, TVec position)
 {
 	Actor A;
 
@@ -984,7 +984,7 @@ void Died(Actor source)
 	if (bCountKill)
 	{
 		Level.Game.level->currentkills++;
-		if (!Level.Game.deathmatch || Level.Game.deathmatch == HexenDefs::game_sweepteam)
+		if (Level.Game.deathmatch == HexenDefs::game_sweep || Level.Game.deathmatch == HexenDefs::game_sweepteam)
 		{
 			// [FB] Update total kills if needed
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -1009,6 +1009,11 @@ void Died(Actor source)
 		{
 			source.Player.KillCount++;
 			Player(source.Player).KillsCount++;
+
+			if (Level.Game.deathmatch == HexenDefs::game_sweepteam)
+			{
+				Player(source.Player).TeamKills++;
+			}
 
 			//[CW] update player's score
 			Player(source.Player).UpdateScore(HexenDefs::scoreevent_Kill);
@@ -1037,6 +1042,11 @@ void Died(Actor source)
 				Player.FragsStats[Player.GetPlayerNum()]--;
 				Player.Frags--;
 
+				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
+				{
+					Player(source.Player).TeamFrags--;
+				}
+
 				Player(Player).UpdateScore(HexenDefs::scoreevent_SelfFrag);
 
 				//[CW] update death row trophy
@@ -1048,6 +1058,12 @@ void Died(Actor source)
 
 				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
+
+				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
+				{
+					Player(source.Player).TeamFrags++;
+				}
+
 				Player(source.Player).GiveExperience(500 + (500 * (Player(Player).exp_level - 1) / 10));
 
 				if (MainGameInfo(Level.Game).GameMode)
@@ -1257,7 +1273,7 @@ void TouchWhirlwind(Actor Other)
 //
 //==========================================================================
 
-bool MorphPlayer(int pclass, classid moclass, bool timed, bool until_death)
+bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 {
 	Actor fog;
 	Actor beastMo;
@@ -1346,7 +1362,7 @@ bool MorphMonster()
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
 	monster = Spawn(Pig, Origin);
-	monster.SpecialCID = Class;
+	monster.SpecialCID = class<Actor>(Class);
 	monster._Special1 = ftoi(Player::MORPHTIME * 35.0) + P_Random();
 	monster.Translucency = Translucency;
 	monster.Enemy = Enemy;
@@ -2080,7 +2096,7 @@ void SpawnDirt(float radius)
 {
 	float angle;
 	TVec org;
-	classid dtype;
+	 class<Actor> dtype;
 	Actor dirt;
 
 	angle = 360.0 * Random();
@@ -3450,6 +3466,7 @@ void Tick(float deltaTime)
 	{
 		return;
 	}
+
 	// Cycle through states, calling action functions at transitions
 	if (!AdvanceState(deltaTime))
 	{
@@ -3788,7 +3805,7 @@ bool CheckMissileSpawn()
 //
 //==========================================================================
 
-Actor SpawnMissileAngle(classid type, float angle, float momz)
+Actor SpawnMissileAngle(class<Actor> type, float angle, float momz)
 {
 	TVec org;
 	Actor mo;
@@ -3844,7 +3861,7 @@ Actor SpawnMissileAngle(classid type, float angle, float momz)
 //
 //==========================================================================
 
-Actor SpawnMissileAngleSpeed(classid type, float angle,
+Actor SpawnMissileAngleSpeed(class<Actor> type, float angle,
 	float momz, float speed)
 {
 	TVec org;
@@ -4537,7 +4554,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 //
 //==========================================================================
 
-int LineAttack(TVec dir, float distance, int damage, classid PuffType)
+int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 {
 	TVec dst;
 
@@ -4567,7 +4584,7 @@ int LineAttack(TVec dir, float distance, int damage, classid PuffType)
 //
 //==========================================================================
 
-void SpawnPuff(TVec org, classid PuffType)
+void SpawnPuff(TVec org, class<Actor> PuffType)
 {
 	Actor puff;
 
