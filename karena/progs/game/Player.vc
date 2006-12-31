@@ -379,7 +379,7 @@ void SpawnClient()
 		}
 	}
 
-	dprint("Player::SpawnClient : aprez TeleportMove");
+	dprint("Player::SpawnClient : before TeleportMove");
 	// Destroy all things touching players
 	Actor(MO).TeleportMove(MO.Origin);
 	dprint("Player::SpawnClient : after TeleportMove");
@@ -603,7 +603,7 @@ void SetPlayerColour()
 	{
 		dprint("Player::SetPlayerColour : was 'teamselection_wait/reselect', now set to 'teamselection_done'");
 
-		if ( !(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour) )
+		if (!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
 		{
 			TeamSelection = HexenDefs::teamselection_done;
 			MO.Remove();
@@ -633,42 +633,39 @@ void SelectPlayerTeam(bool call_update)
 {
 	dprint("Player::SelectPlayerTeam : ");
 
-	if (bIsBot)
+/*	if (bIsBot)
 	{
 		TeamSelection = HexenDefs::teamselection_done;
 	}
 	else
-	{
-
-	int i1, i2;
-	SelectClientMsg(MSG_SV_CLIENT);
-	MSG_WriteByte(HexenDefs::svc_teamselect);
-	if (MainGameInfo(Level.Game).GameMode)
-		MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
-	else
-		MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
-	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
-	{
-		if (MainGameInfo(Level.Game).Teams[i1] == none)
-			break;
-	}
-	MSG_WriteByte(i1);
+	{*/
+		int i1, i2;
+		SelectClientMsg(MSG_SV_CLIENT);
+		MSG_WriteByte(HexenDefs::svc_teamselect);
+		if (MainGameInfo(Level.Game).GameMode)
+			MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
+		else
+			MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
+		for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
+		{
+			if (MainGameInfo(Level.Game).Teams[i1] == none)
+				break;
+		}
+		MSG_WriteByte(i1);
 	
-	
-	for (i2 = 0; i2 < i1; i2++)
-	{
-		MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
-	}
+		for (i2 = 0; i2 < i1; i2++)
+		{
+			MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
+		}
 
-	if (!call_update)
-		MSG_WriteByte(Colour);
+		if (!call_update)
+			MSG_WriteByte(Colour);
 
-	if (TeamSelection != HexenDefs::teamselection_reselect)
-		TeamSelection = HexenDefs::teamselection_wait;
-	dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
-	SetControllable(false);
-
-	}
+		if (TeamSelection != HexenDefs::teamselection_reselect)
+			TeamSelection = HexenDefs::teamselection_wait;
+		dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
+		SetControllable(false);
+//	}
 }
 
 //==========================================================================
@@ -724,7 +721,6 @@ bool CheckSpot(mthing_t * mthing)
 	float an;
 	Actor A;
 	int i;
-
 
 	if (!MO)
 	{
@@ -797,7 +793,7 @@ void SpawnPlayer(mthing_t * mthing)
 	dprint("Player::SpawnPlayer : deathmatch = %i", Level.Game.deathmatch);
 
 	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM &&
-								TeamSelection == HexenDefs::teamselection_none)
+		TeamSelection == HexenDefs::teamselection_none)
 	{
 		dprint("Player::SpawnPlayer : goto select team");
 		SelectPlayerTeam(false);
@@ -943,6 +939,9 @@ void SpawnPlayer(mthing_t * mthing)
 	// [CW] if there is advanced game mode initiated, notify it of player spawn
 	if (MainGameInfo(Level.Game).GameMode)
 		MainGameInfo(Level.Game).GameMode.NotifyPlayerSpawn(self);
+
+	// [FB] Destroy all things touching players
+	Actor(MO).TeleportMove(MO.Origin);
 }
 
 //==========================================================================
@@ -4369,7 +4368,7 @@ void UseArtiTeleportOther()
 //
 //==========================================================================
 
-Actor SpawnPlayerMissile(classid type)
+Actor SpawnPlayerMissile(class<Actor> type)
 {
 	return SpawnPlayerMissile2(type, true);
 }
@@ -4382,7 +4381,7 @@ Actor SpawnPlayerMissile(classid type)
 //
 //==========================================================================
 
-Actor SpawnPlayerMissile2(classid type, bool explode)
+Actor SpawnPlayerMissile2(class<Actor> type, bool explode)
 {
 	Actor MissileMobj;
 	TAVec angles;
@@ -4456,7 +4455,7 @@ Actor SpawnPlayerMissile2(classid type, bool explode)
 //
 //===========================================================================
 
-Actor SpawnPlayerMissileAngle(classid type, float angle)
+Actor SpawnPlayerMissileAngle(class<Actor> type, float angle)
 {
 	TAVec angles;
 	TVec vforward;
@@ -4500,7 +4499,7 @@ Actor SpawnPlayerMissileAngle(classid type, float angle)
 //
 //===========================================================================
 
-Actor SpawnPlayerMissileAngleXYZ(TVec org, classid type, float angle)
+Actor SpawnPlayerMissileAngleXYZ(TVec org, class<Actor> type, float angle)
 {
 	Actor th;
 	TAVec angles;
@@ -5360,9 +5359,6 @@ void UpdateScore(int event)
 
 	Score += mod;
 
-	if (mod > 0)
-		UpdateCompetition();
-
 	if (Level && Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM && Team)
 	{
 		Team.UpdateScore(event);
@@ -5370,6 +5366,9 @@ void UpdateScore(int event)
 		TeamFrags = Team.Frags;
 		TeamKills = Team.Kills;
 	}
+
+	if (mod > 0)
+		UpdateCompetition();
 
 	if (Level)	// in case score is somehow updated between levels
 		MainGameInfo(Level.Game).ScoreboardsUpdate(none);
@@ -5392,48 +5391,48 @@ void UpdateCompetition()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if(Team.Players[i] == self)
-		   break; 
+		   break;
 	}
 
-	// first see if previous players has lower score now
-	if (i != 0)
-	{
-		j = i-1;
-		while (j >= 0)
+		// first see if previous players has lower score now
+		if (i != 0)
 		{
-			pl2 = Team.Players[j];
-
-			if (pl2.Score < Score)
+			j = i-1;
+			while (j >= 0)
 			{
-				bPositionShifted = true;
-				Team.Players[j] = self;
-				Team.Players[i] = pl2;
-				i = j;
+				pl2 = Team.Players[j];
+
+				if (pl2.Score < Score)
+				{
+					bPositionShifted = true;
+					Team.Players[j] = self;
+					Team.Players[i] = pl2;
+					i = j;
+				}
+				else
+					break;
+				j--;
 			}
-			else
-				break;
-			j--;
 		}
-	}
-	// secondly (in other case) see if next players has higher score (in case score gone down)
-	if (!bPositionShifted && i != MAXPLAYERS - 1)
-	{
-		j = i+1;
-		while (j < MAXPLAYERS && Team.Players[j])
+		// secondly (in other case) see if next players has higher score (in case score gone down)
+		if (!bPositionShifted && i != MAXPLAYERS - 1)
 		{
-			pl2 = Team.Players[j];
+			j = i+1;
+			while (j < MAXPLAYERS && Team.Players[j])
+			{
+				pl2 = Team.Players[j];
 	
-			if (pl2.Score > Score)
-			{
-				Team.Players[j] = self;
-				Team.Players[i] = pl2;
-				i = j;
+				if (pl2.Score > Score)
+				{
+					Team.Players[j] = self;
+					Team.Players[i] = pl2;
+					i = j;
+				}
+				else
+					break;
+				j++;
 			}
-			else
-				break;
-			j++;
 		}
-	}
 }
 
 //==========================================================================

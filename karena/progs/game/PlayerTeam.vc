@@ -94,7 +94,7 @@ void EnlistPlayer(Player pl)
 
 			if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 			{
-			   bprint("%s joins %s team", pl.PlayerName, Game.ColourNames[Colour]);
+				bprint("%s joins %s team", pl.PlayerName, Game.ColourNames[Colour]);
 			}
 			else
 			{
@@ -244,47 +244,46 @@ void UpdateCompetition()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if(Game.Teams[i] == self)
-		   break; 
+			break;
 	}
 
-	// first see if previous players has lower score now
-	if (i != 0)
-	{
-		j = i-1;
-		while (j >= 0)
+		// first see if previous players has lower score now
+		if (i != 0)
 		{
-			plteam2 = Game.Teams[j];
-			if (plteam2.Score < Score)
+			j = i-1;
+			while (j >= 0)
 			{
-				
-				bPositionShifted = true;
-				Game.Teams[j] = self;
-				Game.Teams[i] = plteam2;
-				i = j;
+				plteam2 = Game.Teams[j];
+				if (plteam2.Score < Score)
+				{
+					bPositionShifted = true;
+					Game.Teams[j] = self;
+					Game.Teams[i] = plteam2;
+					i = j;
+				}
+				else
+					break;
+				j--;
 			}
-			else
-				break;
-			j--;
 		}
-	}
-	// secondly (in other case) see if next players has higher score (in case score gone down)
-	if (!bPositionShifted && i != HexenDefs::MAXPLAYERTEAMS - 1)
-	{
-		j = i+1;
-		while (j < HexenDefs::MAXPLAYERTEAMS && Game.Teams[j])
+		// secondly (in other case) see if next players has higher score (in case score gone down)
+		if (!bPositionShifted && i != HexenDefs::MAXPLAYERTEAMS - 1)
 		{
-			plteam2 = Game.Teams[j];
-			if (plteam2.Score > Score)
+			j = i+1;
+			while (j < HexenDefs::MAXPLAYERTEAMS && Game.Teams[j])
 			{
-				Game.Teams[j] = self;
-				Game.Teams[i] = plteam2;
-				i = j;
+				plteam2 = Game.Teams[j];
+				if (plteam2.Score > Score)
+				{
+					Game.Teams[j] = self;
+					Game.Teams[i] = plteam2;
+					i = j;
+				}
+				else
+					break;
+				j++;
 			}
-			else
-				break;
-			j++;
 		}
-	}
 }
 
 
