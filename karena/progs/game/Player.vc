@@ -633,39 +633,42 @@ void SelectPlayerTeam(bool call_update)
 {
 	dprint("Player::SelectPlayerTeam : ");
 
-/*	if (bIsBot)
+	if (bIsBot)
 	{
 		TeamSelection = HexenDefs::teamselection_done;
 	}
 	else
-	{*/
-		int i1, i2;
-		SelectClientMsg(MSG_SV_CLIENT);
-		MSG_WriteByte(HexenDefs::svc_teamselect);
-		if (MainGameInfo(Level.Game).GameMode)
-			MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
-		else
-			MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
-		for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
-		{
-			if (MainGameInfo(Level.Game).Teams[i1] == none)
-				break;
-		}
-		MSG_WriteByte(i1);
+	{
+
+	int i1, i2;
+	SelectClientMsg(MSG_SV_CLIENT);
+	MSG_WriteByte(HexenDefs::svc_teamselect);
+	if (MainGameInfo(Level.Game).GameMode)
+		MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
+	else
+		MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
+	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
+	{
+		if (MainGameInfo(Level.Game).Teams[i1] == none)
+			break;
+	}
+	MSG_WriteByte(i1);
 	
-		for (i2 = 0; i2 < i1; i2++)
-		{
-			MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
-		}
+	
+	for (i2 = 0; i2 < i1; i2++)
+	{
+		MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
+	}
 
-		if (!call_update)
-			MSG_WriteByte(Colour);
+	if (!call_update)
+		MSG_WriteByte(Colour);
 
-		if (TeamSelection != HexenDefs::teamselection_reselect)
-			TeamSelection = HexenDefs::teamselection_wait;
-		dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
-		SetControllable(false);
-//	}
+	if (TeamSelection != HexenDefs::teamselection_reselect)
+		TeamSelection = HexenDefs::teamselection_wait;
+	dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
+	SetControllable(false);
+
+	}
 }
 
 //==========================================================================
@@ -5444,6 +5447,25 @@ void UpdateCompetition()
 //	Usage:
 //	All of the message strings are members of MainGameInfo.
 //
+
+//	1) if both source & inflictor are null, it was pure enviroment:
+//	slime, lava and such. Use generic messages like "was in wrong place" etc,
+//	with 1 parameter: this player's name.
+//	2) if inflictor has some value and source is null, it should be some trap
+//	or similar thing; then use inflictor's DeathMessage index with 1 parameter as in p.1.
+//	3) if both inflictor and source has some values, but they are not
+//	equal, that means that either a pawn or player have shot current
+//	player with a missile; use inflictor's DeathMessage index with 2 parameters:
+//	current player name and either pawn name or player's PlayerName.
+//	4) if inflictor and source have equal values (not null), then it might
+//	be melee attack OR instant ranged attack (like gunshot) by pawn or player;
+//	use either pawn's DeathMessage index or	active player Weapon's DeathMessage index,
+//	with 2 parameters as in p.3.
+
+
+
+//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
+
 //	1) if both source & inflictor are null, it was pure enviroment:
 //	slime, lava and such. Use generic messages like "was in wrong place" etc,
 //	with 1 parameter: this player's name.
@@ -5457,24 +5479,39 @@ void UpdateCompetition()
 //	be melee attack by pawn or player; use either pawn deathmessage first index or
 //	player's PClass and ReadyWeapon combined as index, with 2 parameters as in p.3.
 //
+
+//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
+
 //==========================================================================
 
 void DisplayDeathMessage(Actor source, Actor inflictor)
 {
 	if(source)
 	{
-		//[CW] p.4: melee attack
+		//[CW] p.4: melee or instant ranged attack
 		if(source == inflictor)
 		{
 			if(source.bIsPlayer)
 			{
-				bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
+				if (Weapon(source.Player.ViewEnts[ps_weapon]).bInstantRanged)
+					bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(source.Player.ViewEnts[ps_weapon]).deathmsgi],
 						PlayerName, source.Player.PlayerName);
+				else
+					bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(source.Player.ViewEnts[ps_weapon]).deathmsgi],
+						PlayerName, source.Player.PlayerName);
+				//bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
+				//		PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
-				bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
+				if (Pawn(source).bInstantRanged)
+					bprint(MainGameInfo(Level.Game).DeathMessageRanged[source.deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				else
+					bprint(MainGameInfo(Level.Game).DeathMessageMelee[source.deathmsgi],
+						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				/*bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
+						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);*/
 			}
 		}
 		//[CW] p.3: missile attack
@@ -5488,13 +5525,17 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 						PlayerName);
 				}
 				else
-					bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
+					bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
 						PlayerName, source.Player.PlayerName);
+					//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
+					//	PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
-				bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
+				bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
+				//		PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
 		//[CW] suicide
@@ -5508,10 +5549,19 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
 		}
 	}
-	//[CW] p.2: fragged by enviromental thing or trap
+	//[CW] p.2: fragged by enviromental thing or trap, or telefragged
 	else if(inflictor)
 	{
-		bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
+		// telefrag
+		if (inflictor.bIsPlayer)
+			bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName, source.Player.PlayerName);
+		// telefrag
+		else if (inflictor.IsA('Pawn'))
+			bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
+												MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
+		else
+			bprint(MainGameInfo(Level.Game).DeathMessageMisc[inflictor.deathmsgi], PlayerName);
+		//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
