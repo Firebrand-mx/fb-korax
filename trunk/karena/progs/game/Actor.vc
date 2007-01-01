@@ -174,11 +174,19 @@ int LightColour;
 float LightRadius;
 int ExplodeEffect;
 
-//[CW] Death messages indices; first is used for objects, spawned by player weapon and
+// [CW] Death message index; used by those who can damage directly
+//		(anything from enviroment to pawns with melee attacks)
+//		Messages themselves are members of MainGameInfo.
+int deathmsgi;
+
+
+//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
+/*//[CW] Death messages indices; first is used for objects, spawned by player weapon and
 // for pawns' melee attacks, second - for objects, spawned by non-player pawns,
 // third is for enviromental objects, traps etc.
 // Messages themselves are members of MainGameInfo.
-int deathmsgi[3];
+int deathmsgi[3];*/
+//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
 
 //==========================================================================
 //
@@ -1010,11 +1018,6 @@ void Died(Actor source)
 			source.Player.KillCount++;
 			Player(source.Player).KillsCount++;
 
-			if (Level.Game.deathmatch == HexenDefs::game_sweepteam)
-			{
-				Player(source.Player).TeamKills++;
-			}
-
 			//[CW] update player's score
 			Player(source.Player).UpdateScore(HexenDefs::scoreevent_Kill);
 
@@ -1042,11 +1045,6 @@ void Died(Actor source)
 				Player.FragsStats[Player.GetPlayerNum()]--;
 				Player.Frags--;
 
-				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
-				{
-					Player(source.Player).TeamFrags--;
-				}
-
 				Player(Player).UpdateScore(HexenDefs::scoreevent_SelfFrag);
 
 				//[CW] update death row trophy
@@ -1058,12 +1056,6 @@ void Died(Actor source)
 
 				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
-
-				if (Level.Game.deathmatch == HexenDefs::game_dmteam)
-				{
-					Player(source.Player).TeamFrags++;
-				}
-
 				Player(source.Player).GiveExperience(500 + (500 * (Player(Player).exp_level - 1) / 10));
 
 				if (MainGameInfo(Level.Game).GameMode)
@@ -3633,7 +3625,8 @@ bool PIT_StompThing(Entity Other)
 		return false;
 	}
 
-	Actor(Other).Damage(self, self, 10000);
+	//Actor(Other).Damage(self, self, 10000);
+	Actor(Other).Damage(self, none, 10000);		// [CW] changed to allow telfrag deathmsg usage
 
 	return true;
 }

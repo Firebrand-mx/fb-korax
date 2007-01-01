@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -68,23 +68,28 @@ void A_PoisonBreathFire(bool use_mana, int Children)
 	org.z -= pmo.FloorClip;
 	
 	Actor mo = HexenLevelInfo(Player.Level).Spawn(PoisonCloud, org);
-	mo.Instigator = pmo;
-	mo.Angles = angles;
-	AngleVector(&angles, &vforward);
 
-	mo.Speed = 320.0;//90.0;
-	mo.bMissile = true;
-	mo.bRip = true;
-	vforward.z = 0.0;
+	if (mo)
+	{
+		mo.Instigator = pmo;
+		mo.Angles = angles;
+		AngleVector(&angles, &vforward);
 
-	mo.Velocity = vforward * mo.Speed;
-	mo.Origin += mo.Velocity;
-	mo.TryMove(mo.Origin);
+		mo.Speed = 320.0;//90.0;
+		mo.bMissile = true;
+		mo.bRip = true;
+		vforward.z = 0.0;
 
-	PoisonCloud pc = PoisonCloud(mo);
-	pc.InitMeCloud(pmo);
-	pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
-	pc.LifeCount = 1;
+		mo.Velocity = vforward * mo.Speed;
+		mo.Origin += mo.Velocity;
+		mo.TryMove(mo.Origin);
+
+		PoisonCloud pc = PoisonCloud(mo);
+		pc.InitMeCloud(pmo);
+		pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
+		pc.LifeCount = 1;
+		pc.deathmsgi = deathmsgi;
+	}
 
 	if (use_mana)	
 		UseWeaponMana();
@@ -138,4 +143,6 @@ defaultproperties
 	dex_mod = false;
 	str_mod = false;
 	PickUpMessage = "POISON BREATH";
+
+	deathmsgi = 8;
 }
