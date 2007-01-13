@@ -43,43 +43,43 @@ final void A_StaffAttackPL1()
 	TAVec angles;
 	int damage;
 	TVec vforward;
-	Actor Owner = Actor(Player.MO);
+	Actor pmo = Actor(Owner);
 
 	damage = 12; //5 + (P_Random() & 15);
 	if (str_mod)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
-	angles = Owner.Angles;
+	angles = pmo.Angles;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	Owner.AimLineAttack(&angles, 1.5 * MELEERANGE);
-	if (Owner.linetarget)
+	pmo.AimLineAttack(&angles, 1.5 * MELEERANGE);
+	if (pmo.linetarget)
 	{
 		AngleVector(&angles, &vforward);
-		Owner.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
-		if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
+		if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 		{
-			Owner.linetarget.Thrust(angles.yaw, 2.0);
+			pmo.linetarget.Thrust(angles.yaw, 2.0);
 		}
-		Player(Player).AdjustPlayerAngle();
+		Player(Owner.Player).AdjustPlayerAngle();
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		angles = Player.MO.Angles;
-		Actor(Player.MO).AimLineAttack(&angles, MELEERANGE);
+		angles = Owner.Angles;
+		Actor(Owner).AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (Actor(Player.MO).LineAttack(vforward, MELEERANGE, damage, StaffPuff))
+		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, StaffPuff))
 		{
-			Player.MO.PlaySound('StaffHit', CHAN_WEAPON);
+			Owner.PlaySound('StaffHit', CHAN_WEAPON);
 		}
 	}
 }

@@ -50,14 +50,14 @@ final void A_HHolyAttack()
 	Actor mo;
 	Pawn pawn;
 
-	Player(Player).WeaponCShift = 0;
+	Player(Owner.Player).WeaponCShift = 0;
 
 	UseWeaponMana();
-	Player(Player).DamageFlash = 0.0;
-	Player(Player).BonusFlash = 0.0;
+	Player(Owner.Player).DamageFlash = 0.0;
+	Player(Owner.Player).BonusFlash = 0.0;
 
 
-	mo = Actor(Player.MO);
+	mo = Actor(Owner);
 
 	damage = 5;
 	range = 512.0;
@@ -65,14 +65,14 @@ final void A_HHolyAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).intelligence / 10;
+			damage = damage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 
-		range += 128.0 * itof(Player(Player).intelligence / 10);
+		range += 128.0 * itof(Player(Owner.Player).intelligence / 10);
 	}
 	
 
@@ -95,7 +95,7 @@ final void A_HHolyAttack()
 
 		range -= 64.0;
 		flashpoint = mo.Origin + dir * range;
-		MainGameInfo(Player.Level.Game).SpawnDynamicLight(0x00ff0000,
+		MainGameInfo(Level.Game).SpawnDynamicLight(0x00ff0000,
 												flashpoint,
 												192,
 												50,
@@ -113,8 +113,8 @@ final void A_HHolyAttack()
 
 	if (flashrate == 0)
 	{
-		Player(Player).WeaponCShift = CSHIFT(255, 0, 0, 66);
-		Player(Player).MO.PlaySound('SpiritActive', CHAN_WEAPON);
+		Player(Owner.Player).WeaponCShift = CSHIFT(255, 0, 0, 66);
+		Owner.PlaySound('SpiritActive', CHAN_WEAPON);
 		flashrate = 30;
 	}
 	else
@@ -133,7 +133,7 @@ __states__
 	S_HHOLYATK_4('CHLY', 3 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_5, 0, 43) = none
 	S_HHOLYATK_5('CHLY', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_6, 0, 45) { flashrate = 0; }
 	S_HHOLYATK_6('CHLY', 5 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_7, 0, 48) = A_HHolyAttack
-	S_HHOLYATK_7('CHLY', 5 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_8, 0, 48) { Player(Player).WeaponCShift = 0; A_ReFire(); }
+	S_HHOLYATK_7('CHLY', 5 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_8, 0, 48) { Player(Owner.Player).WeaponCShift = 0; A_ReFire(); }
 	S_HHOLYATK_8('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_9, 0, 40) = none
 	S_HHOLYATK_9 ('CHLY', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_HHOLYREADY, 0, 36) = none
 }

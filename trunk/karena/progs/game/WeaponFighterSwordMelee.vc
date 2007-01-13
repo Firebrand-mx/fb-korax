@@ -42,7 +42,7 @@ float SwordRange;
 
 final void A_FSwordMeleeAttack()
 {
-	Actor Owner = Actor(Player.MO);
+	Actor pmo = Actor(Owner);
 	float power;
 	int damage;
 	int i;
@@ -54,49 +54,49 @@ final void A_FSwordMeleeAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 	power = 0.0;
 	for (i = 0; i < 16; i++)
 	{
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		Owner.AimLineAttack(&angles, SwordRange);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, SwordRange);
+		if (pmo.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage, AxePuff))
+			if (pmo.LineAttack(vforward, SwordRange, damage, AxePuff))
 			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
-			Player(Player).AdjustPlayerAngle();
+			Player(Owner.Player).AdjustPlayerAngle();
 			UseWeaponMana();
 			break;
 		}
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		Owner.AimLineAttack(&angles, SwordRange);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, SwordRange);
+		if (pmo.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, SwordRange, damage, AxePuff))
+			if (pmo.LineAttack(vforward, SwordRange, damage, AxePuff))
 			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
-			Player(Player).AdjustPlayerAngle();
+			Player(Owner.Player).AdjustPlayerAngle();
 			UseWeaponMana();
 			break;
 		}
@@ -104,12 +104,12 @@ final void A_FSwordMeleeAttack()
 	if (i == 16)
 	{
 		// didn't find any creatures, so try to strike any walls
-		angles = Owner.Angles;
-		Owner.AimLineAttack(&angles, MELEERANGE);
+		angles = pmo.Angles;
+		pmo.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, MELEERANGE, damage, AxePuff))
+		if (pmo.LineAttack(vforward, MELEERANGE, damage, AxePuff))
 		{
-			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 }

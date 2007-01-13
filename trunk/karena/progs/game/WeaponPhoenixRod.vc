@@ -64,21 +64,21 @@ final void A_FirePhoenixPL1()
 	TVec vforward;
 
 	UseWeaponMana();
-	Player.MO.PlaySound('PhoenixFire', CHAN_WEAPON);
-	A = Player(Player).SpawnPlayerMissile(PhoenixFX1);
+	Owner.PlaySound('PhoenixFire', CHAN_WEAPON);
+	A = Player(Owner.Player).SpawnPlayerMissile(PhoenixFX1);
 	if (A && int_mod)
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	AngleVector(&Player.MO.Angles, &vforward);
-	Player.MO.Velocity -= vforward * 140.0;
+	AngleVector(&Owner.Angles, &vforward);
+	Owner.Velocity -= vforward * 140.0;
 }
 
 //===========================================================================
@@ -108,34 +108,34 @@ final void A_FirePhoenixPL2()
 	if (--FlameCount == 0)
 	{
 		// Out of flame
-		Player.SetViewState(ps_weapon, Attack2ShutdownState);
-		Player(Player).Refire = 0;
+		Owner.Player.SetViewState(ps_weapon, Attack2ShutdownState);
+		Player(Owner.Player).Refire = 0;
 		return;
 	}
-	org.x = Player.MO.Origin.x + (Random() - Random()) * 2.0;
-	org.y = Player.MO.Origin.y + (Random() - Random()) * 2.0;
-	org.z = Player.MO.Origin.z + 26.0 - sin(Player.MO.Angles.pitch);
-	org.z -= Player.MO.FloorClip;
-	A = HexenLevelInfo(Player.Level).Spawn(PhoenixFX2, org);
+	org.x = Owner.Origin.x + (Random() - Random()) * 2.0;
+	org.y = Owner.Origin.y + (Random() - Random()) * 2.0;
+	org.z = Owner.Origin.z + 26.0 - sin(Owner.Angles.pitch);
+	org.z -= Owner.FloorClip;
+	A = HexenLevelInfo(Level).Spawn(PhoenixFX2, org);
 	if (int_mod)
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	A.Instigator = Actor(Player.MO);
-	A.Angles.yaw = Player.MO.Angles.yaw;
-	A.Angles.pitch = Player.MO.Angles.pitch;
+	A.Instigator = Actor(Owner);
+	A.Angles.yaw = Owner.Angles.yaw;
+	A.Angles.pitch = Owner.Angles.pitch;
 	AngleVector(&A.Angles, &dir);
-	A.Velocity = Player.MO.Velocity + A.Speed * dir;
-	if (!Player(Player).Refire || !(Player.Level.Game.level->tictime % 38))
+	A.Velocity = Owner.Velocity + A.Speed * dir;
+	if (!Player(Owner.Player).Refire || !(Level.Game.level->tictime % 38))
 	{
-		Player.MO.PlaySound('PhoenixHit2', CHAN_WEAPON);
+		Owner.PlaySound('PhoenixHit2', CHAN_WEAPON);
 	}
 	A.CheckMissileSpawn();
 }

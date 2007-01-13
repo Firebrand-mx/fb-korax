@@ -48,83 +48,83 @@ final void A_GauntletAttack()
 	TAVec angles;
 	TVec dir;
 
-	Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
-	Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
-	angles = Player.MO.Angles;
+	Owner.Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
+	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
+	angles = Owner.Angles;
 	damage = 17; //10 + (P_Random() & 15);
 	if (str_mod)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 	dist = MELEERANGE + 0.00001;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	Actor(Player.MO).AimLineAttack(&angles, dist);
+	Actor(Owner).AimLineAttack(&angles, dist);
 	AngleVector(&angles, &dir);
-	Actor(Player.MO).LineAttack(dir, dist, damage, GauntletPuff1);
-	if (!Actor(Player.MO).linetarget)
+	Actor(Owner).LineAttack(dir, dist, damage, GauntletPuff1);
+	if (!Actor(Owner).linetarget)
 	{
 		if (P_Random() > 64)
 		{
-			Player.ExtraLight = !Player.ExtraLight;
+			Owner.Player.ExtraLight = !Owner.Player.ExtraLight;
 		}
 		// didn't find any creatures, so try to strike any walls
-		angles = Player.MO.Angles;
-		Actor(Player.MO).AimLineAttack(&angles, MELEERANGE);
+		angles = Owner.Angles;
+		Actor(Owner).AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &dir);
-		Actor(Player.MO).LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
-		Player.MO.PlaySound('GauntletFull', CHAN_WEAPON);
+		Actor(Owner).LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
+		Owner.PlaySound('GauntletFull', CHAN_WEAPON);
 		return;
 	}
 	randVal = P_Random();
 	if (randVal < 64)
 	{
-		Player.ExtraLight = 0;
+		Owner.Player.ExtraLight = 0;
 	}
 	else if (randVal < 160)
 	{
-		Player.ExtraLight = 1;
+		Owner.Player.ExtraLight = 1;
 	}
 	else
 	{
-		Player.ExtraLight = 2;
+		Owner.Player.ExtraLight = 2;
 	}
-	if (!Player(Player).Refire)
-		Player.MO.PlaySound('GauntletHit', CHAN_WEAPON);
+	if (!Player(Owner.Player).Refire)
+		Owner.PlaySound('GauntletHit', CHAN_WEAPON);
 	else
-		Player.MO.PlaySound('GauntletUse', CHAN_WEAPON);
+		Owner.PlaySound('GauntletUse', CHAN_WEAPON);
 	// turn to face target
-	angle = atan2(Actor(Player.MO).linetarget.Origin.y - Player.MO.Origin.y,
-		Actor(Player.MO).linetarget.Origin.x - Player.MO.Origin.x);
-	if (AngleMod360(angle - Player.MO.Angles.yaw) > 180.0)
+	angle = atan2(Actor(Owner).linetarget.Origin.y - Owner.Origin.y,
+		Actor(Owner).linetarget.Origin.x - Owner.Origin.x);
+	if (AngleMod360(angle - Owner.Angles.yaw) > 180.0)
 	{
-		if (AngleMod360(angle - Player.MO.Angles.yaw) < 360.0 - 90.0 / 20.0)
-			Player.MO.Angles.yaw = AngleMod360(angle + 90.0 / 21.0);
+		if (AngleMod360(angle - Owner.Angles.yaw) < 360.0 - 90.0 / 20.0)
+			Owner.Angles.yaw = AngleMod360(angle + 90.0 / 21.0);
 		else
-			Player.MO.Angles.yaw = AngleMod360(Player.MO.Angles.yaw - 90.0 / 20.0);
+			Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw - 90.0 / 20.0);
 	}
 	else
 	{
-		if (AngleMod360(angle - Player.MO.Angles.yaw) > 90.0 / 20.0)
-			Player.MO.Angles.yaw = AngleMod360(angle - 90.0 / 21.0);
+		if (AngleMod360(angle - Owner.Angles.yaw) > 90.0 / 20.0)
+			Owner.Angles.yaw = AngleMod360(angle - 90.0 / 21.0);
 		else
-			Player.MO.Angles.yaw = AngleMod360(Player.MO.Angles.yaw + 90.0 / 20.0);
+			Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw + 90.0 / 20.0);
 	}
-	Actor(Player.MO).bJustAttacked = true;
+	Actor(Owner).bJustAttacked = true;
 }
 
 __states__
 {
 	S_GAUNTLETREADY('CGAU', 0, 1.0 / 35.0, S_GAUNTLETREADY) = A_WeaponReady
 	S_GAUNTLETDOWN('CGAU', 0, 1.0 / 35.0, S_GAUNTLETDOWN) = A_Lower
-	S_GAUNTLETUP('CGAU', 0, 1.0 / 35.0, S_GAUNTLETUP) { Player.MO.PlaySound('GauntletActive', CHAN_WEAPON);A_Raise(); }
+	S_GAUNTLETUP('CGAU', 0, 1.0 / 35.0, S_GAUNTLETUP) { Owner.PlaySound('GauntletActive', CHAN_WEAPON);A_Raise(); }
 	S_GAUNTLETATK1_1('CGAU', 1, 4.0 / 35.0, S_GAUNTLETATK1_2) = none
 	S_GAUNTLETATK1_2('CGAU', 2, 4.0 / 35.0, S_GAUNTLETATK1_3) = none
 	S_GAUNTLETATK1_3('CGAU', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_GAUNTLETATK1_4) = A_GauntletAttack

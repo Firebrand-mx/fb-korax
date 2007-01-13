@@ -43,7 +43,7 @@ final void A_FireSkullRodPL1()
 	Actor A;
 
 	UseWeaponMana();
-	A = Player(Player).SpawnPlayerMissile(HornRodMissile1);
+	A = Player(Owner.Player).SpawnPlayerMissile(HornRodMissile1);
 	// Randomize the first frame
 	if (A && P_Random() > 128)
 	{
@@ -53,14 +53,14 @@ final void A_FireSkullRodPL1()
 	{
 		if(!active_damage)
 		{
-			A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
+			A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	Player.MO.PlaySound('SkullRodFire', CHAN_WEAPON);
+	Owner.PlaySound('SkullRodFire', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -77,7 +77,7 @@ final void A_FireSkullRodPL2()
 {
 	Actor MissileMobj;
 	UseWeaponMana();
-	MissileMobj = Player(Player).SpawnPlayerMissile2(HornRodMissile2, false);
+	MissileMobj = Player(Owner.Player).SpawnPlayerMissile2(HornRodMissile2, false);
 	// Use MissileMobj instead of the return value from
 	// SpawnPlayerMissile because we need to give info to the mobj
 	// even if it exploded immediately.
@@ -97,16 +97,16 @@ final void A_FireSkullRodPL2()
 		{
 			if(!active_damage)
 			{
-				MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player(Player).intelligence / 10;
+				MissileMobj.MissileDamage = MissileMobj.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		if (Actor(Player.MO).linetarget)
+		if (Actor(Owner).linetarget)
 		{
-			MissileMobj.Enemy = Actor(Player.MO).linetarget;
+			MissileMobj.Enemy = Actor(Owner).linetarget;
 		}
 		MissileMobj.PlaySound('SkullRodFire2', CHAN_WEAPON);
 		if (!MissileMobj.TryMove(MissileMobj.Origin))

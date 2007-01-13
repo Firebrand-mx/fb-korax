@@ -43,7 +43,7 @@ final void A_HStormReady()
 	A_WeaponReady();
 	if (P_Random() < 160)
 	{
-		Player.MO.PlaySound('MageLightningReady', CHAN_WEAPON);
+		Owner.PlaySound('MageLightningReady', CHAN_WEAPON);
 	}
 }
 
@@ -73,9 +73,9 @@ final void A_HStormAttack(int attack)
 
 		for (ang = -30; ang < 60; ang += 30)
 		{
-			fang = AngleMod360(Player.MO.Angles.yaw + itof(ang));
-			fmo = LightningFloor(Player(Player).SpawnPlayerMissileAngle(LightningFloor, fang));
-			cmo = LightningCeiling(Player(Player).SpawnPlayerMissileAngle(LightningCeiling, fang));
+			fang = AngleMod360(Owner.Angles.yaw + itof(ang));
+			fmo = LightningFloor(Player(Owner.Player).SpawnPlayerMissileAngle(LightningFloor, fang));
+			cmo = LightningCeiling(Player(Owner.Player).SpawnPlayerMissileAngle(LightningCeiling, fang));
 			if (fmo)
 			{
 				fmo.deathmsgi = 39;
@@ -109,8 +109,8 @@ final void A_HStormAttack(int attack)
 
 		for (; ang < ((attack == 1) ? 90 : 60) ; ang += (attack == 1) ? 10 : 15)
 		{
-			fang = AngleMod360(Player.MO.Angles.yaw + itof(ang));
-			ls = LightningSpark(Player(Player).SpawnPlayerMissileAngle(LightningSpark, fang));
+			fang = AngleMod360(Owner.Angles.yaw + itof(ang));
+			ls = LightningSpark(Player(Owner.Player).SpawnPlayerMissileAngle(LightningSpark, fang));
 			if (ls)
 			{
 				ls.Health = 4 + P_Random() % 8;
@@ -118,18 +118,18 @@ final void A_HStormAttack(int attack)
 				{
 					if(!active_damage)
 					{
-						ls.MissileDamage = ls.MissileDamage * Player(Player).intelligence / 10;
+						ls.MissileDamage = ls.MissileDamage * Player(Owner.Player).intelligence / 10;
 					}
 					else // [FB] PI Damage
 					{
-						ls.MissileDamage = (ls.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+						ls.MissileDamage = (ls.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 					}
 				}
 			}
 		}
 	}
 
-	Player.MO.PlaySound('MageLightningFire', CHAN_WEAPON);
+	Owner.PlaySound('MageLightningFire', CHAN_WEAPON);
 	UseWeaponMana();
 }
 

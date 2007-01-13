@@ -50,24 +50,24 @@ final void A_FireGoldWandPL1()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
-	angles = Player.MO.Angles;
-	Actor(Player.MO).AimLineAttack(&angles, MISSILERANGE);
+	angles = Owner.Angles;
+	Actor(Owner).AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
-	if (Player(Player).Refire)
+	if (Player(Owner.Player).Refire)
 	{
 		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
 	}
-	Actor(Player.MO).LineAttack(dir, MISSILERANGE, damage, GoldWandPuff1);
+	Actor(Owner).LineAttack(dir, MISSILERANGE, damage, GoldWandPuff1);
 
-	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
+	Owner.PlaySound('GoldWandFire', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -86,30 +86,30 @@ final void A_FireGoldWandPL2()
 	Actor mo;
 
 	UseWeaponMana();
-	angles = Player.MO.Angles;
-	Actor(Player.MO).AimLineAttack(&angles, MISSILERANGE);
+	angles = Owner.Angles;
+	Actor(Owner).AimLineAttack(&angles, MISSILERANGE);
 	AngleVector(&angles, &dir);
 //	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
 //	VectorAngles(&dir, &angles);
-	mo = Player(Player).SpawnPlayerMissileAngle(GoldWandMissile2,
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(GoldWandMissile2,
 		AngleMod360(angles.yaw - (45.0 / 8.0))/*, angles.pitch*/);
 	if (mo && int_mod)
 	{
 		if(!active_damage)
 		{
-			mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
+			mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 
 	}
-	mo = Player(Player).SpawnPlayerMissileAngle(GoldWandMissile2,
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(GoldWandMissile2,
 		AngleMod360(angles.yaw + (45.0 / 8.0))/*, angles.pitch*/);
 	if (mo && int_mod)
 	{
-		mo.MissileDamage = mo.MissileDamage *Player(Player).intelligence/10;
+		mo.MissileDamage = mo.MissileDamage *Player(Owner.Player).intelligence/10;
 	}
 	VectorRotateAroundZ(&dir, -45.0 / 8.0);
 	for (i = 0; i < 5; i++)
@@ -119,17 +119,17 @@ final void A_FireGoldWandPL2()
 		{
 			if(!active_damage)
 			{
-				damage = damage * Player(Player).strength / 10;
+				damage = damage * Player(Owner.Player).strength / 10;
 			}
 			else // [FB] PI Damage
 			{
-				damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+				damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 			}
 		}
-		Actor(Player.MO).LineAttack(dir, MISSILERANGE, damage, GoldWandPuff2);
+		Actor(Owner).LineAttack(dir, MISSILERANGE, damage, GoldWandPuff2);
 		VectorRotateAroundZ(&dir, (45.0 / 8.0) / 2.0);
 	}
-	Player.MO.PlaySound('GoldWandFire', CHAN_WEAPON);
+	Owner.PlaySound('GoldWandFire', CHAN_WEAPON);
 }
 
 __states__

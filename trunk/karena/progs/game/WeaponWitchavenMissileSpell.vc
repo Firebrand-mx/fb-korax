@@ -42,21 +42,21 @@ void WMissileSpawn(float angle)
 {
 	Actor mo;
 
-	mo = Player(Player).SpawnPlayerMissileAngle(MagicMissile, angle);
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(MagicMissile, angle);
 
 	if (mo)
 	{
-		mo.Instigator = Actor(Player.MO);
+		mo.Instigator = Actor(Owner);
 		mo.Enemy = Actor(mo.RoughMonsterSearch(2));
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}
@@ -73,9 +73,9 @@ final void A_WMMissilesAttack()
 	float angle;
 
 	UseWeaponMana();
-	angle = Player.MO.Angles.yaw;
+	angle = Owner.Angles.yaw;
 
-	if (Player(Player).exp_level >= 1 && Player(Player).exp_level < 2)
+	if (Player(Owner.Player).exp_level >= 1 && Player(Owner.Player).exp_level < 2)
 	{
 		WMissileSpawn(angle - 2.5);
 		WMissileSpawn(angle - 5.0);
@@ -83,7 +83,7 @@ final void A_WMMissilesAttack()
 		WMissileSpawn(angle + 5.0);
 
 	}
-	if (Player(Player).exp_level >= 2 && Player(Player).exp_level < 4)
+	if (Player(Owner.Player).exp_level >= 2 && Player(Owner.Player).exp_level < 4)
 	{
 		WMissileSpawn(angle - 5.0);
 		WMissileSpawn(angle - 2.5);
@@ -91,7 +91,7 @@ final void A_WMMissilesAttack()
 		WMissileSpawn(angle + 2.5);
 		WMissileSpawn(angle + 5.0);
 	}
-	if (Player(Player).exp_level >= 4 && Player(Player).exp_level < 5)
+	if (Player(Owner.Player).exp_level >= 4 && Player(Owner.Player).exp_level < 5)
 	{
 		WMissileSpawn(angle - 7.5);
 		WMissileSpawn(angle - 5.0);
@@ -101,7 +101,7 @@ final void A_WMMissilesAttack()
 		WMissileSpawn(angle + 5.0);
 		WMissileSpawn(angle + 7.5);
 	}
-	if (Player(Player).exp_level >= 5)
+	if (Player(Owner.Player).exp_level >= 5)
 	{
 		WMissileSpawn(angle - 10.0);
 		WMissileSpawn(angle - 7.5);
@@ -114,7 +114,7 @@ final void A_WMMissilesAttack()
 		WMissileSpawn(angle + 10.0);
 	}	
 
-	Player.MO.PlaySound('MageStaffFire', CHAN_WEAPON);
+	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
 }
 
 __states__

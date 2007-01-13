@@ -40,7 +40,7 @@ class WeaponDarkness : WeaponFighterHammer;
 
 void A_FHammerAttack()
 {
-	Actor Owner = Actor(Player.MO);
+	Actor pmo = Actor(Owner);
 	int damage;
 	float power;
 	int i;
@@ -54,47 +54,47 @@ void A_FHammerAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 	power = 10.0;
 	for (i = 0; i < 16; i++)
 	{
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
-		Owner.AimLineAttack(&angles, HammerRange);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, HammerRange);
+		if (pmo.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
+			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			Player(Player).AdjustPlayerAngle();
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			Player(Owner.Player).AdjustPlayerAngle();
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
-		Owner.AimLineAttack(&angles, HammerRange);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, HammerRange);
+		if (pmo.linetarget)
 		{
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
+			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
-			Player(Player).AdjustPlayerAngle();
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			Player(Owner.Player).AdjustPlayerAngle();
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
 			break;
 		}
@@ -102,12 +102,12 @@ void A_FHammerAttack()
 	if (i == 16)
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
-		angles = Owner.Angles;
-		Owner.AimLineAttack(&angles, HammerRange);
+		angles = pmo.Angles;
+		pmo.AimLineAttack(&angles, HammerRange);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
-			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
@@ -142,7 +142,7 @@ void A_FHammerThrow()
 	TVec org;
 	PlayerPawn pmo;
 
-	pmo = PlayerPawn(Player.MO);
+	pmo = PlayerPawn(Owner);
 
 	angles = pmo.Angles;
 	pmo.AimLineAttack(&angles, 16.0 * 64.0);
@@ -164,7 +164,7 @@ void A_FHammerThrow()
 	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
 	org.z -= pmo.FloorClip;
 	
-	Actor mo = HexenLevelInfo(Player.Level).Spawn(DarknessMissile, org);
+	Actor mo = HexenLevelInfo(Level).Spawn(DarknessMissile, org);
 	mo.Instigator = pmo;
 	mo.Angles = angles;
 	AngleVector(&angles, &vforward);

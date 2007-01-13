@@ -295,8 +295,6 @@ bool bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 
 void PutClientIntoServer()
 {
-	ViewEnt = Weapon(SpawnObject(Weapon));
-	ViewEnt.Player = self;
 	if (bIsBot)
 	{
 		Bot = BotPlayer(SpawnObject(BotPlayer));
@@ -772,10 +770,12 @@ void SpawnPlayer(mthing_t * mthing)
 	int i;
 	float x, y, z;
 	PlayerPawn pp;
+	bool ResetInventory = false;
 
 	if (PlayerState == PST_REBORN)
 	{
 		PlayerReborn();
+		ResetInventory = true;
 	}
 
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
@@ -870,6 +870,15 @@ void SpawnPlayer(mthing_t * mthing)
 	// [FB] Wear out any power we had
 	for (i = 0; i < NUMPOWERS; i++)
 		Powers[i] = 0.0;
+
+	if (ResetInventory)
+	{
+		SetWeapon(HexenDefs::WP_SECOND);
+	}
+	else
+	{
+		ViewEnt.Owner = MO;
+	}
 
 	SetupPsprites();
 	if (Level.Game.deathmatch)
@@ -991,7 +1000,6 @@ void PlayerReborn()
 	Mana[HexenDefs::MANA_2] = 25;
 	Mana[HexenDefs::MANA_3] = 25;
 
-	SetWeapon(HexenDefs::WP_SECOND);
 	LocalQuakeHappening = 0;
 
 	Scoreboard(false); // [CW]
@@ -4586,7 +4594,7 @@ void SetWeapon(int NewWeapon)
 	}
 	ViewEnt = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
 		NewWeapon * HexenDefs::NUMCLASSES + PClass]));
-	ViewEnt.Player = self;
+	ViewEnt.Owner = MO;
 	PSpriteSY = Weapon(ViewEnt).PSpriteSY;
 }
 
@@ -4846,7 +4854,7 @@ Weapon GetWea(int weapon)
 
 	w = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
 		weapon * HexenDefs::NUMCLASSES + PClass]));
-	w.Player = self;
+	w.Owner = MO;
 	return w;
 }
 
