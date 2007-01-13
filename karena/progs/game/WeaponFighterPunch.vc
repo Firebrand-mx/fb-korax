@@ -43,7 +43,7 @@ int PunchCount;
 
 final void A_FPunchAttack()
 {
-	Actor Owner = Actor(Player.MO);
+	Actor pmo = Actor(Owner);
 	int damage;
 	float power;
 	int i;
@@ -56,21 +56,21 @@ final void A_FPunchAttack()
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 	power = 2.0;
 	PuffType = PunchPuff;
 	for (i = 0; i < 16; i++)
 	{
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		Owner.AimLineAttack(&angles, 2.0 * MELEERANGE);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, 2.0 * MELEERANGE);
+		if (pmo.linetarget)
 		{
 			PunchCount++;
 			if (PunchCount == 3)
@@ -80,28 +80,28 @@ final void A_FPunchAttack()
 				PuffType = HammerPuff;
 			}
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, 2.0 * MELEERANGE, damage, PuffType))
+			if (pmo.LineAttack(vforward, 2.0 * MELEERANGE, damage, PuffType))
 			{
 				if (PuffType == HammerPuff)
 				{
-					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+					pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 				}
 				else
 				{
-					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+					pmo.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 				}
 			}
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
-			Player(Player).AdjustPlayerAngle();
+			Player(Owner.Player).AdjustPlayerAngle();
 			break;
 		}
-		angles = Owner.Angles;
+		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		Owner.AimLineAttack(&angles, 2.0 * MELEERANGE);
-		if (Owner.linetarget)
+		pmo.AimLineAttack(&angles, 2.0 * MELEERANGE);
+		if (pmo.linetarget)
 		{
 			PunchCount++;
 			if (PunchCount == 3)
@@ -111,22 +111,22 @@ final void A_FPunchAttack()
 				PuffType = HammerPuff;
 			}
 			AngleVector(&angles, &vforward);
-			if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
+			if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
 			{
 				if (PuffType == HammerPuff)
 				{
-					Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+					pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 				}
 				else
 				{
-					Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+					pmo.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 				}
 			}
-			if (Owner.linetarget.bCountKill || Owner.linetarget.bIsPlayer)
+			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 			{
-				Owner.linetarget.Thrust(angles.yaw, power);
+				pmo.linetarget.Thrust(angles.yaw, power);
 			}
-			Player(Player).AdjustPlayerAngle();
+			Player(Owner.Player).AdjustPlayerAngle();
 			break;
 		}
 	}
@@ -135,20 +135,20 @@ final void A_FPunchAttack()
 		// didn't find any creatures, so try to strike any walls
 		PunchCount = 0;
 
-		angles = Owner.Angles;
-		Owner.AimLineAttack(&angles, MELEERANGE);
+		angles = pmo.Angles;
+		pmo.AimLineAttack(&angles, MELEERANGE);
 		AngleVector(&angles, &vforward);
-		if (Owner.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			Owner.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+			pmo.PlaySound('FighterPunchMiss', CHAN_WEAPON);
 		}
 	}
 
 	if (PunchCount == 3)
 	{
 		PunchCount = 0;
-		Player.SetViewState(ps_weapon, Attack2State);
-		Owner.PlaySound('*fistgrunt', CHAN_VOICE);
+		Owner.Player.SetViewState(ps_weapon, Attack2State);
+		pmo.PlaySound('*fistgrunt', CHAN_VOICE);
 	}
 }
 

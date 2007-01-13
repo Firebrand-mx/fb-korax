@@ -44,27 +44,27 @@ final void A_FireMacePL1B()
 	float angle;
 
 	UseWeaponMana();
-	ball = HexenLevelInfo(Player.Level).Spawn(MaceFX2, Player.MO.Origin +
-		vector(0.0, 0.0, 28.0 - Player.MO.FloorClip));
+	ball = HexenLevelInfo(Level).Spawn(MaceFX2, Owner.Origin +
+		vector(0.0, 0.0, 28.0 - Owner.FloorClip));
 	ball.Velocity.z =
-		(2.0 + 173.0 * -tan(Player.MO.Angles.pitch) / 32.0) * 35.0;
-	angle = Player.MO.Angles.yaw;
+		(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
+	angle = Owner.Angles.yaw;
 	if (int_mod)
 	{
 		if(!active_damage)
 		{
-			ball.MissileDamage = ball.MissileDamage * Player(Player).intelligence / 10;
+			ball.MissileDamage = ball.MissileDamage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			ball.MissileDamage = (ball.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			ball.MissileDamage = (ball.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	ball.Instigator = Actor(Player.MO);
+	ball.Instigator = Actor(Owner);
 	ball.Angles.yaw = angle;
-	ball.Origin.z += 173.0 * -tan(Player.MO.Angles.pitch) / 16.0;
-	ball.Velocity.x = Player.MO.Velocity.x / 2.0 + ball.Speed * cos(angle);
-	ball.Velocity.y = Player.MO.Velocity.y / 2.0 + ball.Speed * sin(angle);
+	ball.Origin.z += 173.0 * -tan(Owner.Angles.pitch) / 16.0;
+	ball.Velocity.x = Owner.Velocity.x / 2.0 + ball.Speed * cos(angle);
+	ball.Velocity.y = Owner.Velocity.y / 2.0 + ball.Speed * sin(angle);
 	ball.PlaySound('MaceFire', CHAN_WEAPON);
 	ball.CheckMissileSpawn();
 }
@@ -85,24 +85,24 @@ final void A_FireMacePL1()
 		return;
 	}
 	UseWeaponMana();
-	Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
-	Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
-	ball = Player(Player).SpawnPlayerMissileAngle(MaceFX1,
-		AngleMod360(Player.MO.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
+	Owner.Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
+	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
+	ball = Player(Owner.Player).SpawnPlayerMissileAngle(MaceFX1,
+		AngleMod360(Owner.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
 	if (ball)
 	{
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				ball.MissileDamage = ball.MissileDamage * Player(Player).intelligence / 10;
+				ball.MissileDamage = ball.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				ball.MissileDamage = (ball.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				ball.MissileDamage = (ball.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		ball.Instigator = Actor(Player.MO);
+		ball.Instigator = Actor(Owner);
 		ball._Special1 = 16;	// tics till dropoff
 	}
 }
@@ -118,31 +118,31 @@ final void A_FireMacePL2()
 	Actor A;
 
 	UseWeaponMana();
-	A = Player(Player).SpawnPlayerMissile(MaceFX4);
+	A = Player(Owner.Player).SpawnPlayerMissile(MaceFX4);
 	if (A)
 	{
-		A.Instigator = Actor(Player.MO);
+		A.Instigator = Actor(Owner);
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				A.MissileDamage = A.MissileDamage * Player(Player).intelligence / 10;
+				A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				A.MissileDamage = (A.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		A.Velocity.x += Player.MO.Velocity.x;
-		A.Velocity.y += Player.MO.Velocity.y;
+		A.Velocity.x += Owner.Velocity.x;
+		A.Velocity.y += Owner.Velocity.y;
 		A.Velocity.z =
-			(2.0 + 173.0 * -tan(Player.MO.Angles.pitch) / 32.0) * 35.0;
-		if (Actor(Player.MO).linetarget)
+			(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
+		if (Actor(Owner).linetarget)
 		{
-			A.Enemy = Actor(Player.MO).linetarget;
+			A.Enemy = Actor(Owner).linetarget;
 		}
 	}
-	Player.MO.PlaySound('MaceFire', CHAN_WEAPON);
+	Owner.PlaySound('MaceFire', CHAN_WEAPON);
 }
 
 __states__

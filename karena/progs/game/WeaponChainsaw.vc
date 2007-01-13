@@ -54,48 +54,48 @@ final void A_Saw()
 		damage = 8 * ftoi(3.1415);
 	}
 
-	aimAng = Player.MO.Angles;
+	aimAng = Owner.Angles;
 	aimAng.yaw = AngleMod360(aimAng.yaw + (Random() -
 		Random()) * 45.0 / 8.0);
 
 	// use meleerange + 1 se the puff doesn't skip the flash
 	//dir = AimLineAttack(Player.MO, aimAng, MELEERANGE + 0.00001);
-	Actor(Player.MO).AimLineAttack(&aimAng, MELEERANGE * 2.0);
+	Actor(Owner).AimLineAttack(&aimAng, MELEERANGE * 2.0);
 	AngleVector(&aimAng, &dir);
-	Actor(Player.MO).LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
-	if (!Actor(Player.MO).linetarget)
+	Actor(Owner).LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
+	if (!Actor(Owner).linetarget)
 	{
-		Player.MO.PlaySound('ChainsawTriggered', CHAN_WEAPON);
+		Owner.PlaySound('ChainsawTriggered', CHAN_WEAPON);
 		return;
 	}
-	Player.MO.PlaySound('ChainsawHit', CHAN_WEAPON);
+	Owner.PlaySound('ChainsawHit', CHAN_WEAPON);
 
 	// turn to face target
-	angle = atan2(Actor(Player.MO).linetarget.Origin.y - Player.MO.Origin.y,
-		Actor(Player.MO).linetarget.Origin.x - Player.MO.Origin.x);
-	if (AngleMod360(angle - Player.MO.Angles.yaw) > 180.0)
+	angle = atan2(Actor(Owner).linetarget.Origin.y - Owner.Origin.y,
+		Actor(Owner).linetarget.Origin.x - Owner.Origin.x);
+	if (AngleMod360(angle - Owner.Angles.yaw) > 180.0)
 	{
-		if (AngleMod360(angle - Player.MO.Angles.yaw) < -90.0 / 20.0)
-			Player.MO.Angles.yaw = angle + 90.0 / 21.0;
+		if (AngleMod360(angle - Owner.Angles.yaw) < -90.0 / 20.0)
+			Owner.Angles.yaw = angle + 90.0 / 21.0;
 		else
-			Player.MO.Angles.yaw = Player.MO.Angles.yaw - 90.0 / 20.0;
+			Owner.Angles.yaw = Owner.Angles.yaw - 90.0 / 20.0;
 	}
 	else
 	{
-		if (AngleMod360(angle - Player.MO.Angles.yaw) > 90.0 / 20.0)
-			Player.MO.Angles.yaw = angle - 90.0 / 21.0;
+		if (AngleMod360(angle - Owner.Angles.yaw) > 90.0 / 20.0)
+			Owner.Angles.yaw = angle - 90.0 / 21.0;
 		else
-			Player.MO.Angles.yaw += 90.0 / 20.0;
+			Owner.Angles.yaw += 90.0 / 20.0;
 	}
-	Player.MO.Angles.yaw = AngleMod360(Player.MO.Angles.yaw);
-	Actor(Player.MO).bJustAttacked = true;
-	Player.bFixAngle = true;
+	Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw);
+	Actor(Owner).bJustAttacked = true;
+	Owner.Player.bFixAngle = true;
 }
 
 __states__
 {
-	S_SAW('SAWG', 2, 4.0 / 35.0, S_SAWB) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
-	S_SAWB('SAWG', 3, 4.0 / 35.0, S_SAW) { Player.MO.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
+	S_SAW('SAWG', 2, 4.0 / 35.0, S_SAWB) { Owner.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
+	S_SAWB('SAWG', 3, 4.0 / 35.0, S_SAW) { Owner.PlaySound('ChainsawIdle', CHAN_WEAPON); A_WeaponReady(); }
 	S_SAWDOWN('SAWG', 2, 1.0 / 35.0, S_SAWDOWN) = A_Lower
 	S_SAWUP('SAWG', 2, 1.0 / 35.0, S_SAWUP) = A_Raise
 	S_SAW1('SAWG', 0, 4.0 / 35.0, S_SAW2) = A_Saw

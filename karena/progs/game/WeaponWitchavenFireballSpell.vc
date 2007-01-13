@@ -42,21 +42,21 @@ void WFireballSpawn(float angle)
 {
 	Actor mo;
 
-	mo = Player(Player).SpawnPlayerMissileAngle(FireBallMissile, angle);
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(FireBallMissile, angle);
 
 	if (mo)
 	{
-		mo.Instigator = Actor(Player.MO);
+		mo.Instigator = Actor(Owner);
 		mo.Enemy = Actor(mo.RoughMonsterSearch(2));
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}
@@ -73,24 +73,24 @@ final void A_WFireballAttack()
 	float angle;
 
 	UseWeaponMana();
-	angle = Player.MO.Angles.yaw;
+	angle = Owner.Angles.yaw;
 
-	if (Player(Player).exp_level >= 1 && Player(Player).exp_level < 3)
+	if (Player(Owner.Player).exp_level >= 1 && Player(Owner.Player).exp_level < 3)
 	{
 		WFireballSpawn(angle);
 	}
-	if (Player(Player).exp_level >= 3 && Player(Player).exp_level < 4)
+	if (Player(Owner.Player).exp_level >= 3 && Player(Owner.Player).exp_level < 4)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 	}
-	if (Player(Player).exp_level >= 4 && Player(Player).exp_level < 5)
+	if (Player(Owner.Player).exp_level >= 4 && Player(Owner.Player).exp_level < 5)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 		WFireballSpawn(angle + 2.5);
 	}
-	if (Player(Player).exp_level >= 5)
+	if (Player(Owner.Player).exp_level >= 5)
 	{
 		WFireballSpawn(angle - 5.0);
 		WFireballSpawn(angle - 2.5);
@@ -98,12 +98,12 @@ final void A_WFireballAttack()
 		WFireballSpawn(angle + 2.5);
 	}	
 
-	Player.MO.PlaySound('MageStaffFire', CHAN_WEAPON);
+	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
 }
 
 __states__
 {
-	S_WFIREBALLREADY('WEFR', 0, 1.0 / 35.0, S_WFIREBALLREADY) { A_WeaponReady(); Player.ViewStates[ps_weapon].SY = 15.0; }
+	S_WFIREBALLREADY('WEFR', 0, 1.0 / 35.0, S_WFIREBALLREADY) { A_WeaponReady(); Owner.Player.ViewStates[ps_weapon].SY = 15.0; }
 	S_WFIREBALLDOWN('WEFR', 0, 1.0 / 35.0, S_WFIREBALLDOWN) = A_Lower
 	S_WFIREBALLUP('WEFR', 0, 1.0 / 35.0, S_WFIREBALLUP) = A_Raise
 	S_WFIREBALLATK_1('WEFR', 1, 2.0 / 35.0, S_WFIREBALLATK_2) = none

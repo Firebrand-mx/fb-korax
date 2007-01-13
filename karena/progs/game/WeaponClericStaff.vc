@@ -57,7 +57,7 @@ final void A_CStaffCheckBlink()
 {
 	if (!--BlinkCount)
 	{
-		Player.SetViewState(ps_weapon, BlinkState);
+		Owner.Player.SetViewState(ps_weapon, BlinkState);
 		BlinkCount = (P_Random() + 50) >> 2;
 	}
 }
@@ -77,18 +77,18 @@ final void A_CStaffCheck()
 	TAVec angles;
 	TVec vforward;
 
-	pmo = Actor(Player.MO);
+	pmo = Actor(Owner);
 	damage = 27; //20 + (P_Random() & 15);
 
 	if (int_mod)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).intelligence / 10;
+			damage = damage * Player(Owner.Player).intelligence / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).intelligence / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
 	for (i = 0; i < 3; i++)
@@ -105,31 +105,31 @@ final void A_CStaffCheck()
 			if ((pmo.linetarget.bIsPlayer || pmo.linetarget.bCountKill) &&
 				!pmo.linetarget.bDormant && !pmo.linetarget.bInvulnerable)
 			{
-				newLife = Player.Health + (damage >> 3);
+				newLife = Owner.Player.Health + (damage >> 3);
 				newLife = newLife > 100 ? 100 : newLife;
 				pmo.Health = newLife;
-				Player.Health = newLife;
-				Player.SetViewState(ps_weapon, Attack2State);
+				Owner.Player.Health = newLife;
+				Owner.Player.SetViewState(ps_weapon, Attack2State);
 			}
 			UseWeaponMana();
 			break;
 		}
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		Actor(Player.MO).AimLineAttack(&angles, 3.0 * MELEERANGE / 2.0);
-		if (Actor(Player.MO).linetarget)
+		Actor(Owner).AimLineAttack(&angles, 3.0 * MELEERANGE / 2.0);
+		if (Actor(Owner).linetarget)
 		{
 			AngleVector(&angles, &vforward);
 			pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
-			pmo.Angles.yaw = atan2(Actor(Player.MO).linetarget.Origin.y - pmo.Origin.y,
-				Actor(Player.MO).linetarget.Origin.x - pmo.Origin.x);
-			if (Actor(Player.MO).linetarget.bIsPlayer || Actor(Player.MO).linetarget.bCountKill)
+			pmo.Angles.yaw = atan2(Actor(Owner).linetarget.Origin.y - pmo.Origin.y,
+				Actor(Owner).linetarget.Origin.x - pmo.Origin.x);
+			if (Actor(Owner).linetarget.bIsPlayer || Actor(Owner).linetarget.bCountKill)
 			{
-				newLife = Player.Health + (damage >> 4);
+				newLife = Owner.Player.Health + (damage >> 4);
 				newLife = newLife > 100 ? 100 : newLife;
 				pmo.Health = newLife;
-				Player.Health = pmo.Health;
-				Player.SetViewState(ps_weapon, Attack2State);
+				Owner.Player.Health = pmo.Health;
+				Owner.Player.SetViewState(ps_weapon, Attack2State);
 			}
 			UseWeaponMana();
 			break;
@@ -150,14 +150,14 @@ final void A_CStaffAttack()
 
 
 	UseWeaponMana();
-	playPawn = PlayerPawn(Player.MO);
-	mo = Player(Player).SpawnPlayerMissileAngle(ClericStaffMissile,
+	playPawn = PlayerPawn(Owner);
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(ClericStaffMissile,
 		playPawn.Angles.yaw - (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 32;
 	}
-	mo = Player(Player).SpawnPlayerMissileAngle(ClericStaffMissile,
+	mo = Player(Owner.Player).SpawnPlayerMissileAngle(ClericStaffMissile,
 		playPawn.Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
@@ -166,11 +166,11 @@ final void A_CStaffAttack()
 		{
 			if(!active_damage)
 			{
-				mo.MissileDamage = mo.MissileDamage * Player(Player).intelligence / 10;
+				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.MissileDamage = (mo.MissileDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}

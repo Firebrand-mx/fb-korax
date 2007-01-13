@@ -47,12 +47,12 @@ final void A_PRayAttack()
 	float delta;
 
 	if (PRayDeltaIndex == 0.0)
-		Player.MO.PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
+		Owner.PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
 
 	delta = sin(PRayDeltaIndex * 360.0 / 256.0) * 10.0;
 	PRayDeltaIndex += 15.0;
-	ang1 = AngleMod360(Player.MO.Angles.yaw + delta);
-	mo = SorcererFX4(Player(Player).SpawnPlayerMissileAngle(SorcererFX4, ang1));
+	ang1 = AngleMod360(Owner.Angles.yaw + delta);
+	mo = SorcererFX4(Player(Owner.Player).SpawnPlayerMissileAngle(SorcererFX4, ang1));
 	if (mo)
 	{
 		mo.deathmsgi = 38;
@@ -60,22 +60,22 @@ final void A_PRayAttack()
 		mo.Velocity.x *= 2.0;
 		mo.Velocity.y *= 2.0;
 		mo.Velocity.z *= 2.0;
-		mo.Instigator = Actor(Player.MO);
+		mo.Instigator = Actor(Owner);
 
 		if (int_mod)
 		{
 			if(!active_damage)
 			{
-				mo.ExplodeDamage = mo.ExplodeDamage * Player(Player).intelligence / 10;
+				mo.ExplodeDamage = mo.ExplodeDamage * Player(Owner.Player).intelligence / 10;
 			}
 			else // [FB] PI Damage
 			{
-				mo.ExplodeDamage = (mo.ExplodeDamage * Player(Player).intelligence / 10) * ftoi(3.1415);
+				mo.ExplodeDamage = (mo.ExplodeDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
 	}	
 
-	Player.MO.PlaySound('SorcererBallWoosh', CHAN_VOICE, 1.0, ATTN_NONE);
+	Owner.PlaySound('SorcererBallWoosh', CHAN_VOICE, 1.0, ATTN_NONE);
 	UseWeaponMana();
 }
 

@@ -63,6 +63,15 @@ bool bInstantRanged;	// [CW] TRUE if ranged weapon do not spawn any missiles, bu
 						// damages target directly (by using Damage, LineAttack etc)
 int deathmsgi;			// [CW] deathmessage index (for melee or instant ranged attacks only)
 
+LevelInfo Level
+{
+	get { return Owner.Level; }
+}
+BasePlayer _Player
+{
+	get { return Owner.Player; }
+}
+
 state GetUpState()
 {
 	return UpState;
@@ -86,7 +95,7 @@ state GetReadyState()
 
 state GetAttackState()
 {
-	return Player(Player).Refire ? HoldAttackState : AttackState;
+	return Player(Owner.Player).Refire ? HoldAttackState : AttackState;
 }
 
 void GotMana(int InMana)
@@ -108,13 +117,13 @@ bool IsWeaponManaUsable()
 {
 	if (Mana == HexenDefs::NUMMANA) 
 	{
-		    return Player(Player).Mana[HexenDefs::MANA_1] >= Player(Player).GetWeaponManaUse(self)
-			&& Player(Player).Mana[HexenDefs::MANA_2] >= Player(Player).GetWeaponManaUse(self)
-			&& Player(Player).Mana[HexenDefs::MANA_3] >= Player(Player).GetWeaponManaUse(self);
+		    return Player(Owner.Player).Mana[HexenDefs::MANA_1] >= Player(Owner.Player).GetWeaponManaUse(self)
+			&& Player(Owner.Player).Mana[HexenDefs::MANA_2] >= Player(Owner.Player).GetWeaponManaUse(self)
+			&& Player(Owner.Player).Mana[HexenDefs::MANA_3] >= Player(Owner.Player).GetWeaponManaUse(self);
 	}
 	else 
 	{
-		return Player(Player).Mana[Mana] >= Player(Player).GetWeaponManaUse(self);
+		return Player(Owner.Player).Mana[Mana] >= Player(Owner.Player).GetWeaponManaUse(self);
 	}
 }
 
@@ -128,17 +137,17 @@ void UseWeaponMana()
 {
 	if (Mana == HexenDefs::NUMMANA)
 	{
-		Player(Player).Mana[HexenDefs::MANA_1] -= Player(Player).GetWeaponManaUse(self);
-		Player(Player).Mana[HexenDefs::MANA_2] -= Player(Player).GetWeaponManaUse(self);
-		Player(Player).Mana[HexenDefs::MANA_3] -= Player(Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_1] -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_2] -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_3] -= Player(Owner.Player).GetWeaponManaUse(self);
 	}
 	else 
 	{
-		Player(Player).Mana[Mana] -= Player(Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[Mana] -= Player(Owner.Player).GetWeaponManaUse(self);
 	}
-	if (Player(Player).Mana[Mana] < 0)
+	if (Player(Owner.Player).Mana[Mana] < 0)
 	{
-		Player(Player).Mana[Mana] = 0;
+		Player(Owner.Player).Mana[Mana] = 0;
 	}	
 }
 
@@ -150,8 +159,8 @@ void UseWeaponMana()
 
 final void A_GunFlash()
 {
-	Player.MO.SetState(Actor(Player.MO).MissileState);
-	Player.SetViewState(ps_flash, FlashState);
+	Owner.SetState(Actor(Owner).MissileState);
+	Owner.Player.SetViewState(ps_flash, FlashState);
 }
 
 
@@ -163,8 +172,8 @@ final void A_GunFlash()
 
 final void A_Light0()
 {
-	Player(Player).ExtraLight = 0;
-	Player.MO.Effects &= ~HexenDefs::EF_DLIGHT_MASK;
+	Player(Owner.Player).ExtraLight = 0;
+	Owner.Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 }
 
 //===========================================================================
@@ -175,7 +184,7 @@ final void A_Light0()
 
 final void A_Light1()
 {
-	Player(Player).ExtraLight = 1;
+	Player(Owner.Player).ExtraLight = 1;
 }
 
 //===========================================================================
@@ -186,7 +195,7 @@ final void A_Light1()
 
 final void A_Light2()
 {
-	Player(Player).ExtraLight = 2;
+	Player(Owner.Player).ExtraLight = 2;
 }
 
 //==========================================================================
@@ -202,40 +211,40 @@ final void A_WeaponReady()
 	float angle;
 
 	// Change player from attack state
-	if (StateIsInRange(Player.MO.State, Actor(Player.MO).MissileState,
-		PlayerPawn(Player.MO).AttackEndState, 3))
+	if (StateIsInRange(Owner.State, Actor(Owner).MissileState,
+		PlayerPawn(Owner).AttackEndState, 3))
 	{
-		Player.MO.SetState(Actor(Player.MO).IdleState);
+		Owner.SetState(Actor(Owner).IdleState);
 	}
 	// Put the weapon away if the player has a pending weapon or has died.
-	if (Player(Player).PendingWeapon != HexenDefs::wp_nochange || !Player.Health)
+	if (Player(Owner.Player).PendingWeapon != HexenDefs::wp_nochange || !Owner.Player.Health)
 	{
-		Player.SetViewState(ps_weapon, GetDownState());
+		Owner.Player.SetViewState(ps_weapon, GetDownState());
 		return;
 	}
 
 	// Check for fire. 
-	if (Player.Buttons & BT_ATTACK)
+	if (Owner.Player.Buttons & BT_ATTACK)
 	{
-		Player.bAttackDown = true;
-		Player(Player).FireWeapon();
+		Owner.Player.bAttackDown = true;
+		Player(Owner.Player).FireWeapon();
 		return;
 	}
 	else
 	{
-		Player.bAttackDown = false;
+		Owner.Player.bAttackDown = false;
 	}
 
-	if (Player.PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
+	if (Owner.Player.PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
 	{
 		// Bob the weapon based on movement speed.
-		angle = AngleMod360(180.0 * Player.Level.Game.level->time);
-		Player.ViewStates[ps_weapon].SX = 1.0 + Player(Player).Bob * cos(angle);
+		angle = AngleMod360(180.0 * Level.Game.level->time);
+		Owner.Player.ViewStates[ps_weapon].SX = 1.0 + Player(Owner.Player).Bob * cos(angle);
 		if (angle >= 180.0)
 		{
 			angle -= 180.0;
 		}
-		Player.ViewStates[ps_weapon].SY = WEAPONTOP + Player(Player).Bob * sin(angle);
+		Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Player(Owner.Player).Bob * sin(angle);
 	}
 }
 
@@ -247,37 +256,37 @@ final void A_WeaponReady()
 
 final void A_Lower()
 {
-	if (/*Player(Player).MorphTime*/Player.PClass == HexenDefs::PCLASS_PIG)
+	if (/*Player(Player).MorphTime*/Owner.Player.PClass == HexenDefs::PCLASS_PIG)
 	{
-		Player.ViewStates[ps_weapon].SY = WEAPONBOTTOM;
+		Owner.Player.ViewStates[ps_weapon].SY = WEAPONBOTTOM;
 	}
 	else
 	{
 		//	FIXME!!
-		if (Player.Level.Game.frametime < 1.0 / 35.0)
-			Player.ViewStates[ps_weapon].SY += LOWERSPEED;
+		if (Level.Game.frametime < 1.0 / 35.0)
+			Owner.Player.ViewStates[ps_weapon].SY += LOWERSPEED;
 		else
-			Player.ViewStates[ps_weapon].SY += LOWERSPEED * 35.0 * Player.Level.Game.frametime;
+			Owner.Player.ViewStates[ps_weapon].SY += LOWERSPEED * 35.0 * Level.Game.frametime;
 	}
-	if (Player.ViewStates[ps_weapon].SY < WEAPONBOTTOM)
+	if (Owner.Player.ViewStates[ps_weapon].SY < WEAPONBOTTOM)
 	{
 		// Not lowered all the way yet
 		return;
 	}
-	if (Player.PlayerState == PST_DEAD)
+	if (Owner.Player.PlayerState == PST_DEAD)
 	{
 		// Player is dead, so don't bring up a pending weapon
-		Player.ViewStates[ps_weapon].SY = WEAPONBOTTOM;
+		Owner.Player.ViewStates[ps_weapon].SY = WEAPONBOTTOM;
 		return;
 	}
-	if (!Player.Health)
+	if (!Owner.Player.Health)
 	{
 		// Player is dead, so keep the weapon off screen
-		Player.SetViewState(ps_weapon, none);
+		Owner.Player.SetViewState(ps_weapon, none);
 		return;
 	}
-	Player(Player).SetWeapon(Player(Player).PendingWeapon);
-	Player(Player).BringUpWeapon();
+	Player(Owner.Player).SetWeapon(Player(Owner.Player).PendingWeapon);
+	Player(Owner.Player).BringUpWeapon();
 }
 
 //==========================================================================
@@ -289,17 +298,17 @@ final void A_Lower()
 final void A_Raise()
 {
 	//	FIXME!!
-	if (Player.Level.Game.frametime < 1.0 / 35.0)
-		Player.ViewStates[ps_weapon].SY -= RAISESPEED;
+	if (Level.Game.frametime < 1.0 / 35.0)
+		Owner.Player.ViewStates[ps_weapon].SY -= RAISESPEED;
 	else
-		Player.ViewStates[ps_weapon].SY -= RAISESPEED * 35.0 * Player.Level.Game.frametime;
-	if (Player.ViewStates[ps_weapon].SY > WEAPONTOP)
+		Owner.Player.ViewStates[ps_weapon].SY -= RAISESPEED * 35.0 * Level.Game.frametime;
+	if (Owner.Player.ViewStates[ps_weapon].SY > WEAPONTOP)
 	{
 		// Not raised all the way yet
 		return;
 	}
-	Player.ViewStates[ps_weapon].SY = WEAPONTOP;
-	Player.SetViewState(ps_weapon, GetReadyState());
+	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP;
+	Owner.Player.SetViewState(ps_weapon, GetReadyState());
 }
 
 //==========================================================================
@@ -312,16 +321,16 @@ final void A_Raise()
 
 final void A_ReFire()
 {
-	if ((Player.Buttons & BT_ATTACK) &&
-		Player(Player).PendingWeapon == HexenDefs::wp_nochange && Player.Health)
+	if ((Owner.Player.Buttons & BT_ATTACK) &&
+		Player(Owner.Player).PendingWeapon == HexenDefs::wp_nochange && Owner.Player.Health)
 	{
-		Player(Player).Refire++;
-		Player(Player).FireWeapon();
+		Player(Owner.Player).Refire++;
+		Player(Owner.Player).FireWeapon();
 	}
 	else
 	{
-		Player(Player).Refire = 0;
-		Player(Player).CheckMana();
+		Player(Owner.Player).Refire = 0;
+		Player(Owner.Player).CheckMana();
 	}
 }
 
@@ -352,11 +361,11 @@ final void GunShot(Actor A, int accurate, TVec dir)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 
@@ -390,11 +399,11 @@ final void GunShot2(Actor A, int accurate, TVec dir)
 	{
 		if(!active_damage)
 		{
-			damage = damage * Player(Player).strength / 10;
+			damage = damage * Player(Owner.Player).strength / 10;
 		}
 		else // [FB] PI Damage
 		{
-			damage = (damage * Player(Player).strength / 10) * ftoi(3.1415);
+			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
 
