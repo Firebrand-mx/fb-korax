@@ -1,0 +1,108 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: UnholyFX.vc 509 2006-07-10 21:01:45Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class UnholyFX : Effect;
+
+bool bAttacking;
+float Time; 
+int AttackDamage;
+float Delay;
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (!bAttacking)
+	{
+		Time += deltaTime;
+		if(Time >= Delay)
+		{
+			bAttacking = true;
+			bHidden = false;
+			SetState(S_UNHOLY_FX_X1);
+		}
+	}
+
+	::Tick(deltaTime);
+}
+
+//==========================================================================
+//
+//	AttackDie
+//
+//==========================================================================
+
+void AttackDie()
+{
+	Pawn pawn;
+
+	PlaySound('SpiritDie', CHAN_VOICE);
+
+	FOREACH(Pawn, pawn)
+		{
+			if (Length(pawn.Origin - Origin) < 128.0)
+			{
+				if (pawn != Instigator)
+					pawn.Damage(self, Instigator, AttackDamage);
+			}
+		}
+}
+
+
+__states__
+{
+	S_UNHOLY_FX1('SPIR', 0, 2.0 / 35.0, S_UNHOLY_FX1) { }
+	S_UNHOLY_FX_X1('SPIR', 3, 4.0 / 35.0, S_UNHOLY_FX_X2) { }
+	S_UNHOLY_FX_X2('SPIR', 4, 4.0 / 35.0, S_UNHOLY_FX_X3) { AttackDie(); }
+	S_UNHOLY_FX_X3('SPIR', 5, 4.0 / 35.0, S_UNHOLY_FX_X4) { }
+	S_UNHOLY_FX_X4('SPIR', 6, 4.0 / 35.0, S_UNHOLY_FX_X5) { }
+	S_UNHOLY_FX_X5('SPIR', 7, 4.0 / 35.0, S_UNHOLY_FX_X6) { }
+	S_UNHOLY_FX_X6('SPIR', 8, 4.0 / 35.0, none) { }
+}
+
+defaultproperties
+{
+	bHidden = true;
+
+	Health = 100;
+	Radius = 10.0;
+	Height = 6.0;
+	Translucency = 33;
+	Effects = HexenDefs::EF_DL_RED;
+	bDamageInvulnerable = true;
+	IdleState = S_UNHOLY_FX1;
+	deathmsgi = 41;
+}

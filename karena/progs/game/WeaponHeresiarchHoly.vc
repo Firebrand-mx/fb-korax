@@ -32,22 +32,21 @@
 
 class WeaponHereisarchHoly : Weapon;
 
-int flashrate;
-
 //============================================================================
 //
 //  A_HHolyAttack
 //
 //============================================================================
 
-final void A_HHolyAttack()
+void A_HHolyAttack()
 {
 	int damage;
 	float range;
+	float dist;
 	TVec dir;
-	TVec endpoint;
 	TAVec angles;
 	Actor mo;
+	UnholyFX spirit;
 	Pawn pawn;
 
 	Player(Owner.Player).WeaponCShift = 0;
@@ -59,7 +58,7 @@ final void A_HHolyAttack()
 
 	mo = Actor(Owner);
 
-	damage = 5;
+	damage = 80;
 	range = 512.0;
 	if (int_mod)
 	{
@@ -80,45 +79,32 @@ final void A_HHolyAttack()
 	AngleVector(&angles, &dir);
 	if (mo.LineAttack(dir, range, 0, none))
 	{
-		endpoint = mo.hit_point;
-		range = Length(endpoint - mo.Origin);
-	}
-	else
-	{
-		endpoint = mo.Origin + dir * range;
+		range = Length(mo.hit_point - mo.Origin);
 	}
 
 	// Everything is prepared, do attack
-	while (range > 64.0)
+	dist = 64.0;
+	while (dist < range)
 	{
 		TVec flashpoint;
 
-		range -= 64.0;
-		flashpoint = mo.Origin + dir * range;
-		MainGameInfo(Level.Game).SpawnDynamicLight(0x00ff0000,
-												flashpoint,
-												192,
-												50,
-												0);
-		FOREACH(Pawn, pawn)
+		flashpoint = mo.Origin + dir * dist;
+		flashpoint.x += (Random() - 0.5) * 64.0;
+		flashpoint.y += (Random() - 0.5) * 64.0;
+		flashpoint.z += (Random() - 0.5) * 16.0;
+		spirit = UnholyFX(HexenLevelInfo(mo.Level).Spawn(UnholyFX, flashpoint));
+		if (spirit)
 		{
-			if (Length(pawn.Origin - flashpoint) < 128.0)
-			{
-				pawn.Damage(mo, mo, damage);
-			}
+			spirit.Instigator = mo;
+			spirit.AttackDamage = damage;
+			spirit.Delay = dist * 0.000625;
 		}
-
-		range -= 64.0;
+				
+		dist += 64.0;
 	}
 
-	if (flashrate == 0)
-	{
-		Player(Owner.Player).WeaponCShift = CSHIFT(255, 0, 0, 66);
-		Owner.PlaySound('SpiritActive', CHAN_WEAPON);
-		flashrate = 30;
-	}
-	else
-		flashrate--;
+	Player(Owner.Player).WeaponCShift = CSHIFT(255, 0, 0, 66);
+	Player(Owner.Player).MO.PlaySound('SpiritActive', CHAN_WEAPON);
 }
 
 
@@ -131,9 +117,9 @@ __states__
 	S_HHOLYATK_2('CHLY', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_3, 0, 40) = none
 	S_HHOLYATK_3('CHLY', 2 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_4, 0, 43) = none
 	S_HHOLYATK_4('CHLY', 3 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_5, 0, 43) = none
-	S_HHOLYATK_5('CHLY', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_6, 0, 45) { flashrate = 0; }
+	S_HHOLYATK_5('CHLY', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_6, 0, 45) = none
 	S_HHOLYATK_6('CHLY', 5 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_7, 0, 48) = A_HHolyAttack
-	S_HHOLYATK_7('CHLY', 5 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_8, 0, 48) { Player(Owner.Player).WeaponCShift = 0; A_ReFire(); }
+	S_HHOLYATK_7('CHLY', 5 | FF_FULLBRIGHT, 1.0 / 35.0, S_HHOLYATK_8, 0, 48) { Player(Owner.Player).WeaponCShift = 0; }
 	S_HHOLYATK_8('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_HHOLYATK_9, 0, 40) = none
 	S_HHOLYATK_9 ('CHLY', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_HHOLYREADY, 0, 36) = none
 }
@@ -142,19 +128,15 @@ __states__
 defaultproperties
 {
 	Mana = HexenDefs::NUMMANA;
-	manause = 10;
+	manause = 40;
 	UpState = S_HHOLYUP;
 	DownState = S_HHOLYDOWN;
 	ReadyState = S_HHOLYREADY;
 	AttackState = S_HHOLYATK_1;
-	HoldAttackState = S_HHOLYATK_6;
 	PSpriteSY = 0.0;
 	wis_mod = true;
 	int_mod = true;
 	dex_mod = false;
 	str_mod = false;
 	PickUpMessage = "UNHOLY SIGN";
-
-	bInstantRanged = true;
-	deathmsgi = 41;
 }
