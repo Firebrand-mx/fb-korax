@@ -285,7 +285,8 @@ bool bShowScoreboard; // [CW] True if scoreboard should be visible
 
 bool bUnControllable; //[CW] Ignore user/AI commands (move/attack etc)
 
-bool bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player respawn
+float	respawn_counter; // [CW] Time player must wait after his death before he may respawn
+bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player respawn
 
 //==========================================================================
 //
@@ -856,6 +857,7 @@ void SpawnPlayer(mthing_t * mthing)
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
 	pcount = 0; // [FB] Reset counter
+	respawn_counter = 2.0;
 
 //[Korax]
 	if (!inited)
@@ -2910,6 +2912,9 @@ void DeathPlayerTick(float deltaTime)
 	float delta;
 	int lookDelta;
 
+	if (respawn_counter > 0.0)
+		respawn_counter -= deltaTime;
+
 	MovePsprites(deltaTime);
 	if (MO.WaterLevel > 1)
 	{
@@ -3020,7 +3025,8 @@ void DeathPlayerTick(float deltaTime)
 		}
 	}
 
-	if (ViewHeight <= 6.0 && ( Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP ))
+	if (respawn_counter <= 0.0 &&
+		( bIsBot || (Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP )) )
 	{
 		WeaponCShift = 0;
 		InvPtr = 0;
