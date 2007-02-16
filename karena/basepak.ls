@@ -21,7 +21,7 @@ progs/svprogs.dat		progs/svprogs.dat
 animdefs.txt			scripts/animdefs.txt
 sndinfo.txt			scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
-terrains.txt			scripts/terrains.txt
+terrain.txt				scripts/terrain.txt
 
 //	Language strings
 language.en				language.en
