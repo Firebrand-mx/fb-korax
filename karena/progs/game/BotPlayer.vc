@@ -86,7 +86,7 @@ struct botinfo_t
 	int evade;		// Ability to dodge incoming missiles
 	int anticip;		// Ability to anticipate "instant" shots
 	int reaction;		// Overall reaction time (lower is "better")
-/*	int pisschance;		// Chance the bot will get pissed when his threshold is reached
+	int pisschance;		// Chance the bot will get pissed when his threshold is reached
 	int threshold;		// How much it takes to frustrate/piss off the bot
 	int dangerlevel;	// When health is below this, we need some health
 //	int wpfav;		// Favorite weapon
@@ -97,7 +97,7 @@ struct botinfo_t
 //	char *gender;		// Male/female/it :)
 //	char *skin;		// Skin
 	int railcolour;		// Railgun trail colour
-//	bool revealed;		// Hidden bots must be revealed */
+//	bool revealed;		// Hidden bots must be revealed
 	string userinfo;
 };
 
@@ -280,15 +280,14 @@ bool CheckItem(Actor item)
 			return true;
 
 		// If we have no more room for the mana it gives
-		if (//(weapon == WP_SECOND && player.Mana[MANA_1] == MAX_MANA) ||
-			(weapon == HexenDefs::WP_THIRD && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
-			(weapon == HexenDefs::WP_FOURTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
-			(weapon == HexenDefs::WP_FIFTH && player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA) ||
-			(weapon == HexenDefs::WP_SIXTH && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
-			(weapon == HexenDefs::WP_SEVENTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
-			(weapon == HexenDefs::WP_EIGHTH && ((player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA) &&
-			(player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) &&
-			(player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA))))
+		if (((weapon == HexenDefs::WP_THIRD && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
+		    (weapon == HexenDefs::WP_FOURTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
+		    (weapon == HexenDefs::WP_FIFTH && player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA) ||
+		    (weapon == HexenDefs::WP_SIXTH && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
+		    (weapon == HexenDefs::WP_SEVENTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
+		    (weapon == HexenDefs::WP_EIGHTH && ((player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA)) &&
+		    ((player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) &&
+		    (player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA)))))
 			return false;
 	}
 
@@ -329,27 +328,22 @@ bool CheckItem(Actor item)
 			return false;
 	}
 
-	if ((item.Class == ItemHealingBottle ||
-		 item.Class == ArtifactHealthFlask ||
-		 item.Class == ArtifactSuperHeal)
-		&& (player.MO.Health >= player.max_health))
+	if ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
+	     item.Class == ArtifactSuperHeal) && (player.MO.Health >= player.max_health))
 		return false;
 
 	// [FB] For morphed bots health
 	// [CW] ...suppose this fits only pig-morphed ones
-	if(/*player.MorphTime*/player.PClass != HexenDefs::PCLASS_PIG)
+	if(player.PClass != HexenDefs::PCLASS_PIG)
 	{
-		if ((item.Class == ItemHealingBottle ||
-			 item.Class == ArtifactHealthFlask ||
-			 item.Class == ArtifactSuperHeal)
-			&& (player.MO.Health >= 30))
+		if ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
+		     item.Class == ArtifactSuperHeal) && (player.MO.Health >= 30))
 			return false;
 	}
 
-	if (Artifact(item) && !ArtifactBoostArmor(item) &&
-		!ArtifactInvulnerability(item) && !ArtifactSpeedBoots(item)
-		&& !ArtifactBoostMana(item) && !ArtifactInvisibility(item)
-		&& !ArtifactPIDamage(item) && !ArtifactTorch(item))
+	if (Artifact(item) && !ArtifactBoostArmor(item) && !ArtifactInvulnerability(item) && 
+	    !ArtifactSpeedBoots(item) && !ArtifactBoostMana(item) && !ArtifactInvisibility(item) && 
+ 	    !ArtifactPIDamage(item) && !ArtifactTorch(item))
 		return false;
 
 	if (Key(item) && player.Level.Game.deathmatch)
@@ -372,8 +366,8 @@ bool CheckPNodes(Actor node)
 	if (player.MO.CanSee(node) && (prev != node && botmo.DistTo(node) <= 32.0))
 	{
 		if (player.Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
-			player.Level.Game.deathmatch == HexenDefs::game_dmteam && node.Class == PathNode
-			/*|| node.Class == SniperSpot*/)
+		    player.Level.Game.deathmatch == HexenDefs::game_dmteam && node.Class == PathNode 
+		    /*|| node.Class == SniperSpot*/)
 		{
 			return true;
 		}
@@ -433,7 +427,7 @@ bool CheckPNodes(Actor node)
 void SetEnemy()
 {
 	if (enemy && enemy.Health > 0 && player.MO &&
-		player.MO.CanSee(enemy))
+	    player.MO.CanSee(enemy))
 	{
 		return;
 	}
@@ -502,8 +496,8 @@ void SetAction()
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO && 
-				Player(player.Level.Game.Players[i]).bIsBot && 
-				player.Level.Game.Players[i].Colour == player.Colour)
+			    Player(player.Level.Game.Players[i]).bIsBot && 
+			    player.Level.Game.Players[i].Colour == player.Colour)
 			{
 				// [FB] Is this bot in Offense?
 				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == 1)
@@ -536,11 +530,11 @@ bool IsDangerous(sector_t *sec)
 {
 	switch (sec->special & ~SECSPEC_SECRET_MASK)
 	{
-	case 4:		// Scroll_EastLavaDamage
-	case 5:		// Damage_LavaWimpy
-	case 7:		// Damage_Sludge
-	case 16:	// Damage_LavaHefty
-		return true;
+		case 4:		// Scroll_EastLavaDamage
+		case 5:		// Damage_LavaWimpy
+		case 7:		// Damage_Sludge
+		case 16:	// Damage_LavaHefty
+			return true;
 	}
 
 	return false;
@@ -620,20 +614,20 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		if (diffheight > 0.0)
 		{
-			if (diffheight > 56.0)
+			if (diffheight >= 24.0 && diffheight <= 56.0)
+			{
+				botmo.Player.Buttons |= BT_JUMP;
+			}
+			else if (diffheight > 56.0)
 			{
 			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
 				{
 					return true;
 				}
-				else*/
-				{
+				else
+				{*/
 					return false;
-				}
-			}
-			else if (diffheight >= 24.0 && diffheight <= 56.0)
-			{
-				botmo.Player.Buttons |= BT_JUMP;
+				//}
 			}
 		}
 
@@ -680,15 +674,15 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		// [FB] Jump to reach a thing
 		dheight = th.Origin.z + th.Height - botmo.Origin.z;
 
-		if (dheight >= 24.0)
+		if (dheight > 0.0)
 		{
-			if (dheight <= 56.0)
-			{
-				botmo.Player.Buttons |= BT_JUMP;
-			}
-			else
+			if (dheight > 56.0)
 			{
 				return false;
+			}
+			else if (dheight >= 24.0 && dheight <= 56.0)
+			{
+				botmo.Player.Buttons |= BT_JUMP;
 			}
 		}
 	}
@@ -739,7 +733,7 @@ bool CheckTo(TVec pos)
 	dist = Length(botmo.Origin - pos);
 	an = GetAngle();
 
-	if (!CheckPath(an, dist) || (pos.z - botmo.Origin.z) >= 48.0)
+	if (!CheckPath(an, dist) || (pos.z - botmo.Origin.z) >= 56.0/*48.0*/)
 		return false;
 
 	return true;
@@ -758,7 +752,7 @@ void CheckStuff()
 	if (item)
 	{
 		if (!item.bSpecial || item.IsDestroyed() || // somebody picked
-				!CheckTo(item.Origin)) // Can't reach
+		    !CheckTo(item.Origin)) // Can't reach
 			item = none;
 	}
 
@@ -838,7 +832,7 @@ bool Check_LOS(Actor to, float vangle)
 		return false; // Looker seems to be blind.
 
 	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
-		vangle / 2.0;
+	       vangle / 2.0;
 }
 
 //==========================================================================
@@ -963,7 +957,7 @@ int WeapFromItem(Actor item)
 int WeapPieceFromItem(Actor item)
 {
 	if (WeaponPiece(item) &&
-		WeaponPiece(item).PieceClass == player.PClass)
+	    WeaponPiece(item).PieceClass == player.PClass)
 	{
 		return WeaponPiece(item).PieceValue;
 	}
@@ -1026,21 +1020,22 @@ void BotAim()
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if (((player.PClass == HexenDefs::PCLASS_FIGHTER && player.ReadyWeapon == HexenDefs::WP_FIFTH ||
-			player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_CLERIC && player.ReadyWeapon == HexenDefs::WP_SECOND ||
-			player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_MAGE && player.ReadyWeapon == HexenDefs::WP_FOURTH ||
-			player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-			player.ReadyWeapon == HexenDefs::WP_SEVENTH ||  player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_HERETIC && player.ReadyWeapon == HexenDefs::WP_THIRD ||
-			player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-			player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_MARINE && player.ReadyWeapon == HexenDefs::WP_FIFTH ||
-			player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH) ||
-	    (player.PClass == HexenDefs::PCLASS_WITCHAVEN && player.ReadyWeapon == HexenDefs::WP_THIRD ||
-			player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-			player.ReadyWeapon == HexenDefs::WP_SEVENTH)))
+	if (((player.PClass == HexenDefs::PCLASS_FIGHTER && (player.ReadyWeapon == HexenDefs::WP_FIFTH ||
+	      player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
+	    (player.PClass == HexenDefs::PCLASS_CLERIC && (player.ReadyWeapon == HexenDefs::WP_SECOND ||
+	      player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_SEVENTH ||
+              player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
+	    (player.PClass == HexenDefs::PCLASS_MAGE && (player.ReadyWeapon == HexenDefs::WP_FOURTH ||
+	     player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+	     player.ReadyWeapon == HexenDefs::WP_SEVENTH ||  player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
+	    (player.PClass == HexenDefs::PCLASS_HERETIC && (player.ReadyWeapon == HexenDefs::WP_THIRD ||
+	     player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+	     player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
+	    (player.PClass == HexenDefs::PCLASS_MARINE && (player.ReadyWeapon == HexenDefs::WP_FIFTH ||
+	     player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
+	    (player.PClass == HexenDefs::PCLASS_WITCHAVEN && (player.ReadyWeapon == HexenDefs::WP_THIRD ||
+	     player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
+	     player.ReadyWeapon == HexenDefs::WP_SEVENTH))))
 	{
 		// Projectile weapons
 		switch (info.intelect)
@@ -1142,11 +1137,13 @@ Actor FindEnemy()
 			continue;
 		if (!botmo.CanSee(actor))
 			continue;
+		if (actor.Health <= 0)
+			continue;
 		// [FB] We spawned the minotaur? we shouldn't attack him then!
 		if (actor.Class == Minotaur && actor.Instigator == botmo)
 			continue;
 		// [FB] Don't attack our friendly minotaur in all these cases
-		if (!player.Level.Game.deathmatch)
+		if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
 		{
 			// [FB] For some gameplay modes, we just only check if it's a minotaur
 			if (actor.Class == Minotaur)
@@ -1157,8 +1154,8 @@ Actor FindEnemy()
 			// [FB] Check if the minotaur's instigator is same coloured as we are
 			for(i = 0; i < MAXPLAYERS; i++)
 			{
-				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i]
-					&& player.Level.Game.Players[i].Colour == player.Colour)
+				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i] && 
+				    player.Level.Game.Players[i].Colour == player.Colour)
 					continue;
 			}
 		}
@@ -1197,7 +1194,7 @@ Actor FindEnemy()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
-			player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
+		    player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
 		{
 			if (MainGameInfo(player.Level.Game).GameMode) // [CW] Check if an advanced game mode is active
 			{
@@ -1205,10 +1202,10 @@ Actor FindEnemy()
 				if (player.Level.Game.Players[i])
 				{
 					teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
-						Actor(player.Level.Game.Players[i].MO));
+						     Actor(player.Level.Game.Players[i].MO));
 					// [CW] We've got a team factor, check if it can be an enemy
 					if (teamfactor != Game::teamfactor_any &&
-							teamfactor != Game::teamfactor_enemy)
+					    teamfactor != Game::teamfactor_enemy)
 						continue;
 				}
 			}
@@ -1220,7 +1217,7 @@ Actor FindEnemy()
 				if (player.Level.Game.Players[i].Colour == player.Colour)
 					continue;
 			}
-			if (!player.Level.Game.deathmatch)
+			if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
 			{
 				// [FB] Don't attack fellow players in some gameplay modes
 				if (player.Level.Game.Players[i])
@@ -1283,11 +1280,11 @@ int B_ChooseWeapon()
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
 						return HexenDefs::WP_SECOND;
 
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
-						return HexenDefs::WP_THIRD;
-
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
 						return HexenDefs::WP_FOURTH;
+
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
+						return HexenDefs::WP_THIRD;
 
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 50)
 						return HexenDefs::WP_SEVENTH;
@@ -1714,6 +1711,7 @@ Actor B_SetAlly()
 				if (teamfactor == Game::teamfactor_coop)
 				{
 					ally = Actor(player.Level.Game.Players[i].MO);
+					break;
 				}
 			}
 		}
@@ -1727,7 +1725,7 @@ Actor B_SetAlly()
 				break;
 			}
 		}
-		else if (!player.Level.Game.deathmatch) // [FB] Set an ally if we're in a mode that has one
+		else if (player.Level.Game.deathmatch == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
 		{
 			if (player.Level.Game.Players[i])
 			{
@@ -1764,7 +1762,7 @@ Actor B_SetAlly()
 				}
 			}
 		}
-		else if(!player.Level.Game.deathmatch) // [FB] Other ally gameplay modes (no player colour checking)
+		else if(player.Level.Game.deathmatch == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
 		{
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
@@ -1845,7 +1843,7 @@ void Roam()
 		float an = GetAngle();
 		float dist;
 
-		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
+		for (dist = 256.0; dist >= 0.0/*>= 64.0*/; dist -= 64.0)
 		{
 			if (CheckPath(an, dist))
 			{
@@ -2063,11 +2061,11 @@ void Move(float deltaTime)
 			itemdist = botmo.DistTo(item);
 
 			if (bItemIsPowerup ||
-				(bItemIsWeapon && player.ReadyWeapon == HexenDefs::WP_FIRST || player.ReadyWeapon == HexenDefs::WP_SECOND)
-				|| (enemy.bIsPlayer && bItemIsWeapon && player.ReadyWeapon < Player(enemy.Player).ReadyWeapon)
-				|| ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask
-				|| item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2)))
-				&& itemdist <= GETINCOMBAT)
+			     (bItemIsWeapon && (player.ReadyWeapon == HexenDefs::WP_FIRST || player.ReadyWeapon == HexenDefs::WP_SECOND)) || 
+			     (enemy.bIsPlayer && bItemIsWeapon && player.ReadyWeapon < Player(enemy.Player).ReadyWeapon) || 
+			     ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
+			       item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2))) &&
+			     itemdist <= GETINCOMBAT)
 			{
 				Roam();
 				return;
@@ -2090,10 +2088,10 @@ void Move(float deltaTime)
 		}
 
 		if (CheckTo(enemy.Origin) && dist >
-			combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon])
+		    combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon])
 		{
 			//if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon] == 48.0)
-			//print("Going forward %d %d", forwardmove, sidemove);
+				//dprint("Going forward %d %d", forwardmove, sidemove);
 			forwardmove = FORWARDRUN;
 		}
 		else
@@ -2109,7 +2107,7 @@ void Move(float deltaTime)
 		return;
 	}
 
-	// [FB] We cover ball movement here too
+	// [FB] We cover movement to ball here too
 	if (ball)
 	{
 		float balldist;
@@ -2217,38 +2215,38 @@ void Turn()
 	// [BC] Don't act crazy while trying to aim
 	switch (info.accuracy)
 	{
-	case bsk_verypoor:
-	case bsk_poor:
-	case bsk_low:
-		if (distance > 7.5)
-			distance = 7.5;
-		if (distance < -7.5)
-			distance = -7.5;
-		break;
-	case bsk_medium:
-		if (distance > 15.0)
-			distance = 15.0;
-		if (distance < -15.0)
-			distance = -15.0;
-		break;
-	case bsk_high:
-		if (distance > 22.5)
-			distance = 22.5;
-		if (distance < -22.5)
-			distance = -22.5;
-		break;
-	case bsk_excellent:
-		if (distance > 30.0)
-			distance = 30.0;
-		if (distance < -30.0)
-			distance = -30.0;
-		break;
-	case bsk_supreme:
-		if (distance > 37.5)
-			distance = 37.5;
-		if (distance < -37.5)
-			distance = -37.5;
-		break;
+		case bsk_verypoor:
+		case bsk_poor:
+		case bsk_low:
+			if (distance > 7.5)
+				distance = 7.5;
+			if (distance < -7.5)
+				distance = -7.5;
+			break;
+		case bsk_medium:
+			if (distance > 15.0)
+				distance = 15.0;
+			if (distance < -15.0)
+				distance = -15.0;
+			break;
+		case bsk_high:
+			if (distance > 22.5)
+				distance = 22.5;
+			if (distance < -22.5)
+				distance = -22.5;
+			break;
+		case bsk_excellent:
+			if (distance > 30.0)
+				distance = 30.0;
+			if (distance < -30.0)
+				distance = -30.0;
+			break;
+		case bsk_supreme:
+			if (distance > 37.5)
+				distance = 37.5;
+			if (distance < -37.5)
+				distance = -37.5;
+			break;
 	}
 	player.ViewAngles.yaw = AngleMod360(botmo.Angles.yaw + distance);
 }
@@ -2363,7 +2361,7 @@ void OnBeginPlay()
 		// If the user doesn't input a name, don't
 		// spawn one of the "special" bots, only one of the
 		// normal ones.
-		bottype = P_Random() % MainGameInfo::NUMBOTTYPES;
+		bottype = P_Random() + (P_Random() % 81) % MainGameInfo::NUMBOTTYPES;
 	}
 
 	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
@@ -2656,7 +2654,7 @@ void BotTick(float deltaTime)
 	}
 
 	// [FB] Set an ally if we're in a mode that has one...
-	if (!player.Level.Game.deathmatch || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM || 
+	if ((player.Level.Game.deathmatch == HexenDefs::game_sweep || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM) || 
 		MainGameInfo(player.Level.Game).GameMode)
 	{
 		ally = B_SetAlly();
