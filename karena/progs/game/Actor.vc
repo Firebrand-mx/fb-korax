@@ -1054,7 +1054,7 @@ void Died(Actor source)
 
 				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
-				Player(source.Player).GiveExperience(500 + (500 * (Player(Player).exp_level - 1) / 10));
+				Player(source.Player).GiveExperience(500 + ((500 * (Player(Player).exp_level - 1) / 10) * (500 * (Player(source.Player).exp_level - 1) / 10)));
 
 				if (MainGameInfo(Level.Game).GameMode)
 					se = MainGameInfo(Level.Game).GameMode.GetFragScoreEvent(Player(source.Player), Player(self.Player));
@@ -2944,7 +2944,7 @@ bool HitFloor()
 			HitFloorType();
 			return true;
 		}
-		else if (Class == MinotaurFloorFire1 || Class == LightningFloor)
+                else if (bIgnoreFloorStep)
 		{
 			// Minotaur floor fire can go up steps
 			return true;
@@ -3627,8 +3627,8 @@ bool PIT_StompThing(Entity Other)
 		return false;
 	}
 
-	//Actor(Other).Damage(self, self, 10000);
-	Actor(Other).Damage(self, none, 10000);		// [CW] changed to allow telfrag deathmsg usage
+	//Actor(Other).Damage(self, none, 10000);		// [CW] changed to allow telfrag deathmsg usage
+	Actor(Other).Damage(self, self, 10000);		//[FB] It would be better to just compare for same source and target...
 
 	return true;
 }
