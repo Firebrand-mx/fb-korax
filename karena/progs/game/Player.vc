@@ -114,6 +114,9 @@ enum
 int SBFlags;
 
 int ArmorPoints;
+// [KORAX]
+/*float ArmorPoints[HexenDefs::NUMARMOR];
+int ArmorPerc[HexenDefs::NUMARMOR];*/
 
 int Mana[HexenDefs::NUMMANA];
 
@@ -122,7 +125,6 @@ int Keys;
 // Power ups. invinc and invis are tic counters.
 float Powers[NUMPOWERS];
 
-int Arti;	// artitype_t to use
 float InventoryTime;
 
 int ArtifactFlash;
@@ -131,6 +133,7 @@ int InvPtr;
 int InvCurPos;
 int InventorySlotNum;
 inventory_t Inventory[HexenDefs::NUMARTIFACTS];
+int Arti;	// artitype_t to use
 
 // Base height above floor for viewz.
 float ViewHeight;
@@ -186,10 +189,7 @@ int NewTorch;	// used in the torch flicker effect.
 int NewTorchDelta;
 
 int WeaponCShift;
-
-//
-//float MorphTime;	// player is a pig if > 0
-//
+//[KORAX]float MorphTime;	// player is a pig if > 0
 morph_t	Morph;
 
 TVec MoveDir;
@@ -206,14 +206,11 @@ float LastHazardTime;
 
 BotPlayer Bot;
 
+TVec useDir;
 Actor Rain1;	// active rain maker 1
 Actor Rain2;	// active rain maker 2
 
 bool inited;
-
-int PuzzleItemType;
-bool PuzzleActivated;
-TVec PuzzleUseDir;
 
 int pcount; // [FB] counter
 int dam_am; // [FB] Just for the hero's shield
@@ -344,14 +341,14 @@ void SpawnClient()
 	//  Spawn player
 	if (Level.Game.deathmatch)
 	{
-		dprint("Player::SpawnClient : goto DMSP");
+		dprint("Player::SpawnClient : goto DeathMatchSpawnPlayer");
 		DeathMatchSpawnPlayer();
 	}
 	else
 	{
-		dprint("Player::SpawnClient : goto SP (probably a bug for now!)");
+		dprint("Player::SpawnClient : goto SpawnPlayer (probably a bug for now!)");
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-				GetPlayerNum()]);
+			GetPlayerNum()]);
 	}
 
 	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
@@ -435,7 +432,7 @@ void NetGameReborn()
 
 	foundSpot = false;
 	if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-			GetPlayerNum()]))
+		GetPlayerNum()]))
 	{
 		// Appropriate player start spot is open
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
@@ -461,7 +458,7 @@ void NetGameReborn()
 	{
 		// Player's going to be inside something
 		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
-				GetPlayerNum()]);
+			GetPlayerNum()]);
 	}
 
 	// Restore keys and weapons
@@ -540,7 +537,7 @@ void UserinfoChanged()
 	//[CW] update all server clients' scoreboards
 	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 
-	dprint("Player::UserinfoChanged : OUT (after SU)");
+	dprint("Player::UserinfoChanged : OUT (after ScoreboardsUpdate)");
 }
 
 //==========================================================================
@@ -694,7 +691,7 @@ void DeathMatchSpawnPlayer()
 		dprint("Player::DeathMatchSpawnPlayer : check spot %i", i);
 		if (CheckSpot(&Level.DeathmatchStarts[i]))
 		{
-			dprint("Player::DeathMatchSpawnPlayer : successfull, goto SP");
+			dprint("Player::DeathMatchSpawnPlayer : successful, goto SpawnPlayer");
 			SpawnPlayer(&Level.DeathmatchStarts[i]);
 			return;
 		}
@@ -777,7 +774,6 @@ void SpawnPlayer(mthing_t * mthing)
 		PlayerReborn();
 		ResetInventory = true;
 	}
-
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
 	{
 		PClass = P_Random() % 6;
@@ -798,7 +794,7 @@ void SpawnPlayer(mthing_t * mthing)
 	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM &&
 		TeamSelection == HexenDefs::teamselection_none)
 	{
-		dprint("Player::SpawnPlayer : goto select team");
+		dprint("Player::SpawnPlayer : goto SelectPlayerTeam");
 		SelectPlayerTeam(false);
 	}
 
@@ -880,7 +876,6 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		ViewEnt.Owner = MO;
 	}
-
 	SetupPsprites();
 	if (Level.Game.deathmatch)
 	{
@@ -945,7 +940,7 @@ void SpawnPlayer(mthing_t * mthing)
 	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
 		TeamSelection == HexenDefs::teamselection_done)
 	{
-		dprint("Player::SpawnPlayer : put player to team");
+		dprint("Player::SpawnPlayer : InsertPlayer to team");
 		MainGameInfo(Level.Game).InsertPlayer(self);
 	}
 
@@ -1056,7 +1051,7 @@ void PlayerExitMap(bool clusterChange)
 		Morph.MorphTime = 0.0;
 	}
 	MO.Angles.pitch = 0.0;
-	MO.	Alpha = 1.0;	// Remove invisibility
+	MO.Alpha = 1.0;	// Remove invisibility
 	ExtraLight = 0;	// Remove weapon flashes
 	FixedColourmap = 0;	// Remove torch
 	DamageFlash = 0.0;	// No palette changes
@@ -1857,13 +1852,13 @@ void MovePlayer(float deltaTime)
 		forward *= 1.5;
 		side *= 1.5;
 	}
-	if ((!Powers[pw_flight] || MO.Origin.z <= MO.FloorZ) &&
+/*	if ((!Powers[pw_flight] || MO.Origin.z <= MO.FloorZ) &&
 		(Actor(MO).GetFloorType()->Friction < Actor::FRICTION_NORMAL ||
 		(MO.Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow))
 	{
 		forward *= 0.5;
 		side *= 0.5;
-	}
+	}*/
 
 	// Do not let the player control movement
 	//  if not onground.
@@ -1884,6 +1879,7 @@ void MovePlayer(float deltaTime)
 	}
 
 	MO.Velocity += 5.0 * deltaTime * wishvel;
+
 	if (forward || side)
 	{
 		SetPlayerRunState();
@@ -1926,13 +1922,13 @@ void MovePlayer(float deltaTime)
 	}
 	if ((Buttons & BT_JUMP) && onground && !JumpTime)
 	{
-		if (PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+		if (PClass == HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
-			MO.Velocity.z = 9.5 * 35.0;
+			MO.Velocity.z = 6.5 * 35.0;
 		}
 		else
 		{
-			MO.Velocity.z = 6.5 * 35.0;
+			MO.Velocity.z = 9.5 * 35.0;
 		}
 		Actor(MO).bOnMobj = false;
 		JumpTime = 0.5;
@@ -2033,8 +2029,8 @@ void WaterMove(float deltaTime)
 	wishvel = vforward * forward + vright * side;
 	if (!forward && !side /* && !cmd.upmove */ )
 		wishvel.z -= 60.0;	// drift towards bottom
-//  	else
-//      	wishvel.z += cmd.upmove;
+//  else
+//      wishvel.z += cmd.upmove;
 
 	MO.Velocity += 3.5 * deltaTime * wishvel;
 
@@ -2675,45 +2671,45 @@ void PlayerImpulse()
 		//PlayerUseArtifact(HexenDefs::arti_poisonbag);
 	}
 
-	///// Hexen artifact hot keys
+	// Hexen artifact hot keys
 ///	if (!Arti)
 ///	{
 /*		if (impulse == 11)
 		{
-			Arti = NUMARTIFACTS;
+			Arti = HexenDefs::NUMARTIFACTS;
 		}
 		else if (impulse == 12 && (HealthBig < max_health))
 		{
-			Arti = arti_health;
+			Arti = HexenDefs::arti_health;
 		}
 		else */
 		
 		/*
 		else if (impulse == 8)
 		{
-			Arti = arti_teleport;
+			Arti = HexenDefs::arti_teleport;
 		}
 		else if (impulse == 7)
 		{
-			Arti = arti_teleportother;
+			Arti = HexenDefs::arti_teleportother;
 		}
 		else if (impulse == 6)
 		{
-			Arti = arti_egg;
+			Arti = HexenDefs::arti_egg;
 		}
 		else if (impulse == 5 && !Powers[pw_invulnerability])
 		{
-			Arti = arti_invulnerability;
+			Arti = HexenDefs::arti_invulnerability;
 		}*/
 //	}
 /*
 	if (Arti)
 	{
 		// Use an artifact
-		if (Arti == NUMARTIFACTS)
+		if (Arti == HexenDefs::NUMARTIFACTS)
 		{
 			// use one of each artifact (except puzzle artifacts)
-			for (i = 1; i < arti_firstpuzzitem; i++)
+			for (i = 1; i < HexenDefs::arti_firstpuzzitem; i++)
 			{
 				PlayerUseArtifact(i);
 			}
@@ -2923,13 +2919,13 @@ void DeathPlayerTick(float deltaTime)
 		// Flying bloody skull or flying ice chunk
 		ViewHeight = 6.0;
 		DeltaViewHeight = 0.0;
-		//player->damagecount = 20;
+		//damagecount = 20;
 		if (onground)
 		{
 #ifdef FIXME
-			if (player->lookdir < 60)
+			if (lookdir < 60)
 			{
-				lookDelta = (60 - player->lookdir) / 8;
+				lookDelta = (60 - lookdir) / 8;
 				if (lookDelta < 1 && (Level.Game.level->tictime & 1))
 				{
 					lookDelta = 1;
@@ -2938,7 +2934,7 @@ void DeathPlayerTick(float deltaTime)
 				{
 					lookDelta = 6;
 				}
-				player->lookdir += lookDelta;
+				lookdir += lookDelta;
 			}
 #endif
 		}
@@ -2956,17 +2952,17 @@ void DeathPlayerTick(float deltaTime)
 			ViewHeight = 6.0;
 		}
 #ifdef FIXME
-		if (player->lookdir > 0)
+		if (lookdir > 0)
 		{
-			player->lookdir -= 6;
+			lookdir -= 6;
 		}
-		else if (player->lookdir < 0)
+		else if (lookdir < 0)
 		{
-			player->lookdir += 6;
+			lookdir += 6;
 		}
-		if (abs(player->lookdir) < 6)
+		if (abs(lookdir) < 6)
 		{
-			player->lookdir = 0;
+			lookdir = 0;
 		}
 #endif
 	}
@@ -3021,7 +3017,7 @@ void DeathPlayerTick(float deltaTime)
 	}
 
 	if (respawn_counter <= 0.0 &&
-		( bIsBot || (Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP )) )
+		(bIsBot || (Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP )))
 	{
 		WeaponCShift = 0;
 		InvPtr = 0;
@@ -3053,8 +3049,12 @@ void PlayerTick(float deltaTime)
 
 	// Deny to do anything while immobile
 	if (bUnControllable)
+	{
 		Buttons = 0;
-	else if (bIsBot)
+		return;
+	}
+
+	if (bIsBot)
 	{
 		Bot.BotTick(deltaTime);
 	}
@@ -3063,8 +3063,7 @@ void PlayerTick(float deltaTime)
 	experience = Actor(MO).experience;
 
 	// Copy view angles
-	if (!bUnControllable)
-		MO.Angles = ViewAngles;
+	MO.Angles = ViewAngles;
 
 	// fixme: do this in the cheat code
 	if (Cheats & CF_NOCLIP)
@@ -3275,7 +3274,7 @@ void PlayerTick(float deltaTime)
 				if (!bAltShadow)
 				{
 					bDontDraw = true;
- 					MO.bNonShootable = true;
+ 					Actor(MO).bNonShootable = true;
 				}
 			}
 			if (!(Level.Game.level->tictime & 31))
@@ -3290,7 +3289,7 @@ void PlayerTick(float deltaTime)
 					else
 					{
 						bDontDraw = false;
- 						MO.bNonShootable = false;
+ 						Actor(MO).bNonShootable = false;
 					}
 				}
 				else
@@ -3326,7 +3325,7 @@ void PlayerTick(float deltaTime)
 			/*MO.bReflective = false;
 			if (PClass == PCLASS_CLERIC)
 			{
-				MO.bNonShootable = false;
+				Actor(MO).bNonShootable = false;
 				MO.Alpha = 1.0;
 			}*/
 			//[KORAX]
@@ -3392,19 +3391,19 @@ void PlayerTick(float deltaTime)
 		}
 		if (bDontDraw)
 		{
-			MO.Alpha = 0.0;
+			Actor(MO).Alpha = 0.0;
 		}
 		else if (bShadow)
 		{
-			MO.Alpha = 0.333;
+			Actor(MO).Alpha = 0.333;
 		}
 		else if (bAltShadow)
 		{
-			MO.Alpha = 0.666;
+			Actor(MO).Alpha = 0.666;
 		}
 		else
 		{
-			MO.Alpha = 1.0;
+			Actor(MO).Alpha = 1.0;
 		}
 		Powers[pw_invulnerability2] -= deltaTime;
 		if (Powers[pw_invulnerability2] <= 0.0)
@@ -3414,6 +3413,7 @@ void PlayerTick(float deltaTime)
 			MO.Alpha = 1.0;
 		}
 	}
+
 	if (Powers[pw_minotaur])
 	{
 		Powers[pw_minotaur] -= deltaTime;
@@ -3443,7 +3443,7 @@ void PlayerTick(float deltaTime)
 			Powers[pw_flight] = 0.0;
 			if (MO.Origin.z != MO.FloorZ)
 			{
-//FIXME             		player->centreing = true;
+//FIXME             centreing = true;
 			}
 			MO.bFly = false;
 			MO.bNoGravity = false;
@@ -3455,7 +3455,7 @@ void PlayerTick(float deltaTime)
 		if (Powers[pw_invisibility] <= 0.0)
 		{
 			Powers[pw_invisibility] = 0.0;
-			MO.Alpha = 1.0;
+			Actor(MO).Alpha = 1.0;
 		}
 	}
 	if (Powers[pw_damage])
@@ -3686,6 +3686,8 @@ void PaletteFlash()
 
 void SetViewPos()
 {
+	int		i;
+
 	ViewOrg.x = MO.Origin.x;
 	ViewOrg.y = MO.Origin.y;
 
@@ -3705,7 +3707,7 @@ void SetViewPos()
 	SBFlags = Keys;
 	SBFlags |= ReadyWeapon << HexenDefs::SBF_WPN_SHIFT;
 //[Korax]
-//	Stats.flags |= Pieces << SBF_PIECES_SHIFT;
+//	SBFlags |= Pieces << HexenDefs::SBF_PIECES_SHIFT;
 	if (Powers[pw_flight])
 	{
 		if (Powers[pw_flight] > BLINKTHRESHOLD ||
@@ -3792,7 +3794,6 @@ void PlayerUseArtifact(int arti)
 		return;
 	}
 //[Korax]
-
 	int i;
 
 	for (i = 0; i < InventorySlotNum; i++)
@@ -3822,7 +3823,6 @@ void PlayerUseArtifact(int arti)
 			break;
 		}
 	}
-
 }
 
 //==========================================================================
@@ -4029,13 +4029,13 @@ bool UseArtifact(int arti)
 	case HexenDefs::arti_puzzgear2:
 	case HexenDefs::arti_puzzgear3:
 	case HexenDefs::arti_puzzgear4:
-		if (P_UsePuzzleItem(arti - HexenDefs::arti_firstpuzzitem))
+		if (UsePuzzleItem(arti - HexenDefs::arti_firstpuzzitem))
 		{
 			return true;
 		}
 		else
 		{
-			centreprint("YOU CANNOT USE THIS HERE");
+			centreprint("$txt_usepuzzlefailed");
 			return false;
 		}
 		break;
@@ -4595,7 +4595,7 @@ void SetWeapon(int NewWeapon)
 	PSpriteSY = Weapon(ViewEnt).PSpriteSY;
 }
 
-//===========================================================================
+//==========================================================================
 //
 //  BringUpWeapon
 //
@@ -4784,7 +4784,7 @@ void ActivateMorphWeapon()
 	}
 
 	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
-	SetWeapon(HexenDefs::WP_FIRST);
+	SetWeapon(HexenDefs::WP_FIRST);	// Snout is the first weapon
 	SetViewState(ps_weapon, Weapon(ViewEnt).ReadyState);
 }
 
@@ -4890,13 +4890,11 @@ bool PTR_UseTraverse(intercept_t * in)
 	float pheight;
 	TVec hit_point;
 	opening_t *open;
-	TVec useDir;
 
 	line = in->line;
 	if (!line->special || (GET_SPAC(line->flags) != SPAC_USE &&
 		GET_SPAC(line->flags) != SPAC_USETHROUGH))
 	{
-		AngleVector(&MO.Angles, &useDir);
 		hit_point = MO.Origin + (USERANGE * in->frac) * useDir;
 		open = LineOpenings(line, hit_point);
 		open = FindOpening(open, hit_point.z + MO.Height / 2.0,
@@ -4955,7 +4953,6 @@ void P_UseLines()
 	float y1;
 	float x2;
 	float y2;
-	TVec useDir;
 
 	AngleVector(&MO.Angles, &useDir);
 	x1 = MO.Origin.x;
@@ -4970,6 +4967,10 @@ void P_UseLines()
 //  USING A PUZZLE ITEM
 //
 //**************************************************************************
+
+int PuzzleItemType;
+bool PuzzleActivated;
+TVec PuzzleUseDir;
 
 //==========================================================================
 //
@@ -4992,7 +4993,10 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 			open = LineOpenings(in->line, hit_point);
 			if (!open || open->range <= 0.0)
 			{
-				MO.PlaySound('*puzzfail', CHAN_VOICE);
+				if (MO.bIsPlayer)
+				{
+					MO.PlaySound('*puzzfail', CHAN_VOICE);
+				}
 				return false;	// can't use through a wall
 			}
 			return true;	// Continue searching
@@ -5034,13 +5038,13 @@ bool PTR_PuzzleItemTraverse(intercept_t * in)
 
 //==========================================================================
 //
-//  P_UsePuzzleItem
+//  UsePuzzleItem
 //
 //  Returns true if the puzzle item was used on a line or a thing.
 //
 //==========================================================================
 
-bool P_UsePuzzleItem(int itemType)
+bool UsePuzzleItem(int itemType)
 {
 	float x1, y1, x2, y2;
 
@@ -5176,13 +5180,41 @@ void Cheat_Gimme()
 
 //==========================================================================
 //
+//  P_Massacre
+//
+//  Kills all monsters.
+//
+//==========================================================================
+
+int P_Massacre()
+{
+	int count;
+	Actor mo;
+
+	count = 0;
+	FOREACH(Actor, mo)
+	{
+		if (mo.bCountKill && mo.Health > 0)
+		{
+			mo.bNonShootable = false;
+			mo.bInvulnerable = false;
+			mo.bShootable = true;
+			mo.Damage(none, none, 10000);
+			count++;
+		}
+	}
+	return count;
+}
+
+//==========================================================================
+//
 //  Cheat_KillAll
 //
 //==========================================================================
 
 void Cheat_KillAll()
 {
-	cprint("%d MONSTERS KILLED", HexenLevelInfo(Level).P_Massacre());
+	cprint("%d MONSTERS KILLED", P_Massacre());
 }
 
 //==========================================================================
@@ -5563,10 +5595,10 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		// telefrag
 		else if (inflictor.IsA('Pawn'))
 			bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
-												MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
+				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
 		else
 			bprint(MainGameInfo(Level.Game).DeathMessageMisc[inflictor.deathmsgi], PlayerName);
-		//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
+//			bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
@@ -5645,7 +5677,7 @@ void ConfirmTrophy(int type)
 	}
 
 	centreprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
-	//////////////CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
+	//CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
 
 
 	// [CW] if the trophy data should be stored, do it here

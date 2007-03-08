@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**		    ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -43,8 +43,6 @@ int ArmorType;
 
 void TouchSpecial(Actor Toucher)
 {
-	PlayerPawn P;
-
 	if (!Toucher.bPickUp)
 	{
 		// Can't be picked up by toucher
@@ -55,21 +53,15 @@ void TouchSpecial(Actor Toucher)
 		// Toucher is dead
 		return;
 	}
-	P = PlayerPawn(Toucher);
-	if (!P)
-	{
-		//	Shouldn't happen
-		return;
-	}
-	if (!Player(P.Player).GiveArmor(ArmorType, -1))
+	if (!Player(Toucher.Player).GiveArmor(ArmorType, -1))
 	{
 		return;
 	}
-	P.Player.cprint(MainGameInfo(Level.Game).armorText[ArmorType]);
+	Toucher.Player.cprint(MainGameInfo(Level.Game).armorText[ArmorType]);
 	if (Special)
 	{
-		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, P);
+		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2], Args[3],
+			Args[4], NULL, 0, Toucher);
 		Special = 0;
 	}
 	if (Level.Game.deathmatch && !bDropped)
@@ -83,8 +75,8 @@ void TouchSpecial(Actor Toucher)
 			HideSpecial();
 		//Remove();
 	}
-	Player(P.Player).BonusFlash += BONUSADD;
-	P.PlaySound('PickupItem', CHAN_ITEM);
+	Player(Toucher.Player).BonusFlash += BONUSADD;
+	Toucher.PlaySound('PickupItem', CHAN_ITEM);
 }
 
 defaultproperties

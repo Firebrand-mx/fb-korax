@@ -120,7 +120,6 @@ final void A_SkullRodStorm()
 	float y;
 	Actor A;
 	Player player;
-	class<Actor> rain_type;
 
 	if (Health-- == 0)
 	{
@@ -153,11 +152,9 @@ final void A_SkullRodStorm()
 	}
 	x = Origin.x + Random() * 128.0 - 64.0;
 	y = Origin.y + Random() * 128.0 - 64.0;
+	A = Spawn(RainPlayer1, vector(x, y, ONCEILINGZ));
 	if(Sector->bHasExtrafloors && Origin.z <= CeilingZ)
-		// [FB] CeilingZ - Height <- In this case "Height" is the rain height (12)
-		A = Spawn(RainPlayer1, vector(x, y, CeilingZ - 12.0));
-	else
-		A = Spawn(RainPlayer1, vector(x, y, ONCEILINGZ));
+		A.Origin.z = CeilingZ - A.Height;
 	A.Instigator = Instigator;
 	A.Velocity.x = 0.00001;	// Force collision detection
 	A.Velocity.z = -A.Speed;
@@ -192,6 +189,7 @@ defaultproperties
 	Height = 8.0;
 	Speed = 770.0;
 	MissileDamage = 20;
+	bActivateImpact = true;	
 	bFireDamage = true;
 	IdleState = S_HRODFX2_1;
 	DeathState = S_HRODFXI2_1;

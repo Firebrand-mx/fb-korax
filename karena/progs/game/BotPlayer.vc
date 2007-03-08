@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**		    ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -46,18 +46,18 @@ const float
 	SIDEWALK				= 192.0,
 	SIDERUN					= 320.0,
 
-	MAX_TRAVERSE_DIST			= 1024.0,		// 10 meters, used within b_func.c
+	MAX_TRAVERSE_DIST		= 1024.0,		// 10 meters, used within b_func.c
 	AVOID_DIST				= 512.0,		// Try avoid incoming missiles once they reached this close
-	SAFE_SELF_MISDIST			= 128.0,		// Distance from self to target where it's safe to pull a rocket.
+	SAFE_SELF_MISDIST		= 128.0,		// Distance from self to target where it's safe to pull a rocket.
 	FRIEND_DIST				= 128.0,		// To friend.
 	DARK_DIST				= 256.0,		// Distance that bot can see enemies in the dark from.
-	MAX_MONSTER_TARGET_DIST			= 1024.0,		// Too high can slow down the performance, see P_mobj.c
-	ENEMY_SCAN_FOV				= 120.0,
-	MAXMOVEHEIGHT				= 32.0,			// MAXSTEPMOVE but with jumping counted in.
+	MAX_MONSTER_TARGET_DIST	= 1024.0,		// Too high can slow down the performance, see P_mobj.c
+	ENEMY_SCAN_FOV			= 120.0,
+	MAXMOVEHEIGHT			= 32.0,			// MAXSTEPMOVE but with jumping counted in.
 	GETINCOMBAT				= 512.0,		// Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
 	MAXROAM					= (5.0 * 35.0);		// When this time is elapsed the bot will roam after something else.
-const int WHATS_DARK				= 64;			// light value thats classed as dark.
+const int WHATS_DARK		= 64;			// light value thats classed as dark.
 
 /*
 
@@ -83,19 +83,19 @@ struct botinfo_t
 	string Name;		// Bot's name
 	int accuracy;		// Accuracy with "instant" weapons (this includes "leading")
 	int intelect;		// Accuracy with "missile" weapons (rocket launcher, etc.)
-	int evade;		// Ability to dodge incoming missiles
+	int evade;			// Ability to dodge incoming missiles
 	int anticip;		// Ability to anticipate "instant" shots
 	int reaction;		// Overall reaction time (lower is "better")
 	int pisschance;		// Chance the bot will get pissed when his threshold is reached
 	int threshold;		// How much it takes to frustrate/piss off the bot
 	int dangerlevel;	// When health is below this, we need some health
-//	int wpfav;		// Favorite weapon
+//	int wpfav;			// Favorite weapon
 	int chatinfo;		// Bot's chat strings
 	int chattime;		// How long it takes us to type a line
-	int chatty;		// How talkative the bot is
+	int chatty;			// How talkative the bot is
 //	char *colour;		// Colour (in form of a string)
 //	char *gender;		// Male/female/it :)
-//	char *skin;		// Skin
+//	char *skin;			// Skin
 	int railcolour;		// Railgun trail colour
 //	bool revealed;		// Hidden bots must be revealed
 	string userinfo;
@@ -104,7 +104,7 @@ struct botinfo_t
 struct chatline_t
 {
 //	string		*string;
-//	chattype_t  	bot;
+//	chattype_t  bot;
 	chatline_t	*line;
 };
 
@@ -146,7 +146,7 @@ struct botstate_t
 	int BState;
 };
 
-Player player;			// Points to reference player
+Player player;		// Points to reference player
 Actor botmo;
 
 // Destinations
@@ -190,7 +190,7 @@ float t_anticip;
 float t_chat;			// Tics left until bots completes "typing" in what he's saying.
 				// Bot also doesn't do anything during this time.
 
-float forwardmove;		// For building ucmd
+float forwardmove;	// For building ucmd
 float sidemove;
 
 // Misc booleans
@@ -596,7 +596,6 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		// crosses a two sided line
 		open = LineOpenings(ld, hit_point);
 		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
-
 		// No valid openings
 		if (!open || open->range <= botmo.Height)
 		{
@@ -624,15 +623,15 @@ bool PTR_BotPathTraverse(intercept_t *in)
 				{
 					return true;
 				}
-				else
-				{*/
+				else*/
 					return false;
-				//}
+
 			}
 		}
 
 		// [FB] Use lines
 		player.P_UseLines();
+		return true;
 	}
 
 	// [FB] Order of actors response precedence
@@ -683,6 +682,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			else if (dheight >= 24.0 && dheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
+				return true;
 			}
 		}
 	}
@@ -832,7 +832,7 @@ bool Check_LOS(Actor to, float vangle)
 		return false; // Looker seems to be blind.
 
 	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
-	       vangle / 2.0;
+		vangle / 2.0;
 }
 
 //==========================================================================
@@ -1055,8 +1055,9 @@ void BotAim()
 			else
 				SetAngle(an - Random() * 20.0);
 			break;
-			default:
-				Error("Unknown bot skill level: %d", info.intelect);
+
+		default:
+			Error("Unknown bot skill level: %d", info.accuracy);
 			return;
 		}
 	}

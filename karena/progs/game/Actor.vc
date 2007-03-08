@@ -33,26 +33,30 @@
 class Actor : EntityEx
 	abstract;
 
-const int BASETHRESHOLD			= 100;	// follow a player exlusively for 3 seconds
+const float MORPHTIME 		= 40.0;
+const float MAULATORTIME 	= 25.0;
 
-const float FLOATRANDZ			= 99998.0;
+const float TELEFOGHEIGHT	= 32.0;
 
-const float TELEFOGHEIGHT		= 32.0;
+const int BASETHRESHOLD		= 100;	// follow a player exlusively for 3 seconds
 
-const float MELEERANGE			= 64.0;
-const float MISSILERANGE		= (32.0 * 64.0);
+const float FLOATRANDZ		= 99998.0;
 
-const float BONUSADD			= 0.2;
+const float MELEERANGE		= 64.0;
+const float MISSILERANGE	= (32.0 * 64.0);
 
-const float FLOATSPEED			= 140.0;
+const float FLOATSPEED		= 140.0;
 
-const float MAXMOVE 			= 1050.0;
-const float MAXMOVESTEP			= 15.0;	//MAXMOVE / (35.0 * 2.0)
-const float STOPSPEED			= 2.1875;
+const float MAXMOVE 		= 1050.0;
+const float MAXMOVESTEP		= 15.0;	//MAXMOVE / (35.0 * 2.0)
+const float STOPSPEED		= 2.1875;
 
-const float MONS_LOOK_RANGE		= (16.0 * 64.0);
+const float BONUSADD		= 0.2;
+
+const float MONS_LOOK_RANGE 	= (16.0 * 64.0);
 const int MONS_LOOK_LIMIT 		= 64;
 
+//  States
 state IdleState;
 state SeeState;
 state PainState;
@@ -62,24 +66,27 @@ state CrashState;
 state DeathState;
 state GibsDeathState;
 state IceDeathState;
-state BurnDeathState;
 
+//  Sounds
 name SightSound;
 name ActiveSound;
 name AttackSound;
 name PainSound;
 name DeathSound;
 
+//	FLAGS
 bool bSpecial;			// call P_SpecialThing when touched
 bool bShootable;		// Can be hit.
 bool bAmbush;
 bool bJustHit;			// try to attack right back
 bool bJustAttacked;		// take at least one step before attacking
 bool bSpawnCeiling;		// hang from ceiling instead of floor
+//	MOVEMENT FLAGS
 bool bPickUp;			// for players to pick up items
 bool bMissile;			// don't hit same species, explode on block
 bool bNoBlood;			// don't bleed when shot (use puff)
 bool bInFloat;			// floating to a height for a move, don't
+				// auto float to target's height
 bool bSkullFly;			// skull in flight
 bool bCountKill;		// count towards intermission kill total
 bool bIceCorpse;		// a frozen corpse (for blasting)
@@ -117,6 +124,7 @@ bool bNoMorph;			// Won't morph into a pig.
 bool bStaticLight;		// Static light source.
 bool bEnemy;			// [FB] A monster enemy for bots to attack
 
+//  Params
 float Speed;
 float PainChance;
 int SpawnHealth;
@@ -158,7 +166,7 @@ TVec aim_dir;
 float aim_topslope;
 float aim_bottomslope;	// slopes to top and bottom of target
 float aim_range2d;
-TVec hit_point;
+TVec hit_pointA;
 Actor linetarget;	// who got hit (or none)
 
 float shoot_range;
@@ -167,9 +175,9 @@ TVec shoot_dir;
 int la_damage;
 TVec shoot_linestart;
 TVec shoot_lineend;
-
 class<Actor> shootPuffType;
 
+// Static light parameters.
 TVec LightOffset;
 int LightColour;
 float LightRadius;
@@ -547,12 +555,16 @@ void OnMapSpawn(mthing_t * mthing)
 		bCheckLineBlocking = true;
 		/*if (Class != PlayerFighter && Class != PlayerCleric &&
 			Class != PlayerMage && Class != PlayerPig)*/
-		if (!bPickUp && Class!=PlayerPig)
+		if (!bPickUp && Class != PlayerPig)
 		{
 //[Korax]
 			bCheckLineBlockMonsters = true;
-	        	experience = SpawnHealth;
+	        experience = SpawnHealth;
 		}
+	}
+	else
+	{
+		MaxStepHeight = 4.0;
 	}
 
 	// Set the state, but do not use P_SetMobjState, because action
@@ -941,7 +953,7 @@ Actor ActiveMinotaur()
 			continue;	// for morphed minotaurs
 		if (mo.bCorpse)
 			continue;
-		if ((Level.Game.level->tictime - mo.Args[0]) >= ftoi(Player::MAULATORTIME * 35.0))
+		if ((Level.Game.level->tictime - mo.Args[0]) >= ftoi(MAULATORTIME * 35.0))
 			continue;
 		if (mo.Instigator == self)
 			return mo;
@@ -957,7 +969,7 @@ Actor ActiveMinotaur()
 
 void Died(Actor source)
 {
-	int i;
+	int i;	
 
 	bShootable = false;
 	bNoGravity = false;
@@ -1067,7 +1079,6 @@ void Died(Actor source)
 			}
 		}
 	}
-
 	if (bIsPlayer)
 	{
 		//[CW] notify advanced game mode
@@ -1107,12 +1118,33 @@ void Died(Actor source)
 		Player.PlayerState = PST_DEAD;
 		Player(Player).SetFOV(HexenDefs::DEFAULT_FOV);
 		Player(Player).DropWeapon();
-		if (bFireDamage && BurnDeathState)
+		if (bFireDamage)
 		{
 			// Player flame death
 			PlaySound('*burndeath', CHAN_VOICE);
-			SetState(BurnDeathState);
-			return;
+			switch (Player.PClass)
+			{
+			case HexenDefs::PCLASS_FIGHTER:
+				SetState(S_PLAY_F_FDTH1);
+				return;
+			case HexenDefs::PCLASS_CLERIC:
+				SetState(S_PLAY_C_FDTH1);
+				return;
+			case HexenDefs::PCLASS_MAGE:
+				SetState(S_PLAY_M_FDTH1);
+				return;
+			case HexenDefs::PCLASS_HERETIC:
+				SetState(S_PLAY_H_FDTH1);
+				return;
+			case HexenDefs::PCLASS_MARINE:
+				SetState(S_PLAY_D_FDTH1);
+				return;
+			case HexenDefs::PCLASS_WITCHAVEN:
+				SetState(S_PLAY_FDTH3);
+				return;
+			default:
+				break;
+			}
 		}
 		if (bIceDamage)
 		{
@@ -1143,19 +1175,19 @@ void Died(Actor source)
 	{
 		if (Class == FighterBoss)
  		{
-			PlaySound('PlayerFighterBurnDeath', CHAN_VOICE);//Boss
+			PlaySound('PlayerFighterBurnDeath', CHAN_VOICE);
 			SetState(S_PLAY_F_FDTH1);
 			return;
  		}
  		if (Class == ClericBoss)
 		{
-			PlaySound('PlayerClericBurnDeath', CHAN_VOICE);//Boss
+			PlaySound('PlayerClericBurnDeath', CHAN_VOICE);
 			SetState(S_PLAY_C_FDTH1);
 			return;
 		}
 		if (Class == MageBoss)
 		{
-			PlaySound('PlayerMageBurnDeath', CHAN_VOICE);//Boss
+			PlaySound('PlayerMageBurnDeath', CHAN_VOICE);
 			SetState(S_PLAY_M_FDTH1);
 			return;
 		}
@@ -1289,7 +1321,7 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 	beastMo.Angles = Angles;
 	beastMo.Player = Player;
 	beastMo.bIsPlayer = true;
-	////////////////////beastMo.Health = beastMo.SpawnHealth;	////Player::MAXMORPHHEALTH;
+	//beastMo.Health = beastMo.SpawnHealth;	////Player::MAXMORPHHEALTH;
 	Player(Player).HealthBig = beastMo.Health;
 	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;
 	Player.MO = beastMo;
@@ -1353,7 +1385,7 @@ bool MorphMonster()
 
 	monster = Spawn(Pig, Origin);
 	monster.SpecialCID = class<Actor>(Class);
-	monster._Special1 = ftoi(Player::MORPHTIME * 35.0) + P_Random();
+	monster._Special1 = ftoi(MORPHTIME * 35.0) + P_Random();
 	monster.Alpha = Alpha;
 	monster.Enemy = Enemy;
 	monster.Angles.yaw = Angles.yaw;
@@ -1524,7 +1556,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 			return;
 		}
 	}
-	// Push the target
+	// Push the	target
 	if (inflictor && (!source || !source.bIsPlayer) &&
 		!inflictor.bNoDamageThrust)
 	{
@@ -2086,7 +2118,7 @@ void SpawnDirt(float radius)
 {
 	float angle;
 	TVec org;
-	 class<Actor> dtype;
+	class<Actor> dtype;
 	Actor dirt;
 
 	angle = 360.0 * Random();
@@ -2567,9 +2599,9 @@ void ApplyFriction()
 		Velocity.z > -STOPSPEED && Velocity.z < STOPSPEED &&
 		(!bIsPlayer || (!Player.ForwardMove && !Player.SideMove)))
 	{
+		// If in a walking frame, stop moving
 		if (bIsPlayer)
 		{
-			// If in a walking frame, stop moving
 			if (StateIsInRange(State, SeeState, none, 4))
 			{
 				SetState(IdleState);
@@ -2676,7 +2708,7 @@ void HitMobj(Entity Other)
 	}
 	else
 	{
-		// [FB] Added behaiviour for soccer ball
+		// [FB] Added behaviour for soccer ball
 		if (bFloorBounce)
 		{
 			float speed;
@@ -2693,7 +2725,7 @@ void HitMobj(Entity Other)
 				PlaySound(SightSound, CHAN_VOICE);
 			}
 
-			// [FB]
+			// [FB] STOP!
 			return;
 		}
 
@@ -2751,7 +2783,7 @@ void HitLine(tmtrace_t* tmtrace)
 {
 	if (bMissile)
 	{
-		if (bFloorBounce && !MaceFX3(self) && !StainedGlassShard1(self))
+		if (bFloorBounce && !MaceFX3(self))
 		{
 			// Struck a wall
 			BounceWall(1.5);
@@ -2788,7 +2820,7 @@ void HitLine(tmtrace_t* tmtrace)
 	}
 	else
 	{
-		// [FB] Added behaiviour for soccer ball
+		// [FB] Added behaviour for soccer ball
 		if (bFloorBounce)
 		{
 			// Struck a wall
@@ -2944,7 +2976,7 @@ bool HitFloor()
 			HitFloorType();
 			return true;
 		}
-                else if (bIgnoreFloorStep)
+		else if (bIgnoreFloorStep)
 		{
 			// Minotaur floor fire can go up steps
 			return true;
@@ -3460,7 +3492,6 @@ void Tick(float deltaTime)
 	{
 		return;
 	}
-
 	// Cycle through states, calling action functions at transitions
 	if (!AdvanceState(deltaTime))
 	{
@@ -3940,8 +3971,7 @@ bool ExplodeMissile()
 	{
 		return false;
 	}
-
-//	mo->tics -= P_Random() & 3;
+	//mo->tics -= P_Random()&3;
 	bMissile = false;
 
 	if (SorcererBall(self))
@@ -4109,6 +4139,11 @@ bool PIT_RadiusAttack(Entity Other)
 		// Out of range
 		return true;
 	}
+	if ((Other.Origin.z - Origin.z) > dist)
+	{
+		// too high/low
+		return true;
+	}
 	if (Other.CanSee(self))
 	{
 		// OK to damage, target is in direct path
@@ -4177,7 +4212,7 @@ bool PTR_AimTraverse(intercept_t * in)
 
 	if (in->bIsALine)
 	{
-		//TVec hit_point;
+		TVec hit_point;
 
 		li = in->line;
 
@@ -4189,6 +4224,7 @@ bool PTR_AimTraverse(intercept_t * in)
 		// the possible target ranges.
 		dist = aim_range * in->frac;
 		hit_point = Origin + dist * aim_dir;
+		hit_pointA = hit_point;
 		open = LineOpenings(li, hit_point);
 		open = FindOpening(open, hit_point.z, hit_point.z);
 
@@ -4402,7 +4438,7 @@ bool ShootCheckPlanes(sector_t * sec)
 
 bool PTR_ShootTraverse(intercept_t * in)
 {
-	//TVec hit_point;
+	TVec hit_point;
 	line_t *li;
 	Actor th;
 
@@ -4502,7 +4538,6 @@ bool PTR_ShootTraverse(intercept_t * in)
 	hit_point -= 10.0 * shoot_dir;
 
 	SpawnPuff(hit_point, shootPuffType);
-
 	if (la_damage)
 	{
 		if (!th.bNoBlood && !th.bInvulnerable)
@@ -4555,7 +4590,7 @@ int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 	dst = shoot_origin + shoot_range * shoot_dir;
 	shoot_linestart = shoot_origin;
 	if (!XLevel.PathTraverse(Origin.x, Origin.y, dst.x, dst.y,
-			PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_ShootTraverse'))
+		PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_ShootTraverse'))
 	{
 		return false;
 	}
@@ -4572,9 +4607,6 @@ int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 void SpawnPuff(TVec org, class<Actor> PuffType)
 {
 	Actor puff;
-
-	if (!PuffType)
-		return;
 
 	org.z += (Random() - Random()) * 4.0;
 	puff = Spawn(PuffType, org);
@@ -4635,28 +4667,6 @@ void SpawnPuff(TVec org, class<Actor> PuffType)
 	MainGameInfo(Level.Game).PuffSpawned = puff;
 }
 
-//==========================================================================
-//
-//  A_HideThing
-//
-//==========================================================================
-
-final void A_HideThing()
-{
-	bHidden = true;
-}
-
-//==========================================================================
-//
-//  A_UnHideThing
-//
-//==========================================================================
-
-final void A_UnHideThing()
-{
-	bHidden = false;
-}
-
 //===========================================================================
 //
 //  A_NoGravity
@@ -4688,6 +4698,28 @@ final void A_SetInvulnerable()
 final void A_UnSetInvulnerable()
 {
 	bInvulnerable = false;
+}
+
+//==========================================================================
+//
+//  A_HideThing
+//
+//==========================================================================
+
+final void A_HideThing()
+{
+	bHidden = true;
+}
+
+//==========================================================================
+//
+//  A_UnHideThing
+//
+//==========================================================================
+
+final void A_UnHideThing()
+{
+	bHidden = false;
 }
 
 //==========================================================================
@@ -4946,7 +4978,6 @@ final void A_Explode()
 		damage = 4;
 		distance = 40.0;
 	}
-
 	P_RadiusAttack(damage, distance, damageSelf);
 	if (Class != PoisonCloud && Origin.z <= FloorZ + distance)
 	{

@@ -57,6 +57,7 @@ string artifactMessages[HexenDefs::NUMARTIFACTS];
 string armorText[HexenDefs::NUMARMOR];
 string manaText[6];
 string TextKeyMessages[HexenDefs::NUMKEYS];
+string TextKeyLockedMessages[HexenDefs::NUMKEYS];
 
 //
 //[CW] Death messages
@@ -94,6 +95,8 @@ float xspeed[8];
 float yspeed[8];
 
 int whatmana[HexenDefs::NUMWEAPONS];
+
+int classFlags[3];
 
 float air_control;
 
@@ -171,6 +174,7 @@ void InitNewGame(int skill)
 		dprint("Spawn Football");
 		GameMode = Game(SpawnObject(GameFootball)); break;
 	case HexenDefs::game_kth:
+		dprint("Spawn Kill The Heresiarch");
 		GameMode = Game(SpawnObject(GameKTH)); break;
 	}
 	if (GameMode)
@@ -208,8 +212,8 @@ LevelInfo CreateLevelInfo()
 	levelinfo.BodyQueSize = GetCvar('BodyQueSize');
 	levelinfo.CorpseQueSize = GetCvar('CorpseQueSize');
 
-	dprint("CreateLevelInfo : BQS = %i",levelinfo.BodyQueSize);
-	dprint("CreateLevelInfo : CQS = %i",levelinfo.CorpseQueSize);
+	dprint("CreateLevelInfo : BodyQueSize = %i",levelinfo.BodyQueSize);
+	dprint("CreateLevelInfo : CorpseQueSize = %i",levelinfo.CorpseQueSize);
 
 	if (bFirstLevelInited)
 	{
@@ -240,7 +244,7 @@ LevelInfo CreateLevelInfo()
 	else
 	{
 		int bots_count;
-		BotSpawner	botSpawner;
+		BotSpawner botSpawner;
 		bots_count = GetCvar('BotsAutoSpawn');
 		if (bots_count > 0)
 		{
@@ -255,6 +259,8 @@ LevelInfo CreateLevelInfo()
 
 	bFirstLevelInited = true;
 
+	// [FB] Which one is the right one??
+//	return LevelInfo(NewSpecialThinker(HexenLevelInfo));
 	return LevelInfo(levelinfo);
 }
 
@@ -3353,7 +3359,7 @@ void InsertPlayer(Player pl)
 		{
 			if (i == maxteams)
 			{
-				bprint("unsufficient allowed teams, new player is added to team 0");
+				bprint("MainGameInfo::InsertPlayer : unsufficient allowed teams, new player is added to team 0");
 				pl.Colour = Teams[0].Colour;
 				teamnum = 0;
 			}
@@ -3377,7 +3383,7 @@ void InsertPlayer(Player pl)
 			GameMode.NotifyUpdateTeams();
 
 		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
-			bprint("team %s enters competition", ColourNames[Teams[teamnum].Colour]);
+			bprint("MainGameInfo::InsertPlayer : team %s enters competition", ColourNames[Teams[teamnum].Colour]);
 
 		// update team selection menus for all non-spawned human players
 		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
@@ -3428,7 +3434,7 @@ void ScoreboardsUpdate(Player thisPlayer)
 		//[CW] update scoreboard for player number "plnum"
 		pl = Player(Players[plnum]);
 		gs = 0;
-		dprint("SU : update scores for human player with index %i", plnum);
+		dprint("MainGameInfo::ScoreboardsUpdate : update scores for human player with index %i", plnum);
 		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
 		{
 			if (!Teams[teamnum])
@@ -3444,7 +3450,7 @@ void ScoreboardsUpdate(Player thisPlayer)
 			   if (!plteam.Players[i])
 				break;
 
-				dprint("SU : write player %i in slot number %i", i, gs);
+				dprint("MainGameInfo::ScoreboardsUpdate : write player %i in slot number %i", i, gs);
 
 			   if (plteam.Players[i] == pl)
 			      pl.table_thisplayer = gs;
@@ -3481,7 +3487,7 @@ void ScoreboardsUpdate(Player thisPlayer)
 		}
 	}
 
-	dprint("SU : end");
+	dprint("MainGameInfo::ScoreboardsUpdate : end");
 }
 
 //==========================================================================
@@ -3651,74 +3657,86 @@ defaultproperties
 	ColourNames[6] = "brown";
 	ColourNames[7] = "magenta";
 
-	fourthWeaponText[0] = "QUIETUS ASSEMBLED";
-	fourthWeaponText[1] = "WRAITHVERGE ASSEMBLED";
-	fourthWeaponText[2] = "BLOODSCOURGE ASSEMBLED";
+	fourthWeaponText[0] = "$txt_weapon_f4";
+	fourthWeaponText[1] = "$txt_weapon_c4";
+	fourthWeaponText[2] = "$txt_weapon_m4";
 
-	weaponPieceText[0] = "SEGMENT OF QUIETUS";
-	weaponPieceText[1] = "SEGMENT OF WRAITHVERGE";
-	weaponPieceText[2] = "SEGMENT OF BLOODSCOURGE";
+	weaponPieceText[0] = "$txt_quietus_piece";
+	weaponPieceText[1] = "$txt_wraithverge_piece";
+	weaponPieceText[2] = "$txt_bloodscourge_piece";
 
 	artifactMessages[0] = "";
-	artifactMessages[1] = "ICON OF THE DEFENDER";
-	artifactMessages[2] = "QUARTZ FLASK";
-	artifactMessages[3] = "MYSTIC URN";
-	artifactMessages[4] = "MYSTIC AMBIT INCANT";
-	artifactMessages[5] = "DARK SERVANT";
-	artifactMessages[6] = "TORCH";
-	artifactMessages[7] = "PORKALATOR";
-	artifactMessages[8] = "WINGS OF WRATH";
-	artifactMessages[9] = "DISC OF REPULSION";
-	artifactMessages[10] = "FLECHETTE";
-	artifactMessages[11] = "BANISHMENT DEVICE";
-	artifactMessages[12] = "BOOTS OF SPEED";
-	artifactMessages[13] = "KRATER OF MIGHT";
-	artifactMessages[14] = "DRAGONSKIN BRACERS";
-	artifactMessages[15] = "CHAOS DEVICE";
+	artifactMessages[1] = "$txt_artiinvulnerability2";
+	artifactMessages[2] = "$txt_artihealth";
+	artifactMessages[3] = "$txt_artisuperhealth";
+	artifactMessages[4] = "$txt_artihealingradius";
+	artifactMessages[5] = "$txt_artisummon";
+	artifactMessages[6] = "$txt_artitorch";
+	artifactMessages[7] = "$txt_artiegg2";
+	artifactMessages[8] = "$txt_artifly";
+	artifactMessages[9] = "$txt_artiblastradius";
+	artifactMessages[10] = "$txt_artipoisonbag";
+	artifactMessages[11] = "$txt_artiteleportother";
+	artifactMessages[12] = "$txt_artispeed";
+	artifactMessages[13] = "$txt_artiboostmana";
+	artifactMessages[14] = "$txt_artiboostarmor";
+	artifactMessages[15] = "$txt_artiteleport";
 	artifactMessages[16] = "SHADOWSPHERE";
 	artifactMessages[17] = "PI DAMAGE";
 
-	artifactMessages[18] = "YORICK\'S SKULL";
-	artifactMessages[19] = "HEART OF D\'SPARIL";
-	artifactMessages[20] = "RUBY PLANET";
-	artifactMessages[21] = "EMERALD PLANET";
-	artifactMessages[22] = "EMERALD PLANET";
-	artifactMessages[23] = "SAPPHIRE PLANET";
-	artifactMessages[24] = "SAPPHIRE PLANET";
-	artifactMessages[25] = "DAEMON CODEX";
-	artifactMessages[26] = "LIBER OSCURA";
-	artifactMessages[27] = "FLAME MASK";
-	artifactMessages[28] = "GLAIVE SEAL";
-	artifactMessages[29] = "HOLY RELIC";
-	artifactMessages[30] = "SIGIL OF THE MAGUS";
-	artifactMessages[31] = "CLOCK GEAR";	// All gear pickups use the same text
-	artifactMessages[32] = "CLOCK GEAR";
-	artifactMessages[33] = "CLOCK GEAR";
-	artifactMessages[34] = "CLOCK GEAR";
+	artifactMessages[18] = "$txt_artipuzzskull";
+	artifactMessages[19] = "$txt_artipuzzgembig";
+	artifactMessages[20] = "$txt_artipuzzgemred";
+	artifactMessages[21] = "$txt_artipuzzgemgreen1";
+	artifactMessages[22] = "$txt_artipuzzgemgreen2";
+	artifactMessages[23] = "$txt_artipuzzgemblue1";
+	artifactMessages[24] = "$txt_artipuzzgemblue2";
+	artifactMessages[25] = "$txt_artipuzzbook1";
+	artifactMessages[26] = "$txt_artipuzzbook2";
+	artifactMessages[27] = "$txt_artipuzzskull2";
+	artifactMessages[28] = "$txt_artipuzzfweapon";
+	artifactMessages[29] = "$txt_artipuzzcweapon";
+	artifactMessages[30] = "$txt_artipuzzmweapon";
+	artifactMessages[31] = "$txt_artipuzzgear";	// All gear pickups use the same text
+	artifactMessages[32] = "$txt_artipuzzgear";
+	artifactMessages[33] = "$txt_artipuzzgear";
+	artifactMessages[34] = "$txt_artipuzzgear";
 
-	armorText[0] = "MESH ARMOR";
-	armorText[1] = "FALCON SHIELD";
-	armorText[2] = "PLATINUM HELMET";
-	armorText[3] = "AMULET OF WARDING";
+	armorText[0] = "$txt_armor1";
+	armorText[1] = "$txt_armor2";
+	armorText[2] = "$txt_armor3";
+	armorText[3] = "$txt_armor4";
 
-	manaText[0] = "BLUE MANA";
-	manaText[1] = "GREEN MANA";
+	manaText[0] = "$txt_mana_1";
+	manaText[1] = "$txt_mana_2";
 	manaText[2] = "RED MANA";
 	manaText[3] = "DISC OF REPULSION";
 	manaText[4] = "FLECHETTE";
 	manaText[5] = "";
 
-	TextKeyMessages[0] = "STEEL KEY";
-	TextKeyMessages[1] = "CAVE KEY";
-	TextKeyMessages[2] = "AXE KEY";
-	TextKeyMessages[3] = "FIRE KEY";
-	TextKeyMessages[4] = "EMERALD KEY";
-	TextKeyMessages[5] = "DUNGEON KEY";
-	TextKeyMessages[6] = "SILVER KEY";
-	TextKeyMessages[7] = "RUSTED KEY";
-	TextKeyMessages[8] = "HORN KEY";
-	TextKeyMessages[9] = "SWAMP KEY";
-	TextKeyMessages[10] = "CASTLE KEY";
+	TextKeyMessages[0] = "$txt_key_steel";
+	TextKeyMessages[1] = "$txt_key_cave";
+	TextKeyMessages[2] = "$txt_key_axe";
+	TextKeyMessages[3] = "$txt_key_fire";
+	TextKeyMessages[4] = "$txt_key_emerald";
+	TextKeyMessages[5] = "$txt_key_dungeon";
+	TextKeyMessages[6] = "$txt_key_silver";
+	TextKeyMessages[7] = "$txt_key_rusted";
+	TextKeyMessages[8] = "$txt_key_horn";
+	TextKeyMessages[9] = "$txt_key_swamp";
+	TextKeyMessages[10] = "$txt_key_castle";
+
+	TextKeyLockedMessages[0] = "$txt_need_key_steel";
+	TextKeyLockedMessages[1] = "$txt_need_key_cave";
+	TextKeyLockedMessages[2] = "$txt_need_key_axe";
+	TextKeyLockedMessages[3] = "$txt_need_key_fire";
+	TextKeyLockedMessages[4] = "$txt_need_key_emerald";
+	TextKeyLockedMessages[5] = "$txt_need_key_dungeon";
+	TextKeyLockedMessages[6] = "$txt_need_key_silver";
+	TextKeyLockedMessages[7] = "$txt_need_key_rusted";
+	TextKeyLockedMessages[8] = "$txt_need_key_horn";
+	TextKeyLockedMessages[9] = "$txt_need_key_swamp";
+	TextKeyLockedMessages[10] = "$txt_need_key_castle";
 
 	//----------------------------------------------------------
 	//
@@ -3863,15 +3881,12 @@ defaultproperties
 	DeathMessageRanged[49] = "%s was purple-fireballed by %s";		// heresiarch fast attack
 	DeathMessageRanged[50] = "%s was blasted by %s's fire bomb";	// heresiarch rolling head attack
 
-
 	//
 	//		Miscellaneous
 	//
 	DeathMessageMisc[0] = "%s has drown in lava";
 	DeathMessageMisc[1] = "%s died in poison cloud";
 	DeathMessageMisc[2] = "%s died of poisoned dart";
-
-
 
 //------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
 /*	// player-specific weaponry (some of them are used by monsters too)
@@ -3948,7 +3963,6 @@ defaultproperties
 	DeathMessage[62] = DeathMessage[60];
 	DeathMessage[63] = DeathMessage[60];
 
-
 	// non-player weaponry or extra weapon abilities, enviromental stuff, traps, etc
 	DeathMessage[64] = "%s was dispelled by a %s";		// bishop melee & missile
 	DeathMessage[65] = "%s was slashed by a %s";		// centaur melee
@@ -3972,7 +3986,6 @@ defaultproperties
 	DeathMessage[82] = "%s was purple-fireballed by %s"; // heresiarch fast attack
 */
 //------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
-
 	
 	TrophyText[0] = "double kill!";
 	TrophyText[1] = "tripple kill!";
@@ -4016,7 +4029,6 @@ defaultproperties
 	PawnName[23] = "pig";
 	PawnName[24] = "";
 	PawnName[25] = "";
-
 
 	windTab[0] = 5.0 / 32.0;
 	windTab[1] = 10.0 / 32.0;
@@ -4082,5 +4094,9 @@ defaultproperties
 	whatmana[6] = HexenDefs::MANA_3;
 	whatmana[7] = HexenDefs::NUMMANA;
 
+	classFlags[0] = HexenLevelInfo::MTF_FIGHTER;
+	classFlags[1] = HexenLevelInfo::MTF_CLERIC;
+	classFlags[2] = HexenLevelInfo::MTF_MAGE;
+	
 	air_control = 1.0 / 256.0;
 }

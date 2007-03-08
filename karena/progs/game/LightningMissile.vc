@@ -97,19 +97,12 @@ bool Touch(Entity InOther)
 			Other.Class == CentaurLeader)
 		{
 			// Lightning does more damage to centaurs
-			damage = 9;
+			Other.Damage(self, Instigator, 9);
 		}
 		else
-		{	
-			damage = 3;
-			
+		{
+			Other.Damage(self, Instigator, 3);
 		}
-		//[Korax]
-		damage += DamageBonus;
-		//Intelligence modifier
-		if (Instigator && Instigator.Player)
-			damage = damage * Player(Instigator.Player).intelligence/10;
-		Other.Damage(self, Instigator, damage);
 		if (!(GetSoundPlayingInfo(self,
 					GetSoundID('MageLightningZap'))))
 		{
@@ -163,7 +156,6 @@ final void A_LightningClip()
 			Origin.z = LightningLink.FloorZ;
 		else
 			Origin.z = FloorZ;
-
 		if (LightningLink)
 			targ = LightningLink.Enemy;
 		else
@@ -171,14 +163,12 @@ final void A_LightningClip()
 	}
 	else if (Class == LightningCeiling)
 	{
-		if(Sector->bHasExtrafloors && LightningLink && Instigator.Origin.z <= LightningLink.CeilingZ)
+		if (Sector->bHasExtrafloors && LightningLink && Instigator.Origin.z <= LightningLink.CeilingZ)
 			Origin.z = LightningLink.CeilingZ - Height;
 		else
 			Origin.z = CeilingZ - Height;
-
 		targ = Enemy;
 	}
-
 	if (Class == LightningFloor)
 	{
 		// floor lightning zig-zags, and forces the ceiling lightning to mimic

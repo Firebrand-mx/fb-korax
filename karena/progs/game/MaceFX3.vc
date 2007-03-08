@@ -40,7 +40,7 @@ class MaceFX3 : Projectile;
 
 final void A_MaceBallImpact()
 {
-	if ((Origin.z <= FloorZ) && HitFloorType())
+	if (Origin.z <= FloorZ && HitFloorType())
 	{
 		// Landed in some sort of liquid
 		Remove();
@@ -59,28 +59,14 @@ final void A_MaceBallImpact()
 	{
 		// Explode
 		bNoGravity = true;
-		PlaySound('MaceHit', CHAN_VOICE);
-	}
-}
-
-final void A_CheckStopMoving()
-{
-	if ((fabs(Velocity.x) < 1.5 * 35.0 &&
-		fabs(Velocity.y) < 1.5 * 35.0) ||
-		Velocity.z < 2.0 * 35.0)
-	{
-		Origin.z = FloorZ;
-		Velocity.z = 0.0;
-		bFloorBounce = false;
-		bMissile = false;
-		SetState(DeathState);
+		PlaySound('weapons/macehit', CHAN_VOICE);
 	}
 }
 
 __states__
 {
 	S_MACEFX3_1('FX02', 0, 4.0 / 35.0, S_MACEFX3_2) = none
-	S_MACEFX3_2('FX02', 1, 4.0 / 35.0, S_MACEFX3_1) = A_CheckStopMoving
+	S_MACEFX3_2('FX02', 1, 4.0 / 35.0, S_MACEFX3_1) = none
 	S_MACEFXI1_1('FX02', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_MACEFXI1_2) = A_MaceBallImpact
 	S_MACEFXI1_2('FX02', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_MACEFXI1_3) = none
 	S_MACEFXI1_3('FX02', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_MACEFXI1_4) = none
@@ -96,9 +82,10 @@ defaultproperties
 	Speed = 245.0;
 	MissileDamage = 4;
 	bFloorBounce = true;
+//	bThruGhost = true;
 	bFireDamage = true;
-	//bThruGhost = true;
 	bNoGravity = false;
+	bActivateImpact = true;
 	IdleState = S_MACEFX3_1;
 	DeathState = S_MACEFXI1_1;
 }

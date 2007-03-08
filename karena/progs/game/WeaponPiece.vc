@@ -34,9 +34,9 @@ class WeaponPiece : Pickup
 	abstract;
 
 const int
-	WPIECE1				= 1,
-	WPIECE2				= 2,
-	WPIECE3				= 4;
+	WPIECE1			= 1,
+	WPIECE2			= 2,
+	WPIECE3			= 4;
 
 int PieceClass;
 int PieceValue;
@@ -49,7 +49,6 @@ int PieceValue;
 
 void TouchSpecial(Actor Toucher)
 {
-	PlayerPawn P;
 	bool remove;
 //	bool checkAssembled;
 //	bool gaveWeapon;
@@ -65,16 +64,10 @@ void TouchSpecial(Actor Toucher)
 		// Toucher is dead
 		return;
 	}
-	P = PlayerPawn(Toucher);
-	if (!P)
-	{
-		//	Shouldn't happen
-		return;
-	}
 	remove = true;
 //	checkAssembled = true;
 //	gaveWeapon = false;
-	if (P.Player.PClass != PieceClass)
+	if (Toucher.Player.PClass != PieceClass)
 	{
 		// Wrong class, but try to pick up for mana
 		if (Level.Game.netgame && !Level.Game.deathmatch)
@@ -83,7 +76,7 @@ void TouchSpecial(Actor Toucher)
 			return;
 		}
 //		checkAssembled = false;
-		gaveMana = Player(P.Player).GiveMana(HexenDefs::MANA_3, 20);
+		gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::NUMMANA, 20);
 		if (!gaveMana)
 		{
 			// Didn't need the mana, so don't pick it up
@@ -94,21 +87,21 @@ void TouchSpecial(Actor Toucher)
 	{
 		// Cooperative net-game
 //[Korax]
-/*		if (P.Player.Pieces & PieceValue)
+/*				if (Player(Toucher.Player).Pieces & PieceValue)
 		{
 			// Already has the piece
 			return;
 		}*/
 		PieceValue = MainGameInfo(Level.Game).pieceValueTrans[PieceValue];
-		Player(P.Player).GiveMana(HexenDefs::MANA_3, 20);
+		Player(Toucher.Player).GiveMana(HexenDefs::NUMMANA, 20);
 		remove = false;
 	}
 	else
 	{
 		// Deathmatch or single player game
-		gaveMana = Player(P.Player).GiveMana(HexenDefs::MANA_3, 20);
+		gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::NUMMANA, 20);
 //[Korax]
-//		if (P.Player.Pieces & PieceValue)
+//		if (Player(Toucher.Player).Pieces & PieceValue)
 //		{
 			// Already has the piece, check if mana needed
 			if (!gaveMana)
@@ -123,8 +116,8 @@ void TouchSpecial(Actor Toucher)
 	// Pick up the weapon piece
 	if (Special)
 	{
-		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, P);
+		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2], Args[3],
+			Args[4], NULL, 0, Toucher);
 		Special = 0;
 	}
 	if (remove)
@@ -138,30 +131,30 @@ void TouchSpecial(Actor Toucher)
 			Remove();
 		}
 	}
-	Player(P.Player).BonusFlash += BONUSADD;
+	Player(Toucher.Player).BonusFlash += BONUSADD;
 
 	// Check if fourth weapon assembled
 /*	if (checkAssembled)
 	{
-		P.Player.Pieces |= PieceValue;
-		if (P.Player.Pieces == (WPIECE1 | WPIECE2 | WPIECE3))
+		Player(Toucher.Player).Pieces |= PieceValue;
+		if (Player(Toucher.Player).Pieces == (WPIECE1 | WPIECE2 | WPIECE3))
 		{
 			gaveWeapon = true;
-			P.Player.WeaponOwned[WP_FOURTH] = true;
-			P.Player.PendingWeapon = WP_FOURTH;
+			Player(Toucher.Player).WeaponOwned[HexenDefs::WP_FOURTH] = true;
+			Player(Toucher.Player).PendingWeapon = HexenDefs::WP_FOURTH;
 		}
 	}
 
 	if (gaveWeapon)
 	{
-		cprint(P.Player, fourthWeaponText[PieceClass]);
+		Toucher.Player.cprint(MainGameInfo(Level.Game).fourthWeaponText[PieceClass]);
 		// Play the build-sound full volume for all players
-		P.PlaySound('WeaponBuild', CHAN_ITEM, 1.0, ATTN_NONE);
+		Toucher.PlaySound('WeaponBuild', CHAN_ITEM, 1.0, ATTN_NONE);
 	}
 	else
 */	{
-		P.Player.cprint(MainGameInfo(Level.Game).weaponPieceText[PieceClass]);
-		P.PlaySound('PickupWeapon', CHAN_ITEM, 1.0, ATTN_NONE);	//FIXME must be PickupPiece
+		Toucher.Player.cprint(MainGameInfo(Level.Game).weaponPieceText[PieceClass]);
+		Toucher.PlaySound('PickupWeapon', CHAN_ITEM, 1.0, ATTN_NONE);	//FIXME must be PickupPiece
 	}
 }
 
