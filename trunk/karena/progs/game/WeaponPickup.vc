@@ -35,10 +35,8 @@ int WeaponType;
 //
 //==========================================================================
 
-
 void TouchSpecial(Actor Toucher)
 {
-	PlayerPawn P;
 	bool remove;
 	bool gaveMana;
 	bool gaveWeapon;
@@ -56,12 +54,6 @@ void TouchSpecial(Actor Toucher)
 		// Toucher is dead
 		return;
 	}
-	P = PlayerPawn(Toucher);
-	if (!P)
-	{
-		//	Shouldn't happen
-		return;
-	}
 	remove = true;
 
 /*	if ((WeaponType > WP_FOURTH && P.Player.exp_level < 2) ||
@@ -73,67 +65,67 @@ void TouchSpecial(Actor Toucher)
 	}*/
 
 //[Korax]	
-	/*if (P.Player.PClass != WeaponClass)
+/*	if (Toucher.Player.PClass != WeaponClass)
 	{
 		// Wrong class, but try to pick up for mana
-		if (netgame && !deathmatch)
+		if (Level.Game.netgame && !Level.Game.deathmatch)
 		{
 			// Can't pick up weapons for other classes in coop netplay
 			return;
 		}
-		if (WeaponType == WP_SECOND)
+		if (WeaponType == HexenDefs::WP_SECOND)
 		{
-			if (!P.Player.GiveMana(MANA_1, 25))
+			if (!Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25))
 			{
 				return;
 			}
 		}
 		else
 		{
-			if (!P.Player.GiveMana(MANA_2, 25))
+			if (!Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25))
 			{
 				return;
 			}
 		}
 	}
-	else if (netgame && !deathmatch)
+	else if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
 		// Cooperative net-game
-		if (P.Player.WeaponOwned[WeaponType])
+		if (Player(Toucher.Player).WeaponOwned[WeaponType])
 		{
 			return;
 		}
-		P.Player.WeaponOwned[WeaponType] = true;
-		if (WeaponType == WP_SECOND)
+		Player(Toucher.Player).WeaponOwned[WeaponType] = true;
+		if (WeaponType == HexenDefs::WP_SECOND)
 		{
-			P.Player.GiveMana(MANA_1, 25);
+			Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
 		}
 		else
 		{
-			P.Player.GiveMana(MANA_2, 25);
+			Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
 		}
-		P.Player.PendingWeapon = WeaponType;
+		Player(Toucher.Player).PendingWeapon = WeaponType;
 		remove = false;
 	}
 	else*/
 	{
 		// Deathmatch or single player game
-		/*if (WeaponType == WP_SECOND)
+		/*if (WeaponType == HexenDefs::WP_SECOND)
 		{
-			gaveMana = P.Player.GiveMana(MANA_1, 25);
+			gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
 		}
 		else
 		{
-			gaveMana = P.Player.GiveMana(MANA_2, 25);
+			gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
 		}*/
-		if (Player(P.Player).WeaponOwned[WeaponType])
+		if (Player(Toucher.Player).WeaponOwned[WeaponType])
 		{
 			gaveWeapon = false;
 			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
 			{
-				mm1 = Player(P.Player).GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = Player(P.Player).GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = Player(P.Player).GiveMana(HexenDefs::MANA_3, 25);
+				mm1 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
+				mm2 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
+				mm3 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_3, 25);
 
 				if (!mm1 && !mm2 && !mm3)
 				{
@@ -145,23 +137,23 @@ void TouchSpecial(Actor Toucher)
 				}
 			}
 			else
-				gaveMana = Player(P.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25);
+				gaveMana = Player(Toucher.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25);
 		}
 		else
 		{
 			gaveWeapon = true;
-			Player(P.Player).WeaponOwned[WeaponType] = true;
-			if (WeaponType > Player(P.Player).ReadyWeapon)
+			Player(Toucher.Player).WeaponOwned[WeaponType] = true;
+			if (WeaponType > Player(Toucher.Player).ReadyWeapon)
 			{
 				// Only switch to more powerful weapons
-				Player(P.Player).PendingWeapon = WeaponType;
+				Player(Toucher.Player).PendingWeapon = WeaponType;
 			}
 			
 			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
 			{
-				mm1 = Player(P.Player).GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = Player(P.Player).GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = Player(P.Player).GiveMana(HexenDefs::MANA_3, 25);
+				mm1 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
+				mm2 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
+				mm3 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_3, 25);
 
 				if (!mm1 && !mm2 && !mm3)
 				{
@@ -173,7 +165,7 @@ void TouchSpecial(Actor Toucher)
 				}
 			}
 			else
-				gaveMana = Player(P.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25/*manaadding[P.Player.PClass*NUMWEAPONS+WeaponType]*/);
+				gaveMana = Player(Toucher.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25/*manaadding[P.Player.PClass*NUMWEAPONS+WeaponType]*/);
 		}
 		if (!gaveWeapon && !gaveMana)
 		{
@@ -182,11 +174,11 @@ void TouchSpecial(Actor Toucher)
 		}
 	}
 
-	P.Player.cprint(Player(P.Player).GetWeaponPickupText(WeaponType));
+	Toucher.Player.cprint(Player(Toucher.Player).GetWeaponPickupText(WeaponType));
 	if (Special)
 	{
 		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, P);
+			Args[3], Args[4], NULL, 0, Toucher);
 		Special = 0;
 	}
 
@@ -205,8 +197,8 @@ void TouchSpecial(Actor Toucher)
 		}
 	}
 
-	Player(P.Player).BonusFlash += BONUSADD;
-	P.PlaySound('PickupWeapon', CHAN_ITEM);
+	Player(Toucher.Player).BonusFlash += BONUSADD;
+	Toucher.PlaySound('PickupWeapon', CHAN_ITEM);
 }
 
 defaultproperties

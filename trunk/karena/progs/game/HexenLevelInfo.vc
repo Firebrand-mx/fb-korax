@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**		    ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -77,13 +77,6 @@ const int CORPSEQUEUESIZE		= 128;
 int BodyQueSize;
 int CorpseQueSize;
 
-const int
-	STROBEBRIGHT		= 5,
-	FASTDARK			= 15,
-	SLOWDARK			= 35;
-
-Actor GLavaInflictor;
-
 Actor bodyque[BODYQUESIZE];
 int bodyqueslot;
 
@@ -94,6 +87,8 @@ float MinotaurSpot_angle[MAX_MINOTAUR_SPOTS];
 // Corpse queue for monsters
 Actor corpseQueue[CORPSEQUEUESIZE];
 int corpseQueueSlot;
+
+Actor GLavaInflictor;
 
 //============================================================================
 //
@@ -195,10 +190,6 @@ int ThingCount(int type, int tid)
 		return 0;
 	}
 	moType = FindClassFromScriptId(type);
-	if (!moType)
-	{
-		return 0;
-	}
 	count = 0;
 	searcher = -1;
 	if (tid)
@@ -264,7 +255,7 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		buttonSuccess = A_LocalQuake(Arg1, Arg2, Arg3, Arg4, Arg5);
 		break;
 	case LNSPEC_UsePuzzleItem:
-		buttonSuccess = EV_LineSearchForPuzzleItem(Arg1, Arg2, Arg3, Arg4, 
+		buttonSuccess = EV_LineSearchForPuzzleItem(Arg1, Arg2, Arg3, Arg4,
 			Arg5, A);
 		break;
 
@@ -430,7 +421,7 @@ bool CheckLock(Entity A, int lock, bool door)
 	}
 	if (!(Player(A.Player).Keys & (1 << (lock - 1))))
 	{
-		A.Player.centreprint("YOU NEED THE %s", MainGameInfo(Game).TextKeyMessages[lock - 1]);
+		A.Player.centreprint(MainGameInfo(Game).TextKeyLockedMessages[lock - 1]);
 		A.PlaySound('DoorLocked', CHAN_ITEM);
 		return false;
 	}
@@ -716,11 +707,11 @@ void SpawnMapThing(mthing_t * mthing)
 //[Korax]
 #if 0
 	// Check current game type with spawn flags
-	if (netgame == false)
+	if (Game.netgame == false)
 	{
 		spawnMask = MTF_GSINGLE;
 	}
-	else if (deathmatch)
+	else if (Game.deathmatch)
 	{
 		spawnMask = MTF_GDEATHMATCH;
 	}
@@ -734,11 +725,11 @@ void SpawnMapThing(mthing_t * mthing)
 	}
 
 	// Check current skill with spawn flags
-	if (gameskill == sk_baby || gameskill == sk_easy)
+	if (Game.gameskill == sk_baby || Game.gameskill == sk_easy)
 	{
 		spawnMask = MTF_EASY;
 	}
-	else if (gameskill == sk_hard || gameskill == sk_nightmare)
+	else if (Game.gameskill == sk_hard || Game.gameskill == sk_nightmare)
 	{
 		spawnMask = MTF_HARD;
 	}
@@ -752,10 +743,10 @@ void SpawnMapThing(mthing_t * mthing)
 	}
 
 	// Check current character classes with spawn flags
-	if (!netgame)
+	if (!Game.netgame)
 	{
 		// Single player
-		if (!(mthing->options & classFlags[GetCvar("Class")]))
+		if (!(mthing->options & MainGameInfo(Game).classFlags[GetCvar('class')]))
 		{
 			// Not for current class
 			return;
@@ -786,6 +777,7 @@ void SpawnMapThing(mthing_t * mthing)
 	moClass = class<Actor>(FindClassFromEditorId(mthing->type));
 	if (moClass)
 	{
+		// spawn it
 		A = Actor(NewMobjThinker(moClass));
 		A.OnMapSpawn(mthing);
 	}
@@ -831,34 +823,6 @@ void InitLava()
 
 //==========================================================================
 //
-//  P_Massacre
-//
-//  Kills all monsters.
-//
-//==========================================================================
-
-int P_Massacre()
-{
-	int count;
-	Actor mo;
-
-	count = 0;
-	FOREACH(Actor, mo)
-	{
-		if (mo.bCountKill && mo.Health > 0)
-		{
-			mo.bNonShootable = false;
-			mo.bInvulnerable = false;
-			mo.bShootable = true;
-			mo.Damage(none, none, 10000);
-			count++;
-		}
-	}
-	return count;
-}
-
-//==========================================================================
-//
 //	Spawn
 //
 //==========================================================================
@@ -871,20 +835,6 @@ Actor Spawn(class<Actor> type, TVec position)
 	A.Origin = position;
 	A.OnMapSpawn(NULL);
 	return A;
-}
-
-//==========================================================================
-//
-//	SpawnTeleportFog
-//
-//==========================================================================
-
-void SpawnTeleportFog(TVec Org)
-{
-	Actor fogAct;
-
-	fogAct = Spawn(TeleportFog, Org + vector(0.0, 0.0, Actor::TELEFOGHEIGHT));
-	fogAct.PlaySound('Teleport', CHAN_VOICE);
 }
 
 defaultproperties

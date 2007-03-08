@@ -33,14 +33,11 @@
 class Weapon : Actor
 	abstract;
 
-const float MELEERANGE			= 64.0;
-const float MISSILERANGE		= (32.0 * 64.0);
+const float LOWERSPEED		= 6.0;
+const float RAISESPEED		= 6.0;
 
-const float LOWERSPEED			= 6.0;
-const float RAISESPEED			= 6.0;
-
-const float WEAPONBOTTOM		= 128.0;
-const float WEAPONTOP			= 32.0;
+const float WEAPONBOTTOM	= 128.0;
+const float WEAPONTOP		= 32.0;
 
 int Mana;
 int manause;
@@ -51,7 +48,8 @@ state ReadyState;
 state AttackState;
 state HoldAttackState;
 state FlashState;
-float PSpriteSY;		// Y-adjustment value for full screen
+float PSpriteSY;	// Y-adjustment value for full screen
+
 bool dex_mod;
 bool str_mod;
 bool int_mod;
@@ -60,8 +58,8 @@ bool active_damage; 	// [FB] TRUE if PI Damage is active
 string PickUpMessage;
 
 bool bInstantRanged;	// [CW] TRUE if ranged weapon do not spawn any missiles, but
-						// damages target directly (by using Damage, LineAttack etc)
-int deathmsgi;			// [CW] deathmessage index (for melee or instant ranged attacks only)
+			// damages target directly (by using Damage, LineAttack etc)
+int deathmsgi;		// [CW] deathmessage index (for melee or instant ranged attacks only)
 
 state GetUpState()
 {
@@ -208,7 +206,8 @@ final void A_WeaponReady()
 		Owner.SetState(Actor(Owner).IdleState);
 	}
 	// Put the weapon away if the player has a pending weapon or has died.
-	if (Player(Owner.Player).PendingWeapon != HexenDefs::wp_nochange || !Owner.Player.Health)
+	if (Player(Owner.Player).PendingWeapon != HexenDefs::wp_nochange ||
+		!Owner.Player.Health)
 	{
 		Owner.Player.SetViewState(ps_weapon, GetDownState());
 		return;
@@ -247,7 +246,7 @@ final void A_WeaponReady()
 
 final void A_Lower()
 {
-	if (/*Player(Player).MorphTime*/Owner.Player.PClass == HexenDefs::PCLASS_PIG)
+	if (Owner.Player.PClass == HexenDefs::PCLASS_PIG/*Player(Player).MorphTime*/)
 	{
 		Owner.Player.ViewStates[ps_weapon].SY = WEAPONBOTTOM;
 	}

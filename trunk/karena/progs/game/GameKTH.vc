@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**			##    ######    ##### ###   ##    ##
+//**		##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -215,11 +215,10 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 	{
 	case state_deathsequence:
 		return HexenDefs::scoreevent_NoScore;	// [CW] It is an interesting precedent;
-												//		Heresiarch is dying, however there's no
-												//		new Heresiarch (old one probably killed himself).
-												//		In this case, I assume, we should make a
-												//		score-less period in the game for awhile.
-
+							//		Heresiarch is dying, however there's no
+							//		new Heresiarch (old one probably killed himself).
+							//		In this case, I assume, we should make a
+							//		score-less period in the game for awhile.
 	case state_birthsequence:
 	case state_rebornsequence:
 	case state_heresiarch:
@@ -229,10 +228,9 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 			return HexenDefs::scoreevent_KthHeresiarchDeath;
 		else
 			return HexenDefs::scoreevent_KthHeresiarchFrag;	// [CW] We assume that any player frag
-															// (except for H.'es death) occured when
-															// a H. is alive or even while he's rising
-															// (birth / reborn sequence) should add a score to H.
-
+									// (except for H.'es death) occured when
+									// a H. is alive or even while he's rising
+									// (birth / reborn sequence) should add a score to H.
 	default:
 		return HexenDefs::scoreevent_Frag;
 	}
@@ -255,15 +253,15 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 		if (plHeresiarch)
 			Game.bcentreprint(va("%s is now the heresiarch", plHeresiarch.PlayerName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
-						(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
-						false, 0.0);
+					(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
+					false, 0.0);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
 		Game.bcentreprint(va("%s the heresiarch is dead", oldHeresiarchName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
-						(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
-						false, 0.0);
+					(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
+					false, 0.0);
 		break;
 	case event_playdeathsequence:
 		PlayDeathSequence();

@@ -43,11 +43,14 @@ class TeleportFog:Effect;
 final void A_Lights()
 {
 	MSG_Select(MSG_SV_DATAGRAM);
-	MSG_WriteByte(HexenDefs::svc_explosion2);
-	MSG_WriteByte(Effects);
-	MSG_WriteShort(ftoi(Origin.x));
-	MSG_WriteShort(ftoi(Origin.y));
-	MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+	if (MSG_CheckSpace(8))
+	{
+		MSG_WriteByte(HexenDefs::svc_explosion2);
+		MSG_WriteByte(Effects);
+		MSG_WriteShort(ftoi(Origin.x));
+		MSG_WriteShort(ftoi(Origin.y));
+		MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+	}
 
 	//  Clear old dynamic light effect
 	Effects &= ~HexenDefs::EF_DLIGHT_MASK;
@@ -63,7 +66,7 @@ __states__
 	S_TFOG6('TELE', 5 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG7) = none
 	S_TFOG7('TELE', 6 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG8) = none
 	S_TFOG8('TELE', 7 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG9) = none
-	S_TFOG9('TELE', 6 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG10) = A_Lights
+	S_TFOG9('TELE', 6 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG10) =  A_Lights
 	S_TFOG10('TELE', 5 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG11) = none
 	S_TFOG11('TELE', 4 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG12) = none
 	S_TFOG12('TELE', 3 | FF_FULLBRIGHT, 6.0 / 35.0, S_TFOG13) = none
@@ -72,6 +75,10 @@ __states__
 
 defaultproperties
 {
+	Alpha = 0.666;
+	bNoBlockmap = true;
+	bNoGravity = true;
+	bNoPassMobj = true;
 	IdleState = S_TFOG1;
 	Effects = HexenDefs::EF_DL_RED;
 }
