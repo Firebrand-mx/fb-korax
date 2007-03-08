@@ -69,6 +69,10 @@ MenuScreen CurrentMenuScreen;
 MenuControlKey CurrentCtl;
 int ControlColumn;	// menu column for controls
 
+int MenuPClass;
+name MenuStartMap;
+class<MenuScreen> SkillMenuType;
+
 //
 //  MESSAGE BOX
 //
@@ -326,7 +330,6 @@ bool MenuResponder(event_t * event)
 			SpawnMainMenu();
 			return true;
 		}
-
 		return false;
 	}
 
@@ -432,7 +435,7 @@ void SetMenu(string Name)
 //
 //==========================================================================
 
-MenuScreen SpawnMenu( class<MenuScreen> CID)
+MenuScreen SpawnMenu(class<MenuScreen> CID)
 {
 	MenuScreen m;
 
@@ -647,7 +650,7 @@ bool MessageBoxResponder(event_t * event)
 			break;
 		}
 
-//	      S_StartSound(sfx1_swtchx);
+//      S_StartSound(sfx1_swtchx);
 		return true;
 	}
 	return false;
@@ -731,6 +734,24 @@ void ControlResponse(int key)
 
 //==========================================================================
 //
+//  NewGame
+//
+//==========================================================================
+
+void NewGame(int SkillLevel)
+{
+	SetCvar('Skill', SkillLevel);
+	SetCvar('Class', MenuPClass);
+
+	CmdBuf_AddText("Disconnect\n");
+	CmdBuf_AddText("MaxPlayers 1\n");
+	CmdBuf_AddText("Map %n\n", MenuStartMap);
+
+	ForceMenuOff();
+}
+
+//==========================================================================
+//
 //  InitBorder
 //
 //==========================================================================
@@ -791,7 +812,7 @@ void DrawBorder(int x, int y, int w, int h)
 
 void DrawViewBorder(int x, int y, int w, int h)
 {
-	R_FillRectWithFlat(0, 0, 640, 480, 'f_022');
+	R_FillRectWithFlat(0, 0, 640, 480/* - 39*/, 'f_022');
 	DrawBorder(x, y, w, h);
 }
 
