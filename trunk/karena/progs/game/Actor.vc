@@ -4540,9 +4540,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 
 	hit_pt = hit_point;
 
-	// [FB] Check to see if we want to spawn a puff or not
-	if(shootPuffType)
-		SpawnPuff(hit_point, shootPuffType);
+	SpawnPuff(hit_point, shootPuffType);
 
 	if (la_damage)
 	{
@@ -4615,7 +4613,13 @@ void SpawnPuff(TVec org, class<Actor> PuffType)
 	Actor puff;
 
 	org.z += (Random() - Random()) * 4.0;
-	puff = Spawn(PuffType, org);
+
+	//[FB] Check if we really want to spawn a puff
+	if(PuffType)
+		puff = Spawn(PuffType, org);
+	else
+		return;
+
 	if (linetarget && puff.SightSound)
 	{
 		// Hit thing sound
