@@ -166,7 +166,6 @@ TVec aim_dir;
 float aim_topslope;
 float aim_bottomslope;	// slopes to top and bottom of target
 float aim_range2d;
-TVec hit_pointA;
 Actor linetarget;	// who got hit (or none)
 
 float shoot_range;
@@ -182,6 +181,9 @@ TVec LightOffset;
 int LightColour;
 float LightRadius;
 int ExplodeEffect;
+
+// [FB] Global copy of hit_point
+TVec hit_pt;
 
 // [CW] Death message index; used by those who can damage directly
 //		(anything from enviroment to pawns with melee attacks)
@@ -786,7 +788,7 @@ void FloorBounceMissile()
 {
 	if (HitFloorType())
 	{
-		Remove();
+		Destroy();
 		return;
 	}
 	Velocity.z = Velocity.z * -0.7;
@@ -2812,7 +2814,7 @@ void HitLine(tmtrace_t* tmtrace)
 			}
 			else
 			{
-				Remove();
+				Destroy();
 			}
 			return;
 		}
@@ -3110,7 +3112,7 @@ bool HitCeiling()
 			}
 			else
 			{
-				Remove();
+				Destroy();
 				return false;
 			}
 			return true;
@@ -3579,7 +3581,7 @@ bool SectorChanged(int CrushChange)
 	{
 		if (bNoBlood)
 		{
-			Remove();
+			Destroy();
 		}
 		else
 		{
@@ -3597,7 +3599,7 @@ bool SectorChanged(int CrushChange)
 	//	Crunch dropped items
 	if (bDropped)
 	{
-		Remove();
+		Destroy();
 		return true;
 	}
 
@@ -4224,7 +4226,6 @@ bool PTR_AimTraverse(intercept_t * in)
 		// the possible target ranges.
 		dist = aim_range * in->frac;
 		hit_point = Origin + dist * aim_dir;
-		hit_pointA = hit_point;
 		open = LineOpenings(li, hit_point);
 		open = FindOpening(open, hit_point.z, hit_point.z);
 
@@ -4537,7 +4538,12 @@ bool PTR_ShootTraverse(intercept_t * in)
 	// position a bit closer
 	hit_point -= 10.0 * shoot_dir;
 
-	SpawnPuff(hit_point, shootPuffType);
+	hit_pt = hit_point;
+
+	// [FB] Check to see if we want to spawn a puff or not
+	if(shootPuffType)
+		SpawnPuff(hit_point, shootPuffType);
+
 	if (la_damage)
 	{
 		if (!th.bNoBlood && !th.bInvulnerable)
@@ -5035,7 +5041,7 @@ final void A_AddPlayerCorpse()
 	if (HexenLevelInfo(Level).bodyqueslot >= /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize)
 	{
 		// Too many player corpses - remove an old one
-		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize].Remove();
+		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize].Destroy();
 	}
 	HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize] = self;
 	HexenLevelInfo(Level).bodyqueslot++;
@@ -5072,7 +5078,7 @@ final void A_QueueCorpse()
 		// Too many corpses - remove an old one
 		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize];
 		if (corpse)
-			corpse.Remove();
+			corpse.Destroy();
 	}
 	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize] = self;
 	HexenLevelInfo(Level).corpseQueueSlot++;
