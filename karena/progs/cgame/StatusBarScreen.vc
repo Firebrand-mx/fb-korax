@@ -59,7 +59,7 @@ int pic_smallinnum[10];
 int pic_bignum[10];
 int bignumwidth[10];
 int pic_minus;
-//int pic_arti[NUMARTIFACTS];
+//int pic_arti[HexenDefs::NUMARTIFACTS];
 
 int pic_statbar;
 int pic_kills;
@@ -88,6 +88,7 @@ int pic_armor[HexenDefs::NUMARMOR];
 int pic_selectbox;
 int pic_invgeml[2];
 int pic_invgemr[2];*/
+
 int pic_fly[16];
 int pic_mino[16];
 int pic_boot[16];
@@ -100,44 +101,6 @@ int pic_paused;
 // For the Fullscreen stuff
 int pic_health;
 int pic_armor2;
-//int pic_arti[HexenDefs::NUMARTIFACTS];
-
-/*string arti_pic_names[NUMARTIFACTS] = {
-	"ARTIBOX",	// none
-	"ARTIINVU",	// invulnerability
-	"ARTIPTN2",	// health
-	"ARTISPHL",	// superhealth
-	"ARTIHRAD",	// healing radius
-	"ARTISUMN",	// summon maulator
-	"ARTITRCH",	// torch
-	"ARTIPORK",	// pig
-	"ARTISOAR",	// fly
-	"ARTIBLST",	// blast radius
-	"ARTIPSBG",	// poison bag
-	"ARTITELO",	// teleport other
-	"ARTISPED",	// speed
-	"ARTIBMAN",	// boost mana
-	"ARTIBRAC",	// boost armor
-	"ARTIATLP",	// teleport
-	"ARTISKLL",	// arti_puzzskull
-	"ARTIBGEM",	// arti_puzzgembig
-	"ARTIGEMR",	// arti_puzzgemred
-	"ARTIGEMG",	// arti_puzzgemgreen1
-	"ARTIGMG2",	// arti_puzzgemgreen2
-	"ARTIGEMB",	// arti_puzzgemblue1
-	"ARTIGMB2",	// arti_puzzgemblue2
-	"ARTIBOK1",	// arti_puzzbook1
-	"ARTIBOK2",	// arti_puzzbook2
-	"ARTISKL2",	// arti_puzzskull2
-	"ARTIFWEP",	// arti_puzzfweapon
-	"ARTICWEP",	// arti_puzzcweapon
-	"ARTIMWEP",	// arti_puzzmweapon
-	"ARTIGEAR",	// arti_puzzgear1
-	"ARTIGER2",	// arti_puzzgear2
-	"ARTIGER3",	// arti_puzzgear3
-	"ARTIGER4"	// arti_puzzgear4
-};
-*/
 
 //==========================================================================
 //
@@ -321,7 +284,12 @@ void StartMap()
 	pic_manavial5[1] = R_RegisterPic('manavl5');
 	pic_manavial6 = R_RegisterPic('manavl6');
 	pic_manavial7 = R_RegisterPic('manavl7');
-/*	switch (sb_pclass)
+/*	pic_artiflash[0] = R_RegisterPic('useartia');
+	pic_artiflash[1] = R_RegisterPic('useartib');
+	pic_artiflash[2] = R_RegisterPic('useartic');
+	pic_artiflash[3] = R_RegisterPic('useartid');
+	pic_artiflash[4] = R_RegisterPic('useartie');
+	switch (sb_pclass)
 	{
 	case HexenDefs::PCLASS_FIGHTER:
 		pic_wpslot = R_RegisterPic('wpslot0');
@@ -383,6 +351,7 @@ void StartMap()
 	//
 	for (i = 0; i < 16; i++)
 	{
+		pic_fly[i] = R_RegisterPic(StrToName(va("spfly%d", i)));
 		pic_mino[i] = R_RegisterPic(StrToName(va("spmino%d", i)));
 		pic_boot[i] = R_RegisterPic(StrToName(va("spboot%d", i)));
 		pic_shld[i] = R_RegisterPic(StrToName(va("spshld%d", i)));
@@ -399,7 +368,7 @@ void StartMap()
 
 	//  "PAUSED" IMAGE
 	pic_paused = R_RegisterPic('paused');
-	
+
 	//  FULLSCREEN ICONS FOR HEALTH AND ARMOR
 	pic_health = R_RegisterPic('ptn1a0');
 	pic_armor2 = R_RegisterPic('arm1a0');
@@ -416,7 +385,6 @@ void SB_DrawBackground()
 	// [FB] Calculate the max_health value according the player level
 	m_h = cl.max_health;
 	sb_health = HealthMarker;
-
 	if (sb_health < 0)
 	{
 		sb_health = 0;
@@ -430,8 +398,8 @@ void SB_DrawBackground()
 	R_FillRectWithFlat(0, 441, 640, 39, 'f_022');
 
 	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
-	R_DrawPic(BAR_X + 28 + (((196 * sb_health) / m_h) % 9), BAR_Y + 32, pic_chain);
-	R_DrawPic(BAR_X + 7 + ((222 * sb_health) / m_h), BAR_Y + 32, pic_lifegem);
+	R_DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
+	R_DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem);
 	R_DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
 	R_DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
 }
@@ -1168,7 +1136,7 @@ void SB_DrawFullscreenStats()
 //
 //==========================================================================
 
-void SB_DrawIcons(int view)
+void SB_DrawIcons()
 {
 	int frame;
 
@@ -1236,7 +1204,7 @@ void SB_DrawIcons(int view)
 //
 //==========================================================================
 
-void SB_DrawPause(int view)
+void SB_DrawPause()
 {
 	if (ClGame.bPaused && GetCvar('draw_pause'))
 	{
@@ -1273,10 +1241,10 @@ void SB_Drawer(int sb_view)
 	}
 
 	//  Animated icons
-	SB_DrawIcons(sb_view);
+	SB_DrawIcons();
 
 	//  Pause icon
-	SB_DrawPause(sb_view);
+	SB_DrawPause();
 
 	// [CW] Targeted enemy hint
 	// (don't know where to put it if not here)
@@ -1306,7 +1274,6 @@ void SB_UpdateWidgets()
 	int curHealth;
 
 	curHealth = Player(cl).HealthBig;
-
 	if (curHealth < 0)
 	{
 		curHealth = 0;
