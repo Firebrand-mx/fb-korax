@@ -254,14 +254,14 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 			Game.bcentreprint(va("%s is now the heresiarch", plHeresiarch.PlayerName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 					(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
-					false, 0.0);
+					true, 2.0);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
 		Game.bcentreprint(va("%s the heresiarch is dead", oldHeresiarchName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
 					(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
-					false, 0.0);
+					true, 2.0);
 		break;
 	case event_playdeathsequence:
 		PlayDeathSequence();
@@ -371,8 +371,7 @@ void PlayDeathSequence()
 		{
 			if (deathSequencer)
 			{
-				RemoveSpecialThinker(deathSequencer);
-				deathSequencer = none;
+				deathSequencer.Destroy();
 			}
 			/*if (State != state_rebornsequence)
 				ChangeMusic(va("%n", originalMusic));*/
@@ -528,8 +527,7 @@ void PlayBirthSequence()
 		{
 			if (birthSequencer)
 			{
-				RemoveSpecialThinker(birthSequencer);
-				birthSequencer = none;
+				birthSequencer.Destroy();
 			}
 			Actor(plHeresiarch.MO).MorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch, false, true);
 			plHeresiarch.GivePower(pw_invulnerability2);
