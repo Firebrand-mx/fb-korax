@@ -27,5 +27,4 @@ terrain.txt				scripts/terrain.txt
 language.en				language.en
 
 $load 				palette.pcx
-rgbtable.dat			rgbtable
 translat.dat			raw 0 0 256 43
