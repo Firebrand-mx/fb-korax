@@ -1090,13 +1090,13 @@ final void A_FreezeDeathChunks()
 	int i;
 	Actor A;
 
-	if (MSG_CheckSpace(8))
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		MSG_WriteByte(HexenDefs::svc_chunks);
-		MSG_WriteShort(ftoi(Origin.x));
-		MSG_WriteShort(ftoi(Origin.y));
-		MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		Player(Level.Game.Players[i]).ClientIceChunks(Origin + vector(0.0, 0.0, Height * 0.5));
 	}
 
 	if (Length(Velocity) > 1.0)

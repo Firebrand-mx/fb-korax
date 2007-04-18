@@ -282,6 +282,13 @@ replication
 		bak_health, table_thisplayer, use_power, targetnamehint_type,
 		altWeapon, gamescores, teamscores, altWeaponMode, PlayerNames,
 		targetnamehint;
+
+	unreliable if (!bIsClient)
+		ClientGunShot, ClientBlood, ClientExplosion, ClientExplosion2,
+		ClientIceChunks, ClientDynamicLightEx;
+
+	reliable if (!bIsClient)
+		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound;
 }
 
 //==========================================================================
@@ -635,28 +642,23 @@ void SelectPlayerTeam(bool call_update)
 	else
 	{
 
-	int i1, i2;
-	SelectClientMsg(MSG_SV_CLIENT);
-	MSG_WriteByte(HexenDefs::svc_teamselect);
+	int i1;
+	int maxTeams;
 	if (MainGameInfo(Level.Game).GameMode)
-		MSG_WriteByte(MainGameInfo(Level.Game).GameMode.AllowedTeams());
+		maxTeams = MainGameInfo(Level.Game).GameMode.AllowedTeams();
 	else
-		MSG_WriteByte(HexenDefs::MAXTEAMSINGAME);
+		maxTeams = HexenDefs::MAXTEAMSINGAME;
 	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
 	{
 		if (MainGameInfo(Level.Game).Teams[i1] == none)
 			break;
 	}
-	MSG_WriteByte(i1);
 	
-	
-	for (i2 = 0; i2 < i1; i2++)
-	{
-		MSG_WriteByte(MainGameInfo(Level.Game).Teams[i2].Colour);
-	}
-
-	if (!call_update)
-		MSG_WriteByte(Colour);
+	ClientTeamSelect(maxTeams, i1, Colour,
+		MainGameInfo(Level.Game).Teams[0].Colour,
+		MainGameInfo(Level.Game).Teams[1].Colour,
+		MainGameInfo(Level.Game).Teams[2].Colour,
+		MainGameInfo(Level.Game).Teams[3].Colour);
 
 	if (TeamSelection != HexenDefs::teamselection_reselect)
 		TeamSelection = HexenDefs::teamselection_wait;
@@ -664,6 +666,19 @@ void SelectPlayerTeam(bool call_update)
 	SetControllable(false);
 
 	}
+}
+
+//==========================================================================
+//
+//  ClientTeamSelect
+//
+//==========================================================================
+
+void ClientTeamSelect(int maxTeams, int activeTeams, int curSelection,
+	int Col1, int Col2, int Col3, int Col4)
+{
+	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, activeTeams, curSelection,
+		Col1, Col2, Col3, Col4);
 }
 
 //==========================================================================
@@ -1692,9 +1707,18 @@ void Scoreboard(bool show)
 	
 	// [CW] Set bShowScoreboard flag
 	bShowScoreboard = show;
-	SelectClientMsg(MSG_SV_CLIENT);
-	MSG_WriteByte(HexenDefs::svc_scoreboard);
-	MSG_WriteByte(bShowScoreboard);
+	ClientScoreboard(bShowScoreboard);
+}
+
+//==========================================================================
+//
+//  ClientScoreboard
+//
+//==========================================================================
+
+void ClientScoreboard(bool show)
+{
+	ClientGameBaseEx(ClGame).ShowScoreBoard(show);
 }
 
 //==========================================================================
@@ -5313,9 +5337,7 @@ void Cheat_Class()
 
 void SetFOV(int FOV)
 {
-	SelectClientMsg(MSG_SV_CLIENT);
-	MSG_WriteByte(HexenDefs::svc_fov);
-	MSG_WriteByte(FOV);
+	SetCvar('FOV', FOV);
 }
 
 //==========================================================================
@@ -5328,11 +5350,7 @@ void SetFOV(int FOV)
 
 void CallLocalSound(int sound, bool put_in_queue, float delay)
 {
-	SelectClientMsg(MSG_SV_CLIENT);
-	MSG_WriteByte(HexenDefs::svc_localsound);
-	MSG_WriteByte(sound);
-	MSG_WriteByte(put_in_queue);
-	MSG_WriteShort(ftoi(delay * 100.0));
+	ClientGameBaseEx(ClGame).PlayAnouncerSound(sound, put_in_queue, delay);
 }
 
 //==========================================================================
@@ -5759,20 +5777,15 @@ void UpdateTimedTrophies(float deltaTime)
 
 //==========================================================================
 //
-//  ParseGunShot
+//  ClientGunShot
 //
 //==========================================================================
 
-void ParseGunShot(void* Msg)
+void ClientGunShot(TVec org)
 {
-	TVec org;
 	int i, j;
 	particle_t *p;
 	int c;
-
-	org.x = itof(MSG_ReadShort(Msg));
-	org.y = itof(MSG_ReadShort(Msg));
-	org.z = itof(MSG_ReadShort(Msg));
 
 	for (i = 0; i < 20; i++)
 	{
@@ -5793,22 +5806,15 @@ void ParseGunShot(void* Msg)
 
 //==========================================================================
 //
-//  ParseBlood
+//  ClientBlood
 //
 //==========================================================================
 
-void ParseBlood(void* Msg)
+void ClientBlood(TVec org, int damage)
 {
-	TVec org;
-	int damage;
 	int i, j;
 	particle_t *p;
 	int c;
-
-	org.x = itof(MSG_ReadShort(Msg));
-	org.y = itof(MSG_ReadShort(Msg));
-	org.z = itof(MSG_ReadShort(Msg));
-	damage = MSG_ReadByte(Msg);
 
 	for (i = 0; i < damage; i++)
 	{
@@ -5829,11 +5835,11 @@ void ParseBlood(void* Msg)
 
 //==========================================================================
 //
-//  ParseExplosion
+//  ClientExplosion
 //
 //==========================================================================
 
-void ParseExplosion(void* Msg)
+void ClientExplosion(TVec org)
 {
 // FROM HEXEN
 /*	TVec org;
@@ -5853,14 +5859,9 @@ void ParseExplosion(void* Msg)
 	dl->decay = 300.0;*/
 
 // ORIGINAL FROM DOOM
-	TVec org;
 	int i;
 	particle_t *p;
 	dlight_t *dl;
-
-	org.x = itof(MSG_ReadShort(Msg));
-	org.y = itof(MSG_ReadShort(Msg));
-	org.z = itof(MSG_ReadShort(Msg));
 
 	for (i = 0; i < 1024; i++)
 	{
@@ -5897,20 +5898,13 @@ void ParseExplosion(void* Msg)
 
 //==========================================================================
 //
-//  ParseExplosion2
+//  ClientExplosion2
 //
 //==========================================================================
 
-void ParseExplosion2(void* Msg)
+void ClientExplosion2(int etype, TVec org)
 {
-	TVec org;
 	dlight_t *dl;
-	int etype;
-
-	etype = MSG_ReadByte(Msg);
-	org.x = itof(MSG_ReadShort(Msg));
-	org.y = itof(MSG_ReadShort(Msg));
-	org.z = itof(MSG_ReadShort(Msg));
 
 	dl = AllocDlight(0);
 	dl->origin = org;
@@ -5922,19 +5916,14 @@ void ParseExplosion2(void* Msg)
 
 //==========================================================================
 //
-//  ParseIceChunks
+//  ClientIceChunks
 //
 //==========================================================================
 
-void ParseIceChunks(void* Msg)
+void ClientIceChunks(TVec org)
 {
-	TVec org;
 	int i, c;
 	particle_t *p;
-
-	org.x = itof(MSG_ReadShort(Msg));
-	org.y = itof(MSG_ReadShort(Msg));
-	org.z = itof(MSG_ReadShort(Msg));
 
 	for (i = 0; i < 1024; i++)
 	{
@@ -5964,85 +5953,23 @@ void ParseIceChunks(void* Msg)
 
 //==========================================================================
 //
-//  ParseDynamicLightEx
+//  ClientDynamicLightEx
 //
 //	[CW] Full data dlight parsing
 //
 //==========================================================================
 
-void ParseDynamicLightEx(void* Msg)
+void ClientDynamicLightEx(int colour, TVec org, int radius, int lifetime, int decay)
 {
 	dlight_t *dl;
 
 	dl = AllocDlight(0);
 
-	dl->colour = MSG_ReadLong(Msg);
-	dl->origin.x = itof(MSG_ReadShort(Msg));
-	dl->origin.y = itof(MSG_ReadShort(Msg));
-	dl->origin.z = itof(MSG_ReadShort(Msg));
-	dl->radius = itof(MSG_ReadShort(Msg));
-	dl->die = ClGame.time + itof(MSG_ReadShort(Msg)) * 0.01;
-	dl->decay = itof(MSG_ReadShort(Msg)) * 0.01;
-}
-
-//==========================================================================
-//
-//  ParseServerCommand
-//
-//==========================================================================
-
-bool ParseServerCommand(int cmd_type, void* Msg)
-{
-	switch (cmd_type)
-	{
-	case HexenDefs::svc_gun_shot:
-		ParseGunShot(Msg);
-		break;
-
-	case HexenDefs::svc_blood:
-		ParseBlood(Msg);
-		break;
-
-	case HexenDefs::svc_explosion:
-		ParseExplosion(Msg);
-		break;
-
-// [Korax]
-	case HexenDefs::svc_explosion2:
-		ParseExplosion2(Msg);
-		break;
-
-	case HexenDefs::svc_chunks:
-		ParseIceChunks(Msg);
-		break;
-
-	case HexenDefs::svc_fov:
-		SetCvar('FOV', MSG_ReadByte(Msg));
-		break;
-
-	case HexenDefs::svc_teamselect:
-		ClientGameBaseEx(ClGame).ParseTeamSelect(Msg);
-		break;
-
-	case HexenDefs::svc_scoreboard:
-		ClientGameBaseEx(ClGame).ShowScoreBoard(MSG_ReadByte(Msg));
-		break;
-
-	case HexenDefs::svc_localsound:
-		ClientGameBaseEx(ClGame).ParseLocalSound(Msg);
-		break;
-
-	case HexenDefs::svc_dlight:			// currently unused
-		break;
-
-	case HexenDefs::svc_dlightex:
-		ParseDynamicLightEx(Msg);
-		break;
-
-	default:
-		return false;
-	}
-	return true;
+	dl->colour = colour;
+	dl->origin = org;
+	dl->radius = itof(radius);
+	dl->die = ClGame.time + itof(lifetime) * 0.01;
+	dl->decay = itof(decay) * 0.01;
 }
 
 defaultproperties

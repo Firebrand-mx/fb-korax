@@ -2038,15 +2038,15 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 void SpawnBloodSplatter(TVec org, int damage)
 {
 	Actor mo;
+	int i;
 
-	MSG_Select(MSG_SV_DATAGRAM);
-	if (MSG_CheckSpace(8))
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		MSG_WriteByte(HexenDefs::svc_blood);
-		MSG_WriteShort(ftoi(org.x));
-		MSG_WriteShort(ftoi(org.y));
-		MSG_WriteShort(ftoi(org.z));
-		MSG_WriteByte(damage > 255 ? 255 : damage);
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		Player(Level.Game.Players[i]).ClientBlood(org, damage > 255 ? 255 : damage);
 	}
 
 	mo = Spawn(BloodSplatter, org);
@@ -3974,21 +3974,33 @@ bool ExplodeMissile()
 	}
 	if (!(Effects & HexenDefs::EF_DL_ROCKET) && (Effects & HexenDefs::EF_DLIGHT_MASK))
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(8))
-		{
-			MSG_WriteByte(HexenDefs::svc_explosion2);
-			MSG_WriteByte(Effects & HexenDefs::EF_DLIGHT_MASK);
-			MSG_WriteShort(ftoi(Origin.x));
-			MSG_WriteShort(ftoi(Origin.y));
-			MSG_WriteShort(ftoi(Origin.z));
-		}
+		SendExplosion2(Effects & HexenDefs::EF_DLIGHT_MASK, Origin);
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
 	}
 	if (Effects & HexenDefs::EF_DL_ROCKET)
 		Effects &= ~HexenDefs::EF_DL_ROCKET;
 
 	return true;
+}
+
+//==========================================================================
+//
+//  Blast
+//
+//==========================================================================
+
+void SendExplosion2(int etype, TVec org)
+{
+	int i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		Player(Level.Game.Players[i]).ClientExplosion2(etype, org);
+	}
 }
 
 //==========================================================================
@@ -4594,6 +4606,7 @@ int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 
 void SpawnPuff(TVec org, class<Actor> PuffType)
 {
+	int i;
 	Actor puff;
 
 	org.z += (Random() - Random()) * 4.0;
@@ -4624,37 +4637,21 @@ void SpawnPuff(TVec org, class<Actor> PuffType)
 
 	if (PuffType == GoldWandPuff1)
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(8))
-		{
-			MSG_WriteByte(HexenDefs::svc_explosion2);
-			MSG_WriteByte(HexenDefs::EF_DL_WHITE);
-			MSG_WriteShort(ftoi(org.x));
-			MSG_WriteShort(ftoi(org.y));
-			MSG_WriteShort(ftoi(org.z));
-		}
+		SendExplosion2(HexenDefs::EF_DL_WHITE, org);
 	}
 	if (PuffType == BlasterPuff1)
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(8))
-		{
-			MSG_WriteByte(HexenDefs::svc_explosion2);
-			MSG_WriteByte(HexenDefs::EF_DL_BLUE);
-			MSG_WriteShort(ftoi(org.x));
-			MSG_WriteShort(ftoi(org.y));
-			MSG_WriteShort(ftoi(org.z));
-		}
+		SendExplosion2(HexenDefs::EF_DL_BLUE, org);
 	}
 	if (PuffType == DoomPuff)
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(7))
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			MSG_WriteByte(HexenDefs::svc_gun_shot);
-			MSG_WriteShort(ftoi(org.x));
-			MSG_WriteShort(ftoi(org.y));
-			MSG_WriteShort(ftoi(org.z));
+			if (!Level.Game.Players[i])
+				continue;
+			if (!Level.Game.Players[i].bSpawned)
+				continue;
+			Player(Level.Game.Players[i]).ClientGunShot(org);
 		}
 	}
 
@@ -4833,6 +4830,7 @@ final void A_Explode()
 	int damage;
 	float distance;
 	int damageSelf;
+	int i;
 
 	damage = 128;
 	distance = 128.0;
@@ -4981,13 +4979,14 @@ final void A_Explode()
 	if ((Effects & HexenDefs::EF_DL_ROCKET) && (Effects & HexenDefs::EF_DLIGHT_MASK))
 	{
 		//  Spawn explosion effects - dynamic light and particles
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(7))
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			MSG_WriteByte(HexenDefs::svc_explosion);
-			MSG_WriteShort(ftoi(Origin.x));
-			MSG_WriteShort(ftoi(Origin.y));
-			MSG_WriteShort(ftoi(Origin.z + Height * 0.5));
+			if (!Level.Game.Players[i])
+				continue;
+			if (!Level.Game.Players[i].bSpawned)
+				continue;
+			Player(Level.Game.Players[i]).ClientExplosion(
+				Origin + vector(0.0, 0.0, Height * 0.5));
 		}
 
 		//  Clear old dynamic light effect
@@ -4995,15 +4994,7 @@ final void A_Explode()
 	}
 	else if (ExplodeEffect)
 	{
-		MSG_Select(MSG_SV_DATAGRAM);
-		if (MSG_CheckSpace(8))
-		{
-			MSG_WriteByte(HexenDefs::svc_explosion2);
-			MSG_WriteByte(ExplodeEffect);
-			MSG_WriteShort(ftoi(Origin.x));
-			MSG_WriteShort(ftoi(Origin.y));
-			MSG_WriteShort(ftoi(Origin.z));
-		}
+		SendExplosion2(ExplodeEffect, Origin);
 	}
 }
 
