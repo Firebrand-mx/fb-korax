@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class ClientGame : ClientGameBase;
+class ClientGame : ClientGameBaseEx;
 
 enum
 {
@@ -38,15 +38,6 @@ enum
 	MB_Control,
 	MB_Quit,
 	MB_EndGame
-};
-
-enum
-{
-	pt_static,
-	pt_explode,
-	pt_explode2,
-	pt_chunks,
-	pt_chunks2
 };
 
 const int MAX_MENU_STACK		= 32;
@@ -93,11 +84,6 @@ int pic_bordtl;
 int pic_bordtr;
 int pic_bordbl;
 int pic_bordbr;
-
-int ramp1[16];
-int ramp2[16];
-int ecolours[8];
-
 
 bool IsInGame;
 
@@ -818,216 +804,11 @@ void DrawViewBorder(int x, int y, int w, int h)
 
 //==========================================================================
 //
-//  ParseGunShot
-//
-//==========================================================================
-
-void ParseGunShot()
-{
-	TVec org;
-	int i, j;
-	particle_t *p;
-	int c;
-
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	for (i = 0; i < 20; i++)
-	{
-		p = NewParticle();
-		if (!p)
-			return;
-
-		p->org = org;
-		c = P_Random() >> 1;
-		p->colour = RGB(c, c, c);
-		p->die = time + 0.5 * Random();
-		p->vel.x = 32.0 * (Random() - 0.5);
-		p->vel.y = 32.0 * (Random() - 0.5);
-		p->vel.z = 32.0 * (Random() - 0.5);
-		p->type = pt_static;
-	}
-}
-
-//==========================================================================
-//
-//  ParseBlood
-//
-//==========================================================================
-
-void ParseBlood()
-{
-	TVec org;
-	int damage;
-	int i, j;
-	particle_t *p;
-	int c;
-
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-	damage = MSG_ReadByte();
-
-	for (i = 0; i < damage; i++)
-	{
-		p = NewParticle();
-		if (!p)
-			return;
-
-		p->org = org;
-		c = P_Random() >> 1;
-		p->colour = RGB(32 + c, c >> 4, c >> 4);
-		p->die = time + 0.5 * Random();
-		p->vel.x = 32.0 * (Random() - 0.5);
-		p->vel.y = 32.0 * (Random() - 0.5);
-		p->vel.z = 32.0 * (Random() - 0.5);
-		p->type = pt_static;
-	}
-}
-
-//==========================================================================
-//
-//  ParseExplosion
-//
-//==========================================================================
-
-void ParseExplosion()
-{
-// FROM HEXEN
-/*	TVec org;
-	dlight_t *dl;
-	int etype;
-
-	etype = MSG_ReadByte();
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	dl = AllocDlight(0);
-	dl->origin = org;
-	dl->radius = 350.0;
-	dl->colour = ecolours[etype];
-	dl->die = cl.time + 0.5;
-	dl->decay = 300.0;*/
-
-// ORIGINAL FROM DOOM
-	TVec org;
-	int i;
-	particle_t *p;
-	dlight_t *dl;
-
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	for (i = 0; i < 1024; i++)
-	{
-		p = NewParticle();
-		if (!p)
-			return;
-		p->die = time + 5.0;
-		p->colour = ramp1[0];
-		p->ramp = Random() * 4.0;
-		if (i & 1)
-		{
-			p->type = pt_explode;
-		}
-		else
-		{
-			p->type = pt_explode2;
-		}
-		p->org.x = org.x + ((Random() * 32.0) - 16.0);
-		p->org.y = org.y + ((Random() * 32.0) - 16.0);
-		p->org.z = org.z + ((Random() * 32.0) - 16.0);
-		p->vel.x = (Random() * 512.0) - 256.0;
-		p->vel.y = (Random() * 512.0) - 256.0;
-		p->vel.z = (Random() * 512.0) - 256.0;
-	}
-
-	dl = AllocDlight(0);
-	dl->origin = org;
-	dl->radius = 350.0;
-	dl->colour = 0xffffffff;
-	dl->die = time + 0.5;
-	dl->decay = 300.0;
-
-}
-
-//==========================================================================
-//
-//  ParseExplosion2
-//
-//==========================================================================
-
-void ParseExplosion2()
-{
-	TVec org;
-	dlight_t *dl;
-	int etype;
-
-	etype = MSG_ReadByte();
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	dl = AllocDlight(0);
-	dl->origin = org;
-	dl->radius = 350.0;
-	dl->colour = ecolours[etype];
-	dl->die = time + 0.5;
-	dl->decay = 300.0;
-}
-
-//==========================================================================
-//
-//  ParseIceChunks
-//
-//==========================================================================
-
-void ParseIceChunks()
-{
-	TVec org;
-	int i, c;
-	particle_t *p;
-
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	for (i = 0; i < 1024; i++)
-	{
-		p = NewParticle();
-		if (!p)
-			return;
-		p->die = time + 5.0;
-		c = P_Random() >> 1; 
-		p->colour = RGB(c, c, c);
-		p->ramp = Random() * 4.0;
-		if (i & 1)
-		{
-			p->type = pt_chunks;
-		}
-		else
-		{
-			p->type = pt_chunks2;
-		}
-		p->org.x = org.x + ((Random() * 16.0) - 8.0);
-		p->org.y = org.y + ((Random() * 16.0) - 8.0);
-		p->org.z = org.z + ((Random() * 16.0) - 8.0);
-		p->vel.x = (Random() * 256.0) - 128.0;
-		p->vel.y = (Random() * 256.0) - 128.0;
-		p->vel.z = (Random() * 256.0) - 128.0;
-	}
-}
-
-//==========================================================================
-//
 //  ParseTeamSelect
 //
 //==========================================================================
 
-void ParseTeamSelect()
+void ParseTeamSelect(void* Msg)
 {
 	int i;
 	bool created;
@@ -1038,17 +819,17 @@ void ParseTeamSelect()
 		TeamSelectScreen = MenuScreenTeamSelect(SpawnMenu(MenuScreenTeamSelect));
 		created = true;
 	}
-	TeamSelectScreen.maxTeams = MSG_ReadByte();
-	TeamSelectScreen.activeTeams = MSG_ReadByte();
+	TeamSelectScreen.maxTeams = MSG_ReadByte(Msg);
+	TeamSelectScreen.activeTeams = MSG_ReadByte(Msg);
 
 	for (i = 0; i < TeamSelectScreen.activeTeams; i++)
 	{
-		TeamSelectScreen.Teams[i] = MSG_ReadByte();
+		TeamSelectScreen.Teams[i] = MSG_ReadByte(Msg);
 	}
 
 	if (created)
 	{
-		TeamSelectScreen.curSelection = MSG_ReadByte();
+		TeamSelectScreen.curSelection = MSG_ReadByte(Msg);
 		TeamSelectScreen.Ready = true;
 		TeamSelectScreen.CreateChoices();
 		PushMenuScreen(TeamSelectScreen);
@@ -1063,12 +844,12 @@ void ParseTeamSelect()
 //
 //==========================================================================
 
-void ParseLocalSound()
+void ParseLocalSound(void* Msg)
 {
 	bool put_in_queue;
 	name sndName;
 
-	switch(MSG_ReadByte())
+	switch(MSG_ReadByte(Msg))
 	{
 	case HexenDefs::lsid_kth_an_awaiting: sndName = 'KTH_AwaitingForHeresiarch'; break;
 	case HexenDefs::lsid_kth_an_ishere: sndName = 'KTH_HeresiarchIsHere'; break;
@@ -1080,101 +861,29 @@ void ParseLocalSound()
 	default: sndName = 'misc/chat'; break;
 	}
 
-	put_in_queue = MSG_ReadByte();
+	put_in_queue = MSG_ReadByte(Msg);
 
 	if (put_in_queue && Announcer)
-		Announcer.QueueSound(sndName, itof(MSG_ReadShort()) / 100.0);
+		Announcer.QueueSound(sndName, itof(MSG_ReadShort(Msg)) / 100.0);
 	else
 	{
-		MSG_ReadShort();
+		MSG_ReadShort(Msg);
 		LocalSound(sndName);
 	}
 }
 
 //==========================================================================
 //
-//  ParseDynamicLightEx
-//
-//	[CW] Full data dlight parsing
+//  ShowScoreBoard
 //
 //==========================================================================
 
-void ParseDynamicLightEx()
+void ShowScoreBoard(bool Show)
 {
-	dlight_t *dl;
-
-	dl = AllocDlight(0);
-
-	dl->colour = MSG_ReadLong();
-	dl->origin.x = itof(MSG_ReadShort());
-	dl->origin.y = itof(MSG_ReadShort());
-	dl->origin.z = itof(MSG_ReadShort());
-	dl->radius = itof(MSG_ReadShort());
-	dl->die = time + itof(MSG_ReadShort()) * 0.01;
-	dl->decay = itof(MSG_ReadShort()) * 0.01;
-}
-
-//==========================================================================
-//
-//  ParseServerCommand
-//
-//==========================================================================
-
-bool ParseServerCommand(int cmd_type)
-{
-	switch (cmd_type)
-	{
-	case HexenDefs::svc_gun_shot:
-		ParseGunShot();
-		break;
-
-	case HexenDefs::svc_blood:
-		ParseBlood();
-		break;
-
-	case HexenDefs::svc_explosion:
-		ParseExplosion();
-		break;
-
-// [Korax]
-	case HexenDefs::svc_explosion2:
-		ParseExplosion2();
-		break;
-
-	case HexenDefs::svc_chunks:
-		ParseIceChunks();
-		break;
-
-	case HexenDefs::svc_fov:
-		SetCvar('FOV', MSG_ReadByte());
-		break;
-
-	case HexenDefs::svc_teamselect:
-		ParseTeamSelect();
-		break;
-
-	case HexenDefs::svc_scoreboard:
-		if (MSG_ReadByte())
-			GScBoard.Show();
-		else
-			GScBoard.Hide();
-		break;
-
-	case HexenDefs::svc_localsound:
-		ParseLocalSound();
-		break;
-
-	case HexenDefs::svc_dlight:			// currently unused
-		break;
-
-	case HexenDefs::svc_dlightex:
-		ParseDynamicLightEx();
-		break;
-
-	default:
-		return false;
-	}
-	return true;
+	if (Show)
+		GScBoard.Show();
+	else
+		GScBoard.Hide();
 }
 
 //==========================================================================
@@ -1199,34 +908,34 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 
 	switch (p->type)
 	{
-	case pt_static:
+	case HexenDefs::pt_static:
 		break;
 
-	case pt_explode:
+	case HexenDefs::pt_explode:
 		p->ramp += time2;
 		if (p->ramp >= 16.0)
 			p->die = -1.0;
 		else
-			p->colour = ramp1[ftoi(p->ramp)];
+			p->colour = HexenDefs.default.ramp1[ftoi(p->ramp)];
 		p->vel.x += p->vel.x * dvel;
 		p->vel.y += p->vel.y * dvel;
 		p->vel.z += p->vel.z * dvel;
 		p->vel.z -= grav;
 		break;
 
-	case pt_explode2:
+	case HexenDefs::pt_explode2:
 		p->ramp += time3;
 		if (p->ramp >= 16.0)
 			p->die = -1.0;
 		else
-			p->colour = ramp2[ftoi(p->ramp)];
+			p->colour = HexenDefs.default.ramp2[ftoi(p->ramp)];
 		p->vel.x -= p->vel.x * DeltaTime;
 		p->vel.y -= p->vel.y * DeltaTime;
 		p->vel.z -= p->vel.z * DeltaTime;
 		p->vel.z -= grav;
 		break;
 
-	case pt_chunks:
+	case HexenDefs::pt_chunks:
 		p->ramp += time1;
 		if (p->ramp >= 16.0)
 			p->die = -1.0;
@@ -1239,7 +948,7 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 		p->vel.z -= grav;
 		break;
 
-	case pt_chunks2:
+	case HexenDefs::pt_chunks2:
 		p->ramp += time2;
 		if (p->ramp >= 16.0)
 			p->die = -1.0;
@@ -1330,7 +1039,7 @@ void UpdateMobj(Entity mobj, int key, float DeltaTime)
 			c = P_Random() >> 1;
 			p->colour = RGB(c, c, c);
 			p->die = time + 0.5 * Random();
-			p->type = pt_static;
+			p->type = HexenDefs::pt_static;
 			p->vel.x = 16.0 * (Random() - 0.5);
 			p->vel.y = 16.0 * (Random() - 0.5);
 			p->vel.z = 16.0 * (Random() - 0.5);
@@ -1354,20 +1063,4 @@ void UpdateMobj(Entity mobj, int key, float DeltaTime)
 defaultproperties
 {
 	sb_height = 39;
-	ramp1[0] = 0xfffff31b; ramp1[1] = 0xefdfab27; ramp1[2] = 0xdfbf772f; ramp1[3] = 0xcf9f4f33;
-	ramp1[4] = 0xbf7f3b2b; ramp1[5] = 0xaf632f1f; ramp1[6] = 0x9f4b2313; ramp1[7] = 0x8f2f170b;
-	ramp1[8] = 0x7f7f3b2b; ramp1[9] = 0x6f632f1f; ramp1[10] = 0x5f4b2313; ramp1[11] = 0x4f2f170b;
-	ramp1[12] = 0x3f7f3b2b; ramp1[13] = 0x2f632f1f; ramp1[14] = 0x1f4b2313; ramp1[15] = 0x0f2f170b;
-	ramp2[0] = 0xfffff31b; ramp2[1] = 0xefefcb1f; ramp2[2] = 0xdfdfab27; ramp2[3] = 0xcfcf8f2b;
-	ramp2[4] = 0xbfbf772f; ramp2[5] = 0xafaf632f; ramp2[6] = 0x9f8f4333; ramp2[7] = 0x8f733723;
-	ramp2[8] = 0x7fbf772f; ramp2[9] = 0x6faf632f; ramp2[10] = 0x5f8f4333; ramp2[11] = 0x4f733723;
-	ramp2[12] = 0x3fbf772f; ramp2[13] = 0x2faf632f; ramp2[14] = 0x1f8f4333; ramp2[15] = 0x0f733723;
-	ecolours[0] = 0;	// EF_DL_NONE
-	ecolours[1] = RGB(255, 255, 255);	// EF_DL_WHITE
-	ecolours[2] = RGB(255, 32, 32);	// EF_DL_RED
-	ecolours[3] = RGB(32, 255, 32);	// EF_DL_GREEN
-	ecolours[4] = RGB(32, 32, 255);	// EF_DL_BLUE
-	ecolours[5] = RGB(1, 1, 1);    	// EF_DL_DARK
-	ecolours[6] = RGB(255, 255, 255);	// EF_DL_ROCKET
-	ecolours[7] = 0;			// EF_DL_MUZZLEFLASH
 }

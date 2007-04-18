@@ -273,7 +273,7 @@ bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 
 replication
 {
-	reliable if (true)
+	reliable if (!bIsClient)
 		SBFlags, ArmorPoints, InventoryTime, ArtifactFlash, ReadyArtifact,
 		InvPtr, InvCurPos, InventorySlotNum, Mana, Inventory,
 		Score, TeamFrags, KillsCount, TeamKills, TotalKills,
@@ -860,7 +860,7 @@ void SpawnPlayer(mthing_t * mthing)
 		InitiateLevel();
 		// [FB] Start TotalKills counter with all monster count, but just once!
 		if (!Level.Game.deathmatch || Level.Game.deathmatch == HexenDefs::game_sweepteam)
-			TotalKills = Level.Game.level->totalkills;
+			TotalKills = Level.TotalKills;
 		inited = true;
 	}
 
@@ -2117,7 +2117,7 @@ void CalcHeight(float deltaTime)
 		Bob = 0.5;
 	}
 
-	angle = 180.0 * 35.0 / 10.0 * Level.Game.level->time;
+	angle = 180.0 * 35.0 / 10.0 * Level.XLevel.Time;
 	bob = Bob / 2.0 * sin(angle);
 
 	// move viewheight
@@ -2190,7 +2190,7 @@ void PlayerInSpecialSector(float deltaTime)
 	{
 		//	Secret area.
 		SecretCount++;
-		Level.Game.level->currentsecret++;
+		Level.CurrentSecret++;
 		MO.Sector->special &= ~SECSPEC_SECRET_MASK;
 		centreprint("You found a secret area");
 	}
@@ -2201,31 +2201,31 @@ void PlayerInSpecialSector(float deltaTime)
 		switch (MO.Sector->special)
 		{
 		case SECSPEC_DamageHellslime:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 10);
 			}
 			break;
 		case SECSPEC_DamageSludge:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 4);
 			}
 			break;
 		case SECSPEC_DamageNukage:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 5);
 			}
 			break;
 		case SECSPEC_LightStrobeFastDamage:
 		case SECSPEC_DamageSuperHellslime:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 20);
 			}
 			break;
@@ -2233,9 +2233,9 @@ void PlayerInSpecialSector(float deltaTime)
 			// EXIT SUPER DAMAGE! (for E1M8 finale)
 			Cheats &= ~CF_GODMODE;
 	
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 20);
 			}
 	
@@ -2245,18 +2245,18 @@ void PlayerInSpecialSector(float deltaTime)
 			}
 			break;
 		case SECSPEC_DamageLavaWimpy:
-			if (Level.Game.level->time - LastSectorDamageTime >= 16.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(HexenLevelInfo(Level).GLavaInflictor, none, 5);
 				Actor(MO).HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
 			}
 			break;
 		case SECSPEC_DamageLavaHefty:
-			if (Level.Game.level->time - LastSectorDamageTime >= 16.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(HexenLevelInfo(Level).GLavaInflictor, none, 8);
 				Actor(MO).HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
@@ -2264,9 +2264,9 @@ void PlayerInSpecialSector(float deltaTime)
 			break;
 		case SECSPEC_ScrollEastLavaDamage:
 			ThrustPlayer(0.0, 1024.0, deltaTime);
-			if (Level.Game.level->time - LastSectorDamageTime >= 16.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(HexenLevelInfo(Level).GLavaInflictor, none, 5);
 				Actor(MO).HitFloorType();
 				MO.PlaySound('LavaSizzle', CHAN_BODY);
@@ -2289,23 +2289,23 @@ void PlayerInSpecialSector(float deltaTime)
 		switch (MO.Sector->special & SECSPEC_DAMAGE_MASK)
 		{
 		case 0x0100:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 5);
 			}
 			break;
 		case 0x0200:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 10);
 			}
 			break;
 		case 0x0300:
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, 20);
 			}
 			break;
@@ -2317,23 +2317,23 @@ void PlayerInSpecialSector(float deltaTime)
 	{
 		if (MO.Sector->Damage < 20)
 		{
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, MO.Sector->Damage);
 			}
 		}
 		else if (MO.Sector->Damage < 50)
 		{
-			if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 			{
-				LastSectorDamageTime = Level.Game.level->time;
+				LastSectorDamageTime = Level.XLevel.Time;
 				Actor(MO).Damage(none, none, MO.Sector->Damage);
 			}
 		}
-		else if (Level.Game.level->time - LastSectorDamageTime >= 1.0 / 35.0)
+		else if (Level.XLevel.Time - LastSectorDamageTime >= 1.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, MO.Sector->Damage);
 		}
 	}
@@ -2442,10 +2442,10 @@ void PlayerOnSpecialFlat(VTerrainInfo* floorType)
 		// Player is not touching the floor
 		return;
 	}
-	if (floorType->DamageAmount && Level.Game.level->time - LastSectorDamageTime >=
+	if (floorType->DamageAmount && Level.XLevel.Time - LastSectorDamageTime >=
 		itof(floorType->DamageTimeMask + 1) / 35.0)
 	{
-		LastSectorDamageTime = Level.Game.level->time;
+		LastSectorDamageTime = Level.XLevel.Time;
 		Actor(MO).Damage(HexenLevelInfo(Level).GLavaInflictor, none, 10);
 		MO.PlaySound('LavaSizzle', CHAN_BODY);
 	}
@@ -2466,42 +2466,42 @@ void PlayerInContents(float deltaTime)
 	switch (MO.WaterType)
 	{
 	case CONTENTS_LAVA:
-		if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(HexenLevelInfo(Level).GLavaInflictor, none, 10);
 			MO.PlaySound('LavaSizzle', CHAN_BODY);
 		}
 		break;
 
 	case CONTENTS_NUKAGE:
-		if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, 5);
 		}
 		break;
 
 	case CONTENTS_SLIME:
-		if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, 10);
 		}
 		break;
 
 	case CONTENTS_HELLSLIME:
-		if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, 20);
 		}
 		break;
 
 	case CONTENTS_SLUDGE:
-		if (Level.Game.level->time - LastSectorDamageTime >= 32.0 / 35.0)
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
 		{
-			LastSectorDamageTime = Level.Game.level->time;
+			LastSectorDamageTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, 4);
 		}
 		break;
@@ -3163,7 +3163,7 @@ void PlayerTick(float deltaTime)
 			WaterMove(deltaTime);
 		else
 			MovePlayer(deltaTime);
-		if (Powers[pw_speed] && !(Level.Game.level->tictime & 1) &&
+		if (Powers[pw_speed] && !(Level.XLevel.TicTime & 1) &&
 			Length(MO.Velocity) > 12.0 * 35.0)
 		{
 			speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
@@ -3333,7 +3333,7 @@ void PlayerTick(float deltaTime)
 	}
 	if (Powers[pw_invulnerability2])
 	{
-		if (!(Level.Game.level->tictime & 1) && bShadow && !bDontDraw)
+		if (!(Level.XLevel.TicTime & 1) && bShadow && !bDontDraw)
 		{
 			bShadow = false;
 			if (!bAltShadow)
@@ -3341,7 +3341,7 @@ void PlayerTick(float deltaTime)
 				bDontDraw = true;
 			}
 		}
-		if (!(Level.Game.level->tictime & 2))
+		if (!(Level.XLevel.TicTime & 2))
 		{
 			if (bDontDraw)
 			{
@@ -3361,7 +3361,7 @@ void PlayerTick(float deltaTime)
 				bAltShadow = false;
 			}
 		}
-		if (!(Level.Game.level->tictime & 3) && bShadow && !bDontDraw)
+		if (!(Level.XLevel.TicTime & 3) && bShadow && !bDontDraw)
 		{
 			bShadow = false;
 			if (!bAltShadow)
@@ -3369,7 +3369,7 @@ void PlayerTick(float deltaTime)
 				bDontDraw = true;
 			}
 		}
-		if (!(Level.Game.level->tictime & 4))
+		if (!(Level.XLevel.TicTime & 4))
 		{
 			if (bDontDraw)
 			{
@@ -3472,19 +3472,19 @@ void PlayerTick(float deltaTime)
 	if (PoisonCount && Actor(MO).bDormant)
 		PoisonCount = 0;
 
-	if (PoisonCount && Level.Game.level->time - LastPoisonTime >= 0.5)
+	if (PoisonCount && Level.XLevel.Time - LastPoisonTime >= 0.5)
 	{
 		PoisonCount -= 5;
 		if (PoisonCount < 0)
 		{
 			PoisonCount = 0;
 		}
-		LastPoisonTime = Level.Game.level->time;
+		LastPoisonTime = Level.XLevel.Time;
 		Actor(MO).PoisonDamage(Poisoner, 1, true);
 	}
 
 	// [FB] Darkness blinding effect
-	if (BlindCount && Level.Game.level->time - LastBlindTime >= 0.5)
+	if (BlindCount && Level.XLevel.Time - LastBlindTime >= 0.5)
 	{
 		BlindCount -= 5;
 		count += 1;
@@ -3492,7 +3492,7 @@ void PlayerTick(float deltaTime)
 		{
 			BlindCount = 0;
 		}
-		LastBlindTime = Level.Game.level->time;
+		LastBlindTime = Level.XLevel.Time;
 		if(count % 5 == 0) // [FB] Damage the blinded player after some time
 		{
 			Actor(MO).BlindDamage(Blinder, 1, true);
@@ -3518,10 +3518,10 @@ void PlayerTick(float deltaTime)
 		HazardTime -= deltaTime;
 		if (HazardTime <= 0.0)
 			HazardTime = 0.0;
-		if (Level.Game.level->time - LastHazardTime >= 32.0 / 35.0 &&
+		if (Level.XLevel.Time - LastHazardTime >= 32.0 / 35.0 &&
 			HazardTime > 16.0)
 		{
-			LastHazardTime = Level.Game.level->time;
+			LastHazardTime = Level.XLevel.Time;
 			Actor(MO).Damage(none, none, 5);
 		}
 	}
@@ -3540,7 +3540,7 @@ void PlayerTick(float deltaTime)
 				FixedColourmap = 1;
 			}
 		}
-		else if (!(Level.Game.level->tictime & 16))
+		else if (!(Level.XLevel.TicTime & 16))
 		{
 			if (NewTorch)
 			{
@@ -5757,6 +5757,293 @@ void UpdateTimedTrophies(float deltaTime)
 	}
 }
 
+//==========================================================================
+//
+//  ParseGunShot
+//
+//==========================================================================
+
+void ParseGunShot(void* Msg)
+{
+	TVec org;
+	int i, j;
+	particle_t *p;
+	int c;
+
+	org.x = itof(MSG_ReadShort(Msg));
+	org.y = itof(MSG_ReadShort(Msg));
+	org.z = itof(MSG_ReadShort(Msg));
+
+	for (i = 0; i < 20; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+
+		p->org = org;
+		c = P_Random() >> 1;
+		p->colour = RGB(c, c, c);
+		p->die = ClGame.time + 0.5 * Random();
+		p->vel.x = 32.0 * (Random() - 0.5);
+		p->vel.y = 32.0 * (Random() - 0.5);
+		p->vel.z = 32.0 * (Random() - 0.5);
+		p->type = HexenDefs::pt_static;
+	}
+}
+
+//==========================================================================
+//
+//  ParseBlood
+//
+//==========================================================================
+
+void ParseBlood(void* Msg)
+{
+	TVec org;
+	int damage;
+	int i, j;
+	particle_t *p;
+	int c;
+
+	org.x = itof(MSG_ReadShort(Msg));
+	org.y = itof(MSG_ReadShort(Msg));
+	org.z = itof(MSG_ReadShort(Msg));
+	damage = MSG_ReadByte(Msg);
+
+	for (i = 0; i < damage; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+
+		p->org = org;
+		c = P_Random() >> 1;
+		p->colour = RGB(32 + c, c >> 4, c >> 4);
+		p->die = ClGame.time + 0.5 * Random();
+		p->vel.x = 32.0 * (Random() - 0.5);
+		p->vel.y = 32.0 * (Random() - 0.5);
+		p->vel.z = 32.0 * (Random() - 0.5);
+		p->type = HexenDefs::pt_static;
+	}
+}
+
+//==========================================================================
+//
+//  ParseExplosion
+//
+//==========================================================================
+
+void ParseExplosion(void* Msg)
+{
+// FROM HEXEN
+/*	TVec org;
+	dlight_t *dl;
+	int etype;
+
+	etype = MSG_ReadByte();
+	org.x = itof(MSG_ReadShort());
+	org.y = itof(MSG_ReadShort());
+	org.z = itof(MSG_ReadShort());
+
+	dl = AllocDlight(0);
+	dl->origin = org;
+	dl->radius = 350.0;
+	dl->colour = ecolours[etype];
+	dl->die = cl.time + 0.5;
+	dl->decay = 300.0;*/
+
+// ORIGINAL FROM DOOM
+	TVec org;
+	int i;
+	particle_t *p;
+	dlight_t *dl;
+
+	org.x = itof(MSG_ReadShort(Msg));
+	org.y = itof(MSG_ReadShort(Msg));
+	org.z = itof(MSG_ReadShort(Msg));
+
+	for (i = 0; i < 1024; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+		p->die = ClGame.time + 5.0;
+		p->colour = HexenDefs.default.ramp1[0];
+		p->ramp = Random() * 4.0;
+		if (i & 1)
+		{
+			p->type = HexenDefs::pt_explode;
+		}
+		else
+		{
+			p->type = HexenDefs::pt_explode2;
+		}
+		p->org.x = org.x + ((Random() * 32.0) - 16.0);
+		p->org.y = org.y + ((Random() * 32.0) - 16.0);
+		p->org.z = org.z + ((Random() * 32.0) - 16.0);
+		p->vel.x = (Random() * 512.0) - 256.0;
+		p->vel.y = (Random() * 512.0) - 256.0;
+		p->vel.z = (Random() * 512.0) - 256.0;
+	}
+
+	dl = AllocDlight(0);
+	dl->origin = org;
+	dl->radius = 350.0;
+	dl->colour = 0xffffffff;
+	dl->die = ClGame.time + 0.5;
+	dl->decay = 300.0;
+
+}
+
+//==========================================================================
+//
+//  ParseExplosion2
+//
+//==========================================================================
+
+void ParseExplosion2(void* Msg)
+{
+	TVec org;
+	dlight_t *dl;
+	int etype;
+
+	etype = MSG_ReadByte(Msg);
+	org.x = itof(MSG_ReadShort(Msg));
+	org.y = itof(MSG_ReadShort(Msg));
+	org.z = itof(MSG_ReadShort(Msg));
+
+	dl = AllocDlight(0);
+	dl->origin = org;
+	dl->radius = 350.0;
+	dl->colour = HexenDefs.default.ecolours[etype];
+	dl->die = ClGame.time + 0.5;
+	dl->decay = 300.0;
+}
+
+//==========================================================================
+//
+//  ParseIceChunks
+//
+//==========================================================================
+
+void ParseIceChunks(void* Msg)
+{
+	TVec org;
+	int i, c;
+	particle_t *p;
+
+	org.x = itof(MSG_ReadShort(Msg));
+	org.y = itof(MSG_ReadShort(Msg));
+	org.z = itof(MSG_ReadShort(Msg));
+
+	for (i = 0; i < 1024; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+		p->die = ClGame.time + 5.0;
+		c = P_Random() >> 1; 
+		p->colour = RGB(c, c, c);
+		p->ramp = Random() * 4.0;
+		if (i & 1)
+		{
+			p->type = HexenDefs::pt_chunks;
+		}
+		else
+		{
+			p->type = HexenDefs::pt_chunks2;
+		}
+		p->org.x = org.x + ((Random() * 16.0) - 8.0);
+		p->org.y = org.y + ((Random() * 16.0) - 8.0);
+		p->org.z = org.z + ((Random() * 16.0) - 8.0);
+		p->vel.x = (Random() * 256.0) - 128.0;
+		p->vel.y = (Random() * 256.0) - 128.0;
+		p->vel.z = (Random() * 256.0) - 128.0;
+	}
+}
+
+//==========================================================================
+//
+//  ParseDynamicLightEx
+//
+//	[CW] Full data dlight parsing
+//
+//==========================================================================
+
+void ParseDynamicLightEx(void* Msg)
+{
+	dlight_t *dl;
+
+	dl = AllocDlight(0);
+
+	dl->colour = MSG_ReadLong(Msg);
+	dl->origin.x = itof(MSG_ReadShort(Msg));
+	dl->origin.y = itof(MSG_ReadShort(Msg));
+	dl->origin.z = itof(MSG_ReadShort(Msg));
+	dl->radius = itof(MSG_ReadShort(Msg));
+	dl->die = ClGame.time + itof(MSG_ReadShort(Msg)) * 0.01;
+	dl->decay = itof(MSG_ReadShort(Msg)) * 0.01;
+}
+
+//==========================================================================
+//
+//  ParseServerCommand
+//
+//==========================================================================
+
+bool ParseServerCommand(int cmd_type, void* Msg)
+{
+	switch (cmd_type)
+	{
+	case HexenDefs::svc_gun_shot:
+		ParseGunShot(Msg);
+		break;
+
+	case HexenDefs::svc_blood:
+		ParseBlood(Msg);
+		break;
+
+	case HexenDefs::svc_explosion:
+		ParseExplosion(Msg);
+		break;
+
+// [Korax]
+	case HexenDefs::svc_explosion2:
+		ParseExplosion2(Msg);
+		break;
+
+	case HexenDefs::svc_chunks:
+		ParseIceChunks(Msg);
+		break;
+
+	case HexenDefs::svc_fov:
+		SetCvar('FOV', MSG_ReadByte(Msg));
+		break;
+
+	case HexenDefs::svc_teamselect:
+		ClientGameBaseEx(ClGame).ParseTeamSelect(Msg);
+		break;
+
+	case HexenDefs::svc_scoreboard:
+		ClientGameBaseEx(ClGame).ShowScoreBoard(MSG_ReadByte(Msg));
+		break;
+
+	case HexenDefs::svc_localsound:
+		ClientGameBaseEx(ClGame).ParseLocalSound(Msg);
+		break;
+
+	case HexenDefs::svc_dlight:			// currently unused
+		break;
+
+	case HexenDefs::svc_dlightex:
+		ParseDynamicLightEx(Msg);
+		break;
+
+	default:
+		return false;
+	}
+	return true;
+}
 
 defaultproperties
 {

@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -30,59 +30,38 @@
 //**
 //**************************************************************************
 
-class SummonMissile : Projectile;
+class ClientGameBaseEx : ClientGameBase;
 
 //==========================================================================
 //
-//  A_Summon
-//
-//  Summon Minotaur
+//  ParseTeamSelect
 //
 //==========================================================================
 
-final void A_Summon()
+void ParseTeamSelect(void* Msg)
 {
-	Actor A;
-
-	A = Spawn(Minotaur, Origin);
-	if (A)
-	{
-		if (!A.TestLocation() || !Instigator)
-		{
-			// Didn't fit - change back to artifact
-			A.SetState(none);
-			return;
-		}
-
-		A.Args[0] = XLevel.TicTime;
-		if (!Instigator.bCorpse)
-		{
-			//	Master isn't dead
-			A.Instigator = Instigator;	// Pointer to master
-			Player(Instigator.Player).GivePower(pw_minotaur);
-		}
-
-		// Make smoke puff
-		Spawn(MinotaurSmoke, Origin);
-		PlaySound('MaulatorActive', CHAN_VOICE);
-	}
 }
 
-__states__
+//==========================================================================
+//
+//  ParseLocalSound
+//
+//==========================================================================
+
+void ParseLocalSound(void* Msg)
 {
-	S_SUMMON_FX1_1('SUMN', 0, 4.0 / 35.0, S_SUMMON_FX1_1) = none
-	S_SUMMON_FX2_1('SUMN', 0, 4.0 / 35.0, S_SUMMON_FX2_2) = none
-	S_SUMMON_FX2_2('SUMN', 0, 4.0 / 35.0, S_SUMMON_FX2_3) = none
-	S_SUMMON_FX2_3('SUMN', 0, 4.0 / 35.0, none) = A_Summon
+}
+
+//==========================================================================
+//
+//  ShowScoreBoard
+//
+//==========================================================================
+
+void ShowScoreBoard(bool Show)
+{
 }
 
 defaultproperties
 {
-	Speed = 700.0;
-	bNoGravity = false;
-	bActivateImpact = false;
-	bActivatePCross = false;
-	Alpha = 0.0;
-	IdleState = S_SUMMON_FX1_1;
-	DeathState = S_SUMMON_FX2_1;
 }
