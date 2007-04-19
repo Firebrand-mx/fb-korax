@@ -190,6 +190,7 @@ void IM_InitStats()
 	int posnum;
 	int slaughtercount;
 	int playercount;
+	PlayerReplicationInfo RepInfo;
 
 	ClGame.skipintermission = false;
 	intertime = 0.0;
@@ -216,39 +217,34 @@ void IM_InitStats()
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			totalFrags[i] = 0;
-			if (ClGame.scores[i].bActive)
+		}
+		FOREACH_EX(ClGame.GLevel.LevelInfo, PlayerReplicationInfo, RepInfo)
+		{
+			i = RepInfo.PlayerNum;
+			playercount++;
+			if (ClGame.deathmatch==2)
 			{
-				playercount++;
-				if (ClGame.deathmatch==2)
+				string col = Info_ValueForKey(RepInfo.UserInfo, "colour");
+				if (col)
 				{
-					string col = Info_ValueForKey(ClGame.scores[i].userinfo, "colour");
-					if (col)
-					{
-						int coo = atoi(col);
-						teams[coo].bActive = true;
-						for (j = 0; j < MAXPLAYERS; j++)
-						{
-							if (i==0)
-							{
-								teams[coo].frags[j] = 0;
-							}
-							totalFrags[coo] += ClGame.scores[i].frags[j];
-							teams[coo].frags[j] += ClGame.scores[i].frags[j];
-						}
-					}
-				}
-				else
-				{
+					int coo = atoi(col);
+					teams[coo].bActive = true;
 					for (j = 0; j < MAXPLAYERS; j++)
 					{
-						if (ClGame.scores[j].bActive)
+						if (i==0)
 						{
-							totalFrags[i] += ClGame.scores[i].frags[j];
+							teams[coo].frags[j] = 0;
 						}
+						totalFrags[coo] += RepInfo.FragsStats[j];
+						teams[coo].frags[j] += RepInfo.FragsStats[j];
 					}
 				}
-				posnum++;
 			}
+			else
+			{
+				totalFrags[i] = RepInfo.Frags;
+			}
+			posnum++;
 		}
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -416,6 +412,7 @@ void IM_DrawDeathTally(GC gc)
 	float xStart, scale;
 	int x, y;
 	bool bold;
+	PlayerReplicationInfo RepInfo;
 
 	gc.DrawFullScreenPic(patchINTERPIC);
 	R_DrawPic(TALLY_TOP_X, TALLY_TOP_Y, tallytop);
@@ -444,18 +441,19 @@ void IM_DrawDeathTally(GC gc)
 		LocalSound('PlatformStop');
 	}
 	y = ftoi(yPos);
-	for (i = 0; i < MAXPLAYERS; i++)
+	FOREACH_EX(ClGame.GLevel.LevelInfo, PlayerReplicationInfo, RepInfo)
 	{
+		i = RepInfo.PlayerNum;
 		xPos = xStart;
 		for (j = 0; j < MAXPLAYERS; j++, xPos += xDelta)
 		{
 			x = ftoi(xPos);
 			bold = ((i == ClGame.cl.ClientNum || j == ClGame.cl.ClientNum) && ClGame.deathmatch != 2) ||
 				(GetCvar('colour') == i || GetCvar('colour') == j);
-			if ((ClGame.scores[i].bActive && ClGame.scores[j].bActive && ClGame.deathmatch!=2) ||
-				(ClGame.deathmatch==2 && teams[i].bActive && teams[j].bActive))
+			if (ClGame.deathmatch != 2 ||
+				(ClGame.deathmatch == 2 && teams[i].bActive && teams[j].bActive))
 			{
-				int frr = (ClGame.deathmatch == 2 ? teams[i].frags[j] : ClGame.scores[i].frags[j]);
+				int frr = (ClGame.deathmatch == 2 ? teams[i].frags[j] : RepInfo.FragsStats[j]);
 				if (bold)
 				{
 					IM_DrawNumberBold(frr, x, y, 100);
@@ -479,7 +477,7 @@ void IM_DrawDeathTally(GC gc)
 				T_DrawText(x, y, "--");
 			}
 		}
-		if (showTotals && ClGame.scores[i].bActive && !((slaughterboy & (1 << i)) &&
+		if (showTotals && !((slaughterboy & (1 << i)) &&
 				!(ftoi(32.0 * intertime) & 16)))
 		{
 			IM_DrawNumber(totalFrags[i], TALLY_TOTALS_X, y, 1000);
