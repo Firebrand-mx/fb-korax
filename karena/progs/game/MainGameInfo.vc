@@ -3409,7 +3409,7 @@ void InsertPlayer(Player pl)
 
 void ScoreboardsUpdate(Player thisPlayer)
 {
-	int teamnum, plnum, gs, i, j;
+	int teamnum, plnum;
 	Player pl;
 	PlayerTeam plteam;
 
@@ -3428,7 +3428,6 @@ void ScoreboardsUpdate(Player thisPlayer)
 
 		//[CW] update scoreboard for player number "plnum"
 		pl = Player(Players[plnum]);
-		gs = 0;
 		dprint("MainGameInfo::ScoreboardsUpdate : update scores for human player with index %i", plnum);
 		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
 		{
@@ -3439,46 +3438,6 @@ void ScoreboardsUpdate(Player thisPlayer)
 			dprint("SU : write Team %i", teamnum);
 
 			pl.teamscores[teamnum] = plteam.Score;
-
-			for (i = 0; i < MAXPLAYERS; i++, gs++)
-			{
-			   if (!plteam.Players[i])
-				break;
-
-				dprint("MainGameInfo::ScoreboardsUpdate : write player %i in slot number %i", i, gs);
-
-			   if (plteam.Players[i] == pl)
-			      pl.table_thisplayer = gs;
-
-			   pl.gamescores[gs].IsActive = true;
-			   pl.PlayerNames[gs] = plteam.Players[i].PlayerName;
-			   pl.gamescores[gs].plclass = plteam.Players[i].PClass;
-			   pl.gamescores[gs].level = plteam.Players[i].exp_level;
-			   pl.gamescores[gs].IsBot = plteam.Players[i].bIsBot;
-			   pl.gamescores[gs].team = plteam.Players[i].Colour;
-			   pl.gamescores[gs].score = plteam.Players[i].Score;
-			   pl.gamescores[gs].frags = plteam.Players[i].Frags;
-			   pl.gamescores[gs].nplkills = plteam.Players[i].KillsCount;
-			   pl.gamescores[gs].deaths = 0;
-
-			   // [CW] counts times all other players killed this one
-			   // (and times he was killed by self/monsters/enviroment)
-			   for (j = 0; j < MAXPLAYERS; j++)
-			   {
-				if (!Players[j])
-				   break;
-				if (Players[j] == plteam.Players[i])
-					pl.gamescores[gs].deaths -= Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
-				else
-					pl.gamescores[gs].deaths += Players[j].FragsStats[plteam.Players[i].GetPlayerNum()];
-			   }
-			}
-		}
-
-		// Set all unused scoreboard slots by "not active" flags
-		for (i = gs; i < MAXPLAYERS; i++)
-		{
-			pl.gamescores[gs].IsActive = false;
 		}
 	}
 
@@ -3555,6 +3514,7 @@ void SpawnDynamicLight(int colour, TVec org, int radius, int lifetime, int decay
 defaultproperties
 {
 	LevelInfoClass = HexenLevelInfo;
+	PlayerReplicationInfoClass = KArenaPlayerReplicationInfo;
 	bUseHexenPolyobjTypes = true;
 
 // First Weapon	
