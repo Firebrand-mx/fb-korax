@@ -56,7 +56,7 @@ const int
 	TABLE_VALINDENT6	= 18;
 
 Player cl;
-//ClientGameBase ClGame;
+ClientGameBase ClGame;
 
 int colourmark[HexenDefs::MAXPLAYERTEAMS];
 
@@ -97,11 +97,12 @@ void StartMap()
 
 void DrawWindow(GC gc)
 {
-	int i, j, y;
+	int j, y;
 	int gamemode;
 	int current_team;
 	int current_team_idx;
 	string tmp;
+	KArenaPlayerReplicationInfo RepInfo;
 
 	R_ShadeRect(SHADE_LEFT, SHADE_TOP, SHADE_WIDTH, SHADE_HEIGHT, 0.6);
 
@@ -135,30 +136,27 @@ void DrawWindow(GC gc)
 	current_team = -1;
 	current_team_idx = -1;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	FOREACH_EX(ClGame.GLevel.LevelInfo, KArenaPlayerReplicationInfo, RepInfo)
 	{
-		if (!cl.gamescores[i].IsActive)
-			break;
-
 		// Insert team string if a new team encountered
-		if (gamemode >= HexenDefs::NUMGAMESNOTEAM && cl.gamescores[i].team != current_team)
+		if (gamemode >= HexenDefs::NUMGAMESNOTEAM && RepInfo.team != current_team)
 		{
 			if (current_team != -1)
 				y += 2;
 			current_team_idx++;
-			R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 11, colourmark[cl.gamescores[i].team]);
-			T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[cl.gamescores[i].team],
+			R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 11, colourmark[RepInfo.team]);
+			T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[RepInfo.team],
 								cl.teamscores[current_team_idx]));
 			y += TABLE_STRING_DELTA / 2;
-			current_team = cl.gamescores[i].team;
+			current_team = RepInfo.team;
 		}
 
 		// Mark current client with special background colour
 		// FIXME!!! - bad thing, need some other marking style for team mode!
-		if (cl.table_thisplayer == i)
+		if (cl.ClientNum == RepInfo.PlayerNum)
 		{
 			if (gamemode < HexenDefs::NUMGAMESNOTEAM)
-				R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[cl.gamescores[i].team]);
+				R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
 			else
 			{
 				T_SetFont(font_yellow);
@@ -166,16 +164,16 @@ void DrawWindow(GC gc)
 		}
 
 		// Player portrait
-		R_DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[cl.gamescores[i].plclass]) >> 1),
-							pic_portraits[cl.gamescores[i].plclass]);
+		R_DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[RepInfo.plclass]) >> 1),
+							pic_portraits[RepInfo.plclass]);
 
 		y += 6;
 
 		// Player's name
-		T_DrawText(TABLE_DATA_LEFT_X, y, cl.PlayerNames[i]);
+		T_DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName);
 
 		// Level + class
-		switch (cl.gamescores[i].level)
+		switch (RepInfo.level)
 		{
 			case 1: tmp = "st"; break;
 			case 2: tmp = "nd"; break;
@@ -183,23 +181,23 @@ void DrawWindow(GC gc)
 			default: tmp = "th";
 		}
 		T_DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-			cl.gamescores[i].level, tmp, playerclassnames[cl.gamescores[i].plclass]));
+			RepInfo.level, tmp, playerclassnames[RepInfo.plclass]));
 
 		y += TABLE_STRING_DELTA >> 1;
 
 		// Player's score
-		T_DrawText(TABLE_COL2, y, va("%d", cl.gamescores[i].score));
+		T_DrawText(TABLE_COL2, y, va("%d", RepInfo.score));
 
 		// Player is human/cpu
-		if (cl.gamescores[i].IsBot)
+		if (RepInfo.IsBot)
 			T_DrawText(TABLE_COL3, y, "bot");
 		else
 			T_DrawText(TABLE_COL3, y, "hum");
 
 		// Those are mode dependent
-		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", cl.gamescores[i].frags));
-		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", cl.gamescores[i].nplkills));
-		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", cl.gamescores[i].deaths));
+		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags));
+		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", RepInfo.nplkills));
+		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", RepInfo.deaths));
 
 		y += TABLE_ENTRY_DELTA - (TABLE_STRING_DELTA >> 1);
 
