@@ -55,7 +55,6 @@ const int
 	TABLE_VALINDENT5	= 12,
 	TABLE_VALINDENT6	= 18;
 
-Player cl;
 ClientGameBase ClGame;
 
 int colourmark[HexenDefs::MAXPLAYERTEAMS];
@@ -146,14 +145,14 @@ void DrawWindow(GC gc)
 			current_team_idx++;
 			R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 11, colourmark[RepInfo.team]);
 			T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[RepInfo.team],
-								cl.teamscores[current_team_idx]));
+								Player(ClGame.cl).teamscores[current_team_idx]));
 			y += TABLE_STRING_DELTA / 2;
 			current_team = RepInfo.team;
 		}
 
 		// Mark current client with special background colour
 		// FIXME!!! - bad thing, need some other marking style for team mode!
-		if (cl.ClientNum == RepInfo.PlayerNum)
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
 		{
 			if (gamemode < HexenDefs::NUMGAMESNOTEAM)
 				R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
