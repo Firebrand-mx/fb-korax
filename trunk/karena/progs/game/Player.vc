@@ -498,7 +498,7 @@ void DisconnectClient()
 		ViewEnt.Destroy();
 		ViewEnt = none;
 	}
-	bprint("%s left the game\n", PlayerName);
+	Level.bprint("%s left the game\n", PlayerName);
 	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
 
 	//[CW] set leaving player down the competition table
@@ -2248,7 +2248,7 @@ void PlayerInSpecialSector(float deltaTime)
 	
 			if (HealthBig <= 10)
 			{
-				G_ExitLevel(0);
+				Level.ExitLevel(0);
 			}
 			break;
 		case SECSPEC_DamageLavaWimpy:
@@ -3091,7 +3091,7 @@ void PlayerTick(float deltaTime)
 		Actor(MO).bJustAttacked = false;
 	}
 
-	WorldTimer++;
+	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
 
 	//
@@ -5532,10 +5532,10 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			if(source.bIsPlayer)
 			{
 				if (Weapon(source.Player.ViewEnt).bInstantRanged)
-					bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(source.Player.ViewEnt).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(source.Player.ViewEnt).deathmsgi],
 						PlayerName, source.Player.PlayerName);
 				else
-					bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(source.Player.ViewEnt).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(source.Player.ViewEnt).deathmsgi],
 						PlayerName, source.Player.PlayerName);
 				//bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
 				//		PlayerName, source.Player.PlayerName);
@@ -5543,10 +5543,10 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			else if(source.IsA('Pawn'))
 			{
 				if (Pawn(source).bInstantRanged)
-					bprint(MainGameInfo(Level.Game).DeathMessageRanged[source.deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[source.deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 				else
-					bprint(MainGameInfo(Level.Game).DeathMessageMelee[source.deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[source.deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 				/*bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);*/
@@ -5559,18 +5559,18 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 			{
 				if(Player(source.Player) == self)
 				{
-					bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
+					Level.bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
 						PlayerName);
 				}
 				else
-					bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
 						PlayerName, source.Player.PlayerName);
 					//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
 					//	PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
-				bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
+				Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[inflictor.deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 				//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
 				//		PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
@@ -5579,12 +5579,12 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 		//[CW] suicide
 		else if (source.bIsPlayer && Player(source.Player) == self)
 		{
-			bprint(MainGameInfo(Level.Game).SuicideDeathMessage[P_Random() % 3], PlayerName);
+			Level.bprint(MainGameInfo(Level.Game).SuicideDeathMessage[P_Random() % 3], PlayerName);
 		}
 		//[CW] falling damage
 		else
 		{
-			bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
+			Level.bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
 		}
 	}
 	//[CW] p.2: fragged by enviromental thing or trap, or telefragged
@@ -5592,19 +5592,19 @@ void DisplayDeathMessage(Actor source, Actor inflictor)
 	{
 		// telefrag
 		if (inflictor.bIsPlayer)
-			bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName, inflictor.Player.PlayerName);
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName, inflictor.Player.PlayerName);
 		// telefrag
 		else if (inflictor.IsA('Pawn'))
-			bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
 				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
 		else
-			bprint(MainGameInfo(Level.Game).DeathMessageMisc[inflictor.deathmsgi], PlayerName);
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[inflictor.deathmsgi], PlayerName);
 //			bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
 	{
-		bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
+		Level.bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
 	}
 }
 
@@ -5772,7 +5772,7 @@ void ClientGunShot(TVec org)
 
 	for (i = 0; i < 20; i++)
 	{
-		p = NewParticle();
+		p = Level.NewParticle();
 		if (!p)
 			return;
 
@@ -5801,7 +5801,7 @@ void ClientBlood(TVec org, int damage)
 
 	for (i = 0; i < damage; i++)
 	{
-		p = NewParticle();
+		p = Level.NewParticle();
 		if (!p)
 			return;
 
@@ -5848,7 +5848,7 @@ void ClientExplosion(TVec org)
 
 	for (i = 0; i < 1024; i++)
 	{
-		p = NewParticle();
+		p = Level.NewParticle();
 		if (!p)
 			return;
 		p->die = ClGame.time + 5.0;
@@ -5870,7 +5870,7 @@ void ClientExplosion(TVec org)
 		p->vel.z = (Random() * 512.0) - 256.0;
 	}
 
-	dl = AllocDlight(0);
+	dl = Level.AllocDlight(0);
 	dl->origin = org;
 	dl->radius = 350.0;
 	dl->colour = 0xffffffff;
@@ -5889,7 +5889,7 @@ void ClientExplosion2(int etype, TVec org)
 {
 	dlight_t *dl;
 
-	dl = AllocDlight(0);
+	dl = Level.AllocDlight(0);
 	dl->origin = org;
 	dl->radius = 350.0;
 	dl->colour = HexenDefs.default.ecolours[etype];
@@ -5910,7 +5910,7 @@ void ClientIceChunks(TVec org)
 
 	for (i = 0; i < 1024; i++)
 	{
-		p = NewParticle();
+		p = Level.NewParticle();
 		if (!p)
 			return;
 		p->die = ClGame.time + 5.0;
@@ -5946,7 +5946,7 @@ void ClientDynamicLightEx(int colour, TVec org, int radius, int lifetime, int de
 {
 	dlight_t *dl;
 
-	dl = AllocDlight(0);
+	dl = Level.AllocDlight(0);
 
 	dl->colour = colour;
 	dl->origin = org;
