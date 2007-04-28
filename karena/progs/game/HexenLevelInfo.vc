@@ -822,6 +822,83 @@ void InitLava()
 	GLavaInflictor = Spawn(LavaInflictor, vector(0.0, 0.0, 0.0));
 }
 
+//==========================================================================
+//
+//  UpdateParticle
+//
+//==========================================================================
+
+void UpdateParticle(particle_t * p, float DeltaTime)
+{
+	float time1, time2, time3;
+	float dvel;
+	float grav;
+	int c;
+	
+	time1 = DeltaTime * 5.0;
+	time2 = DeltaTime * 10.0;	// 15;
+	time3 = DeltaTime * 15.0;
+
+	dvel = DeltaTime * 4.0;
+	grav = DeltaTime * 1.0 * 0.05; //frametime * sv_gravity.value * 0.05;
+
+	switch (p->type)
+	{
+	case HexenDefs::pt_static:
+		break;
+
+	case HexenDefs::pt_explode:
+		p->ramp += time2;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+			p->colour = HexenDefs.default.ramp1[ftoi(p->ramp)];
+		p->vel.x += p->vel.x * dvel;
+		p->vel.y += p->vel.y * dvel;
+		p->vel.z += p->vel.z * dvel;
+		p->vel.z -= grav;
+		break;
+
+	case HexenDefs::pt_explode2:
+		p->ramp += time3;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+			p->colour = HexenDefs.default.ramp2[ftoi(p->ramp)];
+		p->vel.x -= p->vel.x * DeltaTime;
+		p->vel.y -= p->vel.y * DeltaTime;
+		p->vel.z -= p->vel.z * DeltaTime;
+		p->vel.z -= grav;
+		break;
+
+	case HexenDefs::pt_chunks:
+		p->ramp += time1;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+		c = P_Random() >> 1; 
+		p->colour = RGB(c, c, c);
+		p->vel.x += p->vel.x * dvel / 2.0;
+		p->vel.y += p->vel.y * dvel / 2.0;
+		p->vel.z += p->vel.z * dvel / 2.0;
+		p->vel.z -= grav;
+		break;
+
+	case HexenDefs::pt_chunks2:
+		p->ramp += time2;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+		c = P_Random() >> 1;
+		p->colour = RGB(c, c, c);
+		p->vel.x -= p->vel.x * DeltaTime / 2.0;
+		p->vel.y -= p->vel.y * DeltaTime / 2.0;
+		p->vel.z -= p->vel.z * DeltaTime / 2.0;
+		p->vel.z -= grav;
+		break;
+	}
+}
+
 defaultproperties
 {
 }
