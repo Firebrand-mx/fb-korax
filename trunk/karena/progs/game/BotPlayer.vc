@@ -285,9 +285,7 @@ bool CheckItem(Actor item)
 		    (weapon == HexenDefs::WP_FIFTH && player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA) ||
 		    (weapon == HexenDefs::WP_SIXTH && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
 		    (weapon == HexenDefs::WP_SEVENTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_EIGHTH && ((player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA)) &&
-		    ((player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) &&
-		    (player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA)))))
+		    (weapon == HexenDefs::WP_EIGHTH && player.Mana[HexenDefs::NUMMANA] == HexenDefs::MAX_MANA)))
 			return false;
 	}
 
@@ -328,17 +326,19 @@ bool CheckItem(Actor item)
 			return false;
 	}
 
-	if ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
-	     item.Class == ArtifactSuperHeal) && (player.MO.Health >= player.max_health))
-		return false;
-
-	// [FB] For morphed bots health
-	// [CW] ...suppose this fits only pig-morphed ones
-	if(player.PClass != HexenDefs::PCLASS_PIG)
+	if (item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
+	     item.Class == ArtifactSuperHeal)
 	{
-		if ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
-		     item.Class == ArtifactSuperHeal) && (player.MO.Health >= 30))
+		if(player.MO.Health >= player.max_health)
+		{
 			return false;
+		}
+		else if(player.PClass == HexenDefs::PCLASS_PIG && player.MO.Health >= 30)
+		{
+			// [FB] For morphed bots health
+			// [CW] ...suppose this fits only pig-morphed ones
+			return false;
+		}
 	}
 
 	if (Artifact(item) && !ArtifactBoostArmor(item) && !ArtifactInvulnerability(item) && 
@@ -497,7 +497,7 @@ void SetAction()
 		{
 			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO && 
 			    Player(player.Level.Game.Players[i]).bIsBot && 
-			    player.Level.Game.Players[i].Colour == player.Colour)
+			    Player(player.Level.Game.Players[i]).Team == player.Team)
 			{
 				// [FB] Is this bot in Offense?
 				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == 1)
@@ -616,6 +616,7 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			if (diffheight >= 24.0 && diffheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
+				return true;
 			}
 			else if (diffheight > 56.0)
 			{
@@ -629,8 +630,6 @@ bool PTR_BotPathTraverse(intercept_t *in)
 			}
 		}
 
-		// [FB] Use lines
-		player.P_UseLines();
 		return true;
 	}
 
@@ -667,23 +666,25 @@ bool PTR_BotPathTraverse(intercept_t *in)
 
 		if (th.bSolid)
 		{
-			return false;
-		}
+			// [FB] Jump to avoid something
+			dheight = th.Origin.z + th.Height - botmo.Origin.z;
 
-		// [FB] Jump to reach a thing
-		dheight = th.Origin.z + th.Height - botmo.Origin.z;
-
-		if (dheight > 0.0)
-		{
-			if (dheight > 56.0)
-			{
-				return false;
-			}
-			else if (dheight >= 24.0 && dheight <= 56.0)
+			if (dheight >= 24.0 && dheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
 				return true;
 			}
+
+			return false;
+		}
+
+		// [FB] Jump to reach something
+		dheight = th.Origin.z + th.Height - botmo.Origin.z;
+
+		if (dheight >= 24.0 && dheight <= 56.0)
+		{
+			botmo.Player.Buttons |= BT_JUMP;
+			return true;
 		}
 	}
 
@@ -711,10 +712,11 @@ bool CheckPath(float ang, float dist)
  	x2 = x1 + dist * bottracedir.x;
  	y2 = y1 + dist * bottracedir.y;
 
-	if (!player.MO.XLevel.PathTraverse(x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_BotPathTraverse'))
-		return false;
-	else
-		return true;
+	// [FB] Use lines
+	player.P_UseLines();
+
+	return player.MO.XLevel.PathTraverse(x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS, self,
+						'PTR_BotPathTraverse');
 }
 
 //==========================================================================
@@ -751,8 +753,8 @@ void CheckStuff()
 {
 	if (item)
 	{
-		if (!item.bSpecial || item.IsDestroyed() || // somebody picked
-		    !CheckTo(item.Origin)) // Can't reach
+		if (!CheckTo(item.Origin) || !item.bSpecial ||
+		     item.IsDestroyed()) // somebody picked
 			item = none;
 	}
 
@@ -778,7 +780,7 @@ void CheckStuff()
 		TVec dir;
 		dir = posdest - botmo.Origin;
 		dir.z = 0.0;
-		if ((Length(dir) < botmo.Radius) || !CheckTo(posdest))
+		if (!CheckTo(posdest) || (Length(dir) < botmo.Radius))
 		{
 			posdest_valid = false;
 		}
@@ -789,7 +791,7 @@ void CheckStuff()
 		TVec dir;
 		dir = lastpos - botmo.Origin;
 		dir.z = 0.0;
-		if ((Length(dir) < botmo.Radius) || !CheckTo(lastpos))
+		if (!CheckTo(lastpos) || (Length(dir) < botmo.Radius))
 		{
 			lastpos_valid = false;
 		}
@@ -797,7 +799,7 @@ void CheckStuff()
 
 	if (enemy)
 	{
-		if (enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
+		if (!CheckTo(enemy.Origin) || enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
 			enemy = none;
 	}
 
@@ -984,6 +986,91 @@ int ManaFromItem(Actor item)
 
 //==========================================================================
 //
+//	AimProjectile
+//
+// 	[FB] Projectile weapons
+//
+//==========================================================================
+
+void AimProjectile(float dist, bool right, float an)
+{
+	switch (info.intelect)
+	{
+		case bsk_verypoor:
+		case bsk_poor:
+		case bsk_low:
+			// Aim right at the enemy
+			SetAngle(an);
+			break;
+		case bsk_medium:
+		case bsk_high:
+		case bsk_excellent:
+		case bsk_supreme:
+			if (right)
+				SetAngle(an + Random() * 20.0);
+			else
+				SetAngle(an - Random() * 20.0);
+			break;
+
+		default:
+			Error("Unknown bot skill level: %d", info.accuracy);
+			return;
+	}
+}
+
+//==========================================================================
+//
+//	AimInstant
+//
+// 	[FB] Instant weapons
+//
+//==========================================================================
+
+void AimInstant(float dist, bool right, float an)
+{
+	switch (info.accuracy)
+	{
+		case bsk_verypoor:
+			if (right)
+				SetAngle(an + Random() * 60.0);
+			else
+				SetAngle(an - Random() * 60.0);
+			break;
+		case bsk_poor:
+			if (right)
+				SetAngle(an + Random() * 45.0);
+			else
+				SetAngle(an - Random() * 45.0);
+			break;
+		case bsk_low:
+			if (right)
+				SetAngle(an + Random() * 30.0);
+			else
+				SetAngle(an - Random() * 30.0);
+			break;
+		case bsk_medium:
+			if (right)
+				SetAngle(an + Random() * 15.0);
+			else
+				SetAngle(an - Random() * 15.0);
+			break;
+		case bsk_high:
+			SetAngle(an);
+			break;
+		case bsk_excellent:
+			SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
+			break;
+		case bsk_supreme://FIXME
+			SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
+			break;
+		default:
+			Error("Unknown bot skill level: %d", info.accuracy);
+			return;
+	}
+}
+
+//==========================================================================
+//
 //	BotAim
 //
 //==========================================================================
@@ -1006,6 +1093,9 @@ void BotAim()
 	right = !!(P_Random() & 1);
 	an = AngleTo(enemy.Origin);
 
+	// [FB] Decide our weapon if we have an enemy
+	player.ReadyWeapon = B_ChooseWeapon(dist);
+
 	// [BC] Cajun prediction... maybe use this somewhere
 	/*
 			{
@@ -1020,89 +1110,85 @@ void BotAim()
 	*/
 
 	// Fix me: Implement botskill, accuracy, and intelligence
-	if (((player.PClass == HexenDefs::PCLASS_FIGHTER && (player.ReadyWeapon == HexenDefs::WP_FIFTH ||
-	      player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
-	    (player.PClass == HexenDefs::PCLASS_CLERIC && (player.ReadyWeapon == HexenDefs::WP_SECOND ||
-	      player.ReadyWeapon == HexenDefs::WP_SIXTH || player.ReadyWeapon == HexenDefs::WP_SEVENTH ||
-              player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
-	    (player.PClass == HexenDefs::PCLASS_MAGE && (player.ReadyWeapon == HexenDefs::WP_FOURTH ||
-	     player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-	     player.ReadyWeapon == HexenDefs::WP_SEVENTH ||  player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
-	    (player.PClass == HexenDefs::PCLASS_HERETIC && (player.ReadyWeapon == HexenDefs::WP_THIRD ||
-	     player.ReadyWeapon == HexenDefs::WP_FIFTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-	     player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
-	    (player.PClass == HexenDefs::PCLASS_MARINE && (player.ReadyWeapon == HexenDefs::WP_FIFTH ||
-	     player.ReadyWeapon == HexenDefs::WP_SEVENTH || player.ReadyWeapon == HexenDefs::WP_EIGHTH)) ||
-	    (player.PClass == HexenDefs::PCLASS_WITCHAVEN && (player.ReadyWeapon == HexenDefs::WP_THIRD ||
-	     player.ReadyWeapon == HexenDefs::WP_FOURTH || player.ReadyWeapon == HexenDefs::WP_SIXTH ||
-	     player.ReadyWeapon == HexenDefs::WP_SEVENTH))))
+	switch(player.PClass)
 	{
-		// Projectile weapons
-		switch (info.intelect)
-		{
-			case bsk_verypoor:
-			case bsk_poor:
-			case bsk_low:
-				// Aim right at the enemy
-				SetAngle(an);
-				break;
-			case bsk_medium:
-			case bsk_high:
-			case bsk_excellent:
-			case bsk_supreme:
-			if (right)
-				SetAngle(an + Random() * 20.0);
-			else
-				SetAngle(an - Random() * 20.0);
-			break;
-
-		default:
-			Error("Unknown bot skill level: %d", info.accuracy);
-			return;
-		}
-	}
-	else
-	{
-		// Instant weapons
-		switch (info.accuracy)
-		{
-			case bsk_verypoor:
-				if (right)
-					SetAngle(an + Random() * 60.0);
-				else
-					SetAngle(an - Random() * 60.0);
-				break;
-			case bsk_poor:
-				if (right)
-					SetAngle(an + Random() * 45.0);
-				else
-					SetAngle(an - Random() * 45.0);
-				break;
-			case bsk_low:
-				if (right)
-					SetAngle(an + Random() * 30.0);
-				else
-					SetAngle(an - Random() * 30.0);
-				break;
-			case bsk_medium:
-				if (right)
-					SetAngle(an + Random() * 15.0);
-				else
-					SetAngle(an - Random() * 15.0);
-				break;
-			case bsk_high:
-				SetAngle(an);
-				break;
-			case bsk_excellent:
-				SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
-				break;
-			case bsk_supreme://FIXME
-				SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
-				break;
-			default:
-				Error("Unknown bot skill level: %d", info.accuracy);
-				return;
-		}
+		// [FB] Decide which kind of aiming the bot will use...
+		case HexenDefs::PCLASS_FIGHTER:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_FIFTH:
+				case HexenDefs::WP_SIXTH:
+				case HexenDefs::WP_EIGHTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
+		case HexenDefs::PCLASS_CLERIC:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_SECOND:
+				case HexenDefs::WP_SIXTH:
+				case HexenDefs::WP_SEVENTH:
+				case HexenDefs::WP_EIGHTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
+		case HexenDefs::PCLASS_MAGE:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_FOURTH:
+				case HexenDefs::WP_FIFTH:
+				case HexenDefs::WP_SIXTH:
+				case HexenDefs::WP_EIGHTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
+		case HexenDefs::PCLASS_HERETIC:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_THIRD:
+				case HexenDefs::WP_FIFTH:
+				case HexenDefs::WP_SIXTH:
+				case HexenDefs::WP_EIGHTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
+		case HexenDefs::PCLASS_MARINE:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_FIFTH:
+				case HexenDefs::WP_SEVENTH:
+				case HexenDefs::WP_EIGHTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
+		case HexenDefs::PCLASS_WITCHAVEN:
+			switch(player.ReadyWeapon)
+			{
+				case HexenDefs::WP_THIRD:
+				case HexenDefs::WP_FOURTH:
+				case HexenDefs::WP_SIXTH:
+				case HexenDefs::WP_SEVENTH:
+					AimProjectile(dist, right, an);
+					break;
+				default:
+					AimInstant(dist, right, an);
+					return;
+			}
 	}
 }
 
@@ -1143,7 +1229,7 @@ Actor FindEnemy()
 		// [FB] We spawned the minotaur? we shouldn't attack him then!
 		if (actor.Class == Minotaur && actor.Instigator == botmo)
 			continue;
-		// [FB] Don't attack our friendly minotaur in all these cases
+		// [FB] Don't attack a friendly minotaur in all these cases
 		if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
 		{
 			// [FB] For some gameplay modes, we just only check if it's a minotaur
@@ -1152,11 +1238,11 @@ Actor FindEnemy()
 		}
 		else if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
-			// [FB] Check if the minotaur's instigator is same coloured as we are
+			// [FB] Check if the minotaur's instigator is in the same team we are on
 			for(i = 0; i < MAXPLAYERS; i++)
 			{
 				if (actor.Class == Minotaur && actor.Instigator == player.Level.Game.Players[i] && 
-				    player.Level.Game.Players[i].Colour == player.Colour)
+				    Player(player.Level.Game.Players[i]).Team == player.Team)
 					continue;
 			}
 		}
@@ -1215,7 +1301,7 @@ Actor FindEnemy()
 			if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				// [FB] Don't attack same team players
-				if (player.Level.Game.Players[i].Colour == player.Colour)
+				if (Player(player.Level.Game.Players[i]).Team == player.Team)
 					continue;
 			}
 			if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
@@ -1258,113 +1344,89 @@ Actor FindEnemy()
 //
 //==========================================================================
 
-int B_ChooseWeapon()
+int B_ChooseWeapon(float dist)
 {
-	float dist;
-
 	if (!enemy)
 		return player.ReadyWeapon;
 
 	if (enemy)
 	{
-		dist = botmo.DistTo(enemy);
-
 		if (dist <= Actor::MELEERANGE)
 		{
 			switch(player.PClass)
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-			
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
-						return HexenDefs::WP_THIRD;
-
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 50)
 						return HexenDefs::WP_SEVENTH;
-			
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
+						return HexenDefs::WP_SECOND;
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_THIRD;
-
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-			
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
 						return HexenDefs::WP_FOURTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-			
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
 						return HexenDefs::WP_THIRD;
-
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good			
 					return player.ReadyWeapon;
 					break;
 				}
-				if (player.PClass == HexenDefs::PCLASS_WITCHAVEN)
+				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FIRST])
-						return HexenDefs::WP_FIRST;
-			
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
-						return HexenDefs::WP_FIFTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
+						return HexenDefs::WP_SECOND;
+					if (player.WeaponOwned[HexenDefs::WP_FIRST])
+						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
 					return player.ReadyWeapon;
 					break;
@@ -1377,133 +1439,99 @@ int B_ChooseWeapon()
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-			
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
-						return HexenDefs::WP_FIFTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_SIXTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-			
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
 				}
@@ -1515,133 +1543,99 @@ int B_ChooseWeapon()
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-			
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
-						return HexenDefs::WP_FIFTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
 						return HexenDefs::WP_SIXTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
-						return HexenDefs::WP_SECOND;
-
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
-						return HexenDefs::WP_FIFTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-			
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
+						return HexenDefs::WP_FIFTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+						return HexenDefs::WP_THIRD;
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
-						return HexenDefs::WP_THIRD;
-
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
-						return HexenDefs::WP_FOURTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
-						return HexenDefs::WP_SIXTH;
-
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
-						return HexenDefs::WP_SEVENTH;
-
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
 						return HexenDefs::WP_EIGHTH;
-
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+						return HexenDefs::WP_SEVENTH;
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
+						return HexenDefs::WP_SIXTH;
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
+						return HexenDefs::WP_FOURTH;
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
+						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
 				}
@@ -1712,7 +1706,7 @@ Actor B_SetAlly()
 				if (teamfactor == Game::teamfactor_coop)
 				{
 					ally = Actor(player.Level.Game.Players[i].MO);
-					break;
+					return ally;
 				}
 			}
 		}
@@ -1720,10 +1714,10 @@ Actor B_SetAlly()
 		// [FB] Set an ally for team game modes
 		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
-			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].Colour == player.Colour)
+			if (player.Level.Game.Players[i] && Player(player.Level.Game.Players[i]).Team == player.Team)
 			{
 				ally = Actor(player.Level.Game.Players[i].MO);
-				break;
+				return ally;
 			}
 		}
 		else if (player.Level.Game.deathmatch == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
@@ -1731,7 +1725,7 @@ Actor B_SetAlly()
 			if (player.Level.Game.Players[i])
 			{
 				ally = Actor(player.Level.Game.Players[i].MO);
-				break;
+				return ally;
 			}
 		}
 	}
@@ -1746,7 +1740,7 @@ Actor B_SetAlly()
 		{
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
-			    && (player.Level.Game.Players[j].Colour == player.Colour)
+			    && (Player(player.Level.Game.Players[j]).Team == player.Team)
 			    && (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2))
 			{
 				if (botmo.CanSee(player.Level.Game.Players[j].MO))
@@ -1758,7 +1752,7 @@ Actor B_SetAlly()
 						closest_dist = test;
 						target = Actor(player.Level.Game.Players[j].MO);
 						ally = target;
-						break;
+						return ally;
 					}
 				}
 			}
@@ -1778,7 +1772,7 @@ Actor B_SetAlly()
 						closest_dist = test;
 						target = Actor(player.Level.Game.Players[j].MO);
 						ally = target;
-						break;
+						return ally;
 					}
 				}
 			}
@@ -2362,7 +2356,7 @@ void OnBeginPlay()
 		// If the user doesn't input a name, don't
 		// spawn one of the "special" bots, only one of the
 		// normal ones.
-		bottype = P_Random() + (P_Random() % 81) % MainGameInfo::NUMBOTTYPES;
+		bottype = P_Random() % MainGameInfo::NUMBOTTYPES;
 	}
 
 	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
@@ -2444,21 +2438,6 @@ void OnBeginPlay()
 		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
 		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0;
 		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 / mod;
-
-
-/*		combatdist[WP_FIRST]		= 48.0;
-		combatdist[WP_SECOND]		= 48.0;
-		combatdist[WP_THIRD]		= 192.0;
-		combatdist[WP_FOURTH]		= 256.0;
-		combatdist[4 + WP_FIRST]	= 48.0;
-		combatdist[4 + WP_FIRST]	= 48.0;
-		combatdist[4 + WP_SECOND]	= 192.0;
-		combatdist[4 + WP_THIRD]	= 256.0;
-		combatdist[4 + WP_FOURTH]	= 384.0;
-		combatdist[8 + WP_FIRST]	= 192.0;
-		combatdist[8 + WP_SECOND]	= 256.0;
-		combatdist[8 + WP_THIRD]	= 384.0;
-		combatdist[8 + WP_FOURTH]	= 384.0;*/
 	}
 	else
 	{
@@ -2517,20 +2496,6 @@ void OnBeginPlay()
 		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
 		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0;
 		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 / mod;
-
-
-/*		combatdist[WP_FIRST]		= 48.0;
-		combatdist[WP_SECOND]		= 48.0;
-		combatdist[WP_THIRD]		= 192.0 / 2.0;
-		combatdist[WP_FOURTH]		= 256.0 / 2.0;
-		combatdist[4 + WP_FIRST]	= 48.0;
-		combatdist[4 + WP_SECOND]	= 192.0 / 2.0;
-		combatdist[4 + WP_THIRD]	= 256.0 / 2.0;
-		combatdist[4 + WP_FOURTH]	= 384.0 / 2.0;
-		combatdist[8 + WP_FIRST]	= 192.0 / 2.0;
-		combatdist[8 + WP_SECOND]	= 256.0 / 2.0;
-		combatdist[8 + WP_THIRD]	= 384.0 / 2.0;
-		combatdist[8 + WP_FOURTH]	= 384.0 / 2.0;*/
 	}
 }
 
@@ -2553,31 +2518,12 @@ void OnSpawn()
 //
 //	BotTick
 //
-//  Main bot function
+//  [FB] Check if we are blind by darkness!!
 //
 //==========================================================================
 
-void BotTick(float deltaTime)
+void B_AffectStat()
 {
-	botmo = Actor(player.MO);
-
-	player.ForwardMove = 0.0;
-	player.SideMove = 0.0;
-	player.FlyMove = 0.0;
-	player.Buttons = 0;
-
-	// Don't do anything if we're talking
-//	if (B_Chat())
-//		return;
-
-	// We're dead, so hit space to respawn
-	if (!player.Health)
-	{
-		player.Buttons |= BT_USE;
-		return;
-	}
-
-	// [FB] Check if we are blind by darkness!!
 	if (player.BlindCount == 50 && !accuracy_r)
 	{
 		old_accuracy = info.accuracy;
@@ -2620,6 +2566,39 @@ void BotTick(float deltaTime)
 
 		anticip_r = true;
 	}
+}
+
+//==========================================================================
+//
+//	BotTick
+//
+//  Main bot function
+//
+//==========================================================================
+
+void BotTick(float deltaTime)
+{
+	botmo = Actor(player.MO);
+
+	player.ForwardMove = 0.0;
+	player.SideMove = 0.0;
+	player.FlyMove = 0.0;
+	player.Buttons = 0;
+
+	// Don't do anything if we're talking
+//	if (B_Chat())
+//		return;
+
+	// We're dead, so hit space to respawn
+	if (!player.Health && player.respawn_counter <= 0.0)
+	{
+		player.Buttons |= BT_USE;
+		return;
+	}
+
+	// [FB] Apply blind status
+	if(player.BlindCount)
+		B_AffectStat();
 	else if (player.BlindCount < 0)
 	{
 		//[FB] Darkness effects faded out, now restore everything back!
@@ -2655,8 +2634,8 @@ void BotTick(float deltaTime)
 	}
 
 	// [FB] Set an ally if we're in a mode that has one...
-	if ((player.Level.Game.deathmatch == HexenDefs::game_sweep || player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM) || 
-		MainGameInfo(player.Level.Game).GameMode)
+	if (((player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM || player.Level.Game.deathmatch == HexenDefs::game_sweep) || 
+		MainGameInfo(player.Level.Game).GameMode) && !ally)
 	{
 		ally = B_SetAlly();
 		// [FB] ...and decide what action we'll take
@@ -2682,10 +2661,8 @@ void BotTick(float deltaTime)
 	// Turning towards destination...
 	BotAim();
 	Turn();
-
-	B_ChooseWeapon(); // [FB] Decide our weapon if we have an enemy
-
-	Attack();
+	if(enemy)
+		Attack();
 	Move(deltaTime);
 
 	Pitch();
