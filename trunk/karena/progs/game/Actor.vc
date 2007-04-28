@@ -966,8 +966,7 @@ void Died(Actor source)
 	bNoPassMobj = true;
 	Height /= 4.0;
 
-	// [FB] There's no other decent place to put this...
-	//  Remove muzzle flash
+	// [FB] Remove muzzle flash
 	if ((Effects & HexenDefs::EF_DLIGHT_MASK) == HexenDefs::EF_DL_MUZZLEFLASH)
 	{
 		Effects &= ~HexenDefs::EF_DLIGHT_MASK;
@@ -990,11 +989,13 @@ void Died(Actor source)
 		Level.CurrentKills++;
 		if (Level.Game.deathmatch == HexenDefs::game_sweep || Level.Game.deathmatch == HexenDefs::game_sweepteam)
 		{
-			// [FB] Update total kills if needed
+			// [FB] Update total kills
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (Level.Game.Players[i])
 					Player(Level.Game.Players[i]).TotalKills = (Level.TotalKills - Level.CurrentKills);
+				else
+					break;
 			}
 		}
 	}
@@ -1329,11 +1330,11 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
 	if (Actor(Player.MO).MoveToFreePosition())
 	{
-		fog = Spawn(TeleportFog, Player.MO.Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
+		fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
 		fog.PlaySound('Teleport', CHAN_VOICE);
 	}
 
-	dprint("MorphPlayer: after MTFP: MO.Origin = %f, %f, %f", Player.MO.Origin.x, Player.MO.Origin.y, Player.MO.Origin.z);
+	dprint("MorphPlayer: after MoveToFreePosition: Player.MO.Origin = %f, %f, %f", Player.MO.Origin.x, Player.MO.Origin.y, Player.MO.Origin.z);
 
 	// [CW] Recalc attributes based on the new player's body
 	bak_level = Player(Player).exp_level;
@@ -1572,7 +1573,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		{
 			int teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(self,
 										source.bIsPlayer ? source : source.Instigator);
-			if (teamfactor == Game::teamfactor_coop)
+			if (teamfactor == Game::teamfactor_coop && damage < 1000)
 				return;
 		}
 
@@ -1581,8 +1582,8 @@ void Damage(Actor inflictor, Actor source, int damage)
 		    && (source && ((source.bIsPlayer) || (source.Instigator
 		    && source.Instigator.bIsPlayer))))
 		{
-			int col = (source.bIsPlayer?source.Player.Colour:source.Instigator.Player.Colour);
-			if (col == Player.Colour && damage < 1000)
+			PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Instigator.Player).Team);
+			if (col == Player(Player).Team && damage < 1000)
 				return;
 		}
 
@@ -1889,12 +1890,12 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
+/*	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
+		/!Player(Player).MorphTime/ Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
 		AutoUseHealth(damage - Player(Player).HealthBig + 1);
-	}
+	}*/
 	Player(Player).HealthBig -= damage;	// mirror mobj health here for Dave
 	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
 	if (Player(Player).HealthBig < 0)
@@ -1985,12 +1986,12 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		/*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
+/*	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
+		/!Player(Player).MorphTime/ Player(Player).PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Try to use some inventory health
 		AutoUseHealth(damage - Player(Player).HealthBig + 1);
-	}
+	}*/
 	Player(Player).HealthBig -= damage;	// mirror mobj health here for Dave
 	Player.Health = Player(Player).HealthBig > 0xff ? 0xff : Player(Player).HealthBig;;
 	if (Player(Player).HealthBig < 0)
@@ -2710,9 +2711,6 @@ void HitMobj(Entity Other)
 			{
 				PlaySound(SightSound, CHAN_VOICE);
 			}
-
-			// [FB] STOP!
-			return;
 		}
 
 		if (bSlide)
@@ -2815,8 +2813,6 @@ void HitLine(tmtrace_t* tmtrace)
 			{
 				PlaySound(SightSound, CHAN_VOICE);
 			}
-
-			return;
 		}
 
 		if (bSlide)
@@ -3644,8 +3640,8 @@ bool PIT_StompThing(Entity Other)
 		return false;
 	}
 
-	//Actor(Other).Damage(self, none, 10000);		// [CW] changed to allow telfrag deathmsg usage
-	Actor(Other).Damage(self, self, 10000);		//[FB] It would be better to just compare for same source and target...
+	Actor(Other).Damage(self, none, 10000);	// [CW] changed to allow telfrag deathmsg usage
+	//Actor(Other).Damage(self, self, 10000);
 
 	return true;
 }
