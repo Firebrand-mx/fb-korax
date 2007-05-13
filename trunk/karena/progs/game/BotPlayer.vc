@@ -601,36 +601,37 @@ bool PTR_BotPathTraverse(intercept_t *in)
 		{
 			return false;
 		}
-
-		// [FB] No cliff jumping unless we're going after something
-		if ((open->lowfloor - open->bottom) > 32.0 && (open->lowfloor - open->bottom) < 384.0 && !enemy)
+		else
 		{
-			return false;
-		}
-
-		// [FB] Determine if it's wise to jump up to a floor
-		diffheight = open->bottom - open->lowfloor;
-
-		if (diffheight > 0.0)
-		{
-			if (diffheight >= 24.0 && diffheight <= 56.0)
+			// [FB] No cliff jumping unless we're going after something
+			if ((open->lowfloor - open->bottom) > 32.0 && (open->lowfloor - open->bottom) < 384.0 && !enemy)
 			{
-				botmo.Player.Buttons |= BT_JUMP;
-				return true;
+				return false;
 			}
-			else if (diffheight > 56.0)
+
+			// [FB] Determine if it's wise to jump up to a floor
+			diffheight = open->bottom - open->lowfloor;
+
+			if (diffheight > 0.0)
 			{
-			/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
+				if (diffheight >= 24.0 && diffheight <= 56.0)
 				{
+					botmo.Player.Buttons |= BT_JUMP;
 					return true;
 				}
-				else*/
-					return false;
-
+				else if (diffheight > 56.0)
+				{
+				/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
+					{
+						return true;
+					}
+					else*/
+						return false;
+				}
 			}
 		}
 
-		return true;
+//		return true;
 	}
 
 	// [FB] Order of actors response precedence
@@ -751,6 +752,14 @@ bool CheckTo(TVec pos)
 
 void CheckStuff()
 {
+/*	if (goal)
+	{
+		if (!CheckTo(goal.Origin) || (botmo.DistTo(goal) < botmo.Radius))
+		{
+			goal = none;
+		}
+	}*/
+
 	if (item)
 	{
 		if (!CheckTo(item.Origin) || !item.bSpecial ||
@@ -2381,7 +2390,8 @@ void OnBeginPlay()
 	// Setup combat distance tables
 	//[Korax]
 	//[FB] What a terrible mess!!
-	if (player.Level.Game.deathmatch)
+	if (player.Level.Game.deathmatch && (player.Level.Game.deathmatch != HexenDefs::game_sweep ||
+		player.Level.Game.deathmatch != HexenDefs::game_sweepteam))
 	{
 		float mod = 1.0;
 		/* FIGHTER */
