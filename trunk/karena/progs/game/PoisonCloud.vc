@@ -130,20 +130,19 @@ final void A_SpawnChildren()
 													(Random() - 0.5) * 64.0)));
 			if (pc)
 			{
-				// [FB] Check to see if the new children's z value is above the
-				//      ceiling of its new sector, or below the floor. If so, kill it.
-				if (!TestLocation() && (pc.Origin.z < pc.FloorZ ||
-				    pc.Origin.z > (pc.CeilingZ - pc.Height)))
+				if (!TestLocation())
 				{
-					// [FB] but make sure it doesn't spawns childs
 					SetState(S_POISONCLOUD_X2);
 					return;
 				}
-
-				pc.InitCloud(Instigator);
-				pc.LifeCount >> 2;
-				pc.Velocity.x = 0.00001;
-				pc.TryMove(pc.Origin + pc.Velocity);
+				else
+				{
+					pc.InitCloud(Instigator);
+					pc.LifeCount >> 2;
+					pc.Velocity.x = 0.00001;
+					if (!pc.TryMove(pc.Origin + pc.Velocity))
+						SetState(S_POISONCLOUD_X2);
+				}
 			}
 		}
 	}
