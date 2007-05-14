@@ -82,13 +82,19 @@ void A_PoisonBreathFire(bool use_mana, int Children)
 
 		mo.Velocity = vforward * mo.Speed;
 		mo.Origin += mo.Velocity;
-		mo.TryMove(mo.Origin);
 
-		PoisonCloud pc = PoisonCloud(mo);
-		pc.InitCloud(pmo);
-		pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
-		pc.LifeCount = 1;
-		pc.deathmsgi = deathmsgi;
+		if (!mo.TryMove(mo.Origin))
+		{
+			mo.SetState(PoisonCloud::S_POISONCLOUD_X2);
+		}
+		else
+		{
+			PoisonCloud pc = PoisonCloud(mo);
+			pc.InitCloud(pmo);
+			pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
+			pc.LifeCount = 1;
+			pc.deathmsgi = deathmsgi;
+		}
 	}
 
 	if (use_mana)	
