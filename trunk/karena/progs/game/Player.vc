@@ -4833,19 +4833,42 @@ int GetWeaponManaUse(Weapon weapon)
 
 //==========================================================================
 //
+//  GetWeaponClassManaUse
+//
+//==========================================================================
+
+int GetWeaponClassManaUse(class<Weapon> weapon)
+{
+	int manause = weapon.default.manause;
+	if (weapon.default.wis_mod)
+	{
+		manause = manause * 10 / wisdom;
+	}
+	// [FB] Always use mana, no matter what
+	if(manause < 1)
+	{
+		manause = 1;
+	}
+	return manause;
+}
+
+//==========================================================================
+//
 //  GetWeaponMUse
 //
 //==========================================================================
 
 bool GetWeaponMUse(int weapon)
 {
-	Weapon w;
-	bool manause;
+	class<Weapon>	w;
 
 	w = GetWea(weapon);
-	manause = w.Mana == HexenDefs::MANA_NONE || w.needsnomana || w.IsWeaponManaUsable();
-	w.Destroy();
-	return manause;
+	return w.default.Mana == HexenDefs::MANA_NONE || w.default.needsnomana ||
+		(w.default.Mana == HexenDefs::NUMMANA ?
+			Mana[HexenDefs::MANA_1] >= GetWeaponClassManaUse(w) &&
+			Mana[HexenDefs::MANA_2] >= GetWeaponClassManaUse(w) &&
+			Mana[HexenDefs::MANA_3] >= GetWeaponClassManaUse(w) :
+			Mana[w.default.Mana] >= GetWeaponClassManaUse(w));
 }
 
 //==========================================================================
@@ -4854,14 +4877,9 @@ bool GetWeaponMUse(int weapon)
 //
 //==========================================================================
 
-Weapon GetWea(int weapon)
+class<Weapon> GetWea(int weapon)
 {
-	Weapon w;
-
-	w = Weapon(SpawnObject(MainGameInfo(Level.Game).WeaponClasses[
-		weapon * HexenDefs::NUMCLASSES + PClass]));
-	w.Owner = MO;
-	return w;
+	return MainGameInfo(Level.Game).WeaponClasses[weapon * HexenDefs::NUMCLASSES + PClass];
 }
 
 //==========================================================================
@@ -4872,13 +4890,7 @@ Weapon GetWea(int weapon)
 
 string GetWeaponPickupText(int weapon)
 {
-	Weapon w;
-	string pick_m;
-
-	w = GetWea(weapon);
-	pick_m = w.PickUpMessage;
-	w.Destroy();
-	return pick_m;
+	return GetWea(weapon).default.PickUpMessage;
 }
 
 //**************************************************************************
