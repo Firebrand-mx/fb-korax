@@ -119,6 +119,7 @@ bool bReflective;		// reflects missiles
 bool bWaterJump;
 bool bBlaster;
 bool bDamageInvulnerable;	// These inflictors aren't foiled by invulnerability
+bool bSmallSplash;		// Always use small splash
 bool bNoSplash;			// Things that don't splash
 bool bNoMorph;			// Won't morph into a pig.
 bool bStaticLight;		// Static light source.
@@ -233,11 +234,16 @@ bool MoveToFreePosition()
 
 			dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
 
-			if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
+			// [FB] We must check if the move is being done inside the map
+			if (!CheckSides(Origin))
 			{
-				dprint("MoveToFreePosition :: SUCCEED ----------");
-				dprint("MoveToFreePosition :: Free Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
-				return true;
+				// [FB] OK, we are inside the map
+				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
+				{
+					dprint("MoveToFreePosition :: SUCCEED ----------");
+					dprint("MoveToFreePosition :: Free Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
+					return true;
+				}
 			}
 
 			if (test_dist == 0.0)
@@ -704,7 +710,7 @@ bool HitFloorType()
 	TInfo = GetFloorType();
 
 	// Small splash for small masses
-	if (Mass < 10.0)
+	if (Mass < 10.0 || bSmallSplash)
 		smallsplash = true;
 
 	if (TInfo->DamageAmount && bIsPlayer &&
@@ -1336,7 +1342,11 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 	Player(Player).ActivateMorphWeapon();
 
 	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
-	if (Actor(Player.MO).MoveToFreePosition())
+	if (!Actor(Player.MO).TryMove(Origin))
+	{
+		Actor(Player.MO).MoveToFreePosition();
+	}
+	else
 	{
 		fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
 		fog.PlaySound('Teleport', CHAN_VOICE);
@@ -2959,23 +2969,20 @@ bool HitFloor()
 			FloorBounceMissile();
 			return true;
 		}
-		else if (Class == HolyFX)
+		if (Class == HolyFX)
 		{
 			// The spirit struck the ground
 			Velocity.z = 0.0;
 			HitFloorType();
 			return true;
 		}
-		else if (bIgnoreFloorStep)
+		if (bIgnoreFloorStep)
 		{
 			// Minotaur floor fire can go up steps
 			return true;
 		}
-		else
-		{
-			HitFloorType();
-			return ExplodeMissile();
-		}
+		HitFloorType();
+		return ExplodeMissile();
 	}
 
 	vdot = DotProduct(Velocity, Floor->normal);
@@ -3084,7 +3091,7 @@ bool HitCeiling()
 			}
 			return true;
 		}
-		if (Class == LightningCeiling)
+		if (bIgnoreCeilingStep)
 		{
 			return true;
 		}
@@ -3265,7 +3272,8 @@ bool BlasterPhysics(float DeltaTime)
 			if (changexy)
 			{
 				tmtrace_t tmtrace;
-				if (!TryMoveEx(&tmtrace, vector(Origin.x + xfrac, Origin.y + yfrac, Origin.z)))
+				if (!TryMoveEx(&tmtrace, vector(Origin.x + xfrac,
+					Origin.y + yfrac, Origin.z)))
 				{
 					// Blocked move
 					if (tmtrace.BlockingMobj)
@@ -3553,6 +3561,7 @@ bool HeightClip()
 		if ((Origin.z - FloorZ < 9.0) || bNoGravity)
 		{
 			Origin.z = FloorZ;
+			HandleFloorclip();
 		}
 	}
 	else
@@ -4008,7 +4017,7 @@ bool ExplodeMissile()
 
 //==========================================================================
 //
-//  Blast
+//  SendExplosion2
 //
 //==========================================================================
 
@@ -4150,6 +4159,13 @@ bool PIT_RadiusAttack(Entity Other)
 		// don't damage the source of the explosion
 		return true;
 	}
+#if 0
+	if (abs(ftoi(Other.Origin.z - Origin.z)) > 2 * bombdistance)
+	{
+		// too high/low
+		return true;
+	}
+#endif
 	dist = Length(MobjCentre(Other) - MobjCentre(self)) - Other.Radius;
 	if (dist < 0.0)
 	{
@@ -4158,11 +4174,6 @@ bool PIT_RadiusAttack(Entity Other)
 	if (dist >= bombdistance)
 	{
 		// Out of range
-		return true;
-	}
-	if ((Other.Origin.z - Origin.z) > dist)
-	{
-		// too high/low
 		return true;
 	}
 	if (Other.CanSee(self))
@@ -4461,6 +4472,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 	TVec hit_point;
 	line_t *li;
 	Actor th;
+	int i;
 
 	if (in->bIsALine)
 	{
@@ -4560,7 +4572,6 @@ bool PTR_ShootTraverse(intercept_t * in)
 	hit_pt = hit_point;
 
 	SpawnPuff(hit_point, shootPuffType);
-
 	if (la_damage)
 	{
 		if (!th.bNoBlood && !th.bInvulnerable)
@@ -4571,6 +4582,16 @@ bool PTR_ShootTraverse(intercept_t * in)
 			}
 			if (P_Random() < 192)
 			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (!Level.Game.Players[i])
+						continue;
+					if (!Level.Game.Players[i].bSpawned)
+						continue;
+					Player(Level.Game.Players[i]).ClientBlood(hit_point,
+						la_damage > 255 ? 255 : la_damage);
+				}
+
 				th.SpawnBloodSplatter(hit_point, la_damage);
 			}
 		}
@@ -4779,6 +4800,7 @@ final void A_FreeTargMobj()
 {
 	Velocity = vector(0.0, 0.0, 0.0);
 	Origin.z = CeilingZ + 4.0;
+	Gravity = 1.0;
 	bSolid = false;
 	bShootable = false;
 	bFloat = false;
