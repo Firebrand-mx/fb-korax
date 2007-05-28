@@ -134,9 +134,9 @@ int GibsHealth;
 int experience;
 
 // Thing being chased/attacked (or none).
-Actor Enemy;
 // The originator for missiles.
-Actor Instigator;
+Actor			Target;
+Actor			Tracer;
 
 int _Special1;	// Special info
 int _Special2;	// Special info
@@ -268,7 +268,7 @@ bool MoveToFreePosition()
 
 void SetInstigator(Entity NewInstigator)
 {
-	Instigator = Actor(NewInstigator);
+	Target = Actor(NewInstigator);
 }
 
 //===========================================================================
@@ -754,7 +754,7 @@ bool HitFloorType()
 		if (SInfo->ChunkClass)
 		{
 			A = Spawn(class<Actor>(SInfo->ChunkClass), org);
-			A.Instigator = self;
+			A.Target = self;
 			A.Velocity.x = (Random() - Random()) * SInfo->ChunkXVelMul * 35.0;
 			A.Velocity.y = (Random() - Random()) * SInfo->ChunkYVelMul * 35.0;
 			A.Velocity.z = (SInfo->ChunkBaseZVel + Random() *
@@ -955,7 +955,7 @@ Actor ActiveMinotaur()
 			continue;
 		if ((XLevel.TicTime - mo.Args[0]) >= ftoi(MAULATORTIME * 35.0))
 			continue;
-		if (mo.Instigator == self)
+		if (mo.Tracer == self)
 			return mo;
 	}
 	return none;
@@ -1284,7 +1284,7 @@ void TouchWhirlwind(Actor Other)
 	}
 	if (!(XLevel.TicTime & 7))
 	{
-		Other.Damage(none, Instigator, 6);
+		Other.Damage(none, Target, 6);
 	}
 }
 
@@ -1392,7 +1392,7 @@ bool MorphMonster()
 	monster.SpecialCID = class<Actor>(Class);
 	monster._Special1 = ftoi(MORPHTIME * 35.0) + P_Random();
 	monster.Alpha = Alpha;
-	monster.Enemy = Enemy;
+	monster.Target = Target;
 	monster.Angles.yaw = Angles.yaw;
 	monster.TID = TID;
 	monster.Special = Special;
@@ -1586,27 +1586,27 @@ void Damage(Actor inflictor, Actor source, int damage)
 		}
 
 		// [CW] Check advanced game Team Factor
-		if (source && (source.bIsPlayer || source.Instigator && source.Instigator.bIsPlayer) &&
-							MainGameInfo(Level.Game).GameMode)
+		if (source && (source.bIsPlayer || source.Target && source.Target.bIsPlayer) &&
+			MainGameInfo(Level.Game).GameMode)
 		{
 			int teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(self,
-										source.bIsPlayer ? source : source.Instigator);
+				source.bIsPlayer ? source : source.Target);
 			if (teamfactor == Game::teamfactor_coop && damage < 1000)
 				return;
 		}
 
 		// [FB] Don't do damage to teammates in team game modes
 		if ((Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
-		    && (source && ((source.bIsPlayer) || (source.Instigator
-		    && source.Instigator.bIsPlayer))))
+		    && (source && ((source.bIsPlayer) || (source.Target
+		    && source.Target.bIsPlayer))))
 		{
-			PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Instigator.Player).Team);
+			PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Target.Player).Team);
 			if (col == Player(Player).Team && damage < 1000)
 				return;
 		}
 
 		if (!Level.Game.deathmatch && (source && ((source.bIsPlayer) ||
-		   (source.Instigator && source.Instigator.bIsPlayer))))
+		   (source.Target && source.Target.bIsPlayer))))
 		{
 			if (damage < 1000)
 				return;
@@ -1728,7 +1728,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		if (Minotaur(source))
 		{
 			// Minotaur's kills go to his master
-			master = source.Instigator;
+			master = source.Tracer;
 			// Make sure still alive and not a pointer to fighter head
 			if (master && master.bIsPlayer && (master.Player.MO == master))
 			{
@@ -1805,7 +1805,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		{
 			return;
 		}
-		Enemy = source;
+		Target = source;
 		Pawn(self).Threshold = BASETHRESHOLD;
 		if (State == IdleState && SeeState)
 		{
@@ -2069,7 +2069,7 @@ void SpawnBloodSplatter(TVec org, int damage)
 	}
 
 	mo = Spawn(BloodSplatter, org);
-	mo.Instigator = self;
+	mo.Target = self;
 	mo.Velocity.x = (Random() - Random()) * 4.0 * 35.0;
 	mo.Velocity.y = (Random() - Random()) * 4.0 * 35.0;
 	mo.Velocity.z = 3.0 * 35.0 / 20.0;
@@ -2088,7 +2088,7 @@ void SpawnBloodSplatter2(TVec org)
 	org.x += (Random() - 0.5) * 8.0;
 	org.y += (Random() - 0.5) * 8.0;
 	mo = Spawn(AxeBlood, org);
-	mo.Instigator = self;
+	mo.Target = self;
 }
 
 //==========================================================================
@@ -2336,7 +2336,7 @@ bool Touch(Entity InOther)
 		}
 		if (bFloorBounce && !MaceFX3(self))
 		{
-			if (Instigator == Other || !Other.bSolid)
+			if (Target == Other || !Other.bSolid)
 			{
 				return true;
 			}
@@ -2345,21 +2345,21 @@ bool Touch(Entity InOther)
 				return false;
 			}
 		}
-		if ((Class == MageStaffFX2 || Class == InfernalHandFX) && Other != Instigator)
+		if ((Class == MageStaffFX2 || Class == InfernalHandFX) && Other != Target)
 		{
 			// Class bosses not flagged boss so they can be blasted
 			// [CW] InfernalHandFX CAN blast Players
 			if ((Class == InfernalHandFX || !Other.bIsPlayer) && !Other.bBoss && !ClassBoss(Other))
 			{
-				Other.Damage(self, Instigator, (Class == InfernalHandFX) ?
-												InfernalHandFX(self).BlastDamage : 10);
+				Other.Damage(self, Target, (Class == InfernalHandFX) ?
+											InfernalHandFX(self).BlastDamage : 10);
 				return true;
 			}
 		}
-		if (Instigator && Instigator.Class == Other.Class)
+		if (Target && Target.Class == Other.Class)
 		{
 			// Don't hit same species as originator
-			if (Other == Instigator)
+			if (Other == Target)
 			{
 				// Don't missile self
 				return true;
@@ -2383,7 +2383,7 @@ bool Touch(Entity InOther)
 				SpawnRipperBlood();
 			}
 			damage = ((P_Random() & 3) + 2) * MissileDamage;
-			Other.Damage(self, Instigator, damage);
+			Other.Damage(self, Target, damage);
 			if (Other.bPushable && !bCannotPush)
 			{
 				// Push thing
@@ -2407,7 +2407,7 @@ bool Touch(Entity InOther)
 			{
 				Other.SpawnBloodSplatter(Origin, damage);
 			}
-			Other.Damage(self, Instigator, damage);
+			Other.Damage(self, Target, damage);
 		}
 		return false;
 	}
@@ -2457,7 +2457,7 @@ void CheckForPushSpecial(line_t * line, int side)
 		else if (bActivateImpact)
 		{
 			HexenLevelInfo(Level).ActivateLine(line,
-				bMissile ? Instigator : self, side, SPAC_IMPACT);
+				bMissile ? Target : self, side, SPAC_IMPACT);
 		}
 	}
 }
@@ -2702,9 +2702,9 @@ void HitMobj(Entity Other)
 //				Velocity.z = -Velocity.z;
 				if (bSeekerMissile)
 				{
-					Enemy = Instigator;
+					Tracer = Target;
 				}
-				Instigator = Actor(Other);
+				Target = Actor(Other);
 				return;
 			}
 		}
@@ -3157,13 +3157,13 @@ bool ZMovement(float DeltaTime)
 	// adjust height
 	//
 	Origin.z += Velocity.z * DeltaTime;
-	if (bFloat && Enemy)
+	if (bFloat && Target)
 	{
 		// float down towards enemy if too close
 		if (!bSkullFly && !bInFloat)
 		{
-			dist = DistTo2(Enemy);
-			delta = Enemy.Origin.z + Height / 2.0 - Origin.z;
+			dist = DistTo2(Target);
+			delta = Target.Origin.z + Height / 2.0 - Origin.z;
 			if (delta < 0.0 && dist < -delta * 3.0)
 				Origin.z -= FLOATSPEED * DeltaTime;
 			else if (delta > 0.0 && dist < delta * 3.0)
@@ -3878,7 +3878,7 @@ Actor SpawnMissileAngle(class<Actor> type, float angle, float momz)
 	{
 		mo.PlaySound(mo.SightSound, CHAN_VOICE);
 	}
-	mo.Instigator = self;	// Originator
+	mo.Target = self;	// Originator
 	mo.Angles.yaw = angle;
 	mo.Velocity.x = mo.Speed * cos(angle);
 	mo.Velocity.y = mo.Speed * sin(angle);
@@ -3904,7 +3904,7 @@ Actor SpawnMissileAngleSpeed(class<Actor> type, float angle,
 	org = Origin;
 	org.z -= FloorClip;
 	mo = Spawn(type, org);
-	mo.Instigator = self;	// Originator
+	mo.Target = self;	// Originator
 	mo.Angles.yaw = angle;
 	mo.Velocity.x = speed * cos(angle);
 	mo.Velocity.y = speed * sin(angle);
@@ -3927,17 +3927,17 @@ bool SeekerMissile(float thresh, float turnMax)
 	float delta;
 	float angle;
 
-	if (!Enemy)
+	if (!Tracer)
 	{
 		return false;
 	}
-	if (!Enemy.bShootable)
+	if (!Tracer.bShootable)
 	{
-		// Enemy died
-		Enemy = none;
+		// Target died
+		Tracer = none;
 		return false;
 	}
-	dir = FaceActor(Enemy, &delta);
+	dir = FaceActor(Tracer, &delta);
 	if (delta > thresh)
 	{
 		delta /= 2.0;
@@ -3960,17 +3960,17 @@ bool SeekerMissile(float thresh, float turnMax)
 	angle = Angles.yaw;
 	Velocity.x = Speed * cos(angle);
 	Velocity.y = Speed * sin(angle);
-	if (Origin.z + Height < Enemy.Origin.z ||
-		Enemy.Origin.z + Enemy.Height < Origin.z)
+	if (Origin.z + Height < Tracer.Origin.z ||
+		Tracer.Origin.z + Tracer.Height < Origin.z)
 	{
 		// Need to seek vertically
-		dist = DistTo2(Enemy);
+		dist = DistTo2(Tracer);
 		dist = dist / Speed;
 		if (dist < 1.0)
 		{
 			dist = 1.0;
 		}
-		Velocity.z = (Enemy.Origin.z + Enemy.Height / 2.0 -
+		Velocity.z = (Tracer.Origin.z + Tracer.Height / 2.0 -
 			Origin.z - Height / 2.0) / dist;
 	}
 	return true;
@@ -4077,16 +4077,16 @@ void Blast(Actor source, float strength)
 			else if (MageStaffFX2(self) || InfernalHandFX(self))
 			{
 				// Reflect to originator
-				Enemy = Instigator;
-				Instigator = source;
+				Tracer = Target;
+				Target = source;
 			}
 		}
 		if (Class == HolyFX)
 		{
-			if (Enemy == source)
+			if (Tracer == source)
 			{
-				Enemy = Instigator;
-				Instigator = source;
+				Tracer = Target;
+				Target = source;
 			}
 		}
 		Velocity.x = Player::BLAST_SPEED * cos(angle) * 35.0;
@@ -4154,7 +4154,7 @@ bool PIT_RadiusAttack(Entity Other)
 		// Bosses take no damage from PIT_RadiusAttack
 		return true;
 	}
-	if (!DamageSource && Other == Instigator)
+	if (!DamageSource && Other == Target)
 	{
 		// don't damage the source of the explosion
 		return true;
@@ -4185,7 +4185,7 @@ bool PIT_RadiusAttack(Entity Other)
 		{
 			damage >>= 2;
 		}
-		Actor(Other).Damage(self, Instigator, damage);
+		Actor(Other).Damage(self, Target, damage);
 	}
 	return true;
 }
@@ -4901,9 +4901,9 @@ final void A_Explode()
 		// Fighter Hammer
 		damage = 128;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == FighterSwordMissile)
@@ -4911,9 +4911,9 @@ final void A_Explode()
 		// Fighter Runesword
 		damage = 64;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == CircleFlame)
@@ -4921,9 +4921,9 @@ final void A_Explode()
 		// Cleric Flame secondary flames
 		damage = 20;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (SorcererBall(self))
@@ -4941,7 +4941,7 @@ final void A_Explode()
 	else if (Class == SorcererFX4)
 	{
 		// PlayerHeresiarch'es fire
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
 			damage = SorcererFX4(self).ExplodeDamage;
 			damageSelf = false;
@@ -4966,9 +4966,9 @@ final void A_Explode()
 		damage = 64;
 		distance = 192.0;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == MageStaffFX2)
@@ -4976,9 +4976,9 @@ final void A_Explode()
 		damage = 80;
 		distance = 192.0;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == ZXmasTree || Class == ZShrub2)
@@ -4989,9 +4989,9 @@ final void A_Explode()
 	else if (Class == MorningStarMissile)
 	{
 		damage = 80;		
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == WElectricBall)
@@ -4999,9 +4999,9 @@ final void A_Explode()
 		damage = 120;
 		distance = 192.0;
 		damageSelf = false;
-		if (Instigator && Instigator.bIsPlayer)
+		if (Target && Target.bIsPlayer)
 		{
-			damage = damage * Player(Instigator.Player).intelligence / 10;
+			damage = damage * Player(Target.Player).intelligence / 10;
 		}
 	}
 	else if (Class == InfernalHandFX)

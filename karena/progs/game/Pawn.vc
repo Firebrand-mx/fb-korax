@@ -161,7 +161,7 @@ Actor SpawnMissile(Actor dest, class<Actor> type)
 	{
 		th.PlaySound(th.SightSound, CHAN_VOICE);
 	}
-	th.Instigator = self;	// Originator
+	th.Target = self;	// Originator
 	dir = dest.Origin - Origin;
 	if (dest.Alpha < 1.0)
 	{
@@ -194,7 +194,7 @@ Actor SpawnMissileXYZ(TVec org, Actor dest, class<Actor> type)
 	{
 		th.PlaySound(th.SightSound, CHAN_VOICE);
 	}
-	th.Instigator = self;	// Originator
+	th.Target = self;	// Originator
 	dir = dest.Origin - Origin;
 	if (dest.Alpha < 1.0)
 	{
@@ -217,25 +217,25 @@ bool CheckMeleeRange()
 {
 	float dist;
 
-	if (!Enemy)
+	if (!Target)
 	{
 		return false;
 	}
-	dist = DistTo(Enemy);
+	dist = DistTo(Target);
 	if (dist >= MELEERANGE)
 	{
 		return false;
 	}
-	if (!CanSee(Enemy))
+	if (!CanSee(Target))
 	{
 		return false;
 	}
-	if (Enemy.Origin.z > Origin.z + Height)
+	if (Target.Origin.z > Origin.z + Height)
 	{
 		// Enemy is higher than the attacker
 		return false;
 	}
-	else if (Origin.z > Enemy.Origin.z + Enemy.Height)
+	else if (Origin.z > Target.Origin.z + Target.Height)
 	{
 		// Attacker is higher
 		return false;
@@ -253,25 +253,25 @@ bool CheckMeleeRange2()
 {
 	float dist;
 
-	if (!Enemy)
+	if (!Target)
 	{
 		return false;
 	}
-	dist = DistTo(Enemy);
+	dist = DistTo(Target);
 	if (dist >= MELEERANGE * 2.0 || dist < MELEERANGE)
 	{
 		return false;
 	}
-	if (!CanSee(Enemy))
+	if (!CanSee(Target))
 	{
 		return false;
 	}
-	if (Enemy.Origin.z > Origin.z + Height)
+	if (Target.Origin.z > Origin.z + Height)
 	{
 		// Enemy is higher than the attacker
 		return false;
 	}
-	else if (Origin.z > Enemy.Origin.z + Enemy.Height)
+	else if (Origin.z > Target.Origin.z + Target.Height)
 	{
 		// Attacker is higher
 		return false;
@@ -289,7 +289,7 @@ bool CheckMissileRange()
 {
 	float dist;
 
-	if (!CanSee(Enemy))
+	if (!CanSee(Target))
 	{
 		return false;
 	}
@@ -304,7 +304,7 @@ bool CheckMissileRange()
 		// Don't attack yet
 		return false;
 	}
-	dist = DistTo(Enemy) - 64.0;
+	dist = DistTo(Target) - 64.0;
 	if (!MeleeState)
 	{
 		// No melee attack, so fire more frequently
@@ -404,13 +404,13 @@ bool LookForMonsters()
 		}
 		if (Class == Minotaur)
 		{
-			if ((mo.Class == Minotaur) && (mo.Enemy != Instigator))
+			if ((mo.Class == Minotaur) && (mo.Target != Tracer))
 			{
 				continue;
 			}
 		}
 		// Found a target monster
-		Enemy = mo;
+		Target = mo;
 		return true;
 	}
 	return false;
@@ -488,12 +488,12 @@ bool LookForPlayers(bool allaround)
 		}
 		if (Class == Minotaur)
 		{
-			if (Instigator == P.MO)
+			if (Tracer == P.MO)
 			{
 				continue;	// Don't target master
 			}
 		}
-		Enemy = Actor(P.MO);
+		Target = Actor(P.MO);
 		return true;
 	}
 	return false;
@@ -788,11 +788,11 @@ void NewChaseDir()
 	float deltax;
 	float deltay;
 
-	deltax = Enemy.Origin.x - Origin.x;
-	deltay = Enemy.Origin.y - Origin.y;
-
-	if(!Enemy)
+	if (!Target)
 		Error("NewChaseDir: called with no Enemy");
+
+	deltax = Target.Origin.x - Origin.x;
+	deltay = Target.Origin.y - Origin.y;
 
 	tmtrace_t tmtrace;
 	CheckRelPosition(&tmtrace, Origin);
@@ -845,11 +845,11 @@ final void A_Look()
 
 	if (targ && targ.bShootable)
 	{
-		Enemy = targ;
+		Target = targ;
 
 		if (bAmbush)
 		{
-			if (!CanSee(Enemy))
+			if (!CanSee(Target))
 			{
 				if (!LookForPlayers(false))
 					return;
@@ -899,7 +899,7 @@ final void A_Chase()
 	// modify target threshold
 	if (Threshold)
 	{
-		if (!Enemy || Enemy.Health <= 0)
+		if (!Target || Target.Health <= 0)
 		{
 			Threshold = 0;
 		}
@@ -935,7 +935,7 @@ final void A_Chase()
 		}
 	}
 
-	if (!Enemy || !Enemy.bShootable)
+	if (!Target || !Target.bShootable)
 	{
 		// look for a new target
 		if (LookForPlayers(true))
@@ -985,7 +985,7 @@ final void A_Chase()
 	// possibly choose another target
 	if (Level.Game.netgame && !Threshold)
 	{
-		if (!CanSee(Enemy))
+		if (!CanSee(Target))
 		{
 			if (LookForPlayers(true))
 				return;	// got a new target
@@ -1029,15 +1029,15 @@ final void A_Chase()
 
 final void A_FaceTarget()
 {
-	if (!Enemy)
+	if (!Target)
 		return;
 
 	bAmbush = false;
 
-	Angles.yaw = atan2(Enemy.Origin.y - Origin.y,
-		Enemy.Origin.x - Origin.x);
+	Angles.yaw = atan2(Target.Origin.y - Origin.y,
+		Target.Origin.x - Origin.x);
 
-	if (Enemy.Alpha < 1.0)
+	if (Target.Alpha < 1.0)
 	{
 		Angles.yaw = AngleMod360(Angles.yaw + (Random() - Random()) * 45.0);
 	}
