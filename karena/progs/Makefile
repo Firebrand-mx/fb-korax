@@ -11,7 +11,7 @@ COMMON_DIR=../../progs/common
 endif
 
 ifndef COMMON_PROGS_DIR
-COMMON_PROGS_DIR=../../basev/common/progs
+COMMON_PROGS_DIR=../../debug-sdl/basev/common/progs
 endif
 
 all: $(OUTDIR)/shared.dat $(OUTDIR)/svprogs.dat $(OUTDIR)/clprogs.dat
