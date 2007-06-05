@@ -3690,26 +3690,15 @@ bool PIT_StompThing(Entity Other)
 
 bool TeleportMove(TVec pos)
 {
-	int xl;
-	int xh;
-	int yl;
-	int yh;
-	int bx;
-	int by;
+	Entity Other;
 
 	// kill anything occupying the position
 	teleport_pos = pos;
 
 	// stomp on any things contacted
-	xl = MapBlock(pos.x - Radius - XLevel.BlockMapOrgX - MAXRADIUS);
-	xh = MapBlock(pos.x + Radius - XLevel.BlockMapOrgX + MAXRADIUS);
-	yl = MapBlock(pos.y - Radius - XLevel.BlockMapOrgY - MAXRADIUS);
-	yh = MapBlock(pos.y + Radius - XLevel.BlockMapOrgY + MAXRADIUS);
-
-	for (bx = xl; bx <= xh; bx++)
-		for (by = yl; by <= yh; by++)
-			if (!XLevel.BlockThingsIterator(bx, by, self, 'PIT_StompThing'))
-				return false;
+	foreach RadiusThings(Other, pos, Radius)
+		if (!PIT_StompThing(Other))
+			return false;
 
 	// the move is ok,
 	// so link the thing into its new position
@@ -4193,22 +4182,14 @@ bool PIT_RadiusAttack(Entity Other)
 
 void P_RadiusAttack(int damage, float distance, bool damageSource)
 {
-	int x, y, xl, xh, yl, yh;
+	Entity Other;
 
-	yh = MapBlock(Origin.y + distance - XLevel.BlockMapOrgY);
-	yl = MapBlock(Origin.y - distance - XLevel.BlockMapOrgY);
-	xh = MapBlock(Origin.x + distance - XLevel.BlockMapOrgX);
-	xl = MapBlock(Origin.x - distance - XLevel.BlockMapOrgX);
 	bombdamage = damage;
 	bombdistance = distance;
 	DamageSource = damageSource;
-	for (y = yl; y <= yh; y++)
-	{
-		for (x = xl; x <= xh; x++)
-		{
-			XLevel.BlockThingsIterator(x, y, self, 'PIT_RadiusAttack');
-		}
-	}
+	foreach RadiusThings(Other, Origin, distance)
+		if (!PIT_RadiusAttack(Other))
+			break;
 }
 
 //**************************************************************************
@@ -4327,6 +4308,7 @@ void AimLineAttack(TAVec * angles, float distance)
 	float y2;
 	float topangle;
 	float botangle;
+	intercept_t* in;
 
 	AngleVector(angles, &aim_dir);
 	x2 = Origin.x + distance * aim_dir.x;
@@ -4348,8 +4330,12 @@ void AimLineAttack(TAVec * angles, float distance)
 	aim_range = distance;
 	linetarget = none;
 
-	XLevel.PathTraverse(Origin.x, Origin.y, x2, y2,
-		PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_AimTraverse');
+	foreach PathTraverse(in, Origin.x, Origin.y, x2, y2,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		if (!PTR_AimTraverse(in))
+			break;
+	}
 
 	if (linetarget)
 	{
@@ -4614,6 +4600,7 @@ bool PTR_ShootTraverse(intercept_t * in)
 int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 {
 	TVec dst;
+	intercept_t* in;
 
 	la_damage = damage;
 	shootPuffType = PuffType;
@@ -4626,10 +4613,11 @@ int LineAttack(TVec dir, float distance, int damage, class<Actor> PuffType)
 
 	dst = shoot_origin + shoot_range * shoot_dir;
 	shoot_linestart = shoot_origin;
-	if (!XLevel.PathTraverse(Origin.x, Origin.y, dst.x, dst.y,
-		PT_ADDLINES | PT_ADDTHINGS, self, 'PTR_ShootTraverse'))
+	foreach PathTraverse(in, Origin.x, Origin.y, dst.x, dst.y,
+		PT_ADDLINES | PT_ADDTHINGS)
 	{
-		return false;
+		if (!PTR_ShootTraverse(in))
+			return false;
 	}
 	shoot_lineend = dst;
 	return ShootCheckPlanes(XLevel.PointInSector(dst));

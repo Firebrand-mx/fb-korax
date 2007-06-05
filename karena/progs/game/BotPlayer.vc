@@ -211,9 +211,6 @@ float angle;			// The wanted angle that the bot tries to get every tic.
 
 float count;			// [FB] Roam Count
 
-float bottracerange;
-TVec bottracedir;
-
 // [FB] Copy of certain affected stats for Darkness
 int old_intelect;
 int old_anticip;
@@ -542,158 +539,6 @@ bool IsDangerous(sector_t *sec)
 
 //==========================================================================
 //
-//	PTR_BotPathTraverse
-//
-//	[BC] For the bots
-//	[FB] Additions for 3d floor checks
-//
-//==========================================================================
-
-bool PTR_BotPathTraverse(intercept_t *in)
-{
-	Actor th;
-	line_t *ld;
-	TVec hit_point;
-	sector_t *back;
-	sector_t *front;
-	opening_t *open;
-	float diffheight, dheight;
-
-	if (in->bIsALine)
-	{
-		ld = in->line;	// This linedef
-		hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
-
-		// Line is impassible
-		if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
-		{
-			return false;
-		}
-
-		// Line isn't two sided
-		if (!ld->backsector)
-		{
-			return false;
-		}
-
-		if (!PointOnPlaneSide(botmo.Origin, ld))
-		{
-			back = ld->backsector;
-			front = ld->frontsector;
-		}
-		else
-		{
-			back = ld->frontsector;
-			front = ld->backsector;
-		}
-
-		// Sector is dangerous
-		if (IsDangerous(back))
-		{
-			return false;
-		}
-
-		// crosses a two sided line
-		open = LineOpenings(ld, hit_point);
-		open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
-		// No valid openings
-		if (!open || open->range <= botmo.Height)
-		{
-			return false;
-		}
-		else
-		{
-			// [FB] No cliff jumping unless we're going after something
-			if ((open->lowfloor - open->bottom) > 32.0 && (open->lowfloor - open->bottom) < 384.0 && !enemy)
-			{
-				return false;
-			}
-
-			// [FB] Determine if it's wise to jump up to a floor
-			diffheight = open->bottom - open->lowfloor;
-
-			if (diffheight > 0.0)
-			{
-				if (diffheight >= 24.0 && diffheight <= 56.0)
-				{
-					botmo.Player.Buttons |= BT_JUMP;
-					return true;
-				}
-				else if (diffheight > 56.0)
-				{
-				/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
-					{
-						return true;
-					}
-					else*/
-						return false;
-				}
-			}
-		}
-
-//		return true;
-	}
-
-	// [FB] Order of actors response precedence
-	if (goal)
-	{
-		in->Thing = goal;
-	}
-	else if (item)
-	{
-		in->Thing = item;
-	}
-	else if (node)
-	{
-		in->Thing = node;
-	}
-	else if (ball)
-	{
-		in->Thing = ball;
-	}
-	else if (enemy)
-	{
-		in->Thing = enemy;
-	}
-
-	if (in->Thing)
-	{
-		th = Actor(in->Thing);
-
-		if (th == botmo)
-		{
-			return true;
-		}
-
-		if (th.bSolid)
-		{
-			// [FB] Jump to avoid something
-			dheight = th.Origin.z + th.Height - botmo.Origin.z;
-
-			if (dheight >= 24.0 && dheight <= 56.0)
-			{
-				botmo.Player.Buttons |= BT_JUMP;
-				return true;
-			}
-
-			return false;
-		}
-
-		// [FB] Jump to reach something
-		dheight = th.Origin.z + th.Height - botmo.Origin.z;
-
-		if (dheight >= 24.0 && dheight <= 56.0)
-		{
-			botmo.Player.Buttons |= BT_JUMP;
-			return true;
-		}
-	}
-
-	return true;
-}
-
-//==========================================================================
-//
 //	CheckPath
 //
 //	Checks for obstructions at a certain angle and distance. Returns true if
@@ -704,6 +549,9 @@ bool PTR_BotPathTraverse(intercept_t *in)
 bool CheckPath(float ang, float dist)
 {
 	float x1, y1, x2, y2;
+	intercept_t* in;
+	float bottracerange;
+	TVec bottracedir;
 
 	bottracerange = dist;
 	bottracedir.x = cos(ang);
@@ -716,8 +564,149 @@ bool CheckPath(float ang, float dist)
 	// [FB] Use lines
 	player.P_UseLines();
 
-	return player.MO.XLevel.PathTraverse(x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS, self,
-						'PTR_BotPathTraverse');
+	//	[BC] For the bots
+	//	[FB] Additions for 3d floor checks
+	foreach botmo.PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
+	{
+		Actor th;
+		line_t *ld;
+		TVec hit_point;
+		sector_t *back;
+		sector_t *front;
+		opening_t *open;
+		float diffheight, dheight;
+
+		if (in->bIsALine)
+		{
+			ld = in->line;	// This linedef
+			hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
+
+			// Line is impassible
+			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
+			{
+				return false;
+			}
+
+			// Line isn't two sided
+			if (!ld->backsector)
+			{
+				return false;
+			}
+
+			if (!PointOnPlaneSide(botmo.Origin, ld))
+			{
+				back = ld->backsector;
+				front = ld->frontsector;
+			}
+			else
+			{
+				back = ld->frontsector;
+				front = ld->backsector;
+			}
+
+			// Sector is dangerous
+			if (IsDangerous(back))
+			{
+				return false;
+			}
+
+			// crosses a two sided line
+			open = LineOpenings(ld, hit_point);
+			open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
+			// No valid openings
+			if (!open || open->range <= botmo.Height)
+			{
+				return false;
+			}
+			else
+			{
+				// [FB] No cliff jumping unless we're going after something
+				if ((open->lowfloor - open->bottom) > 32.0 && (open->lowfloor - open->bottom) < 384.0 && !enemy)
+				{
+					return false;
+				}
+
+				// [FB] Determine if it's wise to jump up to a floor
+				diffheight = open->bottom - open->lowfloor;
+
+				if (diffheight > 0.0)
+				{
+					if (diffheight >= 24.0 && diffheight <= 56.0)
+					{
+						botmo.Player.Buttons |= BT_JUMP;
+						continue;
+					}
+					else if (diffheight > 56.0)
+					{
+					/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
+						{
+							return true;
+						}
+						else*/
+							return false;
+					}
+				}
+			}
+		}
+		// [JL] You can't do this
+		/*
+		// [FB] Order of actors response precedence
+		if (goal)
+		{
+			in->Thing = goal;
+		}
+		else if (item)
+		{
+			in->Thing = item;
+		}
+		else if (node)
+		{
+			in->Thing = node;
+		}
+		else if (ball)
+		{
+			in->Thing = ball;
+		}
+		else if (enemy)
+		{
+			in->Thing = enemy;
+		}
+		if (in->Thing)
+		*/
+		else
+		{
+			th = Actor(in->Thing);
+
+			if (th == botmo)
+			{
+				continue;
+			}
+
+			if (th.bSolid)
+			{
+				// [FB] Jump to avoid something
+				dheight = th.Origin.z + th.Height - botmo.Origin.z;
+
+				if (dheight >= 24.0 && dheight <= 56.0)
+				{
+					botmo.Player.Buttons |= BT_JUMP;
+					continue;
+				}
+
+				return false;
+			}
+
+			// [FB] Jump to reach something
+			dheight = th.Origin.z + th.Height - botmo.Origin.z;
+
+			if (dheight >= 24.0 && dheight <= 56.0)
+			{
+				botmo.Player.Buttons |= BT_JUMP;
+			}
+		}
+	}
+
+	return true;
 }
 
 //==========================================================================
