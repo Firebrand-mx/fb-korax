@@ -1,0 +1,209 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: CTFBanner.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class CTFBanner : Actor
+	__mobjinfo__(15022);
+
+// Banner status
+enum
+{
+	BANNER_STATUS__BASE,			// Standing on the base spot, ready to be captured
+	BANNER_STATUS__CARRIED,			// Carried by capturer
+	BANNER_STATUS__LOST,			// Dropped somewhere on level
+	BANNER_STATUS__BEING_RETURNED	// Flying home (just in case we'll use delayed respawn for any reason)
+};
+
+const float		AUTORESPAWN_DELAY	= 120.0 * 35.0;	// 2 minutes
+
+
+PlayerTeam	Team;		// Which team this banner do belong
+						// (theoretically can be changed during game for some weird gameplay effect... (: )
+MapSpot		BaseOrigin;	// This Banner's Base; it spawns and respawns here
+Player		Capturer;	// A player who is carrying this banner
+int			Status;		// Current status (on base, carried, lost).
+float		lost_timer;
+
+//==========================================================================
+//
+//	IsTouched
+//
+//	[CW]
+//
+//==========================================================================
+
+bool IsTouched(Entity Toucher)
+{
+	if(Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+	{
+		if (Status != BANNER_STATUS__CARRIED && Status != BANNER_STATUS__BEING_RETURNED)
+		{
+			// First, we check if a toucher is of the defending team or offending team
+			Player plToucher = Player(Toucher.Player);
+			if (plToucher.Team == Team)
+			{
+				// Defender; if a banner is not on its Base, it should be returned there at once
+				if (Status == BANNER_STATUS__LOST)
+					ReturnToBase(false);
+				// Elsewise banner is on base; check if defender is carrying captured opponents' flag
+				else
+				{
+					int i;
+					GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameMode);
+					for (i = 0; i < GameCTF::MAXBANNERS; i++)
+					{
+						if (CTF.Banners[i] && CTF.Banners[i] != self && CTF.Banners[i].Capturer == plToucher)
+							CTF.CommitCapture(CTF.Banners[i]);
+					}
+				}
+			}
+			else
+			{
+				// Offender, capture the flag
+				CaptureBy(plToucher);
+			}
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	CaptureBy
+//
+//	[CW] Called when offending player gets the idle banner.
+//
+//==========================================================================
+
+void CaptureBy(Player newCapturer)
+{
+	// FIXME -- make normal message...
+	MainGameInfo(Level.Game).bcentreprint("Flag captured!");
+	Capturer = newCapturer;
+	Status = BANNER_STATUS__CARRIED;
+}
+
+//==========================================================================
+//
+//	ReturnToBase
+//
+//	[CW]
+//
+//==========================================================================
+
+void ReturnToBase(bool silent)
+{
+	if (!silent)
+	{
+		// FIXME -- make normal message...
+		MainGameInfo(Level.Game).bcentreprint("Flag returned to base!");
+	}
+	
+	Status = BANNER_STATUS__BEING_RETURNED;
+	Capturer = none;
+	bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
+	MoveThing(BaseOrigin.Origin, true);
+	bColideWithThings = true;
+	Status = BANNER_STATUS__BASE;
+}
+
+//==========================================================================
+//
+//	WasLost
+//
+//	[CW] Should be called by GameCTF from notifyPlayerDeath, when this banner's capturer is killed.
+//
+//==========================================================================
+
+void WasLost()
+{
+	// FIXME -- make normal message...
+	MainGameInfo(Level.Game).bcentreprint("Flag lost!");
+	Capturer = none;
+	lost_timer = AUTORESPAWN_DELAY;
+	Status = BANNER_STATUS__LOST;
+}
+
+//==========================================================================
+//
+//	Physics
+//
+//==========================================================================
+
+bool Physics(float DeltaTime)
+{
+	// Carried flag should follow capturer
+	if (Status == BANNER_STATUS__CARRIED)
+	{
+		UnlinkFromWorld();
+		if (Capturer)
+		{
+			Origin = Capturer.MO.Origin;
+			Origin.z += 3.0 * Capturer.MO.Height / 4.0;
+		}
+		LinkToWorld();
+		return true;
+	}
+	else
+		return ::Physics(DeltaTime);
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	// Lost flag counts a timer down until auto-respawn; it also should be returned in case it was dropped in dangerous area
+	if (Status == BANNER_STATUS__LOST)
+	{
+		lost_timer -= deltaTime;
+		if (lost_timer <= 0.0)
+			ReturnToBase(false);
+	}
+}
+
+__states__
+{
+	S_CTFBANNER_IDLE('BNR1', 0, -1.0, none) = none
+}
+
+defaultproperties
+{
+	Radius = 8.0;
+	Height = 120.0;
+	bSolid = false;
+	IdleState = S_CTFBANNER_IDLE;
+}

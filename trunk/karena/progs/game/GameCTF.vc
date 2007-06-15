@@ -1,0 +1,259 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: GameCTF.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class GameCTF : Game;
+
+const int	MAXBANNERS	= 2;
+
+enum
+{
+	state_preparegame,
+	state_gameplay,		// no actual game states here
+	state_finished
+};
+
+enum
+{
+	object_bannerspot,
+	object_banner
+};
+
+CTFBanner	Banners[MAXBANNERS];
+MapSpot		spot_banners[MAXBANNERS];
+
+
+//==========================================================================
+//
+//	AllowedTeams
+//
+//==========================================================================
+
+int AllowedTeams()
+{
+	return 2;
+}
+
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void BeginState(int newstate)
+{
+	int i;
+
+	dprint("BeginState: %i", newstate);
+
+	switch(newstate)
+	{
+	case state_preparegame:
+		if (!Game.Teams[0] || !Game.Teams[1])
+		{
+			dprint("GameCTF : not enouph teams, delay start");
+			State = -1;
+			return;
+		}
+		dprint("Preparing game");
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Game.Teams[0] && Game.Teams[0].Players[i])
+			   Game.Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			if (Game.Teams[1] && Game.Teams[1].Players[i])
+			   Game.Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+		}
+		if (Game.Teams[0])
+			Game.Teams[0].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		if (Game.Teams[1])
+			Game.Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		EndCurrentState(state_gameplay);
+		return;
+	case state_gameplay:
+		for (i = 0; i < MAXBANNERS; i++)
+		{
+			if (Banners[i])
+			{ 
+				if (Banners[i].BaseOrigin)
+					Banners[i].ReturnToBase(true);
+				else
+				{
+					spot_banners[i] = MapSpot(Banners[i].Spawn(MapSpot, Banners[i].Origin));
+					Banners[i].BaseOrigin = spot_banners[i];
+				}
+			}
+			else if (spot_banners[i])
+			{
+				Banners[i] = CTFBanner(spot_banners[i].Spawn(CTFBanner, spot_banners[i].Origin));
+				Banners[i].BaseOrigin = spot_banners[i];
+			}
+			else
+			{
+				dprint("GameCTF::BeginState : state_gameplay : there's no banner or banner_spot of index %i", i);
+				EndCurrentState(state_finished);
+				return;
+			}
+		}
+		break;
+	case state_finished:
+		dprint("GameCTF::BeginState : state_finished");
+		break;
+	};
+
+	State = newstate;
+}
+
+//==========================================================================
+//
+//	NotifyUpdateTeams
+//
+//==========================================================================
+
+void NotifyUpdateTeams()
+{
+	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
+		BeginState(state_preparegame);
+	else if (State == state_gameplay && (!Game.Teams[0] || !Game.Teams[1]))
+		EndCurrentState(state_preparegame);
+}
+
+//==========================================================================
+//
+//	NotifyPlayerDeath
+//
+//==========================================================================
+
+void NotifyPlayerDeath(Player pl, Actor source)
+{
+	int i;
+	for (i = 0; i < MAXBANNERS; i++)
+	{
+		if (Banners[i] && Banners[i].Capturer && Banners[i].Capturer == pl)
+		{
+			Banners[i].WasLost();
+		}
+	}
+}
+
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void EndCurrentState(int nextstate)
+{
+	// TODO! - destroy game objects that were spawned by GameCTF
+
+	BeginState(nextstate);
+}
+
+//==========================================================================
+//
+//	SetGameObject
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
+{
+	switch (object)
+	{
+	case object_bannerspot:
+		if (!A.IsA('MapSpot'))
+		{
+			dprint("GameCTF::SetGameObject : A is not of MapSpot class");
+			break;
+		}
+		if (arg1 >= 0 && arg1 < MAXBANNERS)
+		{
+			spot_banners[arg1] = MapSpot(A);
+			if (Banners[arg1])
+				Banners[arg1].BaseOrigin = spot_banners[arg1];
+		}
+		else
+			dprint("GameCTF::SetGameObject : bad argument(s) for bannerspot");
+		break;
+	case object_banner:
+		if (!A.IsA('CTFBanner'))
+		{
+			dprint("GameCTF::SetGameObject : A is not of CTFBanner class");
+			break;
+		}
+		if (arg1 >= 0 && arg1 < MAXBANNERS)
+		{
+			Banners[arg1] = CTFBanner(A);
+			if (spot_banners[arg1])
+				Banners[arg1].BaseOrigin = spot_banners[arg1];
+		}
+		else
+			dprint("GameCTF::SetGameObject : bad argument(s) for banner");
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
+void End()
+{
+	EndCurrentState(state_finished);
+	::End();
+}
+
+//==========================================================================
+//
+//	CommitCapture
+//
+//	[CW] Called for banner that was captured and brought to opponent's base.
+//
+//==========================================================================
+
+void CommitCapture(CTFBanner Banner)
+{
+	// TADA!!
+	// play some sound here
+	// FIXME -- make normal message...
+	Game.bcentreprint("Flag captured!");
+	Banner.ReturnToBase(true);
+}
+
+defaultproperties
+{
+}
