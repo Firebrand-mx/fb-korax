@@ -207,7 +207,7 @@ bool onground;
 // [FB] Scores for the different gameplay modes
 int Score;	//[CW] personal player's score value (depends on game mode)
 int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
-int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters (?)
+int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
 
@@ -314,6 +314,7 @@ void SpawnClient()
 	dprint("Player::SpawnClient : ");
 	dprint("Player::SpawnClient : netgame = %i", Level.Game.netgame);
 	dprint("Player::SpawnClient : deathmatch = %i", Level.Game.deathmatch);
+	dprint("Player::SpawnClient : GameType = %i", MainGameInfo(Level.Game).GameType);
 
 	if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
@@ -623,30 +624,28 @@ void SelectPlayerTeam(bool call_update)
 	}
 	else
 	{
+		int i;
+		int maxTeams;
+		if (MainGameInfo(Level.Game).GameMode)
+			maxTeams = MainGameInfo(Level.Game).GameMode.AllowedTeams();
+		else
+			maxTeams = HexenDefs::MAXTEAMSINGAME;
+		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		{
+			if (MainGameInfo(Level.Game).Teams[i] == none)
+				break;
+		}
+		
+		ClientTeamSelect(maxTeams, i, Colour,
+			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Colour : -1,
+			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1,
+			MainGameInfo(Level.Game).Teams[2] ? MainGameInfo(Level.Game).Teams[2].Colour : -1,
+			MainGameInfo(Level.Game).Teams[3] ? MainGameInfo(Level.Game).Teams[3].Colour : -1);
 
-	int i1;
-	int maxTeams;
-	if (MainGameInfo(Level.Game).GameMode)
-		maxTeams = MainGameInfo(Level.Game).GameMode.AllowedTeams();
-	else
-		maxTeams = HexenDefs::MAXTEAMSINGAME;
-	for (i1 = 0; i1 < HexenDefs::MAXPLAYERTEAMS; i1++)
-	{
-		if (MainGameInfo(Level.Game).Teams[i1] == none)
-			break;
-	}
-	
-	ClientTeamSelect(maxTeams, i1, Colour,
-		MainGameInfo(Level.Game).Teams[0].Colour,
-		MainGameInfo(Level.Game).Teams[1].Colour,
-		MainGameInfo(Level.Game).Teams[2].Colour,
-		MainGameInfo(Level.Game).Teams[3].Colour);
-
-	if (TeamSelection != HexenDefs::teamselection_reselect)
-		TeamSelection = HexenDefs::teamselection_wait;
-	dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
-	SetControllable(false);
-
+		if (TeamSelection != HexenDefs::teamselection_reselect)
+			TeamSelection = HexenDefs::teamselection_wait;
+		dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
+		SetControllable(false);
 	}
 }
 
@@ -786,9 +785,7 @@ void SpawnPlayer(mthing_t * mthing)
 		PClass = BaseClass;
 	}
 
-	dprint("Player::SpawnPlayer : deathmatch = %i", Level.Game.deathmatch);
-
-	if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM &&
+	if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
 		TeamSelection == HexenDefs::teamselection_none)
 	{
 		dprint("Player::SpawnPlayer : goto SelectPlayerTeam");
@@ -856,7 +853,7 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		InitiateLevel();
 		// [FB] Start TotalKills counter with all monster count, but just once!
-		if (!Level.Game.deathmatch || Level.Game.deathmatch == HexenDefs::game_sweepteam)
+		if (!Level.Game.deathmatch || MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
 			TotalKills = Level.TotalKills;
 		inited = true;
 	}
@@ -883,7 +880,7 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM)
+	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
 	{
 		dprint("Player::SpawnPlayer : goto setplayercolour");
 		SetPlayerColour();
@@ -934,7 +931,7 @@ void SpawnPlayer(mthing_t * mthing)
 		MO.Deactivate();
 
 	//[CW] put player into corresponding team
-	if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
+	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
 		TeamSelection == HexenDefs::teamselection_done)
 	{
 		dprint("Player::SpawnPlayer : InsertPlayer to team");
@@ -3111,7 +3108,7 @@ void PlayerTick(float deltaTime)
 					teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Actor(MO), Actor(MO).linetarget);
 				if (teamfactor == Game::teamfactor_any)
 				{
-					if (Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM)
+					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
 						targetnamehint_type = targethint_shoot;
 					else
 						targetnamehint_type = (Colour == Actor(MO).linetarget.Player.Colour) ? targethint_noshoot : targethint_shoot;
@@ -5393,7 +5390,7 @@ void UpdateScore(int event)
 
 	Score += mod;
 
-	if (Level && Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM && Team)
+	if (Level && MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && Team)
 	{
 		Team.UpdateScore(event);
 		// update team stats for clientstate

@@ -100,6 +100,9 @@ bool randomclass;
 Actor PuffSpawned;
 
 bool		bFirstLevelInited;
+int			GameType;			// [CW] since 'deathmatch' is treated as bool now,
+								//      we should use this extra var when it is
+								//      important to know which exactly is a game mode
 
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
 Game		GameMode;			// [CW] for advanced game modes
@@ -162,9 +165,13 @@ void InitNewGame(int skill)
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
 	// init GameMode
-	mode = GetCvar('deathmatch');
-	switch (mode)
+	GameType = GetCvar('deathmatch');
+	dprint("MainGameInfo::InitNewGame : GameType = %i", GameType);
+	switch (GameType)
 	{
+	case HexenDefs::game_ctf:
+		dprint("Spawn Capture The Flag");
+		GameMode = Game(SpawnObject(GameCTF)); break;
 	case HexenDefs::game_football:
 		dprint("Spawn Football");
 		GameMode = Game(SpawnObject(GameFootball)); break;
@@ -511,7 +518,7 @@ void InsertPlayer(Player pl)
 	int teamnum;
 	teamnum = -1;
 
-	if(deathmatch < HexenDefs::NUMGAMESNOTEAM)
+	if(GameType < HexenDefs::NUMGAMESNOTEAM)
 	{
 		// In no-teams game all players are put into one-for-all team,
 		// which only meaning is to set their right scoretable positions
@@ -564,11 +571,11 @@ void InsertPlayer(Player pl)
 		if (GameMode)
 			GameMode.NotifyUpdateTeams();
 
-		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 			pl.Level.bprint("MainGameInfo::InsertPlayer : team %s enters competition", ColourNames[Teams[teamnum].Colour]);
 
 		// update team selection menus for all non-spawned human players
-		if (deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{

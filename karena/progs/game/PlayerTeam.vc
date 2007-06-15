@@ -92,7 +92,7 @@ void EnlistPlayer(Player pl)
 			dprint("PlayerTeam::EnlistPlayer : reset player's score");
 			pl.UpdateScore(HexenDefs::scoreevent_PlayerReset);
 
-			if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+			if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				pl.Level.bprint("%s joins %s team", pl.PlayerName, Game.ColourNames[Colour]);
 			}
@@ -137,7 +137,7 @@ void DiscardPlayer(Player pl)
 	}
 	playercount--;
 
-	if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
 		pl.Level.bprint("PlayerTeam::DiscardPlayer : %s has left %s team", pl.PlayerName, Game.ColourNames[Colour]);
 	}
@@ -151,11 +151,14 @@ void DiscardPlayer(Player pl)
 		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 		{
 			if (Game.Teams[i] == self)
+			{
 				Game.Teams[i] = none;
+				break;
+			}
 		}
 		dprint("PlayerTeam::DiscardPlayer : removed team with index %i", i);
 
-		if (Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 		   pl.Level.bprint("PlayerTeam::DiscardPlayer : team %s is no longer in competition", Game.ColourNames[Colour]);
 
 		Destroy();
@@ -198,7 +201,7 @@ void UpdateScore(int event)
 		break;
 	case HexenDefs::scoreevent_Frag:
 		Frags++;
-		if (Game.deathmatch != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football)
 			mod = 1;
 		break;
 	case HexenDefs::scoreevent_Kill:
@@ -211,12 +214,12 @@ void UpdateScore(int event)
 		break;
 	case HexenDefs::scoreevent_SelfFrag:
 		Frags--;
-		if (Game.deathmatch != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football)
 			mod = -1;
 		break;
 	case HexenDefs::scoreevent_TeamFrag:
 		Frags--;
-		if (Game.deathmatch != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football)
 			mod = -1;
 		break;
 	}
