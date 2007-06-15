@@ -398,8 +398,11 @@ void SB_DrawBackground()
 	R_FillRectWithFlat(0, 441, 640, 39, 'f_022');
 
 	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
-	R_DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
-	R_DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem);
+	if (m_h)
+	{
+		R_DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
+		R_DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem);
+	}
 	R_DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
 	R_DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
 }
@@ -784,7 +787,10 @@ void SB_DrawMainBar()
 	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * cl.Mana[2]) / HexenDefs::MAX_MANA, 0.99);
 	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * cl.Mana[3]) / HexenDefs::MAX_MANA, 0.99);
 	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * cl.Mana[4]) / HexenDefs::MAX_MANA, 0.99);
-	R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
+	if (cl.next_level != cl.old_level)
+	{
+	   R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
+	}
 	R_ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
 
 	// Ready artifact
