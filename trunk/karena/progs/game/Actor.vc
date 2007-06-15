@@ -1001,7 +1001,7 @@ void Died(Actor source)
 	if (bCountKill)
 	{
 		Level.CurrentKills++;
-		if (Level.Game.deathmatch == HexenDefs::game_sweep || Level.Game.deathmatch == HexenDefs::game_sweepteam)
+		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep || MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
 		{
 			// [FB] Update total kills
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -1103,7 +1103,7 @@ void Died(Actor source)
 		if (!source)
 		{
 			// Self-frag
-			if (Level.Game.deathmatch == HexenDefs::game_dmteam)
+			if (MainGameInfo(Level.Game).GameType == HexenDefs::game_dmteam)
 			{
 				Player.FragsStats[Player.Colour]--;
 			}
@@ -1596,7 +1596,7 @@ void Damage(Actor inflictor, Actor source, int damage)
 		}
 
 		// [FB] Don't do damage to teammates in team game modes
-		if ((Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 		    && (source && ((source.bIsPlayer) || (source.Target
 		    && source.Target.bIsPlayer))))
 		{
@@ -2284,12 +2284,13 @@ bool Touch(Entity InOther)
 	Actor Other;
 
 	Other = Actor(InOther);
-	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
-		return true;
-
+	
 	//[CW]
 	if (Other.IsTouched(self))
-		return !Other.bSolid;
+		return !Other.bSolid && !Other.bSpecial && !Other.bShootable;
+		
+	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
+		return true;
 
 	// Check for skulls slamming into things
 	if (bSkullFly)

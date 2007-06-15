@@ -362,14 +362,14 @@ bool CheckPNodes(Actor node)
 {
 	if (player.MO.CanSee(node) && (prev != node && botmo.DistTo(node) <= 32.0))
 	{
-		if (player.Level.Game.deathmatch < HexenDefs::NUMGAMESNOTEAM ||
-		    player.Level.Game.deathmatch == HexenDefs::game_dmteam && node.Class == PathNode 
+		if (MainGameInfo(player.Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
+		    MainGameInfo(player.Level.Game).GameType == HexenDefs::game_dmteam && node.Class == PathNode 
 		    /*|| node.Class == SniperSpot*/)
 		{
 			return true;
 		}
 		// [FB] Node checking routine for team game
-		else if (player.Team && player.Level.Game.deathmatch != HexenDefs::game_dmteam)
+		else if (player.Team && MainGameInfo(player.Level.Game).GameType != HexenDefs::game_dmteam)
 		{
 			// [FB] Blue Team
 			if (player.Team.Colour == 0)
@@ -451,7 +451,7 @@ void SetEnemy()
 bool CheckActiveBall(Actor check)
 {
 	// [FB] Are we in football gameplay mode?
-	if(MainGameInfo(player.Level.Game).GameMode && player.Level.Game.deathmatch == HexenDefs::game_football)
+	if(MainGameInfo(player.Level.Game).GameMode && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
  	{
 		// [FB] Check for an active ball
 		if (GameFootball(MainGameInfo(player.Level.Game).GameMode).Ball &&
@@ -1228,13 +1228,13 @@ Actor FindEnemy()
 		if (actor.Class == Minotaur && actor.Tracer == botmo)
 			continue;
 		// [FB] Don't attack a friendly minotaur in all these cases
-		if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
+		if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
 		{
 			// [FB] For some gameplay modes, we just only check if it's a minotaur
 			if (actor.Class == Minotaur)
 				continue;
 		}
-		else if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		else if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			// [FB] Check if the minotaur's instigator is in the same team we are on
 			for(i = 0; i < MAXPLAYERS; i++)
@@ -1296,13 +1296,13 @@ Actor FindEnemy()
 			}
 
 			// [FB] Are we on a Team gameplay mode?
-			if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				// [FB] Don't attack same team players
 				if (Player(player.Level.Game.Players[i]).Team == player.Team)
 					continue;
 			}
-			if (player.Level.Game.deathmatch == HexenDefs::game_sweep)
+			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
 			{
 				// [FB] Don't attack fellow players in some gameplay modes
 				if (player.Level.Game.Players[i])
@@ -1710,7 +1710,7 @@ Actor B_SetAlly()
 		}
 
 		// [FB] Set an ally for team game modes
-		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			if (player.Level.Game.Players[i] && Player(player.Level.Game.Players[i]).Team == player.Team)
 			{
@@ -1718,7 +1718,7 @@ Actor B_SetAlly()
 				return ally;
 			}
 		}
-		else if (player.Level.Game.deathmatch == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
+		else if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
 		{
 			if (player.Level.Game.Players[i])
 			{
@@ -1734,7 +1734,7 @@ Actor B_SetAlly()
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
 		// [FB] Team game modes
-		if (player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
+		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
@@ -1755,7 +1755,7 @@ Actor B_SetAlly()
 				}
 			}
 		}
-		else if(player.Level.Game.deathmatch == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
+		else if(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
 		{
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
@@ -2379,8 +2379,8 @@ void OnBeginPlay()
 	// Setup combat distance tables
 	//[Korax]
 	//[FB] What a terrible mess!!
-	if (player.Level.Game.deathmatch && (player.Level.Game.deathmatch != HexenDefs::game_sweep ||
-		player.Level.Game.deathmatch != HexenDefs::game_sweepteam))
+	if (player.Level.Game.deathmatch && (MainGameInfo(player.Level.Game).GameType != HexenDefs::game_sweep ||
+		MainGameInfo(player.Level.Game).GameType != HexenDefs::game_sweepteam))
 	{
 		float mod = 1.0;
 		/* FIGHTER */
@@ -2633,12 +2633,13 @@ void BotTick(float deltaTime)
 	}
 
 	// [FB] Set an ally if we're in a mode that has one...
-	if (((player.Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM || player.Level.Game.deathmatch == HexenDefs::game_sweep) || 
-		MainGameInfo(player.Level.Game).GameMode) && !ally)
+	if (((MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+			MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) || 
+			MainGameInfo(player.Level.Game).GameMode) && !ally)
 	{
 		ally = B_SetAlly();
 		// [FB] ...and decide what action we'll take
-		if (player.Level.Game.deathmatch != HexenDefs::game_dmteam)
+		if (MainGameInfo(player.Level.Game).GameType != HexenDefs::game_dmteam)
 			SetAction();
 	}
 	else
