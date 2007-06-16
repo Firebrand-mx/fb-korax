@@ -39,11 +39,13 @@ int		team;		// colour
 int		score;		// player score (game mode dependent)
 int		nplkills;	// non-player kills
 int		deaths;
+int		teampos;	// [CW] team position in global competition list
+int		playerpos;	// [CW] player position in team inner competition list
 
 replication
 {
 	reliable if (Role == ROLE_Authority)
-		plclass, level, IsBot, team, score, nplkills, deaths;
+		plclass, level, IsBot, team, score, nplkills, deaths, teampos, playerpos;
 }
 
 //==========================================================================
@@ -66,9 +68,11 @@ void Tick(float DeltaTime)
 	team = P.Colour;
 	score = P.Score;
 	nplkills = P.KillsCount;
-	deaths = 0;
+	deaths = P.Deaths;//0;
+	teampos = P.TeamPosition;
+	playerpos = P.PlayerPosition;
 
-	// [CW] counts times all other players killed this one
+	/*// [CW] counts times all other players killed this one
 	// (and times he was killed by self/monsters/enviroment)
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
@@ -78,7 +82,7 @@ void Tick(float DeltaTime)
 			deaths -= Level.Game.Players[j].FragsStats[PlayerNum];
 		else
 			deaths += Level.Game.Players[j].FragsStats[PlayerNum];
-	}
+	}*/
 }
 
 defaultproperties
