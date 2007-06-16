@@ -548,7 +548,8 @@ void InsertPlayer(Player pl)
 		{
 			if (i == maxteams)
 			{
-				pl.Level.bprint("MainGameInfo::InsertPlayer : unsufficient allowed teams, new player is added to team 0");
+				pl.Level.bprint("unsufficient allowed teams, new player is added to team 0");
+				// TODO: set colour by Player.SetPlayerColour?
 				pl.Colour = Teams[0].Colour;
 				teamnum = 0;
 			}
@@ -565,27 +566,32 @@ void InsertPlayer(Player pl)
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Colour = pl.Colour;
-
-		// if an advanced game mode is running, notify it that it should
-		// update its team references, since a new team object is created
+		
+		// if an advanced game mode is running, notify it that
+		// a new team object is created
 		if (GameMode)
 			GameMode.NotifyUpdateTeams();
-
+			
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
-			pl.Level.bprint("MainGameInfo::InsertPlayer : team %s enters competition", ColourNames[Teams[teamnum].Colour]);
+			pl.Level.bprint("team %s enters competition", ColourNames[Teams[teamnum].Colour]);
 
-		// update team selection menus for all non-spawned human players
+		// update team selection menus for all human players
+		// with team selection menu screen activated
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (Players[i] && !Players[i].bIsBot &&
-						Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait)
+						(Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait ||
+						Player(Players[i]).TeamSelection == HexenDefs::teamselection_reselect) )
 				{
-					Player(Players[i]).SelectPlayerTeam(true);
+					dprint("MainGameInfo::InsertPlayer : call team selection screen update for player %i", i);
+					Player(Players[i]).SelectPlayerTeam();
 				}
 			}
 		}
+		
+		Teams[teamnum].UpdateCompetition();
 	}
 
 	Teams[teamnum].EnlistPlayer(pl);
@@ -603,9 +609,8 @@ void InsertPlayer(Player pl)
 
 void ScoreboardsUpdate(Player thisPlayer)
 {
-	int teamnum, plnum;
+	int i, j, plnum;
 	Player pl;
-	PlayerTeam plteam;
 
 	//[CW] iterate through all connected players
 	for (plnum = 0; plnum < MAXPLAYERS; plnum++)
@@ -620,18 +625,15 @@ void ScoreboardsUpdate(Player thisPlayer)
 		if (thisPlayer && Players[plnum] != thisPlayer)
 			continue;
 
-		//[CW] update scoreboard for player number "plnum"
+		//[CW] update team scores list for this player
 		pl = Player(Players[plnum]);
-		dprint("MainGameInfo::ScoreboardsUpdate : update scores for human player with index %i", plnum);
-		for (teamnum = 0; teamnum < HexenDefs::MAXPLAYERTEAMS; teamnum++)
+		
+		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 		{
-			if (!Teams[teamnum])
+			if (!Teams[i])
 			   break;
 
-			plteam = Teams[teamnum];
-			dprint("SU : write Team %i", teamnum);
-
-			pl.teamscores[teamnum] = plteam.Score;
+			pl.teamscores[i] = Teams[i].Score;
 		}
 	}
 
