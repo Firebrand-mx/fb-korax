@@ -210,6 +210,9 @@ int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
 int KillsCount; // [FB] How many enemies the player killed	// [CW] only monsters
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
 int TotalKills; // [FB] How many enemies there are in a map
+int Deaths;
+int TeamPosition; // [CW] team position in global competition list
+int PlayerPosition; // [CW] player position in team inner competition list
 
 // [FB] Player atributes for leveling system
 int experience;
@@ -260,6 +263,7 @@ replication
 		SBFlags, ArmorPoints, InventoryTime, ArtifactFlash, ReadyArtifact,
 		InvPtr, InvCurPos, InventorySlotNum, Mana, Inventory,
 		Score, TeamFrags, KillsCount, TeamKills, TotalKills,
+		Deaths, TeamPosition, PlayerPosition,
 		experience, exp_level, next_level, old_level, strength, intelligence,
 		wisdom, dexterity, constitution, HealthBig, max_health, old_maxhealth,
 		bak_health, use_power, targetnamehint_type, altWeapon, teamscores,
@@ -315,6 +319,7 @@ void SpawnClient()
 	dprint("Player::SpawnClient : netgame = %i", Level.Game.netgame);
 	dprint("Player::SpawnClient : deathmatch = %i", Level.Game.deathmatch);
 	dprint("Player::SpawnClient : GameType = %i", MainGameInfo(Level.Game).GameType);
+	dprint("Player::SpawnClient : MO = %i", MO);
 
 	if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
@@ -581,31 +586,44 @@ void SetPlayerColour()
 		MO.Translation = PClass * (MAXPLAYERS - 1) + Colour;
 	}
 
-	dprint("Player::SetPlayerColour : TeamSelection = %i", TeamSelection);
-
-	// [CW] re-select team... huh... hope this will work
+	// [CW] respawn player if team is selected or re-selected
 	if (TeamSelection == HexenDefs::teamselection_wait || TeamSelection == HexenDefs::teamselection_reselect)
 	{
 		dprint("Player::SetPlayerColour : was 'teamselection_wait/reselect', now set to 'teamselection_done'");
-
+		
 		if (!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
 		{
-			TeamSelection = HexenDefs::teamselection_done;
-			MO.Destroy();
-			dprint("removed old MO");
-			SpawnClient();
-			dprint("respawned client");
+			TeamSelection = HexenDefs::teamselection_done;	
+			if (PlayerState != PST_DEAD)
+			{
+				MO.Destroy();
+				MO = none;
+				dprint("removed old MO");
+				SpawnClient();
+				dprint("respawned client");
+			}
+			else
+			{
+				// [CW] For player's convenience
+				Scoreboard(false);
+				centreprint("you will join selected team after respawn");
+			}
 		}
 		else
 			TeamSelection = HexenDefs::teamselection_done;
 
 		oldColour = Colour;
 	}
-	else if (TeamSelection == HexenDefs::teamselection_done)
+	// ------------ REMOVE ME LATER ------------------------
+	// [CW] this code is obsolete now, since team reselection
+	//      is called using 'impulse' command,
+	//		not by that ugly "setColor(getGolor)" thing
+	/*else if (TeamSelection == HexenDefs::teamselection_done)
 	{
 		TeamSelection = HexenDefs::teamselection_reselect;
 		SelectPlayerTeam(false);
-	}
+	}*/
+	// ------------ REMOVE ME LATER ------------------------
 }
 
 //==========================================================================
@@ -614,7 +632,7 @@ void SetPlayerColour()
 //
 //==========================================================================
 
-void SelectPlayerTeam(bool call_update)
+void SelectPlayerTeam()
 {
 	dprint("Player::SelectPlayerTeam : ");
 
@@ -636,17 +654,19 @@ void SelectPlayerTeam(bool call_update)
 				break;
 		}
 		
+		if (TeamSelection != HexenDefs::teamselection_reselect)
+		{
+			TeamSelection = HexenDefs::teamselection_wait;
+			SetControllable(false);
+		}
+		
 		ClientTeamSelect(maxTeams, i, Colour,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Colour : -1,
 			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1,
 			MainGameInfo(Level.Game).Teams[2] ? MainGameInfo(Level.Game).Teams[2].Colour : -1,
 			MainGameInfo(Level.Game).Teams[3] ? MainGameInfo(Level.Game).Teams[3].Colour : -1);
-
-		if (TeamSelection != HexenDefs::teamselection_reselect)
-			TeamSelection = HexenDefs::teamselection_wait;
-		dprint("Player::SelectPlayerTeam : TeamSelection set to 'teamselection_wait/reselect'");
-		SetControllable(false);
 	}
+	dprint("Player::SelectPlayerTeam : OUT");
 }
 
 //==========================================================================
@@ -789,7 +809,7 @@ void SpawnPlayer(mthing_t * mthing)
 		TeamSelection == HexenDefs::teamselection_none)
 	{
 		dprint("Player::SpawnPlayer : goto SelectPlayerTeam");
-		SelectPlayerTeam(false);
+		SelectPlayerTeam();
 	}
 
 	x = mthing->x;
@@ -1068,7 +1088,10 @@ void SetControllable(bool Mode)
 	{
 		bUnControllable = false;
 		if (MO)
+		{
 			MO.Activate();
+			MO.LinkToWorld();	// [CW] reassurance...
+		}
 	}
 	else
 	{
@@ -2673,6 +2696,11 @@ void PlayerImpulse()
 		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
 		//PlayerUseArtifact(HexenDefs::arti_poisonbag);
 	}
+	else if (impulse == HexenDefs::IMPULSE__SELECTTEAM)
+	{
+		TeamSelection = HexenDefs::teamselection_reselect;
+		SelectPlayerTeam();
+	}
 
 	// Hexen artifact hot keys
 ///	if (!Arti)
@@ -3216,6 +3244,9 @@ void PlayerTick(float deltaTime)
 	}
 
 	CalcHeight(deltaTime);
+	
+	if (!MO.Sector)
+		dprint("Player::PlayerTick : BAD MO.Sector REFERENCE!!");
 
 	if (MO.Sector->special)
 	{
@@ -5398,8 +5429,7 @@ void UpdateScore(int event)
 		TeamKills = Team.Kills;
 	}
 
-	if (mod > 0)
-		UpdateCompetition();
+	UpdateCompetition();
 
 	if (Level)	// in case score is somehow updated between levels
 		MainGameInfo(Level.Game).ScoreboardsUpdate(none);
@@ -5424,46 +5454,52 @@ void UpdateCompetition()
 		if(Team.Players[i] == self)
 		   break;
 	}
-
-		// first see if previous players has lower score now
-		if (i != 0)
-		{
-			j = i-1;
-			while (j >= 0)
-			{
-				pl2 = Team.Players[j];
-
-				if (pl2.Score < Score)
-				{
-					bPositionShifted = true;
-					Team.Players[j] = self;
-					Team.Players[i] = pl2;
-					i = j;
-				}
-				else
-					break;
-				j--;
-			}
-		}
-		// secondly (in other case) see if next players has higher score (in case score gone down)
-		if (!bPositionShifted && i != MAXPLAYERS - 1)
-		{
-			j = i+1;
-			while (j < MAXPLAYERS && Team.Players[j])
-			{
-				pl2 = Team.Players[j];
 	
-				if (pl2.Score > Score)
-				{
-					Team.Players[j] = self;
-					Team.Players[i] = pl2;
-					i = j;
-				}
-				else
-					break;
-				j++;
+	PlayerPosition = i;
+
+	// first see if previous players has lower score now
+	if (i != 0)
+	{
+		j = i-1;
+		while (j >= 0)
+		{
+			pl2 = Team.Players[j];
+
+			if (pl2.Score < Score)
+			{
+				bPositionShifted = true;
+				Team.Players[j] = self;
+				Team.Players[i] = pl2;
+				PlayerPosition = j;
+				pl2.PlayerPosition = i;
+				i = j;
 			}
+			else
+				break;
+			j--;
 		}
+	}
+	// secondly (in other case) see if next players has higher score (in case score gone down)
+	if (!bPositionShifted && i != MAXPLAYERS - 1)
+	{
+		j = i+1;
+		while (j < MAXPLAYERS && Team.Players[j])
+		{
+			pl2 = Team.Players[j];
+
+			if (pl2.Score > Score)
+			{
+				Team.Players[j] = self;
+				Team.Players[i] = pl2;
+				PlayerPosition = j;
+				pl2.PlayerPosition = i;
+				i = j;
+			}
+			else
+				break;
+			j++;
+		}
+	}
 }
 
 //==========================================================================
