@@ -1082,9 +1082,7 @@ void Died(Actor source)
 	}
 	if (bIsPlayer)
 	{
-		//[CW] notify advanced game mode
-		if (MainGameInfo(Level.Game).GameMode)
-			MainGameInfo(Level.Game).GameMode.NotifyPlayerDeath(Player(Player), source);
+		Player(Player).Deaths++;
 
 		//[CW] update death row trophy and end frags/kills rows
 		Player(Player).UpdateQueuedTrophy(HexenDefs::trophycl_deathsrow, 1);
@@ -1119,6 +1117,11 @@ void Died(Actor source)
 		Player.PlayerState = PST_DEAD;
 		Player(Player).SetFOV(HexenDefs::DEFAULT_FOV);
 		Player(Player).DropWeapon();
+		
+		//[CW] notify advanced game mode
+		if (MainGameInfo(Level.Game).GameMode)
+			MainGameInfo(Level.Game).GameMode.NotifyPlayerDeath(Player(Player), source);
+		
 		if (bFireDamage)
 		{
 			// Player flame death

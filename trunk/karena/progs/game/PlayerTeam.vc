@@ -139,7 +139,7 @@ void DiscardPlayer(Player pl)
 
 	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
-		pl.Level.bprint("PlayerTeam::DiscardPlayer : %s has left %s team", pl.PlayerName, Game.ColourNames[Colour]);
+		pl.Level.bprint("%s has left %s team", pl.PlayerName, Game.ColourNames[Colour]);
 	}
 
 	// if there's no players, team is gone...
@@ -159,7 +159,7 @@ void DiscardPlayer(Player pl)
 		dprint("PlayerTeam::DiscardPlayer : removed team with index %i", i);
 
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
-		   pl.Level.bprint("PlayerTeam::DiscardPlayer : team %s is no longer in competition", Game.ColourNames[Colour]);
+		   pl.Level.bprint("team %s is no longer in competition", Game.ColourNames[Colour]);
 
 		Destroy();
 	}
@@ -241,52 +241,75 @@ void UpdateScore(int event)
 void UpdateCompetition()
 {
 	bool bPositionShifted;
-	int i, j;
+	int i, j, k, newposition;
 	PlayerTeam plteam2;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 	{
 		if(Game.Teams[i] == self)
 			break;
 	}
+	
+	newposition = i;
 
-		// first see if previous players has lower score now
-		if (i != 0)
+	// first see if previous players has lower score now
+	if (i != 0)
+	{
+		j = i-1;
+		while (j >= 0)
 		{
-			j = i-1;
-			while (j >= 0)
+			plteam2 = Game.Teams[j];
+			if (plteam2.Score < Score)
 			{
-				plteam2 = Game.Teams[j];
-				if (plteam2.Score < Score)
+				bPositionShifted = true;
+				Game.Teams[j] = self;
+				Game.Teams[i] = plteam2;
+				newposition = j;
+				// update each team player's TeamPosition data
+				for (k = 0; k < MAXPLAYERS; k++)
 				{
-					bPositionShifted = true;
-					Game.Teams[j] = self;
-					Game.Teams[i] = plteam2;
-					i = j;
+					if (plteam2.Players[k])
+						plteam2.Players[k].TeamPosition = i;
 				}
-				else
-					break;
-				j--;
+				i = j;
 			}
+			else
+				break;
+			j--;
 		}
-		// secondly (in other case) see if next players has higher score (in case score gone down)
-		if (!bPositionShifted && i != HexenDefs::MAXPLAYERTEAMS - 1)
+	}
+	// secondly (in other case) see if next players has higher score (in case score gone down)
+	if (!bPositionShifted && i != HexenDefs::MAXPLAYERTEAMS - 1)
+	{
+		j = i+1;
+		while (j < HexenDefs::MAXPLAYERTEAMS && Game.Teams[j])
 		{
-			j = i+1;
-			while (j < HexenDefs::MAXPLAYERTEAMS && Game.Teams[j])
+			plteam2 = Game.Teams[j];
+			if (plteam2.Score > Score)
 			{
-				plteam2 = Game.Teams[j];
-				if (plteam2.Score > Score)
+				Game.Teams[j] = self;
+				Game.Teams[i] = plteam2;
+				newposition = j;
+				// update each team player's TeamPosition data
+				for (k = 0; k < MAXPLAYERS; k++)
 				{
-					Game.Teams[j] = self;
-					Game.Teams[i] = plteam2;
-					i = j;
+					if (plteam2.Players[k])
+						plteam2.Players[k].TeamPosition = i;
 				}
-				else
-					break;
-				j++;
+				i = j;
 			}
+			else
+				break;
+			j++;
 		}
+	}
+	
+	// update each team player's TeamPosition data
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i])
+			Players[i].TeamPosition = newposition;
+	}
 }
 
 
