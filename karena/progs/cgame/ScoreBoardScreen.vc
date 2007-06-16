@@ -100,6 +100,8 @@ void DrawWindow(GC gc)
 	int gamemode;
 	int current_team;
 	int current_team_idx;
+	int current_player_inteam_idx;
+	bool team_player_skipped;
 	string tmp;
 	KArenaPlayerReplicationInfo RepInfo;
 
@@ -132,77 +134,102 @@ void DrawWindow(GC gc)
 	T_SetFont(font_small);
 
 	y = TABLE_TOP_Y;
+	
 	current_team = -1;
-	current_team_idx = -1;
+	current_team_idx = 0;
+	current_player_inteam_idx = 0;
 
-	foreach ClGame.GLevel.LevelInfo.AllThinkers(KArenaPlayerReplicationInfo, RepInfo)
+
+	while(current_team_idx < HexenDefs::MAXPLAYERTEAMS)
 	{
-		// Insert team string if a new team encountered
-		if (gamemode >= HexenDefs::NUMGAMESNOTEAM && RepInfo.team != current_team)
-		{
-			if (current_team != -1)
-				y += 2;
-			current_team_idx++;
-			R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 11, colourmark[RepInfo.team]);
-			T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[RepInfo.team],
-								Player(ClGame.cl).teamscores[current_team_idx]));
-			y += TABLE_STRING_DELTA / 2;
-			current_team = RepInfo.team;
-		}
+		RepInfo = none;
+		team_player_skipped = false;
 
-		// Mark current client with special background colour
-		// FIXME!!! - bad thing, need some other marking style for team mode!
-		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		
+		foreach ClGame.GLevel.LevelInfo.AllThinkers(KArenaPlayerReplicationInfo, RepInfo)
 		{
-			if (gamemode < HexenDefs::NUMGAMESNOTEAM)
-				R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
-			else
+			if (RepInfo.teampos != current_team_idx ||
+					RepInfo.playerpos < current_player_inteam_idx)
+				continue;
+			
+			if (RepInfo.playerpos > current_player_inteam_idx)
 			{
-				T_SetFont(font_yellow);
+				team_player_skipped = true;
+				continue;
 			}
+		
+			// Insert team string if a new team encountered
+			if (gamemode >= HexenDefs::NUMGAMESNOTEAM && RepInfo.team != current_team)
+			{
+				if (current_team != -1)
+					y += 2;
+				R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 13, colourmark[RepInfo.team]);
+				T_DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[RepInfo.team],
+									Player(ClGame.cl).teamscores[current_team_idx]));
+				y += TABLE_STRING_DELTA >> 1 + 2;
+				current_team = RepInfo.team;
+			}
+
+			// Mark current client with special background colour
+			if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+			{
+				if (gamemode < HexenDefs::NUMGAMESNOTEAM)
+					R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
+				else
+				{
+					T_SetFont(font_yellow);
+				}
+			}
+
+			// Player portrait
+			R_DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[RepInfo.plclass]) >> 1),
+								pic_portraits[RepInfo.plclass]);
+
+			y += 6;
+
+			// Player's name
+			T_DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName);
+
+			// Level + class
+			switch (RepInfo.level)
+			{
+				case 1: tmp = "st"; break;
+				case 2: tmp = "nd"; break;
+				case 3: tmp = "rd"; break;
+				default: tmp = "th";
+			}
+			T_DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
+				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]));
+
+			y += TABLE_STRING_DELTA >> 1;
+
+			// Player's score
+			T_DrawText(TABLE_COL2, y, va("%d", RepInfo.score));
+
+			// Player is human/cpu
+			if (RepInfo.IsBot)
+				T_DrawText(TABLE_COL3, y, "bot");
+			else
+				T_DrawText(TABLE_COL3, y, "hum");
+
+			// Those are mode dependent
+			T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags));
+			T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", RepInfo.nplkills));
+			T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", RepInfo.deaths));
+
+			y += TABLE_ENTRY_DELTA - (TABLE_STRING_DELTA >> 1);
+
+			if (gamemode >= HexenDefs::NUMGAMESNOTEAM)
+				T_SetFont(font_small);
+
+			current_player_inteam_idx++;
 		}
-
-		// Player portrait
-		R_DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[RepInfo.plclass]) >> 1),
-							pic_portraits[RepInfo.plclass]);
-
-		y += 6;
-
-		// Player's name
-		T_DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName);
-
-		// Level + class
-		switch (RepInfo.level)
+		
+		if (!team_player_skipped)
 		{
-			case 1: tmp = "st"; break;
-			case 2: tmp = "nd"; break;
-			case 3: tmp = "rd"; break;
-			default: tmp = "th";
+			current_team_idx++;
+			current_player_inteam_idx = 0;
 		}
-		T_DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-			RepInfo.level, tmp, playerclassnames[RepInfo.plclass]));
-
-		y += TABLE_STRING_DELTA >> 1;
-
-		// Player's score
-		T_DrawText(TABLE_COL2, y, va("%d", RepInfo.score));
-
-		// Player is human/cpu
-		if (RepInfo.IsBot)
-			T_DrawText(TABLE_COL3, y, "bot");
-		else
-			T_DrawText(TABLE_COL3, y, "hum");
-
-		// Those are mode dependent
-		T_DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags));
-		T_DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", RepInfo.nplkills));
-		T_DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", RepInfo.deaths));
-
-		y += TABLE_ENTRY_DELTA - (TABLE_STRING_DELTA >> 1);
-
-		if (gamemode >= HexenDefs::NUMGAMESNOTEAM)
-			T_SetFont(font_small);
-
 	}
 }
 
