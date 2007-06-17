@@ -138,14 +138,14 @@ bool MoveToFreePosition()
 			VectorRotateAroundZ(&test_dir, test_ang);
 			UnlinkFromWorld();
 			Origin = bak_org + test_dir * test_dist;
-			LinkToWorld();
-
-			dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
-
 			// [FB] We must check if the move is being done inside the map
-			if (!CheckSides(Origin))
+			if (!CheckSides(bak_org + vector((test_dist + Radius) * cos(test_ang), (test_dist + Radius) * sin(test_ang), 0.0)))
 			{
 				// [FB] OK, we are inside the map
+				LinkToWorld();
+
+				dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
+
 				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
 				{
 					dprint("MoveToFreePosition :: SUCCEED ----------");
