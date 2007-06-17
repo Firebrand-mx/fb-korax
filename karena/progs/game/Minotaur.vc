@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -209,15 +209,27 @@ final void A_MinotaurLook()
 				continue;
 			if (mo.Health <= 0)
 				continue;
+			// [FB] Check if an advanced game mode is active
+			if (MainGameInfo(Level.Game).GameMode)
+			{
+				int teamfactor;
+
+				teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Tracer,
+							mo);
+				// [FB] We've got a team factor, just check if it's an ally or not
+				if (teamfactor == Game::teamfactor_coop)
+				{
+					continue;
+				}
+			}
 			dist = DistTo(mo);
 			if (dist > MinotaurLookDist)
 				continue;
 			// [FB] If we are in a team gameplay mode, check the players colour too
-			/*if((Level.Game.deathmatch == 2 || Level.Game.deathmatch == 3 ||
-                            Level.Game.deathmatch == 4 || Level.Game.deathmatch == 5) &&*/
 			if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
 				Level.Game.Players[i].Colour == Player(Tracer.Player).Colour)
 				continue;
+
 			Target = mo;
 			break;
 		}
