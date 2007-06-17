@@ -59,7 +59,7 @@ void FloorBounceMissile()
 
 final void A_AccelBalls()
 {
-	Actor sorc = Target;
+	EntityEx sorc = Target;
 
 	if (sorc.Args[4] < sorc.Args[2])
 	{
@@ -88,7 +88,7 @@ final void A_AccelBalls()
 
 final void A_DecelBalls()
 {
-	Actor sorc = Target;
+	EntityEx sorc = Target;
 
 	if (sorc.Args[4] > sorc.Args[2])
 	{
@@ -112,7 +112,7 @@ final void A_SorcUpdateBallAngle()
 {
 	if (Class == SorcererBall1)
 	{
-		Target.Special1f = AngleMod360(Target.Special1f + itof(Target.Args[4]));
+		Actor(Target).Special1f = AngleMod360(Actor(Target).Special1f + itof(Target.Args[4]));
 	}
 }
 
@@ -135,7 +135,7 @@ final void A_SorcOffense2()
 	Args[4] = (Args[4] + 15) & 0xff;
 	delta = sin(index) * Sorcerer::SORCFX4_SPREAD_ANGLE;
 	ang1 = AngleMod360(Angles.yaw + delta);
-	mo = Target.SpawnMissileAngle(SorcererFX4, ang1, 0.0);
+	mo = Actor(Target).SpawnMissileAngle(SorcererFX4, ang1, 0.0);
 	if (mo)
 	{
 		mo._Special2 = 35 * 5 / 2;	// 5 seconds
@@ -182,7 +182,7 @@ final void A_SorcBallOrbit()
 	if (Target.Health <= 0)
 		SetState(PainState);
 
-	baseangle = Target.Special1f;
+	baseangle = Actor(Target).Special1f;
 	angle = AngleMod360(baseangle + BallAngleOffset);
 	Angles.yaw = angle;
 
@@ -200,7 +200,7 @@ final void A_SorcBallOrbit()
 		A_SorcUpdateBallAngle();
 		break;
 	case Sorcerer::SORC_STOPPING:	// Balls stopping
-		if ((Target.SpecialCID == Class) &&
+		if ((Actor(Target).SpecialCID == Class) &&
 			(Target.Args[1] > Sorcerer::SORCBALL_SPEED_ROTATIONS) &&
 			(fabs(AngleMod180(angle - Target.Angles.yaw)) <
 			15.0 * 45.0 / 16.0))
@@ -209,7 +209,7 @@ final void A_SorcBallOrbit()
 			Target.Args[3] = Sorcerer::SORC_FIRESPELL;
 			Target.Args[4] = 0;
 			// Set angle so ball angle == sorcerer angle
-			Target.Special1f = AngleMod360(Target.Angles.yaw -
+			Actor(Target).Special1f = AngleMod360(Target.Angles.yaw -
 				BallAngleOffset);
 		}
 		else
@@ -218,7 +218,7 @@ final void A_SorcBallOrbit()
 		}
 		break;
 	case Sorcerer::SORC_FIRESPELL:	// Casting spell
-		if (Target.SpecialCID == Class)
+		if (Actor(Target).SpecialCID == Class)
 		{
 			// Put sorcerer into special throw spell anim
 			if (Target.Health > 0)
@@ -230,7 +230,7 @@ final void A_SorcBallOrbit()
 		}
 		break;
 	case Sorcerer::SORC_FIRING_SPELL:
-		if (Target.SpecialCID == Class)
+		if (Actor(Target).SpecialCID == Class)
 		{
 			if (_Special2-- <= 0)
 			{
