@@ -356,17 +356,6 @@ int HITDICE(int a)
 	return (1 + (P_Random() & 7)) * a;
 }
 
-//===========================================================================
-//
-//  GetFloorType
-//
-//===========================================================================
-
-VTerrainInfo* GetFloorType()
-{
-	return TerrainType(Floor->pic);
-}
-
 //==========================================================================
 //
 //  SetOrigin2
@@ -566,99 +555,15 @@ void Destroyed()
 	::Destroyed();
 }
 
-//==========================================================================
+//===========================================================================
 //
-//  HitFloorType
+//  GetDamageTypeInflictor
 //
-//==========================================================================
+//===========================================================================
 
-bool HitFloorType()
+EntityEx GetDamageTypeInflictor(name DamageType)
 {
-	Actor A;
-	TVec org;
-	int smallsplash = false;
-	VTerrainInfo* TInfo;
-	VSplashInfo* SInfo;
-
-	if (FloorZ != GetPlanePointZ(&Sector->floor, Origin))
-	{
-		// don't splash if landing on the edge above water/lava/etc....
-		return false;
-	}
-
-	// Things that don't splash go here
-	if (bNoSplash)
-	{
-		return false;
-	}
-
-	TInfo = GetFloorType();
-
-	// Small splash for small masses
-	if (Mass < 10.0 || bSmallSplash)
-		smallsplash = true;
-
-	if (TInfo->DamageAmount && bIsPlayer &&
-		XLevel.TicTime & TInfo->DamageTimeMask)
-	{
-		Damage(TInfo->DamageType == 'lava' ? HexenLevelInfo(
-			Level).GLavaInflictor : none, none, TInfo->DamageAmount);
-	}
-
-	SInfo = GetSplashInfo(TInfo->Splash);
-	if (!SInfo)
-	{
-		return TInfo->bLiquid;
-	}
-
-	org = Origin;
-	org.z = FloorZ;
-
-	if (smallsplash)
-	{
-		if (SInfo->SmallClass)
-		{
-			A = Spawn(class<Actor>(SInfo->SmallClass), org);
-			A.FloorClip += SInfo->SmallClip;
-			if (SInfo->SmallSound)
-			{
-				A.PlaySound(SInfo->SmallSound, CHAN_VOICE);
-			}
-		}
-	}
-	else
-	{
-		if (SInfo->BaseClass)
-		{
-			Spawn(class<Actor>(SInfo->BaseClass), org);
-			if (SInfo->Sound && !SInfo->ChunkClass)
-			{
-				A.PlaySound(SInfo->Sound, CHAN_VOICE);
-			}
-		}
-		if (SInfo->ChunkClass)
-		{
-			A = Spawn(class<Actor>(SInfo->ChunkClass), org);
-			A.Target = self;
-			A.Velocity.x = (Random() - Random()) * SInfo->ChunkXVelMul * 35.0;
-			A.Velocity.y = (Random() - Random()) * SInfo->ChunkYVelMul * 35.0;
-			A.Velocity.z = (SInfo->ChunkBaseZVel + Random() *
-				SInfo->ChunkZVelMul) * 35.0;
-			if (SInfo->Sound)
-			{
-				A.PlaySound(SInfo->Sound, CHAN_VOICE);
-			}
-		}
-		if (SInfo->Sound && !SInfo->BaseClass && !SInfo->ChunkClass)
-		{
-			PlaySound(SInfo->Sound, CHAN_BODY);
-		}
-		if (!SInfo->bNoAlert && bIsPlayer)
-		{
-			HexenLevelInfo(Level).NoiseAlert(self, self);
-		}
-	}
-	return TInfo->bLiquid;
+	return DamageType == 'lava' ? HexenLevelInfo(Level).GLavaInflictor : none;
 }
 
 //==========================================================================
@@ -2396,128 +2301,11 @@ void CrossSpecialLine(line_t *ld, int side)
 	}
 }
 
-//==========================================================================
-//
-//	HandleFloorclip
-//
-//==========================================================================
-
-void HandleFloorclip()
-{
-	if (bFloorClip)
-	{
-		VTerrainInfo* TInfo = GetFloorType();
-		if (Origin.z == Sector->floorheight && TInfo->bLiquid)
-		{
-			FloorClip = TInfo->FootClip;
-		}
-		else
-		{
-			FloorClip = 0.0;
-		}
-	}
-}
-
 //**************************************************************************
 //
 //  OBJECT MOVEMENT
 //
 //**************************************************************************
-
-//==========================================================================
-//
-//	ApplyFriction
-//
-//==========================================================================
-
-void ApplyFriction()
-{
-	if (bSkullFly || bMissile)
-	{
-		return;
-	}
-	if (Origin.z > FloorZ && WaterLevel < 2 && !bFly && !bOnMobj)
-	{
-		// No friction when falling
-		if (Class != BlastEffect)
-			return;
-	}
-
-	if (Origin.z <= FloorZ)
-	{
-		//  Clip velocity
-		float dot = DotProduct(Velocity, Floor->normal);
-
-		if (dot < 0.0)
-		{
-			Velocity -= dot * Floor->normal;
-		}
-	}
-
-	if (bCorpse)
-	{
-		// Don't stop sliding if halfway off a step with some momentum
-		if (Velocity.x > 0.25 * 35.0 || Velocity.x < -0.25 * 35.0 ||
-			Velocity.y > 0.25 * 35.0 || Velocity.y < -0.25 * 35.0)
-		{
-			if (FloorZ != GetPlanePointZ(&Sector->floor, Origin))
-			{
-				return;
-			}
-		}
-	}
-	if (Velocity.x > -STOPSPEED && Velocity.x < STOPSPEED &&
-		Velocity.y > -STOPSPEED && Velocity.y < STOPSPEED &&
-		Velocity.z > -STOPSPEED && Velocity.z < STOPSPEED &&
-		(!bIsPlayer || (!Player.ForwardMove && !Player.SideMove)))
-	{
-		// If in a walking frame, stop moving
-		if (bIsPlayer)
-		{
-			if (StateIsInRange(State, SeeState, none, 4))
-			{
-				SetState(IdleState);
-			}
-		}
-		Velocity = vector(0.0, 0.0, 0.0);
-	}
-	else
-	{
-		Velocity -= Velocity * (GetFriction() * Level.Game.frametime);
-	}
-}
-
-//==========================================================================
-//
-//	GetFriction
-//
-//==========================================================================
-
-float GetFriction()
-{
-	if (WaterLevel >= 2)
-	{
-		return FRICTION_WATER;
-	}
-	if (bFly && !(Origin.z <= FloorZ) && !bOnMobj)
-	{
-		return FRICTION_FLY;
-	}
-	if ((Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow)
-	{
-		return FRICTION_LOW;
-	}
-	VTerrainInfo* TInfo = GetFloorType();
-	if (TInfo->Friction)
-	{
-		return TInfo->Friction;
-	}
-	if (Sector->special & SECSPEC_FRICTION_MASK)
-	{
-		return Sector->Friction;
-	}
-	return FRICTION_NORMAL;
-}
 
 //==========================================================================
 //
