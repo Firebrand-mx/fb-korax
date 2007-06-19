@@ -33,6 +33,7 @@
 class GameCTF : Game;
 
 const int	MAXBANNERS	= 2;
+const int	MINREQUIREDBANNERS = 2;	// ...how formal...
 
 enum
 {
@@ -49,6 +50,8 @@ enum
 
 CTFBanner	Banners[MAXBANNERS];
 MapSpot		spot_banners[MAXBANNERS];
+bool		bBannersCreated[MAXBANNERS];
+bool		bSpotBannersCreated[MAXBANNERS];
 
 
 //==========================================================================
@@ -72,20 +75,26 @@ int AllowedTeams()
 
 void BeginState(int newstate)
 {
-	int i;
+	int i, count;
 
 	dprint("BeginState: %i", newstate);
 
 	switch(newstate)
 	{
 	case state_preparegame:
-		if (!Game.Teams[0] || !Game.Teams[1])
+	
+		if (!PrepareGame())
 		{
-			dprint("GameCTF : not enouph teams, delay start");
+			dprint("GameCTF : failed to prepare game, delay start");
 			State = -1;
 			return;
 		}
-		dprint("Preparing game");
+		
+		
+		dprint("GameCTF : starting game!");
+		
+		HandleGameEvent(none, event_playablestatebegins, 0,0,0,0);
+		
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (Game.Teams[0] && Game.Teams[0].Players[i])
@@ -99,34 +108,45 @@ void BeginState(int newstate)
 			Game.Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
 		EndCurrentState(state_gameplay);
 		return;
+		
 	case state_gameplay:
+		
+		if (!Game.Teams[0] || !Game.Teams[1])
+		{
+			dprint("GameCTF::BeginState : state_gameplay : not enouph teams, ending game");
+			EndCurrentState(state_finished);
+			return;
+		}
+		
+		count = 0;
 		for (i = 0; i < MAXBANNERS; i++)
 		{
-			if (Banners[i])
-			{ 
-				if (Banners[i].BaseOrigin)
-					Banners[i].ReturnToBase(true);
-				else
-				{
-					spot_banners[i] = MapSpot(Banners[i].Spawn(MapSpot, Banners[i].Origin));
-					Banners[i].BaseOrigin = spot_banners[i];
-				}
-			}
-			else if (spot_banners[i])
-			{
-				Banners[i] = CTFBanner(spot_banners[i].Spawn(CTFBanner, spot_banners[i].Origin));
-				Banners[i].BaseOrigin = spot_banners[i];
-			}
-			else
-			{
-				dprint("GameCTF::BeginState : state_gameplay : there's no banner or banner_spot of index %i", i);
-				EndCurrentState(state_finished);
-				return;
-			}
+			if (spot_banners[i] && Banners[i])
+				count++;
 		}
+		
+		if (count < MINREQUIREDBANNERS)
+		{
+			dprint("GameCTF::BeginState : state_gameplay : not enouph banners and/or spot_banners, ending game");
+			EndCurrentState(state_finished);
+			return;
+		}
+		
+		for (i = 0; i < MAXBANNERS; i++)
+		{
+			if (Banners[i] && spot_banners[i])
+				Banners[i].ReturnToBase(none, true);
+				//Banners[i].Teleport(spot_banners[i].Origin, spot_banners[i].Angles.yaw, true, true, false);
+		}		
+		
+		Game.bcentreprint("go for it!");
+		
 		break;
+		
 	case state_finished:
-		dprint("GameCTF::BeginState : state_finished");
+		//
+		// do something here?
+		//
 		break;
 	};
 
@@ -141,10 +161,11 @@ void BeginState(int newstate)
 
 void NotifyUpdateTeams()
 {
+	dprint("GameCTF::NotifyUpdateTeams : State = %i, Teams[0] = %i, Teams[1] = %i", State, Game.Teams[0], Game.Teams[1]);
 	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
 		BeginState(state_preparegame);
 	else if (State == state_gameplay && (!Game.Teams[0] || !Game.Teams[1]))
-		EndCurrentState(state_preparegame);
+		EndCurrentState(state_finished);
 }
 
 //==========================================================================
@@ -175,7 +196,23 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 
 void EndCurrentState(int nextstate)
 {
-	// TODO! - destroy game objects that were spawned by GameCTF
+	if (nextstate == state_finished)
+	{
+		int i;
+		for (i = 0; i < MAXBANNERS; i++)
+		{
+			if (bBannersCreated[i])
+			{
+				Banners[i].Destroy();
+				Banners[i] = none;
+			}
+			if (bSpotBannersCreated[i])
+			{
+				spot_banners[i].Destroy();
+				spot_banners[i] = none;
+			}
+		}
+	}
 
 	BeginState(nextstate);
 }
@@ -186,11 +223,13 @@ void EndCurrentState(int nextstate)
 //
 //	ACS callable
 //
+//	[CW] I disable this for a while, since it still needs some workaround.
+//
 //==========================================================================
 
 void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 {
-	switch (object)
+	/*switch (object)
 	{
 	case object_bannerspot:
 		if (!A.IsA('MapSpot'))
@@ -222,7 +261,7 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 		else
 			dprint("GameCTF::SetGameObject : bad argument(s) for banner");
 		break;
-	}
+	}*/
 }
 
 //==========================================================================
@@ -239,6 +278,119 @@ void End()
 
 //==========================================================================
 //
+//	PrepareGame
+//
+//==========================================================================
+
+bool PrepareGame()
+{
+	int i, teams;
+
+	if (!Game.Teams[0] || !Game.Teams[1])
+	{
+		dprint("GameCTF : not enouph teams");
+		return false;
+	}
+
+	teams = AllowedTeams();
+	
+	for (i = 0; i < MAXBANNERS; i++)
+	{
+		dprint("PrepareGame : pass for Banner %i", i);
+		
+		if (!Banners[i])
+		{
+			if (spot_banners[i])
+			{
+				Banners[i] = HexenLevelInfo(Level).Spawn(CTFBanner, spot_banners[i].Origin);
+				if (Banners[i])
+					bBannersCreated[i] = true;
+				else if (i < MINREQUIREDBANNERS)
+				{
+					dprint("GameCTF : failed to spawn banner %i at spot_banner", i);
+					return false;
+				}
+			}
+			else
+			{
+				CTFBanner Banner;
+				foreach Level.AllThinkers(CTFBanner, Banner)
+				{
+					if (Banner.Args[0] == i)
+					{
+						Banners[i] = Banner;
+						break;
+					}
+				}
+				
+				if (!Banners[i] && i < MINREQUIREDBANNERS)
+				{
+					dprint("GameCTF : there is no spot_banner %i nor banner %i object on map", i, i);
+					return false;
+				}
+			}
+		}
+		
+		if (Banners[i] && !spot_banners[i])
+		{
+			spot_banners[i] = HexenLevelInfo(Level).Spawn(MapSpot, Banners[i].Origin);
+			if (spot_banners[i])
+				bSpotBannersCreated[i] = true;
+			//
+			// [CW] This is important for any exisiting banner, even if its presence not required for game
+			//
+			else
+			{
+				if (i < MINREQUIREDBANNERS)
+				{
+					dprint("GameCTF : failed to spawn spot_banner at initial banner %i position; banner %i will be unable to return to base", i, i);
+					return false;
+				}
+				else
+				{
+					if (bBannersCreated[i])
+					{
+						dprint("GameCTF : failed to spawn spot_banner at initial banner %i position; banner %i will be removed", i, i);
+						Banners[i].Destroy();
+						Banners[i] = none;
+						bBannersCreated[i] = false;				
+					}
+					else
+					{
+						dprint("GameCTF : failed to spawn spot_banner at initial banner %i position; banner %i will be disabled", i, i);
+						Banners[i].Deactivate();
+					}
+				}
+			}
+		}
+		
+		if (Banners[i] && spot_banners[i])
+		{
+			dprint("PrepareGame : both banner and spot_banner ready");
+			Banners[i].BaseOrigin = spot_banners[i];
+			dprint("PrepareGame : Banners[%i].BaseOrigin = %i", i, Banners[i].BaseOrigin);
+		
+			// if Banner index is lower teams count its team index arg is ignored
+			if (i < teams)
+				Banners[i].Team = Game.Teams[i];
+			// else team index arg is used to define this banner's team
+			else
+			{
+				if (Banners[i].Args[1] < teams)
+					Banners[i].Team = Game.Teams[Banners[i].Args[1]];
+				// Ok, stupid map designer's mistake, we'll acknowledge
+				// this banner as 1st team's banner
+				else
+					Banners[i].Team = Game.Teams[0];
+			}
+		} 
+	}
+	
+	return true;
+}
+
+//==========================================================================
+//
 //	CommitCapture
 //
 //	[CW] Called for banner that was captured and brought to opponent's base.
@@ -249,9 +401,12 @@ void CommitCapture(CTFBanner Banner)
 {
 	// TADA!!
 	// play some sound here
-	// FIXME -- make normal message...
-	Game.bcentreprint("Flag captured!");
-	Banner.ReturnToBase(true);
+	Game.bcentreprint(va("%s flag captured by %s! %s team scores!",
+						Game.ColourNames[Banner.Team.Colour],
+						Banner.Capturer.PlayerName,
+						Game.ColourNames[Banner.Capturer.Team.Colour]));
+	Banner.Capturer.UpdateScore(HexenDefs::scoreevent_CtfCapture);
+	Banner.ReturnToBase(none, true);
 }
 
 defaultproperties

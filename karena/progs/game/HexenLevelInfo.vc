@@ -45,6 +45,7 @@ enum
 	ACTSPEC_AdvancedGame_SetGameObject,
 	ACTSPEC_IsConditionTrue,
 	ACTSPEC_RunACSConditional,
+	ACTSPEC_AdvancedGame_SetACSNotifier,
 	ACTSPEC_Last
 };
 
@@ -307,6 +308,13 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		break;
 	case ACTSPEC_RunACSConditional:
 		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_AdvancedGame_SetACSNotifier:
+		if (MainGameInfo(Game).GameMode)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameMode.SetACSNotifier(Arg1, Arg2);
+		}
 		break;
 
 	// Inert Line specials
