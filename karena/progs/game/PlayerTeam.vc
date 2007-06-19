@@ -39,6 +39,7 @@ int		Colour;	// team definition
 int		Frags;	// player kills
 int		Kills;	// monster kills
 int		Goals;
+int		FlagCaptures;
 int		playercount;
 Player		Players[MAXPLAYERS];
 
@@ -197,11 +198,13 @@ void UpdateScore(int event)
 		Frags = 0;
 		Kills = 0;
 		Goals = 0;
+		FlagCaptures = 0;
 		mod = -Score;	// this should always set score to 0
 		break;
 	case HexenDefs::scoreevent_Frag:
 		Frags++;
-		if (Game.GameType != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football &&
+			Game.GameType != HexenDefs::game_ctf)
 			mod = 1;
 		break;
 	case HexenDefs::scoreevent_Kill:
@@ -214,13 +217,19 @@ void UpdateScore(int event)
 		break;
 	case HexenDefs::scoreevent_SelfFrag:
 		Frags--;
-		if (Game.GameType != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football &&
+			Game.GameType != HexenDefs::game_ctf)
 			mod = -1;
 		break;
 	case HexenDefs::scoreevent_TeamFrag:
 		Frags--;
-		if (Game.GameType != HexenDefs::game_football)
+		if (Game.GameType != HexenDefs::game_football &&
+			Game.GameType != HexenDefs::game_ctf)
 			mod = -1;
+		break;
+	case HexenDefs::scoreevent_CtfCapture:
+		FlagCaptures++;
+		mod = 1;
 		break;
 	}
 
