@@ -72,7 +72,7 @@ bool IsTouched(Entity Toucher)
 			{
 				// Defender; if a banner is not on its Base, it should be returned there at once
 				if (Status == BANNER_STATUS__LOST)
-					ReturnToBase(false);
+					ReturnToBase(plToucher, false);
 				// Elsewise banner is on base; check if defender is carrying captured opponents' flag
 				else
 				{
@@ -105,8 +105,9 @@ bool IsTouched(Entity Toucher)
 
 void CaptureBy(Player newCapturer)
 {
-	// FIXME -- make normal message...
-	MainGameInfo(Level.Game).bcentreprint("Flag captured!");
+	MainGameInfo(Level.Game).bcentreprint(va("%s got the %s flag!",
+								newCapturer.PlayerName,
+								MainGameInfo(Level.Game).ColourNames[Team.Colour]));
 	Capturer = newCapturer;
 	Status = BANNER_STATUS__CARRIED;
 }
@@ -119,18 +120,28 @@ void CaptureBy(Player newCapturer)
 //
 //==========================================================================
 
-void ReturnToBase(bool silent)
+void ReturnToBase(Player Savior, bool silent)
 {
+	dprint("ReturnToBase : Savior = %i, silent = %i", Savior, silent);
 	if (!silent)
 	{
-		// FIXME -- make normal message...
-		MainGameInfo(Level.Game).bcentreprint("Flag returned to base!");
+		if (Savior)
+		{
+			Capturer.UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
+			MainGameInfo(Level.Game).bcentreprint(va("%s returned %s flag!",
+						Savior.PlayerName,
+						MainGameInfo(Level.Game).ColourNames[Team.Colour]));
+		}
+		else
+			MainGameInfo(Level.Game).bcentreprint(va("%s flag returned to the base",
+						MainGameInfo(Level.Game).ColourNames[Team.Colour]));
 	}
 	
 	Status = BANNER_STATUS__BEING_RETURNED;
 	Capturer = none;
 	bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
-	MoveThing(BaseOrigin.Origin, true);
+	dprint("ReturnToBase : BaseOrigin = %i", BaseOrigin);
+	Teleport(BaseOrigin.Origin, BaseOrigin.Angles.yaw, !silent, !silent && Savior, false);
 	bColideWithThings = true;
 	Status = BANNER_STATUS__BASE;
 }
@@ -145,8 +156,9 @@ void ReturnToBase(bool silent)
 
 void WasLost()
 {
-	// FIXME -- make normal message...
-	MainGameInfo(Level.Game).bcentreprint("Flag lost!");
+	MainGameInfo(Level.Game).bcentreprint(va("%s dropped the %s flag!",
+								Capturer.PlayerName,
+								MainGameInfo(Level.Game).ColourNames[Team.Colour]));
 	Capturer = none;
 	lost_timer = AUTORESPAWN_DELAY;
 	Status = BANNER_STATUS__LOST;
@@ -166,8 +178,12 @@ bool Physics(float DeltaTime)
 		UnlinkFromWorld();
 		if (Capturer)
 		{
+			TVec forward;
 			Origin = Capturer.MO.Origin;
-			Origin.z += 3.0 * Capturer.MO.Height / 4.0;
+			AngleVector(&Capturer.MO.Angles, &forward);
+			VectorRotateAroundZ(&forward, -90.0);
+			forward = forward * (Capturer.MO.Radius / 2.0);
+			Origin += forward;
 		}
 		LinkToWorld();
 		return true;
@@ -191,7 +207,7 @@ void Tick(float deltaTime)
 	{
 		lost_timer -= deltaTime;
 		if (lost_timer <= 0.0)
-			ReturnToBase(false);
+			ReturnToBase(none, false);
 	}
 }
 

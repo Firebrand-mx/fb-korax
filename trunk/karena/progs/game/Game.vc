@@ -45,6 +45,23 @@ enum
 	teamfactor_enemy
 };
 
+// generic events
+enum
+{
+	event_playablestatebegins,
+	num_genericevents,
+	event_custom				= 150
+};
+
+struct acsnotifier_t
+{
+	bool	enabled;
+	int		script;
+};
+
+acsnotifier_t	AcsNotifiersGeneric[num_genericevents];
+
+
 MainGameInfo		Game;
 HexenLevelInfo		Level;
 
@@ -183,6 +200,18 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
+	int notifyACSArgs[3];
+
+	switch (Event)
+	{
+	case event_playablestatebegins:
+		break;
+		
+	default:
+		dprint("Game::HandleGameEvent : unknown event %i", Event);
+	}
+	
+	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
 }
 
 //==========================================================================
@@ -207,6 +236,48 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 
 void SetGameObjective(int objective, int arg2, int arg3, int arg4, int arg5)
 {
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	dprint("Game::SetACSNotifier : event = %i, script = %i", event, script);
+	if (event >= 0 && event < num_genericevents)
+	{
+		dprint(" -------------------- registered --------------------");
+		AcsNotifiersGeneric[event].enabled = true;
+		AcsNotifiersGeneric[event].script = script;
+	}
+	else
+		dprint(" -------------------- failed --------------------");
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	if (Event >= 0 && Event < num_genericevents &&
+		AcsNotifiersGeneric[Event].enabled)
+	{
+		Level.ExecuteActionSpecial(LNSPEC_ACSExecute,
+				AcsNotifiersGeneric[Event].script,
+				0,
+				Arg1,
+				Arg2,
+				Arg3,
+				NULL, 0, none);
+	}
 }
 
 //==========================================================================

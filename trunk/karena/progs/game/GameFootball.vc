@@ -38,13 +38,16 @@ enum
 	state_kickoff,
 	state_freeplay,
 	state_finished,
-	state_waitforplayerspawn
+	state_waitkickoff
+	//state_waitforplayerspawn
 };
 
 enum
 {
-	event_goal,
-	event_offside
+	event_goal			= Game::event_custom,
+	event_offside,
+	event_dokickoff,
+	num_footballevents	= event_dokickoff - Game::event_custom + 1
 };
 
 enum
@@ -54,14 +57,22 @@ enum
 	object_ball
 };
 
+acsnotifier_t	AcsNotifiersFootball[num_footballevents];
+
+
 SoccerBall	Ball;
 MapSpot		spot_ball;
+bool		bBallCreated;
+bool		bSpotBallCreated;
+
 struct spot_players_t
 {
 	MapSpot	ms[MAXPLAYERS];
 };
 spot_players_t spot_players[2];
-PlayerTeam	Teams[2];
+//////PlayerTeam	Teams[2];
+
+GameSequencer	fbTimer;
 
 
 //==========================================================================
@@ -87,58 +98,82 @@ void BeginState(int newstate)
 {
 	int i;
 
-	dprint("BeginState: %i", newstate);
+	dprint("GameFootball::BeginState: %i", newstate);
 
 	switch(newstate)
 	{
 	case state_preparematch:
-		//UpdateTeams();
-		if (!Teams[0] || !Teams[1])
+
+		if (!PrepareMatch())
 		{
-			dprint("GameFootball : not enouph teams, delay start");
+			dprint("GameFootball : failed to prepare match, delay start");
 			State = -1;
 			return;
 		}
-		dprint("Preparing match");
+		
+		dprint("GameFootball : starting match");
+		Game.bcentreprint("Let the game begin!");
+		
+		HandleGameEvent(none, event_playablestatebegins, 0,0,0,0);
+		
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (Teams[0] && Teams[0].Players[i])
-			   Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
-			if (Teams[1] && Teams[1].Players[i])
-			   Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			if (Game.Teams[0] && Game.Teams[0].Players[i])
+			   Game.Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			if (Game.Teams[1] && Game.Teams[1].Players[i])
+			   Game.Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
 		}
-		if (Teams[0])
-			Teams[0].UpdateScore(HexenDefs::scoreevent_TeamReset);
-		if (Teams[1])
-			Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
-		EndCurrentState(state_kickoff);
+		if (Game.Teams[0])
+			Game.Teams[0].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		if (Game.Teams[1])
+			Game.Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		EndCurrentState(state_waitkickoff);
 		return;
+		
 	case state_kickoff:
-		if (spot_ball)
-		{ 
-			if (Ball)
-				Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
-			else
-				Ball = SoccerBall(HexenLevelInfo(Level).Spawn(SoccerBall, spot_ball.Origin));
-		}
-		if (!spot_ball && !Ball)
+	
+		if (!Game.Teams[0] || !Game.Teams[1])
 		{
-			dprint("GameFootball::BeginState : state_kickoff : there's no ball or ball_spot");
+			dprint("GameFootball::BeginState : state_kickoff : not enouph teams, ending game");
 			EndCurrentState(state_finished);
 			return;
 		}
+		
+		if (!spot_ball || !Ball)
+		{
+			dprint("GameFootball::BeginState : state_kickoff : ball and/or spot_ball missing, ending game");
+			EndCurrentState(state_finished);
+			return;
+		}
+		
+		Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
+		
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (Teams[0] && Teams[0].Players[i] && spot_players[0].ms[i])
-			   Actor(Teams[0].Players[i].MO).Teleport(spot_players[0].ms[i].Origin, spot_players[0].ms[i].Angles.yaw, true, true, false);
-			if (Teams[1] && Teams[1].Players[i] && spot_players[1].ms[i])
-			   Actor(Teams[1].Players[i].MO).Teleport(spot_players[1].ms[i].Origin, spot_players[1].ms[i].Angles.yaw, true, true, false);
+			if (Game.Teams[0].Players[i] && spot_players[0].ms[i])
+			   Actor(Game.Teams[0].Players[i].MO).Teleport(spot_players[0].ms[i].Origin, spot_players[0].ms[i].Angles.yaw, true, true, false);
+			if (Game.Teams[1].Players[i] && spot_players[1].ms[i])
+			   Actor(Game.Teams[1].Players[i].MO).Teleport(spot_players[1].ms[i].Origin, spot_players[1].ms[i].Angles.yaw, true, true, false);
 		}
+		
+		Game.bcentreprint("kick off!");
+		
 		EndCurrentState(state_freeplay);
 		return;
 	case state_freeplay:
+		break;
 	case state_finished:
-	case state_waitforplayerspawn:
+		//
+		// do something here?
+		//
+		break;
+	case state_waitkickoff:
+		fbTimer = Level.Spawn(GameSequencer);
+		if (fbTimer)
+		{
+			fbTimer.event_id = event_dokickoff;
+			fbTimer.time_limit = 4.0;
+		}
 		break;
 	};
 
@@ -155,9 +190,19 @@ void BeginState(int newstate)
 
 void EndCurrentState(int nextstate)
 {
-	// FIXME! - destroy ball only if it was spawned by GameFootball
-	/*if (nextstate == state_finished && Ball)
-		Ball.Destroy();*/
+	if (nextstate == state_finished)
+	{
+		if (bBallCreated)
+		{
+			Ball.Destroy();
+			Ball = none;
+		}
+		if (bSpotBallCreated)
+		{
+			spot_ball.Destroy();
+			spot_ball = none;
+		}
+	}
 
 	BeginState(nextstate);
 }
@@ -169,33 +214,11 @@ void EndCurrentState(int nextstate)
 //==========================================================================
 
 void NotifyUpdateTeams()
-{
-	//[CW] Actually (and hypothetically) more than 2 teams may
-	//     participate in game, but that's the question of future updates
-	//     (if there'll be any).
-
-	bool playingteamschange = false;
-	if (State >= 0 && (Teams[0] != Game.Teams[0] ||
-								Teams[1] != Game.Teams[1]))
-	{
-		playingteamschange = true;
-	}
-	Teams[0] = Game.Teams[0];
-	Teams[1] = Game.Teams[1];
-	if (playingteamschange)
-		EndCurrentState(state_waitforplayerspawn);
-}
-
-//==========================================================================
-//
-//	NotifyPlayerSpawn
-//
-//==========================================================================
-
-void NotifyPlayerSpawn(Player pl)
-{
-	if (State == state_waitforplayerspawn)
-		EndCurrentState(state_preparematch);
+{		
+	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
+		BeginState(state_preparematch);
+	else if (State == state_freeplay && (!Game.Teams[0] || !Game.Teams[1]))
+		EndCurrentState(state_finished);
 }
 
 //==========================================================================
@@ -208,37 +231,49 @@ void NotifyPlayerSpawn(Player pl)
 
 void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 {
+	int notifyACSArgs[3];
+
 	switch (Event)
 	{
 	case event_goal:
+		if (State != state_freeplay)
+			return;
+
 		if (!A || A != Ball)
-			break;
+			return;
+			
 		// arg1 is a team, in which gates a ball was thrown
-		if (arg1 >= 0 && arg1 < 2 && Teams[arg1])
+		if (arg1 >= 0 && arg1 < 2 && Game.Teams[arg1])
 		{
-			if (Ball.Owner && Teams[arg1] == Ball.Owner.Team)
+			if (Ball.Owner && Game.Teams[arg1] == Ball.Owner.Team)
 			{
 				// 'self-goal'
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbSelfGoal);
 				// opponent team is getting aware of happening
 				// (in case special score should be provided for it)
-				if (arg1 && Teams[0])
-				   Teams[0].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
-				else if (!arg1 && Teams[1])
-				   Teams[1].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
-				Game.bcentreprint(va("YAHOO! Team %d kicked a ball into their own gates!", arg1));
+				if (arg1 && Game.Teams[0])
+				   Game.Teams[0].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
+				else if (!arg1 && Game.Teams[1])
+				   Game.Teams[1].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
+				Game.bcentreprint(va("OOOPS! Team %d kicked a ball into their own gates!", arg1));
+				
+				notifyACSArgs[1] = arg1;
 			}
-			else
+			else if (Ball.Owner)
 			{
 				// normal goal
-				if (Ball.Owner)
-				{
-					Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
-					Game.bcentreprint(va("WHOA! Team %d scores a goal!", arg1 ? 0 : 1));
-				}
+				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
+				Game.bcentreprint(va("Team %d scores a goal!", arg1 ? 0 : 1));
+				notifyACSArgs[1] = arg1 ? 0 : 1;
+				
 			}
+			else
+				notifyACSArgs[1] = -1;
 		}
-		EndCurrentState(state_kickoff);
+		
+		notifyACSArgs[0] = arg1;
+		
+		EndCurrentState(state_waitkickoff);
 		break;
 	case event_offside:
 
@@ -247,7 +282,19 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 		// before players are repositioned
 
 		break;
+		
+	case event_dokickoff:
+		if (fbTimer)
+			fbTimer.Destroy();
+		EndCurrentState(state_kickoff);
+		break;
+		
+	default:
+		::HandleGameEvent(A, Event, arg1, arg2, arg3, arg4);
+		return;
 	}
+	
+	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
 }
 
 //==========================================================================
@@ -270,6 +317,11 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 	switch (object)
 	{
 	case object_ballspot:
+		if (bSpotBallCreated)
+		{
+			spot_ball.Destroy();
+			spot_ball = none;
+		}
 		spot_ball = MapSpot(A);
 		break;
 	case object_playerspot:
@@ -280,11 +332,73 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 		break;
 	case object_ball:
 		if (A.IsA('SoccerBall'))
+		{
+			if (bBallCreated)
+			{
+				Ball.Destroy();
+				Ball = none;
+			}
 			Ball = SoccerBall(A);
+		}
 		else
 			dprint("GameFootball::SetGameObject : A is not of Ball class");
 		break;		
 	}
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	dprint("GameFootball::SetACSNotifier : event = %i, script = %i", event, script);
+	if (event >= Game::event_custom && event < event_goal + num_footballevents)
+	{
+		dprint(" -------------------- registered --------------------");
+		event -= Game::event_custom;
+		dprint("set anf %i", event);
+		AcsNotifiersFootball[event].enabled = true;
+		AcsNotifiersFootball[event].script = script;
+	}
+	else
+	{
+		dprint(" ------------- failed, pass to base class --------------------");
+		::SetACSNotifier(event, script);
+	}
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	dprint("GameFootball : notify ACS Event = %i", Event);
+	if (Event >= Game::event_custom && Event < event_goal + num_footballevents)
+	{
+		Event -= Game::event_custom;
+		dprint("check anf %i", Event);
+		if (AcsNotifiersFootball[Event].enabled)
+		{
+			dprint("anf enabled, execute script %i", AcsNotifiersFootball[Event].script);
+			Level.ExecuteActionSpecial(LNSPEC_ACSExecute,
+					AcsNotifiersFootball[Event].script,
+					0,
+					Arg1,
+					Arg2,
+					Arg3,
+					NULL, 0, none);
+		}
+	}
+	else
+		::NotifyACS(Event, Arg1, Arg2, Arg3);
 }
 
 //==========================================================================
@@ -297,6 +411,60 @@ void End()
 {
 	EndCurrentState(state_finished);
 	::End();
+}
+
+//==========================================================================
+//
+//	PrepareMatch
+//
+//==========================================================================
+
+bool PrepareMatch()
+{
+	if (!Game.Teams[0] || !Game.Teams[1])
+	{
+		dprint("GameFootball : not enouph teams");
+		return false;
+	}
+
+	if (!Ball)
+	{
+		if (spot_ball)
+		{
+			Ball = HexenLevelInfo(Level).Spawn(SoccerBall, spot_ball.Origin);
+			if (Ball)
+				bBallCreated = true;
+			else
+			{
+				dprint("GameFootball : failed to spawn ball at spot_ball");
+				return false;
+			}
+		}
+		else
+		{
+			foreach Level.AllThinkers(SoccerBall, Ball)
+				break;
+			if (!Ball)
+			{
+				dprint("GameFootball : there are no spot_ball nor ball objects on map");
+				return false;
+			}
+		}
+	}
+	
+	if (Ball && !spot_ball)
+	{
+		spot_ball = HexenLevelInfo(Level).Spawn(MapSpot, Ball.Origin);
+		if (spot_ball)
+			bSpotBallCreated = true;
+		else
+		{
+			dprint("GameFootball : failed to spawn spot_ball at initial ball position; ball will be unable to set position on kickoff");
+			return false;
+		}
+	}
+	
+	return true;
 }
 
 defaultproperties
