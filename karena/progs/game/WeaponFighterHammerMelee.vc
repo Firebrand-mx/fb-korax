@@ -64,10 +64,9 @@ void A_FHammerAttack()
 	{
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
-		pmo.AimLineAttack(&angles, HammerRange);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.linetarget)
 		{
-			AngleVector(&angles, &vforward);
 			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
@@ -81,10 +80,9 @@ void A_FHammerAttack()
 		}
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
-		pmo.AimLineAttack(&angles, HammerRange);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.linetarget)
 		{
-			AngleVector(&angles, &vforward);
 			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
@@ -102,8 +100,7 @@ void A_FHammerAttack()
 		// didn't find any targets in meleerange, so set to throw out a hammer
 		MainGameInfo(Level.Game).PuffSpawned = none;
 		angles = pmo.Angles;
-		pmo.AimLineAttack(&angles, HammerRange);
-		AngleVector(&angles, &vforward);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
 			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
