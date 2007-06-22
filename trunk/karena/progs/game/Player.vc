@@ -5401,25 +5401,28 @@ void UpdateCompetition()
 	if (i != 0)
 	{
 		j = i-1;
-		while (j >= 0 && Team.Players[j])
+		while (Team.Players[j] && j >= 0)
 		{
 			pl2 = Team.Players[j];
 
-			if (pl2.Score == Score && i == 1)
+			if (pl2.Score > 0 && pl2.Score == Score && i == 1)
+			{
 				// [FB] Tied for the lead!
 				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+				pl2.CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+			}
 			
 			if (pl2.Score < Score)
 			{
-				// [FB] Announce new leader!
-				if(pl2.Score < Score && j == 1)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 				bPositionShifted = true;
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
 				i = j;
+				// [FB] Announce new leader!
+				if(i == 0)
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 			}
 			else
 				break;
@@ -5430,20 +5433,19 @@ void UpdateCompetition()
 	if (!bPositionShifted && i != MAXPLAYERS - 1)
 	{
 		j = i+1;
-		while (j < MAXPLAYERS && Team.Players[j])
+		while (Team.Players[j] && j < MAXPLAYERS)
 		{
 			pl2 = Team.Players[j];
 
 			if (pl2.Score > Score)
 			{
-				// [FB] You've lost the lead!
-				if(pl2.Score > Score && j == 2)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
+				// [FB] You've lost the lead!
+				if(i == 0)
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 				i = j;
 			}
 			else
