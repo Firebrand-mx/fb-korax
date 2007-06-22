@@ -217,7 +217,8 @@ final void A_MinotaurLook()
 				teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Tracer,
 							mo);
 				// [FB] We've got a team factor, just check if it's an ally or not
-				if (teamfactor == Game::teamfactor_coop)
+				if (teamfactor != Game::teamfactor_any &&
+					teamfactor != Game::teamfactor_enemy)
 				{
 					continue;
 				}
@@ -258,8 +259,26 @@ final void A_MinotaurLook()
 				continue;
 			if ((mo == Tracer) || (mo == self))
 				continue;
-			if (mo.Class == Minotaur && mo.Tracer == Tracer)
- 				continue;
+			if (mo.Class == Minotaur)
+			{
+				if (mo.Tracer == Tracer)
+					continue;
+				// [FB] Check if an advanced game mode is active
+				if (MainGameInfo(Level.Game).GameMode)
+				{
+					int teamfactor;
+
+					teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Tracer,
+								mo.Tracer);
+					// [FB] We've got a team factor, just check if it's an ally or not
+					if (teamfactor != Game::teamfactor_any &&
+						teamfactor != Game::teamfactor_enemy)
+					{
+						continue;
+					}
+				}
+			}
+
 			Target = mo;
 			break;	// Found mobj to attack
 		}
