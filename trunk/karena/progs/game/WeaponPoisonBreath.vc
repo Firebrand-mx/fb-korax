@@ -47,23 +47,8 @@ void A_PoisonBreathFire(bool use_mana, int Children)
 
 	pmo = PlayerPawn(Owner);
 
-	angles = pmo.Angles;
-	vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
-	if (!pmo.linetarget)
-	{
-		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
-		vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
-		if (!pmo.linetarget)
-		{
-			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
-			vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
-			if (!pmo.linetarget)
-			{
-				angles.yaw = pmo.Angles.yaw;
-				AngleVector(&angles, &vforward);
-			}
-		}
-	}
+	vforward = pmo.Aim(16.0 * 64.0);
+	VectorAngles(&vforward, &angles);
 	org = pmo.Origin;
 	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
 	org.z -= pmo.FloorClip;
