@@ -5448,8 +5448,15 @@ void UpdateCompetition()
 		{
 			pl2 = Team.Players[j];
 
+			if (pl2.Score == Score && i == 1)
+				// [FB] Tied for the lead!
+				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+			
 			if (pl2.Score < Score)
 			{
+				// [FB] Announce new leader!
+				if(pl2.Score < Score && j == 1)
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 				bPositionShifted = true;
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
@@ -5472,6 +5479,10 @@ void UpdateCompetition()
 
 			if (pl2.Score > Score)
 			{
+				// [FB] You've lost the lead!
+				if(pl2.Score > Score && j == 2)
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+
 				Team.Players[j] = self;
 				Team.Players[i] = pl2;
 				PlayerPosition = j;
@@ -5685,14 +5696,10 @@ void ConfirmTrophy(int type)
 	default:
 		return;
 	}
-
 	centreprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
-	//CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
-
+	CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
 
 	// [CW] if the trophy data should be stored, do it here
-
-
 
 	switch (type)
 	{
