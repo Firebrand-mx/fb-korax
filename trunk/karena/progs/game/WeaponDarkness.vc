@@ -66,10 +66,9 @@ void A_FHammerAttack()
 	{
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
-		pmo.AimLineAttack(&angles, HammerRange);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.linetarget)
 		{
-			AngleVector(&angles, &vforward);
 			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
@@ -83,10 +82,9 @@ void A_FHammerAttack()
 		}
 		angles = pmo.Angles;
 		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
-		pmo.AimLineAttack(&angles, HammerRange);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.linetarget)
 		{
-			AngleVector(&angles, &vforward);
 			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 			{
 				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
@@ -103,8 +101,7 @@ void A_FHammerAttack()
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
 		angles = pmo.Angles;
-		pmo.AimLineAttack(&angles, HammerRange);
-		AngleVector(&angles, &vforward);
+		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
 			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
@@ -145,18 +142,19 @@ void A_FHammerThrow()
 	pmo = PlayerPawn(Owner);
 
 	angles = pmo.Angles;
-	pmo.AimLineAttack(&angles, 16.0 * 64.0);
+	vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
 	if (!pmo.linetarget)
 	{
 		angles.yaw = AngleMod360(angles.yaw + 45.0 / 8.0);
-		pmo.AimLineAttack(&angles, 16.0 * 64.0);
+		vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
 		if (!pmo.linetarget)
 		{
 			angles.yaw = AngleMod360(angles.yaw - 45.0 / 4.0);
-			pmo.AimLineAttack(&angles, 16.0 * 64.0);
+			vforward = pmo.AimLineAttack(angles, 16.0 * 64.0);
 			if (!pmo.linetarget)
 			{
 				angles.yaw = pmo.Angles.yaw;
+				AngleVector(&angles, &vforward);
 			}
 		}
 	}
@@ -167,7 +165,6 @@ void A_FHammerThrow()
 	Actor mo = HexenLevelInfo(Level).Spawn(DarknessMissile, org);
 	mo.Target = pmo;
 	mo.Angles = angles;
-	AngleVector(&angles, &vforward);
 
 	mo.Speed = 128.0;//10.0;
 	mo.bMissile = true;

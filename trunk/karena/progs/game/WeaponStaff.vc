@@ -60,10 +60,9 @@ final void A_StaffAttackPL1()
 	angles = pmo.Angles;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	pmo.AimLineAttack(&angles, 1.5 * MELEERANGE);
+	vforward = pmo.AimLineAttack(angles, 1.5 * MELEERANGE);
 	if (pmo.linetarget)
 	{
-		AngleVector(&angles, &vforward);
 		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
 		if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
 		{
@@ -75,8 +74,7 @@ final void A_StaffAttackPL1()
 	{
 		// didn't find any creatures, so try to strike any walls
 		angles = Owner.Angles;
-		Actor(Owner).AimLineAttack(&angles, MELEERANGE);
-		AngleVector(&angles, &vforward);
+		vforward = Actor(Owner).AimLineAttack(angles, MELEERANGE);
 		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, StaffPuff))
 		{
 			Owner.PlaySound('StaffHit', CHAN_WEAPON);
