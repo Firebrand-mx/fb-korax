@@ -5477,6 +5477,7 @@ void UpdateCompetition()
 		{
 			// [FB] Announce new leader!
 			CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+			centreprint("You lead!");
 
 			// Anyone lost the Lead?
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -5488,7 +5489,10 @@ void UpdateCompetition()
 			   if (Team.Players[i].Score == oldLeaderScore)
 			   {
 			      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+			      Team.Players[i].centreprint("You lost the lead!");
 			   }
+			   else
+				break;
 			}
 
 		}
@@ -5497,7 +5501,23 @@ void UpdateCompetition()
 		{
 			// [FB] Tied for the lead!
 			CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-			pl.CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+			centreprint("You are tied for the lead!");
+
+			// Anyone else does?
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+			   if (!Team.Players[i])
+				break;
+			   if (Team.Players[i] == self)
+				continue;
+			   if (Team.Players[i].Score == oldLeaderScore)
+			   {
+			      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+			      Team.Players[i].centreprint("You are tied for the lead!");
+			   }
+			   else
+				break;
+			}
 		}
 
 	}
@@ -5508,6 +5528,7 @@ void UpdateCompetition()
 		{
 			// [FB] You've lost the lead!
 			CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+			centreprint("You lost the lead!");
 		}
 	}
 }
