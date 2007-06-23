@@ -5386,16 +5386,20 @@ void UpdateScore(int event)
 void UpdateCompetition()
 {
 	bool bPositionShifted;
-	int i, j;
+	int i, j, oldPosition, oldLeaderScore;
 	Player pl2;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if(Team.Players[i] && Team.Players[i] == self)
+		if(Team.Players[i] == self)
 		   break;
 	}
 	
 	PlayerPosition = i;
+	oldPosition = PlayerPosition;
+
+	if (Team.Players[0] != self)
+		oldLeaderScore = Team.Players[0].Score;
 
 	// first see if previous players has lower score now
 	if (i != 0)
@@ -5405,12 +5409,12 @@ void UpdateCompetition()
 		{
 			pl2 = Team.Players[j];
 
-			if (pl2.Score > 0 && pl2.Score == Score && i == 1)
+			/*if (pl2.Score > 0 && pl2.Score == Score && i == 1)
 			{
 				// [FB] Tied for the lead!
 				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
 				pl2.CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-			}
+			}*/
 			
 			if (pl2.Score < Score)
 			{
@@ -5420,9 +5424,10 @@ void UpdateCompetition()
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
 				i = j;
-				// [FB] Announce new leader!
+
+				/*// [FB] Announce new leader!
 				if(i == 0)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);*/
 			}
 			else
 				break;
@@ -5443,14 +5448,66 @@ void UpdateCompetition()
 				Team.Players[i] = pl2;
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
-				// [FB] You've lost the lead!
+
+
+				/*// [FB] You've lost the lead!
 				if(i == 0)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);*/
 				i = j;
 			}
 			else
 				break;
 			j++;
+		}
+	}
+
+
+	//
+	// [CW] Place all the necessary announcements in this section
+	//
+
+	// No player-referred announces in team games
+	if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
+		return;
+	
+	if (PlayerPosition > oldPosition)
+	{
+		// Is this player a new and only leader?
+		if (Score > oldLeaderScore)
+		{
+			// [FB] Announce new leader!
+			CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+
+			// Anyone lost the Lead?
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+			   if (!Team.Players[i])
+				break;
+			   if (Team.Players[i] == self)
+				continue;
+			   if (Team.Players[i].Score == oldLeaderScore)
+			   {
+			      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+			   }
+			}
+
+		}
+		// Is he tied for the lead then? 
+		else if (Score == oldLeaderScore)
+		{
+			// [FB] Tied for the lead!
+			CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+			pl.CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+		}
+
+	}
+	else if (PlayerPosition < oldPosition)
+	{
+		// Was he a leader anyway?
+		if (oldPosition == 0)
+		{
+			// [FB] You've lost the lead!
+			CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 		}
 	}
 }
