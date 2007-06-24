@@ -5408,13 +5408,6 @@ void UpdateCompetition()
 		while (Team.Players[j] && j >= 0)
 		{
 			pl2 = Team.Players[j];
-
-			/*if (pl2.Score > 0 && pl2.Score == Score && i == 1)
-			{
-				// [FB] Tied for the lead!
-				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-				pl2.CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-			}*/
 			
 			if (pl2.Score < Score)
 			{
@@ -5424,10 +5417,6 @@ void UpdateCompetition()
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
 				i = j;
-
-				/*// [FB] Announce new leader!
-				if(i == 0)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);*/
 			}
 			else
 				break;
@@ -5448,11 +5437,6 @@ void UpdateCompetition()
 				Team.Players[i] = pl2;
 				PlayerPosition = j;
 				pl2.PlayerPosition = i;
-
-
-				/*// [FB] You've lost the lead!
-				if(i == 0)
-					CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);*/
 				i = j;
 			}
 			else
@@ -5460,7 +5444,6 @@ void UpdateCompetition()
 			j++;
 		}
 	}
-
 
 	//
 	// [CW] Place all the necessary announcements in this section
@@ -5470,65 +5453,53 @@ void UpdateCompetition()
 	if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 		return;
 	
-	if (PlayerPosition > oldPosition)
+	// Is this player a new and only leader?
+	if (Score > oldLeaderScore)
 	{
-		// Is this player a new and only leader?
-		if (Score > oldLeaderScore)
+		// [FB] Announce new leader!
+		if (oldPosition == 1)
 		{
-			// [FB] Announce new leader!
 			CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
 			centreprint("You lead!");
-
-			// Anyone lost the Lead?
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-			   if (!Team.Players[i])
-				break;
-			   if (Team.Players[i] == self)
-				continue;
-			   if (Team.Players[i].Score == oldLeaderScore)
-			   {
-			      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-			      Team.Players[i].centreprint("You lost the lead!");
-			   }
-			   else
-				break;
-			}
-
+			Level.bprint("%s has the lead!\n", PlayerName);
 		}
-		// Is he tied for the lead then? 
-		else if (Score == oldLeaderScore)
+		// Anyone lost the Lead?
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			// [FB] Tied for the lead!
-			CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-			centreprint("You are tied for the lead!");
-
-			// Anyone else does?
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-			   if (!Team.Players[i])
-				break;
-			   if (Team.Players[i] == self)
-				continue;
-			   if (Team.Players[i].Score == oldLeaderScore)
-			   {
-			      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-			      Team.Players[i].centreprint("You are tied for the lead!");
-			   }
-			   else
-				break;
-			}
+		   if (!Team.Players[i])
+			break;
+		   if (Team.Players[i] == self)
+			continue;
+		   if (oldLeaderScore > 0 && Team.Players[i].Score == oldLeaderScore)
+		   {
+		      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+		      Team.Players[i].centreprint("You lost the lead!");
+		   }
+		   else
+			break;
 		}
-
 	}
-	else if (PlayerPosition < oldPosition)
+	// Is he tied for the lead then? 
+	else if (oldLeaderScore > 0 && Score == oldLeaderScore)
 	{
-		// Was he a leader anyway?
-		if (oldPosition == 0)
+		// [FB] Tied for the lead!
+		CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+		centreprint("You are tied for the lead!");
+
+		// Anyone else does?
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			// [FB] You've lost the lead!
-			CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-			centreprint("You lost the lead!");
+		   if (!Team.Players[i])
+			break;
+		   if (Team.Players[i] == self)
+			continue;
+		   if (Team.Players[i].Score == oldLeaderScore)
+		   {
+		      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+		      Team.Players[i].centreprint("You are tied for the lead!");
+		   }
+		   else
+			break;
 		}
 	}
 }
@@ -5542,7 +5513,6 @@ void UpdateCompetition()
 //	Usage:
 //	All of the message strings are members of MainGameInfo.
 //
-
 //	1) if both source & inflictor are null, it was pure enviroment:
 //	slime, lava and such. Use generic messages like "was in wrong place" etc,
 //	with 1 parameter: this player's name.
@@ -5556,27 +5526,7 @@ void UpdateCompetition()
 //	be melee attack OR instant ranged attack (like gunshot) by pawn or player;
 //	use either pawn's DeathMessage index or	active player Weapon's DeathMessage index,
 //	with 2 parameters as in p.3.
-
-
-
-//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
-
-//	1) if both source & inflictor are null, it was pure enviroment:
-//	slime, lava and such. Use generic messages like "was in wrong place" etc,
-//	with 1 parameter: this player's name.
-//	2) if inflictor has some value and source is null, then use inflictor's
-//	third DeathMessage index with 1 parameter as in p.1.
-//	3) if both inflictor and source has some values, but they are not
-//	equal, that means that either a pawn or player have shot current
-//	player with a missile; use inflictor's first/second DeathMessage index with 2 parameters:
-//	current player name and either pawn name or player's PlayerName.
-//	4) if inflictor and source have equal values (not null), then it might
-//	be melee attack by pawn or player; use either pawn deathmessage first index or
-//	player's PClass and ReadyWeapon combined as index, with 2 parameters as in p.3.
 //
-
-//------------------ OLD VERSION ----- REMOVE ME LATER -----------------------------------
-
 //==========================================================================
 
 void DisplayDeathMessage(EntityEx source, EntityEx inflictor)
