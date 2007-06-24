@@ -79,7 +79,7 @@ struct trophies_t
 	int		kills_at_once;
 	float	fao_timer;
 	float	kao_timer;
-	int		frags_row;		// used for death rows as well
+	int		frags_row;
 	int		kills_row;
 	TVec	shot_position;	// for accuracy trophy
 };
@@ -350,7 +350,18 @@ void SpawnClient()
 	Actor(MO).TeleportMove(MO.Origin);
 	dprint("Player::SpawnClient : after TeleportMove");
 
-	// [CW] check trophies
+	//
+	// [CW] if the trophy data should be stored, do it here
+	//
+	Trophies.kills_at_once = 0;
+	Trophies.kao_timer = 0.0;
+	Trophies.frags_at_once = 0;
+	Trophies.fao_timer = 0.0;
+	Trophies.frags_row = 0;
+	Trophies.kills_row = 0;
+	
+
+	/*// [CW] check trophies
 	if (Trophies.fao_timer > 0.0)
 		ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
 	if (Trophies.kao_timer > 0.0)
@@ -358,7 +369,7 @@ void SpawnClient()
 	if (Trophies.frags_row > 0)
 		ConfirmTrophy(HexenDefs::trophycl_fragsrow);
 	if (Trophies.kills_row > 0)
-		ConfirmTrophy(HexenDefs::trophycl_killsrow);
+		ConfirmTrophy(HexenDefs::trophycl_killsrow);*/
 
 	dprint("Player::SpawnClient : OUT");
 }
@@ -5364,15 +5375,143 @@ void UpdateScore(int event)
 	if (Level && MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && Team)
 	{
 		Team.UpdateScore(event);
-		// update team stats for clientstate
+		// update team stats for clientstate	
 		TeamFrags = Team.Frags;
 		TeamKills = Team.Kills;
 	}
 
 	UpdateCompetition();
+	// No player-referred announces in team games
+	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
+		CompetitionAnnouncements(Score - mod);
+	
+	if (mod > 0)
+		MainGameInfo(Level.Game).bCompetitionOpened = true;
 
 	if (Level)	// in case score is somehow updated between levels
 		MainGameInfo(Level.Game).ScoreboardsUpdate(none);
+}
+
+//==========================================================================
+//
+//  CompetitionAnnouncements
+//
+//  [CW]
+//
+//==========================================================================
+
+void CompetitionAnnouncements(int oldScore)
+{
+	int i;
+			
+	if (Score > oldScore)
+	{
+		// Is this player a new and only leader?
+		if (PlayerPosition == 0)
+		{
+			if (Team.Players[1] && Team.Players[1].Score >= oldScore)
+			{
+				// [FB] Announce new leader!
+				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+				centreprint("You lead!");
+				
+				// Anyone lost the Lead?
+				int oldLeaderScore = Team.Players[1].Score;
+				for (i = 1; i < MAXPLAYERS; i++)
+				{
+					if (!Team.Players[i])
+						break;
+					if (Team.Players[i].Score == oldLeaderScore)
+					{
+					   Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					   Team.Players[i].centreprint("You lost the lead!");
+					}
+					else
+					   break;
+				}
+			}
+			else if (Score > 0 && !MainGameInfo(Level.Game).bCompetitionOpened)
+			{
+				// [FB] Announce new leader!
+				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+				centreprint("You lead!");
+			}
+		}
+		// Is he tied for the lead then?
+		else
+		{
+			if (Score == Team.Players[0].Score)
+			{
+				// [FB] Tied for the lead!
+				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+				centreprint("You are tied for the lead!");
+				
+				// If there was a single leader, notify him that he is tied for the lead now
+				// (elsewise there's already a tied group)
+				if (PlayerPosition == 1)
+				{
+					Team.Players[0].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+					Team.Players[0].centreprint("You are tied for the lead!");
+				}
+			}
+		}
+	}
+	// Score may drop down in case of self-frag or similar events
+	else if (Score < oldScore)
+	{
+		// Is he tied for the lead?
+		if (PlayerPosition == 0)
+		{
+			if (Team.Players[1] && Team.Players[1].Score == Score)
+			{
+				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+				centreprint("You are tied for the lead!");
+				
+				// Who else is tied?
+				for (i = 1; i < MAXPLAYERS; i++)
+				{
+					if (!Team.Players[i])
+						break;
+					if (Team.Players[i].Score == Score)
+					{
+					   Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+					   Team.Players[i].centreprint("You are tied for the lead!");
+					}
+					else
+					   break;
+				}
+			}
+		}
+		// Was he a single leader or tied?
+		else if (Team.Players[0].Score <= oldScore)
+		{
+			// [FB] You've lost the lead!
+			CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+			centreprint("You lost the lead!");
+			
+			// If he was a single leader, some others have the lead now
+			if (Team.Players[0].Score < oldScore)
+			{
+				int newLeaderScore = Team.Players[0].Score;
+				if (PlayerPosition != 1 && Team.Players[1].Score == newLeaderScore)
+				{
+					for (i = 0; i < PlayerPosition; i++)
+					{
+						if (Team.Players[i].Score < newLeaderScore)
+							break;
+						Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
+						Team.Players[i].centreprint("You are tied for the lead!");
+					}
+				}
+				else
+				{
+					// [FB] Announce new leader!
+					Team.Players[0].CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					Team.Players[0].centreprint("You lead!");
+				}
+			}
+		}
+	}
 }
 
 //==========================================================================
@@ -5386,7 +5525,7 @@ void UpdateScore(int event)
 void UpdateCompetition()
 {
 	bool bPositionShifted;
-	int i, j, oldPosition, oldLeaderScore;
+	int i, j;
 	Player pl2;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -5396,16 +5535,12 @@ void UpdateCompetition()
 	}
 	
 	PlayerPosition = i;
-	oldPosition = PlayerPosition;
-
-	if (Team.Players[0] != self)
-		oldLeaderScore = Team.Players[0].Score;
 
 	// first see if previous players has lower score now
 	if (i != 0)
 	{
 		j = i-1;
-		while (Team.Players[j] && j >= 0)
+		while (j >= 0)
 		{
 			pl2 = Team.Players[j];
 			
@@ -5421,7 +5556,7 @@ void UpdateCompetition()
 			else
 				break;
 			j--;
-		}
+		};
 	}
 	// secondly (in other case) see if next players has higher score (in case score gone down)
 	if (!bPositionShifted && i != MAXPLAYERS - 1)
@@ -5442,65 +5577,7 @@ void UpdateCompetition()
 			else
 				break;
 			j++;
-		}
-	}
-
-	//
-	// [CW] Place all the necessary announcements in this section
-	//
-
-	// No player-referred announces in team games
-	if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
-		return;
-	
-	// Is this player a new and only leader?
-	if (Score > oldLeaderScore)
-	{
-		// [FB] Announce new leader!
-		if (oldPosition == 1)
-		{
-			CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-			centreprint("You lead!");
-			Level.bprint("%s has the lead!\n", PlayerName);
-		}
-		// Anyone lost the Lead?
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-		   if (!Team.Players[i])
-			break;
-		   if (Team.Players[i] == self)
-			continue;
-		   if (oldLeaderScore > 0 && Team.Players[i].Score == oldLeaderScore)
-		   {
-		      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-		      Team.Players[i].centreprint("You lost the lead!");
-		   }
-		   else
-			break;
-		}
-	}
-	// Is he tied for the lead then? 
-	else if (oldLeaderScore > 0 && Score == oldLeaderScore)
-	{
-		// [FB] Tied for the lead!
-		CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-		centreprint("You are tied for the lead!");
-
-		// Anyone else does?
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-		   if (!Team.Players[i])
-			break;
-		   if (Team.Players[i] == self)
-			continue;
-		   if (Team.Players[i].Score == oldLeaderScore)
-		   {
-		      Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-		      Team.Players[i].centreprint("You are tied for the lead!");
-		   }
-		   else
-			break;
-		}
+		};
 	}
 }
 
@@ -5513,6 +5590,7 @@ void UpdateCompetition()
 //	Usage:
 //	All of the message strings are members of MainGameInfo.
 //
+
 //	1) if both source & inflictor are null, it was pure enviroment:
 //	slime, lava and such. Use generic messages like "was in wrong place" etc,
 //	with 1 parameter: this player's name.
@@ -5526,10 +5604,10 @@ void UpdateCompetition()
 //	be melee attack OR instant ranged attack (like gunshot) by pawn or player;
 //	use either pawn's DeathMessage index or	active player Weapon's DeathMessage index,
 //	with 2 parameters as in p.3.
-//
+
 //==========================================================================
 
-void DisplayDeathMessage(EntityEx source, EntityEx inflictor)
+void DisplayDeathMessage(EntityEx inflictor, EntityEx source)
 {
 	if(source)
 	{
@@ -5539,24 +5617,20 @@ void DisplayDeathMessage(EntityEx source, EntityEx inflictor)
 			if(source.bIsPlayer)
 			{
 				if (Weapon(source.Player.ViewEnt).bInstantRanged)
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(source.Player.ViewEnt).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(inflictor.Player.ViewEnt).deathmsgi],
 						PlayerName, source.Player.PlayerName);
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(source.Player.ViewEnt).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(inflictor.Player.ViewEnt).deathmsgi],
 						PlayerName, source.Player.PlayerName);
-				//bprint(MainGameInfo(Level.Game).DeathMessage[(HexenDefs::NUMWEAPONS * Player(source.Player).PClass) + Player(source.Player).ReadyWeapon],
-				//		PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
 				if (Pawn(source).bInstantRanged)
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(source).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Actor(source).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Actor(inflictor).deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
-				/*bprint(MainGameInfo(Level.Game).DeathMessage[source.deathmsgi[0]],
-						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);*/
 			}
 		}
 		//[CW] p.3: missile attack
@@ -5570,17 +5644,13 @@ void DisplayDeathMessage(EntityEx source, EntityEx inflictor)
 						PlayerName);
 				}
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(source).deathmsgi],
+					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
 						PlayerName, source.Player.PlayerName);
-					//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[0]],
-					//	PlayerName, source.Player.PlayerName);
 			}
 			else if(source.IsA('Pawn'))
 			{
-				Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(source).deathmsgi],
+				Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
 						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
-				//bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[1]],
-				//		PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
 			}
 		}
 		//[CW] suicide
@@ -5605,8 +5675,7 @@ void DisplayDeathMessage(EntityEx source, EntityEx inflictor)
 			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
 				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
 		else
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[Actor(source).deathmsgi], PlayerName);
-//			bprint(MainGameInfo(Level.Game).DeathMessage[inflictor.deathmsgi[2]], PlayerName);
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[Actor(inflictor).deathmsgi], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
@@ -5635,14 +5704,14 @@ void ConfirmTrophy(int type)
 	{
 	case HexenDefs::trophycl_killsatonce:
 		a = -1;
-		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_HUNT) a++;
-		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_MASSACRE) a++;
-		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_DEVASTATION) a++;
-		if (Trophies.kills_at_once >= HexenDefs::TROPHY_KAO_ELIMINATION) a++;
+		if (Trophies.kills_at_once == HexenDefs::TROPHY_KAO_HUNT) a = 0;
+		if (Trophies.kills_at_once == HexenDefs::TROPHY_KAO_MASSACRE) a = 1;
+		if (Trophies.kills_at_once == HexenDefs::TROPHY_KAO_DEVASTATION) a = 2;
+		if (Trophies.kills_at_once == HexenDefs::TROPHY_KAO_ELIMINATION) a = 3;
 		if (a < 0)
 		{
-			Trophies.kills_at_once = 0;
-			Trophies.kao_timer = 0.0;
+			//Trophies.kills_at_once = 0;
+			//Trophies.kao_timer = 0.0;
 			return;
 		}
 		announcement = HexenDefs::trophy_hunt + a;
@@ -5651,8 +5720,8 @@ void ConfirmTrophy(int type)
 	case HexenDefs::trophycl_fragsatonce:
 		if (Trophies.frags_at_once < 2)
 		{
-			Trophies.frags_at_once = 0;
-			Trophies.fao_timer = 0.0;
+			//Trophies.frags_at_once = 0;
+			//Trophies.fao_timer = 0.0;
 			return;
 		}
 		announcement = HexenDefs::trophy_doublekill + Trophies.frags_at_once - 2;
@@ -5661,20 +5730,24 @@ void ConfirmTrophy(int type)
 		value = Trophies.frags_at_once;
 		break;
 	case HexenDefs::trophycl_fragsrow:
-		if (Trophies.frags_row < HexenDefs::TROPHY_FRAGSROW_LIMIT)
+		/*if (Trophies.frags_row < HexenDefs::TROPHY_FRAGSROW_LIMIT)
 		{
 			Trophies.frags_row = 0;
 			return;
-		}
+		}*/
+		if (Trophies.frags_row % HexenDefs::TROPHY_FRAGSROW_LIMIT != 0)
+			return;
 		announcement = HexenDefs::trophy_frags_row;
 		value = Trophies.frags_row;
 		break;
 	case HexenDefs::trophycl_killsrow:
-		if (Trophies.kills_row < HexenDefs::TROPHY_KILLSROW_LIMIT)
+		/*if (Trophies.kills_row < HexenDefs::TROPHY_KILLSROW_LIMIT)
 		{
 			Trophies.kills_row = 0;
 			return;
-		}
+		}*/
+		if (Trophies.kills_row % HexenDefs::TROPHY_KILLSROW_LIMIT != 0)
+			return;
 		announcement = HexenDefs::trophy_kills_row;
 		value = Trophies.kills_row;
 		break;
@@ -5686,8 +5759,9 @@ void ConfirmTrophy(int type)
 	centreprint(va(MainGameInfo(Level.Game).TrophyText[announcement], value));
 	CallLocalSound(HexenDefs::lsid_PLAYERTROPHY + announcement,	true, HexenDefs::STANDART_LSQ_DELAY);
 
-	// [CW] if the trophy data should be stored, do it here
 
+/*	// [CW] if the trophy data should be stored, do it here
+	
 	switch (type)
 	{
 	case HexenDefs::trophycl_killsatonce:
@@ -5703,6 +5777,7 @@ void ConfirmTrophy(int type)
 	case HexenDefs::trophycl_killsrow:
 		Trophies.kills_row = 0; break;
 	}
+*/
 }
 
 //==========================================================================
@@ -5725,15 +5800,21 @@ void UpdateQueuedTrophy(int type, int value)
 	case HexenDefs::trophycl_killsatonce:
 		Trophies.kills_at_once += value;
 		Trophies.kao_timer = HexenDefs::TROPHY_KAO_TIME;
+		ConfirmTrophy(HexenDefs::trophycl_killsatonce);
 		break;
 	case HexenDefs::trophycl_fragsatonce:
 		Trophies.frags_at_once += value;
 		Trophies.fao_timer = HexenDefs::TROPHY_FAO_TIME;
+		ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
 		break;
 	case HexenDefs::trophycl_fragsrow:
-		Trophies.frags_row += value; break;
+		Trophies.frags_row += value;
+		ConfirmTrophy(HexenDefs::trophycl_fragsrow);
+		break;
 	case HexenDefs::trophycl_killsrow:
-		Trophies.kills_row += value; break;
+		Trophies.kills_row += value;
+		ConfirmTrophy(HexenDefs::trophycl_killsrow);
+		break;
 	}
 }
 
@@ -5751,13 +5832,19 @@ void UpdateTimedTrophies(float deltaTime)
 	{
 		Trophies.kao_timer -= deltaTime;
 		if (Trophies.kao_timer <= 0.0)
-			ConfirmTrophy(HexenDefs::trophycl_killsatonce);
+		{
+			Trophies.kills_at_once = 0;
+			//ConfirmTrophy(HexenDefs::trophycl_killsatonce);
+		}
 	}
 	if (Trophies.fao_timer > 0.0)
 	{
 		Trophies.fao_timer -= deltaTime;
 		if (Trophies.fao_timer <= 0.0)
-			ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
+		{
+			Trophies.frags_at_once = 0;
+			//ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
+		}
 	}
 }
 
