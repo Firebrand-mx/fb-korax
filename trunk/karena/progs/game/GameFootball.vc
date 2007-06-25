@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class GameFootball : Game;
+class GameFootball : GameModel;
 
 enum
 {
@@ -44,10 +44,10 @@ enum
 
 enum
 {
-	event_goal			= Game::event_custom,
+	event_goal			= GameModel::event_custom,
 	event_offside,
 	event_dokickoff,
-	num_footballevents	= event_dokickoff - Game::event_custom + 1
+	num_footballevents	= event_dokickoff - GameModel::event_custom + 1
 };
 
 enum
@@ -114,7 +114,7 @@ void BeginState(int newstate)
 		dprint("GameFootball : starting match");
 		Game.bcentreprint("Let the game begin!");
 		
-		HandleGameEvent(none, event_playablestatebegins, 0,0,0,0);
+		HandleEvent(event_playablestatebegins, none, 0,0,0,0);
 		
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -223,13 +223,13 @@ void NotifyUpdateTeams()
 
 //==========================================================================
 //
-//	HandleGameEvent
+//	HandleEvent
 //
 //	ACS callable
 //
 //==========================================================================
 
-void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
+void HandleEvent(int Event, Actor A, int arg1, int arg2, int arg3, int arg4)
 {
 	int notifyACSArgs[3];
 
@@ -290,7 +290,7 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 		break;
 		
 	default:
-		::HandleGameEvent(A, Event, arg1, arg2, arg3, arg4);
+		::HandleEvent(Event, A, arg1, arg2, arg3, arg4);
 		return;
 	}
 	
@@ -356,18 +356,14 @@ void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 
 void SetACSNotifier(int event, int script)
 {
-	dprint("GameFootball::SetACSNotifier : event = %i, script = %i", event, script);
-	if (event >= Game::event_custom && event < event_goal + num_footballevents)
+	if (event >= GameModel::event_custom && event < event_goal + num_footballevents)
 	{
-		dprint(" -------------------- registered --------------------");
-		event -= Game::event_custom;
-		dprint("set anf %i", event);
+		event -= GameModel::event_custom;
 		AcsNotifiersFootball[event].enabled = true;
 		AcsNotifiersFootball[event].script = script;
 	}
 	else
 	{
-		dprint(" ------------- failed, pass to base class --------------------");
 		::SetACSNotifier(event, script);
 	}
 }
@@ -380,14 +376,11 @@ void SetACSNotifier(int event, int script)
 
 void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 {
-	dprint("GameFootball : notify ACS Event = %i", Event);
-	if (Event >= Game::event_custom && Event < event_goal + num_footballevents)
+	if (Event >= GameModel::event_custom && Event < event_goal + num_footballevents)
 	{
-		Event -= Game::event_custom;
-		dprint("check anf %i", Event);
+		Event -= GameModel::event_custom;
 		if (AcsNotifiersFootball[Event].enabled)
 		{
-			dprint("anf enabled, execute script %i", AcsNotifiersFootball[Event].script);
 			Level.ExecuteActionSpecial(LNSPEC_ACSExecute,
 					AcsNotifiersFootball[Event].script,
 					0,

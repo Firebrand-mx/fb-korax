@@ -451,11 +451,11 @@ void SetEnemy()
 bool CheckActiveBall(Actor check)
 {
 	// [FB] Are we in football gameplay mode?
-	if(MainGameInfo(player.Level.Game).GameMode && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
+	if(MainGameInfo(player.Level.Game).GameModel && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
  	{
 		// [FB] Check for an active ball
-		if (GameFootball(MainGameInfo(player.Level.Game).GameMode).Ball &&
-		    check == GameFootball(MainGameInfo(player.Level.Game).GameMode).Ball)
+		if (GameFootball(MainGameInfo(player.Level.Game).GameModel).Ball &&
+		    check == GameFootball(MainGameInfo(player.Level.Game).GameModel).Ball)
 		{
 			if (player.MO.CanSee(check) && botmo.DistTo(check) <= 32.0)
  			{
@@ -1219,15 +1219,15 @@ Actor FindEnemy()
 					continue;
 			}
 			// [FB] Check if an advanced game mode is active
-			if (MainGameInfo(player.Level.Game).GameMode)
+			if (MainGameInfo(player.Level.Game).GameModel)
 			{
 				int teamfactor;
 
-				teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(actor.Tracer,
+				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(actor.Tracer,
 							Actor(botmo));
 				// [FB] We've got a team factor, just check if it's an ally or not
-				if (teamfactor != Game::teamfactor_any &&
-					teamfactor != Game::teamfactor_enemy)
+				if (teamfactor != GameModel::teamfactor_any &&
+					teamfactor != GameModel::teamfactor_enemy)
 				{
 					continue;
 				}
@@ -1270,16 +1270,16 @@ Actor FindEnemy()
 		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
 		    player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
 		{
-			if (MainGameInfo(player.Level.Game).GameMode) // [CW] Check if an advanced game mode is active
+			if (MainGameInfo(player.Level.Game).GameModel) // [CW] Check if an advanced game mode is active
 			{
 				int teamfactor;
 				if (player.Level.Game.Players[i])
 				{
-					teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
+					teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
 						     Actor(player.Level.Game.Players[i].MO));
 					// [CW] We've got a team factor, check if it can be an enemy
-					if (teamfactor != Game::teamfactor_any &&
-					    teamfactor != Game::teamfactor_enemy)
+					if (teamfactor != GameModel::teamfactor_any &&
+					    teamfactor != GameModel::teamfactor_enemy)
 						continue;
 				}
 			}
@@ -1682,16 +1682,16 @@ Actor B_SetAlly()
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (MainGameInfo(player.Level.Game).GameMode) // [FB] Check if an advanced game mode is active
+		if (MainGameInfo(player.Level.Game).GameModel) // [FB] Check if an advanced game mode is active
 		{
 			int teamfactor;
 			if (player.Level.Game.Players[i])
 			{
-				teamfactor = MainGameInfo(player.Level.Game).GameMode.TeamFactor(Actor(botmo),
+				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
 						Actor(player.Level.Game.Players[i].MO));
 				// [FB] We've got a team factor, just check if it's an ally or not
-				if (teamfactor != Game::teamfactor_any &&
-					teamfactor != Game::teamfactor_enemy)
+				if (teamfactor != GameModel::teamfactor_any &&
+					teamfactor != GameModel::teamfactor_enemy)
 				{
 					ally = Actor(player.Level.Game.Players[i].MO);
 					return ally;
@@ -2625,7 +2625,7 @@ void BotTick(float deltaTime)
 	// [FB] Set an ally if we're in a mode that has one...
 	if (((MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
 			MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) || 
-			MainGameInfo(player.Level.Game).GameMode) && !ally)
+			MainGameInfo(player.Level.Game).GameModel) && !ally)
 	{
 		ally = B_SetAlly();
 		// [FB] ...and decide what action we'll take

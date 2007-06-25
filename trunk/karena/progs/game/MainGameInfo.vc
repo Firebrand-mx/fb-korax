@@ -95,7 +95,7 @@ int			GameType;			// [CW] since 'deathmatch' is treated as bool now,
 								//      important to know which exactly is a game mode
 
 PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
-Game		GameMode;			// [CW] for advanced game modes
+GameModel	GameModel;			// [CW] for advanced game modes
 
 bool		bCompetitionOpened;	// [CW] is set to true when first player gets first score
 
@@ -151,28 +151,28 @@ void InitNewGame(int skill)
 	randomclass = GetCvar('RandomClass');
 
 	// Destroy old game mode (if exists)
-	if (GameMode)
-		GameMode.End();
+	if (GameModel)
+		GameModel.End();
 
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
-	// init GameMode
+	// init GameModel
 	GameType = GetCvar('deathmatch');
 	dprint("MainGameInfo::InitNewGame : GameType = %i", GameType);
 	switch (GameType)
 	{
 	case HexenDefs::game_ctf:
 		dprint("Spawn Capture The Flag");
-		GameMode = Game(SpawnObject(GameCTF)); break;
+		GameModel = GameModel(SpawnObject(GameCTF)); break;
 	case HexenDefs::game_football:
 		dprint("Spawn Football");
-		GameMode = Game(SpawnObject(GameFootball)); break;
+		GameModel = GameModel(SpawnObject(GameFootball)); break;
 	case HexenDefs::game_kth:
 		dprint("Spawn Kill The Heresiarch");
-		GameMode = Game(SpawnObject(GameKTH)); break;
+		GameModel = GameModel(SpawnObject(GameKTH)); break;
 	}
-	if (GameMode)
-		GameMode.Init(self);
+	if (GameModel)
+		GameModel.Init(self);
 
 	bFirstLevelInited = false;
 }
@@ -199,8 +199,8 @@ void InitLevel(HexenLevelInfo levelinfo)
 	dprint("MainGameInfo::InitLevel : GO");
 
 	//[CW]
-	if (GameMode)
-		GameMode.Level = levelinfo;
+	if (GameModel)
+		GameModel.Level = levelinfo;
 
 	levelinfo.BodyQueSize = GetCvar('BodyQueSize');
 	levelinfo.CorpseQueSize = GetCvar('CorpseQueSize');
@@ -520,8 +520,8 @@ void InsertPlayer(Player pl)
 	{
 		int i, maxteams;
 
-		if (GameMode)
-			maxteams = GameMode.AllowedTeams();
+		if (GameModel)
+			maxteams = GameModel.AllowedTeams();
 		else
 			maxteams = HexenDefs::MAXTEAMSINGAME;
 
@@ -561,8 +561,8 @@ void InsertPlayer(Player pl)
 		
 		// if an advanced game mode is running, notify it that
 		// a new team object is created
-		if (GameMode)
-			GameMode.NotifyUpdateTeams();
+		if (GameModel)
+			GameModel.NotifyUpdateTeams();
 			
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 			pl.Level.bprint("team %s enters competition", ColourNames[Teams[teamnum].Colour]);

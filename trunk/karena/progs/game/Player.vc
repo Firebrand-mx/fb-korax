@@ -631,8 +631,8 @@ void SelectPlayerTeam()
 	{
 		int i;
 		int maxTeams;
-		if (MainGameInfo(Level.Game).GameMode)
-			maxTeams = MainGameInfo(Level.Game).GameMode.AllowedTeams();
+		if (MainGameInfo(Level.Game).GameModel)
+			maxTeams = MainGameInfo(Level.Game).GameModel.AllowedTeams();
 		else
 			maxTeams = HexenDefs::MAXTEAMSINGAME;
 		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
@@ -946,8 +946,8 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// [CW] if there is advanced game mode initiated, notify it of player spawn
-	if (MainGameInfo(Level.Game).GameMode)
-		MainGameInfo(Level.Game).GameMode.NotifyPlayerSpawn(self);
+	if (MainGameInfo(Level.Game).GameModel)
+		MainGameInfo(Level.Game).GameModel.NotifyPlayerSpawn(self);
 
 	// [FB] Destroy all things touching players
 	Actor(MO).TeleportMove(MO.Origin);
@@ -3118,11 +3118,11 @@ void PlayerTick(float deltaTime)
 		{
 			if (Actor(MO).linetarget.Player)
 			{
-				int teamfactor = Game::teamfactor_any;
+				int teamfactor = GameModel::teamfactor_any;
 				targetnamehint = Actor(MO).linetarget.Player.PlayerName;
-				if (MainGameInfo(Level.Game).GameMode)
-					teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(Actor(MO), Actor(MO).linetarget);
-				if (teamfactor == Game::teamfactor_any)
+				if (MainGameInfo(Level.Game).GameModel)
+					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), Actor(MO).linetarget);
+				if (teamfactor == GameModel::teamfactor_any)
 				{
 					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
 						targetnamehint_type = targethint_shoot;
@@ -3130,7 +3130,7 @@ void PlayerTick(float deltaTime)
 						targetnamehint_type = (Colour == Actor(MO).linetarget.Player.Colour) ? targethint_noshoot : targethint_shoot;
 				}
 				else
-					targetnamehint_type = teamfactor == Game::teamfactor_coop ? targethint_noshoot : targethint_shoot;
+					targetnamehint_type = teamfactor == GameModel::teamfactor_coop ? targethint_noshoot : targethint_shoot;
 			}
 			else
 				targetnamehint = "";
@@ -5353,9 +5353,9 @@ void UpdateScore(int event)
 		case HexenDefs::scoreevent_KthHeresiarchFrag:
 			// [CW] This is an interesting case: whoever this called Player is,
 			//		frag should go to Heresiarch and no one else!
-			if (MainGameInfo(Level.Game).GameMode && MainGameInfo(Level.Game).GameMode.IsA('GameKTH'))
+			if (MainGameInfo(Level.Game).GameModel && MainGameInfo(Level.Game).GameModel.IsA('GameKTH'))
 			{
-				Player plH = GameKTH(MainGameInfo(Level.Game).GameMode).plHeresiarch;
+				Player plH = GameKTH(MainGameInfo(Level.Game).GameModel).plHeresiarch;
 				if (self == plH)
 					mod = 1;
 				else

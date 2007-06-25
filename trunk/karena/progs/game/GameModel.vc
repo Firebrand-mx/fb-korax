@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: Game.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**    $Id: GameModel.vc 508 2006-07-10 19:02:43Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -30,10 +30,10 @@
 //**
 //**************************************************************************
 //
-// Class Game, parent class for advanced game modes
+// Class GameModel, parent class for advanced game models
 //
 
-class Game : Object
+class GameModel : Object
 	abstract;
 
 // team factors
@@ -192,13 +192,13 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 
 //==========================================================================
 //
-//	HandleGameEvent
+//	HandleEvent
 //
 //	ACS callable
 //
 //==========================================================================
 
-void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
+void HandleEvent(int Event, Actor A, int arg1, int arg2, int arg3, int arg4)
 {
 	int notifyACSArgs[3];
 
@@ -208,7 +208,7 @@ void HandleGameEvent(Actor A, int Event, int arg1, int arg2, int arg3, int arg4)
 		break;
 		
 	default:
-		dprint("Game::HandleGameEvent : unknown event %i", Event);
+		dprint("Game::HandleEvent : unknown event %i", Event);
 	}
 	
 	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
@@ -248,15 +248,11 @@ void SetGameObjective(int objective, int arg2, int arg3, int arg4, int arg5)
 
 void SetACSNotifier(int event, int script)
 {
-	dprint("Game::SetACSNotifier : event = %i, script = %i", event, script);
 	if (event >= 0 && event < num_genericevents)
 	{
-		dprint(" -------------------- registered --------------------");
 		AcsNotifiersGeneric[event].enabled = true;
 		AcsNotifiersGeneric[event].script = script;
 	}
-	else
-		dprint(" -------------------- failed --------------------");
 }
 
 //==========================================================================
@@ -288,7 +284,7 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 
 void End()
 {
-	Game.GameMode = none;
+	Game.GameModel = none;
 	Destroy();
 }
 
