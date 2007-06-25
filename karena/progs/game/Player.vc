@@ -1107,9 +1107,15 @@ bool GiveMana(int mana, int count)
 	{
 		return false;
 	}
-	if (mana < 0 || mana >= HexenDefs::NUMMANA)
+	if (mana == HexenDefs::MANA_123)
 	{
-		Error("Actor::GiveMana: bad type %i", mana);
+		return GiveMana(HexenDefs::MANA_1, count) ||
+				GiveMana(HexenDefs::MANA_2, count) ||
+				GiveMana(HexenDefs::MANA_3, count);
+	}
+	if (mana < 0 || mana > HexenDefs::NUMMANA)
+	{
+		Error("Player::GiveMana: bad type %i", mana);
 	}
 	if (Mana[mana] == HexenDefs::MAX_MANA)
 	{
