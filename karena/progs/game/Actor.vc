@@ -800,8 +800,8 @@ void Died(EntityEx source)
 				source.Player.Frags++;
 				Player(source.Player).GiveExperience(500 + ((500 * (Player(Player).exp_level - 1) / 10) * (500 * (Player(source.Player).exp_level - 1) / 10)));
 
-				if (MainGameInfo(Level.Game).GameMode)
-					se = MainGameInfo(Level.Game).GameMode.GetFragScoreEvent(Player(source.Player), Player(self.Player));
+				if (MainGameInfo(Level.Game).GameModel)
+					se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(Player(source.Player), Player(self.Player));
 
 				Player(source.Player).UpdateScore(se);
 
@@ -850,8 +850,8 @@ void Died(EntityEx source)
 		Player(Player).DropWeapon();
 		
 		//[CW] notify advanced game mode
-		if (MainGameInfo(Level.Game).GameMode)
-			MainGameInfo(Level.Game).GameMode.NotifyPlayerDeath(Player(Player), source);
+		if (MainGameInfo(Level.Game).GameModel)
+			MainGameInfo(Level.Game).GameModel.NotifyPlayerDeath(Player(Player), source);
 
 		if (bFireDamage)
 		{
@@ -1321,11 +1321,11 @@ void Damage(EntityEx inflictor, EntityEx source, int damage)
 
 		// [CW] Check advanced game Team Factor
 		if (source && (source.bIsPlayer || source.Target && source.Target.bIsPlayer) &&
-			MainGameInfo(Level.Game).GameMode)
+			MainGameInfo(Level.Game).GameModel)
 		{
-			int teamfactor = MainGameInfo(Level.Game).GameMode.TeamFactor(self,
+			int teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(self,
 				source.bIsPlayer ? source : source.Target);
-			if (teamfactor == Game::teamfactor_coop && damage < 1000)
+			if (teamfactor == GameModel::teamfactor_coop && damage < 1000)
 				return;
 		}
 
@@ -1433,7 +1433,7 @@ void Damage(EntityEx inflictor, EntityEx source, int damage)
 		//[CW] process deathmessage; for players only
 		//
 		if(bIsPlayer)
-			Player(Player).DisplayDeathMessage(source, inflictor);
+			Player(Player).DisplayDeathMessage(inflictor, source);
 
 		// Death
 		if (inflictor)

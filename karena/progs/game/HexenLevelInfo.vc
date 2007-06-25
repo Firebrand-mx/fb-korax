@@ -273,24 +273,24 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		}
 		break;
 	case ACTSPEC_AdvancedGame_BeginState:
-		if (MainGameInfo(Game).GameMode)
+		if (MainGameInfo(Game).GameModel)
 		{
 			buttonSuccess = true;
-			MainGameInfo(Game).GameMode.BeginState(Arg1);
+			MainGameInfo(Game).GameModel.BeginState(Arg1);
 		}
 		break;
 	case ACTSPEC_AdvancedGame_EndState:
-		if (MainGameInfo(Game).GameMode)
+		if (MainGameInfo(Game).GameModel)
 		{
 			buttonSuccess = true;
-			MainGameInfo(Game).GameMode.EndCurrentState(Arg1);
+			MainGameInfo(Game).GameModel.EndCurrentState(Arg1);
 		}
 		break;
 	case ACTSPEC_AdvancedGame_HandleEvent:
-		if (MainGameInfo(Game).GameMode)
+		if (MainGameInfo(Game).GameModel)
 		{
 			buttonSuccess = true;
-			MainGameInfo(Game).GameMode.HandleGameEvent(A, Arg1, Arg2, Arg3, Arg4, Arg5);
+			MainGameInfo(Game).GameModel.HandleEvent(Arg1, A, Arg2, Arg3, Arg4, Arg5);
 		}
 		break;
 	case ACTSPEC_AdvancedGame_SetGameObject:
@@ -310,10 +310,10 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
 		break;
 	case ACTSPEC_AdvancedGame_SetACSNotifier:
-		if (MainGameInfo(Game).GameMode)
+		if (MainGameInfo(Game).GameModel)
 		{
 			buttonSuccess = true;
-			MainGameInfo(Game).GameMode.SetACSNotifier(Arg1, Arg2);
+			MainGameInfo(Game).GameModel.SetACSNotifier(Arg1, Arg2);
 		}
 		break;
 
@@ -573,7 +573,7 @@ bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
 
 //**************************************************************************
 //
-//  Advanced game mode specials
+//  Advanced game model specials
 //
 //**************************************************************************
 
@@ -587,7 +587,7 @@ bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
 
 bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, Actor a)
 {
-	if (!MainGameInfo(Game).GameMode)
+	if (!MainGameInfo(Game).GameModel)
 		return false;
 
 	if (tid)
@@ -601,14 +601,14 @@ bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, A
 		{
 			if (A)
 			{
-			   MainGameInfo(Game).GameMode.SetGameObject(A, Arg2, Arg3, Arg4, Arg5);
+			   MainGameInfo(Game).GameModel.SetGameObject(A, Arg2, Arg3, Arg4, Arg5);
 			   return true;
 			}
 		}
 	}
 	else if (a)
 	{
-		MainGameInfo(Game).GameMode.SetGameObject(a, Arg2, Arg3, Arg4, Arg5);
+		MainGameInfo(Game).GameModel.SetGameObject(a, Arg2, Arg3, Arg4, Arg5);
 		return true;
 	}
 	return false;
@@ -626,7 +626,7 @@ bool EV_IsConditionTrue(int Condition, int cParam)
 	{
 
 	case CNDT_AdvancedGame_StateIs:
-		if (MainGameInfo(Game).GameMode && MainGameInfo(Game).GameMode.State == cParam)
+		if (MainGameInfo(Game).GameModel && MainGameInfo(Game).GameModel.State == cParam)
 			return true;
 	}
 
