@@ -747,7 +747,7 @@ void Died(EntityEx source)
 	if (source && source.bIsPlayer)
 	{
 		// [CW] check for "accuracy" trophy
-		if (bCountKill || bIsPlayer)
+		if (bCountKill || (bIsPlayer && source.Player != Player))
 		{
 			if (Length(Player(source.Player).Trophies.shot_position - GetCentre()) >=
 					HexenDefs::ACCURATE_SHOT_DISTANCE)
@@ -788,9 +788,6 @@ void Died(EntityEx source)
 				Player.Frags--;
 
 				Player(Player).UpdateScore(HexenDefs::scoreevent_SelfFrag);
-
-				//[CW] update death row trophy
-				Player(Player).UpdateQueuedTrophy(HexenDefs::trophycl_deathsrow, 1);
 			}
 			else
 			{
@@ -814,13 +811,6 @@ void Died(EntityEx source)
 	if (bIsPlayer)
 	{
 		Player(Player).Deaths++;
-
-		//[CW] update death row trophy and end frags/kills rows
-		Player(Player).UpdateQueuedTrophy(HexenDefs::trophycl_deathsrow, 1);
-		Player(Player).ConfirmTrophy(HexenDefs::trophycl_fragsatonce);
-		Player(Player).ConfirmTrophy(HexenDefs::trophycl_killsatonce);
-		Player(Player).ConfirmTrophy(HexenDefs::trophycl_fragsrow);
-		Player(Player).ConfirmTrophy(HexenDefs::trophycl_killsrow);
 
 		//[CW] Show scoreboard for died player
 		Player(Player).Scoreboard(true);
@@ -1320,8 +1310,9 @@ void Damage(EntityEx inflictor, EntityEx source, int damage)
 		}
 
 		// [CW] Check advanced game Team Factor
-		if (source && (source.bIsPlayer || source.Target && source.Target.bIsPlayer) &&
-			MainGameInfo(Level.Game).GameModel)
+		if (source != self && source && (source.bIsPlayer || !source.IsA('Pawn') && source.Target &&
+				source.Target.bIsPlayer) &&
+				MainGameInfo(Level.Game).GameModel)
 		{
 			int teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(self,
 				source.bIsPlayer ? source : source.Target);
@@ -1330,8 +1321,10 @@ void Damage(EntityEx inflictor, EntityEx source, int damage)
 		}
 
 		// [FB] Don't do damage to teammates in team game modes
-		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
-		    && (source && ((source.bIsPlayer) || (source.Target
+		if (source != self &&
+			(MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) 
+		    && (source && ((source.bIsPlayer) || (!source.IsA('Pawn') && source.Target
 		    && source.Target.bIsPlayer))))
 		{
 			PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Target.Player).Team);
