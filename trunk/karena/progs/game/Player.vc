@@ -3124,10 +3124,14 @@ void PlayerTick(float deltaTime)
 					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), Actor(MO).linetarget);
 				if (teamfactor == GameModel::teamfactor_any)
 				{
-					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
+					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
+						!MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType])
 						targetnamehint_type = targethint_shoot;
 					else
-						targetnamehint_type = (Colour == Actor(MO).linetarget.Player.Colour) ? targethint_noshoot : targethint_shoot;
+						targetnamehint_type =
+							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
+							Colour == Actor(MO).linetarget.Player.Colour)
+								? targethint_noshoot : targethint_shoot;
 				}
 				else
 					targetnamehint_type = teamfactor == GameModel::teamfactor_coop ? targethint_noshoot : targethint_shoot;
