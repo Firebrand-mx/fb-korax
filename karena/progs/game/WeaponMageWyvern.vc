@@ -40,12 +40,14 @@ class WeaponMageWyvern : Weapon;
 
 final void A_FireWyvernBreath(bool use_mana)
 {
-	TAVec ang;
-	int damage;
-	int i;
-	Actor pmo;
-	DragonMissile mo;
-	int flamedone = false;
+	TAVec			ang;
+	int				damage;
+	int				i;
+	Actor			pmo;
+	DragonMissile	mo;
+	int				flamedone = false;
+	TVec			Dir;
+	EntityEx		AimTarget;
 
 	if (use_mana)
 		UseWeaponMana();
@@ -69,11 +71,11 @@ final void A_FireWyvernBreath(bool use_mana)
 	{
 		ang = pmo.Angles;
 		ang.yaw = AngleMod360(ang.yaw + itof(i) * (45.0 / 16.0));
-		pmo.AimLineAttack(ang, MELEERANGE);
-		if (pmo.linetarget)
+		AimTarget = pmo.AimLineAttack(Dir, ang, MELEERANGE);
+		if (AimTarget)
 		{
 			pmo.bFireDamage = true;
-			pmo.linetarget.Damage(pmo, pmo, damage);
+			AimTarget.Damage(pmo, pmo, damage);
 			pmo.bFireDamage = false;
 			flamedone = true;
 			break;

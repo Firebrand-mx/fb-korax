@@ -40,10 +40,11 @@ class WeaponChainsaw : Weapon;
 
 final void A_Saw()
 {
-	float angle;
-	int damage;
-	TAVec aimAng;
-	TVec dir;
+	float		angle;
+	int			damage;
+	TAVec		aimAng;
+	TVec		dir;
+	EntityEx	AimTarget;
 
 	if(!active_damage)
 	{
@@ -60,9 +61,9 @@ final void A_Saw()
 
 	// use meleerange + 1 se the puff doesn't skip the flash
 	//dir = AimLineAttack(Player.MO, aimAng, MELEERANGE + 0.00001);
-	dir = Actor(Owner).AimLineAttack(aimAng, MELEERANGE * 2.0);
+	AimTarget = Actor(Owner).AimLineAttack(dir, aimAng, MELEERANGE * 2.0);
 	Actor(Owner).LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
-	if (!Actor(Owner).linetarget)
+	if (!AimTarget)
 	{
 		Owner.PlaySound('ChainsawTriggered', CHAN_WEAPON);
 		return;
@@ -70,8 +71,8 @@ final void A_Saw()
 	Owner.PlaySound('ChainsawHit', CHAN_WEAPON);
 
 	// turn to face target
-	angle = atan2(Actor(Owner).linetarget.Origin.y - Owner.Origin.y,
-		Actor(Owner).linetarget.Origin.x - Owner.Origin.x);
+	angle = atan2(AimTarget.Origin.y - Owner.Origin.y,
+		AimTarget.Origin.x - Owner.Origin.x);
 	if (AngleMod360(angle - Owner.Angles.yaw) > 180.0)
 	{
 		if (AngleMod360(angle - Owner.Angles.yaw) < -90.0 / 20.0)

@@ -75,9 +75,11 @@ final void A_FireSkullRodPL1()
 
 final void A_FireSkullRodPL2()
 {
-	Actor MissileMobj;
+	Actor		MissileMobj;
+	EntityEx	AimTarget;
+
 	UseWeaponMana();
-	MissileMobj = Player(Owner.Player).SpawnPlayerMissile2(HornRodMissile2, false);
+	MissileMobj = Player(Owner.Player).SpawnPlayerMissile2Ex(HornRodMissile2, false, AimTarget);
 	// Use MissileMobj instead of the return value from
 	// SpawnPlayerMissile because we need to give info to the mobj
 	// even if it exploded immediately.
@@ -104,9 +106,9 @@ final void A_FireSkullRodPL2()
 				MissileMobj.MissileDamage = (MissileMobj.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 			}
 		}
-		if (Actor(Owner).linetarget)
+		if (AimTarget)
 		{
-			MissileMobj.Tracer = Actor(Owner).linetarget;
+			MissileMobj.Tracer = AimTarget;
 		}
 		MissileMobj.PlaySound('SkullRodFire2', CHAN_WEAPON);
 		if (!MissileMobj.TryMove(MissileMobj.Origin))
