@@ -5684,9 +5684,25 @@ void UpdateCompetition()
 
 //==========================================================================
 
-void DisplayDeathMessage(EntityEx inflictor, EntityEx source)
+void DisplayDeathMessage(EntityEx inflictor, EntityEx source, name DmgType)
 {
-	if(source)
+	if (DmgType == 'Falling')
+	{
+		//[CW] falling damage
+		Level.bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
+	}
+	else if (DmgType == 'Telefrag')
+	{
+		// telefrag
+		if (inflictor.bIsPlayer)
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3],
+				PlayerName, inflictor.Player.PlayerName);
+		// telefrag
+		else
+			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
+				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
+	}
+	else if(source)
 	{
 		//[CW] p.4: melee or instant ranged attack
 		if(source == inflictor)
@@ -5735,24 +5751,11 @@ void DisplayDeathMessage(EntityEx inflictor, EntityEx source)
 		{
 			Level.bprint(MainGameInfo(Level.Game).SuicideDeathMessage[P_Random() % 3], PlayerName);
 		}
-		//[CW] falling damage
-		else
-		{
-			Level.bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
-		}
 	}
 	//[CW] p.2: fragged by enviromental thing or trap, or telefragged
 	else if(inflictor)
 	{
-		// telefrag
-		if (inflictor.bIsPlayer)
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName, inflictor.Player.PlayerName);
-		// telefrag
-		else if (inflictor.IsA('Pawn'))
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
-				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
-		else
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[Actor(inflictor).deathmsgi], PlayerName);
+		Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[Actor(inflictor).deathmsgi], PlayerName);
 	}
 	//[CW] p.1: fragged by pure enviroment
 	else
