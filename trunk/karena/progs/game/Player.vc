@@ -3118,16 +3118,17 @@ void PlayerTick(float deltaTime)
 	if (PlayerState != PST_DEAD && targetnamehint_enabled)
 	{
 		TAVec angles;
+		TVec Dir;
 		angles = MO.Angles;
-		Actor(MO).AimLineAttack(angles, 64.0 * 64.0);
-		if (Actor(MO).linetarget)
+		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
+		if (AimTarget)
 		{
-			if (Actor(MO).linetarget.Player)
+			if (AimTarget.Player)
 			{
 				int teamfactor = GameModel::teamfactor_any;
-				targetnamehint = Actor(MO).linetarget.Player.PlayerName;
+				targetnamehint = AimTarget.Player.PlayerName;
 				if (MainGameInfo(Level.Game).GameModel)
-					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), Actor(MO).linetarget);
+					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), AimTarget);
 				if (teamfactor == GameModel::teamfactor_any)
 				{
 					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
@@ -3136,7 +3137,7 @@ void PlayerTick(float deltaTime)
 					else
 						targetnamehint_type =
 							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
-							Colour == Actor(MO).linetarget.Player.Colour)
+							Colour == AimTarget.Player.Colour)
 								? targethint_noshoot : targethint_shoot;
 				}
 				else
@@ -4479,6 +4480,72 @@ Actor SpawnPlayerMissile2(class<Actor> type, bool explode)
 	return MissileMobj;
 }
 
+//==========================================================================
+//
+//  SpawnPlayerMissile2Ex
+//
+//  Tries to aim at a nearby monster
+//
+//==========================================================================
+
+Actor SpawnPlayerMissile2Ex(class<Actor> type, bool explode,
+	out Entity AimTarget)
+{
+	Actor MissileMobj;
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+
+	// Try to find a target
+	AimTarget = Actor(MO).Aim(vforward, 16.0 * 64.0);
+	VectorAngles(&vforward, &angles);
+	org = MO.Origin;
+	if (type == LightningFloor)
+	{
+		org.z = Actor::ONFLOORZ;
+		angles.pitch = 0.0;
+		vforward.z = 0.0;
+		vforward = Normalise(vforward);
+	}
+	else if (type == LightningCeiling)
+	{
+		org.z = Actor::ONCEILINGZ;
+		angles.pitch = 0.0;
+		vforward.z = 0.0;
+		vforward = Normalise(vforward);
+	}
+	else
+	{
+		org.z = MO.Origin.z + 4.0 * 8.0 - tan(MO.Angles.pitch);
+		org.z -= MO.FloorClip;
+	}
+	MissileMobj = HexenLevelInfo(Level).Spawn(type, org);
+	MissileMobj.Target = Actor(MO);
+	MissileMobj.Angles = angles;
+	MissileMobj.Velocity = vforward * MissileMobj.Speed;
+	if (MissileMobj.Class == MageWandMissile || MissileMobj.Class == MageWandRedMissile ||
+		 MissileMobj.Class == MageWandGreyMissile || MissileMobj.Class == ClericFlameMissile)
+	{
+		// Ultra-fast ripper spawning missile
+		MissileMobj.Origin += MissileMobj.Velocity * Level.Game.frametime / 8.0;
+	}
+	else
+	{
+		// Normal missile
+		MissileMobj.Origin += MissileMobj.Velocity * Level.Game.frametime / 2.0;
+	}
+	if (explode)
+	{
+		if (!MissileMobj.TryMove(MissileMobj.Origin))
+		{
+			// Exploded immediately
+			MissileMobj.ExplodeMissile();
+			return none;
+		}
+	}
+	return MissileMobj;
+}
+
 //===========================================================================
 //
 //  SpawnPlayerMissileAngle
@@ -4539,13 +4606,13 @@ Actor SpawnPlayerMissileAngleXYZ(TVec org, class<Actor> type, float angle)
 //
 //============================================================================
 
-void AdjustPlayerAngle()
+void AdjustPlayerAngle(EntityEx AimTarget)
 {
 	float angle;
 	float difference;
 
-	angle = atan2(Actor(MO).linetarget.Origin.y - MO.Origin.y,
-		Actor(MO).linetarget.Origin.x - MO.Origin.x);
+	angle = atan2(AimTarget.Origin.y - MO.Origin.y,
+		AimTarget.Origin.x - MO.Origin.x);
 	difference = AngleMod180(angle - MO.Angles.yaw);
 	if (fabs(difference) > 5.0)
 	{

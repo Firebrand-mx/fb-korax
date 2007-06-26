@@ -42,6 +42,7 @@ final void A_CMaceAttack()
 {
 	int			damage;
 	TVec		vforward;
+	EntityEx	AimTarget;
 
 	damage = 32; //25 + (P_Random() & 15);
 	if (str_mod)
@@ -55,15 +56,16 @@ final void A_CMaceAttack()
 			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
-	if (Actor(Owner).AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0, 16,
-		MELEERANGE))
+	AimTarget = Actor(Owner).AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0,
+		16, MELEERANGE);
+	if (AimTarget)
 	{
 		if (Actor(Owner).LineAttack(vforward, 2.0 * MELEERANGE, damage,
 			HammerPuff))
 		{
 			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		Player(Owner.Player).AdjustPlayerAngle();
+		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{

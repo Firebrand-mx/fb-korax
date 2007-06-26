@@ -115,10 +115,11 @@ final void A_FireMacePL1()
 
 final void A_FireMacePL2()
 {
-	Actor A;
+	Actor		A;
+	EntityEx	AimTarget;
 
 	UseWeaponMana();
-	A = Player(Owner.Player).SpawnPlayerMissile(MaceFX4);
+	A = Player(Owner.Player).SpawnPlayerMissile2Ex(MaceFX4, true, AimTarget);
 	if (A)
 	{
 		A.Target = Actor(Owner);
@@ -137,9 +138,9 @@ final void A_FireMacePL2()
 		A.Velocity.y += Owner.Velocity.y;
 		A.Velocity.z =
 			(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
-		if (Actor(Owner).linetarget)
+		if (AimTarget)
 		{
-			A.Tracer = Actor(Owner).linetarget;
+			A.Tracer = AimTarget;
 		}
 	}
 	Owner.PlaySound('MaceFire', CHAN_WEAPON);

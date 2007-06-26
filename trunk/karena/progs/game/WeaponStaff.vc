@@ -40,10 +40,11 @@ class WeaponStaff : Weapon;
 
 final void A_StaffAttackPL1()
 {
-	TAVec angles;
-	int damage;
-	TVec vforward;
-	Actor pmo = Actor(Owner);
+	TAVec		angles;
+	int			damage;
+	TVec		vforward;
+	Actor		pmo = Actor(Owner);
+	EntityEx	AimTarget;
 
 	damage = 12; //5 + (P_Random() & 15);
 	if (str_mod)
@@ -60,21 +61,21 @@ final void A_StaffAttackPL1()
 	angles = pmo.Angles;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	vforward = pmo.AimLineAttack(angles, 1.5 * MELEERANGE);
-	if (pmo.linetarget)
+	AimTarget = pmo.AimLineAttack(vforward, angles, 1.5 * MELEERANGE);
+	if (AimTarget)
 	{
 		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
-		if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
+		if (AimTarget.bCountKill || AimTarget.bIsPlayer)
 		{
-			pmo.linetarget.Thrust(angles.yaw, 2.0);
+			AimTarget.Thrust(angles.yaw, 2.0);
 		}
-		Player(Owner.Player).AdjustPlayerAngle();
+		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
 		angles = Owner.Angles;
-		vforward = Actor(Owner).AimLineAttack(angles, MELEERANGE);
+		Actor(Owner).AimLineAttack(vforward, angles, MELEERANGE);
 		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, StaffPuff))
 		{
 			Owner.PlaySound('StaffHit', CHAN_WEAPON);
