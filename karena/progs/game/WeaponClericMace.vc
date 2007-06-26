@@ -40,10 +40,8 @@ class WeaponClericMace : Weapon;
 
 final void A_CMaceAttack()
 {
-	int damage;
-	int i;
-	TAVec angles;
-	TVec vforward;
+	int			damage;
+	TVec		vforward;
 
 	damage = 32; //25 + (P_Random() & 15);
 	if (str_mod)
@@ -57,39 +55,23 @@ final void A_CMaceAttack()
 			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
 		}
 	}
-	for (i = 0; i < 16; i++)
+	if (Actor(Owner).AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0, 16,
+		MELEERANGE))
 	{
-		angles = Owner.Angles;
-		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		vforward = Actor(Owner).AimLineAttack(angles, 2.0 * MELEERANGE);
-		if (Actor(Owner).linetarget)
+		if (Actor(Owner).LineAttack(vforward, 2.0 * MELEERANGE, damage,
+			HammerPuff))
 		{
-			if (Actor(Owner).LineAttack(vforward, 2.0 * MELEERANGE, damage, HammerPuff))
-			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			return;
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		angles = Owner.Angles;
-		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		vforward = Actor(Owner).AimLineAttack(angles, 1.5 * MELEERANGE);
-		if (Actor(Owner).linetarget)
-		{
-			if (Actor(Owner).LineAttack(vforward, 2.0 * MELEERANGE, damage, HammerPuff))
-			{
-				Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			return;
-		}
+		Player(Owner.Player).AdjustPlayerAngle();
 	}
-	// didn't find any creatures, so try to strike any walls
-	angles = Owner.Angles;
-	vforward = Actor(Owner).AimLineAttack(angles, MELEERANGE);
-	if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, HammerPuff))
+	else
 	{
-		Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		// didn't find any creatures, so try to strike any walls
+		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, HammerPuff))
+		{
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
 	}
 }
 

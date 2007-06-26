@@ -40,12 +40,12 @@ class WeaponDarkness : WeaponFighterHammer;
 
 void A_FHammerAttack()
 {
-	Actor pmo = Actor(Owner);
-	int damage;
-	float power;
-	int i;
-	TAVec angles;
-	TVec vforward;
+	Actor		pmo = Actor(Owner);
+	int			damage;
+	float		power;
+	TAVec		angles;
+	TVec		vforward;
+	EntityEx	AimTarget;
 
 	bThrowHammer = true;
 
@@ -62,46 +62,23 @@ void A_FHammerAttack()
 		}
 	}
 	power = 10.0;
-	for (i = 0; i < 16; i++)
+	AimTarget = pmo.AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
+	if (AimTarget)
 	{
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 32.0));
-		vforward = pmo.AimLineAttack(angles, HammerRange);
-		if (pmo.linetarget)
+		VectorAngles(&vforward, &angles);
+		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
-			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
-			{
-				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
-			{
-				pmo.linetarget.Thrust(angles.yaw, power);
-			}
-			break;
+			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 32.0));
-		vforward = pmo.AimLineAttack(angles, HammerRange);
-		if (pmo.linetarget)
+		Player(Owner.Player).AdjustPlayerAngle();
+		if (AimTarget.bCountKill || AimTarget.bIsPlayer)
 		{
-			if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
-			{
-				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
-			{
-				pmo.linetarget.Thrust(angles.yaw, power);
-			}
-			break;
+			AimTarget.Thrust(angles.yaw, power);
 		}
 	}
-	if (i == 16)
+	else
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
-		angles = pmo.Angles;
-		vforward = pmo.AimLineAttack(angles, HammerRange);
 		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
 			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);

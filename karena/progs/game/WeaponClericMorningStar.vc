@@ -43,14 +43,14 @@ float MStarRange;
 
 final void A_CMSAttack()
 {
-	Actor pmo = Actor(Owner);
-	float power;
-	int damage;
-	int i;
-	int useMana;
-	TAVec angles;
-	TVec vforward;
-	class<Actor> PuffType;
+	Actor			pmo = Actor(Owner);
+	float			power;
+	int				damage;
+	int				useMana;
+	TAVec			angles;
+	TVec			vforward;
+	class<Actor>	PuffType;
+	EntityEx		AimTarget;
 
 	damage = 56; //40 + (P_Random() & 15) + (P_Random() & 7);
 	if (str_mod)
@@ -77,48 +77,24 @@ final void A_CMSAttack()
 		PuffType = AxePuff;
 		useMana = 0;
 	}
-	for (i = 0; i < 16; i++)
+	AimTarget = pmo.AimEx(vforward, MStarRange, 45.0 / 16.0, 16, MELEERANGE);
+	if (AimTarget)
 	{
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		vforward = pmo.AimLineAttack(angles, MStarRange);
-		if (pmo.linetarget)
+		VectorAngles(&vforward, &angles);
+		if (pmo.LineAttack(vforward, MStarRange, damage, PuffType))
 		{
-			if (pmo.LineAttack(vforward, MStarRange, damage, PuffType))
-			{
-				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
-			{
-				pmo.linetarget.Thrust(angles.yaw, power);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			useMana++;
-			break;
+			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		vforward = pmo.AimLineAttack(angles, MStarRange);
-		if (pmo.linetarget)
+		if (AimTarget.bCountKill || AimTarget.bIsPlayer)
 		{
-			if (pmo.LineAttack(vforward, MStarRange, damage, PuffType))
-			{
-				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			if (pmo.linetarget.bCountKill || pmo.linetarget.bIsPlayer)
-			{
-				pmo.linetarget.Thrust(angles.yaw, power);
-			}
-			Player(Owner.Player).AdjustPlayerAngle();
-			useMana++;
-			break;
+			AimTarget.Thrust(angles.yaw, power);
 		}
+		Player(Owner.Player).AdjustPlayerAngle();
+		useMana++;
 	}
-	if (i == 16)
+	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		angles = pmo.Angles;
-		vforward = pmo.AimLineAttack(angles, MELEERANGE);
 		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);

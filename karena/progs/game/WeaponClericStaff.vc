@@ -70,12 +70,11 @@ final void A_CStaffCheckBlink()
 
 final void A_CStaffCheck()
 {
-	Actor pmo;
-	int damage;
-	int newLife;
-	int i;
-	TAVec angles;
-	TVec vforward;
+	Actor		pmo;
+	int			damage;
+	int			newLife;
+	TVec		vforward;
+	EntityEx	AimTarget;
 
 	pmo = Actor(Owner);
 	damage = 27; //20 + (P_Random() & 15);
@@ -91,47 +90,22 @@ final void A_CStaffCheck()
 			damage = (damage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	for (i = 0; i < 3; i++)
+	AimTarget = pmo.AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
+	if (AimTarget)
 	{
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw + itof(i) * (45.0 / 16.0));
-		vforward = pmo.AimLineAttack(angles, 3.0 * MELEERANGE / 2.0);
-		if (pmo.linetarget)
+		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
+		pmo.Angles.yaw = atan2(AimTarget.Origin.y - pmo.Origin.y,
+			AimTarget.Origin.x - pmo.Origin.x);
+		if ((AimTarget.bIsPlayer || AimTarget.bCountKill) &&
+			!AimTarget.bDormant && !AimTarget.bInvulnerable)
 		{
-			pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
-			pmo.Angles.yaw = atan2(pmo.linetarget.Origin.y - pmo.Origin.y,
-				pmo.linetarget.Origin.x - pmo.Origin.x);
-			if ((pmo.linetarget.bIsPlayer || pmo.linetarget.bCountKill) &&
-				!pmo.linetarget.bDormant && !Actor(pmo.linetarget).bInvulnerable)
-			{
-				newLife = Owner.Player.Health + (damage >> 3);
-				newLife = newLife > 100 ? 100 : newLife;
-				pmo.Health = newLife;
-				Owner.Player.Health = newLife;
-				Owner.Player.SetViewState(ps_weapon, Attack2State);
-			}
-			UseWeaponMana();
-			break;
+			newLife = Owner.Player.Health + (damage >> 3);
+			newLife = newLife > 100 ? 100 : newLife;
+			pmo.Health = newLife;
+			Owner.Player.Health = newLife;
+			Owner.Player.SetViewState(ps_weapon, Attack2State);
 		}
-		angles = pmo.Angles;
-		angles.yaw = AngleMod360(angles.yaw - itof(i) * (45.0 / 16.0));
-		vforward = Actor(Owner).AimLineAttack(angles, 3.0 * MELEERANGE / 2.0);
-		if (Actor(Owner).linetarget)
-		{
-			pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
-			pmo.Angles.yaw = atan2(Actor(Owner).linetarget.Origin.y - pmo.Origin.y,
-				Actor(Owner).linetarget.Origin.x - pmo.Origin.x);
-			if (Actor(Owner).linetarget.bIsPlayer || Actor(Owner).linetarget.bCountKill)
-			{
-				newLife = Owner.Player.Health + (damage >> 4);
-				newLife = newLife > 100 ? 100 : newLife;
-				pmo.Health = newLife;
-				Owner.Player.Health = pmo.Health;
-				Owner.Player.SetViewState(ps_weapon, Attack2State);
-			}
-			UseWeaponMana();
-			break;
-		}
+		UseWeaponMana();
 	}
 }
 
