@@ -698,7 +698,7 @@ Actor ActiveMinotaur()
 //
 //==========================================================================
 
-void Died(EntityEx source)
+void Died(EntityEx source, name DmgType)
 {
 	int i;	
 
@@ -1426,7 +1426,7 @@ void Damage(EntityEx inflictor, EntityEx source, int damage, optional name DmgTy
 		//[CW] process deathmessage; for players only
 		//
 		if(bIsPlayer)
-			Player(Player).DisplayDeathMessage(inflictor, source);
+			Player(Player).DisplayDeathMessage(inflictor, source, DmgType);
 
 		// Death
 		if (inflictor)
@@ -1468,7 +1468,7 @@ void Damage(EntityEx inflictor, EntityEx source, int damage, optional name DmgTy
 			// Always extreme death from eighth weapon
 			Health = -5000;
 		}
-		Died(source);
+		Died(source, DmgType);
 		return;
 	}
 	if ((Random() < PainChance) && !bSkullFly)
@@ -1639,7 +1639,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 				bIceDamage = true;
 			}
 		}
-		Died(source);
+		Died(source, 'Poison');
 		return;
 	}
 	if (!(XLevel.TicTime & 63) && playPainSound)
@@ -1735,7 +1735,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 				bIceDamage = true;
 			}
 		}
-		Died(source);
+		Died(source, 'Blind');
 		return;
 	}
 	if (playPainSound)
@@ -2461,79 +2461,6 @@ bool SectorChanged(int CrushChange)
 		}
 	}
 	return false;	//don't fit
-}
-
-//==========================================================================
-//
-//  PIT_StompThing
-//
-//==========================================================================
-
-bool PIT_StompThing(Entity Other)
-{
-	float blockdist;
-
-	if (!Actor(Other).bShootable)
-	{
-		return true;
-	}
-
-	blockdist = Other.Radius + Radius;
-
-	if (fabs(Other.Origin.x - teleport_pos.x) >= blockdist ||
-		fabs(Other.Origin.y - teleport_pos.y) >= blockdist)
-	{
-		// didn't hit it
-		return true;
-	}
-
-	// don't clip against self
-	if (Other == self)
-	{
-		return true;
-	}
-
-	//  Check if allowed to stomp things
-	if (!bTelestomp && !Level.bAllowMonsterTelefrags)
-	{
-		return false;
-	}
-
-	Actor(Other).Damage(self, none, 10000);	// [CW] changed to allow telfrag deathmsg usage
-	//Actor(Other).Damage(self, self, 10000);
-
-	return true;
-}
-
-//==========================================================================
-//
-//  TeleportMove
-//
-//==========================================================================
-
-bool TeleportMove(TVec pos)
-{
-	Entity Other;
-
-	// kill anything occupying the position
-	teleport_pos = pos;
-
-	// stomp on any things contacted
-	foreach RadiusThings(Other, pos, Radius)
-		if (!PIT_StompThing(Other))
-			return false;
-
-	// the move is ok,
-	// so link the thing into its new position
-	UnlinkFromWorld();
-	Origin = pos;
-	LinkToWorld();
-	if (pos.z == ONFLOORZ)
-	{
-		Origin.z = FloorZ;
-	}
-
-	return true;
 }
 
 //==========================================================================
