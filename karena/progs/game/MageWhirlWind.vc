@@ -85,22 +85,6 @@ int InflictorModifyDamage(Actor victim, Actor source, int damage)
 	return -1;
 }
 
-//===========================================================================
-//
-//  ExplodeMissile
-//
-//===========================================================================
-
-bool ExplodeMissile()
-{
-	SoundTimer += 1.0 / 35.0;
-	if (SoundTimer < 60.0 / 35.0)
-	{
-		return false;
-	}
-	::ExplodeMissile();
-}
-
 //==========================================================================
 //
 //  A_WhirlwindSeek
@@ -117,10 +101,10 @@ final void A_WhirlwindSeek()
 		bMissile = false;
 		return;
 	}
-	SoundTimer -= 3.0 / 35.0;
-	if (SoundTimer < 0.0)
+	ExploCountSpec2 -= 3;
+	if (ExploCountSpec2 < 0)
 	{
-		SoundTimer = 58.0 / 35.0 + Random() * 31.0 / 35.0;
+		ExploCountSpec2 = 58 + (P_Random() & 31);
 		PlaySound('WhirlWind3', CHAN_WEAPON);
 	}
 	if (!Tracer && (P_Random() < 50))
@@ -158,5 +142,6 @@ defaultproperties
 	Alpha = 0.666;
 	IdleState = S_MWIND_1;
 	DeathState = S_MWINDD_1;
-	SoundTimer = 50.0 / 35.0;
+	ExploCountSpec1 = 60;
+	ExploCountSpec2 = 50;
 }
