@@ -153,17 +153,20 @@ final void A_SkullRodStorm()
 	x = Origin.x + Random() * 128.0 - 64.0;
 	y = Origin.y + Random() * 128.0 - 64.0;
 	A = Spawn(RainPlayer1, vector(x, y, ONCEILINGZ));
-	if(Sector->bHasExtrafloors && Origin.z <= CeilingZ)
-		A.Origin.z = CeilingZ - A.Height;
-	A.Target = Target;
-	A.Velocity.x = 0.00001;	// Force collision detection
-	A.Velocity.z = -A.Speed;
-	A.CheckMissileSpawn();
-	if (!(_Special1 & 31))
+	if (A)
 	{
-		PlaySound('SkullRodRain', CHAN_VOICE);
+		if(Sector->bHasExtrafloors && Origin.z <= CeilingZ)
+			A.Origin.z = CeilingZ - A.Height;
+		A.Target = Target;
+		A.Velocity.x = 0.00001;	// Force collision detection
+		A.Velocity.z = -A.Speed;
+		A.CheckMissileSpawn();
+		if (!(_Special1 & 31))
+		{
+			PlaySound('SkullRodRain', CHAN_VOICE);
+		}
+		_Special1++;
 	}
-	_Special1++;
 }
 
 __states__
