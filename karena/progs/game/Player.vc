@@ -530,6 +530,8 @@ void UserinfoChanged()
 
 void SetPlayerColour()
 {
+	dprint("Player::SetPlayerColour : ");
+	dprint("MO.Translation was = %i", MO.Translation);
 	MO.Translation = 0;
 	if (PClass == HexenDefs::PCLASS_WITCHAVEN)
 	{
@@ -574,11 +576,13 @@ void SetPlayerColour()
 	}
 
 	// [CW] respawn player if team is selected or re-selected
-	if (TeamSelection == HexenDefs::teamselection_wait || TeamSelection == HexenDefs::teamselection_reselect)
+	if (TeamSelection == HexenDefs::teamselection_wait || TeamSelection == HexenDefs::teamselection_reselect
+		|| TeamSelection == HexenDefs::teamselection_autoselect)
 	{
-		dprint("Player::SetPlayerColour : was 'teamselection_wait/reselect', now set to 'teamselection_done'");
+		dprint("Player::SetPlayerColour : was 'teamselection_wait/reselect/autoselect', now set to 'teamselection_done'");
 		
-		if (!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
+		if (TeamSelection != HexenDefs::teamselection_autoselect &&
+			!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
 		{
 			TeamSelection = HexenDefs::teamselection_done;	
 			if (PlayerState != PST_DEAD)
@@ -601,16 +605,8 @@ void SetPlayerColour()
 
 		oldColour = Colour;
 	}
-	// ------------ REMOVE ME LATER ------------------------
-	// [CW] this code is obsolete now, since team reselection
-	//      is called using 'impulse' command,
-	//		not by that ugly "setColor(getGolor)" thing
-	/*else if (TeamSelection == HexenDefs::teamselection_done)
-	{
-		TeamSelection = HexenDefs::teamselection_reselect;
-		SelectPlayerTeam(false);
-	}*/
-	// ------------ REMOVE ME LATER ------------------------
+	dprint("MO.Translation now is = %i", MO.Translation);
+	dprint("Player::SetPlayerColour : OUT");
 }
 
 //==========================================================================
@@ -623,18 +619,17 @@ void SelectPlayerTeam()
 {
 	dprint("Player::SelectPlayerTeam : ");
 
-	if (bIsBot)
+	if (bIsBot || GetCvar('TeamAutoSelect'))
 	{
-		TeamSelection = HexenDefs::teamselection_done;
+		AutoSelectTeam();
 	}
 	else
 	{
 		int i;
 		int maxTeams;
-		if (MainGameInfo(Level.Game).GameModel)
-			maxTeams = MainGameInfo(Level.Game).GameModel.AllowedTeams();
-		else
-			maxTeams = HexenDefs::MAXTEAMSINGAME;
+		maxTeams = MainGameInfo(Level.Game).MaxTeamsInGame[MainGameInfo(Level.Game).GameType]
+						> HexenDefs::MAXTEAMSINGAME ? HexenDefs::MAXTEAMSINGAME :
+						MainGameInfo(Level.Game).MaxTeamsInGame[MainGameInfo(Level.Game).GameType];
 		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 		{
 			if (MainGameInfo(Level.Game).Teams[i] == none)
@@ -649,24 +644,61 @@ void SelectPlayerTeam()
 		
 		ClientTeamSelect(maxTeams, i, Colour,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Colour : -1,
-			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1,
-			MainGameInfo(Level.Game).Teams[2] ? MainGameInfo(Level.Game).Teams[2].Colour : -1,
-			MainGameInfo(Level.Game).Teams[3] ? MainGameInfo(Level.Game).Teams[3].Colour : -1);
+			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1);
 	}
 	dprint("Player::SelectPlayerTeam : OUT");
 }
 
 //==========================================================================
 //
+//  AutoSelectTeam
+//
+//==========================================================================
+
+void AutoSelectTeam()
+{
+	int i;
+	int new_colour = -1;
+	int random_team_sel = -1;
+	int random_colour_sel = -1;
+	int free_team_slots = 0;
+
+	MainGameInfo game = MainGameInfo(Level.Game);
+
+	for (i = 0; i < game.MaxTeamsInGame[game.GameType]; i++)
+	{
+		if (game.Teams[i] == none)
+			free_team_slots++;
+		else if (random_team_sel < 0 && P_Random() > 127)
+			random_team_sel = i;
+	}
+
+
+	if (free_team_slots == game.MaxTeamsInGame[game.GameType] ||
+			free_team_slots > 0 && P_Random() > 127)
+		new_colour = Colour;
+	else
+	{
+		new_colour =
+			game.Teams[P_Random() % (game.MaxTeamsInGame[game.GameType] - free_team_slots)].Colour;
+		Colour = new_colour;
+	}
+	TeamSelection = HexenDefs::teamselection_autoselect;
+}
+
+//==========================================================================
+//
 //  ClientTeamSelect
+//
+//	[CW] TODO: pass array here as Cols if this is possible?
 //
 //==========================================================================
 
 void ClientTeamSelect(int maxTeams, int activeTeams, int curSelection,
-	int Col1, int Col2, int Col3, int Col4)
+	int Col1, int Col2)
 {
 	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, activeTeams, curSelection,
-		Col1, Col2, Col3, Col4);
+		Col1, Col2);
 }
 
 //==========================================================================
@@ -776,6 +808,7 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		PlayerReborn();
 		ResetInventory = true;
+		TeamSelection = HexenDefs::teamselection_autoselect;
 	}
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
 	{
@@ -887,7 +920,8 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
+	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
+		TeamSelection == HexenDefs::teamselection_autoselect)
 	{
 		dprint("Player::SpawnPlayer : goto setplayercolour");
 		SetPlayerColour();
