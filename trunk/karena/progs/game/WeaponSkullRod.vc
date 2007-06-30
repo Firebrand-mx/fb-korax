@@ -40,10 +40,10 @@ class WeaponSkullRod : Weapon;
 
 final void A_FireSkullRodPL1()
 {
-	Actor A;
+	EntityEx A;
 
 	UseWeaponMana();
-	A = Player(Owner.Player).SpawnPlayerMissile(HornRodMissile1);
+	A = Actor(Owner).SpawnPlayerMissile(HornRodMissile1);
 	// Randomize the first frame
 	if (A && P_Random() > 128)
 	{
@@ -60,7 +60,6 @@ final void A_FireSkullRodPL1()
 			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	Owner.PlaySound('SkullRodFire', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -75,11 +74,11 @@ final void A_FireSkullRodPL1()
 
 final void A_FireSkullRodPL2()
 {
-	Actor		MissileMobj;
+	EntityEx	MissileMobj;
 	EntityEx	AimTarget;
 
 	UseWeaponMana();
-	MissileMobj = Player(Owner.Player).SpawnPlayerMissile2Ex(HornRodMissile2, false, AimTarget);
+	MissileMobj = Actor(Owner).SpawnPlayerMissileEx(HornRodMissile2, true, AimTarget);
 	// Use MissileMobj instead of the return value from
 	// SpawnPlayerMissile because we need to give info to the mobj
 	// even if it exploded immediately.
@@ -109,12 +108,6 @@ final void A_FireSkullRodPL2()
 		if (AimTarget)
 		{
 			MissileMobj.Tracer = AimTarget;
-		}
-		MissileMobj.PlaySound('SkullRodFire2', CHAN_WEAPON);
-		if (!MissileMobj.TryMove(MissileMobj.Origin))
-		{
-			// Exploded immediately
-			MissileMobj.ExplodeMissile();
 		}
 	}
 }
