@@ -365,48 +365,61 @@ bool CheckPNodes(Actor node)
 		if (MainGameInfo(player.Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
 		    MainGameInfo(player.Level.Game).GameType == HexenDefs::game_dmteam && node.Class == PathNode 
 		    /*|| node.Class == SniperSpot*/)
-		{
 			return true;
-		}
+
 		// [FB] Node checking routine for team game
-		else if (player.Team && MainGameInfo(player.Level.Game).GameType != HexenDefs::game_dmteam)
+		//	This is mainly used in CTF for now so...
+		if(MainGameInfo(player.Level.Game).GameModel && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf)
 		{
-			// [FB] Blue Team
-			if (player.Team.Colour == 0)
+			if (player.Team)
 			{
-				// [FB] Defense
-				if (botstate.BState == 2 && node.Class == BlueGuardSpot)
+				// [FB] Blue Team ... err, Team 1 :)
+				if (MainGameInfo(player.Level.Game).Teams[0])
 				{
-					return true;
+					switch (botstate.BState)
+					{
+						// [FB] Offense
+						case 1:
+							if (node.Class == BlueNode)
+								return true;
+								break;
+						// [FB] Defense
+						case 2:
+							if (node.Class == BlueGuardSpot)
+								return true;
+								break;
+						// [FB] Return
+						case 3:
+							if (node.Class == BlueGoalSpot)
+								return true;
+								break;
+						default:
+								return false;
+					}
 				}
-				// [FB] Offense
-				else if (botstate.BState == 1 && node.Class == BlueNode)
+				// [FB] Team 2
+				else if (MainGameInfo(player.Level.Game).Teams[1])
 				{
-					return true;
-				}
-				// [FB] Return
-				else if (botstate.BState == 3 && node.Class == BlueGoalSpot)
-				{
-					return true;
-				}
-			}
-			// [FB] Red Team
-			if (player.Team.Colour == 1)
-			{
-				// [FB] Defense
-				if (botstate.BState == 2 && node.Class == RedGuardSpot)
-				{
-					return true;
-				}
-				// [FB] Offense
-				else if (botstate.BState == 1 && node.Class == RedNode)
-				{
-					return true;
-				}
-				// [FB] Return
-				else if (botstate.BState == 3 && node.Class == RedGoalSpot)
-				{
-					return true;
+					switch (botstate.BState)
+					{
+						// [FB] Offense
+						case 1:
+							if (node.Class == RedNode)
+								return true;
+								break;
+						// [FB] Defense
+						case 2:
+							if (node.Class == RedGuardSpot)
+								return true;
+								break;
+						// [FB] Return
+						case 3:
+							if (node.Class == RedGoalSpot)
+								return true;
+								break;
+						default:
+								return false;
+					}
 				}
 			}
 		}
@@ -613,6 +626,7 @@ bool CheckPath(float ang, float dist)
 			// crosses a two sided line
 			open = LineOpenings(ld, hit_point);
 			open = FindOpening(open, hit_point.z, hit_point.z + botmo.Height);
+
 			// No valid openings
 			if (!open || open->range <= botmo.Height)
 			{
@@ -1200,36 +1214,33 @@ Actor FindEnemy()
 		if (actor.Health <= 0)
 			continue;
 		// [FB] We spawned the minotaur? we shouldn't attack him then!
-		if (actor.Class == Minotaur && actor.Tracer == botmo)
-			continue;
-		// [FB] Don't attack a friendly minotaur in all these cases
-		if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
+		if (actor.Class == Minotaur)
 		{
-			// [FB] For some gameplay modes, we just only check if it's a minotaur
-			if (actor.Class == Minotaur)
+			if (actor.Tracer == botmo)
 				continue;
-		}
-		else if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
-		{
-			// [FB] Check if the minotaur's instigator is in the same team we are on
-			for(i = 0; i < MAXPLAYERS; i++)
+			// [FB] Don't attack a friendly minotaur in all these cases
+			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
+				continue;
+			else if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
-				if (actor.Class == Minotaur && actor.Tracer == player.Level.Game.Players[i] && 
-				    Player(player.Level.Game.Players[i]).Team == player.Team)
-					continue;
-			}
-			// [FB] Check if an advanced game mode is active
-			if (MainGameInfo(player.Level.Game).GameModel)
-			{
-				int teamfactor;
-
-				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(actor.Tracer,
-							Actor(botmo));
-				// [FB] We've got a team factor, just check if it's an ally or not
-				if (teamfactor != GameModel::teamfactor_any &&
-					teamfactor != GameModel::teamfactor_enemy)
+				// [FB] Check if the minotaur's instigator is in the same team we are on
+				for(i = 0; i < MAXPLAYERS; i++)
 				{
-					continue;
+					if (actor.Tracer == player.Level.Game.Players[i] && 
+						Player(player.Level.Game.Players[i]).Team == player.Team)
+						continue;
+				}
+				// [FB] Check if an advanced game mode is active
+				if (MainGameInfo(player.Level.Game).GameModel)
+				{
+					int teamfactor;
+
+					teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(actor.Tracer,
+								Actor(botmo));
+					// [FB] We've got a team factor, just check if it's an ally or not
+					if (teamfactor != GameModel::teamfactor_any &&
+						teamfactor != GameModel::teamfactor_enemy)
+						continue;
 				}
 			}
 		}
@@ -1333,9 +1344,6 @@ Actor FindEnemy()
 
 int B_ChooseWeapon(float dist)
 {
-	if (!enemy)
-		return player.ReadyWeapon;
-
 	if (enemy)
 	{
 		if (dist <= Actor::MELEERANGE)
@@ -1677,7 +1685,6 @@ Actor B_SetAlly()
 			ally = last_mate;
 			return ally;
 		}
-
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2172,6 +2179,43 @@ void Attack()
 	if (!Check_LOS(enemy, SHOOTFOV))
 		return;
 
+	// [FB] Don't attack if the distance is not the right one for this weapon
+	switch (player.PClass)
+	{
+		case HexenDefs::PCLASS_FIGHTER:
+			if (botmo.DistTo(enemy) > combatdist[player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_CLERIC:
+			if (botmo.DistTo(enemy) > combatdist[8 + player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_MAGE:
+			if (botmo.DistTo(enemy) > combatdist[16 + player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_HERETIC:
+			if (botmo.DistTo(enemy) > combatdist[24 + player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_MARINE:
+			if (botmo.DistTo(enemy) > combatdist[32 + player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_WITCHAVEN:
+			if (botmo.DistTo(enemy) > combatdist[40 + player.ReadyWeapon])
+				return;
+			break;
+		case HexenDefs::PCLASS_HERESIARCH:
+			if (botmo.DistTo(enemy) > combatdist[48 + player.ReadyWeapon])
+				return;
+			break;
+		default:
+			if (botmo.DistTo(enemy) > Actor::MELEERANGE)
+				return;
+			break;
+	}
+	
 	player.Buttons |= BT_ATTACK;
 }
 
@@ -2374,117 +2418,135 @@ void OnBeginPlay()
 	{
 		float mod = 1.0;
 		/* FIGHTER */
-		combatdist[HexenDefs::WP_FIRST]			= 1.0;
-		combatdist[HexenDefs::WP_SECOND]		= 1.0;
-		combatdist[HexenDefs::WP_THIRD]			= 1.0;
-		combatdist[HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[HexenDefs::WP_FIFTH]			= 384.0 / mod;
-		combatdist[HexenDefs::WP_SIXTH]			= 192.0 / mod;
-		combatdist[HexenDefs::WP_SEVENTH]		= 1.0;
-		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 / mod;
+		combatdist[HexenDefs::WP_FIRST]			= 2.0 * Actor::MELEERANGE;
+		combatdist[HexenDefs::WP_SECOND]		= 9.0 * Actor::MELEERANGE / 4.0;
+		combatdist[HexenDefs::WP_THIRD]			= Actor::MELEERANGE * 3.0;
+		combatdist[HexenDefs::WP_FOURTH]		= 512.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_FIFTH]			= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_SIXTH]			= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_SEVENTH]		= Actor::MELEERANGE + Actor::MELEERANGE;
+		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 + Actor::MISSILERANGE / mod;
 		/* CLERIC */
-		combatdist[8 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[8 + HexenDefs::WP_THIRD]		= 1.0;
-		combatdist[8 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[8 + HexenDefs::WP_FIFTH]		= 192.0 / mod;
-		combatdist[8 + HexenDefs::WP_SIXTH]		= 1.0;
-		combatdist[8 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[8 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[8 + HexenDefs::WP_FIRST]		= 2.0 * Actor::MELEERANGE;
+		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_THIRD]		= Actor::MELEERANGE * 3.0;
+		combatdist[8 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_FIFTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_SIXTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* MAGE */
-		combatdist[16 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[16 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_THIRD]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[16 + HexenDefs::WP_FIFTH]		= 384.0 / mod;
-		combatdist[16 + HexenDefs::WP_SIXTH]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_SEVENTH]		= 384.0 / mod;
-		combatdist[16 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[16 + HexenDefs::WP_FIRST]		= 1.5 * Actor::MELEERANGE;
+		combatdist[16 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_THIRD]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_FIFTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_SIXTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_SEVENTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* HERETIC */
-		combatdist[24 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[24 + HexenDefs::WP_SECOND]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_THIRD]		= 192.0 / mod;
-		combatdist[24 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_FIFTH]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_SIXTH]		= 384.0 / mod;
-		combatdist[24 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
-		combatdist[24 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[24 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE + 0.00001;
+		combatdist[24 + HexenDefs::WP_SECOND]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_THIRD]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_FIFTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_SIXTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* MARINE */
-		combatdist[32 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[32 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[32 + HexenDefs::WP_THIRD]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[32 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_SEVENTH]		= 384.0 / mod;
-		combatdist[32 + HexenDefs::WP_EIGHTH]		= 192.0 / mod;
+		combatdist[32 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE + 0.00001;
+		combatdist[32 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_THIRD]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_SIXTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_SEVENTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_EIGHTH]		= 192.0 + Actor::MISSILERANGE / mod;
 		/* WITCHAVEN */
-		combatdist[40 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[40 + HexenDefs::WP_SECOND]		= 1.0;
-		combatdist[40 + HexenDefs::WP_THIRD]		= 256.0 / mod;
-		combatdist[40 + HexenDefs::WP_FOURTH]		= 384.0 / mod;
-		combatdist[40 + HexenDefs::WP_FIFTH]		= 1.0;
-		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
-		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0;
-		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 / mod;
+		combatdist[40 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE;
+		combatdist[40 + HexenDefs::WP_SECOND]		= 3.0 * Actor::MELEERANGE / 2.0;
+		combatdist[40 + HexenDefs::WP_THIRD]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_FOURTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_FIFTH]		= 4.0 * Actor::MELEERANGE;
+		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		/* HERESIARCH */
+		combatdist[48 + HexenDefs::WP_FIRST]		= 2.0 * Actor::MELEERANGE;
+		combatdist[48 + HexenDefs::WP_SECOND]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_THIRD]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_FIFTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_SIXTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_SEVENTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_EIGHTH]		= 192.0 + Actor::MISSILERANGE / mod;
 	}
 	else
 	{
 		float mod = 2.0;
 		/* FIGHTER */
-		combatdist[HexenDefs::WP_FIRST]			= 1.0;
-		combatdist[HexenDefs::WP_SECOND]		= 1.0;
-		combatdist[HexenDefs::WP_THIRD]			= 1.0;
-		combatdist[HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[HexenDefs::WP_FIFTH]			= 384.0 / mod;
-		combatdist[HexenDefs::WP_SIXTH]			= 192.0 / mod;
-		combatdist[HexenDefs::WP_SEVENTH]		= 1.0;
-		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 / mod;
+		combatdist[HexenDefs::WP_FIRST]			= 2.0 * Actor::MELEERANGE;
+		combatdist[HexenDefs::WP_SECOND]		= 9.0 * Actor::MELEERANGE / 4.0;
+		combatdist[HexenDefs::WP_THIRD]			= Actor::MELEERANGE * 3.0;
+		combatdist[HexenDefs::WP_FOURTH]		= 512.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_FIFTH]			= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_SIXTH]			= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[HexenDefs::WP_SEVENTH]		= Actor::MELEERANGE + Actor::MELEERANGE;
+		combatdist[HexenDefs::WP_EIGHTH]		= 256.0 + Actor::MISSILERANGE / mod;
 		/* CLERIC */
-		combatdist[8 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[8 + HexenDefs::WP_THIRD]		= 1.0;
-		combatdist[8 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[8 + HexenDefs::WP_FIFTH]		= 192.0 / mod;
-		combatdist[8 + HexenDefs::WP_SIXTH]		= 1.0;
-		combatdist[8 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[8 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[8 + HexenDefs::WP_FIRST]		= 2.0 * Actor::MELEERANGE;
+		combatdist[8 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_THIRD]		= Actor::MELEERANGE * 3.0;
+		combatdist[8 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_FIFTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_SIXTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[8 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* MAGE */
-		combatdist[16 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[16 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_THIRD]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[16 + HexenDefs::WP_FIFTH]		= 384.0 / mod;
-		combatdist[16 + HexenDefs::WP_SIXTH]		= 192.0 / mod;
-		combatdist[16 + HexenDefs::WP_SEVENTH]		= 384.0 / mod;
-		combatdist[16 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[16 + HexenDefs::WP_FIRST]		= 1.5 * Actor::MELEERANGE;
+		combatdist[16 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_THIRD]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_FIFTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_SIXTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_SEVENTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[16 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* HERETIC */
-		combatdist[24 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[24 + HexenDefs::WP_SECOND]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_THIRD]		= 192.0 / mod;
-		combatdist[24 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_FIFTH]		= 256.0 / mod;
-		combatdist[24 + HexenDefs::WP_SIXTH]		= 384.0 / mod;
-		combatdist[24 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0;
-		combatdist[24 + HexenDefs::WP_EIGHTH]		= 384.0 / mod;
+		combatdist[24 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE + 0.00001;
+		combatdist[24 + HexenDefs::WP_SECOND]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_THIRD]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_FIFTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_SIXTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_SEVENTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[24 + HexenDefs::WP_EIGHTH]		= 384.0 + Actor::MISSILERANGE / mod;
 		/* MARINE */
-		combatdist[32 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[32 + HexenDefs::WP_SECOND]		= 192.0 / mod;
-		combatdist[32 + HexenDefs::WP_THIRD]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_FOURTH]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 / mod;
-		combatdist[32 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
-		combatdist[32 + HexenDefs::WP_SEVENTH]		= 384.0 / mod;
-		combatdist[32 + HexenDefs::WP_EIGHTH]		= 192.0 / mod;
+		combatdist[32 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE + 0.00001;
+		combatdist[32 + HexenDefs::WP_SECOND]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_THIRD]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_FIFTH]		= SAFE_SELF_MISDIST * 2.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_SIXTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_SEVENTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[32 + HexenDefs::WP_EIGHTH]		= 192.0 + Actor::MISSILERANGE / mod;
 		/* WITCHAVEN */
-		combatdist[40 + HexenDefs::WP_FIRST]		= 1.0;
-		combatdist[40 + HexenDefs::WP_SECOND]		= 1.0;
-		combatdist[40 + HexenDefs::WP_THIRD]		= 256.0 / mod;
-		combatdist[40 + HexenDefs::WP_FOURTH]		= 384.0 / mod;
-		combatdist[40 + HexenDefs::WP_FIFTH]		= 1.0;
-		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 / mod;
-		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0;
-		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 / mod;
+		combatdist[40 + HexenDefs::WP_FIRST]		= Actor::MELEERANGE;
+		combatdist[40 + HexenDefs::WP_SECOND]		= 3.0 * Actor::MELEERANGE / 2.0;
+		combatdist[40 + HexenDefs::WP_THIRD]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_FOURTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_FIFTH]		= 4.0 * Actor::MELEERANGE;
+		combatdist[40 + HexenDefs::WP_SIXTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_SEVENTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[40 + HexenDefs::WP_EIGHTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		/* HERESIARCH */
+		combatdist[48 + HexenDefs::WP_FIRST]		= 2.0 * Actor::MELEERANGE;
+		combatdist[48 + HexenDefs::WP_SECOND]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_THIRD]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_FOURTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_FIFTH]		= 192.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_SIXTH]		= 384.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_SEVENTH]		= 256.0 + Actor::MISSILERANGE / mod;
+		combatdist[48 + HexenDefs::WP_EIGHTH]		= 192.0 + Actor::MISSILERANGE / mod;
 	}
 }
 
@@ -2505,7 +2567,7 @@ void OnSpawn()
 
 //==========================================================================
 //
-//	BotTick
+//	B_AffectStat
 //
 //  [FB] Check if we are blind by darkness!!
 //
@@ -2651,8 +2713,7 @@ void BotTick(float deltaTime)
 	// Turning towards destination...
 	BotAim();
 	Turn();
-	if(enemy)
-		Attack();
+	Attack();
 	Move(deltaTime);
 
 	Pitch();
