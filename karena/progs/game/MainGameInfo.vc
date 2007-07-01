@@ -76,8 +76,9 @@ int			GameType;			// [CW] since 'deathmatch' is treated as bool now,
 bool		bIsCoopGame[HexenDefs::NUMGAMES];
 int			MaxTeamsInGame[HexenDefs::NUMGAMES];
 
-PlayerTeam	Teams[HexenDefs::MAXPLAYERTEAMS];
-GameModel	GameModel;			// [CW] for advanced game modes
+PlayerTeam	Teams[HexenDefs::MAXTEAMSINGAME];
+HexenLevelInfo	Level;
+GameModel		GameModel;			// [CW] for advanced game modes
 
 bool		bCompetitionOpened;	// [CW] is set to true when first player gets first score
 
@@ -184,6 +185,7 @@ void InitLevel(HexenLevelInfo levelinfo)
 	dprint("MainGameInfo::InitLevel : GO");
 
 	//[CW]
+	Level = levelinfo;
 	if (GameModel)
 		GameModel.Level = levelinfo;
 
@@ -208,7 +210,7 @@ void InitLevel(HexenLevelInfo levelinfo)
 				Player(Players[i]).TotalKills = 0;
 			}
 		}
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
 			if (Teams[i])
 			{
@@ -484,6 +486,44 @@ void SetBotType(int i, string Name, int accuracy, int intelect, int evade,
 
 //==========================================================================
 //
+//  GetPlayerCount
+//
+//==========================================================================
+
+int GetPlayerCount()
+{
+	int i, count;
+	for (i = 0, count = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i]) count++;
+	}
+
+	return count;
+}
+
+//==========================================================================
+//
+//  GetTeamCount
+//
+//==========================================================================
+
+int GetTeamCount()
+{
+	int i;
+	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
+	{
+		if (Teams[i] == none)
+			break;
+	}
+
+	if (i == HexenDefs::MAXTEAMSINGAME - 1 && Teams[HexenDefs::MAXTEAMSINGAME - 1])
+		i++;
+
+	return i;
+}
+
+//==========================================================================
+//
 //  InsertPlayer
 //
 //	[CW] function decides what team this new player shall join
@@ -536,8 +576,6 @@ void InsertPlayer(Player pl)
 	// if this team does not exist, create a new one
 	if (!Teams[teamnum])
 	{
-		int i;
-
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Colour = pl.Colour;
@@ -549,24 +587,25 @@ void InsertPlayer(Player pl)
 			
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 			pl.Level.bprint("team %s enters competition", ColourNames[Teams[teamnum].Colour]);
-
-		// update team selection menus for all human players
-		// with team selection menu screen activated
-		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (Players[i] && !Players[i].bIsBot &&
-						(Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait ||
-						Player(Players[i]).TeamSelection == HexenDefs::teamselection_reselect) )
-				{
-					dprint("MainGameInfo::InsertPlayer : call team selection screen update for player %i", i);
-					Player(Players[i]).SelectPlayerTeam();
-				}
-			}
-		}
 		
 		Teams[teamnum].UpdateCompetition();
+	}
+
+	// update team selection menus for all human players
+	// with team selection menu screen activated
+	if (GameType >= HexenDefs::NUMGAMESNOTEAM)
+	{
+		int i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Players[i] && !Players[i].bIsBot &&
+					(Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait ||
+					Player(Players[i]).TeamSelection == HexenDefs::teamselection_reselect) )
+			{
+				dprint("MainGameInfo::InsertPlayer : call team selection screen update for player %i", i);
+				Player(Players[i]).SelectPlayerTeam();
+			}
+		}
 	}
 
 	Teams[teamnum].EnlistPlayer(pl);
@@ -603,7 +642,7 @@ void ScoreboardsUpdate(Player thisPlayer)
 		//[CW] update team scores list for this player
 		pl = Player(Players[plnum]);
 		
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
 			if (!Teams[i])
 			   break;
