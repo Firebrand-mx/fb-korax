@@ -5516,82 +5516,109 @@ void UpdateCompetition()
 
 void DisplayDeathMessage(EntityEx inflictor, EntityEx source, name DmgType)
 {
+	string		Msg;
+
 	if (DmgType == 'Falling')
 	{
 		//[CW] falling damage
-		Level.bprint(MainGameInfo(Level.Game).FallingDeathMessage[P_Random() % 3], PlayerName);
+		Msg = va("$ob_falling%d", (P_Random() % 3) + 1);
 	}
 	else if (DmgType == 'Telefrag')
 	{
 		// telefrag
 		if (inflictor.bIsPlayer)
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3],
-				PlayerName, inflictor.Player.PlayerName);
+		{
+			Msg = va("$ob_telefrag%d", (P_Random() % 3) + 1);
+		}
 		// telefrag
 		else
-			Level.bprint(MainGameInfo(Level.Game).DeathMessageTelefrag[P_Random() % 3], PlayerName,
-				MainGameInfo(Level.Game).PawnName[Pawn(inflictor).pawnname]);
+		{
+			Msg = va("$ob_monsttelefrag%d", (P_Random() % 3) + 1);
+		}
 	}
-	else if(source)
+	else if (source)
 	{
 		//[CW] p.4: melee or instant ranged attack
-		if(source == inflictor)
+		if (source == inflictor)
 		{
-			if(source.bIsPlayer)
+			if (source.bIsPlayer)
 			{
 				if (Weapon(source.Player.ViewEnt).bInstantRanged)
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Weapon(inflictor.Player.ViewEnt).deathmsgi],
-						PlayerName, source.Player.PlayerName);
+				{
+					Msg = Weapon(inflictor.Player.ViewEnt).Obituary;
+				}
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Weapon(inflictor.Player.ViewEnt).deathmsgi],
-						PlayerName, source.Player.PlayerName);
+				{
+					Msg = Weapon(inflictor.Player.ViewEnt).Obituary;
+				}
 			}
-			else if(source.IsA('Pawn'))
+			else if (source.IsA('Pawn'))
 			{
 				if (Pawn(source).bInstantRanged)
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
-						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				{
+					Msg = Actor(source).Obituary;
+				}
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageMelee[Actor(inflictor).deathmsgi],
-						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				{
+					Msg = Actor(source).HitObituary;
+				}
 			}
 		}
 		//[CW] p.3: missile attack
-		else if(inflictor)
+		else if (inflictor)
 		{
 			if(source.bIsPlayer)
 			{
-				if(Player(source.Player) == self)
+				if (source.Player == self)
 				{
-					Level.bprint(MainGameInfo(Level.Game).SelfFragDeathMessage[P_Random() % 3],
-						PlayerName);
+					Msg = va("$ob_selffrag%d", (P_Random() % 3) + 1);
 				}
 				else
-					Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
-						PlayerName, source.Player.PlayerName);
+				{
+					Msg = Actor(inflictor).Obituary;
+				}
 			}
 			else if(source.IsA('Pawn'))
 			{
-				Level.bprint(MainGameInfo(Level.Game).DeathMessageRanged[Actor(inflictor).deathmsgi],
-						PlayerName, MainGameInfo(Level.Game).PawnName[Pawn(source).pawnname]);
+				Msg = Actor(source).Obituary;
 			}
 		}
 		//[CW] suicide
 		else if (source.bIsPlayer && Player(source.Player) == self)
 		{
-			Level.bprint(MainGameInfo(Level.Game).SuicideDeathMessage[P_Random() % 3], PlayerName);
+			Msg = va("$ob_suicide%d", (P_Random() % 3) + 1);
 		}
 	}
 	//[CW] p.2: fragged by enviromental thing or trap, or telefragged
-	else if(inflictor)
+	else if (inflictor)
 	{
-		Level.bprint(MainGameInfo(Level.Game).DeathMessageMisc[Actor(inflictor).deathmsgi], PlayerName);
+		Msg = Actor(inflictor).Obituary;
 	}
-	//[CW] p.1: fragged by pure enviroment
+
+	if (!Msg)
+	{
+		//[CW] p.1: fragged by pure enviroment
+		Msg = va("$ob_generic%d", (P_Random() % 3) + 1);
+	}
+
+	//	Look up string in language lump is necesary.
+	if (StrStartsWith(Msg, "$"))
+	{
+		Msg = GetLangString(StrToName(substr(Msg, 1, strlen(Msg) - 1)));
+	}
+
+	//	Do replacements.
+	Msg = StrReplace(Msg, "%o", PlayerName);
+	if (source && source.Player)
+	{
+		Msg = StrReplace(Msg, "%k", source.Player.PlayerName);
+	}
 	else
 	{
-		Level.bprint(MainGameInfo(Level.Game).GenericDeathMessage[P_Random() % 3], PlayerName);
+		Msg = StrReplace(Msg, "%k", "monster");
 	}
+
+	Level.bprint(Msg, PlayerName);
 }
 
 //==========================================================================
