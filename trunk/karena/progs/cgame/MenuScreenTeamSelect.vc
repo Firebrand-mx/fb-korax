@@ -29,6 +29,7 @@ bool 	Ready;
 bool	bIsSelected;
 string	TeamNames[HexenDefs::MAXPLAYERTEAMS];
 int		Teams[HexenDefs::MAXTEAMSINGAME];
+int		Counts[HexenDefs::MAXTEAMSINGAME];
 int		maxTeams;
 int		activeTeams;
 int		curSelection;
@@ -45,6 +46,18 @@ void CreateChoices()
 
 	if (!Ready)
 		return;
+
+	bool bKeepEqual = GetCvar('KeepTeamsEqual');
+	int count_limit = activeTeams > 1 ? Counts[0] : 0;
+
+	if (bKeepEqual)
+	{
+		for (i = 0; i < activeTeams && i < HexenDefs::MAXTEAMSINGAME; i++)
+		{
+			if (count_limit > Counts[i])
+				count_limit = Counts[i];
+		}
+	}
 
 	y = ChoicesStartY;
 	if (activeTeams > 0)
@@ -63,6 +76,17 @@ void CreateChoices()
 			newChoice = MenuChoice_Team(NewChild(MenuChoice_Team));
 			newChoice.SetPos(ChoicesStartX, y);
 			newChoice.Text = TeamNames[Teams[i]];
+			if (bKeepEqual)
+			{
+				newChoice.Text = va("%s (%i)", newChoice.Text, Counts[i]);
+				if (Counts[i] <= count_limit)
+					newChoice.Text = va("%s (CAN JOIN)", newChoice.Text);
+				else
+				{
+					newChoice.Text = va("%s (CANNOT JOIN)", newChoice.Text);
+					newChoice.Disable();
+				}
+			}
 			newChoice.Team = Teams[i];
 			teams_active[Teams[i]] = true;
 			y += 18;
