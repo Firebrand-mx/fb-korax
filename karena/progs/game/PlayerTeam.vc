@@ -34,6 +34,7 @@ class PlayerTeam : Object;
 
 MainGameInfo	Game;
 
+int		Position;
 int		Score;
 int		Colour;	// team definition
 int		Frags;	// player kills
@@ -41,7 +42,7 @@ int		Kills;	// monster kills
 int		Goals;
 int		FlagCaptures;
 int		playercount;
-Player		Players[MAXPLAYERS];
+Player	Players[MAXPLAYERS];
 
 
 //==========================================================================
@@ -132,9 +133,11 @@ void DiscardPlayer(Player pl)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (Players[i] == pl)
+		{
 			Players[i] = none;
-
-		dprint("PlayerTeam::DiscardPlayer : removed player with index %i", i);
+			dprint("PlayerTeam::DiscardPlayer : removed player with index %i", i);
+			break;
+		}
 	}
 	playercount--;
 
@@ -149,7 +152,7 @@ void DiscardPlayer(Player pl)
 		dprint("PlayerTeam::DiscardPlayer : team has no more players...");
 		dprint("PlayerTeam::DiscardPlayer : push team down the table...");
 		UpdateScore(HexenDefs::scoreevent_TeamDiscard);
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
 			if (Game.Teams[i] == self)
 			{
@@ -162,8 +165,31 @@ void DiscardPlayer(Player pl)
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 		   pl.Level.bprint("team %s is no longer in competition", Game.ColourNames[Colour]);
 
+		Game.Teams[Position] = none;
 		Destroy();
 	}
+}
+
+//==========================================================================
+//
+//	GetPlayerCount
+//
+//==========================================================================
+
+int GetPlayerCount()
+{
+	return playercount;
+	/*int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Players[i] == none)
+			break;
+	}
+
+	if (i == MAXPLAYERS - 1 && Players[MAXPLAYERS - 1])
+		i++;
+
+	return i;*/
 }
 
 //==========================================================================
@@ -177,17 +203,17 @@ void DiscardPlayer(Player pl)
 
 void UpdateScore(int event)
 {
-	int mod;
+	int i, mod;
 
 	switch(event)
 	{
 	case HexenDefs::scoreevent_TeamDiscard:
-		for (mod = 0; mod < HexenDefs::MAXPLAYERTEAMS; mod++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
-			if (!Game.Teams[mod] || mod == HexenDefs::MAXPLAYERTEAMS - 1)
+			if (!Game.Teams[i] || i == HexenDefs::MAXTEAMSINGAME - 1)
 			{
-				if (mod)
-				   mod = Game.Teams[mod - 1].Score - Score - 1;
+				if (i)
+				   mod = Game.Teams[i - 1].Score - Score - 1;
 				else
 				   mod = 0;
 				break;
@@ -237,6 +263,85 @@ void UpdateScore(int event)
 	Score += mod;
 
 	UpdateCompetition();
+
+	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM &&
+			Game.GetTeamCount() > 1)
+		CompetitionAnnouncements(Score - mod);
+}
+
+//==========================================================================
+//
+//  CompetitionAnnouncements
+//
+//  [CW]
+//
+//==========================================================================
+
+void CompetitionAnnouncements(int oldScore)
+{
+	int i;
+
+	// [CW] NOTE: following agorythm works good only for 2 teams in game;
+	//      If there will be more than 2 teams, we should modify this.
+
+	if (Game == none || Game.Level == none ||
+		Game.Teams[0] == none)
+	{
+		dprint("Game = %i", Game);
+		dprint("Game.Level = %i", Game.Level);
+		dprint("Game.Teams[0] = %i", Game.Teams[0]);
+		Error("AAAACK!!!");
+	}
+
+	if (Score > oldScore)
+	{
+		// Is this player a new and only leader?
+		if (Position == 0)
+		{
+			if (Game.Teams[1] && Game.Teams[1].Score >= oldScore ||
+					Score > 0 && !Game.bCompetitionOpened)
+			{
+				// [FB] Announce new leader!
+				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue + Colour, true, 0.0);
+				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_leads, true, 1.0);
+				Game.Level.bprint(va("%s team leads!", Game.ColourNames[Colour]));
+			}
+		}
+		// Is he tied for the lead then?
+		else
+		{
+			if (Score == Game.Teams[0].Score)
+			{
+				// [FB] Tied for the lead!
+				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_teams_are_tied, true, HexenDefs::STANDART_LSQ_DELAY);
+				Game.Level.bprint(va("teams are tied!", Game.ColourNames[Colour]));
+			}
+		}
+	}
+	// Score may drop down in case of self-frag or similar events
+	else if (Score < oldScore)
+	{
+		// Is he tied for the lead?
+		if (Position == 0)
+		{
+			if (Game.Teams[1] && Game.Teams[1].Score == Score)
+			{
+				// [CW] NOTE: this works good only for 2 teams in game;
+				//      If there will be more than 2 teams, we should modify this.
+				// [FB] Tied for the lead!
+				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_teams_are_tied, true, HexenDefs::STANDART_LSQ_DELAY);
+				Game.Level.bprint(va("teams are tied!", Game.ColourNames[Colour]));
+			}
+		}
+		// Was he a single leader or tied?
+		else if (Game.Teams[0].Score <= oldScore)
+		{
+			// [FB] Announce new leader!
+			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue + Game.Teams[0].Colour, true, 0.0);
+			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_leads, true, 1.0);
+			Game.Level.bprint(va("%s team leads!", Game.ColourNames[Game.Teams[0].Colour]));
+		}
+	}
 }
 
 //==========================================================================
@@ -250,16 +355,16 @@ void UpdateScore(int event)
 void UpdateCompetition()
 {
 	bool bPositionShifted;
-	int i, j, k, newposition;
+	int i, j, k;
 	PlayerTeam plteam2;
 
-	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 	{
 		if(Game.Teams[i] == self)
 			break;
 	}
 	
-	newposition = i;
+	Position = i;
 
 	// first see if previous players has lower score now
 	if (i != 0)
@@ -273,7 +378,8 @@ void UpdateCompetition()
 				bPositionShifted = true;
 				Game.Teams[j] = self;
 				Game.Teams[i] = plteam2;
-				newposition = j;
+				Position = j;
+				plteam2.Position = i;
 				// update each team player's TeamPosition data
 				for (k = 0; k < MAXPLAYERS; k++)
 				{
@@ -288,17 +394,18 @@ void UpdateCompetition()
 		}
 	}
 	// secondly (in other case) see if next players has higher score (in case score gone down)
-	if (!bPositionShifted && i != HexenDefs::MAXPLAYERTEAMS - 1)
+	if (!bPositionShifted && i != HexenDefs::MAXTEAMSINGAME - 1)
 	{
 		j = i+1;
-		while (j < HexenDefs::MAXPLAYERTEAMS && Game.Teams[j])
+		while (j < HexenDefs::MAXTEAMSINGAME && Game.Teams[j])
 		{
 			plteam2 = Game.Teams[j];
 			if (plteam2.Score > Score)
 			{
 				Game.Teams[j] = self;
 				Game.Teams[i] = plteam2;
-				newposition = j;
+				Position = j;
+				plteam2.Position = i;
 				// update each team player's TeamPosition data
 				for (k = 0; k < MAXPLAYERS; k++)
 				{
@@ -317,7 +424,7 @@ void UpdateCompetition()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (Players[i])
-			Players[i].TeamPosition = newposition;
+			Players[i].TeamPosition = Position;
 	}
 }
 
