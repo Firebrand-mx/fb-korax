@@ -208,7 +208,7 @@ int max_health;
 int old_maxhealth;	// [FB] To decrease the health
 int bak_health;		// [FB] To keep an older level health
 
-int				teamscores[HexenDefs::MAXPLAYERTEAMS];
+int				teamscores[HexenDefs::MAXTEAMSINGAME];
 
 int use_power;				// [CW] is needed for some advanced game modes (football);
 							//	stores time USE button was held pressed
@@ -619,7 +619,7 @@ void SelectPlayerTeam()
 {
 	dprint("Player::SelectPlayerTeam : ");
 
-	if (bIsBot || GetCvar('TeamAutoSelect'))
+	if (bIsBot || GetCvar('TeamAutoSelect') && TeamSelection != HexenDefs::teamselection_reselect)
 	{
 		AutoSelectTeam();
 	}
@@ -630,7 +630,7 @@ void SelectPlayerTeam()
 		maxTeams = MainGameInfo(Level.Game).MaxTeamsInGame[MainGameInfo(Level.Game).GameType]
 						> HexenDefs::MAXTEAMSINGAME ? HexenDefs::MAXTEAMSINGAME :
 						MainGameInfo(Level.Game).MaxTeamsInGame[MainGameInfo(Level.Game).GameType];
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
 			if (MainGameInfo(Level.Game).Teams[i] == none)
 				break;
@@ -644,7 +644,9 @@ void SelectPlayerTeam()
 		
 		ClientTeamSelect(maxTeams, i, Colour,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Colour : -1,
-			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1);
+			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].GetPlayerCount() : 0,
+			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1,
+			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].GetPlayerCount() : 0);
 	}
 	dprint("Player::SelectPlayerTeam : OUT");
 }
@@ -659,31 +661,78 @@ void AutoSelectTeam()
 {
 	int i;
 	int new_colour = -1;
-	int random_team_sel = -1;
-	int random_colour_sel = -1;
 	int free_team_slots = 0;
+	bool team_colours_free[HexenDefs::MAXPLAYERTEAMS];
 
 	MainGameInfo game = MainGameInfo(Level.Game);
+
+	bool bKeepEqual = GetCvar('KeepTeamsEqual');
+	dprint("AutoSelectTeam : KeepTeamsEqual = %i", bKeepEqual);
+	int count_limit = 0;
+	if (bKeepEqual && game.Teams[0] && game.Teams[1])
+		count_limit = game.Teams[0].GetPlayerCount();
+
+	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		team_colours_free[i] = true;
+	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
+	{
+		if (game.Teams[i])
+			team_colours_free[game.Teams[i].Colour] = false;
+	}
 
 	for (i = 0; i < game.MaxTeamsInGame[game.GameType]; i++)
 	{
 		if (game.Teams[i] == none)
 			free_team_slots++;
-		else if (random_team_sel < 0 && P_Random() > 127)
-			random_team_sel = i;
+		else
+		{
+			if (bKeepEqual)
+			{
+				int count = game.Teams[i].GetPlayerCount();
+				dprint("AutoSelectTeam : team %i has %i players", i, count);
+				if (count_limit > count)
+					count_limit = count;
+			}
+		}
 	}
 
+	dprint("AutoSelectTeam : count_limit = %i", count_limit);
+	dprint("AutoSelectTeam : original Colour = %i", Colour);
 
 	if (free_team_slots == game.MaxTeamsInGame[game.GameType] ||
-			free_team_slots > 0 && P_Random() > 127)
+			free_team_slots > 0 && !(bKeepEqual && !team_colours_free[Colour]) && P_Random() > 127)
 		new_colour = Colour;
 	else
 	{
-		new_colour =
-			game.Teams[P_Random() % (game.MaxTeamsInGame[game.GameType] - free_team_slots)].Colour;
-		Colour = new_colour;
+		if (bKeepEqual)
+		{
+			for (i = 0; i < game.MaxTeamsInGame[game.GameType]; i++)
+			{
+				if (game.Teams[i] == none)
+					break;
+				if (game.Teams[i].GetPlayerCount() <= count_limit)
+				{
+					new_colour = game.Teams[i].Colour;
+					break;
+				}
+			}
+
+			if (new_colour < 0)
+			{
+				do
+					new_colour = P_Random() % HexenDefs::MAXPLAYERTEAMS;
+				while (!team_colours_free[new_colour]);
+			}
+		}
+		else
+		{
+			new_colour =
+				game.Teams[P_Random() % (game.MaxTeamsInGame[game.GameType] - free_team_slots)].Colour;
+		}
 	}
+	Colour = new_colour;
 	TeamSelection = HexenDefs::teamselection_autoselect;
+	dprint("AutoSelectTeam : OUT, new colour = %i", Colour);
 }
 
 //==========================================================================
@@ -695,10 +744,10 @@ void AutoSelectTeam()
 //==========================================================================
 
 void ClientTeamSelect(int maxTeams, int activeTeams, int curSelection,
-	int Col1, int Col2)
+	int Col1, int Count1, int Col2, int Count2)
 {
 	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, activeTeams, curSelection,
-		Col1, Col2);
+		Col1, Count1, Col2, Count2);
 }
 
 //==========================================================================
@@ -808,7 +857,11 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		PlayerReborn();
 		ResetInventory = true;
-		TeamSelection = HexenDefs::teamselection_autoselect;
+		if (TeamSelection != HexenDefs::teamselection_none)
+		{
+			dprint("Player::SpawnPlayer : after rebirth, using previously set colour");
+			TeamSelection = HexenDefs::teamselection_autoselect;
+		}
 	}
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
 	{
@@ -891,6 +944,7 @@ void SpawnPlayer(mthing_t * mthing)
 //[Korax]
 	if (!inited)
 	{
+		dprint("Player::SpawnPlayer : not inited, call InitiateLevel");
 		InitiateLevel();
 		// [FB] Start TotalKills counter with all monster count, but just once!
 		if (!Level.Game.deathmatch || MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
@@ -941,6 +995,7 @@ void SpawnPlayer(mthing_t * mthing)
 
 			bRecalculateLevelOnRespawn = false;
 			bak_level = exp_level;
+			dprint("Player::SpawnPlayer : must recalc level on respawn, current level = %i", exp_level);
 			InitiateLevel();
 			ActivateLevel(bak_level, false);
 		}
@@ -955,6 +1010,9 @@ void SpawnPlayer(mthing_t * mthing)
 
 		Actor(MO).experience = experience;
 
+		dprint("Player::SpawnPlayer : experience = %i, old_level = %i, exp_level = %i",
+			experience, old_level, exp_level);
+
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower to it, then we activate a level less than
@@ -964,6 +1022,7 @@ void SpawnPlayer(mthing_t * mthing)
 			/*exp_level--; // [FB] Decrese experience level
 			next_level = 1000 * exp_level; // [FB] Decrease the next to the old_level
 			old_level = 1000 * (exp_level - 1); // [FB] Also decrease the old_level*/
+			dprint("Player::SpawnPlayer : deactivating level to %i", exp_level - 1);
 			DeactivateLevel(exp_level - 1, true); // [FB] Update Stats accordingly
 		}
 	}
@@ -1524,11 +1583,14 @@ void GiveExperience(int exp)
 
 	Actor(MO).experience = experience;
 
+	dprint("Player::GiveExperience : exps = %i", experience);
+
 	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
 	{
 		/*old_level = 1000 * (exp_level); // [FB] We need to keep this to compare it
 		exp_level++;
 		next_level = 1000 * exp_level;*/
+		dprint("Player::GiveExperience : activating level to %i", exp_level + 1);
 		ActivateLevel(exp_level + 1, true);
 	}
 }
@@ -1545,6 +1607,9 @@ void ActivateLevel(int to_lvl, bool message)
 {
 	int addhealth;
 	int i;
+
+	dprint("Player::ActivateLevel : to_lvl = %i", to_lvl);
+	dprint("Player::ActivateLevel : exp_level = %i", exp_level);
 
 	while (exp_level < 11 && exp_level < to_lvl) // [FB] MAX Level it's 10
 	{
@@ -1587,6 +1652,8 @@ void ActivateLevel(int to_lvl, bool message)
 
 	}
 
+	dprint("Player::ActivateLevel : new level = %i", exp_level);
+
 	if (message)
 	{
 		cprint("YOU REACHED LEVEL %d", exp_level);
@@ -1606,6 +1673,9 @@ void DeactivateLevel(int to_lvl, bool message)
 {
 	int addhealth;
 	int i;
+
+	dprint("Player::DeactivateLevel : to_lvl = %i", to_lvl);
+	dprint("Player::DeactivateLevel : exp_level = %i", exp_level);
 
 	while(exp_level > 1 && exp_level > to_lvl)
 	{
@@ -1639,6 +1709,8 @@ void DeactivateLevel(int to_lvl, bool message)
 		//}
 	}
 
+	dprint("Player::DeactivateLevel : new level = %i", exp_level);
+
 	if (message)
 	{
 		cprint("YOU LOWERED TO LEVEL %d", exp_level);
@@ -1654,6 +1726,7 @@ void DeactivateLevel(int to_lvl, bool message)
 
 void InitiateLevel()
 {
+	dprint("Player::InitiateLevel : ");
 	max_health = PlayerPawn(MO).default.Health;	//100;
 
 	exp_level = 1;
@@ -1669,6 +1742,7 @@ void InitiateLevel()
 	dexterity = PlayerPawn(MO).InitialDexterity;
 	constitution = PlayerPawn(MO).InitialConstitution;
 	intelligence = PlayerPawn(MO).InitialIntelligence;
+	dprint("Player::InitiateLevel : OUT; exp_level = %i, exps = %i", exp_level, experience);
 }
 
 //==========================================================================
@@ -2926,6 +3000,7 @@ bool UndoPlayerMorph()
 
 	// [CW] recalc attributes
 	bak_level = exp_level;
+	dprint("Player::UndoPlayerMorph : do recalc level");
 	InitiateLevel();
 	ActivateLevel(bak_level, false);
 	bRecalculateLevelOnRespawn = false;
@@ -5289,7 +5364,8 @@ void UpdateScore(int event)
 
 	UpdateCompetition();
 	// No player-referred announces in team games
-	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
+	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
+			MainGameInfo(Level.Game).GetPlayerCount() > 1)
 		CompetitionAnnouncements(Score - mod);
 	
 	if (mod > 0)
@@ -5320,7 +5396,7 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Announce new leader!
 				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-				centreprint("You lead!");
+				Level.bprint("%s leads!", PlayerName);
 				
 				// Anyone lost the Lead?
 				int oldLeaderScore = Team.Players[1].Score;
@@ -5331,7 +5407,7 @@ void CompetitionAnnouncements(int oldScore)
 					if (Team.Players[i].Score == oldLeaderScore)
 					{
 					   Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-					   Team.Players[i].centreprint("You lost the lead!");
+					   //Team.Players[i].centreprint("You lost the lead!");
 					}
 					else
 					   break;
@@ -5341,7 +5417,7 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Announce new leader!
 				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-				centreprint("You lead!");
+				Level.bprint("%s leads!", PlayerName);
 			}
 		}
 		// Is he tied for the lead then?
@@ -5351,14 +5427,14 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Tied for the lead!
 				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-				centreprint("You are tied for the lead!");
+				//centreprint("You are tied for the lead!");
 				
 				// If there was a single leader, notify him that he is tied for the lead now
 				// (elsewise there's already a tied group)
 				if (PlayerPosition == 1)
 				{
 					Team.Players[0].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-					Team.Players[0].centreprint("You are tied for the lead!");
+					//Team.Players[0].centreprint("You are tied for the lead!");
 				}
 			}
 		}
@@ -5372,7 +5448,7 @@ void CompetitionAnnouncements(int oldScore)
 			if (Team.Players[1] && Team.Players[1].Score == Score)
 			{
 				CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-				centreprint("You are tied for the lead!");
+				//centreprint("You are tied for the lead!");
 				
 				// Who else is tied?
 				for (i = 1; i < MAXPLAYERS; i++)
@@ -5382,7 +5458,7 @@ void CompetitionAnnouncements(int oldScore)
 					if (Team.Players[i].Score == Score)
 					{
 					   Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-					   Team.Players[i].centreprint("You are tied for the lead!");
+					   //Team.Players[i].centreprint("You are tied for the lead!");
 					}
 					else
 					   break;
@@ -5394,7 +5470,7 @@ void CompetitionAnnouncements(int oldScore)
 		{
 			// [FB] You've lost the lead!
 			CallLocalSound(HexenDefs::lsid_gen_an_y_lost_the_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-			centreprint("You lost the lead!");
+			//centreprint("You lost the lead!");
 			
 			// If he was a single leader, some others have the lead now
 			if (Team.Players[0].Score < oldScore)
@@ -5407,14 +5483,15 @@ void CompetitionAnnouncements(int oldScore)
 						if (Team.Players[i].Score < newLeaderScore)
 							break;
 						Team.Players[i].CallLocalSound(HexenDefs::lsid_gen_an_y_tied_ftl, true, HexenDefs::STANDART_LSQ_DELAY);
-						Team.Players[i].centreprint("You are tied for the lead!");
+						//Team.Players[i].centreprint("You are tied for the lead!");
 					}
 				}
 				else
 				{
 					// [FB] Announce new leader!
 					Team.Players[0].CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-					Team.Players[0].centreprint("You lead!");
+					//Team.Players[0].centreprint("You lead!");
+					Level.bprint("%s leads!", Team.Players[0].PlayerName);
 				}
 			}
 		}
@@ -5447,7 +5524,7 @@ void UpdateCompetition()
 	if (i != 0)
 	{
 		j = i-1;
-		while (Team.Players[j] && j >= 0)
+		while (j >= 0)
 		{
 			pl2 = Team.Players[j];
 			

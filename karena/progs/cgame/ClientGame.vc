@@ -96,12 +96,13 @@ bool IsInGame;
 void RootWindowCreated()
 {
 	//[CW]
-	CreateCvar('BodyQueSize', "32", CVAR_ARCHIVE);
-	CreateCvar('CorpseQueSize', "64", CVAR_ARCHIVE);
+	CreateCvar('BodyQueSize', "32", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('CorpseQueSize', "64", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	CreateCvar('BotsAutoSpawn', "0", CVAR_ARCHIVE);
 	CreateCvar('TargetNameHint', "1", CVAR_ARCHIVE | CVAR_USERINFO);
-	CreateCvar('TeamAutoSelect', "0", CVAR_ARCHIVE);
-	CreateCvar('KeepTeamsEqual', "0", CVAR_ARCHIVE);
+	CreateCvar('TeamAutoSelect', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('KeepTeamsEqual', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('FriendlyFire', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
 
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
@@ -811,7 +812,7 @@ void DrawViewBorder(int x, int y, int w, int h)
 //==========================================================================
 
 void TeamSelect(int maxTeams, int activeTeams, int curSelection,
-	int Col1, int Col2)
+	int Col1, int Count1, int Col2, int Count2)
 {
 	bool created;
 	created = false;
@@ -826,6 +827,8 @@ void TeamSelect(int maxTeams, int activeTeams, int curSelection,
 
 	TeamSelectScreen.Teams[0] = Col1;
 	TeamSelectScreen.Teams[1] = Col2;
+	TeamSelectScreen.Counts[0] = Count1;
+	TeamSelectScreen.Counts[1] = Count2;
 
 	if (created)
 	{
