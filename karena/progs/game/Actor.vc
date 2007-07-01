@@ -595,8 +595,21 @@ void Died(EntityEx source, name DmgType)
 	}
 	if (source && source.bIsPlayer)
 	{
+		bool bKilledByAlly = false;
+		if (bIsPlayer)
+		{
+			if (MainGameInfo(Level.Game).GameModel &&
+					MainGameInfo(Level.Game).GameModel.TeamFactor(self, source)
+						== GameModel::teamfactor_coop)
+				bKilledByAlly = true;
+			else if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+					MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
+					Player(Player).Team == Player(source.Player).Team)
+				bKilledByAlly = true;
+		}
+
 		// [CW] check for "accuracy" trophy
-		if (bCountKill || (bIsPlayer && source.Player != Player))
+		if (bCountKill || (source.Player != Player) && !bKilledByAlly)
 		{
 			if (Length(Player(source.Player).Trophies.shot_position - GetCentre()) >=
 					HexenDefs::ACCURATE_SHOT_DISTANCE)
@@ -640,11 +653,20 @@ void Died(EntityEx source, name DmgType)
 			}
 			else
 			{
-				int se = HexenDefs::scoreevent_Frag;
+				int se = bKilledByAlly ? HexenDefs::scoreevent_TeamFrag : HexenDefs::scoreevent_Frag;
 
-				source.Player.FragsStats[Player.GetPlayerNum()]++;
-				source.Player.Frags++;
-				Player(source.Player).GiveExperience(500 + ((500 * (Player(Player).exp_level - 1) / 10) + (500 * (Player(source.Player).exp_level - 1) / 10)));
+				if (bKilledByAlly)
+				{
+					source.Player.FragsStats[Player.GetPlayerNum()]--;
+					source.Player.Frags--;
+				}
+				else
+				{
+					source.Player.FragsStats[Player.GetPlayerNum()]++;
+					source.Player.Frags++;
+					//Player(source.Player).GiveExperience(500 + ((500 * (Player(Player).exp_level - 1) / 10) * (500 * (Player(source.Player).exp_level - 1) / 10)));
+					Player(source.Player).GiveExperience(500 * Player(Player).exp_level / Player(source.Player).exp_level);
+				}
 
 				if (MainGameInfo(Level.Game).GameModel)
 					se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(Player(source.Player), Player(self.Player));
@@ -652,8 +674,11 @@ void Died(EntityEx source, name DmgType)
 				Player(source.Player).UpdateScore(se);
 
 				//[CW] update frag trophies
-				Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
-				Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
+				if (!bKilledByAlly)
+				{
+					Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
+					Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
+				}
 			}
 		}
 	}
@@ -670,15 +695,17 @@ void Died(EntityEx source, name DmgType)
 		// Player death
 		if (!source)
 		{
-			// Self-frag
-			if (MainGameInfo(Level.Game).GameType == HexenDefs::game_dmteam)
+			// Fragged by enviroment
+			// [CW] I don't get the idea of the following piece of code...
+			// perhaps it is wrong, i'll comment it for a while
+			/*if (MainGameInfo(Level.Game).GameType == HexenDefs::game_dmteam)
 			{
 				Player.FragsStats[Player.Colour]--;
 			}
 			else
-			{
+			{*/
 				Player.FragsStats[Player.GetPlayerNum()]--;
-			}
+			//}
 			Player.Frags--;
 		}
 		bSolid = false;
@@ -1158,34 +1185,31 @@ void Damage(EntityEx inflictor, EntityEx source, int damage, optional name DmgTy
 			damage = Health - 1;
 		}
 
-		// [CW] Check advanced game Team Factor
-		if (source != self && source && (source.bIsPlayer || !source.IsA('Pawn') && source.Target &&
-				source.Target.bIsPlayer) &&
-				MainGameInfo(Level.Game).GameModel)
+		if (!GetCvar('FriendlyFire'))
 		{
-			int teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(self,
-				source.bIsPlayer ? source : source.Target);
-			if (teamfactor == GameModel::teamfactor_coop && damage < 1000)
-				return;
-		}
+			// [FB] Don't do damage to teammates in team game modes
+			// [CW] ... and allies as well...
+			if (source != self && source && 
+					(source.bIsPlayer ||
+					!source.IsA('Pawn') && source.Target && source.Target.bIsPlayer) &&
+					damage < 1000)
+			{
+				if (MainGameInfo(Level.Game).GameModel)
+				{
+					int teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(self,
+								source.bIsPlayer ? source : source.Target);
+					if (teamfactor == GameModel::teamfactor_coop)
+						return;
+				}
 
-		// [FB] Don't do damage to teammates in team game modes
-		if (source != self &&
-			(MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
-			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) 
-		    && (source && ((source.bIsPlayer) || (!source.IsA('Pawn') && source.Target
-		    && source.Target.bIsPlayer))))
-		{
-			PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Target.Player).Team);
-			if (col == Player(Player).Team && damage < 1000)
-				return;
-		}
-
-		if (!Level.Game.deathmatch && (source && ((source.bIsPlayer) ||
-		   (source.Target && source.Target.bIsPlayer))))
-		{
-			if (damage < 1000)
-				return;
+				if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+					MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType])
+				{
+					PlayerTeam col = (source.bIsPlayer ? Player(source.Player).Team : Player(source.Target.Player).Team);
+					if (col == Player(Player).Team && damage < 1000)
+						return;
+				}
+			}
 		}
 
 //[Korax]
