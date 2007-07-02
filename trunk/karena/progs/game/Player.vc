@@ -1202,8 +1202,8 @@ bool GiveMana(int mana, int count)
 	}
 	if (mana == HexenDefs::MANA_123)
 	{
-		return GiveMana(HexenDefs::MANA_1, count) ||
-				GiveMana(HexenDefs::MANA_2, count) ||
+		return GiveMana(HexenDefs::MANA_1, count) +
+				GiveMana(HexenDefs::MANA_2, count) +
 				GiveMana(HexenDefs::MANA_3, count);
 	}
 	if (mana < 0 || mana > HexenDefs::NUMMANA)
@@ -2752,19 +2752,6 @@ void PlayerImpulse()
 			PendingWeapon = newWeapon;
 		}		
 	}
-//[Korax]
-/*	else if (impulse == 13)
-	{
-		InventoryLeft();
-	}
-	else if (impulse == 14)
-	{
-		InventoryRight();
-	}
-	else if (impulse == 15)
-	{
-		InventoryUse();
-	}*/
 	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
 	{
 		Actor(MO).Damage(none, Actor(self.MO), 10000);
@@ -2790,69 +2777,22 @@ void PlayerImpulse()
 	else if (impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD)
 	{
 		ToggleAltAttack(HexenDefs::ALTFIRE_BLASTRADIUS);
-		//PlayerUseArtifact(HexenDefs::arti_blastradius);
 	}
 	else if (impulse == HexenDefs::IMPULSE__TOGGLE_POSIONBAG)
 	{
 		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
-		//PlayerUseArtifact(HexenDefs::arti_poisonbag);
 	}
 	else if (impulse == HexenDefs::IMPULSE__SELECTTEAM)
 	{
 		TeamSelection = HexenDefs::teamselection_reselect;
 		SelectPlayerTeam();
 	}
-
-	// Hexen artifact hot keys
-///	if (!Arti)
-///	{
-/*		if (impulse == 11)
-		{
-			Arti = HexenDefs::NUMARTIFACTS;
-		}
-		else if (impulse == 12 && (HealthBig < max_health))
-		{
-			Arti = HexenDefs::arti_health;
-		}
-		else */
-		
-		/*
-		else if (impulse == 8)
-		{
-			Arti = HexenDefs::arti_teleport;
-		}
-		else if (impulse == 7)
-		{
-			Arti = HexenDefs::arti_teleportother;
-		}
-		else if (impulse == 6)
-		{
-			Arti = HexenDefs::arti_egg;
-		}
-		else if (impulse == 5 && !Powers[pw_invulnerability])
-		{
-			Arti = HexenDefs::arti_invulnerability;
-		}*/
-//	}
-/*
-	if (Arti)
+	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
-		// Use an artifact
-		if (Arti == HexenDefs::NUMARTIFACTS)
-		{
-			// use one of each artifact (except puzzle artifacts)
-			for (i = 1; i < HexenDefs::arti_firstpuzzitem; i++)
-			{
-				PlayerUseArtifact(i);
-			}
-		}
-		else
-		{
-			PlayerUseArtifact(Arti);
-		}
+		MO.Destroy();
+		MO = none;
+		SpawnClient();
 	}
-*/
-//[Korax]
 }
 
 //==========================================================================
@@ -5512,6 +5452,9 @@ void UpdateCompetition()
 	int i, j;
 	Player pl2;
 
+	if (!Team)
+		Error("Player::UpdateCompetition : Team reference is not set to real object");
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if(Team.Players[i] == self)
@@ -5527,6 +5470,8 @@ void UpdateCompetition()
 		while (j >= 0)
 		{
 			pl2 = Team.Players[j];
+			if (!pl2)
+				Error("Player::UpdateCompetition : previous player slot in team has no reference to object");
 			
 			if (pl2.Score < Score)
 			{
