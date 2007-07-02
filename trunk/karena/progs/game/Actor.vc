@@ -449,17 +449,6 @@ void Destroyed()
 	::Destroyed();
 }
 
-//===========================================================================
-//
-//  GetDamageTypeInflictor
-//
-//===========================================================================
-
-EntityEx GetDamageTypeInflictor(name DamageType)
-{
-	return DamageType == 'lava' ? HexenLevelInfo(Level).GLavaInflictor : none;
-}
-
 //==========================================================================
 //
 //  FloorBounceActor
@@ -728,7 +717,7 @@ void Died(EntityEx source, EntityEx inflictor)
 		if (MainGameInfo(Level.Game).GameModel)
 			MainGameInfo(Level.Game).GameModel.NotifyPlayerDeath(Player(Player), source);
 
-		if (bFireDamage)
+		if (DamageType == 'Fire')
 		{
 			// Player flame death
 			PlaySound('*burndeath', CHAN_VOICE);
@@ -756,7 +745,7 @@ void Died(EntityEx source, EntityEx inflictor)
 				break;
 			}
 		}
-		if (bIceDamage)
+		if (DamageType == 'Ice')
 		{
 			// Player ice death
 			Translation = 0;	//no translation
@@ -781,7 +770,7 @@ void Died(EntityEx source, EntityEx inflictor)
 		}
 	}
 //[Korax]
-	if (bFireDamage)
+	if (DamageType == 'Fire')
 	{
 		if (Class == FighterBoss)
  		{
@@ -809,7 +798,7 @@ void Died(EntityEx source, EntityEx inflictor)
 			return;
 		}
 	}
-	if (bIceDamage && IceDeathState)
+	if (DamageType == 'Ice' && IceDeathState)
 	{
 		bIceCorpse = true;
 		SetState(IceDeathState);
@@ -1165,13 +1154,13 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
-			if (inflictor.bFireDamage && (Health > -50) && (damage > 25))
+			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
 			{
-				bFireDamage = true;
+				DamageType = 'Fire';
 			}
-			if (inflictor.bIceDamage)
+			else
 			{
-				bIceDamage = true;
+				DamageType = inflictor.DamageType;
 			}
 		}
 		DamageType = 'Poison';
@@ -1260,13 +1249,13 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
-			if (inflictor.bFireDamage && (Health > -50) && (damage > 25))
+			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
 			{
-				bFireDamage = true;
+				DamageType = 'Fire';
 			}
-			if (inflictor.bIceDamage)
+			else
 			{
-				bIceDamage = true;
+				DamageType = inflictor.DamageType;
 			}
 		}
 		DamageType = 'Blind';
