@@ -2769,6 +2769,18 @@ void PlayerImpulse()
 		MO = none;
 		SpawnClient();
 	}
+	// [CW] Such a pervertion... *sigh*, but it works
+	else if (impulse >= HexenDefs::IMPULSE__DISCONNECT && impulse <= HexenDefs::IMPULSE__DISCONNECT_LAST)
+	{
+		int num = impulse - HexenDefs::IMPULSE__DISCONNECT;
+		if (Level.Game.Players[num])
+		{
+			if (Level.Game.Players[num].bIsBot)
+				Level.Game.Players[num].DisconnectBot();
+			else
+				Level.Game.Players[num].DisconnectClient();
+		}
+	}
 }
 
 //==========================================================================
