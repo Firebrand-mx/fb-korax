@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**    $Id: MenuChoice_RemoveBot.vc 481 2006-06-27 21:30:51Z dj_jl $
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    $Id: template.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -27,7 +34,18 @@ class MenuChoice_RemoveBot : MenuBigTextButton;
 
 void ActivateEvent()
 {
-	
+	KArenaPlayerReplicationInfo RepInfo;
+	int i = 0;
+
+	foreach MenuScreenMain(Parent).ClGame.GLevel.LevelInfo.AllThinkers(KArenaPlayerReplicationInfo, RepInfo)
+	{
+		if (RepInfo.IsBot)
+		{
+			CmdBuf_AddText(va("Impulse %i\n", HexenDefs::IMPULSE__DISCONNECT + RepInfo.PlayerNum));
+			break;
+		}
+		i++;
+	}
 }
 
 defaultproperties
