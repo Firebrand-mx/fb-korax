@@ -79,6 +79,22 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 	return damage;
 }
 
+//===========================================================================
+//
+//	Slam
+//
+//===========================================================================
+
+bool Slam(EntityEx Other)
+{
+	// Slamming minotaurs shouldn't move non-creatures
+	if (!Other.bMonster)
+	{
+		return false;
+	}
+	return ::Slam(Other);
+}
+
 //==========================================================================
 //
 //  Died
@@ -130,7 +146,7 @@ bool RoughCheckThing(Entity Other)
 {
 	Actor link = Actor(Other);
 	
-	if (!link.bCountKill && (!link.bIsPlayer || link == Tracer))
+	if (!link.bMonster && (!link.bIsPlayer || link == Tracer))
 	{
 		return false;
 	}
@@ -259,7 +275,7 @@ final void A_MinotaurLook()
 	{
 		foreach AllThinkers(Actor, mo)
 		{
-			if (!mo.bCountKill)
+			if (!mo.bMonster)
 				continue;
 			if (mo.Health <= 0)
 				continue;
@@ -656,9 +672,8 @@ defaultproperties
 	PainSound = 'MaulatorPain';
 	DeathSound = 'MaulatorDeath';
 	bActivateMCross = false;
-	bCheckNoMonsters = false;	// We want minoaturs also in deathmatch
-	bEnemy = true;
 	bNoTargetSwitch = true;
+	bCountKill = false;
 	Obituary = "$ob_minotaur";
 	HitObituary = "$ob_minotaurhit";
 }

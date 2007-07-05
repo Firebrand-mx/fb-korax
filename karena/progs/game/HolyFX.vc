@@ -66,7 +66,7 @@ bool Touch(Entity InOther)
 				Target = Other;
 				return true;
 			}
-			if (Other.bCountKill || Other.bIsPlayer)
+			if (Other.bMonster || Other.bIsPlayer)
 			{
 				Tracer = Other;
 			}
@@ -88,7 +88,7 @@ bool Touch(Entity InOther)
 				{
 					Spawn(HolyPuff, Origin);
 					PlaySound('SpiritAttack', CHAN_VOICE);
-					if (Other.bCountKill && P_Random() < 128
+					if (Other.bMonster && P_Random() < 128
 						&& !GetSoundPlayingInfo(Other,
 							GetSoundID('PuppyBeat')))
 					{
@@ -121,7 +121,7 @@ bool RoughCheckThing(Entity Other)
 {
 	Actor link = Actor(Other);
 	
-	if ((!link.bCountKill && !link.bIsPlayer) || link.bDormant)
+	if ((!link.bMonster && !link.bIsPlayer) || link.bDormant)
 	{
 		return false;
 	}
@@ -185,7 +185,7 @@ void CHolySeekerMissile(float thresh, float turnMax)
 	{
 		return;
 	}
-	if (!Tracer.bShootable || (!Tracer.bCountKill && !Tracer.bIsPlayer))
+	if (!Tracer.bShootable || (!Tracer.bMonster && !Tracer.bIsPlayer))
 	{
 		// Target died/target isn't a player or creature
 		Tracer = none;
