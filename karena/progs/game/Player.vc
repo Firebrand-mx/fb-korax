@@ -214,6 +214,7 @@ int		oldColour;		// used to skip respawn if Team Selection screen was cancelled
 PlayerTeam	Team;	//[CW]
 
 bool			targetinfo_enabled;
+int				targetnamehint_type;
 int				targetinfo_counter;	//[CW]
 targetinfo_t	targetinfo;
 
@@ -3002,16 +3003,17 @@ void UpdateTargetInfo()
 	if (PlayerState != PST_DEAD && targetinfo_enabled)
 	{
 		TAVec angles;
+		TVec Dir;
+		
 		angles = MO.Angles;
-		Actor(MO).AimLineAttack(angles, 64.0 * 64.0);
-		if (Actor(MO).linetarget)
+		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
+		if (AimTarget)
 		{
-			Player plTarget = Player(Actor(MO).linetarget.Player);
-			if (plTarget)
+			if (AimTarget.Player)
 			{
 				int teamfactor = GameModel::teamfactor_any;
 				if (MainGameInfo(Level.Game).GameModel)
-					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), Actor(MO).linetarget);
+					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), AimTarget);
 				if (teamfactor == GameModel::teamfactor_any)
 				{
 					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
@@ -3020,16 +3022,16 @@ void UpdateTargetInfo()
 					else
 						targetinfo.type =
 							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
-							Colour == Actor(MO).linetarget.Player.Colour)
+							Colour == AimTarget.Player.Colour)
 								? targetinfo_noshoot : targetinfo_shoot;
 				}
 				else
 					targetinfo.type = teamfactor == GameModel::teamfactor_coop ? targetinfo_noshoot : targetinfo_shoot;
 
-				targetinfo.sname = plTarget.PlayerName;
-				targetinfo.level = plTarget.exp_level;
-				if (plTarget.max_health)	// [CW] paranoia
-					targetinfo.healthpc = 100 * plTarget.Health / plTarget.max_health;
+				targetinfo.sname = AimTarget.Player.PlayerName;
+				targetinfo.level = Player(AimTarget.Player).exp_level;
+				if (Player(AimTarget.Player).max_health)	// [CW] paranoia
+					targetinfo.healthpc = 100 * Player(AimTarget.Player).Health / Player(AimTarget.Player).max_health;
 				else
 					targetinfo.healthpc = 0;
 			}
