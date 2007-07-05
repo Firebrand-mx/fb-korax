@@ -87,8 +87,17 @@ struct morph_t
 
 enum
 {
-	targethint_noshoot,
-	targethint_shoot
+	targetinfo_none,
+	targetinfo_noshoot,
+	targetinfo_shoot
+};
+
+struct targetinfo_t
+{
+	byte	type;
+	string	sname;
+	byte	level;
+	byte	healthpc;	// [CW] health percentage
 };
 
 int SBFlags;
@@ -198,16 +207,15 @@ int				teamscores[HexenDefs::MAXTEAMSINGAME];
 
 int use_power;				// [CW] is needed for some advanced game modes (football);
 							//	stores time USE button was held pressed
-int	targetnamehint_type;
-string		targetnamehint;
 
 int		TeamSelection;	//[CW] team selection process state
 int		oldColour;		// used to skip respawn if Team Selection screen was cancelled
 						// while REselecting team
 PlayerTeam	Team;	//[CW]
 
-bool targetnamehint_enabled;
-int targetnamehint_counter;	//[CW]
+bool			targetinfo_enabled;
+int				targetinfo_counter;	//[CW]
+targetinfo_t	targetinfo;
 
 // [CW] for trophy announcements
 trophies_t	Trophies;
@@ -228,7 +236,7 @@ replication
 		experience, exp_level, next_level, old_level, strength, intelligence,
 		wisdom, dexterity, constitution, max_health, old_maxhealth,
 		bak_health, use_power, targetnamehint_type, altWeapon, teamscores,
-		altWeaponMode, targetnamehint;
+		altWeaponMode, targetinfo;
 
 	unreliable if (!bIsClient)
 		ClientGunShot, ClientBlood, ClientExplosion, ClientExplosion2,
@@ -491,7 +499,7 @@ void DisconnectClient()
 
 void UserinfoChanged()
 {
-	targetnamehint_enabled = GetCvar('TargetNameHint');
+	targetinfo_enabled = GetCvar('TargetInfo');
 
 	if (!bSpawned)
 	{
@@ -3098,6 +3106,68 @@ void DeathPlayerTick(float deltaTime)
 
 //==========================================================================
 //
+//  UpdateTargetInfo
+//
+//==========================================================================
+
+void UpdateTargetInfo()
+{
+	if (PlayerState != PST_DEAD && targetinfo_enabled)
+	{
+		TAVec angles;
+		angles = MO.Angles;
+		Actor(MO).AimLineAttack(angles, 64.0 * 64.0);
+		if (Actor(MO).linetarget)
+		{
+			Player plTarget = Player(Actor(MO).linetarget.Player);
+			if (plTarget)
+			{
+				int teamfactor = GameModel::teamfactor_any;
+				if (MainGameInfo(Level.Game).GameModel)
+					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), Actor(MO).linetarget);
+				if (teamfactor == GameModel::teamfactor_any)
+				{
+					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
+						!MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType])
+						targetinfo.type = targetinfo_shoot;
+					else
+						targetinfo.type =
+							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
+							Colour == Actor(MO).linetarget.Player.Colour)
+								? targetinfo_noshoot : targetinfo_shoot;
+				}
+				else
+					targetinfo.type = teamfactor == GameModel::teamfactor_coop ? targetinfo_noshoot : targetinfo_shoot;
+
+				targetinfo.sname = plTarget.PlayerName;
+				targetinfo.level = plTarget.exp_level;
+				if (plTarget.max_health)	// [CW] paranoia
+					targetinfo.healthpc = 100 * plTarget.Health / plTarget.max_health;
+				else
+					targetinfo.healthpc = 0;
+			}
+			else
+			{
+				targetinfo.type = targetinfo_none;
+				targetinfo.sname = "";
+			}
+			targetinfo_counter = 30;	//[CW] this should use real time, i think
+		}
+		
+	}
+	if (targetinfo_counter > 0)
+	{
+		targetinfo_counter--;
+		if (!targetinfo_counter)
+		{
+			targetinfo.type = targetinfo_none;
+			targetinfo.sname = "";
+		}
+	}
+}
+
+//==========================================================================
+//
 //  PlayerTick
 //
 //==========================================================================
@@ -3148,49 +3218,7 @@ void PlayerTick(float deltaTime)
 	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
 
-	//
-	//[CW] "Targeted enemy hint" feature
-	//
-	if (PlayerState != PST_DEAD && targetnamehint_enabled)
-	{
-		TAVec angles;
-		TVec Dir;
-		angles = MO.Angles;
-		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
-		if (AimTarget)
-		{
-			if (AimTarget.Player)
-			{
-				int teamfactor = GameModel::teamfactor_any;
-				targetnamehint = AimTarget.Player.PlayerName;
-				if (MainGameInfo(Level.Game).GameModel)
-					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), AimTarget);
-				if (teamfactor == GameModel::teamfactor_any)
-				{
-					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
-						!MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType])
-						targetnamehint_type = targethint_shoot;
-					else
-						targetnamehint_type =
-							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
-							Colour == AimTarget.Player.Colour)
-								? targethint_noshoot : targethint_shoot;
-				}
-				else
-					targetnamehint_type = teamfactor == GameModel::teamfactor_coop ? targethint_noshoot : targethint_shoot;
-			}
-			else
-				targetnamehint = "";
-			targetnamehint_counter = 30;	//[CW] this should use real time, i think
-		}
-		
-	}
-	if (targetnamehint_counter > 0)
-	{
-		targetnamehint_counter--;
-		if (!targetnamehint_counter)
-			targetnamehint = "";
-	}
+	UpdateTargetInfo();
 
 
 	if (PlayerState == PST_DEAD)

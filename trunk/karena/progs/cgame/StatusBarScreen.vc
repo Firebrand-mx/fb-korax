@@ -1254,13 +1254,33 @@ void SB_Drawer(int sb_view)
 	//  Pause icon
 	SB_DrawPause();
 
-	// [CW] Targeted enemy hint
+	// [CW] Targeted enemy info
 	// (don't know where to put it if not here)
-	if (sb_view != SB_VIEW_AUTOMAP && strlen(cl.targetnamehint))
+	byte tinfoFormat = GetCvar('TargetInfo');
+	if (sb_view != SB_VIEW_AUTOMAP && tinfoFormat > 0 && cl.targetinfo.type != Player::targetinfo_none)
 	{
 		T_SetAlign(hcentre, vcentre);
-		T_SetFont((cl.targetnamehint_type == Player::targethint_shoot) ? font_small : font_yellow);
-		T_DrawText(320, 240, cl.targetnamehint);
+		T_SetFont((cl.targetinfo.type == Player::targetinfo_shoot) ? font_small : font_yellow);
+		T_DrawText(320, 240, cl.targetinfo.sname);
+		
+		if (tinfoFormat > 1)
+		{
+			string s = va("%i", cl.targetinfo.level);
+			switch (cl.targetinfo.level)
+			{
+				case 1: s = strcat(s, "st"); break;
+				case 2: s = strcat(s, "nd"); break;
+				case 3: s = strcat(s, "rd"); break;
+				default: s = strcat(s, "th");
+			}
+		
+			if (tinfoFormat > 2)
+			{
+				s = strcat(s, va("     %i%%", cl.targetinfo.healthpc));
+			}
+
+			T_DrawText(320, 254, s);
+		}
 	}
 
 	// [CW] Use power
