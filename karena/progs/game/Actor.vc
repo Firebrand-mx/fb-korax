@@ -79,30 +79,22 @@ bool MoveToFreePosition()
 	bak_org = Origin;
 	test_dir = vector(1.0, 0.0, 0.0);
 
-	dprint("MoveToFreePosition :: Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
-	dprint("MoveToFreePosition :: START ----------");
-
 	for (test_dist = 0.0; test_dist <= 512.0; test_dist += 64.0)
 	{
-		dprint("MoveToFreePosition :: test_distance = %f", test_dist);
 		for (test_ang = 0.0; test_ang < 360.0; test_ang += 45.0)
 		{
-			dprint("MoveToFreePosition :: test_angle = %f", test_ang);
 			VectorRotateAroundZ(&test_dir, test_ang);
 			UnlinkFromWorld();
 			Origin = bak_org + test_dir * test_dist;
+			LinkToWorld();
 			// [FB] We must check if the move is being done inside the map
 			if (!CheckSides(bak_org + vector((test_dist + Radius) * cos(test_ang), (test_dist + Radius) * sin(test_ang), 0.0)))
 			{
 				// [FB] OK, we are inside the map
-				LinkToWorld();
-
-				dprint("MoveToFreePosition :: test location = %f,%f,%f", Origin.x, Origin.y, Origin.z);
+				// LinkToWorld();
 
 				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
 				{
-					dprint("MoveToFreePosition :: SUCCEED ----------");
-					dprint("MoveToFreePosition :: Free Origin = %f, %f, %f", Origin.x, Origin.y, Origin.z);
 					return true;
 				}
 			}
@@ -110,10 +102,7 @@ bool MoveToFreePosition()
 			if (test_dist == 0.0)
 				break;
 		}
-		dprint("MoveToFreePosition :: test location distance failed, next?");
 	};
-
-	dprint("MoveToFreePosition :: FAILED ----------");
 
 	UnlinkFromWorld();
 	Origin = bak_org;
@@ -321,7 +310,7 @@ void OnMapSpawn(mthing_t * mthing)
 			bCheckLineBlockMonsters = true;
 		}
 		//[Korax]
-		if (!bPickUp && Class != PlayerPig && Class != PlayerHeresiarch)
+		if (!bPickUp && Class != PlayerPig)
 		{
 		        experience = default.Health;
 		}
@@ -814,8 +803,6 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 		fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
 		fog.PlaySound('Teleport', CHAN_VOICE);
 	}
-
-	dprint("MorphPlayer: after MoveToFreePosition: Player.MO.Origin = %f, %f, %f", Player.MO.Origin.x, Player.MO.Origin.y, Player.MO.Origin.z);
 
 	// [CW] Recalc attributes based on the new player's body
 	bak_level = Player(Player).exp_level;
