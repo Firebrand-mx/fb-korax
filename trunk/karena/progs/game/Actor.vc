@@ -1841,12 +1841,14 @@ final void A_NoBlocking()
 
 final void A_AddPlayerCorpse()
 {
-	if (HexenLevelInfo(Level).bodyqueslot >= /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize)
+	int n = HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo(Level).BodyQueSize;
+	if (HexenLevelInfo(Level).bodyqueslot >= HexenLevelInfo(Level).BodyQueSize)
 	{
 		// Too many player corpses - remove an old one
-		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize].Destroy();
+		if (HexenLevelInfo(Level).bodyque[n])
+			HexenLevelInfo(Level).bodyque[n].Destroy();
 	}
-	HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % /*HexenLevelInfo::BODYQUESIZE*/HexenLevelInfo(Level).BodyQueSize] = self;
+	HexenLevelInfo(Level).bodyque[n] = self;
 	HexenLevelInfo(Level).bodyqueslot++;
 }
 
