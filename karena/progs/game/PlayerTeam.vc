@@ -121,25 +121,21 @@ void DiscardPlayer(Player pl)
 	// first check if player is in team
 	if (pl.Team != self)
 	{
-		dprint("PlayerTeam::DiscardPlayer : no such player in the team, cancel!");
+		Error("PlayerTeam::DiscardPlayer : player is not enlisted in this team.");
 		return;
 	}
 
-	dprint("PlayerTeam::DiscardPlayer : push player down the table...");
 	// push player down the competition table
+	dprint("PlayerTeam::DiscardPlayer : pushing player down the table");
+	dprint("PlayerTeam::DiscardPlayer : player position was %i", pl.PlayerPosition);
 	pl.UpdateScore(HexenDefs::scoreevent_PlayerDiscard);
+	dprint("PlayerTeam::DiscardPlayer : player position now is %i", pl.PlayerPosition);
 
 	pl.Team = none;
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (Players[i] == pl)
-		{
-			Players[i] = none;
-			dprint("PlayerTeam::DiscardPlayer : removed player with index %i", i);
-			break;
-		}
-	}
+	Players[pl.PlayerPosition] = none;
 	playercount--;
+
+	dprint("PlayerTeam::DiscardPlayer : removed player from team");
 
 	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
@@ -149,8 +145,6 @@ void DiscardPlayer(Player pl)
 	// if there's no players, team is gone...
 	if (!playercount)
 	{
-		dprint("PlayerTeam::DiscardPlayer : team has no more players...");
-		dprint("PlayerTeam::DiscardPlayer : push team down the table...");
 		UpdateScore(HexenDefs::scoreevent_TeamDiscard);
 		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 		{
@@ -160,7 +154,6 @@ void DiscardPlayer(Player pl)
 				break;
 			}
 		}
-		dprint("PlayerTeam::DiscardPlayer : removed team with index %i", i);
 
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 		   pl.Level.bprint("team %s is no longer in competition", Game.ColourNames[Colour]);
@@ -179,17 +172,6 @@ void DiscardPlayer(Player pl)
 int GetPlayerCount()
 {
 	return playercount;
-	/*int i;
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (Players[i] == none)
-			break;
-	}
-
-	if (i == MAXPLAYERS - 1 && Players[MAXPLAYERS - 1])
-		i++;
-
-	return i;*/
 }
 
 //==========================================================================
@@ -203,22 +185,19 @@ int GetPlayerCount()
 
 void UpdateScore(int event)
 {
-	int i, mod;
+	int i;
+	int mod = 0;
+	bool force_update = false;
 
 	switch(event)
 	{
 	case HexenDefs::scoreevent_TeamDiscard:
-		for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
-		{
-			if (!Game.Teams[i] || i == HexenDefs::MAXTEAMSINGAME - 1)
-			{
-				if (i)
-				   mod = Game.Teams[i - 1].Score - Score - 1;
-				else
-				   mod = 0;
-				break;
-			}
-		}
+		i = Game.GetTeamCount();
+		if (i > 1)
+			mod = Game.Teams[--i].Score - Score - 1;
+		else
+			mod = -Score;
+		force_update = true;
 		break;
 	case HexenDefs::scoreevent_TeamReset:
 		Frags = 0;
@@ -226,6 +205,7 @@ void UpdateScore(int event)
 		Goals = 0;
 		FlagCaptures = 0;
 		mod = -Score;	// this should always set score to 0
+		force_update = true;
 		break;
 	case HexenDefs::scoreevent_Frag:
 		Frags++;
@@ -259,14 +239,16 @@ void UpdateScore(int event)
 		break;
 	}
 
+	if (mod || force_update)
+	{
+		Score += mod;
 
-	Score += mod;
+		UpdateCompetition();
 
-	UpdateCompetition();
-
-	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM &&
-			Game.GetTeamCount() > 1)
-		CompetitionAnnouncements(Score - mod);
+		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM &&
+				Game.GetTeamCount() > 1)
+			CompetitionAnnouncements(Score - mod);
+	}
 }
 
 //==========================================================================
@@ -283,15 +265,6 @@ void CompetitionAnnouncements(int oldScore)
 
 	// [CW] NOTE: following agorythm works good only for 2 teams in game;
 	//      If there will be more than 2 teams, we should modify this.
-
-	if (Game == none || Game.Level == none ||
-		Game.Teams[0] == none)
-	{
-		dprint("Game = %i", Game);
-		dprint("Game.Level = %i", Game.Level);
-		dprint("Game.Teams[0] = %i", Game.Teams[0]);
-		Error("AAAACK!!!");
-	}
 
 	if (Score > oldScore)
 	{

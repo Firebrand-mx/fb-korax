@@ -244,6 +244,9 @@ replication
 
 	reliable if (!bIsClient)
 		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound;
+
+	reliable if (bIsClient)
+		ServerDisconnectBot;
 }
 
 //==========================================================================
@@ -456,6 +459,27 @@ void DisconnectClient()
 	//[CW] set leaving player down the competition table
 	// NOTE: for future, should leaving player really loose his/her score?
 	Team.DiscardPlayer(self);
+
+	// [CW] get rid of the MO corpse
+	MO.Destroy();
+	MO = none;
+}
+
+//==========================================================================
+//
+//  ServerDisconnectBot
+//
+//==========================================================================
+
+void ServerDisconnectBot(int pl)
+{
+	if (Level.Game.Players[pl])
+	{
+		if (Level.Game.Players[pl].bIsBot)
+			Level.Game.Players[pl].DisconnectBot();
+		else
+			Error("Player::ServerDisconnectBot : called for non-bot player %i", pl);
+	}
 }
 
 //==========================================================================
@@ -2665,18 +2689,6 @@ void PlayerImpulse()
 	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
 		Actor(MO).MoveToFreePosition();
-	}
-	// [CW] Such a pervertion... *sigh*, but it works
-	else if (impulse >= HexenDefs::IMPULSE__DISCONNECT && impulse <= HexenDefs::IMPULSE__DISCONNECT_LAST)
-	{
-		int num = impulse - HexenDefs::IMPULSE__DISCONNECT;
-		if (Level.Game.Players[num])
-		{
-			if (Level.Game.Players[num].bIsBot)
-				Level.Game.Players[num].DisconnectBot();
-			else
-				Level.Game.Players[num].DisconnectClient();
-		}
 	}
 }
 
@@ -5143,27 +5155,25 @@ void CallLocalSound(int sound, bool put_in_queue, float delay)
 
 void UpdateScore(int event)
 {
+	int i;
 	int mod = 0;
+	bool force_update = false;
 
 	switch(event)
 	{
 		case HexenDefs::scoreevent_PlayerDiscard:
 		
-			for (mod = 0; mod < MAXPLAYERS; mod++)
-			{
-				if (!Team.Players[mod] || mod == MAXPLAYERS - 1)
-				{
-					if (mod)
-					   mod = Team.Players[mod - 1].Score - Score - 1;
-					else
-					   mod = 0;
-					break;
-				}
-			}
+			i = MainGameInfo(Level.Game).GetPlayerCount();
+			if (i > 1)
+				mod = Team.Players[--i].Score - Score - 1;
+			else
+				mod = -Score;
+			force_update = true;
 			break;
 		
 		case HexenDefs::scoreevent_PlayerReset:
 			mod = -Score;
+			force_update = true;
 			break;	// this should always set Score to 0
 		case HexenDefs::scoreevent_Frag:
 		case HexenDefs::scoreevent_Kill:
@@ -5210,17 +5220,20 @@ void UpdateScore(int event)
 		TeamKills = Team.Kills;
 	}
 
-	UpdateCompetition();
-	// No player-referred announces in team games
-	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
-			MainGameInfo(Level.Game).GetPlayerCount() > 1)
-		CompetitionAnnouncements(Score - mod);
-	
-	if (mod > 0)
-		MainGameInfo(Level.Game).bCompetitionOpened = true;
+	if (mod || force_update)
+	{
+		UpdateCompetition();
+		// No player-referred announces in team games
+		if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
+				MainGameInfo(Level.Game).GetPlayerCount() > 1)
+			CompetitionAnnouncements(Score - mod);
+		
+		if (mod > 0)
+			MainGameInfo(Level.Game).bCompetitionOpened = true;
 
-	if (Level)	// in case score is somehow updated between levels
-		MainGameInfo(Level.Game).ScoreboardsUpdate(none);
+		if (Level)	// in case score is somehow updated between levels
+			MainGameInfo(Level.Game).ScoreboardsUpdate(none);
+	}
 }
 
 //==========================================================================
