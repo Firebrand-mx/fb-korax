@@ -40,9 +40,6 @@ const float TELEFOGHEIGHT	= 32.0;
 
 const float BONUSADD		= 0.2;
 
-bool bSpawnFloat;		// spawn random float z
-bool bNoMorph;			// Won't morph into a pig.
-
 int experience;
 
 int _Special1;	// Special info
@@ -169,135 +166,23 @@ int HITDICE(int a)
 
 void OnMapSpawn(mthing_t* mthing)
 {
-	if (Level.Game.gameskill == sk_nightmare)
+	//[Korax]
+	if (!bMissile && !bPickUp && Class != PlayerPig)
 	{
-		ReactionCount = 0;
+		experience = default.Health;
 	}
+	::OnMapSpawn(mthing);
+}
 
-	LastLook = P_Random() % MAXPLAYERS;
+//==========================================================================
+//
+//  AngleIncrements
+//
+//==========================================================================
 
-	bCheckLineBlocking = false;
-	bCheckLineBlockMonsters = false;
-	if (!bMissile)
-	{
-		bCheckLineBlocking = true;
-		if (Class != PlayerFighter && Class != PlayerCleric &&
-		    Class != PlayerMage && Class != PlayerHeretic &&
-		    Class != PlayerMarine && Class != PlayerWitchaven &&
-		    Class != PlayerHeresiarch && Class != PlayerPig)
-		{
-			bCheckLineBlockMonsters = true;
-		}
-		//[Korax]
-		if (!bPickUp && Class != PlayerPig)
-		{
-		        experience = default.Health;
-		}
-	}
-	else
-	{
-		MaxStepHeight = 4.0;
-	}
-
-	// Set the state, but do not use P_SetMobjState, because action
-	// routines can't be called yet.  If the spawnstate has an action
-	// routine, it will not be called.
-	SetInitialState(IdleState);
-
-	if (mthing)
-	{
-		float x, y, z;
-
-		x = mthing->x;
-		y = mthing->y;
-		if (Class == ZCorpseLynchedNoHeart)
-		{
-			// Special stuff
-			Spawn(BloodPool, vector(x, y, ONFLOORZ));
-		}
-
-		if (bSpawnCeiling)
-		{
-			z = ONCEILINGZ;
-		}
-		else if (bSpawnFloat)
-		{
-			z = FLOATRANDZ;
-		}
-		else if (bFloatBob)
-		{
-			z = mthing->height;
-		}
-		else
-		{
-			z = ONFLOORZ;
-		}
-		SetOrigin2(vector(x, y, z));
-		if (z == ONFLOORZ)
-		{
-			Origin.z += mthing->height;
-		}
-		else if (z == ONCEILINGZ)
-		{
-			Origin.z -= mthing->height;
-		}
-		LinkToWorld();
-		TID = mthing->tid;
-		Special = mthing->special;
-		Args[0] = mthing->arg1;
-		Args[1] = mthing->arg2;
-		Args[2] = mthing->arg3;
-		Args[3] = mthing->arg4;
-		Args[4] = mthing->arg5;
-		if (bFloatBob)
-		{
-			// Seed random starting index for bobbing motion
-			Health = P_Random();
-			Special1f = mthing->height;
-		}
-		if (StateTime > 0.0)
-		{
-			StateTime = 0.1 + Random() * StateTime;
-		}
-		if (bMonster)
-		{
-			// Quantize angle to 45 degree increments
-			Angles.yaw = itof(45 * (mthing->angle / 45));
-			// [FB] Count for the total kills in the map
-			Level.TotalKills++;
-		}
-		else
-		{
-			// Scale angle correctly (source is 0..359)
-			Angles.yaw = itof(mthing->angle);
-		}
-		if (mthing->options & HexenLevelInfo::MTF_AMBUSH)
-		{
-			bAmbush = true;
-		}
-		if (mthing->options & HexenLevelInfo::MTF_DORMANT)
-		{
-			SetDormant();
-		}
-	}
-	else
-	{
-		SetOrigin2(Origin);
-	}
-
-	if (bStaticLight && mthing && !TID)
-	{
-		if (LightColour == 0xffffffff)
-		{
-			Level.AddStaticLight(Origin + LightOffset, mthing->arg1 ?
-				itof(mthing->arg1) * 8.0 : LightRadius);
-		}
-		else
-		{
-			Level.AddStaticLightRGB(Origin + LightOffset, mthing->arg1 ?
-				itof(mthing->arg1) * 8.0 : LightRadius, LightColour);
-		}
-	}
+int AngleIncrements()
+{
+	return bMonster ? 45 : 1;
 }
 
 //==========================================================================
@@ -1405,152 +1290,6 @@ bool HaveFlightPower()
 bool HaveSpeedPower()
 {
 	return !!Player(Player).Powers[pw_speed];
-}
-
-//==========================================================================
-//
-//  SpawnMissileAngle
-//
-//  Returns NULL if the missile exploded immediately, otherwise returns
-// a Actor reference to the missile.
-//
-//==========================================================================
-
-Actor SpawnMissileAngle(class<Actor> type, float angle, float momz)
-{
-	TVec org;
-	Actor mo;
-
-	org = Origin;
-	if (type == MinotaurMissile)
-	{
-		// Minotaur swing attack missile
-		org.z = Origin.z + 40.0;
-	}
-	else if (type == MinotaurFloorFire1)
-	{
-		// Minotaur floor fire missile
-		org.z = ONFLOORZ + FloorClip;
-	}
-	else if (type == IceGuyMissile2)
-	{
-		// Secondary Projectiles of the Ice Guy
-		org.z = Origin.z + 3.0;
-	}
-	else if (type == MageStaffFX2 || type == InfernalHandFX)
-	{
-		org.z = Origin.z + 40.0;
-	}
-	else if (IsA('PlayerHeresiarch'))
-	{
-		org.z = Origin.z + (Height / 2.0);
-	}
-	else
-	{
-		org.z = Origin.z + 32.0;
-	}
-	org.z -= FloorClip;
-	mo = Spawn(type, org);
-	if (mo.SightSound)
-	{
-		mo.PlaySound(mo.SightSound, CHAN_VOICE);
-	}
-	mo.Target = self;	// Originator
-	mo.Angles.yaw = angle;
-	mo.Velocity.x = mo.Speed * cos(angle);
-	mo.Velocity.y = mo.Speed * sin(angle);
-	mo.Velocity.z = momz;
-	return mo.CheckMissileSpawn() ? mo : none;
-}
-
-//==========================================================================
-//
-//  SpawnMissileAngleSpeed
-//
-//  Returns NULL if the missile exploded immediately, otherwise returns
-// a Actor reference to the missile.
-//
-//==========================================================================
-
-Actor SpawnMissileAngleSpeed(class<Actor> type, float angle,
-	float momz, float speed)
-{
-	TVec org;
-	Actor mo;
-
-	org = Origin;
-	org.z -= FloorClip;
-	mo = Spawn(type, org);
-	mo.Target = self;	// Originator
-	mo.Angles.yaw = angle;
-	mo.Velocity.x = speed * cos(angle);
-	mo.Velocity.y = speed * sin(angle);
-	mo.Velocity.z = momz;
-	return mo.CheckMissileSpawn() ? mo : none;
-}
-
-//==========================================================================
-//
-//  SeekerMissile
-//
-//  Returns true if target was tracked, false if not.
-//
-//==========================================================================
-
-bool SeekerMissile(float thresh, float turnMax)
-{
-	int dir;
-	float dist;
-	float delta;
-	float angle;
-
-	if (!Tracer)
-	{
-		return false;
-	}
-	if (!Tracer.bShootable)
-	{
-		// Target died
-		Tracer = none;
-		return false;
-	}
-	dir = FaceActor(Actor(Tracer), delta);
-	if (delta > thresh)
-	{
-		delta /= 2.0;
-		if (delta > turnMax)
-		{
-			delta = turnMax;
-		}
-	}
-	if (dir)
-	{
-		// Turn clockwise
-		Angles.yaw += delta;
-	}
-	else
-	{
-		// Turn counter clockwise
-		Angles.yaw -= delta;
-	}
-	Angles.yaw = AngleMod360(Angles.yaw);
-	angle = Angles.yaw;
-	Velocity.x = Speed * cos(angle);
-	Velocity.y = Speed * sin(angle);
-	if (Origin.z + Height < Tracer.Origin.z ||
-		Tracer.Origin.z + Tracer.Height < Origin.z)
-	{
-		// Need to seek vertically
-		dist = DistTo2(Tracer);
-		dist = dist / Speed;
-		if (dist < 1.0)
-		{
-			dist = 1.0;
-		}
-		Velocity.z = (Tracer.Origin.z + Tracer.Height / 2.0 -
-			Origin.z - Height / 2.0) / dist;
-	}
-	return true;
 }
 
 //==========================================================================
