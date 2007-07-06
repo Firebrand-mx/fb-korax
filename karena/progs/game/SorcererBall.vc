@@ -127,7 +127,7 @@ final void A_SorcUpdateBallAngle()
 final void A_SorcOffense2()
 {
 	float ang1;
-	Actor mo;
+	EntityEx mo;
 	float delta, index;
 	float dist;
 
@@ -135,10 +135,11 @@ final void A_SorcOffense2()
 	Args[4] = (Args[4] + 15) & 0xff;
 	delta = sin(index) * Sorcerer::SORCFX4_SPREAD_ANGLE;
 	ang1 = AngleMod360(Angles.yaw + delta);
-	mo = Actor(Target).SpawnMissileAngle(SorcererFX4, ang1, 0.0);
+	mo = Actor(Target).SpawnMissileAngle(SorcererFX4, ang1, 0.0,
+		PlayerHeresiarch(Target) ? Target.Height / 2.0 : 32.0);
 	if (mo)
 	{
-		mo._Special2 = 35 * 5 / 2;	// 5 seconds
+		Actor(mo)._Special2 = 35 * 5 / 2;	// 5 seconds
 		dist = Target.Target.DistTo2(mo);
 		dist = dist / mo.Speed;
 		if (dist < 1.0)
