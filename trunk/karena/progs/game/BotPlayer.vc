@@ -571,8 +571,8 @@ bool CheckPath(float ang, float dist)
 	bottracedir.y = sin(ang);
 	x1 = botmo.Origin.x;
 	y1 = botmo.Origin.y;
- 	x2 = x1 + dist * bottracedir.x;
- 	y2 = y1 + dist * bottracedir.y;
+ 	x2 = x1 + botmo.Radius + dist * bottracedir.x;
+ 	y2 = y1 + botmo.Radius + dist * bottracedir.y;
 
 	// [FB] Use lines
 	player.P_UseLines();
@@ -1279,7 +1279,8 @@ Actor FindEnemy()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
-		    player.Level.Game.Players[i].MO.Health > 0 && botmo != player.Level.Game.Players[i].MO)
+		    player.Level.Game.Players[i].MO.Health > 0 && !Player(player.Level.Game.Players[i]).bUnControllable && 
+			botmo != player.Level.Game.Players[i].MO)
 		{
 			if (MainGameInfo(player.Level.Game).GameModel) // [CW] Check if an advanced game mode is active
 			{
