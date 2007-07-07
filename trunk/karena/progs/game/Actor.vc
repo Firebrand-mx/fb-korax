@@ -290,6 +290,9 @@ void Died(EntityEx source, EntityEx inflictor)
 {
 	::Died(source, inflictor);
 
+	if (inflictor && ClassIsChildOf(inflictor.Class, Actor))
+		Actor(inflictor).IsDeathInflictor(self);
+
 //[Korax]
 	if (source && !bIsPlayer)
 	{
@@ -315,6 +318,18 @@ void Died(EntityEx source, EntityEx inflictor)
 
 //==========================================================================
 //
+//  IsDeathInflictor
+//
+//	[CW]
+//
+//==========================================================================
+
+void IsDeathInflictor(EntityEx victim)
+{
+}
+
+//==========================================================================
+//
 //	KilledByPlayer
 //
 //==========================================================================
@@ -332,14 +347,6 @@ void KilledByPlayer(EntityEx source)
 				MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
 				Player(Player).Team == Player(source.Player).Team)
 			bKilledByAlly = true;
-	}
-
-	// [CW] check for "accuracy" trophy
-	if (bMonster || (source.Player != Player) && !bKilledByAlly)
-	{
-		if (Length(Player(source.Player).Trophies.shot_position - GetCentre()) >=
-				HexenDefs::ACCURATE_SHOT_DISTANCE)
-			Player(source.Player).ConfirmTrophy(HexenDefs::trophycl_accuracy);
 	}
 
 	// [FB] Increase the player's KillCount
