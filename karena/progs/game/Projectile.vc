@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -26,6 +26,47 @@
 class Projectile : Actor
 	abstract;
 
+/* KORAX */
+bool		bNoAccuracy;		// [CW] forbid to give accuracy trophy for this
+								//		projectile killing a target
+TVec		SpawnOrigin;		// [CW] coordinates of projectile's spawn point;
+								//		currently is used to determine player's
+								//		accuracy trophy
+
+//==========================================================================
+//
+//	IsDeathInflictor
+//
+//	[CW]
+//
+//==========================================================================
+
+void IsDeathInflictor(EntityEx victim)
+{
+	// Currently only Pawn's death has a meaning here
+	if (!bNoAccuracy && ClassIsChildOf(victim.Class, Pawn))
+	{
+		if (Target && Target.bIsPlayer)
+		{
+			if (Length(SpawnOrigin - GetCentre()) >= HexenDefs::ACCURATE_SHOT_DISTANCE)
+				Player(Target.Player).ConfirmTrophy(HexenDefs::trophycl_accuracy);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	if (Target && ClassIsChildOf(Target.Class, PlayerPawn))
+		SpawnOrigin = Origin;
+}
+
+
 defaultproperties
 {
 	bMissile = true;
@@ -35,4 +76,7 @@ defaultproperties
 	bNoTeleport = true;
 	bActivateImpact = true;
 	bActivatePCross = true;
+
+	/* KORAX */
+	bNoAccuracy = false;
 }
