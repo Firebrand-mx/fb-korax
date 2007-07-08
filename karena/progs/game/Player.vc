@@ -4188,32 +4188,35 @@ void UseArtiSummon()
 //                          ^
 // [FB] Old behaviour above |
 	int i;
-	float x;
-	float y;
-	float z;
-	TVec Orig;
-	TVec dir;
 	Actor fog, newmobj;
+	int SpotCount;
+	EntityEx Spot;
 
-	if (!HexenLevelInfo(Level).MinotaurSpotCount)
+	SpotCount = 0;
+	foreach Level.AllThinkers(MinotaurSpot, Spot)
+	{
+		SpotCount++;
+	}
+	if (!SpotCount)
 	{
 		// No spots
 		return;
 	}
-	i = P_Random();
+	i = P_Random() % SpotCount;
+	foreach Level.AllThinkers(MinotaurSpot, Spot)
+	{
+		if (!i)
+		{
+			break;
+		}
+		i--;
+	}
 
-	i++;
-	x = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].x;
-	y = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].y;
-	z = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount].z;
-	dir = HexenLevelInfo(Level).MinotaurSpot[i % HexenLevelInfo(Level).MinotaurSpotCount] /*-Origin*/;
-	Orig = vector(x, y, z);
-
-	fog = HexenLevelInfo(Level).Spawn(TeleportFog, Orig);
+	fog = HexenLevelInfo(Level).Spawn(TeleportFog, Spot.Origin);
 	fog.PlaySound('Teleport', CHAN_VOICE);
-	newmobj = HexenLevelInfo(Level).Spawn(SummonMissile, Orig);
-	newmobj.Origin = Orig;
-	newmobj.Angles.yaw = HexenLevelInfo(Level).MinotaurSpot_angle[i % HexenLevelInfo(Level).MinotaurSpotCount];
+	newmobj = HexenLevelInfo(Level).Spawn(SummonMissile, Spot.Origin);
+	newmobj.Origin = Spot.Origin;
+	newmobj.Angles.yaw = Spot.Angles.yaw;
 	newmobj.Velocity.z = 5.0 * 35.0;
 	newmobj.Target = Actor(MO);
 	newmobj.bTelestomp = true;
