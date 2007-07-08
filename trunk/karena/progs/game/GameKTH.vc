@@ -54,7 +54,7 @@ enum
 
 
 Player				plHeresiarch;
-Actor				DeathSpot;
+EntityEx			DeathSpot;
 string				oldHeresiarchName;
 
 GameSequencer		deathSequencer;
@@ -183,7 +183,7 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 		// Handle Heresiarch death
 		if (pl == plHeresiarch)
 		{
-			DeathSpot = Actor(plHeresiarch.MO);
+			DeathSpot = EntityEx(plHeresiarch.MO);
 			oldHeresiarchName = plHeresiarch.PlayerName;
 			if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
 			{
@@ -256,7 +256,7 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 //
 //==========================================================================
 
-void HandleEvent(int Event, Actor A, int arg1, int arg2, int arg3, int arg4)
+void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 {
 	switch (Event)
 	{
@@ -408,34 +408,34 @@ void PlayBirthSequence()
 		// of birth sequence
 		dlDelay2 = 0;
 		dmDelay = 0;
-		Actor(plHeresiarch.MO).SetState(Actor(plHeresiarch.MO).PainState);
+		EntityEx(plHeresiarch.MO).SetState(EntityEx(plHeresiarch.MO).PainState);
 		if (State != state_rebornsequence)
 			birthsequence_state = 39;	// skip waiting for death sequence completion
 		break;
 	case 40:
 		// Spawn Sorcerer's balls
 		{
-			Actor ball;
+			EntityEx ball;
 			TVec org;
 			plHeresiarch.MO.Args[0] = 0;	// Currently no defense
 			plHeresiarch.MO.Args[2] = Sorcerer::SORCBALL_INITIAL_SPEED;	// target speed
 			plHeresiarch.MO.Args[3] = Sorcerer::SORC_NORMAL;
 			plHeresiarch.MO.Args[4] = Sorcerer::SORCBALL_INITIAL_SPEED;	// Initial orbit speed
-			Actor(plHeresiarch.MO).Special1f = 1.0;
+			EntityEx(plHeresiarch.MO).Special1f = 1.0;
 			org = plHeresiarch.MO.Origin;
 			org.z = plHeresiarch.MO.Origin.z - plHeresiarch.MO.FloorClip + plHeresiarch.MO.Height;
 			srcballs[0] = SorcererBall(Level.Spawn(SorcererBall1, org));
 			if (srcballs[0])
 			{
-				srcballs[0].Target = Actor(plHeresiarch.MO);
+				srcballs[0].Target = EntityEx(plHeresiarch.MO);
 				srcballs[0]._Special2 = Sorcerer::SORCFX4_RAPIDFIRE_TIME;
 			}
 			srcballs[1] = SorcererBall(Level.Spawn(SorcererBall2, org));
 			if (srcballs[1])
-				srcballs[1].Target = Actor(plHeresiarch.MO);
+				srcballs[1].Target = EntityEx(plHeresiarch.MO);
 			srcballs[2] = SorcererBall(Level.Spawn(SorcererBall3, org));
 			if (srcballs[2])
-				srcballs[2].Target = Actor(plHeresiarch.MO);
+				srcballs[2].Target = EntityEx(plHeresiarch.MO);
 
 			plHeresiarch.MO.bNoGravity = true;
 			plHeresiarch.MO.Velocity.z = 8.0;
