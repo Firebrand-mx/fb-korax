@@ -62,11 +62,11 @@ const int CORPSEQUEUESIZE		= 128;
 int BodyQueSize;
 int CorpseQueSize;
 
-Actor bodyque[BODYQUESIZE];
+EntityEx bodyque[BODYQUESIZE];
 int bodyqueslot;
 
 // Corpse queue for monsters
-Actor corpseQueue[CORPSEQUEUESIZE];
+EntityEx corpseQueue[CORPSEQUEUESIZE];
 int corpseQueueSlot;
 
 //============================================================================
@@ -92,9 +92,9 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	int Arg4, int Arg5, line_t* Line, int Side, Entity E)
 {
 	bool buttonSuccess;
-	Actor A;
+	EntityEx A;
 
-	A = Actor(E);
+	A = EntityEx(E);
 	buttonSuccess = false;
 	switch (Special)
 	{
@@ -176,7 +176,7 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 //
 //==========================================================================
 
-bool CheckActivation(int activationType, line_t * line, Actor A)
+bool CheckActivation(int activationType, line_t * line, EntityEx A)
 {
 	int lineActivation;
 
@@ -226,7 +226,7 @@ bool ActivateLine(line_t* Line, EntityEx A, int Side, int ActivationType)
 	bool repeat;
 	bool buttonSuccess;
 
-	if (!CheckActivation(ActivationType, Line, Actor(A)))
+	if (!CheckActivation(ActivationType, Line, A))
 	{
 		return false;
 	}
@@ -290,23 +290,23 @@ bool CheckLock(Entity A, int lock, bool door)
 //
 //==========================================================================
 
-bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Actor a)
+bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, EntityEx a)
 {
 	if (tid)
 	{
-		Actor A;
+		EntityEx A;
 		int searcher;
 
 		searcher = -1;
-		for (A = Actor(FindMobjFromTID(tid, &searcher)); A;
-			A = Actor(FindMobjFromTID(tid, &searcher)))
+		for (A = EntityEx(FindMobjFromTID(tid, &searcher)); A;
+			A = EntityEx(FindMobjFromTID(tid, &searcher)))
 		{
 			if (A)
 			{
 			      if (angle3)
-			         A.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+			         Actor(A).Thrust3d(itof(angle2d), itof(angle3), itof(move));
 			      else
-			         A.Thrust3d2(itof(angle2d), itof(move), itof(move2));
+			         Actor(A).Thrust3d2(itof(angle2d), itof(move), itof(move2));
 			   return true;
 			}
 		}
@@ -314,9 +314,9 @@ bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Act
 	else if (a)
 	{
 		if (angle3)
-			a.Thrust3d(itof(angle2d), itof(angle3), itof(move));
+			Actor(a).Thrust3d(itof(angle2d), itof(angle3), itof(move));
 		else
-			a.Thrust3d2(itof(angle2d), itof(move), itof(move2));
+			Actor(a).Thrust3d2(itof(angle2d), itof(move), itof(move2));
 		return true;
 	}
 	return false;
@@ -342,14 +342,14 @@ bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Act
 bool A_LocalQuake(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
 {
 	QuakeFocus focus;
-	Actor target;
+	EntityEx target;
 	int lastfound = 0;
 	int success = false;
 
 	// Find all quake foci
 	do
 	{
-		target = Actor(FindMobjFromTID(Arg5, &lastfound));
+		target = EntityEx(FindMobjFromTID(Arg5, &lastfound));
 		if (target)
 		{
 			focus = QuakeFocus(Spawn(QuakeFocus, target.Origin));
@@ -375,7 +375,7 @@ bool A_LocalQuake(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
 //==========================================================================
 
 bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
-	int Arg5, Actor A)
+	int Arg5, EntityEx A)
 {
 	int i;
 	int type, arti;
@@ -429,19 +429,19 @@ bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
 //
 //==========================================================================
 
-bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, Actor a)
+bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, EntityEx a)
 {
 	if (!MainGameInfo(Game).GameModel)
 		return false;
 
 	if (tid)
 	{
-		Actor A;
+		EntityEx A;
 		int searcher;
 
 		searcher = -1;
-		for (A = Actor(FindMobjFromTID(tid, &searcher)); A;
-			A = Actor(FindMobjFromTID(tid, &searcher)))
+		for (A = EntityEx(FindMobjFromTID(tid, &searcher)); A;
+			A = EntityEx(FindMobjFromTID(tid, &searcher)))
 		{
 			if (A)
 			{
@@ -498,147 +498,6 @@ bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int
 		runACS = false;
 
 	return runACS;
-}
-
-//==========================================================================
-//
-//	SpawnMapThing
-//
-//	The fields of the mapthing should already be in host byte order.
-//
-//==========================================================================
-
-void SpawnMapThing(mthing_t * mthing)
-{
-	int				spawnMask;
-	EntityEx		A;
-	class<EntityEx>	moClass;
-
-	if (mthing->type <= 0)
-	{
-		return;
-	}
-
-	// Count deathmatch start positions
-	if (mthing->type == 11)
-	{
-		if (NumDeathmatchStarts < MAXDEATHMATCHSTARTS)
-		{
-			CopyMThing(mthing, &DeathmatchStarts[NumDeathmatchStarts]);
-			NumDeathmatchStarts++;
-		}
-		return;
-	}
-
-	// Check for player starts 1 to 4
-	if (mthing->type <= 4)
-	{
-		CopyMThing(mthing, &PlayerStarts[mthing->arg1 * MAXPLAYERS +
-			mthing->type - 1]);
-		return;
-	}
-	// Check for player starts 5 to 8
-	if (mthing->type >= 9100 && mthing->type <= 9103)
-	{
-		mthing->type = 5 + mthing->type - 9100;	// Translate to 5 - 8
-		CopyMThing(mthing, &PlayerStarts[mthing->arg1 * MAXPLAYERS +
-			mthing->type - 1]);
-		return;
-	}
-
-	if (mthing->type >= 1400 && mthing->type < 1410)
-	{
-		XLevel.PointInSector(vector(mthing->x,
-			mthing->y, 0.0))->seqType = mthing->type - 1400;
-		return;
-	}
-
-//[Korax]
-/*
-	// Check current game type with spawn flags
-	if (Game.netgame == false)
-	{
-		spawnMask = MTF_GSINGLE;
-	}
-	else if (Game.deathmatch)
-	{
-		spawnMask = MTF_GDEATHMATCH;
-	}
-	else
-	{
-		spawnMask = MTF_GCOOP;
-	}
-	if (!(mthing->options & spawnMask))
-	{
-		return;
-	}
-
-	// Check current skill with spawn flags
-	if (Game.gameskill == sk_baby || Game.gameskill == sk_easy)
-	{
-		spawnMask = MTF_EASY;
-	}
-	else if (Game.gameskill == sk_hard || Game.gameskill == sk_nightmare)
-	{
-		spawnMask = MTF_HARD;
-	}
-	else
-	{
-		spawnMask = MTF_NORMAL;
-	}
-	if (!(mthing->options & spawnMask))
-	{
-		return;
-	}
-
-	// Check current character classes with spawn flags
-	if (!Game.netgame)
-	{
-		// Single player
-		if (!(mthing->options & MainGameInfo(Game).classFlags[GetCvar('class')]))
-		{
-			// Not for current class
-			return;
-		}
-	}
-*/
-//[Korax]
-#ifdef FIXME	//  Because of client/server and in-game joining we can't do this
-	else if (!deathmatch)
-	{
-		// Cooperative
-		spawnMask = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (GPlayers[i])
-			{
-				spawnMask |= classFlags[PlayerClass[i]];
-			}
-		}
-		if (!(mthing->options & spawnMask))
-		{
-			return;
-		}
-	}
-#endif
-
-	// Find which type to spawn
-	moClass = class<Actor>(FindClassFromEditorId(mthing->type));
-	if (moClass)
-	{
-		if (Level.Game.nomonsters && moClass.default.bMonster)
-		{
-			return;
-		}
-		// spawn it
-		A = Spawn(moClass,,, mthing);
-	}
-	else
-	{
-		// Can't find thing type
-		dprint("SpawnMapThing: Unknown type %i at (%f, %f)",
-			mthing->type, mthing->x, mthing->y);
-	}
 }
 
 //==========================================================================
@@ -718,6 +577,38 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 	}
 }
 
+//==========================================================================
+//
+//  GetClassSpawnFlags
+//
+//==========================================================================
+
+int GetPClassSpawnFlags()
+{
+	if (!Game.netgame)
+	{
+		// Single player
+		return MainGameInfo(Game).classFlags[GetCvar('class')];
+	}
+#ifdef FIXME	//  Because of client/server and in-game joining we can't do this
+	else if (!deathmatch)
+	{
+		// Cooperative
+		int spawnMask = 0;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (GPlayers[i])
+			{
+				spawnMask |= classFlags[PlayerClass[i]];
+			}
+		}
+		return spawnMask;
+	}
+#endif
+	return 0;
+}
+
 defaultproperties
 {
+	ExtPlayersBase = 9100;
 }
