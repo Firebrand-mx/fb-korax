@@ -65,10 +65,6 @@ int CorpseQueSize;
 Actor bodyque[BODYQUESIZE];
 int bodyqueslot;
 
-int MinotaurSpotCount;
-TVec MinotaurSpot[MAX_MINOTAUR_SPOTS];
-float MinotaurSpot_angle[MAX_MINOTAUR_SPOTS];
-
 // Corpse queue for monsters
 Actor corpseQueue[CORPSEQUEUESIZE];
 int corpseQueueSlot;
@@ -506,25 +502,20 @@ bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int
 
 //==========================================================================
 //
-// SpawnMapThing
+//	SpawnMapThing
 //
-// The fields of the mapthing should already be in host byte order.
+//	The fields of the mapthing should already be in host byte order.
 //
 //==========================================================================
 
 void SpawnMapThing(mthing_t * mthing)
 {
-	int spawnMask;
-	Actor A;
-	class<Actor> moClass;
+	int				spawnMask;
+	EntityEx		A;
+	class<EntityEx>	moClass;
 
 	if (mthing->type <= 0)
-		return;
-
-	// [FB] Check for minotaur spots
-	if (mthing->type == 15005)	// [FB] Minotaur Spot
 	{
-		AddMinotaurSpot(mthing->x, mthing->y, itof(45 * (mthing->angle / 45)));
 		return;
 	}
 
@@ -648,27 +639,6 @@ void SpawnMapThing(mthing_t * mthing)
 		dprint("SpawnMapThing: Unknown type %i at (%f, %f)",
 			mthing->type, mthing->x, mthing->y);
 	}
-}
-
-//==========================================================================
-//
-//  AddMinotaurSpot
-//
-//  [FB] Count how many minotaur spots this level has
-//
-//==========================================================================
-
-void AddMinotaurSpot(float x, float y, float angle)
-{
-	if (MinotaurSpotCount == MAX_MINOTAUR_SPOTS)
-	{
-		Error("Too many minotaur spots.");
-	}
-	MinotaurSpot[MinotaurSpotCount].x = x;
-	MinotaurSpot[MinotaurSpotCount].y = y;
-	MinotaurSpot[MinotaurSpotCount].z = Actor::ONFLOORZ;
-	MinotaurSpot_angle[MinotaurSpotCount] = angle;
-	MinotaurSpotCount++;
 }
 
 //==========================================================================
