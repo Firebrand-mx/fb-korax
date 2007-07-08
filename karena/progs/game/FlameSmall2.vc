@@ -1,0 +1,87 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: FlameSmall2.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class FlameSmall2 : Decoration
+	__mobjinfo__(15028);
+/*	__scriptid__(97)
+	__scriptid__(66);*/
+
+__states__
+{
+	S_FLAME2_SDORM1('FFS2', 0, 2.0 / 35.0, S_FLAME2_SDORM2) = none
+	S_FLAME2_SDORM2('FFS2', 1, 2.0 / 35.0, S_FLAME2_SDORM3) = A_HideThing
+	S_FLAME2_SDORM3('FFS2', 2, 200.0 / 35.0, S_FLAME2_SDORM3) = none
+	S_FLAME2_SMALL1('FFS2', 0 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL2) = none
+	S_FLAME2_SMALL2('FFS2', 0 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL3) = A_UnHideThing
+	S_FLAME2_SMALL3('FFS2', 0 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL4) = none
+	S_FLAME2_SMALL4('FFS2', 1 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL5) = none
+	S_FLAME2_SMALL5('FFS2', 2 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL6) = none
+	S_FLAME2_SMALL6('FFS2', 3 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL7) = none
+	S_FLAME2_SMALL7('FFS2', 4 | FF_FULLBRIGHT, 3.0 / 35.0, S_FLAME2_SMALL3) = none
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+bool Activate()
+{
+	PlaySound('Ignite', CHAN_VOICE);
+	SetState(S_FLAME2_SMALL1);
+	bStaticLight = true;
+	return true;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+bool Deactivate()
+{
+	SetState(S_FLAME2_SDORM1);
+	bStaticLight = false;
+	return true;
+}
+
+defaultproperties
+{
+	bHidden = true;
+	bNoTeleport = true;
+	IdleState = S_FLAME2_SMALL1;
+	bStaticLight = true;
+	LightColour = RGB(0, 0, 255);
+	LightRadius = 64.0;
+}
