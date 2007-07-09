@@ -32,14 +32,148 @@
 
 class MenuChoice_Level : MenuChoiceEnum;
 
-name MapLumpNames[32];
+const int MAXMAPSPERGAMEMODE = 32;
 
-bool MapPrefixIs(int i, string Prefix)
+name MapLumpNames[MAXMAPSPERGAMEMODE];
+
+/*bool MapPrefixIs(int i, string Prefix)
 {
 	return !stricmp(substr(va("%n", P_GetMapLumpName(i)), 0, strlen(Prefix)), Prefix);
+}*/
+
+// [CW] Load and parse maps table for selected game mode
+void InitMapList(int GameType)
+{
+	string rawTable;
+	string mapLumpName;
+
+	switch (GameType + 1)
+	{
+	case HexenDefs::game_sweep:	//	Castle Sweep
+		rawTable = LoadTextLump('gm_swp');
+		break;
+	case HexenDefs::game_sweepteam:	//	Team Castle Sweep
+		rawTable = LoadTextLump('gm_tswp');
+		break;
+	case HexenDefs::game_kth:
+		rawTable = LoadTextLump('gm_kth');
+		break;
+	case HexenDefs::game_dm:	//	Deathmatch
+		rawTable = LoadTextLump('gm_dm');
+		break;
+	case HexenDefs::game_dmteam:	//	Team deathmatch.
+		rawTable = LoadTextLump('gm_tdm');
+		break;
+	case HexenDefs::game_ctf: //	Capture the Flag
+		rawTable = LoadTextLump('gm_ctf');
+		break;
+	case HexenDefs::game_football: //	Football
+		rawTable = LoadTextLump('gm_ftb');
+		break;
+	default:
+		Error("MenuChoice_Level::InitMapList : unknown game type %i", GameType + 1);
+		return;
+	}
+
+	int n = strlen(rawTable);
+	if (!n)
+	{
+		Error("MenuChoice_Level::InitMapList : maps table missing for game type %i", GameType + 1);
+		return;
+	}
+
+	//
+	// Begin parsing...
+	//
+	bool reading = false;
+	bool skipping = false;
+	bool expecting_newline = false;
+	int i = -1;
+	int substr_from = 0;
+	int Idx = 0;
+
+	while (++i < n && Idx < MAXMAPSPERGAMEMODE)
+	{
+		if (skipping)
+		{
+			if (strcmp(substr(rawTable, i, 1), "\n") == 0)
+			{
+				skipping = false;
+				expecting_newline = true;
+			}
+			continue;
+		}
+
+		if (strcmp(substr(rawTable, i, 1), "0") >= 0 && strcmp(substr(rawTable, i, 1), "9") <= 0 ||
+			strcmp(substr(rawTable, i, 1), "A") >= 0 && strcmp(substr(rawTable, i, 1), "Z") <= 0 ||
+			strcmp(substr(rawTable, i, 1), "_") == 0 ||
+			strcmp(substr(rawTable, i, 1), "a") >= 0 && strcmp(substr(rawTable, i, 1), "z") <= 0)
+		{
+			expecting_newline = false;
+			if (!reading)
+			{
+				reading = true;
+				substr_from = i;
+			}
+			//mapLumpName = strcat(mapLumpName, substr(rawTable, i, 1));
+		}
+		else
+		{
+			if (expecting_newline && strcmp(substr(rawTable, i, 1), " ") < 0)
+				continue;
+			skipping = true;
+			if (reading)
+			{
+				reading = false;
+				mapLumpName = substr(rawTable, substr_from, i - substr_from);
+				if (!strcmp(substr(rawTable, i, 1), "*"))
+					Idx += AddMapsToList(Idx, mapLumpName, true);
+				else
+					AddMapsToList(Idx++, mapLumpName, false);
+			}
+		}
+	};
+
+	if (reading)
+	{
+		if (!strcmp(substr(rawTable, i, 1), "*"))
+			Idx += AddMapsToList(Idx, mapLumpName, true);
+		else
+			AddMapsToList(Idx++, mapLumpName, false);
+	}
+
+	MaxValue = Idx;
+	Value = 0;
 }
 
-void InitMapList(int GameType)
+int AddMapsToList(int Idx, string mapLumpName, bool useAsPrefix)
+{
+	int i, count;
+
+	for (i = 0, count = 0; i < 99 && Idx < MAXMAPSPERGAMEMODE; i++)
+	{
+		// If the lump found after any others is the first possible map, it means
+		// no appropriate lump may be found any more, so cycle should end here 
+		if (i > 0 && P_GetMapLumpName(i) == P_GetMapLumpName(0))
+			break;
+
+		if (!stricmp(substr(va("%n", P_GetMapLumpName(i)), 0, strlen(mapLumpName)), mapLumpName))
+		{
+			count++;
+			MapLumpNames[Idx] = P_GetMapLumpName(i);
+			EnumNames[Idx] = P_GetMapName(i);
+			
+			if (!useAsPrefix)
+				break;
+
+			Idx++;
+		}
+	}
+
+	return count;
+}
+
+/*void InitMapList(int GameType)
 {
 	int i;
 	int Idx;
@@ -96,7 +230,7 @@ void InitMapList(int GameType)
 	MaxValue = Idx;
 #endif
 	Value = 0;
-}
+}*/
 
 void InitWindow()
 {

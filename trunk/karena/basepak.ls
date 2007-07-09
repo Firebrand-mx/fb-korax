@@ -19,9 +19,17 @@ progs/svprogs.dat		progs/svprogs.dat
 
 //	Scripts
 animdefs.txt			scripts/animdefs.txt
-sndinfo.txt			scripts/sndinfo.txt
+sndinfo.txt				scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
 terrain.txt				scripts/terrain.txt
+
+gm_ctf.txt				scripts/gm_ctf.txt
+gm_dm.txt				scripts/gm_dm.txt
+gm_ftb.txt				scripts/gm_ftb.txt
+gm_kth.txt				scripts/gm_kth.txt
+gm_swp.txt			scripts/gm_swp.txt
+gm_tdm.txt			scripts/gm_tdm.txt
+gm_tswp.txt			scripts/gm_tswp.txt
 
 //	Language strings
 language.en				language.en
