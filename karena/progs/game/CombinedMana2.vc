@@ -35,34 +35,16 @@ class CombinedMana : Pickup
 
 //==========================================================================
 //
-//  TouchSpecial
+//  HandlePickup
 //
 //==========================================================================
 
-void TouchSpecial(EntityEx Toucher)
+bool HandlePickup(EntityEx Toucher)
 {
-	PlayerPawn P;
 	/*bool mm1;
 	bool mm2;
 	bool mm3;*/
 
-
-	if (!Toucher.bPickUp)
-	{
-		// Can't be picked up by toucher
-		return;
-	}
-	if (Toucher.Health <= 0)
-	{
-		// Toucher is dead
-		return;
-	}
-	P = PlayerPawn(Toucher);
-	if (!P)
-	{
-		//	Shouldn't happen
-		return;
-	}
 	/*mm1 = Player(P.Player).GiveMana(HexenDefs::MANA_1, 40);
 	mm2 = Player(P.Player).GiveMana(HexenDefs::MANA_2, 40);
 	mm3 = Player(P.Player).GiveMana(HexenDefs::MANA_3, 40);
@@ -71,15 +53,17 @@ void TouchSpecial(EntityEx Toucher)
 	{
 		return;
 	}*/
-	if (!Player(P.Player).GiveMana(HexenDefs::MANA_123, 40))
-		return;
-	P.Player.cprint("COMBINED MANA");
-	if (Special)
-	{
-		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, P);
-		Special = 0;
-	}
+	return Player(Toucher.Player).GiveMana(HexenDefs::MANA_123, 40);
+}
+
+//==========================================================================
+//
+//	HidePickup
+//
+//==========================================================================
+
+void HidePickup()
+{
 	if (Level.Game.deathmatch && !bDropped)
 	{
 		HideSpecial();
@@ -91,8 +75,6 @@ void TouchSpecial(EntityEx Toucher)
 			HideSpecial();
 		//Remove();
 	}
-	Player(P.Player).BonusFlash += BONUSADD;
-	P.PlaySound('PickupItem', CHAN_ITEM);
 }
 
 __states__
@@ -119,4 +101,5 @@ defaultproperties
 {
 	bFloatBob = true;
 	IdleState = S_MANA4_1;
+	PickupMessage = "$txt_mana_both";
 }

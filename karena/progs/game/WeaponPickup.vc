@@ -29,31 +29,22 @@ class WeaponPickup : Pickup
 int WeaponClass;
 int WeaponType;
 
+bool remove;
+
 //==========================================================================
 //
-//  TouchSpecial
+//  HandlePickup
 //
 //==========================================================================
 
-void TouchSpecial(EntityEx Toucher)
+bool HandlePickup(EntityEx Toucher)
 {
-	bool remove;
 	bool gaveMana;
 	bool gaveWeapon;
 	/*bool mm1;
 	bool mm2;
 	bool mm3;*/
 
-	if (!Toucher.bPickUp)
-	{
-		// Can't be picked up by toucher
-		return;
-	}
-	if (Toucher.Health <= 0)
-	{
-		// Toucher is dead
-		return;
-	}
 	remove = true;
 
 /*	if ((WeaponType > WP_FOURTH && P.Player.exp_level < 2) ||
@@ -172,18 +163,31 @@ void TouchSpecial(EntityEx Toucher)
 		if (!gaveWeapon && !gaveMana)
 		{
 			// Player didn't need the weapon or any mana
-			return;
+			return false;
 		}
 	}
+	return true;
+}
 
-	Toucher.Player.cprint(Player(Toucher.Player).GetWeaponPickupText(WeaponType));
-	if (Special)
-	{
-		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, Toucher);
-		Special = 0;
-	}
+//==========================================================================
+//
+//	GetPickupMessage
+//
+//==========================================================================
 
+string GetPickupMessage(EntityEx Toucher)
+{
+	return Player(Toucher.Player).GetWeaponPickupText(WeaponType);
+}
+
+//==========================================================================
+//
+//	HidePickup
+//
+//==========================================================================
+
+void HidePickup()
+{
 	if (remove)
 	{
 		if (Level.Game.deathmatch && !bDropped)
@@ -198,12 +202,10 @@ void TouchSpecial(EntityEx Toucher)
 			//Remove();
 		}
 	}
-
-	Player(Toucher.Player).BonusFlash += BONUSADD;
-	Toucher.PlaySound('PickupWeapon', CHAN_ITEM);
 }
 
 defaultproperties
 {
 	bFloatBob = true;
+	PickupSound = 'PickupWeapon';
 }
