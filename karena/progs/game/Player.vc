@@ -245,7 +245,7 @@ replication
 		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound;
 
 	reliable if (bIsClient)
-		ServerDisconnectBot;
+		ServerDisconnectBot, ServerTeamSelect;
 }
 
 //==========================================================================
@@ -284,6 +284,8 @@ void SpawnClient()
 	Poisoner = none;
 	Blinder = none;
 
+	TeamPosition = -1;
+	PlayerPosition = -1;
 	bUnControllable = false;
 
 	if (Level.Game.netgame && !Level.Game.deathmatch)
@@ -710,6 +712,18 @@ void ClientTeamSelect(int maxTeams, int activeTeams, int curSelection,
 {
 	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, activeTeams, curSelection,
 		Col1, Count1, Col2, Count2);
+}
+
+//==========================================================================
+//
+//  ServerTeamSelect
+//
+//==========================================================================
+
+void ServerTeamSelect()
+{
+	TeamSelection = HexenDefs::teamselection_reselect;
+	SelectPlayerTeam();
 }
 
 //==========================================================================
@@ -2677,14 +2691,14 @@ void PlayerImpulse()
 	{
 		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
 	}
-	else if (impulse == HexenDefs::IMPULSE__SELECTTEAM)
+	/*else if (impulse == HexenDefs::IMPULSE__SELECTTEAM)
 	{
 		if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
 		{
 			TeamSelection = HexenDefs::teamselection_reselect;
 			SelectPlayerTeam();
 		}
-	}
+	}*/
 	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
 		Actor(MO).MoveToFreePosition();
@@ -5158,11 +5172,14 @@ void UpdateScore(int event)
 	int mod = 0;
 	bool force_update = false;
 
+	dprint("Player::UpdateScore : ");
+
 	switch(event)
 	{
 		case HexenDefs::scoreevent_PlayerDiscard:
 		
-			i = MainGameInfo(Level.Game).GetPlayerCount();
+			dprint("Player::UpdateScore : scoreevent_PlayerDiscard");
+			i = Team.GetPlayerCount();
 			if (i > 1)
 				mod = Team.Players[--i].Score - Score - 1;
 			else
@@ -5233,6 +5250,8 @@ void UpdateScore(int event)
 		if (Level)	// in case score is somehow updated between levels
 			MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 	}
+
+	dprint("Player::UpdateScore : OUT");
 }
 
 //==========================================================================
