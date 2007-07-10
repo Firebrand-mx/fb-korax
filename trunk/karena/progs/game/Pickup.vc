@@ -26,7 +26,10 @@
 class Pickup : Inventory
 	abstract;
 
-string PickupMessage;
+string			PickupMessage;
+name			PickupSound;
+
+bool			bFullVolPickupSound;
 
 const float BONUSADD		= 0.2;
 
@@ -43,269 +46,85 @@ int AngleIncrements()
 
 //==========================================================================
 //
-//	Tick
-//
-//==========================================================================
-
-void Tick(float deltaTime)
-{
-	if (!Physics(deltaTime))
-	{
-		return;
-	}
-	// Cycle through states, calling action functions at transitions
-	if (!AdvanceState(deltaTime))
-	{
-		// mobj was removed
-		return;
-	}
-}
-
-//==========================================================================
-//
-//	SetDormant
-//
-//==========================================================================
-
-void SetDormant()
-{
-	bDormant = true;
-	StateTime = -1.0;
-}
-
-//==========================================================================
-//
-//	SectorChanged
-//
-//==========================================================================
-
-bool SectorChanged(int CrushChange)
-{
-	Actor B;
-
-	if (HeightClip())
-	{
-		return true;
-	}
-
-	//	Crunch dropped items
-	if (bDropped)
-	{
-		Destroy();
-		return true;
-	}
-
-	if (!bShootable)
-	{
-		//	Assume it is bloody gibs or something
-		return true;
-	}
-
-	if (CrushChange && !(XLevel.TicTime & 3))
-	{
-		Damage(none, none, CrushChange);
-
-		// spray blood in a random direction
-		if (!bNoBlood && !bInvulnerable)
-		{
-			B = Spawn(Blood, Origin + vector(0.0, 0.0, Height / 2.0));
-			B.Velocity.x = (Random() - Random()) * 16.0 * 35.0;
-			B.Velocity.y = (Random() - Random()) * 16.0 * 35.0;
-		}
-	}
-	return false;	//don't fit
-}
-
-//==========================================================================
-//
-//  Blast
-//
-//==========================================================================
-
-void Blast(Actor source, float strength)
-{
-	float angle;
-	float ang;
-	Actor A;
-	float x;
-	float y;
-	float z;
-
-	angle = atan2(Origin.y - source.Origin.y, Origin.x - source.Origin.x);
-	if (strength < Player::BLAST_FULLSTRENGTH)
-	{
-		Velocity.x = strength * cos(angle) * 35.0;
-		Velocity.y = strength * sin(angle) * 35.0;
-		if (bIsPlayer)
-		{
-			// Players handled automatically
-		}
-		else
-		{
-			bSlide = true;
-			bBlasted = true;
-		}
-	}
-	else	// full strength blast from artifact
-	{
-		if (bMissile)
-		{
-			if (SorcererBall(self))
-			{
-				// don't blast sorcerer balls
-				return;
-			}
-			else if (MageStaffFX2(self) || InfernalHandFX(self))
-			{
-				// Reflect to originator
-				Tracer = Target;
-				Target = source;
-			}
-		}
-		if (Class == HolyFX)
-		{
-			if (Tracer == source)
-			{
-				Tracer = Target;
-				Target = source;
-			}
-		}
-		Velocity.x = Player::BLAST_SPEED * cos(angle) * 35.0;
-		Velocity.y = Player::BLAST_SPEED * sin(angle) * 35.0;
-
-		// Spawn blast puff
-		ang = atan2(source.Origin.y - Origin.y, source.Origin.x - Origin.x);
-		x = Origin.x + (Radius + 1.0) * cos(ang);
-		y = Origin.y + (Radius + 1.0) * sin(ang);
-		z = Origin.z - FloorClip + Height / 2.0;
-		A = Spawn(BlastEffect, vector(x, y, z));
-		if (A)
-		{
-			A.Velocity.x = Velocity.x;
-			A.Velocity.y = Velocity.y;
-		}
-
-		if (bMissile)
-		{
-			Velocity.z = 8.0 * 35.0;
-			A.Velocity.z = Velocity.z;
-		}
-		else
-		{
-			Velocity.z = 1000.0 / Mass * 35.0;
-		}
-		if (bIsPlayer)
-		{
-			// Players handled automatically
-		}
-		else
-		{
-			bSlide = true;
-			bBlasted = true;
-		}
-	}
-}
-
-//==========================================================================
-//
-//	ClientTick
-//
-//==========================================================================
-
-void ClientTick(float DeltaTime)
-{
-	dlight_t *dl;
-	TVec fv;
-	int i, c, count;
-	particle_t *p;
-
-	switch (Effects & EF_DLIGHT_MASK)
-	{
-	case EF_DL_NONE:
-		break;
-
-	case EF_DL_WHITE:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(255, 255, 255);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_RED:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(255, 0, 0);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_GREEN:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(0, 255, 0);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_BLUE:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(0, 0, 255);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_DARK:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(1, 1, 1);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_MUZZLEFLASH:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->origin.z += 48.0;
-		AngleVector(&Angles, &fv);
-
-		dl->origin = dl->origin + 18.0 * fv;
-		dl->radius = 200.0 + Random() * 31.0;
-		dl->colour = 0xffffffff;
-		dl->minlight = 32.0;
-		dl->die = XLevel.Time + 0.1;
-	}
-
-	if (Effects & EF_ROCKET)
-	{
-		count = ftoi(DeltaTime * 256.0);
-		for (i = 0; i < count; i++)
-		{
-			p = NewParticle();
-			if (!p)
-				return;
-
-			p->org = Origin;
-			c = P_Random() >> 1;
-			p->colour = RGB(c, c, c);
-			p->die = XLevel.Time + 0.5 * Random();
-			p->type = HexenDefs::pt_static;
-			p->vel.x = 16.0 * (Random() - 0.5);
-			p->vel.y = 16.0 * (Random() - 0.5);
-			p->vel.z = 16.0 * (Random() - 0.5);
-		}
-	}
-}
-
-//==========================================================================
-//
 //  TouchSpecial
 //
 //==========================================================================
 
-void TouchSpecial(EntityEx Toucher)
+final void TouchSpecial(EntityEx Toucher)
 {
+	if (!Toucher.bPickUp)
+	{
+		// Can't be picked up by toucher
+		return;
+	}
+	if (Toucher.Health <= 0)
+	{
+		// Toucher is dead
+		return;
+	}
+
+	if (!HandlePickup(Toucher))
+	{
+		return;
+	}
+
+	Toucher.Player.cprint(GetPickupMessage(Toucher));
+	if (Special)
+	{
+		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2], Args[3],
+			Args[4], NULL, 0, Toucher);
+		Special = 0;
+	}
+	HidePickup();
+	Player(Toucher.Player).BonusFlash += BONUSADD;
+	PlayPickupSound(Toucher);
+}
+
+//==========================================================================
+//
+//	HandlePickup
+//
+//==========================================================================
+
+bool HandlePickup(EntityEx Toucher)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	GetPickupMessage
+//
+//==========================================================================
+
+string GetPickupMessage(EntityEx Toucher)
+{
+	return PickupMessage;
+}
+
+//==========================================================================
+//
+//	HidePickup
+//
+//==========================================================================
+
+void HidePickup()
+{
+}
+
+//==========================================================================
+//
+//	PlayPickupSound
+//
+//==========================================================================
+
+void PlayPickupSound(EntityEx Toucher)
+{
+	if (PickupSound)
+	{
+		Toucher.PlaySound(PickupSound, CHAN_ITEM, 1.0,
+			bFullVolPickupSound ? ATTN_NONE : ATTN_NORMAL);
+	}
 }
 
 //==========================================================================
@@ -390,4 +209,5 @@ defaultproperties
 	Height = 32.0;
 	bSpecial = true;
 	bNoPassMobj = true;
+	PickupSound = 'PickupItem';
 }

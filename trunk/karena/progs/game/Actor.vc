@@ -1184,101 +1184,6 @@ float GetBaseViewHeight()
 
 //==========================================================================
 //
-//	Tick
-//
-//==========================================================================
-
-void Tick(float deltaTime)
-{
-	if (!Physics(deltaTime))
-	{
-		return;
-	}
-	// Cycle through states, calling action functions at transitions
-	if (!AdvanceState(deltaTime))
-	{
-		// mobj was removed
-		return;
-	}
-}
-
-//==========================================================================
-//
-//	SetDormant
-//
-//==========================================================================
-
-void SetDormant()
-{
-	bDormant = true;
-	StateTime = -1.0;
-}
-
-//==========================================================================
-//
-//	SectorChanged
-//
-//==========================================================================
-
-bool SectorChanged(int CrushChange)
-{
-	Actor B;
-
-	if (HeightClip())
-	{
-		return true;
-	}
-
-	//	Crunch bodies to giblets
-	if (bCorpse && (Health <= 0))
-	{
-		if (bNoBlood)
-		{
-			Destroy();
-		}
-		else
-		{
-			if (State != S_GIBS1)
-			{
-				SetState(S_GIBS1);
-				Height = 0.0;
-				Radius = 0.0;
-				PlaySound('*splat', CHAN_VOICE);
-			}
-		}
-		return true;
-	}
-
-	//	Crunch dropped items
-	if (bDropped)
-	{
-		Destroy();
-		return true;
-	}
-
-	if (!bShootable)
-	{
-		//	Assume it is bloody gibs or something
-		return true;
-	}
-
-	if (CrushChange && !(XLevel.TicTime & 3))
-	{
-		Damage(none, none, CrushChange);
-
-		// spray blood in a random direction
-		if (!bNoBlood && !bInvulnerable)
-		{
-			B = Spawn(Blood, Origin + vector(0.0, 0.0, Height / 2.0));
-			B.Velocity.x = (Random() - Random()) * 16.0 * 35.0;
-			B.Velocity.y = (Random() - Random()) * 16.0 * 35.0;
-		}
-	}
-	return false;	//don't fit
-}
-
-//==========================================================================
-//
 //  HaveFlightPower
 //
 //==========================================================================
@@ -1874,98 +1779,6 @@ final void A_PigPain()
 	}
 }
 
-//==========================================================================
-//
-//	ClientTick
-//
-//==========================================================================
-
-void ClientTick(float DeltaTime)
-{
-	dlight_t *dl;
-	TVec fv;
-	int i, c, count;
-	particle_t *p;
-
-	switch (Effects & EF_DLIGHT_MASK)
-	{
-	case EF_DL_NONE:
-		break;
-
-	case EF_DL_WHITE:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(255, 255, 255);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_RED:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(255, 0, 0);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_GREEN:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(0, 255, 0);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_BLUE:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(0, 0, 255);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_DARK:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->radius = 200.0;
-		dl->colour = RGB(1, 1, 1);
-		dl->die = XLevel.Time + 0.1;
-		break;
-
-	case EF_DL_MUZZLEFLASH:
-		dl = AllocDlight(self);
-		dl->origin = Origin;
-		dl->origin.z += 48.0;
-		AngleVector(&Angles, &fv);
-
-		dl->origin = dl->origin + 18.0 * fv;
-		dl->radius = 200.0 + Random() * 31.0;
-		dl->colour = 0xffffffff;
-		dl->minlight = 32.0;
-		dl->die = XLevel.Time + 0.1;
-	}
-
-	if (Effects & EF_ROCKET)
-	{
-		count = ftoi(DeltaTime * 256.0);
-		for (i = 0; i < count; i++)
-		{
-			p = NewParticle();
-			if (!p)
-				return;
-
-			p->org = Origin;
-			c = P_Random() >> 1;
-			p->colour = RGB(c, c, c);
-			p->die = XLevel.Time + 0.5 * Random();
-			p->type = HexenDefs::pt_static;
-			p->vel.x = 16.0 * (Random() - 0.5);
-			p->vel.y = 16.0 * (Random() - 0.5);
-			p->vel.z = 16.0 * (Random() - 0.5);
-		}
-	}
-}
-
 __states__
 {
 	S_FREETARGMOBJ('ACLO', 4, 1050.0 / 35.0, none) = A_FreeTargMobj
@@ -1976,4 +1789,6 @@ __states__
 defaultproperties
 {
 	SoundClass = 'fighter';
+	CrunchState = S_GIBS1;
+	CrunchSound = '*splat';
 }
