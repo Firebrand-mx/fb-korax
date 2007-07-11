@@ -41,21 +41,18 @@ const int
 int PieceClass;
 int PieceValue;
 
-bool remove;
-
 //==========================================================================
 //
-//  HandlePickup
+//  TryPickup
 //
 //==========================================================================
 
-bool HandlePickup(EntityEx Toucher)
+bool TryPickup(EntityEx Toucher)
 {
 //	bool checkAssembled;
 //	bool gaveWeapon;
 	int gaveMana;
 
-	remove = true;
 //	checkAssembled = true;
 //	gaveWeapon = false;
 	if (Toucher.Player.PClass != PieceClass)
@@ -85,7 +82,6 @@ bool HandlePickup(EntityEx Toucher)
 		}*/
 		PieceValue = MainGameInfo(Level.Game).pieceValueTrans[PieceValue];
 		Player(Toucher.Player).GiveMana(HexenDefs::MANA_123, 20);
-		remove = false;
 	}
 	else
 	{
@@ -132,23 +128,13 @@ bool HandlePickup(EntityEx Toucher)
 
 //==========================================================================
 //
-//	HidePickup
+//	ShouldStay
 //
 //==========================================================================
 
-void HidePickup()
+bool ShouldStay()
 {
-	if (remove)
-	{
-		if (Level.Game.deathmatch && !bDropped)
-		{
-			HideSpecial();
-		}
-		else
-		{
-			Destroy();
-		}
-	}
+	return Level.Game.netgame && !Level.Game.deathmatch;
 }
 
 defaultproperties
