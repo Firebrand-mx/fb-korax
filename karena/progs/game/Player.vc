@@ -3138,7 +3138,8 @@ void PlayerTick(float deltaTime)
 	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
 
-	UpdateTargetInfo();
+	if (!bIsBot)
+		UpdateTargetInfo();
 
 	if (PlayerState == PST_DEAD)
 	{
@@ -5454,11 +5455,12 @@ void UpdateCompetition()
 //  DisplayDeathMessage
 //
 //  [CW] Displays message notificating that player was killed.
+//	[CW] TODO: Those comments below need to be updated, since they no longer
+//		 reflect actual usage of death messages.
 //
 //	Usage:
 //	All of the message strings are members of MainGameInfo.
 //
-
 //	1) if both source & inflictor are null, it was pure enviroment:
 //	slime, lava and such. Use generic messages like "was in wrong place" etc,
 //	with 1 parameter: this player's name.
@@ -5472,7 +5474,7 @@ void UpdateCompetition()
 //	be melee attack OR instant ranged attack (like gunshot) by pawn or player;
 //	use either pawn's DeathMessage index or	active player Weapon's DeathMessage index,
 //	with 2 parameters as in p.3.
-
+//
 //==========================================================================
 
 void DisplayDeathMessage(EntityEx inflictor, EntityEx source, name DmgType)
