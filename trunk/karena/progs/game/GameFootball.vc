@@ -70,7 +70,6 @@ struct spot_players_t
 	MapSpot	ms[MAXPLAYERS];
 };
 spot_players_t spot_players[2];
-//////PlayerTeam	Teams[2];
 
 GameSequencer	fbTimer;
 
@@ -190,6 +189,7 @@ void BeginState(int newstate)
 
 void EndCurrentState(int nextstate)
 {
+	dprint("GameFootball::EndCurrentState : state = %i, next_state = %i", State, nextstate);
 	if (nextstate == state_finished)
 	{
 		if (bBallCreated)
@@ -214,7 +214,8 @@ void EndCurrentState(int nextstate)
 //==========================================================================
 
 void NotifyUpdateTeams()
-{		
+{
+	dprint("NotifyUpdateTeams : State = %i, T1 = %i, T2 = %i", State, Game.Teams[0], Game.Teams[1]);
 	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
 		BeginState(state_preparematch);
 	else if (State == state_freeplay && (!Game.Teams[0] || !Game.Teams[1]))
@@ -229,9 +230,11 @@ void NotifyUpdateTeams()
 //
 //==========================================================================
 
-void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
+void HandleEvent(int Event, Actor A, int arg1, int arg2, int arg3, int arg4)
 {
 	int notifyACSArgs[3];
+
+	dprint("GameFootball::HandleEvent : %i", Event);
 
 	switch (Event)
 	{
@@ -305,7 +308,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 //
 //==========================================================================
 
-void SetGameObject(EntityEx A, int object, int arg1, int arg2, int arg3)
+void SetGameObject(Actor A, int object, int arg1, int arg2, int arg3)
 {
 	if ((object == object_ballspot || object == object_playerspot) &&
 			!A.IsA('MapSpot'))
@@ -325,7 +328,7 @@ void SetGameObject(EntityEx A, int object, int arg1, int arg2, int arg3)
 		spot_ball = MapSpot(A);
 		break;
 	case object_playerspot:
-		if (arg1 >= 0 && arg1 < 2 && arg2 >= 0 && arg2 < MAXPLAYERS)
+		if (arg1 >= 0 && arg1 < AllowedTeams() && arg2 >= 0 && arg2 < MAXPLAYERS)
 			spot_players[arg1].ms[arg2] = MapSpot(A);
 		else
 			dprint("GameFootball::SetGameObject : bad argument(s) for playerspot");
@@ -376,6 +379,7 @@ void SetACSNotifier(int event, int script)
 
 void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 {
+	dprint("GameFootball::NotifyACS : Event = %i", Event);
 	if (Event >= GameModel::event_custom && Event < event_goal + num_footballevents)
 	{
 		Event -= GameModel::event_custom;
