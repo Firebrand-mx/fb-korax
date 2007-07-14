@@ -1198,7 +1198,7 @@ bool GiveMana(int mana, int count)
 	{
 		return true;
 	}
-	if (ManaItem.Amount == HexenDefs::MAX_MANA)
+	if (ManaItem.Amount == ManaItem.MaxAmount)
 	{
 		return false;
 	}
@@ -1210,9 +1210,9 @@ bool GiveMana(int mana, int count)
 	prevMana = ManaItem.Amount;
 
 	ManaItem.Amount += count;
-	if (ManaItem.Amount > HexenDefs::MAX_MANA)
+	if (ManaItem.Amount > ManaItem.MaxAmount)
 	{
-		ManaItem.Amount = HexenDefs::MAX_MANA;
+		ManaItem.Amount = ManaItem.MaxAmount;
 	}
 	if (prevMana <= 0)
 	{
@@ -4009,7 +4009,7 @@ bool UseArtifact(int arti)
 		}
 		break;
 	case HexenDefs::arti_boostmana:
-		if (!GiveMana(HexenDefs::MANA_3, HexenDefs::MAX_MANA))
+		if (!GiveMana(HexenDefs::MANA_3, ItemManaCombined.default.MaxAmount))
 		{
 			return false;
 		}
@@ -4966,7 +4966,7 @@ void Cheat_Gimme()
 		for (i = 0; i < HexenDefs::NUMMANA; i++)
 		{
 			GiveMana(i, 0);
-			Mana[i].Amount = HexenDefs::MAX_MANA;
+			Mana[i].Amount = Mana[i].MaxAmount;
 		}
 //		Pieces = 7;
 		cprint("ALL WEAPONS");
