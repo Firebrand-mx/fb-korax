@@ -277,12 +277,20 @@ bool CheckItem(Actor item)
 			return true;
 
 		// If we have no more room for the mana it gives
-		if (((weapon == HexenDefs::WP_THIRD && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_FOURTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_FIFTH && player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_SIXTH && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_SEVENTH && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA) ||
-		    (weapon == HexenDefs::WP_EIGHTH && player.Mana[HexenDefs::NUMMANA] == HexenDefs::MAX_MANA)))
+		if (((weapon == HexenDefs::WP_THIRD &&
+			player.Mana[HexenDefs::MANA_2].Amount == HexenDefs::MAX_MANA) ||
+			(weapon == HexenDefs::WP_FOURTH &&
+			player.Mana[HexenDefs::MANA_3].Amount == HexenDefs::MAX_MANA) ||
+			(weapon == HexenDefs::WP_FIFTH &&
+			player.Mana[HexenDefs::MANA_1].Amount == HexenDefs::MAX_MANA) ||
+			(weapon == HexenDefs::WP_SIXTH &&
+			player.Mana[HexenDefs::MANA_2].Amount == HexenDefs::MAX_MANA) ||
+			(weapon == HexenDefs::WP_SEVENTH &&
+			player.Mana[HexenDefs::MANA_3].Amount == HexenDefs::MAX_MANA) ||
+			(weapon == HexenDefs::WP_EIGHTH &&
+			player.Mana[HexenDefs::MANA_1].Amount == HexenDefs::MAX_MANA &&
+			player.Mana[HexenDefs::MANA_2].Amount == HexenDefs::MAX_MANA &&
+			player.Mana[HexenDefs::MANA_3].Amount == HexenDefs::MAX_MANA)))
 			return false;
 	}
 
@@ -303,7 +311,9 @@ bool CheckItem(Actor item)
 */
 	if (WeaponPiece(item))
 	{
-		if (player.Mana[HexenDefs::NUMMANA] == HexenDefs::MAX_MANA)
+		if (player.Mana[HexenDefs::MANA_1].Amount == HexenDefs::MAX_MANA &&
+			player.Mana[HexenDefs::MANA_2].Amount == HexenDefs::MAX_MANA &&
+			player.Mana[HexenDefs::MANA_3].Amount == HexenDefs::MAX_MANA)
 			return false;
 	}
 
@@ -311,15 +321,15 @@ bool CheckItem(Actor item)
 	if (mana != -1)
 	{
 		// If we have no more room for the mana it gives
-		if (mana == HexenDefs::MANA_1 && player.Mana[HexenDefs::MANA_1] == HexenDefs::MAX_MANA)
+		if (mana == HexenDefs::MANA_1 && player.Mana[HexenDefs::MANA_1].Amount == HexenDefs::MAX_MANA)
 			return false;
-		if (mana == HexenDefs::MANA_2 && player.Mana[HexenDefs::MANA_2] == HexenDefs::MAX_MANA)
+		if (mana == HexenDefs::MANA_2 && player.Mana[HexenDefs::MANA_2].Amount == HexenDefs::MAX_MANA)
 			return false;
-		if (mana == HexenDefs::MANA_3 && player.Mana[HexenDefs::MANA_3] == HexenDefs::MAX_MANA)
+		if (mana == HexenDefs::MANA_3 && player.Mana[HexenDefs::MANA_3].Amount == HexenDefs::MAX_MANA)
 			return false;
-		if (mana == HexenDefs::MANA_4 && player.Mana[HexenDefs::MANA_4] == HexenDefs::MAX_MANA)
+		if (mana == HexenDefs::MANA_4 && player.Mana[HexenDefs::MANA_4].Amount == HexenDefs::MAX_MANA)
 			return false;
-		if (mana == HexenDefs::MANA_5 && player.Mana[HexenDefs::MANA_5] == HexenDefs::MAX_MANA)
+		if (mana == HexenDefs::MANA_5 && player.Mana[HexenDefs::MANA_5].Amount == HexenDefs::MAX_MANA)
 			return false;
 	}
 
@@ -1353,13 +1363,13 @@ int B_ChooseWeapon(float dist)
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 50)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 50)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 5)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 5)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 5)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1369,9 +1379,9 @@ int B_ChooseWeapon(float dist)
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 5)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1381,7 +1391,7 @@ int B_ChooseWeapon(float dist)
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1391,9 +1401,9 @@ int B_ChooseWeapon(float dist)
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 15)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1403,9 +1413,9 @@ int B_ChooseWeapon(float dist)
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 10)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1415,11 +1425,11 @@ int B_ChooseWeapon(float dist)
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 15)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 5)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1435,98 +1445,98 @@ int B_ChooseWeapon(float dist)
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 5)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 5)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 5)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 15)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 7)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 3)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 3)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 25)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 15)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 15)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 10)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 8)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 25)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 10)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 3)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 10)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 30)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 10)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
@@ -1539,98 +1549,98 @@ int B_ChooseWeapon(float dist)
 			{
 				case HexenDefs::PCLASS_FIGHTER:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 5)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 5)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 5)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 5)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 15)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 7)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 7)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 3)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 3)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 25)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 25)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 15)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 15)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 15)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 10)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 8)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 8)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 25)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 25)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_FIFTH] && player.Mana[HexenDefs::MANA_1].Amount >= 10)
 						return HexenDefs::WP_FIFTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 3)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 3)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 10)
 						return HexenDefs::WP_THIRD;
-					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1] >= 2)
+					if (player.WeaponOwned[HexenDefs::WP_SECOND] && player.Mana[HexenDefs::MANA_1].Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
-					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA] >= 100)
+					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] && player.Mana[HexenDefs::NUMMANA].Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
-					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] && player.Mana[HexenDefs::MANA_3].Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
-					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2] >= 30)
+					if (player.WeaponOwned[HexenDefs::WP_SIXTH] && player.Mana[HexenDefs::MANA_2].Amount >= 30)
 						return HexenDefs::WP_SIXTH;
-					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3] >= 10)
+					if (player.WeaponOwned[HexenDefs::WP_FOURTH] && player.Mana[HexenDefs::MANA_3].Amount >= 10)
 						return HexenDefs::WP_FOURTH;
-					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2] >= 20)
+					if (player.WeaponOwned[HexenDefs::WP_THIRD] && player.Mana[HexenDefs::MANA_2].Amount >= 20)
 						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
