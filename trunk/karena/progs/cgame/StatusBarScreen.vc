@@ -63,16 +63,8 @@ int pic_minus;
 
 int pic_statbar;
 int pic_kills;
-int pic_manadim1[2];
-int pic_manadim2[2];
-int pic_manadim3[2];
-int pic_manadim4[2];
-int pic_manadim5[6];
-int pic_manavial1[2];
-int pic_manavial2[2];
-int pic_manavial3[2];
-int pic_manavial4[2];
-int pic_manavial5[2];
+int pic_manadim[14];
+int pic_manavial[10];
 int pic_manavial6;
 int pic_manavial7;
 /*int pic_artiflash[5];
@@ -258,30 +250,30 @@ void StartMap()
 	//
 	pic_statbar = R_RegisterPic('statbar');
 	pic_kills = R_RegisterPic('kills');
-	pic_manadim1[0] = R_RegisterPic('manadim1');
-	pic_manadim1[1] = R_RegisterPic('manabrt1');
-	pic_manadim2[0] = R_RegisterPic('manadim2');
-	pic_manadim2[1] = R_RegisterPic('manabrt2');
-	pic_manadim3[0] = R_RegisterPic('manadim3');
-	pic_manadim3[1] = R_RegisterPic('manabrt3');
-	pic_manadim4[0] = R_RegisterPic('manadim4');
-	pic_manadim4[1] = R_RegisterPic('manabrt4');
-	pic_manadim5[0] = R_RegisterPic('manadim5');
-	pic_manadim5[1] = R_RegisterPic('manabrt5');
-	pic_manadim5[2] = R_RegisterPic('manadim6');
-	pic_manadim5[3] = R_RegisterPic('manabrt6');
-	pic_manadim5[4] = R_RegisterPic('manadim7');
-	pic_manadim5[5] = R_RegisterPic('manabrt7');
-	pic_manavial1[0] = R_RegisterPic('manavl1d');
-	pic_manavial1[1] = R_RegisterPic('manavl1');
-	pic_manavial2[0] = R_RegisterPic('manavl2d');
-	pic_manavial2[1] = R_RegisterPic('manavl2');
-	pic_manavial3[0] = R_RegisterPic('manavl3d');
-	pic_manavial3[1] = R_RegisterPic('manavl3');
-	pic_manavial4[0] = R_RegisterPic('manavl4d');
-	pic_manavial4[1] = R_RegisterPic('manavl4');
-	pic_manavial5[0] = R_RegisterPic('manavl5d');
-	pic_manavial5[1] = R_RegisterPic('manavl5');
+	pic_manadim[0] = R_RegisterPic('manadim1');
+	pic_manadim[1] = R_RegisterPic('manabrt1');
+	pic_manadim[2] = R_RegisterPic('manadim2');
+	pic_manadim[3] = R_RegisterPic('manabrt2');
+	pic_manadim[4] = R_RegisterPic('manadim3');
+	pic_manadim[5] = R_RegisterPic('manabrt3');
+	pic_manadim[6] = R_RegisterPic('manadim4');
+	pic_manadim[7] = R_RegisterPic('manabrt4');
+	pic_manadim[8] = R_RegisterPic('manadim5');
+	pic_manadim[9] = R_RegisterPic('manabrt5');
+	pic_manadim[10] = R_RegisterPic('manadim6');
+	pic_manadim[11] = R_RegisterPic('manabrt6');
+	pic_manadim[12] = R_RegisterPic('manadim7');
+	pic_manadim[13] = R_RegisterPic('manabrt7');
+	pic_manavial[0] = R_RegisterPic('manavl1d');
+	pic_manavial[1] = R_RegisterPic('manavl1');
+	pic_manavial[2] = R_RegisterPic('manavl2d');
+	pic_manavial[3] = R_RegisterPic('manavl2');
+	pic_manavial[4] = R_RegisterPic('manavl3d');
+	pic_manavial[5] = R_RegisterPic('manavl3');
+	pic_manavial[6] = R_RegisterPic('manavl4d');
+	pic_manavial[7] = R_RegisterPic('manavl4');
+	pic_manavial[8] = R_RegisterPic('manavl5d');
+	pic_manavial[9] = R_RegisterPic('manavl5');
 	pic_manavial6 = R_RegisterPic('manavl6');
 	pic_manavial7 = R_RegisterPic('manavl7');
 /*	pic_artiflash[0] = R_RegisterPic('useartia');
@@ -575,6 +567,7 @@ void SB_DrawMainBar()
 	int sb_manaVial3;
 	int sb_manaVial4;
 	int sb_manaVial5;
+	int Mana5DimBase;
 	int readyweapon;
 
 	SB_DrawBackground();
@@ -621,84 +614,11 @@ void SB_DrawMainBar()
 	}
 
 	//  Mana
-	if (!cl.Mana[0] || cl.Mana[0].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana1 = 0;
-	}
-	else
-	{
-		sb_mana1 = 1;
-	}
-	if (!cl.Mana[1] || cl.Mana[1].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana2 = 0;
-	}
-	else
-	{
-		sb_mana2 = 1;
-	}
-	if (!cl.Mana[2] || cl.Mana[2].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana3 = 0;
-	}
-	else
-	{
-		sb_mana3 = 1;
-	}
-	if (!cl.Mana[3] || cl.Mana[3].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
-	{
-		// Draw Dim Mana icon
-		sb_mana4 = 0;
-		sb_manaVial4 = 0;
-	}
-	else
-	{
-		sb_mana4 = 1;
-		sb_manaVial4 = 1;
-	}
-	if (!cl.Mana[4] || cl.Mana[4].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
-	{
-		// Draw Dim Mana icon
-		// [FB] Choose correct mana type to display
-
-		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
-		{
-		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
-			sb_mana5 = 0;
-			sb_manaVial5 = 0;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-			sb_mana5 = 2;
-			sb_manaVial5 = 0;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-			sb_mana5 = 4;
-			sb_manaVial5 = 0;
-			break;
-		}
-	}
-	else
-	{
-		// [FB] Choose correct mana type to display
-		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
-		{
-		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
-			sb_mana5 = 1;
-			sb_manaVial5 = 1;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-			sb_mana5 = 3;
-			sb_manaVial5 = 1;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-			sb_mana5 = 5;
-			sb_manaVial5 = 1;
-			break;
-		}
-	}
+	sb_mana1 = 1;
+	sb_mana2 = 1;
+	sb_mana3 = 1;
+	sb_mana4 = 1;
+	sb_mana5 = 1;
 	// Update mana graphics based upon mana count/weapon type
 	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
 	if (readyweapon == HexenDefs::WP_FIRST)
@@ -764,29 +684,46 @@ void SB_DrawMainBar()
 		sb_manaVial2 = 1;
 		sb_manaVial3 = 1;
 	}
+	if (cl.altWeapon == HexenDefs::ALTFIRE_BLASTRADIUS)
+	{
+		sb_mana5 = 0;
+		sb_manaVial4 = 1;
+		sb_manaVial5 = 0;
+	}
+	else if (cl.altWeapon == HexenDefs::ALTFIRE_POISONBAG)
+	{
+		sb_mana4 = 0;
+		sb_manaVial4 = 0;
+		sb_manaVial5 = 1;
+	}
+	else
+	{
+		sb_mana4 = 0;
+		sb_mana5 = 0;
+		sb_manaVial4 = 0;
+		sb_manaVial5 = 0;
+	}
+	// [FB] Choose correct mana type to display
+	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+	{
+	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+		Mana5DimBase = 0;
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+		Mana5DimBase = 2;
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+		Mana5DimBase = 4;
+		break;
+	}
 
-	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.Mana[0] ? cl.Mana[0].Amount : 0);
-	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.Mana[1] ? cl.Mana[1].Amount : 0);
-	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.Mana[2] ? cl.Mana[2].Amount : 0);
-	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.Mana[3] ? cl.Mana[3].Amount : 0);
-	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.Mana[4] ? cl.Mana[4].Amount : 0);
-	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
-	R_DrawPic(BAR_X + 107, BAR_Y + 3, pic_manadim2[sb_mana2]);//+30
-	R_DrawPic(BAR_X + 138, BAR_Y + 3, pic_manadim3[sb_mana3]);//+31
-	R_DrawPic(BAR_X + 169, BAR_Y + 3, pic_manadim4[sb_mana4]);//+31
-	R_DrawPic(BAR_X + 200, BAR_Y + 3, pic_manadim5[sb_mana5]);//+31
-	R_DrawPic(BAR_X + 94, BAR_Y + 3, pic_manavial1[sb_manaVial1]);
-	R_DrawPic(BAR_X + 124, BAR_Y + 3, pic_manavial2[sb_manaVial2]);
-	R_DrawPic(BAR_X + 155, BAR_Y + 3, pic_manavial3[sb_manaVial3]);
-	R_DrawPic(BAR_X + 186, BAR_Y + 3, pic_manavial4[sb_manaVial4]);
-	R_DrawPic(BAR_X + 217, BAR_Y + 3, pic_manavial5[sb_manaVial5]);
 	R_DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
 	R_DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
-	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[0] ? cl.Mana[0].Amount : 0)) / (cl.Mana[0] ? cl.Mana[0].MaxAmount : 1), 0.99);
-	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[1] ? cl.Mana[1].Amount : 0)) / (cl.Mana[1] ? cl.Mana[1].MaxAmount : 1), 0.99);
-	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[2] ? cl.Mana[2].Amount : 0)) / (cl.Mana[2] ? cl.Mana[2].MaxAmount : 1), 0.99);
-	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[3] ? cl.Mana[3].Amount : 0)) / (cl.Mana[3] ? cl.Mana[3].MaxAmount : 1), 0.99);
-	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[4] ? cl.Mana[4].Amount : 0)) / (cl.Mana[4] ? cl.Mana[4].MaxAmount : 1), 0.99);
+	DrawMana(ItemManaBlue, 77, sb_manaVial1, 0, sb_mana1);
+	DrawMana(ItemManaGreen, 107, 2 + sb_manaVial2, 2, sb_mana2);
+	DrawMana(ItemManaCombined, 138, 4 + sb_manaVial3, 4, sb_mana3);
+	DrawMana(ArtifactBlastRadius, 169, 6 + sb_manaVial4, 6, sb_mana4);
+	DrawMana(ArtifactFlechette, 200, 8 + sb_manaVial5, 8 + Mana5DimBase, sb_mana5);
 	if (cl.next_level != cl.old_level)
 	{
 	   R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
@@ -830,6 +767,38 @@ void SB_DrawMainBar()
 
 	// Armor
 	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, cl.ArmorPoints, 0);
+}
+
+//==========================================================================
+//
+//	DrawMana
+//
+//==========================================================================
+
+void DrawMana(class<Mana> Type, int X, int manaVial, int DimBase,
+	int UsesMana)
+{
+	Inventory		ManaItem;
+
+	ManaItem = cl.MO ? EntityEx(cl.MO).FindInventory(Type) : none;
+	if (!ManaItem || ManaItem.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		UsesMana = 0;
+	}
+	R_DrawPic(BAR_X + X, BAR_Y + 3, pic_manadim[DimBase + UsesMana]);
+	R_DrawPic(BAR_X + X + 17, BAR_Y + 3, pic_manavial[manaVial]);
+	if (ManaItem)
+	{
+		SB_DrawMNumber(BAR_X + X + 2, BAR_Y + 20, ManaItem.Amount);
+		R_ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3,
+			22 - (22 * ManaItem.Amount) / ManaItem.MaxAmount, 0.99);
+	}
+	else
+	{
+		SB_DrawMNumber(BAR_X + X + 2, BAR_Y + 20, 0);
+		R_ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3, 22, 0.99);
+	}
 }
 
 //==========================================================================
@@ -975,74 +944,34 @@ void SB_DrawFullscreenStats()
 	}
 
 	//  [FB] Mana Display in Fullscreen
-	if (!cl.Mana[0] || cl.Mana[0].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana1 = 0;
-	}
-	else
-	{
-		sb_mana1 = 1;
-	}
-	if (!cl.Mana[1] || cl.Mana[1].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana2 = 0;
-	}
-	else
-	{
-		sb_mana2 = 1;
-	}
-	if (!cl.Mana[2] || cl.Mana[2].Amount == 0)
-	{
-		// Draw Dim Mana icon
-		sb_mana3 = 0;
-	}
-	else
-	{
-		sb_mana3 = 1;
-	}
-	if (!cl.Mana[3] || cl.Mana[3].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
+	sb_mana1 = 1;
+	sb_mana2 = 1;
+	sb_mana3 = 1;
+	sb_mana4 = 1;
+	sb_mana5 = 1;
+	if (cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
 	}
-	else
-	{
-		sb_mana4 = 1;
-	}
-	if (!cl.Mana[4] || cl.Mana[4].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
+	if (cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
 	{
 		// Draw Dim Mana icon
-		// [FB] Choose correct mana type to display
-		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
-		{
-		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
-			sb_mana5 = 0;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-			sb_mana5 = 2;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-			sb_mana5 = 4;
-			break;
-		}
+		sb_mana5 = 0;
 	}
-	else
+	int Mana5DimBase = 0;
+	// [FB] Choose correct mana type to display
+	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
-		// [FB] Choose correct mana type to display
-		switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
-		{
-		case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
-			sb_mana5 = 1;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-			sb_mana5 = 3;
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-			sb_mana5 = 5;
-			break;
-		}
+	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+		Mana5DimBase = 0;
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+		Mana5DimBase = 2;
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+		Mana5DimBase = 4;
+		break;
 	}
 	// [FB] Update mana graphics based upon mana count/weapon type
 	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
@@ -1086,16 +1015,11 @@ void SB_DrawFullscreenStats()
 	{
 	}
 
-	R_DrawShadowedPic(240, 440, pic_manadim1[sb_mana1]);
-	R_DrawShadowedPic(300, 440, pic_manadim2[sb_mana2]);
-	R_DrawShadowedPic(360, 440, pic_manadim3[sb_mana3]);
-	R_DrawShadowedPic(420, 440, pic_manadim4[sb_mana4]);
-	R_DrawShadowedPic(480, 440, pic_manadim5[sb_mana5]);
-	SB_DrawNumber92(235, 454, cl.Mana[0] ? cl.Mana[0].Amount : 0, 0);
-	SB_DrawNumber92(295, 454, cl.Mana[1] ? cl.Mana[1].Amount : 0, 0);
-	SB_DrawNumber92(355, 454, cl.Mana[2] ? cl.Mana[2].Amount : 0, 0);
-	SB_DrawNumber92(415, 454, cl.Mana[3] ? cl.Mana[3].Amount : 0, 0);
-	SB_DrawNumber92(475, 454, cl.Mana[4] ? cl.Mana[4].Amount : 0, 0);
+	DrawFullscreenMana(ItemManaBlue, 235, 0, sb_mana1);
+	DrawFullscreenMana(ItemManaGreen, 295, 2, sb_mana2);
+	DrawFullscreenMana(ItemManaCombined, 355, 4, sb_mana3);
+	DrawFullscreenMana(ArtifactBlastRadius, 415, 6, sb_mana4);
+	DrawFullscreenMana(ArtifactFlechette, 475, 8 + Mana5DimBase, sb_mana5);
 	R_DrawShadowedPic(534, 439, pic_manavial6);
 	R_DrawShadowedPic(546, 439, pic_manavial7);
 	if (cl.next_level != cl.old_level)
@@ -1137,6 +1061,26 @@ void SB_DrawFullscreenStats()
 		R_DrawShadowedPic(284, 169, pic_arti[cl.readyArtifact]);
 		SB_DrawINumber(306, 192, cl.inventory[cl.inv_ptr].count);
 	}*/
+}
+
+//==========================================================================
+//
+//	DrawFullscreenMana
+//
+//==========================================================================
+
+void DrawFullscreenMana(class<Mana> Type, int X, int DimBase, int UsesMana)
+{
+	Inventory		ManaItem;
+
+	ManaItem = EntityEx(cl.MO).FindInventory(Type);
+	if (!ManaItem || ManaItem.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		UsesMana = 0;
+	}
+	R_DrawShadowedPic(X + 5, 440, pic_manadim[DimBase + UsesMana]);
+	SB_DrawNumber92(X, 454, ManaItem ? ManaItem.Amount : 0, 0);
 }
 
 //==========================================================================
