@@ -621,7 +621,7 @@ void SB_DrawMainBar()
 	}
 
 	//  Mana
-	if (cl.Mana[0] == 0)
+	if (!cl.Mana[0] || cl.Mana[0].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -630,7 +630,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana1 = 1;
 	}
-	if (cl.Mana[1] == 0)
+	if (!cl.Mana[1] || cl.Mana[1].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -639,7 +639,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana2 = 1;
 	}
-	if (cl.Mana[2] == 0)
+	if (!cl.Mana[2] || cl.Mana[2].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -648,7 +648,7 @@ void SB_DrawMainBar()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.Mana[3] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
+	if (!cl.Mana[3] || cl.Mana[3].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -659,7 +659,7 @@ void SB_DrawMainBar()
 		sb_mana4 = 1;
 		sb_manaVial4 = 1;
 	}
-	if (cl.Mana[4] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
+	if (!cl.Mana[4] || cl.Mana[4].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
 	{
 		// Draw Dim Mana icon
 		// [FB] Choose correct mana type to display
@@ -765,11 +765,11 @@ void SB_DrawMainBar()
 		sb_manaVial3 = 1;
 	}
 
-	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.Mana[0]);
-	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.Mana[1]);
-	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.Mana[2]);
-	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.Mana[3]);
-	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.Mana[4]);
+	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, cl.Mana[0] ? cl.Mana[0].Amount : 0);
+	SB_DrawMNumber(BAR_X + 109, BAR_Y + 20, cl.Mana[1] ? cl.Mana[1].Amount : 0);
+	SB_DrawMNumber(BAR_X + 140, BAR_Y + 20, cl.Mana[2] ? cl.Mana[2].Amount : 0);
+	SB_DrawMNumber(BAR_X + 171, BAR_Y + 20, cl.Mana[3] ? cl.Mana[3].Amount : 0);
+	SB_DrawMNumber(BAR_X + 202, BAR_Y + 20, cl.Mana[4] ? cl.Mana[4].Amount : 0);
 	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
 	R_DrawPic(BAR_X + 107, BAR_Y + 3, pic_manadim2[sb_mana2]);//+30
 	R_DrawPic(BAR_X + 138, BAR_Y + 3, pic_manadim3[sb_mana3]);//+31
@@ -782,11 +782,11 @@ void SB_DrawMainBar()
 	R_DrawPic(BAR_X + 217, BAR_Y + 3, pic_manavial5[sb_manaVial5]);
 	R_DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
 	R_DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
-	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * cl.Mana[0]) / HexenDefs::MAX_MANA, 0.99);
-	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * cl.Mana[1]) / HexenDefs::MAX_MANA, 0.99);
-	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * cl.Mana[2]) / HexenDefs::MAX_MANA, 0.99);
-	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * cl.Mana[3]) / HexenDefs::MAX_MANA, 0.99);
-	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * cl.Mana[4]) / HexenDefs::MAX_MANA, 0.99);
+	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[0] ? cl.Mana[0].Amount : 0)) / HexenDefs::MAX_MANA, 0.99);
+	R_ShadeRect(BAR_X + 125, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[1] ? cl.Mana[1].Amount : 0)) / HexenDefs::MAX_MANA, 0.99);
+	R_ShadeRect(BAR_X + 156, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[2] ? cl.Mana[2].Amount : 0)) / HexenDefs::MAX_MANA, 0.99);
+	R_ShadeRect(BAR_X + 187, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[3] ? cl.Mana[3].Amount : 0)) / HexenDefs::MAX_MANA, 0.99);
+	R_ShadeRect(BAR_X + 218, BAR_Y + 4, 3, 22 - (22 * (cl.Mana[4] ? cl.Mana[4].Amount : 0)) / HexenDefs::MAX_MANA, 0.99);
 	if (cl.next_level != cl.old_level)
 	{
 	   R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
@@ -975,7 +975,7 @@ void SB_DrawFullscreenStats()
 	}
 
 	//  [FB] Mana Display in Fullscreen
-	if (cl.Mana[0] == 0)
+	if (!cl.Mana[0] || cl.Mana[0].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
@@ -984,7 +984,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana1 = 1;
 	}
-	if (cl.Mana[1] == 0)
+	if (!cl.Mana[1] || cl.Mana[1].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
@@ -993,7 +993,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana2 = 1;
 	}
-	if (cl.Mana[2] == 0)
+	if (!cl.Mana[2] || cl.Mana[2].Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana3 = 0;
@@ -1002,7 +1002,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana3 = 1;
 	}
-	if (cl.Mana[3] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
+	if (!cl.Mana[3] || cl.Mana[3].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
 		// Draw Dim Mana icon
 		sb_mana4 = 0;
@@ -1011,7 +1011,7 @@ void SB_DrawFullscreenStats()
 	{
 		sb_mana4 = 1;
 	}
-	if (cl.Mana[4] == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
+	if (!cl.Mana[4] || cl.Mana[4].Amount == 0 || cl.altWeapon != HexenDefs::ALTFIRE_POISONBAG)
 	{
 		// Draw Dim Mana icon
 		// [FB] Choose correct mana type to display
@@ -1091,11 +1091,11 @@ void SB_DrawFullscreenStats()
 	R_DrawShadowedPic(360, 440, pic_manadim3[sb_mana3]);
 	R_DrawShadowedPic(420, 440, pic_manadim4[sb_mana4]);
 	R_DrawShadowedPic(480, 440, pic_manadim5[sb_mana5]);
-	SB_DrawNumber92(235, 454, cl.Mana[0], 0);
-	SB_DrawNumber92(295, 454, cl.Mana[1], 0);
-	SB_DrawNumber92(355, 454, cl.Mana[2], 0);
-	SB_DrawNumber92(415, 454, cl.Mana[3], 0);
-	SB_DrawNumber92(475, 454, cl.Mana[4], 0);
+	SB_DrawNumber92(235, 454, cl.Mana[0] ? cl.Mana[0].Amount : 0, 0);
+	SB_DrawNumber92(295, 454, cl.Mana[1] ? cl.Mana[1].Amount : 0, 0);
+	SB_DrawNumber92(355, 454, cl.Mana[2] ? cl.Mana[2].Amount : 0, 0);
+	SB_DrawNumber92(415, 454, cl.Mana[3] ? cl.Mana[3].Amount : 0, 0);
+	SB_DrawNumber92(475, 454, cl.Mana[4] ? cl.Mana[4].Amount : 0, 0);
 	R_DrawShadowedPic(534, 439, pic_manavial6);
 	R_DrawShadowedPic(546, 439, pic_manavial7);
 	if (cl.next_level != cl.old_level)

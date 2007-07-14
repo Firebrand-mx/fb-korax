@@ -105,13 +105,13 @@ final bool IsWeaponManaUsable()
 {
 	if (Mana == HexenDefs::NUMMANA) 
 	{
-		    return Player(Owner.Player).Mana[HexenDefs::MANA_1] >= Player(Owner.Player).GetWeaponManaUse(self)
-			&& Player(Owner.Player).Mana[HexenDefs::MANA_2] >= Player(Owner.Player).GetWeaponManaUse(self)
-			&& Player(Owner.Player).Mana[HexenDefs::MANA_3] >= Player(Owner.Player).GetWeaponManaUse(self);
+		return Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount >= Player(Owner.Player).GetWeaponManaUse(self)
+			&& Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount >= Player(Owner.Player).GetWeaponManaUse(self)
+			&& Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount >= Player(Owner.Player).GetWeaponManaUse(self);
 	}
 	else 
 	{
-		return Player(Owner.Player).Mana[Mana] >= Player(Owner.Player).GetWeaponManaUse(self);
+		return Player(Owner.Player).Mana[Mana].Amount >= Player(Owner.Player).GetWeaponManaUse(self);
 	}
 }
 
@@ -125,18 +125,30 @@ void UseWeaponMana()
 {
 	if (Mana == HexenDefs::NUMMANA)
 	{
-		Player(Owner.Player).Mana[HexenDefs::MANA_1] -= Player(Owner.Player).GetWeaponManaUse(self);
-		Player(Owner.Player).Mana[HexenDefs::MANA_2] -= Player(Owner.Player).GetWeaponManaUse(self);
-		Player(Owner.Player).Mana[HexenDefs::MANA_3] -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		if (Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount < 0)
+		{
+			Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount = 0;
+		}
+		if (Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount < 0)
+		{
+			Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount = 0;
+		}
+		if (Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount < 0)
+		{
+			Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount = 0;
+		}
 	}
 	else 
 	{
-		Player(Owner.Player).Mana[Mana] -= Player(Owner.Player).GetWeaponManaUse(self);
+		Player(Owner.Player).Mana[Mana].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		if (Player(Owner.Player).Mana[Mana].Amount < 0)
+		{
+			Player(Owner.Player).Mana[Mana].Amount = 0;
+		}
 	}
-	if (Player(Owner.Player).Mana[Mana] < 0)
-	{
-		Player(Owner.Player).Mana[Mana] = 0;
-	}	
 }
 
 //===========================================================================
