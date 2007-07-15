@@ -39,7 +39,9 @@ const float RAISESPEED		= 6.0;
 const float WEAPONBOTTOM	= 128.0;
 const float WEAPONTOP		= 32.0;
 
-int Mana;
+class<Mana> ManaType1;
+class<Mana> ManaType2;
+class<Mana> ManaType3;
 int manause;
 bool needsnomana;
 state UpState;
@@ -103,16 +105,28 @@ void SnoutSniff()
 
 final bool IsWeaponManaUsable()
 {
-	if (Mana == HexenDefs::NUMMANA) 
+	if (ManaType1)
 	{
-		return Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount >= Player(Owner.Player).GetWeaponManaUse(self)
-			&& Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount >= Player(Owner.Player).GetWeaponManaUse(self)
-			&& Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount >= Player(Owner.Player).GetWeaponManaUse(self);
+		if (EntityEx(Owner).FindInventory(ManaType1).Amount < Player(Owner.Player).GetWeaponManaUse(self))
+		{
+			return false;
+		}
 	}
-	else 
+	if (ManaType2)
 	{
-		return Player(Owner.Player).Mana[Mana].Amount >= Player(Owner.Player).GetWeaponManaUse(self);
+		if (EntityEx(Owner).FindInventory(ManaType2).Amount < Player(Owner.Player).GetWeaponManaUse(self))
+		{
+			return false;
+		}
 	}
+	if (ManaType3)
+	{
+		if (EntityEx(Owner).FindInventory(ManaType3).Amount < Player(Owner.Player).GetWeaponManaUse(self))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 //==========================================================================
@@ -123,30 +137,31 @@ final bool IsWeaponManaUsable()
 
 void UseWeaponMana()
 {
-	if (Mana == HexenDefs::NUMMANA)
+	if (ManaType1)
 	{
-		Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
-		Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
-		Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
-		if (Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount < 0)
+		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType1);
+		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		if (ManaItem.Amount < 0)
 		{
-			Player(Owner.Player).Mana[HexenDefs::MANA_1].Amount = 0;
-		}
-		if (Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount < 0)
-		{
-			Player(Owner.Player).Mana[HexenDefs::MANA_2].Amount = 0;
-		}
-		if (Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount < 0)
-		{
-			Player(Owner.Player).Mana[HexenDefs::MANA_3].Amount = 0;
+			ManaItem.Amount = 0;
 		}
 	}
-	else 
+	if (ManaType2)
 	{
-		Player(Owner.Player).Mana[Mana].Amount -= Player(Owner.Player).GetWeaponManaUse(self);
-		if (Player(Owner.Player).Mana[Mana].Amount < 0)
+		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType2);
+		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		if (ManaItem.Amount < 0)
 		{
-			Player(Owner.Player).Mana[Mana].Amount = 0;
+			ManaItem.Amount = 0;
+		}
+	}
+	if (ManaType3)
+	{
+		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType3);
+		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		if (ManaItem.Amount < 0)
+		{
+			ManaItem.Amount = 0;
 		}
 	}
 }
@@ -425,6 +440,4 @@ defaultproperties
 {
 	bHidden = true;
 	bNoBlockmap = true;
-
-	bInstantRanged = false;
 }
