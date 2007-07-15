@@ -28,6 +28,9 @@ class WeaponPickup : Inventory
 
 int WeaponClass;
 int WeaponType;
+class<Mana>		ManaType1;
+class<Mana>		ManaType2;
+class<Mana>		ManaType3;
 
 //==========================================================================
 //
@@ -39,9 +42,9 @@ bool TryPickup(EntityEx Toucher)
 {
 	bool gaveMana;
 	bool gaveWeapon;
-	/*bool mm1;
+	bool mm1;
 	bool mm2;
-	bool mm3;*/
+	bool mm3;
 
 /*	if ((WeaponType > WP_FOURTH && P.Player.exp_level < 2) ||
 	    (WeaponType == WP_EIGHTH && P.Player.exp_level < 3))
@@ -108,24 +111,19 @@ bool TryPickup(EntityEx Toucher)
 		if (Player(Toucher.Player).WeaponOwned[WeaponType])
 		{
 			gaveWeapon = false;
-			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
+			gaveMana = false;
+			if (Player(Toucher.Player).GiveMana(ManaType1, 25))
 			{
-				gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_123, 25);
-				/*mm1 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_3, 25);
-
-				if (!mm1 && !mm2 && !mm3)
-				{
-					gaveMana = 0;
-				}
-				else
-				{
-					gaveMana = 1;
-				}*/
+				gaveMana = true;
 			}
-			else
-				gaveMana = Player(Toucher.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25);
+			if (Player(Toucher.Player).GiveMana(ManaType2, 25))
+			{
+				gaveMana = true;
+			}
+			if (Player(Toucher.Player).GiveMana(ManaType3, 25))
+			{
+				gaveMana = true;
+			}
 		}
 		else
 		{
@@ -137,24 +135,19 @@ bool TryPickup(EntityEx Toucher)
 				Player(Toucher.Player).PendingWeapon = WeaponType;
 			}
 			
-			if (MainGameInfo(Level.Game).whatmana[WeaponType] == HexenDefs::NUMMANA)
+			gaveMana = false;
+			if (Player(Toucher.Player).GiveMana(ManaType1, 25))
 			{
-				gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_123, 25);
-				/*mm1 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
-				mm2 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
-				mm3 = Player(Toucher.Player).GiveMana(HexenDefs::MANA_3, 25);
-
-				if (!mm1 && !mm2 && !mm3)
-				{
-					gaveMana = 0;
-				}
-				else
-				{
-					gaveMana = 1;
-				}*/
+				gaveMana = true;
 			}
-			else
-				gaveMana = Player(Toucher.Player).GiveMana(MainGameInfo(Level.Game).whatmana[WeaponType], 25/*manaadding[P.Player.PClass*NUMWEAPONS+WeaponType]*/);
+			if (Player(Toucher.Player).GiveMana(ManaType2, 25))
+			{
+				gaveMana = true;
+			}
+			if (Player(Toucher.Player).GiveMana(ManaType3, 25))
+			{
+				gaveMana = true;
+			}
 		}
 		if (!gaveWeapon && !gaveMana)
 		{
