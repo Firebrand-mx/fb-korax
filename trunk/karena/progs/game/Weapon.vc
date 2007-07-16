@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class Weapon : Actor
+class Weapon : Inventory
 	abstract;
 
 const float LOWERSPEED		= 6.0;
@@ -61,6 +61,10 @@ string PickUpMessage;
 
 bool bInstantRanged;
 TVec ShotPosition;	// [CW]
+
+// [CW] Death messages; used by those who can damage directly
+//		(anything from enviroment to pawns with melee attacks)
+string		Obituary;
 
 state GetUpState()
 {
@@ -305,8 +309,9 @@ final void A_Lower()
 		Owner.Player.SetViewState(ps_weapon, none);
 		return;
 	}
+	Entity Tmp = Owner;
 	Player(Owner.Player).SetWeapon(Player(Owner.Player).PendingWeapon);
-	Player(Owner.Player).BringUpWeapon();
+	Player(Tmp.Player).BringUpWeapon();
 }
 
 //==========================================================================
@@ -438,6 +443,4 @@ final void GunShot2(Actor A, int accurate, TVec dir)
 
 defaultproperties
 {
-	bHidden = true;
-	bNoBlockmap = true;
 }
