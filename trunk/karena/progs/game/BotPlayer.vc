@@ -1062,7 +1062,7 @@ void BotAim()
 	an = AngleTo(enemy.Origin);
 
 	// [FB] Decide our weapon if we have an enemy
-	player.ReadyWeapon = B_ChooseWeapon(dist);
+	player.ReadyWeapon.WeaponType = B_ChooseWeapon(dist);
 
 	// [BC] Cajun prediction... maybe use this somewhere
 	/*
@@ -1082,7 +1082,7 @@ void BotAim()
 	{
 		// [FB] Decide which kind of aiming the bot will use...
 		case HexenDefs::PCLASS_FIGHTER:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_FIFTH:
 				case HexenDefs::WP_SIXTH:
@@ -1094,7 +1094,7 @@ void BotAim()
 					return;
 			}
 		case HexenDefs::PCLASS_CLERIC:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_SECOND:
 				case HexenDefs::WP_SIXTH:
@@ -1107,7 +1107,7 @@ void BotAim()
 					return;
 			}
 		case HexenDefs::PCLASS_MAGE:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_FOURTH:
 				case HexenDefs::WP_FIFTH:
@@ -1120,7 +1120,7 @@ void BotAim()
 					return;
 			}
 		case HexenDefs::PCLASS_HERETIC:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_THIRD:
 				case HexenDefs::WP_FIFTH:
@@ -1133,7 +1133,7 @@ void BotAim()
 					return;
 			}
 		case HexenDefs::PCLASS_MARINE:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_FIFTH:
 				case HexenDefs::WP_SEVENTH:
@@ -1145,7 +1145,7 @@ void BotAim()
 					return;
 			}
 		case HexenDefs::PCLASS_WITCHAVEN:
-			switch(player.ReadyWeapon)
+			switch(player.ReadyWeapon.WeaponType)
 			{
 				case HexenDefs::WP_THIRD:
 				case HexenDefs::WP_FOURTH:
@@ -1349,7 +1349,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
@@ -1363,7 +1363,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
@@ -1376,7 +1376,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
@@ -1390,7 +1390,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
@@ -1404,7 +1404,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good			
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
@@ -1423,7 +1423,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
 					// Didn't find anything good
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 			}
@@ -1448,7 +1448,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
 						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
@@ -1465,7 +1465,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
@@ -1493,7 +1493,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 3)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
@@ -1521,7 +1521,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
@@ -1549,7 +1549,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
@@ -1571,7 +1571,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
 						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_THIRD;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 			}
@@ -1596,7 +1596,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
 						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_CLERIC:
@@ -1613,7 +1613,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MAGE:
@@ -1641,7 +1641,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 3)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_HERETIC:
@@ -1669,7 +1669,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_MARINE:
@@ -1697,7 +1697,7 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
 						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
 				case HexenDefs::PCLASS_WITCHAVEN:
@@ -1719,14 +1719,14 @@ int B_ChooseWeapon(float dist)
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
 						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_THIRD;
-					return player.ReadyWeapon;
+					return player.ReadyWeapon.WeaponType;
 					break;
 				}
-				return player.ReadyWeapon;
+				return player.ReadyWeapon.WeaponType;
 			}
 		}
 	}
-	return player.ReadyWeapon;
+	return player.ReadyWeapon.WeaponType;
 }
 
 //==========================================================================
@@ -2139,8 +2139,8 @@ void Move(float deltaTime)
 			itemdist = botmo.DistTo(item);
 
 			if (bItemIsPowerup ||
-			     (bItemIsWeapon && (player.ReadyWeapon == HexenDefs::WP_FIRST || player.ReadyWeapon == HexenDefs::WP_SECOND)) || 
-			     (enemy.bIsPlayer && bItemIsWeapon && player.ReadyWeapon < Player(enemy.Player).ReadyWeapon) || 
+			     (bItemIsWeapon && (player.ReadyWeapon.WeaponType == HexenDefs::WP_FIRST || player.ReadyWeapon.WeaponType == HexenDefs::WP_SECOND)) || 
+			     (enemy.bIsPlayer && bItemIsWeapon && player.ReadyWeapon.WeaponType < Player(enemy.Player).ReadyWeapon.WeaponType) || 
 			     ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
 			       item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2))) &&
 			     itemdist <= GETINCOMBAT)
@@ -2166,7 +2166,7 @@ void Move(float deltaTime)
 		}
 
 		if (CheckTo(enemy.Origin) && dist >
-		    combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon])
+		    combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon.WeaponType])
 		{
 			//if (combatdist[player.PClass * NUMWEAPONS + player.ReadyWeapon] == 48.0)
 				//dprint("Going forward %d %d", forwardmove, sidemove);
@@ -2269,7 +2269,7 @@ void Attack()
 		return;
 
 	// [FB] Don't attack if the distance is not the right one for this weapon
-	if (botmo.DistTo(enemy) > combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon])
+	if (botmo.DistTo(enemy) > combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon.WeaponType])
 		return;
 	
 	player.Buttons |= BT_ATTACK;
@@ -2811,13 +2811,13 @@ void BotTick(float deltaTime)
 void GaveMana(Ammo mana)
 {
 	int i;
-	if (player.ReadyWeapon == HexenDefs::WP_FIRST)
+	if (player.ReadyWeapon.WeaponType == HexenDefs::WP_FIRST)
 	{
 		for (i = HexenDefs::NUMWEAPONS - 1; i > -1; i--)
 		{
 			if (player.WeaponOwned[i]) 
 			{
-				player.PendingWeapon = i;
+				player.PendingWeapon = player.WeaponOwned[i];
 				return;
 			}
 		}

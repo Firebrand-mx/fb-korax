@@ -132,8 +132,8 @@ int Refire;
 //int Pieces;	// Fourth Weapon pieces
 
 // Is wp_nochange if not changing.
-int PendingWeapon;
-int ReadyWeapon;
+WeaponEx PendingWeapon;
+WeaponEx ReadyWeapon;
 
 WeaponEx WeaponOwned[HexenDefs::NUMWEAPONS];
 
@@ -277,7 +277,7 @@ void SpawnClient()
 //	int oldPieces;
 	WeaponEx oldWeaponowned[HexenDefs::NUMWEAPONS];
 	bool playerWasReborn;
-	int bestWeapon;
+	WeaponEx bestWeapon;
 
 	Attacker = none;
 	Poisoner = none;
@@ -315,11 +315,11 @@ void SpawnClient()
 		// Restore keys and weapons when reborn in co-op
 		Keys = oldKeys;
 //		player.Pieces = oldPieces;
-		for (bestWeapon = 0, j = 0; j < HexenDefs::NUMWEAPONS; j++)
+		for (bestWeapon = none, j = 0; j < HexenDefs::NUMWEAPONS; j++)
 		{
 			if (oldWeaponowned[j])
 			{
-				bestWeapon = j;
+				bestWeapon = oldWeaponowned[j];
 				oldWeaponowned[j].AttachToOwner(EntityEx(MO));
 				WeaponOwned[j] = oldWeaponowned[j];
 			}
@@ -354,7 +354,7 @@ void NetGameReborn()
 	int oldKeys;
 //	int oldPieces;
 	bool foundSpot;
-	int bestWeapon;
+	WeaponEx bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
 
 	// remove pitch and roll angles from corpse
@@ -415,11 +415,11 @@ void NetGameReborn()
 	// Restore keys and weapons
 	Keys = oldKeys;
 //	Pieces = oldPieces;
-	for (bestWeapon = 0, i = 0; i < HexenDefs::NUMWEAPONS; i++)
+	for (bestWeapon = none, i = 0; i < HexenDefs::NUMWEAPONS; i++)
 	{
 		if (oldWeaponowned[i])
 		{
-			bestWeapon = i;
+			bestWeapon = oldWeaponowned[i];
 			oldWeaponowned[i].AttachToOwner(EntityEx(MO));
 			WeaponOwned[i] = oldWeaponowned[i];
 		}
@@ -2598,10 +2598,10 @@ void PrevWeapon()
 		return;
 	for (i = HexenDefs::NUMWEAPONS - 1; i > 0; i--)
 	{
-		NewWeap = (ReadyWeapon + i) % HexenDefs::NUMWEAPONS;
+		NewWeap = (ReadyWeapon.WeaponType + i) % HexenDefs::NUMWEAPONS;
 		if (WeaponOwned[NewWeap])
 		{
-			PendingWeapon = NewWeap;
+			PendingWeapon = WeaponOwned[NewWeap];
 			return;
 		}
 	}
@@ -2622,10 +2622,10 @@ void NextWeapon()
 		return;
 	for (i = 1; i < HexenDefs::NUMWEAPONS; i++)
 	{
-		NewWeap = (ReadyWeapon + i) % HexenDefs::NUMWEAPONS;
+		NewWeap = (ReadyWeapon.WeaponType + i) % HexenDefs::NUMWEAPONS;
 		if (WeaponOwned[NewWeap])
 		{
-			PendingWeapon = NewWeap;
+			PendingWeapon = WeaponOwned[NewWeap];
 			return;
 		}
 	}
@@ -2659,15 +2659,15 @@ void PlayerImpulse()
 		// psprite can do it (A_WeaponReady), so it doesn't happen in
 		// the middle of an attack.
 		if (WeaponOwned[impulse - 1] &&
-			impulse - 1 != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+			impulse - 1 != ReadyWeapon.WeaponType && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
-			PendingWeapon = impulse - 1;
+			PendingWeapon = WeaponOwned[impulse - 1];
 		}
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
-		newWeapon = ReadyWeapon;
+		newWeapon = ReadyWeapon.WeaponType;
 		do 
 		{
 			newWeapon = newWeapon -1;
@@ -2675,15 +2675,15 @@ void PlayerImpulse()
 				newWeapon = HexenDefs::NUMWEAPONS -1;
 		}
 		while (!WeaponOwned[newWeapon]);
-		if (newWeapon != ReadyWeapon)
+		if (newWeapon != ReadyWeapon.WeaponType)
 		{
-			PendingWeapon = newWeapon;
+			PendingWeapon = WeaponOwned[newWeapon];
 		}
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		int newWeapon;
-		newWeapon = ReadyWeapon;
+		newWeapon = ReadyWeapon.WeaponType;
 		do 
 		{
 			newWeapon = newWeapon + 1;
@@ -2691,9 +2691,9 @@ void PlayerImpulse()
 				newWeapon = 0;
 		}
 		while (!WeaponOwned[newWeapon]);
-		if (newWeapon != ReadyWeapon)
+		if (newWeapon != ReadyWeapon.WeaponType)
 		{
-			PendingWeapon = newWeapon;
+			PendingWeapon = WeaponOwned[newWeapon];
 		}		
 	}
 	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
@@ -3757,7 +3757,7 @@ void SetViewPos()
 	PaletteFlash();
 
 	SBFlags = Keys;
-	SBFlags |= ReadyWeapon << HexenDefs::SBF_WPN_SHIFT;
+	SBFlags |= ReadyWeapon.WeaponType << HexenDefs::SBF_WPN_SHIFT;
 //[Korax]
 //	SBFlags |= Pieces << HexenDefs::SBF_PIECES_SHIFT;
 	if (Powers[pw_flight])
@@ -4433,10 +4433,10 @@ void AdjustPlayerAngle(EntityEx AimTarget)
 
 void SetWeapon(int NewWeapon)
 {
-	ReadyWeapon = NewWeapon;
-	PendingWeapon = HexenDefs::wp_nochange;
+	ReadyWeapon = WeaponOwned[NewWeapon];
+	PendingWeapon = none;
 
-	ViewEnt = WeaponOwned[ReadyWeapon];
+	ViewEnt = ReadyWeapon;
 	PSpriteSY = WeaponEx(ViewEnt).PSpriteSY;
 }
 
@@ -4450,7 +4450,7 @@ void SetWeapon(int NewWeapon)
 
 void BringUpWeapon()
 {
-	PendingWeapon = HexenDefs::wp_nochange;
+	PendingWeapon = none;
 	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetUpState());
 }
@@ -4532,7 +4532,7 @@ bool CheckMana()
 	cur_weap = Weapon(player.ViewEnt);
 	if (cur_weap.Mana == MANA_NONE || cur_weap.needsnomana 
 		|| IsWeaponManaUsable(player, cur_weap))*/
-	if (GetWeaponMUse(ReadyWeapon))
+	if (GetWeaponMUse(ReadyWeapon.WeaponType))
 	{
 		return true;
 	}
@@ -4542,38 +4542,38 @@ bool CheckMana()
 	{
 		if (WeaponOwned[HexenDefs::WP_EIGHTH] && GetWeaponMUse(HexenDefs::WP_EIGHTH))
 		{
-			PendingWeapon = HexenDefs::WP_EIGHTH;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_EIGHTH];
 		}
 		else if (WeaponOwned[HexenDefs::WP_SEVENTH] && GetWeaponMUse(HexenDefs::WP_SEVENTH))
 		{
-			PendingWeapon = HexenDefs::WP_SEVENTH;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_SEVENTH];
 		}
 		else if (WeaponOwned[HexenDefs::WP_SIXTH] && GetWeaponMUse(HexenDefs::WP_SIXTH))
 		{
-			PendingWeapon = HexenDefs::WP_SIXTH;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_SIXTH];
 		}
 		else if (WeaponOwned[HexenDefs::WP_FIFTH] && GetWeaponMUse(HexenDefs::WP_FIFTH))
 		{
-			PendingWeapon = HexenDefs::WP_FIFTH;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_FIFTH];
 		}
 		else if (WeaponOwned[HexenDefs::WP_FOURTH] && GetWeaponMUse(HexenDefs::WP_FOURTH))
 		{
-			PendingWeapon = HexenDefs::WP_FOURTH;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_FOURTH];
 		}
 		else if (WeaponOwned[HexenDefs::WP_THIRD] && GetWeaponMUse(HexenDefs::WP_THIRD))
 		{
-			PendingWeapon = HexenDefs::WP_THIRD;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_THIRD];
 		}
 		else if (WeaponOwned[HexenDefs::WP_SECOND] && GetWeaponMUse(HexenDefs::WP_SECOND))
 		{
-			PendingWeapon = HexenDefs::WP_SECOND;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_SECOND];
 		}
 		else 
 		{
-			PendingWeapon = HexenDefs::WP_FIRST;
+			PendingWeapon = WeaponOwned[HexenDefs::WP_FIRST];
 		}
 	}
-	while (PendingWeapon == HexenDefs::wp_nochange);
+	while (!PendingWeapon);
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetDownState());
 	return false;
 }
@@ -5156,7 +5156,7 @@ void Cheat_NoWeapons()
 			WeaponOwned[i].Destroy();
 		}
 	}
-	PendingWeapon = HexenDefs::WP_FIRST;
+	PendingWeapon = WeaponOwned[HexenDefs::WP_FIRST];
 //	Pieces = 0;
 	cprint("CHEATER - YOU DON'T DESERVE WEAPONS");
 }
@@ -6148,7 +6148,7 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 bool IsWeaponAlwaysExtremeDeath()
 {
 	// Always extreme death from eight weapon
-	return ReadyWeapon == HexenDefs::WP_EIGHTH;
+	return ReadyWeapon.WeaponType == HexenDefs::WP_EIGHTH;
 }
 
 defaultproperties

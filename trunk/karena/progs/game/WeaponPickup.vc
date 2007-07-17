@@ -27,7 +27,6 @@ class WeaponPickup : WeaponEx
 	abstract;
 
 int WeaponClass;
-int WeaponType;
 
 //==========================================================================
 //
@@ -129,10 +128,10 @@ bool TryPickup(EntityEx Toucher)
 				Spawn(MainGameInfo(Level.Game).WeaponClasses[
 				WeaponType * HexenDefs::NUMCLASSES + Toucher.Player.PClass]);
 			Player(Toucher.Player).WeaponOwned[WeaponType].AttachToOwner(Toucher);
-			if (WeaponType > Player(Toucher.Player).ReadyWeapon)
+			if (WeaponType > Player(Toucher.Player).ReadyWeapon.WeaponType)
 			{
 				// Only switch to more powerful weapons
-				Player(Toucher.Player).PendingWeapon = WeaponType;
+				Player(Toucher.Player).PendingWeapon = Player(Toucher.Player).WeaponOwned[WeaponType];
 			}
 			
 			gaveMana = false;
