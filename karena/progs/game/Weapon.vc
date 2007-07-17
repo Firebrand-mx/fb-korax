@@ -52,6 +52,8 @@ state HoldAttackState;
 state FlashState;
 float PSpriteSY;	// Y-adjustment value for full screen
 
+int WeaponType;
+
 bool dex_mod;
 bool str_mod;
 bool int_mod;
@@ -236,8 +238,7 @@ final void A_WeaponReady()
 		Owner.SetState(Actor(Owner).IdleState);
 	}
 	// Put the weapon away if the player has a pending weapon or has died.
-	if (Player(Owner.Player).PendingWeapon != HexenDefs::wp_nochange ||
-		!Player(Owner.Player).Health)
+	if (Player(Owner.Player).PendingWeapon || !Player(Owner.Player).Health)
 	{
 		Owner.Player.SetViewState(ps_weapon, GetDownState());
 		return;
@@ -309,9 +310,8 @@ final void A_Lower()
 		Owner.Player.SetViewState(ps_weapon, none);
 		return;
 	}
-	Entity Tmp = Owner;
-	Player(Owner.Player).SetWeapon(Player(Owner.Player).PendingWeapon);
-	Player(Tmp.Player).BringUpWeapon();
+	Player(Owner.Player).SetWeapon(Player(Owner.Player).PendingWeapon.WeaponType);
+	Player(Owner.Player).BringUpWeapon();
 }
 
 //==========================================================================
@@ -351,7 +351,7 @@ final void A_Raise()
 final void A_ReFire()
 {
 	if ((Owner.Player.Buttons & BT_ATTACK) &&
-		Player(Owner.Player).PendingWeapon == HexenDefs::wp_nochange && Player(Owner.Player).Health)
+		!Player(Owner.Player).PendingWeapon && Player(Owner.Player).Health)
 	{
 		Player(Owner.Player).Refire++;
 		Player(Owner.Player).FireWeapon();
