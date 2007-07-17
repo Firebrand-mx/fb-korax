@@ -584,6 +584,7 @@ bool CheckPath(float ang, float dist)
 	bottracerange = dist;
 	bottracedir.x = cos(ang);
 	bottracedir.y = sin(ang);
+	bottracedir.z = 0.0;	
 	x1 = botmo.Origin.x;
 	y1 = botmo.Origin.y;
  	x2 = x1 + botmo.Radius + dist * bottracedir.x;
@@ -596,7 +597,7 @@ bool CheckPath(float ang, float dist)
 	//	[FB] Additions for 3d floor checks
 	foreach botmo.PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
 	{
-		Actor th;
+		EntityEx th;
 		line_t *ld;
 		TVec hit_point;
 		sector_t *back;
@@ -679,9 +680,9 @@ bool CheckPath(float ang, float dist)
 		}
 		else
 		{
-			th = Actor(in->Thing);
+			th = EntityEx(in->Thing);
 
-			if (th == botmo)
+			if (Actor(th) == botmo)
 			{
 				continue;
 			}
@@ -1334,16 +1335,16 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_FIGHTER:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 50)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 50)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 5)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 5)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1354,10 +1355,10 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_CLERIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 5)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1368,9 +1369,9 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MAGE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1381,10 +1382,10 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_HERETIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 15)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1395,10 +1396,10 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MARINE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 10)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1409,15 +1410,15 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 15)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 5)
 						return HexenDefs::WP_SECOND;
 					if (player.WeaponOwned[HexenDefs::WP_FIRST])
 						return HexenDefs::WP_FIRST;
@@ -1434,18 +1435,18 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_FIGHTER:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
@@ -1453,16 +1454,16 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_CLERIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 5)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 5)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1470,27 +1471,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MAGE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 15)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 7)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 7)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 3)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 3)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1498,27 +1499,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_HERETIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 25)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 25)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 15)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 15)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 10)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1526,27 +1527,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MARINE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 8)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 8)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 25)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 25)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 10)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 3)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 10)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1554,21 +1555,21 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 30)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 30)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 10)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
@@ -1582,18 +1583,18 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_FIGHTER:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					return player.ReadyWeapon;
 					break;
@@ -1601,16 +1602,16 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_CLERIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 5)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 5)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 5)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 5)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1618,27 +1619,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MAGE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 15)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 7)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 7)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 3)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 3)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1646,27 +1647,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_HERETIC:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 25)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 25)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 15)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 15)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 15)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 10)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1674,27 +1675,27 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_MARINE:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 8)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 8)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 25)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 25)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FIFTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 10)
 						return HexenDefs::WP_FIFTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 3)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 3)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 10)
 						return HexenDefs::WP_THIRD;
 					if (player.WeaponOwned[HexenDefs::WP_SECOND] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 2)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 2)
 						return HexenDefs::WP_SECOND;
 					return player.ReadyWeapon;
 					break;
@@ -1702,21 +1703,21 @@ int B_ChooseWeapon(float dist)
 				case HexenDefs::PCLASS_WITCHAVEN:
 				{
 					if (player.WeaponOwned[HexenDefs::WP_EIGHTH] &&
-						botmo.FindInventory(ItemManaBlue).Amount >= 100 &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 100 &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 100)
+						EntityEx(botmo).FindInventory(ItemManaBlue).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 100 &&
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 100)
 						return HexenDefs::WP_EIGHTH;
 					if (player.WeaponOwned[HexenDefs::WP_SEVENTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 20)
 						return HexenDefs::WP_SEVENTH;
 					if (player.WeaponOwned[HexenDefs::WP_SIXTH] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 30)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 30)
 						return HexenDefs::WP_SIXTH;
 					if (player.WeaponOwned[HexenDefs::WP_FOURTH] &&
-						botmo.FindInventory(ItemManaCombined).Amount >= 10)
+						EntityEx(botmo).FindInventory(ItemManaCombined).Amount >= 10)
 						return HexenDefs::WP_FOURTH;
 					if (player.WeaponOwned[HexenDefs::WP_THIRD] &&
-						botmo.FindInventory(ItemManaGreen).Amount >= 20)
+						EntityEx(botmo).FindInventory(ItemManaGreen).Amount >= 20)
 						return HexenDefs::WP_THIRD;
 					return player.ReadyWeapon;
 					break;
@@ -2195,6 +2196,7 @@ void Move(float deltaTime)
 		if (CheckTo(ball.Origin) && dist <= Actor::MELEERANGE * 6.0)
 		{
 			botmo.Player.Buttons |= BT_USE;
+			return;
 		}
 	}
 	
@@ -2267,41 +2269,8 @@ void Attack()
 		return;
 
 	// [FB] Don't attack if the distance is not the right one for this weapon
-	switch (player.PClass)
-	{
-		case HexenDefs::PCLASS_FIGHTER:
-			if (botmo.DistTo(enemy) > combatdist[player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_CLERIC:
-			if (botmo.DistTo(enemy) > combatdist[8 + player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_MAGE:
-			if (botmo.DistTo(enemy) > combatdist[16 + player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_HERETIC:
-			if (botmo.DistTo(enemy) > combatdist[24 + player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_MARINE:
-			if (botmo.DistTo(enemy) > combatdist[32 + player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_WITCHAVEN:
-			if (botmo.DistTo(enemy) > combatdist[40 + player.ReadyWeapon])
-				return;
-			break;
-		case HexenDefs::PCLASS_HERESIARCH:
-			if (botmo.DistTo(enemy) > combatdist[48 + player.ReadyWeapon])
-				return;
-			break;
-		default:
-			if (botmo.DistTo(enemy) > Actor::MELEERANGE)
-				return;
-			break;
-	}
+	if (botmo.DistTo(enemy) > combatdist[player.PClass * HexenDefs::NUMWEAPONS + player.ReadyWeapon])
+		return;
 	
 	player.Buttons |= BT_ATTACK;
 }
