@@ -2658,43 +2658,27 @@ void PlayerImpulse()
 		// The actual changing of the weapon is done when the weapon
 		// psprite can do it (A_WeaponReady), so it doesn't happen in
 		// the middle of an attack.
-		if (WeaponOwned[impulse - 1] &&
-			impulse - 1 != ReadyWeapon.WeaponType && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+		WeaponEx NewWpn = WeaponEx(GetSlotChangeWeapon(impulse, ReadyWeapon, false));
+		if (NewWpn && NewWpn != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
-			PendingWeapon = WeaponOwned[impulse - 1];
+			PendingWeapon = NewWpn;
 		}
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
-		int newWeapon;
-		newWeapon = ReadyWeapon.WeaponType;
-		do 
+		WeaponEx Best = WeaponEx(GetPrevWeapon(ReadyWeapon, true));
+		if (Best && Best != ReadyWeapon)
 		{
-			newWeapon = newWeapon -1;
-			if (newWeapon == -1)
-				newWeapon = HexenDefs::NUMWEAPONS -1;
-		}
-		while (!WeaponOwned[newWeapon]);
-		if (newWeapon != ReadyWeapon.WeaponType)
-		{
-			PendingWeapon = WeaponOwned[newWeapon];
+			PendingWeapon = Best;
 		}
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
-		int newWeapon;
-		newWeapon = ReadyWeapon.WeaponType;
-		do 
+		WeaponEx Best = WeaponEx(GetNextWeapon(ReadyWeapon, true));
+		if (Best && Best != ReadyWeapon)
 		{
-			newWeapon = newWeapon + 1;
-			if (newWeapon == HexenDefs::NUMWEAPONS)
-				newWeapon = 0;
+			PendingWeapon = Best;
 		}
-		while (!WeaponOwned[newWeapon]);
-		if (newWeapon != ReadyWeapon.WeaponType)
-		{
-			PendingWeapon = WeaponOwned[newWeapon];
-		}		
 	}
 	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
 	{
