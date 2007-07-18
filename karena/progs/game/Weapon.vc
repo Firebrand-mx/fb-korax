@@ -105,34 +105,112 @@ void SnoutSniff()
 
 //==========================================================================
 //
-//  IsWeaponManaUsable
+//  GetManaUse
 //
 //==========================================================================
 
-final bool IsWeaponManaUsable()
+int GetManaUse()
 {
-	if (ManaType1)
+	int manause = manause;
+	if (wis_mod)
 	{
-		if (EntityEx(Owner).FindInventory(ManaType1).Amount < Player(Owner.Player).GetWeaponManaUse(self))
+		manause = manause * 10 / Player(Owner.Player).wisdom;
+	}
+	// [FB] Always use mana, no matter what
+	if(manause < 1)
+	{
+		manause = 1;
+	}
+	return manause;
+}
+
+//==========================================================================
+//
+//  CheckAmmo
+//
+//  Returns true if there is enough mana to shoot.  If not, selects the
+// next weapon to use.
+//
+//==========================================================================
+
+bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
+{
+	if (!ManaType1 && !ManaType2 && !ManaType3)
+	{
+		return true;
+	}
+	if (!RequireAmmo && needsnomana)
+	{
+		return true;
+	}
+	bool Good = true;
+	if (ManaType1 && EntityEx(Owner).FindInventory(ManaType1).Amount < GetManaUse())
+	{
+		Good = false;
+	}
+	if (ManaType2 && EntityEx(Owner).FindInventory(ManaType2).Amount < GetManaUse())
+	{
+		Good = false;
+	}
+	if (ManaType3 && EntityEx(Owner).FindInventory(ManaType3).Amount < GetManaUse())
+	{
+		Good = false;
+	}
+	if (Good)
+	{
+		return true;
+	}
+	if (!AutoSwitch)
+	{
+		return false;
+	}
+	Player(Owner.Player).centreprint("No mana");
+	// out of mana, pick a weapon to change to
+	do
+	{
+		if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_EIGHTH] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_EIGHTH].CheckAmmo(false))
 		{
-			return false;
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_EIGHTH];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_SEVENTH] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_SEVENTH].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_SEVENTH];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_SIXTH] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_SIXTH].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_SIXTH];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_FIFTH] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_FIFTH].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_FIFTH];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_FOURTH] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_FOURTH].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_FOURTH];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_THIRD] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_THIRD].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_THIRD];
+		}
+		else if (Player(Owner.Player).WeaponOwned[HexenDefs::WP_SECOND] &&
+			Player(Owner.Player).WeaponOwned[HexenDefs::WP_SECOND].CheckAmmo(false))
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_SECOND];
+		}
+		else 
+		{
+			Player(Owner.Player).PendingWeapon = Player(Owner.Player).WeaponOwned[HexenDefs::WP_FIRST];
 		}
 	}
-	if (ManaType2)
-	{
-		if (EntityEx(Owner).FindInventory(ManaType2).Amount < Player(Owner.Player).GetWeaponManaUse(self))
-		{
-			return false;
-		}
-	}
-	if (ManaType3)
-	{
-		if (EntityEx(Owner).FindInventory(ManaType3).Amount < Player(Owner.Player).GetWeaponManaUse(self))
-		{
-			return false;
-		}
-	}
-	return true;
+	while (!Player(Owner.Player).PendingWeapon);
+	Player(Owner.Player).SetViewState(ps_weapon, GetDownState());
+	return false;
 }
 
 //==========================================================================
@@ -146,7 +224,7 @@ void UseWeaponMana()
 	if (ManaType1)
 	{
 		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType1);
-		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
 			ManaItem.Amount = 0;
@@ -155,7 +233,7 @@ void UseWeaponMana()
 	if (ManaType2)
 	{
 		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType2);
-		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
 			ManaItem.Amount = 0;
@@ -164,7 +242,7 @@ void UseWeaponMana()
 	if (ManaType3)
 	{
 		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType3);
-		ManaItem.Amount -= Player(Owner.Player).GetWeaponManaUse(self);
+		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
 			ManaItem.Amount = 0;
@@ -359,7 +437,7 @@ final void A_ReFire()
 	else
 	{
 		Player(Owner.Player).Refire = 0;
-		Player(Owner.Player).CheckMana();
+		CheckAmmo(true);
 	}
 }
 

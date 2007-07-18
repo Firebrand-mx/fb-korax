@@ -4518,75 +4518,13 @@ void MovePsprites(float deltaTime)
 
 //==========================================================================
 //
-//  CheckMana
-//
-//  Returns true if there is enough mana to shoot.  If not, selects the
-// next weapon to use.
-//
-//==========================================================================
-
-bool CheckMana()
-{
-	/*Weapon cur_weap;
-
-	cur_weap = Weapon(player.ViewEnt);
-	if (cur_weap.Mana == MANA_NONE || cur_weap.needsnomana 
-		|| IsWeaponManaUsable(player, cur_weap))*/
-	if (GetWeaponMUse(ReadyWeapon.WeaponType))
-	{
-		return true;
-	}
-	centreprint("No mana");
-	// out of mana, pick a weapon to change to
-	do
-	{
-		if (WeaponOwned[HexenDefs::WP_EIGHTH] && GetWeaponMUse(HexenDefs::WP_EIGHTH))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_EIGHTH];
-		}
-		else if (WeaponOwned[HexenDefs::WP_SEVENTH] && GetWeaponMUse(HexenDefs::WP_SEVENTH))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_SEVENTH];
-		}
-		else if (WeaponOwned[HexenDefs::WP_SIXTH] && GetWeaponMUse(HexenDefs::WP_SIXTH))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_SIXTH];
-		}
-		else if (WeaponOwned[HexenDefs::WP_FIFTH] && GetWeaponMUse(HexenDefs::WP_FIFTH))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_FIFTH];
-		}
-		else if (WeaponOwned[HexenDefs::WP_FOURTH] && GetWeaponMUse(HexenDefs::WP_FOURTH))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_FOURTH];
-		}
-		else if (WeaponOwned[HexenDefs::WP_THIRD] && GetWeaponMUse(HexenDefs::WP_THIRD))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_THIRD];
-		}
-		else if (WeaponOwned[HexenDefs::WP_SECOND] && GetWeaponMUse(HexenDefs::WP_SECOND))
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_SECOND];
-		}
-		else 
-		{
-			PendingWeapon = WeaponOwned[HexenDefs::WP_FIRST];
-		}
-	}
-	while (!PendingWeapon);
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetDownState());
-	return false;
-}
-
-//==========================================================================
-//
 //  FireWeapon
 //
 //==========================================================================
 
 void FireWeapon()
 {
-	if (!CheckMana())
+	if (!ReadyWeapon.CheckAmmo(true))
 	{
 		return;
 	}
@@ -4670,85 +4608,6 @@ void PostMorphWeapon(int weapon)
 	SetWeapon(weapon);
 	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).UpState);
-}
-
-//==========================================================================
-//
-//  GetWeaponManaUse
-//
-//==========================================================================
-
-int GetWeaponManaUse(WeaponEx weapon)
-{
-	int manause = weapon.manause;
-	if (weapon.wis_mod)
-	{
-		manause = manause * 10 / wisdom;
-	}
-	// [FB] Always use mana, no matter what
-	if(manause < 1)
-	{
-		manause = 1;
-	}
-	return manause;
-}
-
-//==========================================================================
-//
-//  GetWeaponClassManaUse
-//
-//==========================================================================
-
-int GetWeaponClassManaUse(class<WeaponEx> weapon)
-{
-	int manause = weapon.default.manause;
-	if (weapon.default.wis_mod)
-	{
-		manause = manause * 10 / wisdom;
-	}
-	// [FB] Always use mana, no matter what
-	if(manause < 1)
-	{
-		manause = 1;
-	}
-	return manause;
-}
-
-//==========================================================================
-//
-//  GetWeaponMUse
-//
-//==========================================================================
-
-bool GetWeaponMUse(int weapon)
-{
-	class<WeaponEx>	w;
-
-	w = GetWea(weapon);
-	if (!w.default.ManaType1 && !w.default.ManaType2 && !w.default.ManaType3)
-	{
-		return true;
-	}
-	if (w.default.needsnomana)
-	{
-		return true;
-	}
-	if (w.default.ManaType1 &&
-		EntityEx(MO).FindInventory(w.default.ManaType1).Amount < GetWeaponClassManaUse(w))
-	{
-		return false;
-	}
-	if (w.default.ManaType2 &&
-		EntityEx(MO).FindInventory(w.default.ManaType2).Amount < GetWeaponClassManaUse(w))
-	{
-		return false;
-	}
-	if (w.default.ManaType3 &&
-		EntityEx(MO).FindInventory(w.default.ManaType3).Amount < GetWeaponClassManaUse(w))
-	{
-		return false;
-	}
-	return true;
 }
 
 //==========================================================================
