@@ -1231,9 +1231,13 @@ bool GiveMana(class<Ammo> mana, int count)
 
 void GotAmmo(Ammo NewAmmo)
 {
-	if (Bot)
+	if (ReadyWeapon.bWimpyWeapon)
 	{
-		Bot.GaveMana(NewAmmo);
+		WeaponEx Best = WeaponEx(BestWeapon(class<Ammo>(NewAmmo.Class)));
+		if (Best && Best.SelectionOrder < ReadyWeapon.SelectionOrder)
+		{
+			PendingWeapon = Best;
+		}
 	}
 }
 
