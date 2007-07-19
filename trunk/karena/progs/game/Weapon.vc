@@ -79,6 +79,28 @@ state GetReadyState()
 
 //==========================================================================
 //
+//  TryPickup
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+	if (Player(Toucher.Player).WeaponOwned[WeaponType])
+	{
+		return false;
+	}
+
+	Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1);
+	Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2);
+	Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3);
+
+	AttachToOwner(Toucher);
+	Player(Toucher.Player).WeaponOwned[WeaponType] = self;
+	return true;
+}
+
+//==========================================================================
+//
 //	AttachToOwner
 //
 //==========================================================================
