@@ -33,23 +33,10 @@
 class WeaponEx : Weapon
 	abstract;
 
-const float LOWERSPEED		= 6.0;
-const float RAISESPEED		= 6.0;
-
-const float WEAPONBOTTOM	= 128.0;
-const float WEAPONTOP		= 32.0;
-
-class<Ammo> ManaType1;
-class<Ammo> ManaType2;
-class<Ammo> ManaType3;
-int manause;
+class<Ammo>		AmmoType3;
+int				AmmoGive3;
+int				AmmoUse3;
 bool needsnomana;
-state UpState;
-state DownState;
-state ReadyState;
-state AttackState;
-state HoldAttackState;
-state FlashState;
 float PSpriteSY;	// Y-adjustment value for full screen
 
 int WeaponType;
@@ -111,7 +98,7 @@ void SnoutSniff()
 
 int GetManaUse()
 {
-	int manause = manause;
+	int manause = AmmoUse1;
 	if (wis_mod)
 	{
 		manause = manause * 10 / Player(Owner.Player).wisdom;
@@ -135,24 +122,20 @@ int GetManaUse()
 
 bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
 {
-	if (!ManaType1 && !ManaType2 && !ManaType3)
-	{
-		return true;
-	}
 	if (!RequireAmmo && needsnomana)
 	{
 		return true;
 	}
 	bool Good = true;
-	if (ManaType1 && EntityEx(Owner).FindInventory(ManaType1).Amount < GetManaUse())
+	if (AmmoType1 && EntityEx(Owner).FindInventory(AmmoType1).Amount < GetManaUse())
 	{
 		Good = false;
 	}
-	if (ManaType2 && EntityEx(Owner).FindInventory(ManaType2).Amount < GetManaUse())
+	if (AmmoType2 && EntityEx(Owner).FindInventory(AmmoType2).Amount < GetManaUse())
 	{
 		Good = false;
 	}
-	if (ManaType3 && EntityEx(Owner).FindInventory(ManaType3).Amount < GetManaUse())
+	if (AmmoType3 && EntityEx(Owner).FindInventory(AmmoType3).Amount < GetManaUse())
 	{
 		Good = false;
 	}
@@ -182,27 +165,27 @@ bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
 
 void UseWeaponMana()
 {
-	if (ManaType1)
+	if (AmmoType1)
 	{
-		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType1);
+		Inventory ManaItem = EntityEx(Owner).FindInventory(AmmoType1);
 		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
 			ManaItem.Amount = 0;
 		}
 	}
-	if (ManaType2)
+	if (AmmoType2)
 	{
-		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType2);
+		Inventory ManaItem = EntityEx(Owner).FindInventory(AmmoType2);
 		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
 			ManaItem.Amount = 0;
 		}
 	}
-	if (ManaType3)
+	if (AmmoType3)
 	{
-		Inventory ManaItem = EntityEx(Owner).FindInventory(ManaType3);
+		Inventory ManaItem = EntityEx(Owner).FindInventory(AmmoType3);
 		ManaItem.Amount -= GetManaUse();
 		if (ManaItem.Amount < 0)
 		{
