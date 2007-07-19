@@ -249,8 +249,8 @@ float AngleTo(TVec dest)
 
 bool CheckItem(Actor item)
 {
+	Inventory TmpItem;
 	int piece;
-	int mana;
 
 	bNewItemIsWeapon = false;
 	bNewItemIsPowerup = false;
@@ -272,8 +272,19 @@ bool CheckItem(Actor item)
 		}*/
 
 		// If we don't have the weapon, pick it up
-		if (!player.WeaponOwned[Wpn.WeaponType])
+		bool HaveWeapon = false;
+		for (TmpItem = botmo.Inventory; TmpItem; TmpItem = TmpItem.Inventory)
+		{
+			if (WeaponEx(TmpItem) && WeaponEx(TmpItem).Slot == Wpn.Slot)
+			{
+				HaveWeapon = true;
+				break;
+			}
+		}
+		if (!HaveWeapon)
+		{
 			return true;
+		}
 
 		//	Check if we can pick it up for mana
 		if (Wpn.AmmoType1)
@@ -2459,28 +2470,6 @@ void BotTick(float deltaTime)
 	if (t_anticip <= 0.0)
 	{
 		t_anticip = 0.0;
-	}
-}
-
-//==========================================================================
-//
-//	GaveMana
-//
-//==========================================================================
-
-void GaveMana(Ammo mana)
-{
-	int i;
-	if (player.ReadyWeapon.WeaponType == HexenDefs::WP_FIRST)
-	{
-		for (i = HexenDefs::NUMWEAPONS - 1; i > -1; i--)
-		{
-			if (player.WeaponOwned[i]) 
-			{
-				player.PendingWeapon = player.WeaponOwned[i];
-				return;
-			}
-		}
 	}
 }
 
