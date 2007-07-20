@@ -36,11 +36,34 @@ int WeaponClass;
 
 bool TryPickup(EntityEx Toucher)
 {
-	bool gaveMana;
-	bool gaveWeapon;
-	bool mm1;
-	bool mm2;
-	bool mm3;
+	class<WeaponEx> WpnClass = MainGameInfo(Level.Game).WeaponClasses[
+			WeaponType * HexenDefs::NUMCLASSES + Toucher.Player.PClass];
+	Inventory Wpn = Toucher.FindInventory(WpnClass);
+
+	if (Wpn)
+	{
+		bool gaveMana = false;
+		if (Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1))
+		{
+			gaveMana = true;
+		}
+		if (Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2))
+		{
+			gaveMana = true;
+		}
+		if (Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3))
+		{
+			gaveMana = true;
+		}
+		if (!gaveMana)
+		{
+			// Player didn't need any mana
+			return false;
+		}
+		PickupMessage = Player(Toucher.Player).GetWeaponPickupText(WeaponType);
+		GoAwayAndDie();
+		return true;
+	}
 
 /*	if ((WeaponType > WP_FOURTH && P.Player.exp_level < 2) ||
 	    (WeaponType == WP_EIGHTH && P.Player.exp_level < 3))
@@ -50,113 +73,19 @@ bool TryPickup(EntityEx Toucher)
 		return;
 	}*/
 
-//[Korax]	
-/*	if (Toucher.Player.PClass != WeaponClass)
+	Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1);
+	Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2);
+	Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3);
+
+	Wpn = Spawn(WpnClass);
+	Wpn.AttachToOwner(Toucher);
+	if (WeaponType > Player(Toucher.Player).ReadyWeapon.WeaponType)
 	{
-		// Wrong class, but try to pick up for mana
-		if (Level.Game.netgame && !Level.Game.deathmatch)
-		{
-			// Can't pick up weapons for other classes in coop netplay
-			return;
-		}
-		if (WeaponType == HexenDefs::WP_SECOND)
-		{
-			if (!Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25))
-			{
-				return;
-			}
-		}
-		else
-		{
-			if (!Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25))
-			{
-				return;
-			}
-		}
-	}
-	else if (Level.Game.netgame && !Level.Game.deathmatch)
-	{
-		// Cooperative net-game
-		if (Player(Toucher.Player).WeaponOwned[WeaponType])
-		{
-			return;
-		}
-		Player(Toucher.Player).WeaponOwned[WeaponType] = true;
-		if (WeaponType == HexenDefs::WP_SECOND)
-		{
-			Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
-		}
-		else
-		{
-			Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
-		}
-		Player(Toucher.Player).PendingWeapon = WeaponType;
-		remove = false;
-	}
-	else*/
-	{
-		// Deathmatch or single player game
-		/*if (WeaponType == HexenDefs::WP_SECOND)
-		{
-			gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_1, 25);
-		}
-		else
-		{
-			gaveMana = Player(Toucher.Player).GiveMana(HexenDefs::MANA_2, 25);
-		}*/
-		if (Player(Toucher.Player).WeaponOwned[WeaponType])
-		{
-			gaveWeapon = false;
-			gaveMana = false;
-			if (Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1))
-			{
-				gaveMana = true;
-			}
-			if (Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2))
-			{
-				gaveMana = true;
-			}
-			if (Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3))
-			{
-				gaveMana = true;
-			}
-		}
-		else
-		{
-			gaveWeapon = true;
-			Player(Toucher.Player).WeaponOwned[WeaponType] =
-				Spawn(MainGameInfo(Level.Game).WeaponClasses[
-				WeaponType * HexenDefs::NUMCLASSES + Toucher.Player.PClass]);
-			Player(Toucher.Player).WeaponOwned[WeaponType].AttachToOwner(Toucher);
-			if (WeaponType > Player(Toucher.Player).ReadyWeapon.WeaponType)
-			{
-				// Only switch to more powerful weapons
-				Player(Toucher.Player).PendingWeapon = Player(Toucher.Player).WeaponOwned[WeaponType];
-			}
-			
-			gaveMana = false;
-			if (Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1))
-			{
-				gaveMana = true;
-			}
-			if (Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2))
-			{
-				gaveMana = true;
-			}
-			if (Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3))
-			{
-				gaveMana = true;
-			}
-		}
-		if (!gaveWeapon && !gaveMana)
-		{
-			// Player didn't need the weapon or any mana
-			return false;
-		}
+		// Only switch to more powerful weapons
+		Player(Toucher.Player).PendingWeapon = WeaponEx(Wpn);
 	}
 
-	PickupMessage = Player(Toucher.Player).GetWeaponPickupText(WeaponType);
-
+	PickupMessage = Wpn.PickupMessage;
 	GoAwayAndDie();
 	return true;
 }
