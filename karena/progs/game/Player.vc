@@ -275,9 +275,10 @@ void SpawnClient()
 	int j;
 	int oldKeys;
 //	int oldPieces;
-	WeaponEx oldWeaponowned[HexenDefs::NUMWEAPONS];
 	bool playerWasReborn;
 	WeaponEx bestWeapon;
+	EntityEx OldMO = EntityEx(MO);
+	Inventory Item;
 
 	Attacker = none;
 	Poisoner = none;
@@ -292,10 +293,6 @@ void SpawnClient()
 		// Cooperative net-play, retain keys and weapons
 		oldKeys = Keys;
 //		oldPieces = Pieces;
-		for (j = 0; j < HexenDefs::NUMWEAPONS; j++)
-		{
-			oldWeaponowned[j] = WeaponOwned[j];
-		}
 		playerWasReborn = (PlayerState == PST_REBORN);
 	}
 
@@ -315,13 +312,23 @@ void SpawnClient()
 		// Restore keys and weapons when reborn in co-op
 		Keys = oldKeys;
 //		player.Pieces = oldPieces;
-		for (bestWeapon = none, j = 0; j < HexenDefs::NUMWEAPONS; j++)
+		bestWeapon = none;
+		if (OldMO)
 		{
-			if (oldWeaponowned[j])
+			for (Item = OldMO.Inventory; Item; )
 			{
-				bestWeapon = oldWeaponowned[j];
-				oldWeaponowned[j].AttachToOwner(EntityEx(MO));
-				WeaponOwned[j] = oldWeaponowned[j];
+				Inventory Next = Item.Inventory;
+				if (WeaponEx(Item))
+				{
+					if (!bestWeapon || bestWeapon.SelectionOrder >
+						WeaponEx(Item).SelectionOrder)
+					{
+						bestWeapon = WeaponEx(Item);
+					}
+					Item.AttachToOwner(EntityEx(MO));
+					WeaponOwned[WeaponEx(Item).WeaponType] = WeaponEx(Item);
+				}
+				Item = Next;
 			}
 		}
 		GiveMana(ItemManaBlue, 0);
@@ -350,12 +357,12 @@ void SpawnClient()
 void NetGameReborn()
 {
 	int i;
-	WeaponEx oldWeaponowned[HexenDefs::NUMWEAPONS];
 	int oldKeys;
 //	int oldPieces;
 	bool foundSpot;
 	WeaponEx bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
+	Inventory Item;
 
 	// remove pitch and roll angles from corpse
 	MO.Angles.pitch = 0.0;
@@ -376,10 +383,6 @@ void NetGameReborn()
 	// Cooperative net-play, retain keys and weapons
 	oldKeys = Keys;
 //	oldPieces = Pieces;
-	for (i = 0; i < HexenDefs::NUMWEAPONS; i++)
-	{
-		oldWeaponowned[i] = WeaponOwned[i];
-	}
 
 	foundSpot = false;
 	if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
@@ -415,13 +418,18 @@ void NetGameReborn()
 	// Restore keys and weapons
 	Keys = oldKeys;
 //	Pieces = oldPieces;
-	for (bestWeapon = none, i = 0; i < HexenDefs::NUMWEAPONS; i++)
+	bestWeapon = none;
+	for (Item = OldMO.Inventory; Item; Item = Item.Inventory)
 	{
-		if (oldWeaponowned[i])
+		if (WeaponEx(Item))
 		{
-			bestWeapon = oldWeaponowned[i];
-			oldWeaponowned[i].AttachToOwner(EntityEx(MO));
-			WeaponOwned[i] = oldWeaponowned[i];
+			if (!bestWeapon || bestWeapon.SelectionOrder >
+				WeaponEx(Item).SelectionOrder)
+			{
+				bestWeapon = WeaponEx(Item);
+			}
+			Item.AttachToOwner(EntityEx(MO));
+			WeaponOwned[WeaponEx(Item).WeaponType] = WeaponEx(Item);
 		}
 	}
 	GiveMana(ItemManaBlue, 0);
@@ -962,7 +970,8 @@ void SpawnPlayer(mthing_t * mthing)
 		{
 			Wpn.Destroy();
 		}
-		SetWeapon(HexenDefs::WP_SECOND);
+		SetWeapon(WeaponEx(pp.FindInventory(MainGameInfo(Level.Game).WeaponClasses[
+			HexenDefs::WP_SECOND * HexenDefs::NUMCLASSES + PClass])));
 	}
 	else
 	{
@@ -1126,7 +1135,7 @@ void PlayerExitMap(bool clusterChange)
 
 	if (Morph.bMorphed/*MorphTime*/)
 	{
-		SetWeapon(Actor(MO)._Special1);	// Restore weapon
+		SetWeapon(WeaponEx(Actor(MO).Tracer));	// Restore weapon
 		Morph.bMorphed = false;
 		Morph.bTimer = false;
 		Morph.bUntilDeath = false;
@@ -2598,54 +2607,6 @@ void PlayerInContents(float deltaTime)
 
 //==========================================================================
 //
-//  PrevWeapon
-//
-//==========================================================================
-
-void PrevWeapon()
-{
-	int			i;
-	int			NewWeap;
-
-	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
-		return;
-	for (i = HexenDefs::NUMWEAPONS - 1; i > 0; i--)
-	{
-		NewWeap = (ReadyWeapon.WeaponType + i) % HexenDefs::NUMWEAPONS;
-		if (WeaponOwned[NewWeap])
-		{
-			PendingWeapon = WeaponOwned[NewWeap];
-			return;
-		}
-	}
-}
-
-//==========================================================================
-//
-//  NextWeapon
-//
-//==========================================================================
-
-void NextWeapon()
-{
-	int			i;
-	int			NewWeap;
-
-	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
-		return;
-	for (i = 1; i < HexenDefs::NUMWEAPONS; i++)
-	{
-		NewWeap = (ReadyWeapon.WeaponType + i) % HexenDefs::NUMWEAPONS;
-		if (WeaponOwned[NewWeap])
-		{
-			PendingWeapon = WeaponOwned[NewWeap];
-			return;
-		}
-	}
-}
-
-//==========================================================================
-//
 //  PlayerImpulse
 //
 //==========================================================================
@@ -2696,14 +2657,6 @@ void PlayerImpulse()
 	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
 	{
 		Actor(MO).Damage(none, Actor(self.MO), 10000);
-	}
-	else if (impulse == 17)
-	{
-		PrevWeapon();
-	}
-	else if (impulse == 18)
-	{
-		NextWeapon();
 	}
 	// [FB] We want to make the scoreboard accesible with a new impulse value
 	else if (impulse == HexenDefs::IMPULSE__SCOREBOARD)
@@ -2869,7 +2822,7 @@ bool UndoPlayerMorph()
 	Health = A.Health;
 	PClass = BaseClass;
 	SetPlayerColour();
-	PostMorphWeapon(Actor(MO)._Special1);
+	PostMorphWeapon(WeaponEx(Actor(MO).Tracer));
 
 	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
 		20.0 * sin(MO.Angles.yaw), Actor::TELEFOGHEIGHT));
@@ -4428,9 +4381,9 @@ void AdjustPlayerAngle(EntityEx AimTarget)
 //
 //==========================================================================
 
-void SetWeapon(int NewWeapon)
+void SetWeapon(WeaponEx NewWeapon)
 {
-	ReadyWeapon = WeaponOwned[NewWeapon];
+	ReadyWeapon = NewWeapon;
 	PendingWeapon = none;
 
 	ViewEnt = ReadyWeapon;
@@ -4572,7 +4525,12 @@ void ActivateMorphWeapon()
 	}
 
 	ViewStates[ps_weapon].SY = WeaponEx::WEAPONTOP;
-	SetWeapon(HexenDefs::WP_FIRST);	// Snout is the first weapon
+	WeaponEx Wpn = Level.Spawn(WeaponPigSnout);
+	if (!Wpn.TryPickup(EntityEx(MO)))
+	{
+		Wpn.Destroy();
+	}
+	SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).ReadyState);
 }
 
@@ -4582,8 +4540,9 @@ void ActivateMorphWeapon()
 //
 //==========================================================================
 
-void PostMorphWeapon(int weapon)
+void PostMorphWeapon(WeaponEx weapon)
 {
+	ReadyWeapon.Destroy();
 	SetWeapon(weapon);
 	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).UpState);
@@ -4839,17 +4798,14 @@ void Cheat_Gimme()
 		ArmorPoints = 200;
 		for (i = 0; i < HexenDefs::NUMWEAPONS; i++)
 		{
-			if (!WeaponOwned[i])
+			WeaponEx Wpn = Level.Spawn(MainGameInfo(Level.Game).WeaponClasses[
+				i * HexenDefs::NUMCLASSES + PClass]);
+			Wpn.AmmoGive1 = 0;
+			Wpn.AmmoGive2 = 0;
+			Wpn.AmmoGive3 = 0;
+			if (!Wpn.TryPickup(EntityEx(MO)))
 			{
-				WeaponEx Wpn = Level.Spawn(MainGameInfo(Level.Game).WeaponClasses[
-					i * HexenDefs::NUMCLASSES + PClass]);
-				Wpn.AmmoGive1 = 0;
-				Wpn.AmmoGive2 = 0;
-				Wpn.AmmoGive3 = 0;
-				if (!Wpn.TryPickup(EntityEx(MO)))
-				{
-					Wpn.Destroy();
-				}
+				Wpn.Destroy();
 			}
 		}
 		foreach AllClasses(Ammo, Cls)
@@ -4993,21 +4949,33 @@ void Cheat_Morph()
 
 void Cheat_NoWeapons()
 {
-	int i;
-
 	if (Morph.bMorphed/*MorphTime*/)
 	{
 		return;
 	}
-	for (i = 1; i < 4; i++)
+	//	Find weakest weapon.
+	Inventory Item;
+	WeaponEx Weakest = none;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
 	{
-		if (WeaponOwned[i])
+		if (Weapon(Item) && (!Weakest ||
+			Weakest.SelectionOrder < Weapon(Item).SelectionOrder))
 		{
-			WeaponOwned[i].Destroy();
+			Weakest = WeaponEx(Item);
 		}
 	}
-	PendingWeapon = WeaponOwned[HexenDefs::WP_FIRST];
-//	Pieces = 0;
+	//	Removed all others.
+	for (Item = EntityEx(MO).Inventory; Item; )
+	{
+		Inventory Next = Item.Inventory;
+		if (Weapon(Item) && Item != Weakest)
+		{
+			Item.Destroy();
+		}
+		Item = Next;
+	}
+	SetWeapon(Weakest);
+	PendingWeapon = Weakest;
 	cprint("CHEATER - YOU DON'T DESERVE WEAPONS");
 }
 
@@ -5052,7 +5020,7 @@ void Cheat_Class()
 */
 	ArmorPoints = 0;
 	BaseClass = pclass;
-	PostMorphWeapon(HexenDefs::WP_FIRST);
+//	PostMorphWeapon(HexenDefs::WP_FIRST);
 	SetCvar('class', pclass);
 	SB_Start();
 }
