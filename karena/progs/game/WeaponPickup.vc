@@ -36,8 +36,7 @@ int WeaponClass;
 
 bool TryPickup(EntityEx Toucher)
 {
-	class<WeaponEx> WpnClass = MainGameInfo(Level.Game).WeaponClasses[
-			WeaponType * HexenDefs::NUMCLASSES + Toucher.Player.PClass];
+	class<WeaponEx> WpnClass = PlayerPawn(Toucher).WeaponClasses[WeaponType];
 	Inventory Wpn = Toucher.FindInventory(WpnClass);
 
 	if (Wpn)
@@ -60,7 +59,7 @@ bool TryPickup(EntityEx Toucher)
 			// Player didn't need any mana
 			return false;
 		}
-		PickupMessage = Player(Toucher.Player).GetWeaponPickupText(WeaponType);
+		PickupMessage = WpnClass.default.PickUpMessage;
 		GoAwayAndDie();
 		return true;
 	}
