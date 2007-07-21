@@ -942,26 +942,7 @@ void SpawnPlayer(mthing_t * mthing)
 		{
 			pp.Inventory.Destroy();
 		}
-		for (i = 0; i < pp.InitialInventory.Num; i++)
-		{
-			Item = Level.Spawn(pp.InitialInventory[i].Type);
-			Item.Amount = pp.InitialInventory[i].Amount;
-			if (WeaponEx(Item))
-			{
-				//	For better control empty weapon's ammo.
-				WeaponEx(Item).AmmoGive1 = 0;
-				WeaponEx(Item).AmmoGive2 = 0;
-				WeaponEx(Item).AmmoGive3 = 0;
-			}
-			if (!Item.TryPickup(pp))
-			{
-				Item.Destroy();
-			}
-			else if (Weapon(Item) && Weapon(Item).CheckAmmo(false))
-			{
-				SetWeapon(WeaponEx(Item));
-			}
-		}
+		AddDefaultInventory();
 	}
 	SetupPsprites();
 	if (Level.Game.deathmatch)
@@ -1041,6 +1022,38 @@ void SpawnPlayer(mthing_t * mthing)
 
 	// [FB] Destroy all things touching players
 	Actor(MO).TeleportMove(MO.Origin);
+}
+
+//===========================================================================
+//
+//	AddDefaultInventory
+//
+//===========================================================================
+
+final void AddDefaultInventory()
+{
+	int i;
+
+	for (i = 0; i < PlayerPawn(MO).InitialInventory.Num; i++)
+	{
+		Inventory Item = Level.Spawn(PlayerPawn(MO).InitialInventory[i].Type);
+		Item.Amount = PlayerPawn(MO).InitialInventory[i].Amount;
+		if (WeaponEx(Item))
+		{
+			//	For better control empty weapon's ammo.
+			WeaponEx(Item).AmmoGive1 = 0;
+			WeaponEx(Item).AmmoGive2 = 0;
+			WeaponEx(Item).AmmoGive3 = 0;
+		}
+		if (!Item.TryPickup(EntityEx(MO)))
+		{
+			Item.Destroy();
+		}
+		else if (Weapon(Item) && Weapon(Item).CheckAmmo(false))
+		{
+			SetWeapon(WeaponEx(Item));
+		}
+	}
 }
 
 //==========================================================================
@@ -4478,45 +4491,18 @@ void FireWeapon()
 
 void ActivateMorphWeapon()
 {
-	int i;
-
+	AddDefaultInventory();
+	ViewStates[ps_weapon].SY = WeaponEx::WEAPONTOP;
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_HERESIARCH:
-		for (i = 0; i < HexenDefs::NUMWEAPONS; i++)
-		{
-			WeaponEx Wpn = Level.Spawn(MainGameInfo(Level.Game).WeaponClasses[
-				i * HexenDefs::NUMCLASSES + PClass]);
-			Wpn.AmmoGive1 = 0;
-			Wpn.AmmoGive2 = 0;
-			Wpn.AmmoGive3 = 0;
-			if (!Wpn.TryPickup(EntityEx(MO)))
-			{
-				Wpn.Destroy();
-			}
-		}
-		GiveMana(ItemManaBlue, 0);
-		GiveMana(ItemManaGreen, 0);
-		GiveMana(ItemManaCombined, 0);
-		GiveMana(ArtifactBlastRadius, 0);
-		GiveMana(ArtifactFlechette, 0);
-		EntityEx(MO).FindInventory(ItemManaBlue).Amount = 100;
-		EntityEx(MO).FindInventory(ItemManaGreen).Amount = 100;
-		EntityEx(MO).FindInventory(ItemManaCombined).Amount = 100;
-		EntityEx(MO).FindInventory(ArtifactBlastRadius).Amount = 30;
-		EntityEx(MO).FindInventory(ArtifactFlechette).Amount = 30;
+		SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponHeresiarchClaw)));
 		break;
 	case HexenDefs::PCLASS_PIG:
+		SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 		break;
 	}
 
-	ViewStates[ps_weapon].SY = WeaponEx::WEAPONTOP;
-	WeaponEx Wpn = Level.Spawn(WeaponPigSnout);
-	if (!Wpn.TryPickup(EntityEx(MO)))
-	{
-		Wpn.Destroy();
-	}
-	SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).ReadyState);
 }
 
@@ -4532,28 +4518,6 @@ void PostMorphWeapon(WeaponEx weapon)
 	SetWeapon(weapon);
 	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
 	SetViewState(ps_weapon, WeaponEx(ViewEnt).UpState);
-}
-
-//==========================================================================
-//
-//  GetWea
-//
-//==========================================================================
-
-class<WeaponEx> GetWea(int weapon)
-{
-	return MainGameInfo(Level.Game).WeaponClasses[weapon * HexenDefs::NUMCLASSES + PClass];
-}
-
-//==========================================================================
-//
-//  GetWeaponPickupText
-//
-//==========================================================================
-
-string GetWeaponPickupText(int weapon)
-{
-	return GetWea(weapon).default.PickUpMessage;
 }
 
 //==========================================================================
@@ -4771,6 +4735,7 @@ void Cheat_NoClip()
 void Cheat_Gimme()
 {
 	class<Inventory>	Cls;
+	class<WeaponPickup>	WpnCls;
 
 	if (Cmd_CheckParm("weapons"))
 	{
@@ -4782,10 +4747,9 @@ void Cheat_Gimme()
 		}
 */
 		ArmorPoints = 200;
-		for (i = 0; i < HexenDefs::NUMWEAPONS; i++)
+		foreach AllClasses(WeaponPickup, WpnCls)
 		{
-			WeaponEx Wpn = Level.Spawn(MainGameInfo(Level.Game).WeaponClasses[
-				i * HexenDefs::NUMCLASSES + PClass]);
+			WeaponPickup Wpn = Level.Spawn(WpnCls);
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
 			Wpn.AmmoGive3 = 0;
