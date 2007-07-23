@@ -26,8 +26,6 @@
 class WeaponPickup : WeaponEx
 	abstract;
 
-int WeaponClass;
-
 //==========================================================================
 //
 //  TryPickup
@@ -36,7 +34,7 @@ int WeaponClass;
 
 bool TryPickup(EntityEx Toucher)
 {
-	class<WeaponEx> WpnClass = PlayerPawn(Toucher).WeaponClasses[WeaponType];
+	class<WeaponEx> WpnClass = PlayerPawn(Toucher).WeaponClasses[Slot - 1];
 	if (!WpnClass)
 	{
 		return false;
@@ -82,7 +80,7 @@ bool TryPickup(EntityEx Toucher)
 
 	Wpn = Spawn(WpnClass);
 	Wpn.AttachToOwner(Toucher);
-	if (WeaponType > Player(Toucher.Player).ReadyWeapon.WeaponType)
+	if (Slot > Player(Toucher.Player).ReadyWeapon.Slot)
 	{
 		// Only switch to more powerful weapons
 		Player(Toucher.Player).PendingWeapon = WeaponEx(Wpn);

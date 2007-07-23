@@ -568,7 +568,6 @@ void SB_DrawMainBar()
 	int sb_manaVial4;
 	int sb_manaVial5;
 	int Mana5DimBase;
-	int readyweapon;
 
 	SB_DrawBackground();
 	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
@@ -619,70 +618,42 @@ void SB_DrawMainBar()
 	sb_mana3 = 1;
 	sb_mana4 = 1;
 	sb_mana5 = 1;
+	sb_manaVial1 = 0;
+	sb_manaVial2 = 0;
+	sb_manaVial3 = 0;
 	// Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
-	if (readyweapon == HexenDefs::WP_FIRST)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_SECOND)
-	{
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 1;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_THIRD)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 1;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_FOURTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 1;
-	}
-	else if (readyweapon == HexenDefs::WP_FIFTH)
-	{
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 1;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_SIXTH)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 1;
-		sb_manaVial3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_SEVENTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_manaVial1 = 0;
-		sb_manaVial2 = 0;
-		sb_manaVial3 = 1;
-	}
-	else
+	if (cl.ReadyWeapon &&
+		(cl.ReadyWeapon.AmmoType1 == ItemManaBlue ||
+		cl.ReadyWeapon.AmmoType2 == ItemManaBlue ||
+		cl.ReadyWeapon.AmmoType3 == ItemManaBlue))
 	{
 		sb_manaVial1 = 1;
+	}
+	if (cl.ReadyWeapon &&
+		(cl.ReadyWeapon.AmmoType1 == ItemManaGreen ||
+		cl.ReadyWeapon.AmmoType2 == ItemManaGreen ||
+		cl.ReadyWeapon.AmmoType3 == ItemManaGreen))
+	{
 		sb_manaVial2 = 1;
+	}
+	if (cl.ReadyWeapon &&
+		(cl.ReadyWeapon.AmmoType1 == ItemManaCombined ||
+		cl.ReadyWeapon.AmmoType2 == ItemManaCombined ||
+		cl.ReadyWeapon.AmmoType3 == ItemManaCombined))
+	{
 		sb_manaVial3 = 1;
+	}
+	if (!sb_manaVial1)
+	{
+		sb_mana1 = 0;
+	}
+	if (!sb_manaVial2)
+	{
+		sb_mana2 = 0;
+	}
+	if (!sb_manaVial3)
+	{
+		sb_mana3 = 0;
 	}
 	if (cl.altWeapon == HexenDefs::ALTFIRE_BLASTRADIUS)
 	{
@@ -902,7 +873,6 @@ void SB_DrawFullscreenStats()
 	int sb_mana3;
 	int sb_mana4;
 	int sb_mana5;
-	int readyweapon;
 
 	//  [FB] Armorpoints
 	SB_DrawNumber12(50, 430, cl.ArmorPoints);
@@ -974,45 +944,26 @@ void SB_DrawFullscreenStats()
 		break;
 	}
 	// [FB] Update mana graphics based upon mana count/weapon type
-	readyweapon = (cl.SBFlags & HexenDefs::SBF_WPN_MASK) >> HexenDefs::SBF_WPN_SHIFT;
-	if (readyweapon == HexenDefs::WP_FIRST)
+	if (cl.ReadyWeapon &&
+		cl.ReadyWeapon.AmmoType1 != ItemManaBlue &&
+		cl.ReadyWeapon.AmmoType2 != ItemManaBlue &&
+		cl.ReadyWeapon.AmmoType3 != ItemManaBlue)
 	{
 		sb_mana1 = 0;
-		sb_mana2 = 0;
-		sb_mana3 = 0;
 	}
-	else if (readyweapon == HexenDefs::WP_SECOND)
+	if (cl.ReadyWeapon &&
+		cl.ReadyWeapon.AmmoType1 != ItemManaGreen &&
+		cl.ReadyWeapon.AmmoType2 != ItemManaGreen &&
+		cl.ReadyWeapon.AmmoType3 != ItemManaGreen)
 	{
 		sb_mana2 = 0;
+	}
+	if (cl.ReadyWeapon &&
+		cl.ReadyWeapon.AmmoType1 != ItemManaCombined &&
+		cl.ReadyWeapon.AmmoType2 != ItemManaCombined &&
+		cl.ReadyWeapon.AmmoType3 != ItemManaCombined)
+	{
 		sb_mana3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_THIRD)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_FOURTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_FIFTH)
-	{
-		sb_mana2 = 0;
-		sb_mana3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_SIXTH)
-	{
-		sb_mana1 = 0;
-		sb_mana3 = 0;
-	}
-	else if (readyweapon == HexenDefs::WP_SEVENTH)
-	{
-		sb_mana1 = 0;
-		sb_mana2 = 0;
-	}
-	else
-	{
 	}
 
 	DrawFullscreenMana(ItemManaBlue, 235, 0, sb_mana1);
