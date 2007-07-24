@@ -52,13 +52,7 @@ Inventory CreateCopy(EntityEx Toucher)
 	AddAmmo(Toucher, AmmoType2, AmmoGive2);
 	AddAmmo(Toucher, AmmoType3, AmmoGive3);
 
-	Inventory Copy = Spawn(WpnClass);
-	if (Slot > Player(Toucher.Player).ReadyWeapon.Slot)
-	{
-		// Only switch to more powerful weapons
-		Player(Toucher.Player).PendingWeapon = WeaponEx(Copy);
-	}
-
+	Weapon Copy = Spawn(WpnClass);
 	PickupMessage = Copy.PickupMessage;
 	GoAwayAndDie();
 	return Copy;
@@ -79,15 +73,15 @@ final bool PickupForMana(EntityEx Toucher)
 	}
 
 	bool gaveMana = false;
-	if (AddAmmo(Toucher, AmmoType1, AmmoGive1))
+	if (Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1))
 	{
 		gaveMana = true;
 	}
-	if (AddAmmo(Toucher, AmmoType2, AmmoGive2))
+	if (Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2))
 	{
 		gaveMana = true;
 	}
-	if (AddAmmo(Toucher, AmmoType3, AmmoGive3))
+	if (Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3))
 	{
 		gaveMana = true;
 	}
@@ -118,5 +112,4 @@ defaultproperties
 	AmmoGive1 = 25;
 	AmmoGive2 = 25;
 	AmmoGive3 = 25;
-	PickupSound = 'PickupWeapon';
 }
