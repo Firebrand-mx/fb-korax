@@ -76,23 +76,39 @@ state GetReadyState()
 
 //==========================================================================
 //
-//  TryPickup
+//	HandlePickup
+//
+//	In Korax Arena weapons pickups and actual weapon classes are different,
+// so we are using a different pickup handling.
 //
 //==========================================================================
 
-bool TryPickup(EntityEx Toucher)
+bool HandlePickup(Inventory Item)
 {
-	if (Toucher.FindInventory(class<Inventory>(Class)))
+	if (Item.Class == Class)
 	{
-		return false;
+		//	Actual weapon classes are used only internally to give weapons,
+		// so just ignore it.
+		return true;
 	}
 
-	Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1);
-	Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2);
-	Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3);
+	if (WeaponPickup(Item) && PlayerPawn(Owner) &&
+		PlayerPawn(Owner).WeaponClasses[WeaponPickup(Item).Slot - 1] == Class)
+	{
+		//	It's a weapon pickup that will give this weapon, so just pick it
+		// up for more mana.
+		if (WeaponPickup(Item).PickupForMana(EntityEx(Owner)))
+		{
+			Item.bPickupGood = true;
+		}
+		return true;
+	}
 
-	AttachToOwner(Toucher);
-	return true;
+	if (Inventory)
+	{
+		return Inventory.HandlePickup(Item);
+	}
+	return false;
 }
 
 //==========================================================================

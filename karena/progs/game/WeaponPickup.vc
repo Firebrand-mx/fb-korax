@@ -28,42 +28,16 @@ class WeaponPickup : WeaponEx
 
 //==========================================================================
 //
-//  TryPickup
+//	CreateCopy
 //
 //==========================================================================
 
-bool TryPickup(EntityEx Toucher)
+Inventory CreateCopy(EntityEx Toucher)
 {
 	class<WeaponEx> WpnClass = PlayerPawn(Toucher).WeaponClasses[Slot - 1];
 	if (!WpnClass)
 	{
-		return false;
-	}
-	Inventory Wpn = Toucher.FindInventory(WpnClass);
-
-	if (Wpn)
-	{
-		bool gaveMana = false;
-		if (Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1))
-		{
-			gaveMana = true;
-		}
-		if (Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2))
-		{
-			gaveMana = true;
-		}
-		if (Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3))
-		{
-			gaveMana = true;
-		}
-		if (!gaveMana)
-		{
-			// Player didn't need any mana
-			return false;
-		}
-		PickupMessage = WpnClass.default.PickupMessage;
-		GoAwayAndDie();
-		return true;
+		return none;
 	}
 
 /*	if ((WeaponType > WP_FOURTH && P.Player.exp_level < 2) ||
@@ -74,20 +48,55 @@ bool TryPickup(EntityEx Toucher)
 		return;
 	}*/
 
-	Player(Toucher.Player).GiveMana(AmmoType1, AmmoGive1);
-	Player(Toucher.Player).GiveMana(AmmoType2, AmmoGive2);
-	Player(Toucher.Player).GiveMana(AmmoType3, AmmoGive3);
+	AddAmmo(Toucher, AmmoType1, AmmoGive1);
+	AddAmmo(Toucher, AmmoType2, AmmoGive2);
+	AddAmmo(Toucher, AmmoType3, AmmoGive3);
 
-	Wpn = Spawn(WpnClass);
-	Wpn.AttachToOwner(Toucher);
+	Inventory Copy = Spawn(WpnClass);
 	if (Slot > Player(Toucher.Player).ReadyWeapon.Slot)
 	{
 		// Only switch to more powerful weapons
-		Player(Toucher.Player).PendingWeapon = WeaponEx(Wpn);
+		Player(Toucher.Player).PendingWeapon = WeaponEx(Copy);
 	}
 
-	PickupMessage = Wpn.PickupMessage;
+	PickupMessage = Copy.PickupMessage;
 	GoAwayAndDie();
+	return Copy;
+}
+
+//==========================================================================
+//
+//	PickupForMana
+//
+//==========================================================================
+
+final bool PickupForMana(EntityEx Toucher)
+{
+	class<WeaponEx> WpnClass = PlayerPawn(Toucher).WeaponClasses[Slot - 1];
+	if (!WpnClass)
+	{
+		return false;
+	}
+
+	bool gaveMana = false;
+	if (AddAmmo(Toucher, AmmoType1, AmmoGive1))
+	{
+		gaveMana = true;
+	}
+	if (AddAmmo(Toucher, AmmoType2, AmmoGive2))
+	{
+		gaveMana = true;
+	}
+	if (AddAmmo(Toucher, AmmoType3, AmmoGive3))
+	{
+		gaveMana = true;
+	}
+	if (!gaveMana)
+	{
+		// Player didn't need any mana
+		return false;
+	}
+	PickupMessage = WpnClass.default.PickupMessage;
 	return true;
 }
 
