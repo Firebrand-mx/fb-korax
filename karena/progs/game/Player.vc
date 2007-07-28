@@ -267,7 +267,7 @@ void SpawnClient()
 	int oldKeys;
 //	int oldPieces;
 	bool playerWasReborn;
-	WeaponEx bestWeapon;
+	Weapon bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
 	Inventory Item;
 
@@ -309,12 +309,12 @@ void SpawnClient()
 			for (Item = OldMO.Inventory; Item; )
 			{
 				Inventory Next = Item.Inventory;
-				if (WeaponEx(Item))
+				if (Weapon(Item))
 				{
 					if (!bestWeapon || bestWeapon.SelectionOrder >
-						WeaponEx(Item).SelectionOrder)
+						Weapon(Item).SelectionOrder)
 					{
-						bestWeapon = WeaponEx(Item);
+						bestWeapon = Weapon(Item);
 					}
 					Item.AttachToOwner(EntityEx(MO));
 				}
@@ -350,7 +350,7 @@ void NetGameReborn()
 	int oldKeys;
 //	int oldPieces;
 	bool foundSpot;
-	WeaponEx bestWeapon;
+	Weapon bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
 	Inventory Item;
 
@@ -411,12 +411,12 @@ void NetGameReborn()
 	bestWeapon = none;
 	for (Item = OldMO.Inventory; Item; Item = Item.Inventory)
 	{
-		if (WeaponEx(Item))
+		if (Weapon(Item))
 		{
 			if (!bestWeapon || bestWeapon.SelectionOrder >
-				WeaponEx(Item).SelectionOrder)
+				Weapon(Item).SelectionOrder)
 			{
-				bestWeapon = WeaponEx(Item);
+				bestWeapon = Weapon(Item);
 			}
 			Item.AttachToOwner(EntityEx(MO));
 		}
@@ -1031,12 +1031,12 @@ final void AddDefaultInventory()
 	{
 		Inventory Item = Level.Spawn(PlayerPawn(MO).InitialInventory[i].Type);
 		Item.Amount = PlayerPawn(MO).InitialInventory[i].Amount;
-		if (WeaponEx(Item))
+		if (Weapon(Item))
 		{
 			//	For better control empty weapon's ammo.
-			WeaponEx(Item).AmmoGive1 = 0;
-			WeaponEx(Item).AmmoGive2 = 0;
-			WeaponEx(Item).AmmoGive3 = 0;
+			Weapon(Item).AmmoGive1 = 0;
+			Weapon(Item).AmmoGive2 = 0;
+			KArenaWeapon(Item).AmmoGive3 = 0;
 		}
 		if (!Item.TryPickup(EntityEx(MO)))
 		{
@@ -1044,7 +1044,7 @@ final void AddDefaultInventory()
 		}
 		else if (Weapon(Item) && Weapon(Item).CheckAmmo(false))
 		{
-			SetWeapon(WeaponEx(Item));
+			SetWeapon(Weapon(Item));
 		}
 	}
 }
@@ -1127,7 +1127,7 @@ void PlayerExitMap(bool clusterChange)
 
 	if (Morph.bMorphed/*MorphTime*/)
 	{
-		SetWeapon(WeaponEx(Actor(MO).Tracer));	// Restore weapon
+		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
 		Morph.bMorphed = false;
 		Morph.bTimer = false;
 		Morph.bUntilDeath = false;
@@ -1245,7 +1245,7 @@ void GotAmmo(Ammo NewAmmo)
 {
 	if (ReadyWeapon.bWimpyWeapon)
 	{
-		WeaponEx Best = WeaponEx(BestWeapon(class<Ammo>(NewAmmo.Class)));
+		Weapon Best = BestWeapon(class<Ammo>(NewAmmo.Class));
 		if (Best && Best.SelectionOrder < ReadyWeapon.SelectionOrder)
 		{
 			PendingWeapon = Best;
@@ -1431,7 +1431,7 @@ bool GivePower(int power)
 			return false;
 		}
 		Powers[power] = DAMAGETIME;
-		WeaponEx(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
+		KArenaWeapon(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
 		return true;
 	}
 	if (Powers[power])
@@ -2635,7 +2635,7 @@ void PlayerImpulse()
 		// The actual changing of the weapon is done when the weapon
 		// psprite can do it (A_WeaponReady), so it doesn't happen in
 		// the middle of an attack.
-		WeaponEx NewWpn = WeaponEx(GetSlotChangeWeapon(impulse, ReadyWeapon, false));
+		Weapon NewWpn = GetSlotChangeWeapon(impulse, ReadyWeapon, false);
 		if (NewWpn && NewWpn != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 		{
 			PendingWeapon = NewWpn;
@@ -2643,7 +2643,7 @@ void PlayerImpulse()
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
-		WeaponEx Best = WeaponEx(GetPrevWeapon(ReadyWeapon, true));
+		Weapon Best = GetPrevWeapon(ReadyWeapon, true);
 		if (Best && Best != ReadyWeapon)
 		{
 			PendingWeapon = Best;
@@ -2651,7 +2651,7 @@ void PlayerImpulse()
 	}
 	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
-		WeaponEx Best = WeaponEx(GetNextWeapon(ReadyWeapon, true));
+		Weapon Best = GetNextWeapon(ReadyWeapon, true);
 		if (Best && Best != ReadyWeapon)
 		{
 			PendingWeapon = Best;
@@ -2749,7 +2749,7 @@ void MorphPlayerThink()
 	if (!(MO.Velocity.x + MO.Velocity.y) && P_Random() < 64)
 	{
 		// Snout sniff
-		WeaponEx(ViewEnt).SnoutSniff();
+		KArenaWeapon(ViewEnt).SnoutSniff();
 		MO.PlaySound('PigActive1', CHAN_VOICE);	// snort
 		return;
 	}
@@ -2825,7 +2825,7 @@ bool UndoPlayerMorph()
 	Health = A.Health;
 	PClass = BaseClass;
 	SetPlayerColour();
-	PostMorphWeapon(WeaponEx(Actor(MO).Tracer));
+	PostMorphWeapon(Weapon(Actor(MO).Tracer));
 
 	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
 		20.0 * sin(MO.Angles.yaw), Actor::TELEFOGHEIGHT));
@@ -3469,7 +3469,7 @@ void PlayerTick(float deltaTime)
 		if (Powers[pw_damage] <= 0.0)
 		{
 			Powers[pw_damage] = 0.0;
-			WeaponEx(ViewEnt).active_damage = 0; // [FB] Return to using normal damage
+			KArenaWeapon(ViewEnt).active_damage = 0; // [FB] Return to using normal damage
 		}
 	}
 
@@ -4387,7 +4387,7 @@ void SetWeapon(Weapon NewWeapon)
 	PendingWeapon = none;
 
 	ViewEnt = ReadyWeapon;
-	PSpriteSY = WeaponEx(ViewEnt).PSpriteSY;
+	PSpriteSY = Weapon(ViewEnt).PSpriteSY;
 }
 
 //==========================================================================
@@ -4401,8 +4401,8 @@ void SetWeapon(Weapon NewWeapon)
 void BringUpWeapon()
 {
 	PendingWeapon = none;
-	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetUpState());
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetUpState());
 }
 
 //==========================================================================
@@ -4415,7 +4415,7 @@ void BringUpWeapon()
 
 void DropWeapon()
 {
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetDownState());
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetDownState());
 }
 
 //==========================================================================
@@ -4450,7 +4450,7 @@ void SetupPsprites()
 void MovePsprites(float deltaTime)
 {
 //[Korax]
-	if (WeaponEx(ViewEnt).dex_mod)
+	if (KArenaWeapon(ViewEnt).dex_mod)
 	{
 		if (dexterity < 6)
 			deltaTime *= 0.8;
@@ -4480,7 +4480,7 @@ void FireWeapon()
 	}
 
 	MO.SetState(Actor(MO).MissileState);
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).GetAttackState(Refire));
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetAttackState(Refire));
 	HexenLevelInfo(Level).NoiseAlert(Actor(MO), Actor(MO));
 }
 
@@ -4493,18 +4493,18 @@ void FireWeapon()
 void ActivateMorphWeapon()
 {
 	AddDefaultInventory();
-	ViewStates[ps_weapon].SY = WeaponEx::WEAPONTOP;
+	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_HERESIARCH:
-		SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponHeresiarchClaw)));
+		SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponHeresiarchClaw)));
 		break;
 	case HexenDefs::PCLASS_PIG:
-		SetWeapon(WeaponEx(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
+		SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 		break;
 	}
 
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).ReadyState);
+	SetViewState(ps_weapon, Weapon(ViewEnt).ReadyState);
 }
 
 //==========================================================================
@@ -4513,12 +4513,12 @@ void ActivateMorphWeapon()
 //
 //==========================================================================
 
-void PostMorphWeapon(WeaponEx weapon)
+void PostMorphWeapon(Weapon weapon)
 {
 	ReadyWeapon.Destroy();
 	SetWeapon(weapon);
-	ViewStates[ps_weapon].SY = WeaponEx::WEAPONBOTTOM;
-	SetViewState(ps_weapon, WeaponEx(ViewEnt).UpState);
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).UpState);
 }
 
 //==========================================================================
@@ -4906,13 +4906,13 @@ void Cheat_NoWeapons()
 	}
 	//	Find weakest weapon.
 	Inventory Item;
-	WeaponEx Weakest = none;
+	Weapon Weakest = none;
 	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
 	{
 		if (Weapon(Item) && (!Weakest ||
 			Weakest.SelectionOrder < Weapon(Item).SelectionOrder))
 		{
-			Weakest = WeaponEx(Item);
+			Weakest = Weapon(Item);
 		}
 	}
 	//	Removed all others.
@@ -5348,7 +5348,7 @@ void DisplayDeathMessage(EntityEx inflictor, EntityEx source, name DmgType)
 		{
 			if (source.bIsPlayer)
 			{
-				Msg = WeaponEx(inflictor.Player.ViewEnt).Obituary;
+				Msg = KArenaWeapon(inflictor.Player.ViewEnt).Obituary;
 			}
 			else if (source.IsA('Pawn'))
 			{
