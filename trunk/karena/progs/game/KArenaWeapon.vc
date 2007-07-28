@@ -30,28 +30,27 @@
 //**
 //**************************************************************************
 
-class WeaponEx : Weapon
+class KArenaWeapon : Weapon
 	abstract;
 
+//	Third ammo.
 class<Ammo>		AmmoType3;
 int				AmmoGive3;
 int				AmmoUse3;
 Ammo			Ammo3;
 
-float PSpriteSY;	// Y-adjustment value for full screen
+bool			dex_mod;
+bool			str_mod;
+bool			int_mod;
+bool			wis_mod;
+bool			active_damage; 	// [FB] TRUE if PI Damage is active
 
-bool dex_mod;
-bool str_mod;
-bool int_mod;
-bool wis_mod;
-bool active_damage; 	// [FB] TRUE if PI Damage is active
-
-bool bInstantRanged;
-TVec ShotPosition;	// [CW]
+bool			bInstantRanged;
+TVec			ShotPosition;	// [CW]
 
 // [CW] Death messages; used by those who can damage directly
 //		(anything from enviroment to pawns with melee attacks)
-string		Obituary;
+string			Obituary;
 
 //	Bot AI flags
 bool			bBotChooseMelee;
@@ -173,7 +172,7 @@ bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
 	Player(Owner.Player).centreprint("No mana");
 
 	// out of mana, pick a weapon to change to
-	WeaponEx Best = WeaponEx(Player(Owner.Player).BestWeapon());
+	Weapon Best = Player(Owner.Player).BestWeapon();
 
 	Player(Owner.Player).PendingWeapon = Best;
 	Player(Owner.Player).SetViewState(ps_weapon, GetDownState());
