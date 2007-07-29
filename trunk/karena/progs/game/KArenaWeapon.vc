@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -33,7 +33,7 @@
 class KArenaWeapon : Weapon
 	abstract;
 
-//	Third ammo.
+//	Third ammo ... I mean mana.
 class<Ammo>		AmmoType3;
 int				AmmoGive3;
 int				AmmoUse3;
@@ -118,9 +118,8 @@ void SnoutSniff()
 //
 //==========================================================================
 
-int GetManaUse()
+final int GetManaUse(int manause)
 {
-	int manause = AmmoUse1;
 	if (wis_mod)
 	{
 		manause = manause * 10 / Player(Owner.Player).wisdom;
@@ -149,15 +148,15 @@ bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
 		return true;
 	}
 	bool Good = true;
-	if (Ammo1 && Ammo1.Amount < GetManaUse())
+	if (Ammo1 && Ammo1.Amount < GetManaUse(AmmoUse1))
 	{
 		Good = false;
 	}
-	if (Ammo2 && Ammo2.Amount < GetManaUse())
+	if (Ammo2 && Ammo2.Amount < GetManaUse(AmmoUse2))
 	{
 		Good = false;
 	}
-	if (Ammo3 && Ammo3.Amount < GetManaUse())
+	if (Ammo3 && Ammo3.Amount < GetManaUse(AmmoUse3))
 	{
 		Good = false;
 	}
@@ -185,11 +184,11 @@ bool CheckAmmo(bool AutoSwitch, optional bool RequireAmmo)
 //
 //==========================================================================
 
-void UseWeaponMana()
+final void UseWeaponMana()
 {
 	if (Ammo1)
 	{
-		Ammo1.Amount -= GetManaUse();
+		Ammo1.Amount -= GetManaUse(AmmoUse1);
 		if (Ammo1.Amount < 0)
 		{
 			Ammo1.Amount = 0;
@@ -197,7 +196,7 @@ void UseWeaponMana()
 	}
 	if (Ammo2)
 	{
-		Ammo2.Amount -= GetManaUse();
+		Ammo2.Amount -= GetManaUse(AmmoUse2);
 		if (Ammo2.Amount < 0)
 		{
 			Ammo2.Amount = 0;
@@ -205,7 +204,7 @@ void UseWeaponMana()
 	}
 	if (Ammo3)
 	{
-		Ammo3.Amount -= GetManaUse();
+		Ammo3.Amount -= GetManaUse(AmmoUse3);
 		if (Ammo3.Amount < 0)
 		{
 			Ammo3.Amount = 0;
