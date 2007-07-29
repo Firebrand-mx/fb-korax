@@ -299,9 +299,9 @@ void Died(EntityEx source, EntityEx inflictor)
 	}
 //[Korax]
 	// [FB] Remove muzzle flash
-	if ((Effects & EF_DLIGHT_MASK) == EF_DL_MUZZLEFLASH)
+	if (bMuzzleFlash)
 	{
-		Effects &= ~EF_DLIGHT_MASK;
+		bMuzzleFlash = false;
 	}
 }
 
@@ -1201,13 +1201,12 @@ bool HaveSpeedPower()
 
 void DoMissileExplosionEffects()
 {
-	if (!(Effects & EF_ROCKET) && (Effects & EF_DLIGHT_MASK))
+	if (!EntityEx(self).bLeaveTrail && bDynamicLight)
 	{
-		SendExplosion2(Effects & EF_DLIGHT_MASK, Origin);
-		Effects &= ~EF_DLIGHT_MASK;
+		SendExplosion2(DLightColour, Origin);
+		bDynamicLight = false;
 	}
-	if (Effects & EF_ROCKET)
-		Effects &= ~EF_ROCKET;
+	EntityEx(self).bLeaveTrail = false;
 }
 
 //==========================================================================
@@ -1216,7 +1215,7 @@ void DoMissileExplosionEffects()
 //
 //==========================================================================
 
-void SendExplosion2(int etype, TVec org)
+void SendExplosion2(int colour, TVec org)
 {
 	int i;
 
@@ -1226,7 +1225,7 @@ void SendExplosion2(int etype, TVec org)
 			continue;
 		if (!Level.Game.Players[i].bSpawned)
 			continue;
-		Player(Level.Game.Players[i]).ClientExplosion2(etype, org);
+		Player(Level.Game.Players[i]).ClientExplosion2(colour, org);
 	}
 }
 
@@ -1359,11 +1358,11 @@ void SpawnPuff(TVec org, float Range, class<EntityEx> PuffType, bool HitThing)
 
 	if (PuffType == GoldWandPuff1)
 	{
-		SendExplosion2(EF_DL_WHITE, org);
+		SendExplosion2(RGB(252, 187, 57), org);
 	}
 	if (PuffType == BlasterPuff1)
 	{
-		SendExplosion2(EF_DL_BLUE, org);
+		SendExplosion2(RGB(80, 164, 252), org);
 	}
 	if (PuffType == DoomPuff)
 	{
@@ -1652,24 +1651,7 @@ final void A_Explode()
 	{
 		HitFloorType();
 	}
-
-	if ((Effects & EF_ROCKET) && (Effects & EF_DLIGHT_MASK))
-	{
-		//  Spawn explosion effects - dynamic light and particles
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!Level.Game.Players[i])
-				continue;
-			if (!Level.Game.Players[i].bSpawned)
-				continue;
-			Player(Level.Game.Players[i]).ClientExplosion(
-				Origin + vector(0.0, 0.0, Height * 0.5));
-		}
-
-		//  Clear old dynamic light effect
-		Effects &= ~EF_DLIGHT_MASK;
-	}
-	else if (ExplodeEffect)
+	if (ExplodeEffect)
 	{
 		SendExplosion2(ExplodeEffect, Origin);
 	}
