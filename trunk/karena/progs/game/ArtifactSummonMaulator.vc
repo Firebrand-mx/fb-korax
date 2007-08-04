@@ -23,9 +23,67 @@
 //**
 //**************************************************************************
 
-class ArtifactSummonMaulator : Artifact
+class ArtifactSummonMaulator : Inventory
 	__mobjinfo__(86)
 	__scriptid__(16);
+
+//==========================================================================
+//
+//  TryPickup
+//
+//  [FB] Original function
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+/*	Actor mo;
+
+	mo = SpawnPlayerMissile(SummonMissile);
+	if (mo)
+	{
+		mo.Instigator = MO;
+		mo.Velocity.z = 5.0 * 35.0;
+	}*/
+//                          ^
+// [FB] Old behaviour above |
+	int i;
+	Actor fog, newmobj;
+	int SpotCount;
+	EntityEx Spot;
+
+	SpotCount = 0;
+	foreach AllThinkers(MinotaurSpot, Spot)
+	{
+		SpotCount++;
+	}
+	if (!SpotCount)
+	{
+		// No spots
+		return false;
+	}
+	i = P_Random() % SpotCount;
+	foreach AllThinkers(MinotaurSpot, Spot)
+	{
+		if (!i)
+		{
+			break;
+		}
+		i--;
+	}
+
+	fog = Spawn(TeleportFog, Spot.Origin);
+	fog.PlaySound('Teleport', CHAN_VOICE);
+	newmobj = Spawn(SummonMissile, Spot.Origin);
+	newmobj.Origin = Spot.Origin;
+	newmobj.Angles.yaw = Spot.Angles.yaw;
+	newmobj.Velocity.z = 5.0 * 35.0;
+	newmobj.Target = Toucher;
+	newmobj.bTelestomp = true;
+
+	GoAwayAndDie();
+	return true;
+}
 
 __states__
 {
@@ -34,8 +92,11 @@ __states__
 
 defaultproperties
 {
-	ArtifactType = HexenDefs::arti_summon;
-	IdleState = S_ARTI_SUMMON;
+	Height = 32.0;
+	bFloatBob = true;
+	bPickupFlash = true;
+	PickupSound = 'PickupArtifact';
 	PickupMessage = "$txt_artisummon";
 	RespawnTime = 120.0 + 30.0 / 35.0;
+	IdleState = S_ARTI_SUMMON;
 }
