@@ -73,7 +73,6 @@ int pic_wpfull;
 int pic_wppiece[3];
 int wppiecex[3];*/
 int pic_keybar;
-int pic_key[HexenDefs::NUMKEYS];
 int pic_armor[HexenDefs::NUMARMOR];
 
 /*int pic_invbar;
@@ -210,41 +209,6 @@ void StartMap()
 		bignumwidth[i] = info.width;
 	}
 	pic_minus = R_RegisterPic('negnum');
-// [KORAX]
-/*	pic_arti[0] = R_RegisterPic('artibox');	// none
-	pic_arti[1] = R_RegisterPic('artiinvu');	// invulnerability
-	pic_arti[2] = R_RegisterPic('artiptn2');	// health
-	pic_arti[3] = R_RegisterPic('artisphl');	// superhealth
-	pic_arti[4] = R_RegisterPic('artihrad');	// healing radius
-	pic_arti[5] = R_RegisterPic('artisumn');	// summon maulator
-	pic_arti[6] = R_RegisterPic('artitrch');	// torch
-	pic_arti[7] = R_RegisterPic('artipork');	// pig
-	pic_arti[8] = R_RegisterPic('artisoar');	// fly
-	pic_arti[9] = R_RegisterPic('artiblst');	// blast radius
-	pic_arti[10] = R_RegisterPic('artipsbg');	// poison bag
-	pic_arti[11] = R_RegisterPic('artitelo');	// teleport other
-	pic_arti[12] = R_RegisterPic('artisped');	// speed
-	pic_arti[13] = R_RegisterPic('artibman');	// boost mana
-	pic_arti[14] = R_RegisterPic('artibrac');	// boost armor
-	pic_arti[15] = R_RegisterPic('artiatlp');	// teleport
-	pic_arti[16] = R_RegisterPic('artiskll');	// arti_puzzskull
-	pic_arti[17] = R_RegisterPic('artibgem');	// arti_puzzgembig
-	pic_arti[18] = R_RegisterPic('artigemr');	// arti_puzzgemred
-	pic_arti[19] = R_RegisterPic('artigemg');	// arti_puzzgemgreen1
-	pic_arti[20] = R_RegisterPic('artigmg2');	// arti_puzzgemgreen2
-	pic_arti[21] = R_RegisterPic('artigemb');	// arti_puzzgemblue1
-	pic_arti[22] = R_RegisterPic('artigmb2');	// arti_puzzgemblue2
-	pic_arti[23] = R_RegisterPic('artibok1');	// arti_puzzbook1
-	pic_arti[24] = R_RegisterPic('artibok2');	// arti_puzzbook2
-	pic_arti[25] = R_RegisterPic('artiskl2');	// arti_puzzskull2
-	pic_arti[26] = R_RegisterPic('artifwep');	// arti_puzzfweapon
-	pic_arti[27] = R_RegisterPic('articwep');	// arti_puzzcweapon
-	pic_arti[28] = R_RegisterPic('artimwep');	// arti_puzzmweapon
-	pic_arti[29] = R_RegisterPic('artigear');	// arti_puzzgear1
-	pic_arti[30] = R_RegisterPic('artiger2');	// arti_puzzgear2
-	pic_arti[31] = R_RegisterPic('artiger3');	// arti_puzzgear3
-	pic_arti[32] = R_RegisterPic('artiger4');	// arti_puzzgear4
-*/
 	//
 	//  MAIN BAR
 	//
@@ -782,16 +746,19 @@ void SB_DrawKeyBar()
 {
 	int i;
 	int num;
+	Inventory Item;
 
 	SB_DrawBackground();
 	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
 
 	//  Keys
-	for (i = 0, num = 0; i < HexenDefs::NUMKEYS && num < 5; i++)
+	Item = EntityEx(cl.MO).Inventory;
+	for (num = 0; Item && num < 5; Item = Item.Inventory)
 	{
-		if (cl.SBFlags & (1 << i))
+		if (Key(Item))
 		{
-			R_DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3, pic_key[i]);
+			R_DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3,
+				R_RegisterPic(Item.IconName));
 			num++;
 		}
 	}
