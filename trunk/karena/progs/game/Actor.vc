@@ -1131,7 +1131,7 @@ void DoMissileExplosionEffects()
 //
 //==========================================================================
 
-void SendExplosion2(int colour, TVec org)
+final void SendExplosion2(int colour, TVec org)
 {
 	int i;
 
@@ -1567,7 +1567,23 @@ final void A_Explode()
 	{
 		HitFloorType();
 	}
-	if (ExplodeEffect)
+	if (EntityEx(self).bLeaveTrail && bDynamicLight)
+	{
+		//  Spawn explosion effects - dynamic light and particles
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!Level.Game.Players[i])
+				continue;
+			if (!Level.Game.Players[i].bSpawned)
+				continue;
+			Player(Level.Game.Players[i]).ClientExplosion(DLightColour,
+				Origin + vector(0.0, 0.0, Height * 0.5));
+		}
+		//  Clear old dynamic light effect
+		EntityEx(self).bDynamicLight = false;
+		bLeaveTrail = false;
+	}
+	else if (ExplodeEffect)
 	{
 		SendExplosion2(ExplodeEffect, Origin);
 	}
