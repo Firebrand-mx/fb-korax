@@ -104,8 +104,6 @@ int ArmorPoints;
 /*float ArmorPoints[HexenDefs::NUMARMOR];
 int ArmorPerc[HexenDefs::NUMARMOR];*/
 
-int Keys;
-
 // Power ups. invinc and invis are tic counters.
 float Powers[NUMPOWERS];
 
@@ -248,8 +246,6 @@ void PutClientIntoServer()
 void SpawnClient()
 {
 	int j;
-	int oldKeys;
-//	int oldPieces;
 	bool playerWasReborn;
 	Weapon bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
@@ -266,8 +262,6 @@ void SpawnClient()
 	if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
 		// Cooperative net-play, retain keys and weapons
-		oldKeys = Keys;
-//		oldPieces = Pieces;
 		playerWasReborn = (PlayerState == PST_REBORN);
 	}
 
@@ -285,8 +279,6 @@ void SpawnClient()
 	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
 	{
 		// Restore keys and weapons when reborn in co-op
-		Keys = oldKeys;
-//		player.Pieces = oldPieces;
 		bestWeapon = none;
 		if (OldMO)
 		{
@@ -300,6 +292,10 @@ void SpawnClient()
 					{
 						bestWeapon = Weapon(Item);
 					}
+					Item.AttachToOwner(EntityEx(MO));
+				}
+				else if (Key(Item))
+				{
 					Item.AttachToOwner(EntityEx(MO));
 				}
 				Item = Next;
@@ -331,8 +327,6 @@ void SpawnClient()
 void NetGameReborn()
 {
 	int i;
-	int oldKeys;
-//	int oldPieces;
 	bool foundSpot;
 	Weapon bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
@@ -353,10 +347,6 @@ void NetGameReborn()
 		DeathMatchSpawnPlayer();
 		return;
 	}
-
-	// Cooperative net-play, retain keys and weapons
-	oldKeys = Keys;
-//	oldPieces = Pieces;
 
 	foundSpot = false;
 	if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
@@ -390,8 +380,6 @@ void NetGameReborn()
 	}
 
 	// Restore keys and weapons
-	Keys = oldKeys;
-//	Pieces = oldPieces;
 	bestWeapon = none;
 	for (Item = OldMO.Inventory; Item; Item = Item.Inventory)
 	{
@@ -402,6 +390,10 @@ void NetGameReborn()
 			{
 				bestWeapon = Weapon(Item);
 			}
+			Item.AttachToOwner(EntityEx(MO));
+		}
+		else if (Key(Item))
+		{
 			Item.AttachToOwner(EntityEx(MO));
 		}
 	}
@@ -809,6 +801,7 @@ void SpawnPlayer(mthing_t * mthing)
 	PlayerPawn pp;
 	bool ResetInventory = false;
 	Inventory Item;
+	class<Inventory> Cls;
 
 	if (PlayerState == PST_REBORN)
 	{
@@ -925,7 +918,15 @@ void SpawnPlayer(mthing_t * mthing)
 	if (Level.Game.deathmatch)
 	{
 		// Give all keys in death match mode
-		Keys = 2047;
+		foreach AllClasses(Key, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class.
+				continue;
+			}
+			pp.GiveInventoryType(Cls);
+		}
 		// [FB] Give temporary invulnerability in DM only
 		GivePower(pw_invulnerability2);
 	}
@@ -1080,6 +1081,7 @@ void PlayerReborn()
 void PlayerExitMap(bool clusterChange)
 {
 	int i;
+	Inventory Item;
 
 	// Strip all current powers (retain flight)
 	for (i = 0; i < NUMPOWERS; i++)
@@ -1090,7 +1092,15 @@ void PlayerExitMap(bool clusterChange)
 		if (clusterChange)
 		{	// Entering new cluster
 			// Strip all keys
-			Keys = 0;
+			for (Item = EntityEx(MO).Inventory; Item;)
+			{
+				Inventory Next = Item.Inventory;
+				if (Key(Item))
+				{
+					Item.Destroy();
+				}
+				Item = Next;
+			}
 		}
 	}
 
@@ -3398,7 +3408,6 @@ void SetViewPos()
 
 	PaletteFlash();
 
-	SBFlags = Keys;
 	if (Powers[pw_speed])
 	{
 		if (Powers[pw_speed] > BLINKTHRESHOLD ||
@@ -3953,7 +3962,15 @@ void Cheat_Gimme()
 	}
 	if (Cmd_CheckParm("keys"))
 	{
-		Keys = 2047;
+		foreach AllClasses(Key, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
 		cprint("ALL KEYS");
 	}
 	if (Cmd_CheckParm("puzzles"))
