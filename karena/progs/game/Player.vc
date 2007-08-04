@@ -109,19 +109,7 @@ int Keys;
 // Power ups. invinc and invis are tic counters.
 float Powers[NUMPOWERS];
 
-float InventoryTime;
-
-int ArtifactFlash;
-int ReadyArtifact;
-int InvPtr;
-int InvCurPos;
-int InventorySlotNum;
-inventory_t Inventory[HexenDefs::NUMARTIFACTS];
-int Arti;	// artitype_t to use
-
 float FlyHeight;
-
-int ArtifactCount;
 
 //[Korax]
 //int Pieces;	// Fourth Weapon pieces
@@ -217,13 +205,11 @@ bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 replication
 {
 	reliable if (!bIsClient)
-		SBFlags, ArmorPoints, InventoryTime, ArtifactFlash, ReadyArtifact,
-		InvPtr, InvCurPos, InventorySlotNum, Inventory, Score, TeamFrags,
-		TeamKills, Deaths, TeamPosition, PlayerPosition,
-		experience, exp_level, next_level, old_level, strength, intelligence,
-		wisdom, dexterity, constitution, max_health, old_maxhealth,
-		bak_health, use_power, altWeapon, teamscores,
-		altWeaponMode, targetinfo;
+		SBFlags, ArmorPoints, Score, TeamFrags, TeamKills, Deaths,
+		TeamPosition, PlayerPosition, experience, exp_level, next_level,
+		old_level, strength, intelligence, wisdom, dexterity, constitution,
+		max_health, old_maxhealth, bak_health, use_power, altWeapon,
+		teamscores, altWeaponMode, targetinfo;
 
 	unreliable if (!bIsClient)
 		ClientGunShot, ClientBlood, ClientExplosion, ClientExplosion2,
@@ -1113,13 +1099,6 @@ void PlayerExitMap(bool clusterChange)
 		{	// Entering new cluster
 			// Strip all keys
 			Keys = 0;
-
-			// Strip flight artifact
-			for (i = 0; i < 25; i++)
-			{
-				Powers[pw_flight] = 0.0;
-				PlayerUseArtifactOld(HexenDefs::arti_fly);
-			}
 			Powers[pw_flight] = 0.0;
 		}
 	}
@@ -1679,110 +1658,6 @@ void ClientScoreboard(bool show)
 
 //==========================================================================
 //
-//  InventoryLeft
-//
-//==========================================================================
-
-void InventoryLeft()
-{
-	if (!InventoryTime)
-	{
-		InventoryTime = 5.0;
-		return;
-	}
-	InventoryTime = 5.0;
-	InvPtr--;
-	if (InvPtr < 0)
-	{
-		InvPtr = 0;
-	}
-	else
-	{
-		InvCurPos--;
-		if (InvCurPos < 0)
-		{
-			InvCurPos = 0;
-		}
-	}
-}
-
-//==========================================================================
-//
-//  InventoryRight
-//
-//==========================================================================
-
-void InventoryRight()
-{
-	if (!InventoryTime)
-	{
-		InventoryTime = 5.0;
-		return;
-	}
-	InventoryTime = 5.0;
-	InvPtr++;
-	if (InvPtr >= InventorySlotNum)
-	{
-		InvPtr--;
-		if (InvPtr < 0)
-			InvPtr = 0;
-	}
-	else
-	{
-		InvCurPos++;
-		if (InvCurPos > 6)
-		{
-			InvCurPos = 6;
-		}
-	}
-}
-
-//==========================================================================
-//
-//  InventoryUse
-//
-//==========================================================================
-
-void InventoryUse()
-{
-	ReadyArtifact = Inventory[InvPtr].type;
-	// flag to denote that it's okay to use an artifact
-	if (InventoryTime)
-	{
-		InventoryTime = 0.0;
-	}
-	else
-	{
-		Arti = ReadyArtifact;
-	}
-}
-
-//==========================================================================
-//
-//  InventoryTick
-//
-//==========================================================================
-
-void InventoryTick(float deltaTime)
-{
-	// turn inventory off after a certain amount of time
-	if (InventoryTime)
-	{
-		InventoryTime -= deltaTime;
-		if (InventoryTime <= 0.0)
-		{
-			InventoryTime = 0.0;
-			ReadyArtifact = Inventory[InvPtr].type;
-		}
-	}
-	if (ArtifactFlash)
-	{
-		ArtifactFlash--;
-	}
-}
-
-//==========================================================================
-//
 //  MovePlayer
 //
 //==========================================================================
@@ -1887,10 +1762,6 @@ void MovePlayer(float deltaTime)
 			MO.bFly = false;
 			MO.bNoGravity = false;
 		}
-	}
-	else if (fly > 0.0)
-	{
-		PlayerUseArtifactOld(HexenDefs::arti_fly);
 	}
 	if (MO.bFly)
 	{
@@ -2505,7 +2376,6 @@ void PlayerImpulse()
 
 	impulse = Impulse;
 	Impulse = 0;
-	Arti = 0;
 
 	if (bUnControllable)
 	{
@@ -2604,13 +2474,16 @@ void ToggleAltAttack(int weapon)
 
 void AlternateAttack()
 {
+	//	Note to Firebrand:
+	//	This would never work, since player doesn't have these items
+	// in the inventory.
 	switch (altWeapon)
 	{
 	case HexenDefs::ALTFIRE_BLASTRADIUS:
-		PlayerUseArtifactOld(HexenDefs::arti_blastradius);
+		//PlayerUseArtifactOld(HexenDefs::arti_blastradius);
 		break;
 	case HexenDefs::ALTFIRE_POISONBAG:
-		PlayerUseArtifactOld(HexenDefs::arti_poisonbag);
+		//PlayerUseArtifactOld(HexenDefs::arti_poisonbag);
 		break;
 	}
 }
@@ -2872,8 +2745,6 @@ void DeathPlayerTick(float deltaTime)
 		(bIsBot || (Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP )))
 	{
 		WeaponCShift = 0;
-		InvPtr = 0;
-		InvCurPos = 0;
 		NewTorch = 0;
 		NewTorchDelta = 0;
 		PlayerState = PST_REBORN;
@@ -3008,7 +2879,6 @@ void PlayerTick(float deltaTime)
 	}
 
 	WorldTimer += deltaTime;
-	InventoryTick(deltaTime);
 
 	if (!bIsBot)
 		UpdateTargetInfo();
@@ -3652,38 +3522,6 @@ void SetViewPos()
 
 //==========================================================================
 //
-//  PlayerUseArtifactOld
-//
-//==========================================================================
-
-void PlayerUseArtifactOld(int arti)
-{
-	int i;
-
-	for (i = 0; i < InventorySlotNum; i++)
-	{
-		if (Inventory[i].type == arti)
-		{
-			// Found match - try to use
-			if (UseArtifact(arti))
-			{
-				// Artifact was used - remove it from inventory
-				PlayerRemoveArtifact(i);
-				MO.PlaySound('UseArtifact', CHAN_ITEM);
-				ArtifactFlash = 4;
-			}
-			else
-			{
-				// Unable to use artifact, advance pointer
-				PlayerNextArtifact();
-			}
-			break;
-		}
-	}
-}
-
-//==========================================================================
-//
 //  PlayerUseArtifact
 //
 //==========================================================================
@@ -3701,88 +3539,6 @@ bool PlayerUseArtifact(Inventory Item)
 			Item.Destroy();
 		}
 		MO.PlaySound(Item.UseSound, CHAN_ITEM);
-		ArtifactFlash = 4;
-	}
-	else if (!PuzzleItem(Item))
-	{
-		// Unable to use artifact, advance pointer
-		PlayerNextArtifact();
-	}
-}
-
-//==========================================================================
-//
-//  PlayerNextArtifact
-//
-//==========================================================================
-
-void PlayerNextArtifact()
-{
-	InvPtr--;
-	if (InvPtr < 6)
-	{
-		InvCurPos--;
-		if (InvCurPos < 0)
-		{
-			InvCurPos = 0;
-		}
-	}
-	if (InvPtr < 0)
-	{
-		InvPtr = InventorySlotNum - 1;
-		if (InvPtr < 6)
-		{
-			InvCurPos = InvPtr;
-		}
-		else
-		{
-			InvCurPos = 6;
-		}
-	}
-	ReadyArtifact = Inventory[InvPtr].type;
-}
-
-//==========================================================================
-//
-//  PlayerRemoveArtifact
-//
-//==========================================================================
-
-void PlayerRemoveArtifact(int slot)
-{
-	int i;
-
-	ArtifactCount--;
-	if (!(--Inventory[slot].count))
-	{
-		// Used last of a type - compact the artifact list
-		ReadyArtifact = HexenDefs::arti_none;
-		Inventory[slot].type = HexenDefs::arti_none;
-		for (i = slot + 1; i < InventorySlotNum; i++)
-		{
-			Inventory[i - 1].type = Inventory[i].type;
-			Inventory[i - 1].count = Inventory[i].count;
-		}
-		InventorySlotNum--;
-		// Set position markers and get next ReadyArtifact
-		InvPtr--;
-		if (InvPtr < 6)
-		{
-			InvCurPos--;
-			if (InvCurPos < 0)
-			{
-				InvCurPos = 0;
-			}
-		}
-		if (InvPtr >= InventorySlotNum)
-		{
-			InvPtr = InventorySlotNum - 1;
-		}
-		if (InvPtr < 0)
-		{
-			InvPtr = 0;
-		}
-		ReadyArtifact = Inventory[InvPtr].type;
 	}
 }
 
