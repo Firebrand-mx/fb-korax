@@ -2410,16 +2410,29 @@ void ToggleAltAttack(int weapon)
 
 void AlternateAttack()
 {
-	//	Note to Firebrand:
-	//	This would never work, since player doesn't have these items
-	// in the inventory.
+	Ammo type;
+	// FIXME
+	// [FB] Gotta find a better way to make this....
 	switch (altWeapon)
 	{
 	case HexenDefs::ALTFIRE_BLASTRADIUS:
 		//PlayerUseArtifactOld(HexenDefs::arti_blastradius);
+		type = Ammo(EntityEx(MO).FindInventory(ArtifactBlastRadius));
+		if (type.Amount > 0)
+		{
+			// [FB] Use correct ammo
+			type.Amount -= 10;
+			UseArtiBlastRadius();
+		}
 		break;
 	case HexenDefs::ALTFIRE_POISONBAG:
 		//PlayerUseArtifactOld(HexenDefs::arti_poisonbag);
+		type = Ammo(EntityEx(MO).FindInventory(ArtifactFlechette));
+		if (type.Amount > 0)
+		{
+			type.Amount -= 10;
+			UseArtiPoisonBag();
+		}
 		break;
 	}
 }
@@ -4778,24 +4791,6 @@ void ClientBlood(TVec org, int damage)
 
 void ClientExplosion(int colour, TVec org)
 {
-// FROM HEXEN
-/*	TVec org;
-	dlight_t *dl;
-	int etype;
-
-	etype = MSG_ReadByte();
-	org.x = itof(MSG_ReadShort());
-	org.y = itof(MSG_ReadShort());
-	org.z = itof(MSG_ReadShort());
-
-	dl = AllocDlight(0);
-	dl->origin = org;
-	dl->radius = 350.0;
-	dl->colour = ecolours[etype];
-	dl->die = cl.time + 0.5;
-	dl->decay = 300.0;*/
-
-// ORIGINAL FROM DOOM
 	int i;
 	particle_t *p;
 	dlight_t *dl;
@@ -4830,7 +4825,6 @@ void ClientExplosion(int colour, TVec org)
 	dl->colour = colour;
 	dl->die = Level.XLevel.Time + 0.5;
 	dl->decay = 300.0;
-
 }
 
 //==========================================================================
