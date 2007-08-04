@@ -23,9 +23,25 @@
 //**
 //**************************************************************************
 
-class ArtifactBoostArmor : Artifact
+class ArtifactBoostArmor : Inventory
 	__mobjinfo__(8041)
 	__scriptid__(22);
+
+//==========================================================================
+//
+//  TryPickup
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+	if (Player(Toucher.Player).GiveArmor(0, 40))
+	{
+		GoAwayAndDie();
+		return true;
+	}
+	return false;
+}
 
 __states__
 {
@@ -41,7 +57,10 @@ __states__
 
 defaultproperties
 {
-	ArtifactType = HexenDefs::arti_boostarmor;
-	IdleState = S_ARTI_ARMOR1;
+	Height = 32.0;
+	bFloatBob = true;
+	bPickupFlash = true;
+	PickupSound = 'PickupArtifact';
 	PickupMessage = "$txt_artiboostarmor";
+	IdleState = S_ARTI_ARMOR1;
 }

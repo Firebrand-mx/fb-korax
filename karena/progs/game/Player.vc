@@ -1441,93 +1441,12 @@ bool GivePower(int power)
 	return true;
 }
 
-//==========================================================================
-//
-//  GiveArtifact
-//
-//  Returns true if artifact accepted.
-//
-//==========================================================================
-
-bool GiveArtifact(int arti)
-{
 //[Korax]
-	if (arti == HexenDefs::arti_invulnerability)
-	{
-		return GivePower(pw_invulnerability);
-	}
-	else if (arti == HexenDefs::arti_speed)
-	{
-		return GivePower(pw_speed);
-	}
-	else if (arti == HexenDefs::arti_boostarmor)
-	{
-		return GiveArmor(0, 40);
-	}
-	else if (arti == HexenDefs::arti_summon)
-	{
-//		return GivePower(pw_minotaur);
-		UseArtiSummon();
-		return true;
-	}
-	else if (arti == HexenDefs::arti_torch)
-	{
-		return GivePower(pw_infrared);
-	}
-	else if (arti == HexenDefs::arti_invisibility)
-	{
-		return GivePower(pw_invisibility);
-	}
-	else if (arti == HexenDefs::arti_damage)
-	{
-		return GivePower(pw_damage);
-	}
-	else if (arti == HexenDefs::arti_egg)
-	{
-		UseArtiPig();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-	int i;
-	int j;
-
-	i = 0;
-	while (Inventory[i].type != arti && i < InventorySlotNum)
-	{
-		i++;
-	}
-	if (i == InventorySlotNum)
-	{
-		Inventory[i].count = 1;
-		Inventory[i].type = arti;
-		InventorySlotNum++;
-	}
-	else
-	{
-		if (Inventory[i].count >= 25)
-		{
-			// Player already has 25 of this item
-			return false;
-		}
-		Inventory[i].count++;
-	}
-	if (!ArtifactCount)
-	{
-		ReadyArtifact = arti;
-	}
-	ArtifactCount++;
-	return true;
-}
-
-//[Korax]
-//============================================================================
+//==========================================================================
 //
 //  GiveExperience
 //
-//============================================================================
+//==========================================================================
 
 void GiveExperience(int exp)
 {
@@ -3882,30 +3801,6 @@ bool UseArtifact(int arti)
 
 	switch (arti)
 	{
-	case HexenDefs::arti_health:
-		if (!GiveBody(25))
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_superhealth:
-		if (!GiveBody(100))
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_invulnerability:
-		if (!GivePower(pw_invulnerability))
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_torch:
-		if (!GivePower(pw_infrared))
-		{
-			return false;
-		}
-		break;
 	case HexenDefs::arti_fly:
 		if (!GivePower(pw_flight))
 		{
@@ -3920,17 +3815,11 @@ bool UseArtifact(int arti)
 	case HexenDefs::arti_teleport:
 		UseArtiTele();
 		break;
-	case HexenDefs::arti_egg:
-		UseArtiPig();
-		break;
 	case HexenDefs::arti_healingradius:
 		if (!UseArtiHealRadius())
 		{
 			return false;
 		}
-		break;
-	case HexenDefs::arti_summon:
-		UseArtiSummon();
 		break;
 	case HexenDefs::arti_blastradius:
 		UseArtiBlastRadius();
@@ -3941,38 +3830,8 @@ bool UseArtifact(int arti)
 	case HexenDefs::arti_teleportother:
 		UseArtiTeleportOther();
 		break;
-	case HexenDefs::arti_speed:
-		if (!GivePower(pw_speed))
-		{
-			return false;
-		}
-		break;
 	case HexenDefs::arti_boostmana:
 		if (!GiveMana(ItemManaCombined, ItemManaCombined.default.MaxAmount))
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_boostarmor:
-		count = 0;
-
-		for (i = 0; i < HexenDefs::NUMARMOR; i++)
-		{
-			count += GiveArmor(i, 1);	// 1 point per armor type
-		}
-		if (!count)
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_invisibility:
-		if (!GivePower(pw_invisibility))
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_damage:
-		if (!GivePower(pw_damage))
 		{
 			return false;
 		}
@@ -4016,23 +3875,6 @@ void UseArtiTele()
 	{
 		// Teleporting away will undo any morph effects (pig)
 		UndoPlayerMorph();
-	}
-}
-
-//==========================================================================
-//
-//  UseArtiPig
-//
-//==========================================================================
-
-void UseArtiPig()
-{
-	int i;
-
-	for(i = 0; i < 49; i++)
-	{
-		Actor(MO).SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw - 7.5 * itof(i)));
-		Actor(MO).SpawnPlayerMissileAngle(EggMissile, AngleMod360(MO.Angles.yaw + 7.5 * itof(i)));
 	}
 }
 
@@ -4100,61 +3942,6 @@ bool UseArtiHealRadius()
 		}
 	}
 	return effective;
-}
-
-//==========================================================================
-//
-//  UseArtiSummon
-//
-//  [FB] Original function
-//
-//==========================================================================
-
-void UseArtiSummon()
-{
-/*	Actor mo;
-
-	mo = SpawnPlayerMissile(SummonMissile);
-	if (mo)
-	{
-		mo.Instigator = MO;
-		mo.Velocity.z = 5.0 * 35.0;
-	}*/
-//                          ^
-// [FB] Old behaviour above |
-	int i;
-	Actor fog, newmobj;
-	int SpotCount;
-	EntityEx Spot;
-
-	SpotCount = 0;
-	foreach Level.AllThinkers(MinotaurSpot, Spot)
-	{
-		SpotCount++;
-	}
-	if (!SpotCount)
-	{
-		// No spots
-		return;
-	}
-	i = P_Random() % SpotCount;
-	foreach Level.AllThinkers(MinotaurSpot, Spot)
-	{
-		if (!i)
-		{
-			break;
-		}
-		i--;
-	}
-
-	fog = HexenLevelInfo(Level).Spawn(TeleportFog, Spot.Origin);
-	fog.PlaySound('Teleport', CHAN_VOICE);
-	newmobj = HexenLevelInfo(Level).Spawn(SummonMissile, Spot.Origin);
-	newmobj.Origin = Spot.Origin;
-	newmobj.Angles.yaw = Spot.Angles.yaw;
-	newmobj.Velocity.z = 5.0 * 35.0;
-	newmobj.Target = Actor(MO);
-	newmobj.bTelestomp = true;
 }
 
 //==========================================================================
@@ -4676,20 +4463,6 @@ void Cheat_Gimme()
 	{
 		Keys = 2047;
 		cprint("ALL KEYS");
-	}
-	if (Cmd_CheckParm("artifacts"))
-	{
-		int i;
-		int j;
-
-		for (i = HexenDefs::arti_none + 1; i < HexenDefs::NUMARTIFACTS; i++)
-		{
-			for (j = 0; j < 25; j++)
-			{
-				GiveArtifact(i);
-			}
-		}
-		cprint("ALL ARTIFACTS");
 	}
 	if (Cmd_CheckParm("puzzles"))
 	{
@@ -5758,13 +5531,6 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 	if (ArmorPoints < 0)
 	{
 		ArmorPoints = 0; // [FB] No negative armor points
-	}
-	if (damage >= Health
-		&& ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		PClass != HexenDefs::PCLASS_PIG/*!Player(Player).MorphTime*/)
-	{
-		// Try to use some inventory health
-		Actor(MO).AutoUseHealth(damage - Health + 1);
 	}
 
 	// [FB] We need to know how much damage the player took for the hero's shield

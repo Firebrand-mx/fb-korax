@@ -23,9 +23,30 @@
 //**
 //**************************************************************************
 
-class ArtifactEgg : Artifact
+class ArtifactEgg : Inventory
 	__mobjinfo__(30)
 	__scriptid__(14);
+
+//==========================================================================
+//
+//  TryPickup
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+	int i;
+
+	for (i = 0; i < 49; i++)
+	{
+		Actor(Toucher).SpawnPlayerMissileAngle(EggMissile,
+			AngleMod360(Toucher.Angles.yaw - 7.5 * itof(i)));
+		Actor(Toucher).SpawnPlayerMissileAngle(EggMissile,
+			AngleMod360(Toucher.Angles.yaw + 7.5 * itof(i)));
+	}
+	GoAwayAndDie();
+	return true;
+}
 
 __states__
 {
@@ -41,7 +62,10 @@ __states__
 
 defaultproperties
 {
-	ArtifactType = HexenDefs::arti_egg;
-	IdleState = S_ARTI_EGGC1;
+	Height = 32.0;
+	bFloatBob = true;
+	bPickupFlash = true;
+	PickupSound = 'PickupArtifact';
 	PickupMessage = "$txt_artiegg2";
+	IdleState = S_ARTI_EGGC1;
 }
