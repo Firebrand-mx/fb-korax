@@ -1080,26 +1080,17 @@ void PlayerReborn()
 void PlayerExitMap(bool clusterChange)
 {
 	int i;
-	float flightPower;
 
 	// Strip all current powers (retain flight)
-	flightPower = Powers[pw_flight];
 	for (i = 0; i < NUMPOWERS; i++)
 		Powers[i] = 0.0;
-//  memset(Powers, 0, sizeof(Powers));
-	Powers[pw_flight] = flightPower;
 
-	if (Level.Game.deathmatch)
-	{
-		Powers[pw_flight] = 0.0;
-	}
-	else
+	if (!Level.Game.deathmatch)
 	{
 		if (clusterChange)
 		{	// Entering new cluster
 			// Strip all keys
 			Keys = 0;
-			Powers[pw_flight] = 0.0;
 		}
 	}
 
@@ -1347,22 +1338,6 @@ bool GivePower(int power)
 		Powers[power] = INVULNTIME2;
 		Actor(MO).bInvulnerable = true;
 		return true;
-	}
-	if (power == pw_flight)
-	{
-		if (Powers[power] > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power] = FLIGHTTIME;
-		MO.bFly = true;
-		MO.bNoGravity = true;
-		if (MO.Origin.z <= MO.FloorZ)
-		{
-			FlyHeight = 10.0;	// thrust the player in the air a bit
-		}
-		return (true);
 	}
 	if (power == pw_infrared)
 	{
@@ -1741,28 +1716,6 @@ void MovePlayer(float deltaTime)
 	}
 
 	fly = FlyMove / 16.0;
-	if (fly && Powers[pw_flight])
-	{
-		if (FlyMove != TOCENTRE)
-		{
-			FlyHeight = fly * 2.0;
-			if (!MO.bFly)
-			{
-				MO.bFly = true;
-				MO.bNoGravity = true;
-				if (MO.Velocity.z <= -39.0 * 35.0)
-				{
-					// stop falling scream
-					MO.StopSound(CHAN_AUTO);
-				}
-			}
-		}
-		else
-		{
-			MO.bFly = false;
-			MO.bNoGravity = false;
-		}
-	}
 	if (MO.bFly)
 	{
 		MO.Velocity.z = FlyHeight * 35.0 + wishvel.z;
@@ -1929,8 +1882,7 @@ void WaterJump()
 
 void ThrustPlayer(float angle, float move, float deltaTime)
 {
-	if (!(Powers[pw_flight] && !(MO.Origin.z <= MO.FloorZ)) &&
-		(Actor(MO).GetFloorType()->Friction < Actor::FRICTION_NORMAL ||
+	if ((Actor(MO).GetFloorType()->Friction < Actor::FRICTION_NORMAL ||
 		(MO.Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow))
 	{
 		move *= 0.5;
@@ -3194,20 +3146,6 @@ void PlayerTick(float deltaTime)
 			Powers[pw_speed] = 0.0;
 	}
 
-	if (Powers[pw_flight] && Level.Game.netgame)
-	{
-		Powers[pw_flight] -= deltaTime;
-		if (Powers[pw_flight] <= 0.0)
-		{
-			Powers[pw_flight] = 0.0;
-			if (MO.Origin.z != MO.FloorZ)
-			{
-//FIXME             centreing = true;
-			}
-			MO.bFly = false;
-			MO.bNoGravity = false;
-		}
-	}
 	if (Powers[pw_invisibility])
 	{
 		Powers[pw_invisibility] -= deltaTime;
@@ -3464,14 +3402,6 @@ void SetViewPos()
 	PaletteFlash();
 
 	SBFlags = Keys;
-	if (Powers[pw_flight])
-	{
-		if (Powers[pw_flight] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_flight] * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_FLIGHT;
-		}
-	}
 	if (Powers[pw_speed])
 	{
 		if (Powers[pw_speed] > BLINKTHRESHOLD ||
@@ -3540,164 +3470,6 @@ bool PlayerUseArtifact(Inventory Item)
 		}
 		MO.PlaySound(Item.UseSound, CHAN_ITEM);
 	}
-}
-
-//==========================================================================
-//
-//  UseArtifact
-//
-//  Returns true if the artifact was used.
-//
-//==========================================================================
-
-bool UseArtifact(int arti)
-{
-	int i;
-	int count;
-
-	switch (arti)
-	{
-	case HexenDefs::arti_fly:
-		if (!GivePower(pw_flight))
-		{
-			return false;
-		}
-		if (MO.Velocity.z <= -35.0 * 35.0)
-		{
-			// stop falling scream
-			MO.StopSound(CHAN_AUTO);
-		}
-		break;
-	case HexenDefs::arti_teleport:
-		UseArtiTele();
-		break;
-	case HexenDefs::arti_healingradius:
-		if (!UseArtiHealRadius())
-		{
-			return false;
-		}
-		break;
-	case HexenDefs::arti_blastradius:
-		UseArtiBlastRadius();
-		break;
-	case HexenDefs::arti_poisonbag:
-		UseArtiPoisonBag();
-		break;
-	case HexenDefs::arti_teleportother:
-		UseArtiTeleportOther();
-		break;
-	case HexenDefs::arti_boostmana:
-		if (!GiveMana(ItemManaCombined, ItemManaCombined.default.MaxAmount))
-		{
-			return false;
-		}
-		break;
-
-	default:
-		return false;
-	}
-	return true;
-}
-
-//==========================================================================
-//
-//  UseArtiTele
-//
-//==========================================================================
-
-void UseArtiTele()
-{
-	int i;
-	float destX;
-	float destY;
-	float destAngle;
-
-	if (Level.Game.deathmatch)
-	{
-		i = P_Random() % Level.NumDeathmatchStarts;
-		destX = Level.DeathmatchStarts[i].x;
-		destY = Level.DeathmatchStarts[i].y;
-		destAngle = itof(45 * (Level.DeathmatchStarts[i].angle / 45));
-	}
-	else
-	{
-		destX = Level.PlayerStarts[0].x;
-		destY = Level.PlayerStarts[0].y;
-		destAngle = itof(45 * (Level.PlayerStarts[0].angle / 45));
-	}
-	Actor(MO).Teleport(vector(destX, destY, Actor::ONFLOORZ), destAngle, true, true,
-		false);
-	if (Morph.bMorphed && PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
-	{
-		// Teleporting away will undo any morph effects (pig)
-		UndoPlayerMorph();
-	}
-}
-
-//==========================================================================
-//
-//  UseArtiHealRadius
-//
-//  Do class specific effect for everyone in radius
-//
-//==========================================================================
-
-bool UseArtiHealRadius()
-{
-	PlayerPawn P;
-	float dist;
-	int effective = false;
-	int amount;
-
-	foreach MO.AllThinkers(PlayerPawn, P)
-	{
-		if (!P.bIsPlayer)
-			continue;
-		if (P.Health <= 0)
-			continue;
-		dist = MO.DistTo(P);
-		if (dist > HEAL_RADIUS_DIST)
-		{
-			// Out of range
-			continue;
-		}
-
-		switch (PClass)
-		{
-		case HexenDefs::PCLASS_FIGHTER:	// Radius armor boost
-			if ((Player(P.Player).GiveArmor(HexenDefs::ARMOR_ARMOR, 1)) ||
-				(Player(P.Player).GiveArmor(HexenDefs::ARMOR_SHIELD, 1)) ||
-				(Player(P.Player).GiveArmor(HexenDefs::ARMOR_HELMET, 1)) ||
-				(Player(P.Player).GiveArmor(HexenDefs::ARMOR_AMULET, 1)))
-			{
-				effective = true;
-				P.PlaySound('MysticIncant', CHAN_ITEM);
-			}
-			break;
-		case HexenDefs::PCLASS_CLERIC:	// Radius heal
-			amount = 50 + (P_Random() % 50);
-			if (Player(P.Player).GiveBody(amount))
-			{
-				effective = true;
-				P.PlaySound('MysticIncant', CHAN_ITEM);
-			}
-			break;
-		case HexenDefs::PCLASS_MAGE:	// Radius mana boost
-			amount = 50 + (P_Random() % 50);
-			if ((Player(P.Player).GiveMana(ItemManaBlue, amount)) ||
-				(Player(P.Player).GiveMana(ItemManaGreen, amount)) ||
-				(Player(P.Player).GiveMana(ItemManaCombined, amount)))
-			{
-				effective = true;
-				P.PlaySound('MysticIncant', CHAN_ITEM);
-			}
-			break;
-		case HexenDefs::PCLASS_PIG:
-		default:
-			break;
-		}
-	}
-	return effective;
 }
 
 //==========================================================================
@@ -3837,20 +3609,9 @@ void UseArtiPoisonBag()
 
 //==========================================================================
 //
-//  UseArtiTeleportOther
-//
-//==========================================================================
-
-void UseArtiTeleportOther()
-{
-	Actor(MO).SpawnPlayerMissile(TeleportOtherFX1);
-}
-
-//============================================================================
-//
 //  AdjustPlayerAngle
 //
-//============================================================================
+//==========================================================================
 
 void AdjustPlayerAngle(EntityEx AimTarget)
 {
