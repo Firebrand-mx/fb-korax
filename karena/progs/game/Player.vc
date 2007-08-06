@@ -105,7 +105,7 @@ int ArmorPoints;
 int ArmorPerc[HexenDefs::NUMARMOR];*/
 
 // Power ups. invinc and invis are tic counters.
-float Powers[NUMPOWERS];
+Powerup Powers[NUMPOWERS];
 
 float FlyHeight;
 
@@ -898,7 +898,13 @@ void SpawnPlayer(mthing_t * mthing)
 
 	// [FB] Wear out any power we had
 	for (i = 0; i < NUMPOWERS; i++)
-		Powers[i] = 0.0;
+	{
+		if (Powers[i])
+		{
+			Powers[i].Destroy();
+			Powers[i] = none;
+		}
+	}
 
 	pp.Inventory = SavedInventory;
 	for (Item = pp.Inventory; Item; Item = Item.Inventory)
@@ -1085,7 +1091,13 @@ void PlayerExitMap(bool clusterChange)
 
 	// Strip all current powers (retain flight)
 	for (i = 0; i < NUMPOWERS; i++)
-		Powers[i] = 0.0;
+	{
+		if (Powers[i])
+		{
+			Powers[i].Destroy();
+			Powers[i] = none;
+		}
+	}
 
 	if (!Level.Game.deathmatch)
 	{
@@ -1305,14 +1317,20 @@ bool GiveArmor(int armortype, int amount)
 
 bool GivePower(int power)
 {
+	if (!Powers[power])
+	{
+		Powers[power] = Level.Spawn(DummyPowerup);
+		Powers[power].AttachToOwner(EntityEx(MO));
+	}
+
 	if (power == pw_invulnerability)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = INVULNTIME;
+		Powers[power].DurationTime = INVULNTIME;
 		Actor(MO).bInvulnerable = true;
 		// [KORAX]
 		/*if (PClass == PCLASS_MAGE)
@@ -1324,68 +1342,68 @@ bool GivePower(int power)
 	}
 	if (power == pw_invulnerability2)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = INVULNTIME2;
+		Powers[power].DurationTime = INVULNTIME2;
 		Actor(MO).bInvulnerable = true;
 		return true;
 	}
 	if (power == pw_infrared)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = INFRATIME;
+		Powers[power].DurationTime = INFRATIME;
 		return true;
 	}
 	if (power == pw_speed)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = SPEEDTIME;
+		Powers[power].DurationTime = SPEEDTIME;
 		return true;
 	}
 	if (power == pw_minotaur)
 	{
 		// Doesn't matter if already have power, renew ticker
-		Powers[power] = MAULATORTIME;
+		Powers[power].DurationTime = MAULATORTIME;
 		return true;
 	}
 	if (power == pw_invisibility)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = INVISTIME;
+		Powers[power].DurationTime = INVISTIME;
 		MO.Alpha = 0.666;
 		return true;
 	}
 	if (power == pw_damage)
 	{
-		if (Powers[power] > BLINKTHRESHOLD)
+		if (Powers[power].DurationTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power] = DAMAGETIME;
+		Powers[power].DurationTime = DAMAGETIME;
 		KArenaWeapon(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
 		return true;
 	}
-	if (Powers[power])
+	if (Powers[power].DurationTime)
 	{
 		return false;	// already got it
 	}
-	Powers[power] = 1.0;
+	Powers[power].DurationTime = 1.0;
 	return true;
 }
 
@@ -3034,10 +3052,11 @@ void PlayerTick(float deltaTime)
 			}
 		}*/
 		//[KORAX]
-		Powers[pw_invulnerability] -= deltaTime;
-		if (Powers[pw_invulnerability] <= 0.0)
+		Powers[pw_invulnerability].DurationTime -= deltaTime;
+		if (Powers[pw_invulnerability].DurationTime <= 0.0)
 		{
-			Powers[pw_invulnerability] = 0.0;
+			Powers[pw_invulnerability].Destroy();
+			Powers[pw_invulnerability] = none;
 			Actor(MO).bInvulnerable = false;
 			//[KORAX]
 			/*MO.bReflective = false;
@@ -3123,10 +3142,11 @@ void PlayerTick(float deltaTime)
 		{
 			Actor(MO).Alpha = 1.0;
 		}
-		Powers[pw_invulnerability2] -= deltaTime;
-		if (Powers[pw_invulnerability2] <= 0.0)
+		Powers[pw_invulnerability2].DurationTime -= deltaTime;
+		if (Powers[pw_invulnerability2].DurationTime <= 0.0)
 		{
-			Powers[pw_invulnerability2] = 0.0;
+			Powers[pw_invulnerability2].Destroy();
+			Powers[pw_invulnerability2] = none;
 			Actor(MO).bInvulnerable = false;
 			MO.Alpha = 1.0;
 		}
@@ -3134,40 +3154,51 @@ void PlayerTick(float deltaTime)
 
 	if (Powers[pw_minotaur])
 	{
-		Powers[pw_minotaur] -= deltaTime;
-		if (Powers[pw_minotaur] <= 0.0)
-			Powers[pw_minotaur] = 0.0;
+		Powers[pw_minotaur].DurationTime -= deltaTime;
+		if (Powers[pw_minotaur].DurationTime <= 0.0)
+		{
+			Powers[pw_minotaur].Destroy();
+			Powers[pw_minotaur] = none;
+		}
 	}
 
 	if (Powers[pw_infrared])
 	{
-		Powers[pw_infrared] -= deltaTime;
-		if (Powers[pw_infrared] <= 0.0)
-			Powers[pw_infrared] = 0.0;
+		Powers[pw_infrared].DurationTime -= deltaTime;
+		if (Powers[pw_infrared].DurationTime <= 0.0)
+		{
+			Powers[pw_infrared].Destroy();
+			Powers[pw_infrared] = none;
+		}
 	}
 
 	if (Powers[pw_speed])
 	{
-		Powers[pw_speed] -= deltaTime;
-		if (Powers[pw_speed] <= 0.0)
-			Powers[pw_speed] = 0.0;
+		Powers[pw_speed].DurationTime -= deltaTime;
+		if (Powers[pw_speed].DurationTime <= 0.0)
+		{
+			Powers[pw_speed].Destroy();
+			Powers[pw_speed] = none;
+		}
 	}
 
 	if (Powers[pw_invisibility])
 	{
-		Powers[pw_invisibility] -= deltaTime;
-		if (Powers[pw_invisibility] <= 0.0)
+		Powers[pw_invisibility].DurationTime -= deltaTime;
+		if (Powers[pw_invisibility].DurationTime <= 0.0)
 		{
-			Powers[pw_invisibility] = 0.0;
+			Powers[pw_invisibility].Destroy();
+			Powers[pw_invisibility] = none;
 			Actor(MO).Alpha = 1.0;
 		}
 	}
 	if (Powers[pw_damage])
 	{
-		Powers[pw_damage] -= deltaTime;
-		if (Powers[pw_damage] <= 0.0)
+		Powers[pw_damage].DurationTime -= deltaTime;
+		if (Powers[pw_damage].DurationTime <= 0.0)
 		{
-			Powers[pw_damage] = 0.0;
+			Powers[pw_damage].Destroy();
+			Powers[pw_damage] = none;
 			KArenaWeapon(ViewEnt).active_damage = 0; // [FB] Return to using normal damage
 		}
 	}
@@ -3233,9 +3264,9 @@ void PlayerTick(float deltaTime)
 	// Handling colourmaps.
 	if (Powers[pw_infrared])
 	{
-		if (Powers[pw_infrared] <= BLINKTHRESHOLD)
+		if (Powers[pw_infrared].DurationTime <= BLINKTHRESHOLD)
 		{
-			if (ftoi(Powers[pw_infrared] * 35.0) & 8)
+			if (ftoi(Powers[pw_infrared].DurationTime * 35.0) & 8)
 			{
 				FixedColourmap = 0;
 			}
@@ -3410,40 +3441,40 @@ void SetViewPos()
 
 	if (Powers[pw_speed])
 	{
-		if (Powers[pw_speed] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_speed] * 35.0) & 16))
+		if (Powers[pw_speed].DurationTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_speed].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_SPEED;
 		}
 	}
 	if (Powers[pw_invulnerability])
 	{
-		if (Powers[pw_invulnerability] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_invulnerability] * 35.0) & 16))
+		if (Powers[pw_invulnerability].DurationTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_invulnerability].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_INVULN;
 		}
 	}
 	if (Powers[pw_minotaur])
 	{
-		if (Powers[pw_minotaur] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_minotaur] * 35.0) & 16))
+		if (Powers[pw_minotaur].DurationTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_minotaur].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_MINOTAUR;
 		}
 	}
 	if (Powers[pw_invisibility])
 	{
-		if (Powers[pw_invisibility] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_invisibility] * 35.0) & 16))
+		if (Powers[pw_invisibility].DurationTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_invisibility].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_INVISIBILITY;
 		}
 	}
 	if (Powers[pw_damage])
 	{
-		if (Powers[pw_damage] > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_damage] * 35.0) & 16))
+		if (Powers[pw_damage].DurationTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_damage].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_DAMAGE;
 		}
