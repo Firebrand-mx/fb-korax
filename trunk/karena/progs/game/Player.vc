@@ -934,7 +934,14 @@ void SpawnPlayer(mthing_t * mthing)
 			pp.GiveInventoryType(Cls);
 		}
 		// [FB] Give temporary invulnerability in DM only
-		GivePower(pw_invulnerability2);
+		Powerup Pw = Level.Spawn(PowerInvulnerable);
+		Pw.DurationTime = INVULNTIME2;
+		Pw.Mode = 'Initial';
+		if (!Pw.TryPickup(pp))
+		{
+			Pw.Destroy();
+		}
+		pp.bInvulnerable = true;
 	}
 
 	// Set translation table data
@@ -1323,34 +1330,6 @@ bool GivePower(int power)
 		Powers[power].AttachToOwner(EntityEx(MO));
 	}
 
-	if (power == pw_invulnerability)
-	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power].DurationTime = INVULNTIME;
-		Actor(MO).bInvulnerable = true;
-		// [KORAX]
-		/*if (PClass == PCLASS_MAGE)
-		{
-			MO.bReflective = true;
-		}*/
-		// [KORAX]
-		return true;
-	}
-	if (power == pw_invulnerability2)
-	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power].DurationTime = INVULNTIME2;
-		Actor(MO).bInvulnerable = true;
-		return true;
-	}
 	if (power == pw_infrared)
 	{
 		if (Powers[power].DurationTime > BLINKTHRESHOLD)
@@ -2999,76 +2978,8 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	// Counters, time dependend power ups.
-	if (Powers[pw_invulnerability])
-	{
-		//[KORAX]
-		/*if (PClass == PCLASS_CLERIC)
-		{
-			if (!(Level.Game.level->tictime & 7) && bShadow && !bDontDraw)
-			{
-				bShadow = false;
-				if (!bAltShadow)
-				{
-					bDontDraw = true;
- 					Actor(MO).bNonShootable = true;
-				}
-			}
-			if (!(Level.Game.level->tictime & 31))
-			{
-				if (bDontDraw)
-				{
-					if (!bShadow)
-					{
-						bShadow = true;
- 						bAltShadow = true;
-					}
-					else
-					{
-						bDontDraw = false;
- 						Actor(MO).bNonShootable = false;
-					}
-				}
-				else
-				{
-					bShadow = true;
-					bAltShadow = false;
-				}
-			}
-			if (bDontDraw)
-			{
-				MO.Alpha = 0.0;
-			}
-			else if (bShadow)
-			{
-				MO.Alpha = 0.333;
-			}
-			else if (bAltShadow)
-			{
-				MO.Alpha = 0.666;
-			}
-			else
-			{
-				MO.Alpha = 1.0;
-			}
-		}*/
-		//[KORAX]
-		Powers[pw_invulnerability].DurationTime -= deltaTime;
-		if (Powers[pw_invulnerability].DurationTime <= 0.0)
-		{
-			Powers[pw_invulnerability].Destroy();
-			Powers[pw_invulnerability] = none;
-			Actor(MO).bInvulnerable = false;
-			//[KORAX]
-			/*MO.bReflective = false;
-			if (PClass == PCLASS_CLERIC)
-			{
-				Actor(MO).bNonShootable = false;
-				MO.Alpha = 1.0;
-			}*/
-			//[KORAX]
-		}
-	}
-	if (Powers[pw_invulnerability2])
+	Powerup Pw = Powerup(EntityEx(MO).FindInventory(PowerInvulnerable));
+	if (Pw && Pw.Mode == 'Initial')
 	{
 		if (!(Level.XLevel.TicTime & 1) && bShadow && !bDontDraw)
 		{
@@ -3142,13 +3053,21 @@ void PlayerTick(float deltaTime)
 		{
 			Actor(MO).Alpha = 1.0;
 		}
-		Powers[pw_invulnerability2].DurationTime -= deltaTime;
-		if (Powers[pw_invulnerability2].DurationTime <= 0.0)
+		Pw.DurationTime -= deltaTime;
+		if (Pw.DurationTime <= 0.0)
 		{
-			Powers[pw_invulnerability2].Destroy();
-			Powers[pw_invulnerability2] = none;
+			Pw.Destroy();
 			Actor(MO).bInvulnerable = false;
 			MO.Alpha = 1.0;
+		}
+	}
+	else if (Pw)
+	{
+		Pw.DurationTime -= deltaTime;
+		if (Pw.DurationTime <= 0.0)
+		{
+			Pw.Destroy();
+			Actor(MO).bInvulnerable = false;
 		}
 	}
 
@@ -3445,14 +3364,6 @@ void SetViewPos()
 			!(ftoi(Powers[pw_speed].DurationTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_SPEED;
-		}
-	}
-	if (Powers[pw_invulnerability])
-	{
-		if (Powers[pw_invulnerability].DurationTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_invulnerability].DurationTime * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_INVULN;
 		}
 	}
 	if (Powers[pw_minotaur])
@@ -4959,7 +4870,7 @@ void ClientDynamicLightEx(int colour, TVec org, int radius, int lifetime, int de
 
 bool HaveInvulnerabilityPower()
 {
-	return !!Powers[pw_invulnerability];
+	return !!EntityEx(MO).FindInventory(PowerInvulnerable);
 }
 
 //==========================================================================

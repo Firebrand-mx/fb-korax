@@ -974,6 +974,11 @@ void SB_DrawIcons()
 {
 	int frame;
 
+	if (!cl.MO)
+	{
+		return;
+	}
+
 	// Wings of wrath
 	if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
 	{
@@ -1007,7 +1012,10 @@ void SB_DrawIcons()
 	}
 
 	// Defensive power
-	if (cl.SBFlags & HexenDefs::SBF_POWER_INVULN)
+	Powerup Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerInvulnerable));
+	if (Pw && Pw.Mode != 'Initial' &&
+		(Pw.DurationTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.DurationTime * 35.0) & 16)))
 	{
 		R_DrawShadowedPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
