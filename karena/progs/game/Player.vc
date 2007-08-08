@@ -129,11 +129,6 @@ int WeaponCShift;
 //[KORAX]float MorphTime;	// player is a pig if > 0
 morph_t	Morph;
 
-// For cleric's invulnerability effect
-bool bAltShadow;
-bool bShadow;
-bool bDontDraw;
-
 BotPlayer Bot;
 Inventory SavedInventory;
 
@@ -2969,82 +2964,6 @@ void PlayerTick(float deltaTime)
 
 	// Counters, time dependend power ups.
 	Powerup Pw = Powerup(EntityEx(MO).FindInventory(PowerInvulnerable));
-	if (Pw && Pw.Mode == 'Initial')
-	{
-		if (!(Level.XLevel.TicTime & 1) && bShadow && !bDontDraw)
-		{
-			bShadow = false;
-			if (!bAltShadow)
-			{
-				bDontDraw = true;
-			}
-		}
-		if (!(Level.XLevel.TicTime & 2))
-		{
-			if (bDontDraw)
-			{
-				if (!bShadow)
-				{
-					bShadow = true;
-					bAltShadow = true;
-				}
-				else
-				{
-					bDontDraw = false;
-				}
-			}
-			else
-			{
-				bShadow = true;
-				bAltShadow = false;
-			}
-		}
-		if (!(Level.XLevel.TicTime & 3) && bShadow && !bDontDraw)
-		{
-			bShadow = false;
-			if (!bAltShadow)
-			{
-				bDontDraw = true;
-			}
-		}
-		if (!(Level.XLevel.TicTime & 4))
-		{
-			if (bDontDraw)
-			{
-				if (!bShadow)
-				{
-					bShadow = true;
-					bAltShadow = true;
-				}
-				else
-				{
-					bDontDraw = false;
-				}
-			}
-			else
-			{
-				bShadow = true;
-				bAltShadow = false;
-			}
-		}
-		if (bDontDraw)
-		{
-			Actor(MO).Alpha = 0.0;
-		}
-		else if (bShadow)
-		{
-			Actor(MO).Alpha = 0.333;
-		}
-		else if (bAltShadow)
-		{
-			Actor(MO).Alpha = 0.666;
-		}
-		else
-		{
-			Actor(MO).Alpha = 1.0;
-		}
-	}
-
 	if (Powers[pw_minotaur])
 	{
 		Powers[pw_minotaur].EffectTime -= deltaTime;
