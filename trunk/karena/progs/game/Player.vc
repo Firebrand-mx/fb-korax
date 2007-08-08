@@ -1322,57 +1322,57 @@ bool GivePower(int power)
 
 	if (power == pw_infrared)
 	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
+		if (Powers[power].EffectTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power].DurationTime = INFRATIME;
+		Powers[power].EffectTime = INFRATIME;
 		return true;
 	}
 	if (power == pw_speed)
 	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
+		if (Powers[power].EffectTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power].DurationTime = SPEEDTIME;
+		Powers[power].EffectTime = SPEEDTIME;
 		return true;
 	}
 	if (power == pw_minotaur)
 	{
 		// Doesn't matter if already have power, renew ticker
-		Powers[power].DurationTime = MAULATORTIME;
+		Powers[power].EffectTime = MAULATORTIME;
 		return true;
 	}
 	if (power == pw_invisibility)
 	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
+		if (Powers[power].EffectTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power].DurationTime = INVISTIME;
+		Powers[power].EffectTime = INVISTIME;
 		MO.Alpha = 0.666;
 		return true;
 	}
 	if (power == pw_damage)
 	{
-		if (Powers[power].DurationTime > BLINKTHRESHOLD)
+		if (Powers[power].EffectTime > BLINKTHRESHOLD)
 		{
 			// Already have it
 			return false;
 		}
-		Powers[power].DurationTime = DAMAGETIME;
+		Powers[power].EffectTime = DAMAGETIME;
 		KArenaWeapon(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
 		return true;
 	}
-	if (Powers[power].DurationTime)
+	if (Powers[power].EffectTime)
 	{
 		return false;	// already got it
 	}
-	Powers[power].DurationTime = 1.0;
+	Powers[power].EffectTime = 1.0;
 	return true;
 }
 
@@ -3043,28 +3043,12 @@ void PlayerTick(float deltaTime)
 		{
 			Actor(MO).Alpha = 1.0;
 		}
-		Pw.DurationTime -= deltaTime;
-		if (Pw.DurationTime <= 0.0)
-		{
-			Pw.Destroy();
-			Actor(MO).bInvulnerable = false;
-			MO.Alpha = 1.0;
-		}
-	}
-	else if (Pw)
-	{
-		Pw.DurationTime -= deltaTime;
-		if (Pw.DurationTime <= 0.0)
-		{
-			Pw.Destroy();
-			Actor(MO).bInvulnerable = false;
-		}
 	}
 
 	if (Powers[pw_minotaur])
 	{
-		Powers[pw_minotaur].DurationTime -= deltaTime;
-		if (Powers[pw_minotaur].DurationTime <= 0.0)
+		Powers[pw_minotaur].EffectTime -= deltaTime;
+		if (Powers[pw_minotaur].EffectTime <= 0.0)
 		{
 			Powers[pw_minotaur].Destroy();
 			Powers[pw_minotaur] = none;
@@ -3073,8 +3057,8 @@ void PlayerTick(float deltaTime)
 
 	if (Powers[pw_infrared])
 	{
-		Powers[pw_infrared].DurationTime -= deltaTime;
-		if (Powers[pw_infrared].DurationTime <= 0.0)
+		Powers[pw_infrared].EffectTime -= deltaTime;
+		if (Powers[pw_infrared].EffectTime <= 0.0)
 		{
 			Powers[pw_infrared].Destroy();
 			Powers[pw_infrared] = none;
@@ -3083,8 +3067,8 @@ void PlayerTick(float deltaTime)
 
 	if (Powers[pw_speed])
 	{
-		Powers[pw_speed].DurationTime -= deltaTime;
-		if (Powers[pw_speed].DurationTime <= 0.0)
+		Powers[pw_speed].EffectTime -= deltaTime;
+		if (Powers[pw_speed].EffectTime <= 0.0)
 		{
 			Powers[pw_speed].Destroy();
 			Powers[pw_speed] = none;
@@ -3093,8 +3077,8 @@ void PlayerTick(float deltaTime)
 
 	if (Powers[pw_invisibility])
 	{
-		Powers[pw_invisibility].DurationTime -= deltaTime;
-		if (Powers[pw_invisibility].DurationTime <= 0.0)
+		Powers[pw_invisibility].EffectTime -= deltaTime;
+		if (Powers[pw_invisibility].EffectTime <= 0.0)
 		{
 			Powers[pw_invisibility].Destroy();
 			Powers[pw_invisibility] = none;
@@ -3103,8 +3087,8 @@ void PlayerTick(float deltaTime)
 	}
 	if (Powers[pw_damage])
 	{
-		Powers[pw_damage].DurationTime -= deltaTime;
-		if (Powers[pw_damage].DurationTime <= 0.0)
+		Powers[pw_damage].EffectTime -= deltaTime;
+		if (Powers[pw_damage].EffectTime <= 0.0)
 		{
 			Powers[pw_damage].Destroy();
 			Powers[pw_damage] = none;
@@ -3173,9 +3157,9 @@ void PlayerTick(float deltaTime)
 	// Handling colourmaps.
 	if (Powers[pw_infrared])
 	{
-		if (Powers[pw_infrared].DurationTime <= BLINKTHRESHOLD)
+		if (Powers[pw_infrared].EffectTime <= BLINKTHRESHOLD)
 		{
-			if (ftoi(Powers[pw_infrared].DurationTime * 35.0) & 8)
+			if (ftoi(Powers[pw_infrared].EffectTime * 35.0) & 8)
 			{
 				FixedColourmap = 0;
 			}
@@ -3351,32 +3335,32 @@ void SetViewPos()
 	SBFlags = 0;
 	if (Powers[pw_speed])
 	{
-		if (Powers[pw_speed].DurationTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_speed].DurationTime * 35.0) & 16))
+		if (Powers[pw_speed].EffectTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_speed].EffectTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_SPEED;
 		}
 	}
 	if (Powers[pw_minotaur])
 	{
-		if (Powers[pw_minotaur].DurationTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_minotaur].DurationTime * 35.0) & 16))
+		if (Powers[pw_minotaur].EffectTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_minotaur].EffectTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_MINOTAUR;
 		}
 	}
 	if (Powers[pw_invisibility])
 	{
-		if (Powers[pw_invisibility].DurationTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_invisibility].DurationTime * 35.0) & 16))
+		if (Powers[pw_invisibility].EffectTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_invisibility].EffectTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_INVISIBILITY;
 		}
 	}
 	if (Powers[pw_damage])
 	{
-		if (Powers[pw_damage].DurationTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_damage].DurationTime * 35.0) & 16))
+		if (Powers[pw_damage].EffectTime > BLINKTHRESHOLD ||
+			!(ftoi(Powers[pw_damage].EffectTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_DAMAGE;
 		}
