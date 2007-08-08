@@ -39,7 +39,6 @@ const float
 	SPEEDTIME 				= 45.0,
 	MORPHTIME 				= 40.0,
 	MAULATORTIME 			= 30.0,
-	INVISTIME				= 40.0,
 	DAMAGETIME				= 40.0;
 
 //const int MAXMORPHHEALTH	= 30;		//[CW] this may be obsolete
@@ -1339,17 +1338,6 @@ bool GivePower(int power)
 	{
 		// Doesn't matter if already have power, renew ticker
 		Powers[power].EffectTime = MAULATORTIME;
-		return true;
-	}
-	if (power == pw_invisibility)
-	{
-		if (Powers[power].EffectTime > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power].EffectTime = INVISTIME;
-		MO.Alpha = 0.666;
 		return true;
 	}
 	if (power == pw_damage)
@@ -2963,7 +2951,6 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	// Counters, time dependend power ups.
-	Powerup Pw = Powerup(EntityEx(MO).FindInventory(PowerInvulnerable));
 	if (Powers[pw_minotaur])
 	{
 		Powers[pw_minotaur].EffectTime -= deltaTime;
@@ -2994,14 +2981,14 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if (Powers[pw_invisibility])
+	Powerup Pw = Powerup(EntityEx(MO).FindInventory(PowerGhost));
+	if (Pw)
 	{
-		Powers[pw_invisibility].EffectTime -= deltaTime;
-		if (Powers[pw_invisibility].EffectTime <= 0.0)
+		Pw.EffectTime -= deltaTime;
+		if (Pw.EffectTime <= 0.0)
 		{
-			Powers[pw_invisibility].Destroy();
-			Powers[pw_invisibility] = none;
-			Actor(MO).Alpha = 1.0;
+			Pw.Destroy();
+			MO.Alpha = 1.0;
 		}
 	}
 	if (Powers[pw_damage])
@@ -3266,14 +3253,6 @@ void SetViewPos()
 			!(ftoi(Powers[pw_minotaur].EffectTime * 35.0) & 16))
 		{
 			SBFlags |= HexenDefs::SBF_POWER_MINOTAUR;
-		}
-	}
-	if (Powers[pw_invisibility])
-	{
-		if (Powers[pw_invisibility].EffectTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_invisibility].EffectTime * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_INVISIBILITY;
 		}
 	}
 	if (Powers[pw_damage])

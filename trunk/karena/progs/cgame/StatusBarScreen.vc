@@ -972,6 +972,7 @@ void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 
 void SB_DrawIcons()
 {
+	Powerup Pw;
 	int frame;
 
 	if (!cl.MO)
@@ -1012,7 +1013,7 @@ void SB_DrawIcons()
 	}
 
 	// Defensive power
-	Powerup Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerInvulnerable));
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerInvulnerable));
 	if (Pw && Pw.Mode != 'Initial' &&
 		(Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
@@ -1034,9 +1035,14 @@ void SB_DrawIcons()
 	}
 
 	// [FB] Invisibility power
-	if (cl.SBFlags & HexenDefs::SBF_POWER_INVISIBILITY)
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerGhost));
+	if (Pw)
 	{
-		R_DrawPic2(220, 19, pic_shsp, 0.6);
+		if (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+			!(ftoi(Pw.EffectTime * 35.0) & 16))
+		{
+			R_DrawPic2(220, 19, pic_shsp, 0.6);
+		}
 	}
 }
 
