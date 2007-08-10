@@ -23,36 +23,38 @@
 //**
 //**************************************************************************
 
-import shared;
-import linespec;
+class PowerPIDamage : Powerup;
 
-// CONSTANTS ---------------------------------------------------------------
+//==========================================================================
+//
+//	InitEffect
+//
+//==========================================================================
 
-enum
+void InitEffect()
 {
-	CONTENTS_EMPTY,
-	CONTENTS_WATER,
-	CONTENTS_LAVA,
-	CONTENTS_NUKAGE,
-	CONTENTS_SLIME,
-	CONTENTS_HELLSLIME,
-	CONTENTS_BLOOD,
-	CONTENTS_SLUDGE,
-	CONTENTS_HAZARD,
+	// [FB] Adjust weapon damage
+	KArenaWeapon(Player(Owner.Player).ReadyWeapon).active_damage = true;
+}
 
-	CONTENTS_SOLID = -1
-};
+//==========================================================================
+//
+//	EndEffect
+//
+//==========================================================================
 
-enum
+void EndEffect()
 {
-	CSHIFT_Contents,
-	CSHIFT_Damage,
-	CSHIFT_Bonus,
-	CSHIFT_Poison,
-	CSHIFT_Weapon,
-	CSHIFT_Blind
-};
+	if (!Owner || !Owner.bIsPlayer)
+	{
+		return;
+	}
 
-// TYPES -------------------------------------------------------------------
+	// [FB] Return to using normal damage
+	KArenaWeapon(Player(Owner.Player).ReadyWeapon).active_damage = false;
+}
 
-#include "game/classes.vc"
+defaultproperties
+{
+	EffectTime = 40.0;
+}
