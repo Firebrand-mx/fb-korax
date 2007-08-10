@@ -34,7 +34,6 @@ class Player : PlayerEx;
 
 const float
 	INVULNTIME2				= 5.0,
-	SPEEDTIME 				= 45.0,
 	MORPHTIME 				= 40.0,
 	MAULATORTIME 			= 30.0,
 	DAMAGETIME				= 40.0;
@@ -100,8 +99,6 @@ int ArmorPerc[HexenDefs::NUMARMOR];*/
 
 // Power ups. invinc and invis are tic counters.
 Powerup Powers[NUMPOWERS];
-
-float FlyHeight;
 
 //[Korax]
 //int Pieces;	// Fourth Weapon pieces
@@ -1309,22 +1306,6 @@ bool GivePower(int power)
 		Powers[power].AttachToOwner(EntityEx(MO));
 	}
 
-	if (power == pw_speed)
-	{
-		if (Powers[power].EffectTime > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power].EffectTime = SPEEDTIME;
-		return true;
-	}
-	if (power == pw_minotaur)
-	{
-		// Doesn't matter if already have power, renew ticker
-		Powers[power].EffectTime = MAULATORTIME;
-		return true;
-	}
 	if (power == pw_damage)
 	{
 		if (Powers[power].EffectTime > BLINKTHRESHOLD)
@@ -1625,11 +1606,13 @@ void MovePlayer(float deltaTime)
 		break;
 	}
 
-	if (Powers[pw_speed] && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	if (EntityEx(MO).Inventory &&
+		PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5;
-		side *= 1.5;
+		float SpeedFactor = EntityEx(MO).Inventory.GetSpeedFactor();
+		forward *= SpeedFactor;
+		side *= SpeedFactor;
 	}
 /*	if ((!Powers[pw_flight] || MO.Origin.z <= MO.FloorZ) &&
 		(Actor(MO).GetFloorType()->Friction < Actor::FRICTION_NORMAL ||
@@ -1772,11 +1755,13 @@ void WaterMove(float deltaTime)
 		break;
 	}
 
-	if (Powers[pw_speed] && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	if (EntityEx(MO).Inventory &&
+		PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
 	{
 		// Adjust for a player with a speed artifact
-		forward *= 1.5;
-		side *= 1.5;
+		float SpeedFactor = EntityEx(MO).Inventory.GetSpeedFactor();
+		forward *= SpeedFactor;
+		side *= SpeedFactor;
 	}
 
 	wishvel = vforward * forward + vright * side;
@@ -2831,8 +2816,8 @@ void PlayerTick(float deltaTime)
 			WaterMove(deltaTime);
 		else
 			MovePlayer(deltaTime);
-		if (Powers[pw_speed] && !(Level.XLevel.TicTime & 1) &&
-			Length(MO.Velocity) > 12.0 * 35.0)
+		if (EntityEx(MO).FindInventory(PowerSpeed) &&
+			!(Level.XLevel.TicTime & 1) && Length(MO.Velocity) > 12.0 * 35.0)
 		{
 			speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
 			if (speedA)
@@ -2934,26 +2919,7 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	// Counters, time dependend power ups.
-	if (Powers[pw_minotaur])
-	{
-		Powers[pw_minotaur].EffectTime -= deltaTime;
-		if (Powers[pw_minotaur].EffectTime <= 0.0)
-		{
-			Powers[pw_minotaur].Destroy();
-			Powers[pw_minotaur] = none;
-		}
-	}
-
-	if (Powers[pw_speed])
-	{
-		Powers[pw_speed].EffectTime -= deltaTime;
-		if (Powers[pw_speed].EffectTime <= 0.0)
-		{
-			Powers[pw_speed].Destroy();
-			Powers[pw_speed] = none;
-		}
-	}
-
+	
 	if (Powers[pw_damage])
 	{
 		Powers[pw_damage].EffectTime -= deltaTime;
@@ -3162,22 +3128,6 @@ void SetViewPos()
 	PaletteFlash();
 
 	SBFlags = 0;
-	if (Powers[pw_speed])
-	{
-		if (Powers[pw_speed].EffectTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_speed].EffectTime * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_SPEED;
-		}
-	}
-	if (Powers[pw_minotaur])
-	{
-		if (Powers[pw_minotaur].EffectTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_minotaur].EffectTime * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_MINOTAUR;
-		}
-	}
 	if (Powers[pw_damage])
 	{
 		if (Powers[pw_damage].EffectTime > BLINKTHRESHOLD ||
@@ -3185,10 +3135,6 @@ void SetViewPos()
 		{
 			SBFlags |= HexenDefs::SBF_POWER_DAMAGE;
 		}
-	}
-	if (MO.bFly)
-	{
-		SBFlags |= HexenDefs::SBF_IN_FLIGHT;
 	}
 
 	ClientSetViewOrg(ViewOrg.x, ViewOrg.y, ViewOrg.z);

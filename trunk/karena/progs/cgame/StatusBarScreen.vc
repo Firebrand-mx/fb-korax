@@ -973,41 +973,16 @@ void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 void SB_DrawIcons()
 {
 	Powerup Pw;
-	int frame;
 
 	if (!cl.MO)
 	{
 		return;
 	}
 
-	// Wings of wrath
-	if (cl.SBFlags & HexenDefs::SBF_POWER_FLIGHT)
-	{
-		frame = (ClGame.GLevel.TicTime / 3) & 15;
-		if (cl.SBFlags & HexenDefs::SBF_IN_FLIGHT)
-		{
-			if (hitCentreFrame && frame != 15 && frame != 0)
-			{
-				frame = 15;
-			}
-			else
-			{
-				hitCentreFrame = false;
-			}
-		}
-		else
-		{
-			if (hitCentreFrame || frame == 15 || frame == 0)
-			{
-				frame = 15;
-				hitCentreFrame = true;
-			}
-		}
-		R_DrawShadowedPic(20, 19, pic_fly[frame]);
-	}
-
 	// Speed Boots
-	if (cl.SBFlags & HexenDefs::SBF_POWER_SPEED)
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerSpeed));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		R_DrawShadowedPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
@@ -1022,7 +997,9 @@ void SB_DrawIcons()
 	}
 
 	// Minotaur Active
-	if (cl.SBFlags & HexenDefs::SBF_POWER_MINOTAUR)
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerMinotaur));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		R_DrawShadowedPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
