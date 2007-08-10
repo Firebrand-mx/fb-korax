@@ -35,8 +35,7 @@ class Player : PlayerEx;
 const float
 	INVULNTIME2				= 5.0,
 	MORPHTIME 				= 40.0,
-	MAULATORTIME 			= 30.0,
-	DAMAGETIME				= 40.0;
+	MAULATORTIME 			= 30.0;
 
 //const int MAXMORPHHEALTH	= 30;		//[CW] this may be obsolete
 //const float VIEWHEIGHT 		= 48.0;
@@ -90,15 +89,10 @@ struct targetinfo_t
 	byte	healthpc;	// [CW] health percentage
 };
 
-int SBFlags;
-
 int ArmorPoints;
 // [KORAX]
 /*float ArmorPoints[HexenDefs::NUMARMOR];
 int ArmorPerc[HexenDefs::NUMARMOR];*/
-
-// Power ups. invinc and invis are tic counters.
-Powerup Powers[NUMPOWERS];
 
 //[Korax]
 //int Pieces;	// Fourth Weapon pieces
@@ -186,7 +180,7 @@ bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 replication
 {
 	reliable if (!bIsClient)
-		SBFlags, ArmorPoints, Score, TeamFrags, TeamKills, Deaths,
+		ArmorPoints, Score, TeamFrags, TeamKills, Deaths,
 		TeamPosition, PlayerPosition, experience, exp_level, next_level,
 		old_level, strength, intelligence, wisdom, dexterity, constitution,
 		max_health, old_maxhealth, bak_health, use_power, altWeapon,
@@ -879,16 +873,6 @@ void SpawnPlayer(mthing_t * mthing)
 		inited = true;
 	}
 
-	// [FB] Wear out any power we had
-	for (i = 0; i < NUMPOWERS; i++)
-	{
-		if (Powers[i])
-		{
-			Powers[i].Destroy();
-			Powers[i] = none;
-		}
-	}
-
 	pp.Inventory = SavedInventory;
 	for (Item = pp.Inventory; Item; Item = Item.Inventory)
 	{
@@ -1072,14 +1056,16 @@ void PlayerExitMap(bool clusterChange)
 	int i;
 	Inventory Item;
 
-	// Strip all current powers (retain flight)
-	for (i = 0; i < NUMPOWERS; i++)
+	// Strip all current powers
+	for (Item = EntityEx(MO).Inventory; Item;)
 	{
-		if (Powers[i])
+		Inventory Next = Item.Inventory;
+		if (Powerup(Item) && (Level.Game.deathmatch || clusterChange ||
+			!Item.bHubPower))
 		{
-			Powers[i].Destroy();
-			Powers[i] = none;
+			Item.Destroy();
 		}
+		Item = Next;
 	}
 
 	if (!Level.Game.deathmatch)
@@ -1288,41 +1274,6 @@ bool GiveArmor(int armortype, int amount)
 		return true;
 	}
 	return false;
-}
-
-//==========================================================================
-//
-//  GivePower
-//
-//  Returns true if power accepted.
-//
-//==========================================================================
-
-bool GivePower(int power)
-{
-	if (!Powers[power])
-	{
-		Powers[power] = Level.Spawn(DummyPowerup);
-		Powers[power].AttachToOwner(EntityEx(MO));
-	}
-
-	if (power == pw_damage)
-	{
-		if (Powers[power].EffectTime > BLINKTHRESHOLD)
-		{
-			// Already have it
-			return false;
-		}
-		Powers[power].EffectTime = DAMAGETIME;
-		KArenaWeapon(ViewEnt).active_damage = 1; // [FB] Adjust weapon damage
-		return true;
-	}
-	if (Powers[power].EffectTime)
-	{
-		return false;	// already got it
-	}
-	Powers[power].EffectTime = 1.0;
-	return true;
 }
 
 //[Korax]
@@ -2918,19 +2869,8 @@ void PlayerTick(float deltaTime)
 	// cycle psprites
 	MovePsprites(deltaTime);
 
-	// Counters, time dependend power ups.
+	// Counters
 	
-	if (Powers[pw_damage])
-	{
-		Powers[pw_damage].EffectTime -= deltaTime;
-		if (Powers[pw_damage].EffectTime <= 0.0)
-		{
-			Powers[pw_damage].Destroy();
-			Powers[pw_damage] = none;
-			KArenaWeapon(ViewEnt).active_damage = 0; // [FB] Return to using normal damage
-		}
-	}
-
 	// [CW]
 	if (PoisonCount && Actor(MO).bDormant)
 		PoisonCount = 0;
@@ -3126,16 +3066,6 @@ void SetViewPos()
 	ViewAngles = MO.Angles;
 
 	PaletteFlash();
-
-	SBFlags = 0;
-	if (Powers[pw_damage])
-	{
-		if (Powers[pw_damage].EffectTime > BLINKTHRESHOLD ||
-			!(ftoi(Powers[pw_damage].EffectTime * 35.0) & 16))
-		{
-			SBFlags |= HexenDefs::SBF_POWER_DAMAGE;
-		}
-	}
 
 	ClientSetViewOrg(ViewOrg.x, ViewOrg.y, ViewOrg.z);
 }
