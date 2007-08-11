@@ -37,9 +37,6 @@ const float
 	MORPHTIME 				= 40.0,
 	MAULATORTIME 			= 30.0;
 
-//const int MAXMORPHHEALTH	= 30;		//[CW] this may be obsolete
-//const float VIEWHEIGHT 		= 48.0;
-
 // 16 pixels of bob
 const float MAXBOB			= 16.0;
 
@@ -90,12 +87,6 @@ struct targetinfo_t
 };
 
 int ArmorPoints;
-// [KORAX]
-/*float ArmorPoints[HexenDefs::NUMARMOR];
-int ArmorPerc[HexenDefs::NUMARMOR];*/
-
-//[Korax]
-//int Pieces;	// Fourth Weapon pieces
 
 int		altWeapon;
 int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
@@ -111,7 +102,6 @@ float LastPoisonTime;
 Actor Poisoner;		// none for non-player mobjs
 
 int WeaponCShift;
-//[KORAX]float MorphTime;	// player is a pig if > 0
 morph_t	Morph;
 
 BotPlayer Bot;
@@ -475,7 +465,7 @@ void SetPlayerColour()
 	if (PClass == HexenDefs::PCLASS_WITCHAVEN)
 	{
 		// [FB] The first type should be blue, and the second should be the
-		// Witchaven's original red colour
+		// Hero's original red colour
 		if (Colour == 0)
 			MO.Translation = 1 + PClass * (MAXPLAYERS - 1);
 		else if (Colour != 1)
@@ -851,7 +841,6 @@ void SpawnPlayer(mthing_t * mthing)
 	BonusFlash = 0.0;
 	PoisonCount = 0;
 	BlindCount = 0; // [FB] Reset the blind count too!
-	//MorphTime = 0.0;
 	Morph.bMorphed = false;
 	Morph.bTimer = false;
 	Morph.bUntilDeath = false;
@@ -860,7 +849,7 @@ void SpawnPlayer(mthing_t * mthing)
 	FixedColourmap = 0;
 	LastSectorDamageTime = 0.0;
 	LastHazardTime = 0.0;
-	ViewHeight = pp.ViewHeight;	//VIEWHEIGHT;
+	ViewHeight = pp.ViewHeight;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
 	pcount = 0; // [FB] Reset counter
@@ -951,7 +940,7 @@ void SpawnPlayer(mthing_t * mthing)
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower to it, then we activate a level less than
 		//	our current one
-		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
+		while(experience < old_level && exp_level >= 1)
 		{
 			DeactivateLevel(exp_level - 1, true); // [FB] Update Stats accordingly
 		}
@@ -1085,7 +1074,7 @@ void PlayerExitMap(bool clusterChange)
 		}
 	}
 
-	if (Morph.bMorphed/*MorphTime*/)
+	if (Morph.bMorphed)
 	{
 		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
 		Morph.bMorphed = false;
@@ -1274,7 +1263,7 @@ void GiveExperience(int exp)
 
 	Actor(MO).experience = experience;
 
-	while (experience >= next_level && exp_level < 11/* && (cl < PCLASS_PIG)*/)
+	while (experience >= next_level && exp_level < 11)
 	{
 		ActivateLevel(exp_level + 1, true);
 	}
@@ -1424,7 +1413,7 @@ void InitiateLevel()
 
 void PlayerCamping()
 {
-	// [FB] Let's see, if every a tic is 1/35 of a second, a second should
+	// [FB] Let's see, if a tic is 1/35 of a second, a second should
 	//	be multiplied by 35 to have an equality, every 3 secs. the
 	//	player stays camping (even if he's shooting), we'll start
 	//	decreasing his experience according his level, so...
@@ -1452,11 +1441,8 @@ void PlayerCamping()
 		//	Then we use the old_level value to compare our current experience,
 		//	if it is lower than it, then we activate a level less than
 		//	our current one
-		while(experience < old_level && exp_level >= 1/* && (cl < PCLASS_PIG)*/)
+		while(experience < old_level && exp_level >= 1)
 		{
-			/*exp_level--; // [FB] Decrese experience level
-			next_level = next_level - 1000; // [FB] Decrease the next to the old_level
-			old_level = old_level - 1000; // [FB] Also decrease the old_level*/
 			DeactivateLevel(exp_level - 1, true); // [FB] Update Stats accordingly
 		}
 	}
@@ -1539,7 +1525,7 @@ void MovePlayer(float deltaTime)
 	}
 
 	if (EntityEx(MO).Inventory &&
-		PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+		PClass != HexenDefs::PCLASS_PIG)
 	{
 		// Adjust for a player with a speed artifact
 		float SpeedFactor = EntityEx(MO).Inventory.GetSpeedFactor();
@@ -1590,7 +1576,7 @@ void MovePlayer(float deltaTime)
 	}
 	if ((Buttons & BT_JUMP) && onground && !JumpTime)
 	{
-		if (PClass == HexenDefs::PCLASS_PIG/*!MorphTime*/)
+		if (PClass == HexenDefs::PCLASS_PIG)
 		{
 			MO.Velocity.z = 6.5 * 35.0;
 		}
@@ -1794,15 +1780,15 @@ void CalcHeight(float deltaTime)
 	{
 		ViewHeight += DeltaViewHeight * deltaTime;
 
-		if (ViewHeight > PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/)
+		if (ViewHeight > PlayerPawn(MO).ViewHeight)
 		{
-			ViewHeight = PlayerPawn(MO).ViewHeight;	//VIEWHEIGHT;
+			ViewHeight = PlayerPawn(MO).ViewHeight;
 			DeltaViewHeight = 0.0;
 		}
 
-		if (ViewHeight < PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/ / 2.0)
+		if (ViewHeight < PlayerPawn(MO).ViewHeight / 2.0)
 		{
-			ViewHeight = PlayerPawn(MO).ViewHeight /*VIEWHEIGHT*/ / 2.0;
+			ViewHeight = PlayerPawn(MO).ViewHeight / 2.0;
 			if (DeltaViewHeight <= 0.0)
 				DeltaViewHeight = 0.00001;
 		}
@@ -1814,7 +1800,7 @@ void CalcHeight(float deltaTime)
 				DeltaViewHeight = 0.00001;
 		}
 	}
-	if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
+	if (PClass == HexenDefs::PCLASS_PIG)
 	{
 		ViewOrg.z = MO.Origin.z + ViewHeight - 20.0;
 	}
@@ -2208,12 +2194,12 @@ void PlayerImpulse()
 		// psprite can do it (A_WeaponReady), so it doesn't happen in
 		// the middle of an attack.
 		Weapon NewWpn = GetSlotChangeWeapon(impulse, ReadyWeapon, false);
-		if (NewWpn && NewWpn != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+		if (NewWpn && NewWpn != ReadyWeapon && PClass != HexenDefs::PCLASS_PIG)
 		{
 			PendingWeapon = NewWpn;
 		}
 	}
-	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV && PClass != HexenDefs::PCLASS_PIG)
 	{
 		Weapon Best = GetPrevWeapon(ReadyWeapon, true);
 		if (Best && Best != ReadyWeapon)
@@ -2221,7 +2207,7 @@ void PlayerImpulse()
 			PendingWeapon = Best;
 		}
 	}
-	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG/*!MorphTime*/)
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT && PClass != HexenDefs::PCLASS_PIG)
 	{
 		Weapon Best = GetNextWeapon(ReadyWeapon, true);
 		if (Best && Best != ReadyWeapon)
@@ -2293,14 +2279,12 @@ void ToggleAltAttack(int weapon)
 void AlternateAttack()
 {
 	Ammo type;
-	// FIXME
-	// [FB] Gotta find a better way to make this....
+
 	switch (altWeapon)
 	{
 	case HexenDefs::ALTFIRE_BLASTRADIUS:
-		//PlayerUseArtifactOld(HexenDefs::arti_blastradius);
 		type = Ammo(EntityEx(MO).FindInventory(ArtifactBlastRadius));
-		if (type.Amount > 0)
+		if (type && type.Amount > 0)
 		{
 			// [FB] Use correct ammo
 			type.Amount -= 10;
@@ -2308,9 +2292,8 @@ void AlternateAttack()
 		}
 		break;
 	case HexenDefs::ALTFIRE_POISONBAG:
-		//PlayerUseArtifactOld(HexenDefs::arti_poisonbag);
 		type = Ammo(EntityEx(MO).FindInventory(ArtifactFlechette));
-		if (type.Amount > 0)
+		if (type && type.Amount > 0)
 		{
 			type.Amount -= 10;
 			UseArtiPoisonBag();
@@ -2683,11 +2666,6 @@ void PlayerTick(float deltaTime)
 		MO.Angles = ViewAngles;
 	}
 
-	//[Korax]
-	// [CW] Do we really need this? Actor::experience seem never update on its own
-	// for Player mobjes, only for non-player ones. Thus there's no need to do this copying.
-	//experience = Actor(MO).experience;
-
 	// fixme: do this in the cheat code
 	if (Cheats & CF_NOCLIP)
 	{
@@ -2810,7 +2788,7 @@ void PlayerTick(float deltaTime)
 	PlayerInContents(deltaTime);
 
 	if (MO.Velocity.z <= -35.0 * 35.0 && MO.Velocity.z >= -40.0 * 35.0 &&
-		/*!MorphTime*/ PClass != HexenDefs::PCLASS_PIG && !GetSoundPlayingInfo(MO, GetSoundID('*falling')))
+		PClass != HexenDefs::PCLASS_PIG && !GetSoundPlayingInfo(MO, GetSoundID('*falling')))
 	{
 		MO.PlaySound('*falling', CHAN_VOICE);
 	}
@@ -3137,9 +3115,6 @@ void UseArtiPoisonBag()
 	switch(altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
 	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:		
-	
-	/*if (PClass == HexenDefs::PCLASS_CLERIC || PClass == HexenDefs::PCLASS_WITCHAVEN)
-	{*/
 		bomb = HexenLevelInfo(Level).Spawn(PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
@@ -3149,10 +3124,6 @@ void UseArtiPoisonBag()
 		break;
 		
 	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-	
-	/*}
-	else if (PClass == HexenDefs::PCLASS_MAGE || PClass == HexenDefs::PCLASS_HERETIC)
-	{*/
 		bomb = HexenLevelInfo(Level).Spawn(FireBomb, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
@@ -3162,9 +3133,6 @@ void UseArtiPoisonBag()
 		break;
 
 	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:	
-	/*}
-	else	// PCLASS_FIGHTER && PCLASS_MARINE, obviously (also pig, not so obviously)
-	{*/
 		bomb = HexenLevelInfo(Level).Spawn(ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
 		if (bomb)
@@ -3402,7 +3370,7 @@ void P_UseLines()
 				hit_point.z + MO.Height);
 			if (!open)
 			{
-				if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
+				if (PClass == HexenDefs::PCLASS_PIG)
 				{
 					MO.PlaySound('PigActive1', CHAN_VOICE);
 				}
@@ -3415,7 +3383,7 @@ void P_UseLines()
 			pheight = MO.Origin.z + MO.Height / 2.0;
 			if ((open->top < pheight) || (open->bottom > pheight))
 			{
-				if (PClass == HexenDefs::PCLASS_PIG/*MorphTime*/)
+				if (PClass == HexenDefs::PCLASS_PIG)
 				{
 					MO.PlaySound('PigActive1', CHAN_VOICE);
 				}
@@ -3499,11 +3467,6 @@ void Cheat_Gimme()
 	{
 		int i;
 
-/*		for (i = 0; i < NUMARMOR; i++)
-		{
-			ArmorPoints[i] = ArmorIncrement[PClass * NUMARMOR + i];
-		}
-*/
 		ArmorPoints = 200;
 		foreach AllClasses(WeaponPickup, WpnCls)
 		{
@@ -3538,21 +3501,12 @@ void Cheat_Gimme()
 				AmmoItem.Amount = AmmoItem.MaxAmount;
 			}
 		}
-//		Pieces = 7;
 		cprint("ALL WEAPONS");
 	}
 	if (Cmd_CheckParm("health"))
 	{
-		/*if (PClass == HexenDefs::PCLASS_PIG)
-		{
-			MO.Health = MAXMORPHHEALTH;
-			Health = MO.Health;
-		}
-		else
-		{*/
-			MO.Health = max_health;
-			Health = MO.Health;
-		//}
+		MO.Health = max_health;
+		Health = MO.Health;
 		cprint("FULL HEALTH");
 	}
 	if (Cmd_CheckParm("keys"))
@@ -3635,7 +3589,7 @@ void Cheat_KillAll()
 
 void Cheat_Morph()
 {
-	if (Morph.bMorphed/*MorphTime*/)
+	if (Morph.bMorphed)
 	{
 		UndoPlayerMorph();
 	}
@@ -3718,11 +3672,6 @@ void Cheat_Class()
 		return;
 	}
 	PClass = pclass;
-/*	for (i = 0; i < NUMARMOR; i++)
-	{
-		ArmorPoints[i] = 0.0;
-	}
-*/
 	ArmorPoints = 0;
 	BaseClass = pclass;
 //	PostMorphWeapon(HexenDefs::WP_FIRST);
@@ -4555,46 +4504,10 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 		}
 	}
 
-//[Korax]
-/*	savedPercent = itof(Player.constitution)+AutoArmorSave[Player.PClass]
-		+ Player.ArmorPoints[ARMOR_ARMOR]
-		+ Player.ArmorPoints[ARMOR_SHIELD]
-		+ Player.ArmorPoints[ARMOR_HELMET]
-		+ Player.ArmorPoints[ARMOR_AMULET];
-	if (savedPercent)
-	{
-		// armor absorbed some damage
-		if (savedPercent > 100.0)
-		{
-			savedPercent = 100.0;
-		}
-		for (i = 0; i < NUMARMOR; i++)
-		{
-			if (Player.ArmorPoints[i])
-			{
-				Player.ArmorPoints[i] -= itof(damage) *
-					ArmorIncrement[Player.PClass * NUMARMOR + i] / 300.0;
-				if (Player.ArmorPoints[i] < 2.0)
-				{
-					Player.ArmorPoints[i] = 0.0;
-				}
-			}
-		}
-		saved = itof(damage) * savedPercent / 100.0;
-		if (saved > savedPercent * 2.0)
-		{
-			saved = savedPercent * 2.0;
-		}
-		damage -= ftoi(saved);
-	}
-*/		
-//Old Armor handling above
 	saved = itof(damage) * itof(40 + constitution) / 100.0;
-//	savedPercent = itof(damage) * itof(60-Player.constitution) / 100.0;
 	if (savedPercent > itof(ArmorPoints))
 	{
 		saved = (itof(ArmorPoints) * itof(40 + constitution)) / 100.0;
-//		savedPercent = itof(Player.ArmorPoints) * itof(60-Player.constitution) / 100.0;
 	}
 	damage -= ftoi(saved);
 	if (damage < 1) // [FB] Always do damage no matter what

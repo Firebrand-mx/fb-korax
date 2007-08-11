@@ -82,8 +82,6 @@ bool MoveToFreePosition()
 			if (!CheckSides(Origin + vector((4.0 + 3.0 * (Radius) / 2.0) * cos(test_ang), (4.0 + 3.0 * (Radius) / 2.0) * sin(test_ang), ONFLOORZ)))
 			{
 				// [FB] OK, we are inside the map
-				// LinkToWorld();
-
 				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
 				{
 					return true;
@@ -383,7 +381,6 @@ void KilledByPlayer(EntityEx source)
 			{
 				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
-				//Player(source.Player).GiveExperience(500 + ((500 * (Player(Player).exp_level - 1) / 10) * (500 * (Player(source.Player).exp_level - 1) / 10)));
 				Player(source.Player).GiveExperience(500 * Player(Player).exp_level / Player(source.Player).exp_level);
 			}
 
@@ -520,7 +517,7 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 		// Immune when invulnerable
 		return (false);
 	}
-	if (Player(Player).Morph.bMorphed/*MorphTime*/)
+	if (Player(Player).Morph.bMorphed)
 	{
 		// Player is already a beast
 		return false;
@@ -529,21 +526,15 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 	fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
-	beastMo = Spawn(/*PlayerPig*/moclass, Origin);
+	beastMo = Spawn(moclass, Origin);
 	beastMo.Tracer = Player(Player).ReadyWeapon;
 	beastMo.Angles = Angles;
 	beastMo.Player = Player;
 	beastMo.bIsPlayer = true;
-	//beastMo.Health = beastMo.SpawnHealth;	////Player::MAXMORPHHEALTH;
 	Player.Health = beastMo.Health;
 	Player.MO = beastMo;
-/*	for (i = 0; i < NUMARMOR; i++)
-	{
-		Player.ArmorPoints[i] = 0.0;
-	}
-*/
 	Player(Player).ArmorPoints = 0;
-	Player.PClass = pclass/*HexenDefs::PCLASS_PIG*/;
+	Player.PClass = pclass;
 	beastMo.bFly = bFly;
 	Player(Player).Morph.bMorphed = true;
 	Player(Player).Morph.bTimer = timed;
@@ -670,12 +661,6 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-/*	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		/!Player(Player).MorphTime/ Player(Player).PClass != HexenDefs::PCLASS_PIG)
-	{
-		// Try to use some inventory health
-		AutoUseHealth(damage - Player(Player).HealthBig + 1);
-	}*/
 	Player.Health -= damage;	// mirror mobj health here for Dave
 	if (Player.Health < 0)
 	{
@@ -691,7 +676,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		// Death
 		_Special1 = damage;
-		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
+		if (bIsPlayer && inflictor && Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
 			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
@@ -765,12 +750,6 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		return;
 	}
-/*	if (damage >= Player(Player).HealthBig && ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) &&
-		/!Player(Player).MorphTime/ Player(Player).PClass != HexenDefs::PCLASS_PIG)
-	{
-		// Try to use some inventory health
-		AutoUseHealth(damage - Player(Player).HealthBig + 1);
-	}*/
 	Player.Health -= damage;	// mirror mobj health here for Dave
 	if (Player.Health < 0)
 	{
@@ -786,7 +765,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		// Death
 		_Special1 = damage;
-		if (bIsPlayer && inflictor && /*!Player(Player).MorphTime*/Player(Player).PClass != HexenDefs::PCLASS_PIG)
+		if (bIsPlayer && inflictor && Player(Player).PClass != HexenDefs::PCLASS_PIG)
 		{
 			// Check for flame death
 			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
@@ -1031,7 +1010,7 @@ TVec ClipVelocity(TVec in, TVec normal, float overbounce)
 
 bool PlayerIsMorphed()
 {
-	return /*Player(Player).MorphTime*/Player(Player).PClass == HexenDefs::PCLASS_PIG;
+	return Player(Player).PClass == HexenDefs::PCLASS_PIG;
 }
 
 //===========================================================================
@@ -1095,7 +1074,7 @@ void SpawnBlasterEffects()
 
 float GetBaseViewHeight()
 {
-	return PlayerPawn(self).ViewHeight/*Player::VIEWHEIGHT*/;
+	return PlayerPawn(self).ViewHeight;
 }
 
 //==========================================================================
@@ -1623,14 +1602,14 @@ final void A_QueueCorpse()
 {
 	EntityEx corpse;
 
-	if (HexenLevelInfo(Level).corpseQueueSlot >= /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize)
+	if (HexenLevelInfo(Level).corpseQueueSlot >= HexenLevelInfo(Level).CorpseQueSize)
 	{
 		// Too many corpses - remove an old one
-		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize];
+		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo(Level).CorpseQueSize];
 		if (corpse)
 			corpse.Destroy();
 	}
-	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize] = self;
+	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo(Level).CorpseQueSize] = self;
 	HexenLevelInfo(Level).corpseQueueSlot++;
 }
 
@@ -1646,7 +1625,7 @@ final void A_DeQueueCorpse()
 {
 	int slot;
 
-	for (slot = 0; slot < /*HexenLevelInfo::CORPSEQUEUESIZE*/HexenLevelInfo(Level).CorpseQueSize; slot++)
+	for (slot = 0; slot < HexenLevelInfo(Level).CorpseQueSize; slot++)
 	{
 		if (HexenLevelInfo(Level).corpseQueue[slot] == self)
 		{
