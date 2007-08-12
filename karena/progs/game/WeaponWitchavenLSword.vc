@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -32,32 +32,55 @@
 
 class WeaponWitchavenLSword : KArenaWeapon;
 
-float LongSwordRange;
+bool			bShieldActive;
+float			LongSwordRange;
 
 //==========================================================================
 //
-//  A_WLShieldProtect
+//	AbsorbDamage
 //
 //  [FB] This is protective shield effect
 //
 //==========================================================================
 
-final void A_WLShieldProtect()
+void AbsorbDamage(int damage, name DmgType, out int NewDamage)
 {
-	int hits;
-
-	if (Owner.Player.Buttons & BT_ATTACK)
+	if (bShieldActive && (Owner.Player.Buttons & BT_ATTACK))
 	{
-		hits = (Player(Owner.Player).dam_am * (60 + Player(Owner.Player).constitution) / 15);
-
-		if(hits > 0)
+		int hits = (damage * (60 + Player(Owner.Player).constitution) / 15);
+		if (hits > 0)
 		{
-			if (EntityEx(Owner).GiveBody(hits))
-			{
-				UseWeaponMana();
-			}
+			NewDamage -= hits;
+			damage = NewDamage;
+			UseWeaponMana();
 		}
 	}
+	if (Inventory)
+	{
+		Inventory.AbsorbDamage(damage, DmgType, NewDamage);
+	}
+}
+
+//==========================================================================
+//
+//  A_WLShieldProtect
+//
+//==========================================================================
+
+final void A_WLShieldProtect()
+{
+	bShieldActive = true;
+}
+
+//==========================================================================
+//
+//  A_WLDeactivateShield
+//
+//==========================================================================
+
+final void A_WLDeactivateShield()
+{
+	bShieldActive = false;
 }
 
 //==========================================================================
@@ -129,12 +152,24 @@ final void A_WLSwordAttack()
 
 __states__
 {
-	S_WLSWORDDOWN_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDDOWN_G) = A_Lower
-	S_WLSWORDUP_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDUP_G) = A_Raise
+	S_WLSWORDDOWN_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDDOWN_G)
+	{
+		A_WLDeactivateShield();
+		A_Lower();
+	}
+	S_WLSWORDUP_G('WDHP', 0, 1.0 / 35.0, S_WLSWORDUP_G)
+	{
+		A_WLDeactivateShield();
+		A_Raise();
+	}
 
 // 	** FIRST SHIELD STATE **
 
-	S_WLSWORDREADY_G('WDHP', 0, 2.0 / 35.0, S_WLSWORDREADY_G1) = A_WeaponReady
+	S_WLSWORDREADY_G('WDHP', 0, 2.0 / 35.0, S_WLSWORDREADY_G1)
+	{
+		A_WLDeactivateShield();
+		A_WeaponReady();
+	}
 	S_WLSWORDREADY_G1('WDHP', 0, 2.0 / 35.0, S_WLSWORDREADY_G2) = A_WeaponReady
 	S_WLSWORDREADY_G2('WDHP', 0, 2.0 / 35.0, S_WLSWORDREADY_G3) = A_WeaponReady
 	S_WLSWORDREADY_G3('WDHP', 0, 2.0 / 35.0, S_WLSWORDREADY_G4) = A_WeaponReady
@@ -243,16 +278,16 @@ __states__
 //	--- Shield Action States --- 
 	S_WSHIELD1_G1('SHDS', 0, 2.0 / 35.0, S_WSHIELD1_G2) = A_WLShieldProtect
 	S_WSHIELD1_G2('SHDS', 0, 2.0 / 35.0, S_WSHIELD1_G3) = A_ReFire
-	S_WSHIELD1_G3('SHDS', 0, 2.0 / 35.0, S_WSHIELDX_G) = none
+	S_WSHIELD1_G3('SHDS', 0, 2.0 / 35.0, S_WSHIELDX_G) = A_WLDeactivateShield
 	S_WSHIELD2_G1('SHDS', 1, 2.0 / 35.0, S_WSHIELD2_G2) = A_WLShieldProtect
 	S_WSHIELD2_G2('SHDS', 1, 2.0 / 35.0, S_WSHIELD2_G3) = A_ReFire
-	S_WSHIELD2_G3('SHDS', 1, 2.0 / 35.0, S_WSHIELDX_G) = none
+	S_WSHIELD2_G3('SHDS', 1, 2.0 / 35.0, S_WSHIELDX_G) = A_WLDeactivateShield
 	S_WSHIELD3_G1('SHDS', 2, 2.0 / 35.0, S_WSHIELD3_G2) = A_WLShieldProtect
 	S_WSHIELD3_G2('SHDS', 2, 2.0 / 35.0, S_WSHIELD3_G3) = A_ReFire
-	S_WSHIELD3_G3('SHDS', 2, 2.0 / 35.0, S_WSHIELDX_G) = none
+	S_WSHIELD3_G3('SHDS', 2, 2.0 / 35.0, S_WSHIELDX_G) = A_WLDeactivateShield
 	S_WSHIELD4_G1('SHDS', 3, 2.0 / 35.0, S_WSHIELD4_G2) = A_WLShieldProtect
 	S_WSHIELD4_G2('SHDS', 3, 2.0 / 35.0, S_WSHIELD4_G3) = A_ReFire
-	S_WSHIELD4_G3('SHDS', 3, 2.0 / 35.0, S_WSHIELDX_G) = none
+	S_WSHIELD4_G3('SHDS', 3, 2.0 / 35.0, S_WSHIELDX_G) = A_WLDeactivateShield
 	S_WSHIELDX_G('WDHP', 0, 2.0 / 35.0, S_WLSWORDATK_G1) = none
 }
 
