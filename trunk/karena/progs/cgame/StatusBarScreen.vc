@@ -536,6 +536,11 @@ void SB_DrawMainBar()
 	SB_DrawBackground();
 	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
 
+	if (!cl.MO)
+	{
+		return;
+	}
+
 //[Korax]
 /*	SB_DrawNumber92(320, 20, cl.exp_level, 1);
 	SB_DrawNumber92(460, 20, cl.experience, 1);
@@ -701,7 +706,9 @@ void SB_DrawMainBar()
 */
 
 	// Armor
-	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, cl.ArmorPoints, 0);
+	KArenaArmor KArmor = KArenaArmor(EntityEx(cl.MO).FindInventory(
+		KArenaArmor));
+	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, KArmor ? KArmor.Amount : 0, 0);
 }
 
 //==========================================================================
@@ -804,8 +811,15 @@ void SB_DrawFullscreenStats()
 	int sb_mana4;
 	int sb_mana5;
 
+	if (!cl.MO)
+	{
+		return;
+	}
+
 	//  [FB] Armorpoints
-	SB_DrawNumber12(50, 430, cl.ArmorPoints);
+	KArenaArmor KArmor = KArenaArmor(EntityEx(cl.MO).FindInventory(
+		KArenaArmor));
+	SB_DrawNumber12(50, 430, KArmor ? KArmor.Amount : 0);
 	R_DrawShadowedPic(30, 470, pic_armor2);
 
 	//  [FB] Health

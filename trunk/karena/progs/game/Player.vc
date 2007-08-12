@@ -80,8 +80,6 @@ struct targetinfo_t
 	byte	healthpc;	// [CW] health percentage
 };
 
-int ArmorPoints;
-
 int		altWeapon;
 int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
 
@@ -163,11 +161,11 @@ bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 replication
 {
 	reliable if (!bIsClient)
-		ArmorPoints, Score, TeamFrags, TeamKills, Deaths,
-		TeamPosition, PlayerPosition, experience, exp_level, next_level,
-		old_level, strength, intelligence, wisdom, dexterity, constitution,
-		max_health, old_maxhealth, bak_health, use_power, altWeapon,
-		teamscores, altWeaponMode, targetinfo;
+		Score, TeamFrags, TeamKills, Deaths, TeamPosition, PlayerPosition,
+		experience, exp_level, next_level, old_level, strength,
+		intelligence, wisdom, dexterity, constitution, max_health,
+		old_maxhealth, bak_health, use_power, altWeapon, teamscores,
+		altWeaponMode, targetinfo;
 
 	unreliable if (!bIsClient)
 		ClientGunShot, ClientBlood, ClientExplosion, ClientExplosion2,
@@ -1008,19 +1006,6 @@ final void AddDefaultInventory()
 
 void PlayerReborn()
 {
-	BotPlayer B;
-
-	B = Bot;
-	if (!inited && Level.Game.deathmatch)
-	{
-	}
-	else if (Level.Game.deathmatch)
-	{
-		ArmorPoints = 0;
-	}
-
-	Bot = B;
-
 	PClass = BaseClass;
 
 	bUseDown = true;	// don't do anything immediately
@@ -1239,9 +1224,12 @@ bool GiveArmor(int armortype, int amount)
 	{
 		hits = itof(amount) * 10.0;
 	}
-	if (ArmorPoints < 200)
+	KArenaArmor KArmor = KArenaArmor(EntityEx(MO).FindInventory(
+		KArenaArmor));
+	if (KArmor.Amount < 200)
 	{
-		ArmorPoints += (ftoi(hits) < 200 - ArmorPoints ? ftoi(hits) : 200 - ArmorPoints);
+		KArmor.Amount += (ftoi(hits) < 200 - KArmor.Amount ?
+			ftoi(hits) : 200 - KArmor.Amount);
 		return true;
 	}
 	return false;
@@ -3468,7 +3456,9 @@ void Cheat_Gimme()
 	{
 		int i;
 
-		ArmorPoints = 200;
+		KArenaArmor KArmor = KArenaArmor(EntityEx(MO).FindInventory(
+			KArenaArmor));
+		KArmor.Amount = 200;
 		foreach AllClasses(WeaponPickup, WpnCls)
 		{
 			WeaponPickup Wpn = Level.Spawn(WpnCls);
@@ -3673,7 +3663,9 @@ void Cheat_Class()
 		return;
 	}
 	PClass = pclass;
-	ArmorPoints = 0;
+	KArenaArmor KArmor = KArenaArmor(EntityEx(MO).FindInventory(
+		KArenaArmor));
+	KArmor.Amount = 0;
 	BaseClass = pclass;
 //	PostMorphWeapon(HexenDefs::WP_FIRST);
 	SetCvar('class', pclass);
@@ -4474,9 +4466,6 @@ void ClientDynamicLightEx(int colour, TVec org, int radius, int lifetime, int de
 int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 	name DmgType)
 {
-	float saved;
-	int i;
-
 	if (!GetCvar('FriendlyFire'))
 	{
 		// [FB] Don't do damage to teammates in team game modes
@@ -4504,17 +4493,6 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 		}
 	}
 
-	saved = itof(damage) * itof(40 + constitution) / 100.0;
-	damage -= ftoi(saved);
-	if (damage < 1) // [FB] Always do damage no matter what
-	{
-		damage = 1;
-	}
-	ArmorPoints -= ftoi(saved);//Percent
-	if (ArmorPoints < 0)
-	{
-		ArmorPoints = 0; // [FB] No negative armor points
-	}
 	return damage;
 }
 
