@@ -47,12 +47,6 @@ const float
 	BLAST_FULLSTRENGTH		= 0.0038909912,
 	BLAST_SPEED				= 20.0;
 
-struct inventory_t
-{
-	int type;
-	int count;
-};
-
 struct trophies_t
 {
 	int		frags_at_once;
@@ -113,7 +107,6 @@ Actor Rain2;	// active rain maker 2
 bool inited;
 
 int pcount; // [FB] counter
-int dam_am; // [FB] Just for the hero's shield
 
 bool onground;
 
@@ -973,6 +966,14 @@ void SpawnPlayer(mthing_t * mthing)
 final void AddDefaultInventory()
 {
 	int i;
+
+	KArenaArmor KArmor = Level.Spawn(KArenaArmor);
+	KArmor.Amount = 0;
+	KArmor.AttachToOwner(EntityEx(MO));
+
+	BasicArmor BArmor = Level.Spawn(BasicArmor);
+	BArmor.Amount = 0;
+	BArmor.AttachToOwner(EntityEx(MO));
 
 	for (i = 0; i < PlayerPawn(MO).InitialInventory.Num; i++)
 	{
@@ -4474,7 +4475,6 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 	name DmgType)
 {
 	float saved;
-	float savedPercent;
 	int i;
 
 	if (!GetCvar('FriendlyFire'))
@@ -4505,10 +4505,6 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 	}
 
 	saved = itof(damage) * itof(40 + constitution) / 100.0;
-	if (savedPercent > itof(ArmorPoints))
-	{
-		saved = (itof(ArmorPoints) * itof(40 + constitution)) / 100.0;
-	}
 	damage -= ftoi(saved);
 	if (damage < 1) // [FB] Always do damage no matter what
 	{
@@ -4519,10 +4515,6 @@ int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
 	{
 		ArmorPoints = 0; // [FB] No negative armor points
 	}
-
-	// [FB] We need to know how much damage the player took for the hero's shield
-	//      so we store it in our recently created damage amount attribute
-	dam_am = damage;
 	return damage;
 }
 
