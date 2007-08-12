@@ -1199,42 +1199,6 @@ int GetMaxHealth()
 	return max_health;
 }
 
-//==========================================================================
-//
-//  GiveArmor
-//
-//  Works like in Doom and Heretic now
-//
-//==========================================================================
-
-bool GiveArmor(int armortype, int amount)
-{
-	float hits;
-	float totalArmor;
-
-	// [CW] Heresiarch does not use armor at all
-	if (PClass == HexenDefs::PCLASS_HERESIARCH)
-		return false;
-
-	if (amount == -1)
-	{
-		hits = MainGameInfo(Level.Game).ArmorIncrement[PClass * HexenDefs::NUMARMOR + armortype] * 2.0;
-	}
-	else
-	{
-		hits = itof(amount) * 10.0;
-	}
-	KArenaArmor KArmor = KArenaArmor(EntityEx(MO).FindInventory(
-		KArenaArmor));
-	if (KArmor.Amount < 200)
-	{
-		KArmor.Amount += (ftoi(hits) < 200 - KArmor.Amount ?
-			ftoi(hits) : 200 - KArmor.Amount);
-		return true;
-	}
-	return false;
-}
-
 //[Korax]
 //==========================================================================
 //
