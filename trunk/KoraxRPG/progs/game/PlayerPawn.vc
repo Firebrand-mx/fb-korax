@@ -1,0 +1,165 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: PlayerPawn.vc 2632 2007-08-12 08:02:24Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PlayerPawn : Pawn
+	abstract;
+
+struct InitInvInfo
+{
+	class<Inventory>	Type;
+	int					Amount;
+};
+
+float					HexenArmor[5];
+array<InitInvInfo>		InitialInventory;
+
+//==========================================================================
+//
+//	AddInventory
+//
+//==========================================================================
+
+void AddInventory(Inventory Item)
+{
+	::AddInventory(Item);
+	if (bIsPlayer && Item.bInvBar && !Player(Player).InvPtr)
+	{
+		Player(Player).InvPtr = Item;
+		Player(Player).InvFirst = Item;
+	}
+}
+
+//==========================================================================
+//
+//	RemoveInventory
+//
+//==========================================================================
+
+void RemoveInventory(Inventory Item)
+{
+	if (bIsPlayer)
+	{
+		if (Player(Player).InvPtr == Item)
+		{
+			Player(Player).InvPtr = Item.PrevInv();
+			if (!Player(Player).InvPtr)
+			{
+				Player(Player).InvPtr = Item.NextInv();
+			}
+		}
+		if (Player(Player).InvFirst == Item)
+		{
+			Player(Player).InvFirst = Item.PrevInv();
+			if (!Player(Player).InvFirst)
+			{
+				Player(Player).InvFirst = Item.NextInv();
+			}
+		}
+	}
+	::RemoveInventory(Item);
+	if (bIsPlayer && Item.bInvBar)
+	{
+		Player(Player).AdjustInvFirst();
+	}
+}
+
+//==========================================================================
+//
+//  PlayerUseArtifact
+//
+//==========================================================================
+
+bool UseInventory(Inventory Item)
+{
+	// Found match - try to use
+	if (!::UseInventory(Item))
+	{
+		if (!PuzzleItem(Item))
+		{
+			// Unable to use artifact, advance pointer
+			Player(Player).PlayerNextArtifact();
+		}
+		return false;
+	}
+	PlaySound(Item.UseSound, CHAN_ITEM);
+	Player(Player).ArtifactFlash = 4;
+	return true;
+}
+
+//===========================================================================
+//
+//  RoughCheckThing
+//
+//	Minotaur looking around player
+//
+//===========================================================================
+
+bool RoughCheckThing(Entity Other)
+{
+	EntityEx link = EntityEx(Other);
+	
+	if (!bIsPlayer)
+	{
+		return false;
+	}
+	if (!link.bMonster && (!link.bIsPlayer || link == self))
+	{
+		return false;
+	}
+	if (!link.bShootable)
+	{
+		return false;
+	}
+	if (link.bDormant)
+	{
+		return false;
+	}
+	if (link.IsA('MinotaurFriend') && link.Tracer == self)
+	{
+		return false;
+	}
+	if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
+	{
+		return false;
+	}
+	if (CanSee(link))
+	{
+		return true;
+	}
+	return false;
+}
+
+defaultproperties
+{
+	ReactionCount = 0;
+	bCountKill = false;
+	bMonster = false;
+	bActivateMCross = false;
+	bDropOff = true;
+	bWindThrust = true;
+	bSlide = true;
+	bNoBlockMonst = true;
+	RDFactor = 0.25;
+}

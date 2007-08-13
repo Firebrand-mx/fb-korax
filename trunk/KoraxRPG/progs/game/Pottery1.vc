@@ -1,0 +1,103 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Pottery1.vc 2412 2007-07-05 19:25:13Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class Pottery1 : Decoration
+	__mobjinfo__(104);
+
+//==========================================================================
+//
+//	OnHitFloor
+//
+//==========================================================================
+
+void OnHitFloor()
+{
+	::OnHitFloor();
+	Damage(none, none, 25);
+}
+
+//==========================================================================
+//
+//  A_PotteryExplode
+//
+//==========================================================================
+
+final void A_PotteryExplode()
+{
+	EntityEx A;
+	int i;
+
+	for (i = (P_Random() & 3) + 3; i; i--)
+	{
+		A = Spawn(PotteryBit, Origin);
+		switch (P_Random() % 5)
+		{
+		case 0: A.SetState(PotteryBit::S_POTTERYBIT_1); break;
+		case 1: A.SetState(PotteryBit::S_POTTERYBIT_2); break;
+		case 2: A.SetState(PotteryBit::S_POTTERYBIT_3); break;
+		case 3: A.SetState(PotteryBit::S_POTTERYBIT_4); break;
+		case 4: A.SetState(PotteryBit::S_POTTERYBIT_5); break;
+		}
+		if (A)
+		{
+			A.Velocity.x = (Random() - Random()) * 4.0 * 35.0;
+			A.Velocity.y = (Random() - Random()) * 4.0 * 35.0;
+			A.Velocity.z = (Random() * 8.0 + 5.0) * (3.0 / 4.0) * 35.0;
+		}
+	}
+	A.PlaySound('PotteryExplode', CHAN_VOICE);
+	if (Args[0])
+	{
+		// Spawn an item. Don't spawn monsters it they are disabled.
+		class<EntityEx> Cls = class<EntityEx>(FindClassFromScriptId(Args[0]));
+		if (Cls && (!Level.Game.nomonsters || !Cls.default.bMonster))
+		{
+			Spawn(Cls, Origin, vector(0.0, 0.0, 0.0));
+		}
+	}
+}
+
+__states__
+{
+	S_ZPOTTERY1('POT1', 0, -1.0, none) = none
+	S_ZPOTTERY_EXPLODE('POT1', 0, 0.0 / 35.0, none) = A_PotteryExplode
+}
+
+defaultproperties
+{
+	Health = 15;
+	Radius = 10.0;
+	Height = 32.0;
+	bSolid = true;
+	bShootable = true;
+	bDropOff = true;
+	bNoBlood = true;
+	bPushable = true;
+	bSlide = true;
+	bTelestomp = true;
+	bNoPassMobj = false;
+	IdleState = S_ZPOTTERY1;
+	DeathState = S_ZPOTTERY_EXPLODE;
+}

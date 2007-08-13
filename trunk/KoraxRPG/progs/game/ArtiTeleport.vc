@@ -1,0 +1,84 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ArtiTeleport.vc 2562 2007-08-02 19:35:55Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ArtiTeleport : Inventory
+	__mobjinfo__(36)
+	__scriptid__(18);
+
+//==========================================================================
+//
+//	Use
+//
+//==========================================================================
+
+bool Use(bool Pickup)
+{
+	int i;
+	float destX;
+	float destY;
+	float destAngle;
+
+	if (Level.Game.deathmatch)
+	{
+		i = P_Random() % Level.NumDeathmatchStarts;
+		destX = Level.DeathmatchStarts[i].x;
+		destY = Level.DeathmatchStarts[i].y;
+		destAngle = itof(45 * (Level.DeathmatchStarts[i].angle / 45));
+	}
+	else
+	{
+		destX = Level.PlayerStarts[0].x;
+		destY = Level.PlayerStarts[0].y;
+		destAngle = itof(45 * (Level.PlayerStarts[0].angle / 45));
+	}
+	EntityEx(Owner).Teleport(vector(destX, destY, EntityEx::ONFLOORZ),
+		destAngle, true, true, false);
+	if (Player(Owner.Player).MorphTime)
+	{
+		// Teleporting away will undo any morph effects (pig)
+		Player(Owner.Player).UndoPlayerMorph();
+	}
+	return true;
+}
+
+__states__
+{
+	S_ARTI_ATLP1('ATLP', 0, 4.0 / 35.0, S_ARTI_ATLP2) = none
+	S_ARTI_ATLP2('ATLP', 1, 4.0 / 35.0, S_ARTI_ATLP3) = none
+	S_ARTI_ATLP3('ATLP', 2, 4.0 / 35.0, S_ARTI_ATLP4) = none
+	S_ARTI_ATLP4('ATLP', 1, 4.0 / 35.0, S_ARTI_ATLP1) = none
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	PickupSound = 'PickupArtifact';
+	PickupMessage = "$txt_artiteleport";
+	IconName = 'artiatlp';
+	bFloatBob = true;
+	bPickupFlash = true;
+	bInvBar = true;
+	IdleState = S_ARTI_ATLP1;
+}

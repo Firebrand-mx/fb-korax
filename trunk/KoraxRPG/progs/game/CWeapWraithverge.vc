@@ -1,0 +1,120 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: CWeapWraithverge.vc 2527 2007-07-29 08:18:44Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class CWeapWraithverge : ClericWeapon;
+
+//============================================================================
+//
+//  A_CHolyAttack
+//
+//============================================================================
+
+final void A_CHolyAttack()
+{
+	EntityEx	A;
+	EntityEx	AimTarget;
+
+	DepleteAmmo();
+	A = Actor(Owner).SpawnPlayerMissileEx(HolyMissile, false, AimTarget);
+	if (A)
+	{
+		A.Tracer = AimTarget;
+	}
+	Player(Owner.Player).DamageFlash = 0.0;
+	Player(Owner.Player).BonusFlash = 0.0;
+	Player(Owner.Player).WeaponCShift = RGBA(255, 255, 255, 66);
+	Owner.PlaySound('HolySymbolFire', CHAN_WEAPON);
+}
+
+//============================================================================
+//
+//  A_CHolyPalette1
+//
+//============================================================================
+
+final void A_CHolyPalette1()
+{
+	Player(Owner.Player).WeaponCShift = RGBA(255, 255, 255, 51);
+}
+
+//============================================================================
+//
+//  A_CHolyPalette2
+//
+//============================================================================
+
+final void A_CHolyPalette2()
+{
+	Player(Owner.Player).WeaponCShift = RGBA(255, 255, 255, 36);
+}
+
+//============================================================================
+//
+//  A_CHolyPalette3
+//
+//============================================================================
+
+final void A_CHolyPalette3()
+{
+	// reset back to original playpal
+	Player(Owner.Player).WeaponCShift = 0;
+}
+
+__states__
+{
+	S_CHOLYREADY('CHLY', 0, 1.0 / 35.0, S_CHOLYREADY) = A_WeaponReady
+	S_CHOLYDOWN('CHLY', 0, 1.0 / 35.0, S_CHOLYDOWN) = A_Lower
+	S_CHOLYUP('CHLY', 0, 1.0 / 35.0, S_CHOLYUP) = A_Raise
+	S_CHOLYATK_1('CHLY', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_CHOLYATK_2, 0, 40) = none
+	S_CHOLYATK_2('CHLY', 1 | FF_FULLBRIGHT, 1.0 / 35.0, S_CHOLYATK_3, 0, 40) = none
+	S_CHOLYATK_3('CHLY', 2 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYATK_4, 0, 43) = none
+	S_CHOLYATK_4('CHLY', 3 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYATK_5, 0, 43) = none
+	S_CHOLYATK_5('CHLY', 4 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYATK_6, 0, 45) = none
+	S_CHOLYATK_6('CHLY', 5 | FF_FULLBRIGHT, 6.0 / 35.0, S_CHOLYATK_7, 0, 48) = A_CHolyAttack
+	S_CHOLYATK_7('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYATK_8, 0, 40) = A_CHolyPalette1
+	S_CHOLYATK_8('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYATK_9, 0, 40) = A_CHolyPalette2
+	S_CHOLYATK_9('CHLY', 6 | FF_FULLBRIGHT, 2.0 / 35.0, S_CHOLYREADY, 0, 36) = A_CHolyPalette3
+}
+
+defaultproperties
+{
+	WeaponClass = HexenDefs::PCLASS_CLERIC;
+	Slot = 4;
+	SelectionOrder = 3000;
+	AmmoType1 = Mana1;
+	AmmoType2 = Mana2;
+	AmmoUse1 = 18;
+	AmmoUse2 = 18;
+	PSpriteSY = 0.0;
+	PickupMessage = "$txt_weapon_c4";
+	BotCombatDist = 384.0;
+	bBotProjectile = true;
+	bExtremeDeath = true;
+	UpState = S_CHOLYUP;
+	DownState = S_CHOLYDOWN;
+	ReadyState = S_CHOLYREADY;
+	AttackState = S_CHOLYATK_1;
+	HoldAttackState = S_CHOLYATK_1;
+}

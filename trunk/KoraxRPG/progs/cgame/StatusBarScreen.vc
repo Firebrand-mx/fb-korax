@@ -1,0 +1,882 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: StatusBarScreen.vc 2632 2007-08-12 08:02:24Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class StatusBarScreen : Window;
+
+const int BAR_X = 160;
+const int BAR_Y = 441;
+
+ClientGameBase ClGame;
+
+Player cl;
+
+int sb_pclass;
+int sb_colour;
+
+int HealthMarker;
+int sb_health;
+
+bool hitCentreFrame;
+
+int pic_bar;
+int pic_chain;
+int pic_lifegem;
+int pic_lfedge;
+int pic_rtedge;
+
+int pic_innum[2 * 10];
+int pic_smallinnum[10];
+int pic_bignum[10];
+int bignumwidth[10];
+int pic_minus;
+int pic_artibox;
+
+int pic_statbar;
+int pic_kills;
+int pic_manadim1[2];
+int pic_manadim2[2];
+int pic_manavial1[2];
+int pic_manavial2[2];
+int pic_artiflash[5];
+int pic_wpslot;
+int pic_wpfull;
+int pic_wppiece[3];
+int wppiecex[3];
+
+int pic_keybar;
+int pic_armor[4];
+
+int pic_invbar;
+int pic_selectbox;
+int pic_invgeml[2];
+int pic_invgemr[2];
+
+int pic_fly[16];
+int pic_mino[16];
+int pic_boot[16];
+int pic_shld[16];
+
+int pic_paused;
+
+// For the Fullscreen stuff
+int pic_health;
+int pic_armor2;
+
+//==========================================================================
+//
+//  StartMap
+//
+//==========================================================================
+
+void StartMap()
+{
+	int i;
+	picinfo_t info;
+
+	sb_pclass = GetCvar('class');
+	sb_colour = GetCvar('colour');
+
+	//
+	//  COMMON BAR
+	//
+	pic_bar = R_RegisterPic('h2bar');
+	switch (sb_pclass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		pic_chain = R_RegisterPic('chain');
+		if (ClGame.maxclients == 1)
+		{
+			// single player game uses red life gem (the second gem)
+			pic_lifegem = R_RegisterPic('lifegmf2');
+		}
+		else if (!sb_colour)
+		{
+			pic_lifegem = R_RegisterPic('lifegem');
+		}
+		else
+		{
+			pic_lifegem = R_RegisterPic(StrToName(va("lifegmf%d",
+				sb_colour + 1)));
+		}
+		break;
+	case HexenDefs::PCLASS_CLERIC:
+		pic_chain = R_RegisterPic('chain2');
+		if (ClGame.maxclients == 1)
+		{
+			// single player game uses red life gem (the second gem)
+			pic_lifegem = R_RegisterPic('lifegmc2');
+		}
+		else
+		{
+			pic_lifegem = R_RegisterPic(StrToName(va("lifegmc%d",
+				sb_colour + 1)));
+		}
+		break;
+	case HexenDefs::PCLASS_MAGE:
+		pic_chain = R_RegisterPic('chain3');
+		if (ClGame.maxclients == 1)
+		{
+			// single player game uses red life gem (the second gem)
+			pic_lifegem = R_RegisterPic('lifegmm2');
+		}
+		else
+		{
+			pic_lifegem = R_RegisterPic(StrToName(va("lifegmm%d",	
+				sb_colour + 1)));
+		}
+		break;
+	}
+	pic_lfedge = R_RegisterPic('lfedge');
+	pic_rtedge = R_RegisterPic('rtedge');
+
+	for (i = 0; i < 10; i++)
+	{
+		pic_innum[i] = R_RegisterPic(StrToName(va("in%d", i)));
+		pic_innum[10 + i] = R_RegisterPic(StrToName(va("inred%d", i)));
+		pic_smallinnum[i] = R_RegisterPic(StrToName(va("smallin%d", i)));
+		pic_bignum[i] = R_RegisterPic(StrToName(va("fontb%d", 16 + i)));
+		R_GetPicInfo(pic_bignum[i], &info);
+		bignumwidth[i] = info.width;
+	}
+	pic_minus = R_RegisterPic('negnum');
+	pic_artibox = R_RegisterPic('artibox');
+
+	//
+	//  MAIN BAR
+	//
+	pic_statbar = R_RegisterPic('statbar');
+	pic_kills = R_RegisterPic('kills');
+	pic_manadim1[0] = R_RegisterPic('manadim1');
+	pic_manadim1[1] = R_RegisterPic('manabrt1');
+	pic_manadim2[0] = R_RegisterPic('manadim2');
+	pic_manadim2[1] = R_RegisterPic('manabrt2');
+	pic_manavial1[0] = R_RegisterPic('manavl1d');
+	pic_manavial1[1] = R_RegisterPic('manavl1');
+	pic_manavial2[0] = R_RegisterPic('manavl2d');
+	pic_manavial2[1] = R_RegisterPic('manavl2');
+	pic_artiflash[0] = R_RegisterPic('useartia');
+	pic_artiflash[1] = R_RegisterPic('useartib');
+	pic_artiflash[2] = R_RegisterPic('useartic');
+	pic_artiflash[3] = R_RegisterPic('useartid');
+	pic_artiflash[4] = R_RegisterPic('useartie');
+	switch (sb_pclass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		pic_wpslot = R_RegisterPic('wpslot0');
+		pic_wppiece[0] = R_RegisterPic('wpiecef1');
+		pic_wppiece[1] = R_RegisterPic('wpiecef2');
+		pic_wppiece[2] = R_RegisterPic('wpiecef3');
+		pic_wpfull = R_RegisterPic('wpfull0');
+		wppiecex[0] = 190;
+		wppiecex[1] = 225;
+		wppiecex[2] = 234;
+		break;
+	case HexenDefs::PCLASS_CLERIC:
+		pic_wpslot = R_RegisterPic('wpslot1');
+		pic_wppiece[0] = R_RegisterPic('wpiecec1');
+		pic_wppiece[1] = R_RegisterPic('wpiecec2');
+		pic_wppiece[2] = R_RegisterPic('wpiecec3');
+		pic_wpfull = R_RegisterPic('wpfull1');
+		wppiecex[0] = 190;
+		wppiecex[1] = 212;
+		wppiecex[2] = 225;
+		break;
+	case HexenDefs::PCLASS_MAGE:
+		pic_wpslot = R_RegisterPic('wpslot2');
+		pic_wppiece[0] = R_RegisterPic('wpiecem1');
+		pic_wppiece[1] = R_RegisterPic('wpiecem2');
+		pic_wppiece[2] = R_RegisterPic('wpiecem3');
+		pic_wpfull = R_RegisterPic('wpfull2');
+		wppiecex[0] = 190;
+		wppiecex[1] = 205;
+		wppiecex[2] = 224;
+		break;
+	}
+
+	//
+	//  KEY BAR
+	//
+	pic_keybar = R_RegisterPic('keybar');
+	for (i = 0; i < 4; i++)
+	{
+		pic_armor[i] = R_RegisterPic(StrToName(va("armslot%d", i + 1)));
+	}
+
+	//
+	//  INVENTORY
+	//
+	pic_invbar = R_RegisterPic('invbar');
+	pic_selectbox = R_RegisterPic('selectbo');
+	pic_invgeml[0] = R_RegisterPic('invgeml1');
+	pic_invgeml[1] = R_RegisterPic('invgeml2');
+	pic_invgemr[0] = R_RegisterPic('invgemr1');
+	pic_invgemr[1] = R_RegisterPic('invgemr2');
+
+	//
+	//  ANIMATED ICONS
+	//
+	for (i = 0; i < 16; i++)
+	{
+		pic_fly[i] = R_RegisterPic(StrToName(va("spfly%d", i)));
+		pic_mino[i] = R_RegisterPic(StrToName(va("spmino%d", i)));
+		pic_boot[i] = R_RegisterPic(StrToName(va("spboot%d", i)));
+		pic_shld[i] = R_RegisterPic(StrToName(va("spshld%d", i)));
+	}
+
+	pic_paused = R_RegisterPic('paused');
+
+	//  FULLSCREEN ICONS FOR HEALTH AND ARMOR
+	pic_health = R_RegisterPic('ptn1a0');
+	pic_armor2 = R_RegisterPic('arm1a0');
+}
+
+//==========================================================================
+//
+//	SB_DrawBackground
+//
+//==========================================================================
+
+void SB_DrawBackground()
+{
+	sb_health = HealthMarker;
+	if (sb_health < 0)
+	{
+		sb_health = 0;
+	}
+	else if (sb_health > 100)
+	{
+		sb_health = 100;
+	}
+
+	// draw something in the blank spaces
+	R_FillRectWithFlat(0, 441, 640, 39, 'f_022');
+
+	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
+	R_DrawPic(BAR_X + 28 + (((sb_health * 196) / 100) % 9), BAR_Y + 32, pic_chain);
+	R_DrawPic(BAR_X + 7 + ((sb_health * 11) / 5), BAR_Y + 32, pic_lifegem);
+	R_DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
+	R_DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
+}
+
+//==========================================================================
+//
+//	SB_DrawNumber9
+//
+//==========================================================================
+
+void SB_DrawNumber9(int x, int y, int num, int colour)
+{
+	int w = 9;
+	int neg = num < 0;
+
+	if (neg)
+	{
+		num = -num;
+	}
+
+	x = x + 27;
+    
+	// in the special case of 0, you draw 0
+	if (!num)
+	{
+		R_DrawPic(x - w, y, pic_innum[colour * 10]);
+	}
+
+	// draw the new number
+	while (num)
+	{
+		x -= w;
+		R_DrawPic(x, y, pic_innum[colour * 10 + num % 10]);
+		num /= 10;
+	}
+
+	// draw a minus sign if necessary
+	if (neg)
+	{
+		R_DrawPic(x - 8, y, pic_minus);
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawNumber12
+//
+//==========================================================================
+
+void SB_DrawNumber12(int x, int y, int num)
+{
+	x = x + 36;
+    
+	// in the special case of 0, you draw 0
+	if (!num)
+	{
+		R_DrawShadowedPic(x - bignumwidth[0], y, pic_bignum[0]);
+	}
+
+	// draw the new number
+	while (num)
+	{
+		x -= bignumwidth[num % 10];
+		R_DrawShadowedPic(x, y, pic_bignum[num % 10]);
+		num /= 10;
+		x -= 3;
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawINumber
+//
+//==========================================================================
+
+void SB_DrawINumber(int x, int y, int num)
+{
+	if (num > 1)
+	{
+		x = x + 8;
+    
+		// draw the new number
+		while (num)
+		{
+			x -= 4;
+			R_DrawPic(x, y, pic_smallinnum[num % 10]);
+			num /= 10;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawMNumber
+//
+//==========================================================================
+
+void SB_DrawMNumber(int x, int y, int num)
+{
+	if (num > 0)
+	{
+		x = x + 12;
+
+		// draw the new number
+		while (num)
+		{
+			x -= 4;
+			R_DrawPic(x, y, pic_smallinnum[num % 10]);
+			num /= 10;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawMainBar
+//
+//==========================================================================
+
+void SB_DrawMainBar()
+{
+	int sb_mana1;
+	int sb_mana2;
+	int sb_manaVial1;
+	int sb_manaVial2;
+	int readyweapon;
+
+	SB_DrawBackground();
+	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
+
+	if (!cl.MO)
+	{
+		return;
+	}
+
+	// Frags / health
+	if (ClGame.deathmatch)
+	{
+		R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_kills);
+		SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, cl.Frags, 0);
+	}
+	else
+	{
+		if (sb_health >= 25)
+		{
+			SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
+		}
+		else
+		{
+			SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 1);
+		}
+	}
+
+	//  Mana
+	Inventory ManaItem1 = EntityEx(cl.MO).FindInventory(Mana1);
+	Inventory ManaItem2 = EntityEx(cl.MO).FindInventory(Mana2);
+	if (!ManaItem1 || ManaItem1.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana1 = 0;
+	}
+	else
+	{
+		sb_mana1 = 1;
+	}
+	if (!ManaItem2 || ManaItem2.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana2 = 0;
+	}
+	else
+	{
+		sb_mana2 = 1;
+	}
+
+	// Update mana graphics based upon mana count/weapon type
+	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, ManaItem1 ? ManaItem1.Amount : 0);
+	SB_DrawMNumber(BAR_X + 111, BAR_Y + 20, ManaItem2 ? ManaItem2.Amount : 0);
+	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
+	R_DrawPic(BAR_X + 110, BAR_Y + 3, pic_manadim2[sb_mana2]);
+	R_DrawPic(BAR_X + 94, BAR_Y + 3, pic_manavial1[sb_manaVial1]);
+	R_DrawPic(BAR_X + 102, BAR_Y + 3, pic_manavial2[sb_manaVial2]);
+	R_ShadeRect(BAR_X + 95, BAR_Y + 4, 3, 22 -
+		(ManaItem1 ? 22 * ManaItem1.Amount / ManaItem1.MaxAmount : 0), 0.99);
+	R_ShadeRect(BAR_X + 103, BAR_Y + 4, 3, 22 -
+		(ManaItem2 ? 22 * ManaItem2.Amount / ManaItem2.MaxAmount : 0), 0.99);
+
+	// Ready artifact
+	if (cl.ArtifactFlash)
+	{
+		R_DrawPic(BAR_X + 148, BAR_Y + 3, pic_artiflash[cl.ArtifactFlash]);
+	}
+	else if (cl.InvPtr)
+	{
+		R_DrawPic(BAR_X + 143, BAR_Y + 2, R_RegisterPic(cl.InvPtr.IconName));
+		SB_DrawINumber(BAR_X + 166, BAR_Y + 23, cl.InvPtr.Amount);
+	}
+
+	// Weapon Pieces
+	FourthWeaponHolder Hold = FourthWeaponHolder(
+		EntityEx(cl.MO).FindInventory(FourthWeaponHolder));
+	int Pieces = Hold ? Hold.PieceMask : 0;
+	if (Pieces != 7)
+	{
+		R_DrawPic(BAR_X + 190, BAR_Y + 1, pic_wpslot);
+		if (Pieces & FourthWeaponPiece::WPIECE1)
+		{
+			R_DrawPic(BAR_X + wppiecex[0], BAR_Y + 1, pic_wppiece[0]);
+		}
+		if (Pieces & FourthWeaponPiece::WPIECE2)
+		{
+			R_DrawPic(BAR_X + wppiecex[1], BAR_Y + 1, pic_wppiece[1]);
+		}
+		if (Pieces & FourthWeaponPiece::WPIECE3)
+		{
+			R_DrawPic(BAR_X + wppiecex[2], BAR_Y + 1, pic_wppiece[2]);
+		}
+	}
+	else
+	{
+		R_DrawPic(BAR_X + 190, BAR_Y + 1, pic_wpfull);
+	}
+
+	// Armor
+	HexenArmor HArmor = HexenArmor(EntityEx(cl.MO).FindInventory(
+		HexenArmor));
+	int TotalArmorPoints = !HArmor ? 0 :
+		ftoi((HArmor.Slots[0] + HArmor.Slots[1] + HArmor.Slots[2] +
+		HArmor.Slots[3] + HArmor.Slots[4]) / 5.0);
+	SB_DrawNumber9(BAR_X + 250, BAR_Y + 15, TotalArmorPoints, 0);
+}
+
+//==========================================================================
+//
+//	SB_DrawKeyBar
+//
+//==========================================================================
+
+void SB_DrawKeyBar()
+{
+	int i;
+	int num;
+	Inventory Item;
+
+	SB_DrawBackground();
+	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
+
+	//  Keys
+	Item = EntityEx(cl.MO).Inventory;
+	for (num = 0; Item && num < 5; Item = Item.Inventory)
+	{
+		if (Key(Item))
+		{
+			R_DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3,
+				R_RegisterPic(Item.IconName));
+			num++;
+		}
+	}
+
+	//  Armor
+	HexenArmor HArmor = HexenArmor(EntityEx(cl.MO).FindInventory(
+		HexenArmor));
+	for (i = 0; i < 4; i++)
+	{
+		float ArmorPerc;
+		if (!HArmor || !HArmor.Slots[i])
+		{
+			continue;
+		}
+		else if (HArmor.Slots[i] <= (HArmor.SlotsIncrement[i] / 4.0))
+		{
+			ArmorPerc = 0.333;
+		}
+		else if (HArmor.Slots[i] <= (HArmor.SlotsIncrement[i] / 2.0))
+		{
+			ArmorPerc = 0.666;
+		}
+		else
+		{
+			ArmorPerc = 1.0;
+		}
+		R_DrawPic2(BAR_X + 150 + 31 * i, BAR_Y + 3, pic_armor[i], ArmorPerc);
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawInventoryBar
+//
+//==========================================================================
+
+void SB_DrawInventoryBar()
+{
+	int i;
+
+	SB_DrawBackground();
+	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_invbar);
+
+	//  Inventory
+	Inventory Item = cl.InvFirst;
+	for (i = 0; Item && i < 7; i++)
+	{
+		R_DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2,
+			R_RegisterPic(Item.IconName));
+		SB_DrawINumber(BAR_X + 71 + i * 31, BAR_Y + 24, Item.Amount);
+		if (Item == cl.InvPtr)
+		{
+			R_DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2, pic_selectbox);
+		}
+		Item = Item.NextInv();
+	}
+
+	if (cl.InvFirst && cl.InvFirst.PrevInv())
+	{
+		R_DrawPic(BAR_X + 42, BAR_Y + 2, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+	}
+	if (Item)
+	{
+		R_DrawPic(BAR_X + 269, BAR_Y + 2, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawFullscreenStats
+//
+//==========================================================================
+
+void SB_DrawFullscreenStats()
+{
+	int i;
+	int sb_mana1;
+	int sb_mana2;
+	int readyweapon;
+
+	//  Health
+	SB_DrawNumber12(50, 450, cl.Health);
+	R_DrawPic(30, 494, pic_health);
+
+	// Armor
+	HexenArmor HArmor = HexenArmor(EntityEx(cl.MO).FindInventory(
+		HexenArmor));
+	int TotalArmorPoints = !HArmor ? 0 :
+		ftoi((HArmor.Slots[0] + HArmor.Slots[1] + HArmor.Slots[2] +
+		HArmor.Slots[3] + HArmor.Slots[4]) / 5.0);
+	SB_DrawNumber12(140, 450, TotalArmorPoints);
+	R_DrawPic(120, 490, pic_armor2);
+
+	//  Frags
+	if (ClGame.deathmatch)
+	{
+		SB_DrawNumber9(200, 450, cl.Frags, 0);
+	}
+
+	if (cl.InventoryTime)
+	{
+		//  Inventory
+		Inventory Item = cl.InvFirst;
+		for (i = 0; i < 7; i++)
+		{
+			R_DrawPic2(210 + i * 31, 448, pic_artibox, 0.6);
+			if (Item)
+			{
+				R_DrawPic(209 + i * 31, 447,
+					R_RegisterPic(Item.IconName));
+				SB_DrawINumber(229 + i * 31, 468, Item.Amount);
+				if (Item == cl.InvPtr)
+				{
+					R_DrawPic(210 + i * 31, 447, pic_selectbox);
+				}
+				Item = Item.NextInv();
+			}
+		}
+		if (cl.InvFirst && cl.InvFirst.PrevInv())
+		{
+			R_DrawPic(200, 447, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+		}
+		if (Item)
+		{
+			R_DrawPic(428, 447, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+		}
+	}
+	else if (cl.InvPtr)
+	{
+		//  Ready artifact
+		R_DrawPic2(546, 440, pic_artibox, 0.6);
+		R_DrawPic(544, 440, R_RegisterPic(cl.InvPtr.IconName));
+		SB_DrawINumber(567, 462, cl.InvPtr.Amount);
+	}
+
+	//  Mana
+	Inventory ManaItem1 = cl.MO ? EntityEx(cl.MO).FindInventory(Mana1) : none;
+	Inventory ManaItem2 = cl.MO ? EntityEx(cl.MO).FindInventory(Mana2) : none;
+	if (!ManaItem1 || ManaItem1.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana1 = 0;
+	}
+	else
+	{
+		sb_mana1 = 1;
+	}
+	if (!ManaItem2 || ManaItem2.Amount == 0)
+	{
+		// Draw Dim Mana icon
+		sb_mana2 = 0;
+	}
+	else
+	{
+		sb_mana2 = 1;
+	}
+
+	// Update mana graphics based upon mana count/weapon type
+	if (cl.ReadyWeapon.AmmoType1 != Mana1 && cl.ReadyWeapon.AmmoType2 != Mana1)
+	{
+		sb_mana1 = 0;
+	}
+	if (cl.ReadyWeapon.AmmoType1 != Mana2 && cl.ReadyWeapon.AmmoType2 != Mana2)
+	{
+		sb_mana2 = 0;
+	}
+
+	SB_DrawMNumber(600, 446, ManaItem1 ? ManaItem1.Amount : 0);
+	SB_DrawMNumber(600, 462, ManaItem2 ? ManaItem2.Amount : 0);
+	R_DrawPic(584, 440, pic_manadim1[sb_mana1]);
+	R_DrawPic(584, 456, pic_manadim2[sb_mana2]);
+}
+
+//==========================================================================
+//
+//	SB_DrawIcons
+//
+//==========================================================================
+
+void SB_DrawIcons()
+{
+	int frame;
+
+	if (!cl.MO)
+	{
+		return;
+	}
+
+	// Wings of wrath
+	Powerup Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerFlight));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
+	{
+		frame = (ClGame.GLevel.TicTime / 3) & 15;
+		if (cl.MO.bFly)
+		{
+			if (hitCentreFrame && frame != 15 && frame != 0)
+			{
+				frame = 15;
+			}
+			else
+			{
+				hitCentreFrame = false;
+			}
+		}
+		else
+		{
+			if (hitCentreFrame || frame == 15 || frame == 0)
+			{
+				frame = 15;
+				hitCentreFrame = true;
+			}
+		}
+		R_DrawPic(20, 19, pic_fly[frame]);
+	}
+
+	// Speed Boots
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerSpeed));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
+	{
+		R_DrawPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15]);
+	}
+
+	// Defensive power
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerInvulnerable));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
+	{
+		R_DrawPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15]);
+	}
+
+	// Minotaur Active
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerMinotaur));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
+	{
+		R_DrawPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15]);
+	}
+}
+
+//==========================================================================
+//
+//	SB_DrawPause
+//
+//==========================================================================
+
+void SB_DrawPause()
+{
+	if (ClGame.bPaused && GetCvar('draw_pause'))
+	{
+		R_DrawPic(320, ClGame.maxclients > 1 ? 140 : 40, pic_paused);
+	}
+}
+
+//==========================================================================
+//
+//  SB_Drawer
+//
+//==========================================================================
+
+void SB_Drawer(int sb_view)
+{
+	int i;
+
+	if (sb_view == SB_VIEW_FULLSCREEN)
+	{
+		SB_DrawFullscreenStats();
+	}
+	else if (cl.InventoryTime)
+	{
+		SB_DrawInventoryBar();
+	}
+	else if (sb_view == SB_VIEW_AUTOMAP)
+	{
+		SB_DrawKeyBar();
+	}
+	else
+	{
+		SB_DrawMainBar();
+	}
+
+	//  Animated icons
+	SB_DrawIcons();
+
+	SB_DrawPause();
+}
+
+//==========================================================================
+//
+//  SB_UpdateWidgets
+//
+//==========================================================================
+
+void SB_UpdateWidgets()
+{
+	int delta;
+	int curHealth;
+
+	curHealth = cl.Health;
+	if (curHealth < 0)
+	{
+		curHealth = 0;
+	}
+	if (curHealth < HealthMarker)
+	{
+		delta = (HealthMarker - curHealth) >> 2;
+		if (delta < 1)
+		{
+			delta = 1;
+		}
+		else if (delta > 6)
+		{
+			delta = 6;
+		}
+		HealthMarker -= delta;
+	}
+	else if (curHealth > HealthMarker)
+	{
+		delta = (curHealth - HealthMarker) >> 2;
+		if (delta < 1)
+		{
+			delta = 1;
+		}
+		else if (delta > 6)
+		{
+			delta = 6;
+		}
+		HealthMarker += delta;
+	}
+}
+
+//==========================================================================
+//
+//	VisibilityChanged
+//
+//==========================================================================
+
+void VisibilityChanged(bool bNewVisibility)
+{
+	bTickEnabled = bNewVisibility;
+}
+
+defaultproperties
+{
+	bTickEnabled = true;
+	Width = 640;
+	Height = 480;
+}

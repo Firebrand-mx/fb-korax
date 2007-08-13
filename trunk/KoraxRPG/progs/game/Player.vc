@@ -1,0 +1,2977 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Player.vc 2633 2007-08-12 08:26:28Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class Player : PlayerEx;
+
+const int MAXHEALTH			= 100;
+const int MAXMORPHHEALTH	= 30;
+const float VIEWHEIGHT		= 48.0;
+
+// 16 pixels of bob
+const float MAXBOB			= 16.0;
+
+float InventoryTime;
+int ArtifactFlash;
+Inventory InvPtr;
+Inventory InvFirst;
+
+int PoisonCount;	// screen flash for poison damage
+float LastPoisonTime;
+Actor Poisoner;		// none for non-player mobjs
+
+int WeaponCShift;
+float MorphTime;	// player is a pig if > 0
+
+BotPlayer Bot;
+Inventory SavedInventory;
+
+bool onground;
+
+replication
+{
+	reliable if (!bIsClient)
+		InventoryTime, ArtifactFlash, InvPtr, InvFirst;
+
+	unreliable if (!bIsClient)
+		ClientBlood, ClientExplosion;
+}
+
+//==========================================================================
+//
+//	PutClientIntoServer
+//
+//==========================================================================
+
+void PutClientIntoServer()
+{
+	if (bIsBot)
+	{
+		Bot = BotPlayer(SpawnObject(BotPlayer));
+		Bot.player = self;
+		Bot.OnBeginPlay();
+	}
+}
+
+//==========================================================================
+//
+//  SpawnClient
+//
+//==========================================================================
+
+void SpawnClient()
+{
+	bool playerWasReborn;
+	Weapon bestWeapon;
+	EntityEx OldMO = EntityEx(MO);
+	Inventory Item;
+
+	Attacker = none;
+	Poisoner = none;
+
+	if (Level.Game.netgame && !Level.Game.deathmatch)
+	{
+		// Cooperative net-play, retain keys and weapons
+		playerWasReborn = (PlayerState == PST_REBORN);
+	}
+
+	//  Spawn player
+	if (Level.Game.deathmatch)
+	{
+		DeathMatchSpawnPlayer();
+	}
+	else
+	{
+		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
+			GetPlayerNum()]);
+	}
+
+	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
+	{
+		// Restore keys and weapons when reborn in co-op
+		bestWeapon = none;
+		if (OldMO)
+		{
+			for (Item = OldMO.Inventory; Item; )
+			{
+				Inventory Next = Item.Inventory;
+				if (Weapon(Item))
+				{
+					if (!bestWeapon || bestWeapon.SelectionOrder >
+						Weapon(Item).SelectionOrder)
+					{
+						bestWeapon = Weapon(Item);
+					}
+					Item.AttachToOwner(EntityEx(MO));
+				}
+				else if (FourthWeaponHolder(Item) || Key(Item))
+				{
+					Item.AttachToOwner(EntityEx(MO));
+				}
+				Item = Next;
+			}
+		}
+		GiveMana(Mana1, 0);
+		GiveMana(Mana2, 0);
+		EntityEx(MO).FindInventory(Mana1).Amount = 25;
+		EntityEx(MO).FindInventory(Mana2).Amount = 25;
+		if (bestWeapon)
+		{
+			// Bring up the best weapon
+			PendingWeapon = bestWeapon;
+		}
+	}
+
+	// Destroy all things touching players
+	Actor(MO).TeleportMove(MO.Origin);
+}
+
+//==========================================================================
+//
+//  NetGameReborn
+//
+//==========================================================================
+
+void NetGameReborn()
+{
+	int i;
+	bool foundSpot;
+	Weapon bestWeapon;
+	EntityEx OldMO = EntityEx(MO);
+	Inventory Item;
+
+	// remove pitch and roll angles from corpse
+	MO.Angles.pitch = 0.0;
+	MO.Angles.roll = 0.0;
+
+	// first dissasociate the corpse
+	MO.Player = none;
+	MO.bIsPlayer = false;
+
+	// spawn at random spot if in death match
+	if (Level.Game.deathmatch)
+	{
+		OldMO.DestroyAllInventory();
+		DeathMatchSpawnPlayer();
+		return;
+	}
+
+	foundSpot = false;
+	if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
+		GetPlayerNum()]))
+	{
+		// Appropriate player start spot is open
+		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
+			GetPlayerNum()]);
+		foundSpot = true;
+	}
+	else
+	{
+		// Try to spawn at one of the other player start spots
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (CheckSpot(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS + i]))
+			{
+				// Found an open start spot
+				SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS + i]);
+				foundSpot = true;
+				break;
+			}
+		}
+	}
+
+	if (!foundSpot)
+	{
+		// Player's going to be inside something
+		SpawnPlayer(&Level.PlayerStarts[Level.Game.RebornPosition * MAXPLAYERS +
+			GetPlayerNum()]);
+	}
+
+	// Restore keys and weapons
+	bestWeapon = none;
+	for (Item = OldMO.Inventory; Item; Item = Item.Inventory)
+	{
+		if (Weapon(Item))
+		{
+			if (!bestWeapon || bestWeapon.SelectionOrder >
+				Weapon(Item).SelectionOrder)
+			{
+				bestWeapon = Weapon(Item);
+			}
+			Item.AttachToOwner(EntityEx(MO));
+		}
+		else if (FourthWeaponHolder(Item) || Key(Item))
+		{
+			Item.AttachToOwner(EntityEx(MO));
+		}
+	}
+	GiveMana(Mana1, 0);
+	GiveMana(Mana2, 0);
+	EntityEx(MO).FindInventory(Mana1).Amount = 25;
+	EntityEx(MO).FindInventory(Mana2).Amount = 25;
+	if (bestWeapon)
+	{
+		// Bring up the best weapon
+		PendingWeapon = bestWeapon;
+	}
+	OldMO.DestroyAllInventory();
+}
+
+//==========================================================================
+//
+//  DisconnectClient
+//
+//==========================================================================
+
+void DisconnectClient()
+{
+	int i;
+
+	if (Bot != none)
+	{
+		Bot.Destroy();
+		Bot = none;
+	}
+	if (MO)
+	{
+		MO.Player = none;
+		MO.bIsPlayer = false;
+		Actor(MO).Damage(none, none, 10000);
+	}
+	if (ViewEnt)
+	{
+		ViewEnt.Destroy();
+		ViewEnt = none;
+	}
+	Level.bprint("%s left the game\n", PlayerName);
+	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
+}
+
+//==========================================================================
+//
+//  UserinfoChanged
+//
+//==========================================================================
+
+void UserinfoChanged()
+{
+	if (!bSpawned)
+	{
+		return;
+	}
+	SetPlayerColour();
+}
+
+//==========================================================================
+//
+//  SetPlayerColour
+//
+//==========================================================================
+
+void SetPlayerColour()
+{
+	MO.Translation = 0;
+	if (PClass == HexenDefs::PCLASS_FIGHTER)
+	{
+		// The first type should be blue, and the third should be the
+		// Fighter's original gold colour
+		if (Colour == 0)
+		{
+			MO.Translation = 2;
+		}
+		else if (Colour != 2)
+		{
+			MO.Translation = Colour;
+		}
+	}
+	else if (Colour)
+	{
+		// Set colour translation bits for player sprites
+		MO.Translation = PClass * (MAXPLAYERS - 1) + Colour;
+	}
+}
+
+//==========================================================================
+//
+//  DeathMatchSpawnPlayer
+//
+//  Spawns a player at one of the random death match spots called at level
+// load and each death
+//
+//==========================================================================
+
+void DeathMatchSpawnPlayer()
+{
+	int i;
+	int j;
+
+	for (j = 0; j < 20; j++)
+	{
+		i = P_Random() % Level.NumDeathmatchStarts;
+		if (CheckSpot(&Level.DeathmatchStarts[i]))
+		{
+			SpawnPlayer(&Level.DeathmatchStarts[i]);
+			return;
+		}
+	}
+
+	// no good spot, so the player will probably get stuck 
+	SpawnPlayer(&Level.PlayerStarts[GetPlayerNum()]);
+}
+
+//==========================================================================
+//
+//  CheckSpot
+//
+//  Returns false if the player cannot be respawned at the given mthing_t
+// spot because something is occupying it
+//
+//==========================================================================
+
+bool CheckSpot(mthing_t * mthing)
+{
+	float x;
+	float y;
+	sector_t *sec;
+	float an;
+	Actor A;
+	int i;
+
+	if (!MO)
+	{
+		// first spawn of level, before corpses
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (Level.Game.Players[i] && Level.Game.Players[i].MO &&
+				Level.Game.Players[i].MO.Origin.x == mthing->x &&
+				Level.Game.Players[i].MO.Origin.y == mthing->y)
+				return false;
+		return true;
+	}
+
+	x = mthing->x;
+	y = mthing->y;
+
+	MO.bNoPassMobj = true;
+	if (!MO.CheckPosition(vector(x, y, Actor::ONFLOORZ)))
+	{
+		MO.bNoPassMobj = false;
+		return false;
+	}
+	MO.bNoPassMobj = false;
+
+	// spawn a teleport fog 
+	sec = Level.XLevel.PointInSector(vector(x, y, 0.0));
+	an = itof(45 * (mthing->angle / 45));
+
+	A = HexenLevelInfo(Level).Spawn(TeleportFog, vector(x + 20.0 * cos(an), y + 20.0 * sin(an),
+		sec->floorheight + Actor::TELEFOGHEIGHT));
+	A.PlaySound('Teleport', CHAN_VOICE);
+
+	return true;
+}
+
+//==========================================================================
+//
+//  SpawnPlayer
+//
+//  Called when a player is spawned on the level.  Most of the player
+// structure stays unchanged between levels.
+//
+//==========================================================================
+
+void SpawnPlayer(mthing_t * mthing)
+{
+	float x, y, z;
+	PlayerPawn pp;
+	bool ResetInventory = false;
+	Inventory Item;
+	int i;
+	class<Inventory> Cls;
+
+	if (PlayerState == PST_REBORN)
+	{
+		PlayerReborn();
+		ResetInventory = true;
+	}
+	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
+	{
+		PClass = P_Random() % 3;
+		if (PClass == BaseClass)
+		{
+			PClass = (PClass + 1) % 3;
+		}
+		BaseClass = PClass;
+		SB_Start();
+	}
+	else
+	{
+		PClass = BaseClass;
+	}
+	x = mthing->x;
+	y = mthing->y;
+	z = Actor::ONFLOORZ;
+	switch (PClass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(FighterPlayer, vector(x, y, z)));
+		break;
+	case HexenDefs::PCLASS_CLERIC:
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(ClericPlayer, vector(x, y, z)));
+		break;
+	case HexenDefs::PCLASS_MAGE:
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(MagePlayer, vector(x, y, z)));
+		break;
+	default:
+		Error("P_SpawnPlayer: Unknown class type");
+		break;
+	}
+	pp.Origin.z += mthing->height;
+	pp.LinkToWorld();
+
+	pp.Angles.yaw = itof(45 * (mthing->angle / 45));
+	pp.Player = self;
+	pp.bIsPlayer = true;
+	pp.Health = Health;
+	MO = pp;
+	PlayerState = PST_LIVE;
+	Refire = 0;
+	DamageFlash = 0.0;
+	BonusFlash = 0.0;
+	PoisonCount = 0;
+	MorphTime = 0.0;
+	ExtraLight = 0;
+	FixedColourmap = 0;
+	LastSectorDamageTime = 0.0;
+	LastHazardTime = 0.0;
+	ViewHeight = VIEWHEIGHT;
+	ViewAngles = pp.Angles;
+	bFixAngle = true;
+
+	pp.Inventory = SavedInventory;
+	for (Item = pp.Inventory; Item; Item = Item.Inventory)
+	{
+		Item.Owner = MO;
+	}
+
+	if (ResetInventory)
+	{
+		while (pp.Inventory)
+		{
+			pp.Inventory.Destroy();
+		}
+
+		HexenArmor HArmor = Level.Spawn(HexenArmor);
+		HArmor.AttachToOwner(pp);
+		HArmor.Slots[4] = pp.HexenArmor[0];
+		HArmor.SlotsIncrement[0] = pp.HexenArmor[1];
+		HArmor.SlotsIncrement[1] = pp.HexenArmor[2];
+		HArmor.SlotsIncrement[2] = pp.HexenArmor[3];
+		HArmor.SlotsIncrement[3] = pp.HexenArmor[4];
+
+		BasicArmor BArmor = Level.Spawn(BasicArmor);
+		BArmor.Amount = 0;
+		BArmor.AttachToOwner(pp);
+
+		for (i = 0; i < pp.InitialInventory.Num; i++)
+		{
+			Item = Level.Spawn(pp.InitialInventory[i].Type);
+			Item.bIgnoreSkill = true;
+			Item.Amount = pp.InitialInventory[i].Amount;
+			if (Weapon(Item))
+			{
+				//	For better control empty weapon's ammo.
+				Weapon(Item).AmmoGive1 = 0;
+				Weapon(Item).AmmoGive2 = 0;
+			}
+			if (!Item.TryPickup(pp))
+			{
+				Item.Destroy();
+			}
+			else if (Weapon(Item) && Weapon(Item).CheckAmmo(false))
+			{
+				SetWeapon(Weapon(Item));
+			}
+		}
+	}
+	else
+	{
+		ViewEnt.Owner = MO;
+	}
+	SetupPsprites();
+	if (Level.Game.deathmatch)
+	{
+		// Give all keys in death match mode
+		foreach AllClasses(Key, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class.
+				continue;
+			}
+			pp.GiveInventoryType(Cls);
+		}
+	}
+
+	// Set translation table data
+	SetPlayerColour();
+	if (bIsBot)
+	{
+		Bot.OnSpawn();
+	}
+}
+
+//==========================================================================
+//
+//  PlayerReborn
+//
+//  Called after a player dies almost everything is cleared and initialised
+//
+//==========================================================================
+
+void PlayerReborn()
+{
+	BotPlayer B;
+
+	B = Bot;
+	ClearPlayer();
+	Bot = B;
+
+	PClass = BaseClass;
+
+	bUseDown = true;	// don't do anything immediately
+	bAttackDown = true;
+	PlayerState = PST_LIVE;
+	Health = MAXHEALTH;
+	LocalQuakeHappening = 0;
+}
+
+//==========================================================================
+//
+//  PlayerExitMap
+//
+//  Called when the player leaves a map.
+//
+//==========================================================================
+
+void PlayerExitMap(bool clusterChange)
+{
+	int i;
+	Inventory Item;
+
+	// Strip all current powers
+	for (Item = EntityEx(MO).Inventory; Item;)
+	{
+		Inventory Next = Item.Inventory;
+		if (Powerup(Item) && (Level.Game.deathmatch || clusterChange ||
+			!Item.bHubPower))
+		{
+			Item.Destroy();
+		}
+		Item = Next;
+	}
+
+	if (!Level.Game.deathmatch)
+	{
+		if (clusterChange)
+		{	// Entering new cluster
+			// Strip all keys
+			for (Item = EntityEx(MO).Inventory; Item;)
+			{
+				Inventory Next = Item.Inventory;
+				if (Key(Item))
+				{
+					Item.Destroy();
+				}
+				Item = Next;
+			}
+
+			// Strip flight artifact
+			Item = EntityEx(MO).FindInventory(ArtiFly);
+			if (Item)
+			{
+				Item.Destroy();
+			}
+		}
+	}
+
+	if (MorphTime)
+	{
+		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
+		MorphTime = 0.0;
+	}
+	MO.Angles.pitch = 0.0;
+	MO.Alpha = 1.0;	// Remove invisibility
+	ExtraLight = 0;	// Remove weapon flashes
+	FixedColourmap = 0;	// Remove torch
+	DamageFlash = 0.0;	// No palette changes
+	BonusFlash = 0.0;
+	PoisonCount = 0;
+	SavedInventory = EntityEx(MO).Inventory;
+}
+
+//==========================================================================
+//
+//  GiveMana
+//
+//  Returns true if the player accepted the mana, false if it was refused.
+//
+//==========================================================================
+
+bool GiveMana(class<Ammo> ammo, int count)
+{
+	int oldammo;
+
+	if (!ammo)
+	{
+		return false;
+	}
+
+	Ammo AmmoItem = Ammo(EntityEx(MO).FindInventory(ammo));
+	if (!AmmoItem)
+	{
+		AmmoItem = Level.Spawn(ammo);
+		AmmoItem.AttachToOwner(EntityEx(MO));
+		AmmoItem.Amount = 0;
+	}
+	if (!count)
+	{
+		return false;
+	}
+	if (AmmoItem.Amount == AmmoItem.MaxAmount)
+	{
+		return false;
+	}
+
+	if (Level.Game.gameskill == sk_baby ||
+		(Level.Game.gameskill == sk_nightmare &&
+		LineSpecialGameInfo(Level.Game).bNightmareExtraAmmo))
+	{
+		// extra ammo in baby mode and nightmare mode
+		if (LineSpecialGameInfo(Level.Game).bBabyNightmareDoubleAmmo)
+		{
+			count <<= 1;
+		}
+		else
+		{
+			count += count >> 1;
+		}
+	}
+
+	oldammo = AmmoItem.Amount;
+	AmmoItem.Amount += count;
+	if (AmmoItem.Amount > AmmoItem.MaxAmount)
+	{
+		AmmoItem.Amount = AmmoItem.MaxAmount;
+	}
+
+	if (oldammo <= 0)
+	{
+		GotAmmo(AmmoItem);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	GotAmmo
+//
+//==========================================================================
+
+void GotAmmo(Ammo NewAmmo)
+{
+}
+
+//==========================================================================
+//
+//	GetMaxHealth
+//
+//==========================================================================
+
+int GetMaxHealth()
+{
+	if (MorphTime)
+	{
+		return MAXMORPHHEALTH;
+	}
+	return MAXHEALTH;
+}
+
+//==========================================================================
+//
+//  InventoryLeft
+//
+//==========================================================================
+
+void InventoryLeft()
+{
+	if (!InventoryTime)
+	{
+		InventoryTime = 5.0;
+		return;
+	}
+	InventoryTime = 5.0;
+	if (InvPtr)
+	{
+		Inventory Prev = InvPtr.PrevInv();
+		if (Prev)
+		{
+			InvPtr = Prev;
+			AdjustInvFirst();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  InventoryRight
+//
+//==========================================================================
+
+void InventoryRight()
+{
+	if (!InventoryTime)
+	{
+		InventoryTime = 5.0;
+		return;
+	}
+	InventoryTime = 5.0;
+	if (InvPtr)
+	{
+		Inventory Next = InvPtr.NextInv();
+		if (Next)
+		{
+			InvPtr = Next;
+			AdjustInvFirst();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  InventoryUse
+//
+//==========================================================================
+
+Inventory InventoryUse()
+{
+	// flag to denote that it's okay to use an artifact
+	if (InventoryTime)
+	{
+		InventoryTime = 0.0;
+		return none;
+	}
+	else
+	{
+		return InvPtr;
+	}
+}
+
+//==========================================================================
+//
+//  InventoryTick
+//
+//==========================================================================
+
+void InventoryTick(float deltaTime)
+{
+	// turn inventory off after a certain amount of time
+	if (InventoryTime)
+	{
+		InventoryTime -= deltaTime;
+		if (InventoryTime <= 0.0)
+		{
+			InventoryTime = 0.0;
+		}
+	}
+	if (ArtifactFlash)
+	{
+		ArtifactFlash--;
+	}
+}
+
+//==========================================================================
+//
+//	AdjustInvFirst
+//
+//==========================================================================
+
+void AdjustInvFirst()
+{
+	Inventory Item;
+
+	if (!InvPtr)
+	{
+		InvFirst = none;
+		return;
+	}
+
+	//	Count how many items are following the current one, also make sure
+	// that first is not after this one.
+	int NumFollowing = 0;
+	for (Item = InvPtr.NextInv(); Item; Item = Item.NextInv())
+	{
+		NumFollowing++;
+		if (InvFirst == Item)
+		{
+			InvFirst = InvPtr;
+		}
+	}
+	int FirstOffs = 0;
+	for (Item = InvPtr; Item && Item != InvFirst; Item = Item.PrevInv())
+	{
+		FirstOffs++;
+	}
+	while (FirstOffs > 5)
+	{
+		InvFirst = InvFirst.NextInv();
+		FirstOffs--;
+	}
+	while (NumFollowing + FirstOffs < 5 && InvFirst.PrevInv())
+	{
+		InvFirst = InvFirst.PrevInv();
+		FirstOffs++;
+	}
+}
+
+//==========================================================================
+//
+//  MovePlayer
+//
+//==========================================================================
+
+void MovePlayer(float deltaTime)
+{
+	float fly;
+	float forward;
+	float side;
+	TVec vforward;
+	TVec vright;
+	TVec vup;
+	TVec wishvel;
+
+	forward = ForwardMove;
+	side = SideMove;
+
+	//  Adjust speed depending on class. Originaly this is done in input
+	// code, but to simplify it, we do it here.
+	//  Fighter moves faster, cleric at original speed, mage - slower,
+	// pig - slower, but faster than mage
+	switch (PClass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		forward *= 1.18;
+		side *= 1.3;
+		break;
+
+	case HexenDefs::PCLASS_CLERIC:
+		break;
+
+	case HexenDefs::PCLASS_MAGE:
+		forward *= 0.9;
+		side *= 0.9;
+		break;
+
+	case HexenDefs::PCLASS_PIG:
+		forward *= 0.97;
+		side *= 0.97;
+		break;
+	}
+
+	if (EntityEx(MO).Inventory && !MorphTime)
+	{
+		// Adjust for a player with a speed artifact
+		float SpeedFactor = EntityEx(MO).Inventory.GetSpeedFactor();
+		forward *= SpeedFactor;
+		side *= SpeedFactor;
+	}
+	if ((!EntityEx(MO).FindInventory(PowerFlight) ||
+		MO.Origin.z <= MO.FloorZ) &&
+		Actor(MO).GetFriction() < Actor::FRICTION_NORMAL * 0.5)
+	{
+		forward *= 0.5;
+		side *= 0.5;
+	}
+
+	// Do not let the player control movement
+	//  if not onground.
+	onground = (MO.Origin.z <= MO.FloorZ) || Actor(MO).bOnMobj;
+	if (!(onground || MO.bFly))
+	{
+		//  not on ground, so little effect on velocity
+		forward *= MainGameInfo(Level.Game).air_control;
+		side *= MainGameInfo(Level.Game).air_control;
+	}
+
+	AngleVectors(&MO.Angles, &vforward, &vright, &vup);
+
+	wishvel = forward * vforward + side * vright;
+	if (onground && !MO.bFly)
+	{
+		wishvel.z = 0.0;
+	}
+
+	MO.Velocity += 5.0 * deltaTime * wishvel;
+
+	if (forward || side)
+	{
+		SetPlayerRunState();
+	}
+
+	fly = FlyMove / 16.0;
+	if (fly && EntityEx(MO).FindInventory(PowerFlight))
+	{
+		if (FlyMove != TOCENTRE)
+		{
+			FlyHeight = fly * 2.0;
+			if (!MO.bFly)
+			{
+				MO.bFly = true;
+				MO.bNoGravity = true;
+				if (MO.Velocity.z <= -39.0 * 35.0)
+				{
+					// stop falling scream
+					MO.StopSound(CHAN_AUTO);
+				}
+			}
+		}
+		else
+		{
+			MO.bFly = false;
+			MO.bNoGravity = false;
+		}
+	}
+	else if (fly > 0.0)
+	{
+		PlayerUseArtifactType(ArtiFly);
+	}
+	if (MO.bFly)
+	{
+		MO.Velocity.z = FlyHeight * 35.0 + wishvel.z;
+		if (FlyHeight)
+		{
+			FlyHeight /= 2.0;
+		}
+	}
+	if ((Buttons & BT_JUMP) && onground && !JumpTime)
+	{
+		if (MorphTime)
+		{
+			MO.Velocity.z = 6.5 * 35.0;
+		}
+		else
+		{
+			MO.Velocity.z = 9.5 * 35.0;
+		}
+		Actor(MO).bOnMobj = false;
+		JumpTime = 0.5;
+	}
+}
+
+//==========================================================================
+//
+//  CheckWaterJump
+//
+//==========================================================================
+
+void CheckWaterJump()
+{
+	TVec start;
+	TVec end;
+	TVec vforward;
+	TVec HitPoint;
+	TVec HitNormal;
+
+	// check for a jump-out-of-water
+	AngleVector(&MO.Angles, &vforward);
+	start = MO.Origin;
+	start.z += MO.Height * 0.5 + 8.0;
+	vforward.z = 0.0;
+	vforward = Normalise(vforward);
+	end = start + vforward * 24.0;
+	if (!Level.XLevel.TraceLine(start, end, HitPoint, HitNormal))
+	{
+		// solid at waist
+		start.z = MO.Origin.z + MO.Height;
+		end = start + vforward * 24.0;
+		MoveDir = HitNormal * -50.0;
+		if (Level.XLevel.TraceLine(start, end, HitPoint, HitNormal))
+		{
+			// open at eye level
+			Actor(MO).bWaterJump = true;
+			MO.Velocity.z = 350.0;
+			Actor(MO).ReactionTime = 2.0;	// safety net
+		}
+	}
+}
+
+//==========================================================================
+//
+//  WaterMove
+//
+//==========================================================================
+
+void WaterMove(float deltaTime)
+{
+	float forward;
+	float side;
+	TVec vforward;
+	TVec vright;
+	TVec vup;
+	TVec wishvel;
+
+	// Do not let the player control movement
+	//  if not onground.
+	onground = (MO.Origin.z <= MO.FloorZ) || Actor(MO).bOnMobj;
+
+	AngleVectors(&MO.Angles, &vforward, &vright, &vup);
+
+	forward = ForwardMove;
+	side = SideMove;
+
+	//  Adjust speed depending on class. Originaly this is done in input
+	// code, but to simplify it, we do it here.
+	//  Fighter moves faster, cleric at original speed, mage - slower,
+	// pig - slower, but faster than mage
+	switch (PClass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		forward *= 1.18;
+		side *= 1.3;
+		break;
+
+	case HexenDefs::PCLASS_CLERIC:
+		break;
+
+	case HexenDefs::PCLASS_MAGE:
+		forward *= 0.9;
+		side *= 0.9;
+		break;
+
+	case HexenDefs::PCLASS_PIG:
+		forward *= 0.97;
+		side *= 0.97;
+		break;
+	}
+
+	if (EntityEx(MO).Inventory && !MorphTime)
+	{
+		// Adjust for a player with a speed artifact
+		float SpeedFactor = EntityEx(MO).Inventory.GetSpeedFactor();
+		forward *= SpeedFactor;
+		side *= SpeedFactor;
+	}
+
+	wishvel = vforward * forward + vright * side;
+	if (!forward && !side /* && !cmd.upmove */ )
+		wishvel.z -= 60.0;	// drift towards bottom
+//  else
+//      wishvel.z += cmd.upmove;
+
+	MO.Velocity += 3.5 * deltaTime * wishvel;
+
+	if (forward || side)
+	{
+		SetPlayerRunState();
+	}
+
+	if (Buttons & BT_JUMP)
+	{
+		if (MO.WaterType == CONTENTS_WATER)
+			MO.Velocity.z = 100.0;
+		else if (MO.WaterType == CONTENTS_SLUDGE)
+			MO.Velocity.z = 80.0;
+		else
+			MO.Velocity.z = 50.0;
+	}
+	CheckWaterJump();
+}
+
+//==========================================================================
+//
+//  WaterJump
+//
+//==========================================================================
+
+void WaterJump()
+{
+	if (!Actor(MO).ReactionTime || !MO.WaterLevel)
+	{
+		Actor(MO).bWaterJump = false;
+		Actor(MO).ReactionTime = 0.0;
+	}
+	MO.Velocity.x = MoveDir.x;
+	MO.Velocity.y = MoveDir.y;
+}
+
+//==========================================================================
+//
+//  ThrustPlayer
+//
+//  Moves the given origin along a given angle.
+//
+//==========================================================================
+
+void ThrustPlayer(float angle, float move, float deltaTime)
+{
+	if (!(EntityEx(MO).FindInventory(PowerFlight) &&
+		!(MO.Origin.z <= MO.FloorZ)) &&
+		(Actor(MO).GetFloorType()->Friction < Actor::FRICTION_NORMAL ||
+		(MO.Sector->special & SECSPEC_BASE_MASK) == SECSPEC_FrictionLow))
+	{
+		move *= 0.5;
+	}
+	MO.Velocity.x += move * cos(angle) * deltaTime;
+	MO.Velocity.y += move * sin(angle) * deltaTime;
+}
+
+//==========================================================================
+//
+//  CalcHeight
+//
+//  Calculate the walking / running height adjustment
+//
+//==========================================================================
+
+void CalcHeight(float deltaTime)
+{
+	float angle;
+	float bob;
+
+	// Regular movement bobbing
+	// (needs to be calculated for gun swing
+	// even if not on ground)
+	// OPTIMIZE: tablify angle
+	// Note: a LUT allows for effects
+	//  like a ramp with low health.
+	Bob = MO.Velocity.x * MO.Velocity.x + MO.Velocity.y * MO.Velocity.y;
+	Bob /= 4.0 * 35.0 * 35.0;
+	if (Bob > MAXBOB)
+		Bob = MAXBOB;
+
+	if (MO.bFly && !onground)
+	{
+		Bob = 0.5;
+	}
+
+	angle = 180.0 * 35.0 / 10.0 * Level.XLevel.Time;
+	bob = Bob / 2.0 * sin(angle);
+
+	// move viewheight
+	if (PlayerState == PST_LIVE)
+	{
+		ViewHeight += DeltaViewHeight * deltaTime;
+
+		if (ViewHeight > VIEWHEIGHT)
+		{
+			ViewHeight = VIEWHEIGHT;
+			DeltaViewHeight = 0.0;
+		}
+
+		if (ViewHeight < VIEWHEIGHT / 2.0)
+		{
+			ViewHeight = VIEWHEIGHT / 2.0;
+			if (DeltaViewHeight <= 0.0)
+				DeltaViewHeight = 0.00001;
+		}
+
+		if (DeltaViewHeight)
+		{
+			DeltaViewHeight += 256.0 * deltaTime;
+			if (!DeltaViewHeight)
+				DeltaViewHeight = 0.00001;
+		}
+	}
+	if (MorphTime)
+	{
+		ViewOrg.z = MO.Origin.z + ViewHeight - 20.0;
+	}
+	else
+	{
+		ViewOrg.z = MO.Origin.z + ViewHeight + bob;
+	}
+	if (MO.FloorClip && PlayerState != PST_DEAD &&
+		MO.Origin.z <= MO.FloorZ)
+	{
+		ViewOrg.z -= MO.FloorClip;
+	}
+	if (ViewOrg.z < MO.FloorZ + 4.0)
+	{
+		ViewOrg.z = MO.FloorZ + 4.0;
+	}
+
+	if (ViewOrg.z > MO.CeilingZ - 4.0)
+		ViewOrg.z = MO.CeilingZ - 4.0;
+}
+
+//==========================================================================
+//
+//  PlayerInSpecialSector
+//
+//  Called every tic frame that the player origin is in a special sector.
+//
+//==========================================================================
+
+void PlayerInSpecialSector(float deltaTime)
+{
+	float speed;
+	float finean;
+
+	if (MO.Origin.z != GetPlanePointZ(&MO.Sector->floor, MO.Origin))
+	{
+		// Player is not touching the floor
+		return;
+	}
+
+	if (MO.Sector->special & SECSPEC_SECRET_MASK)
+	{
+		//	Secret area.
+		SecretCount++;
+		Level.CurrentSecret++;
+		MO.Sector->special &= ~SECSPEC_SECRET_MASK;
+		centreprint("You found a secret area");
+	}
+
+	if (MO.Sector->special <= SECSPEC_LightFlicker &&
+		MO.Sector->special >= 255)
+	{
+		switch (MO.Sector->special)
+		{
+		case SECSPEC_DamageHellslime:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 10);
+			}
+			break;
+		case SECSPEC_DamageSludge:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 4);
+			}
+			break;
+		case SECSPEC_DamageNukage:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 5);
+			}
+			break;
+		case SECSPEC_LightStrobeFastDamage:
+		case SECSPEC_DamageSuperHellslime:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 20);
+			}
+			break;
+		case SECSPEC_DamageSuperHellslimeExit:
+			// EXIT SUPER DAMAGE! (for E1M8 finale)
+			Cheats &= ~CF_GODMODE;
+	
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 20);
+			}
+	
+			if (Health <= 10)
+			{
+				Level.ExitLevel(0);
+			}
+			break;
+		case SECSPEC_DamageLavaWimpy:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 5, 'Fire');
+				Actor(MO).HitFloorType();
+				MO.PlaySound('LavaSizzle', CHAN_BODY);
+			}
+			break;
+		case SECSPEC_DamageLavaHefty:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 8, 'Fire');
+				Actor(MO).HitFloorType();
+				MO.PlaySound('LavaSizzle', CHAN_BODY);
+			}
+			break;
+		case SECSPEC_ScrollEastLavaDamage:
+			ThrustPlayer(0.0, 1024.0, deltaTime);
+			if (Level.XLevel.Time - LastSectorDamageTime >= 16.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 5, 'Fire');
+				Actor(MO).HitFloorType();
+				MO.PlaySound('LavaSizzle', CHAN_BODY);
+			}
+			break;
+		case SECSPEC_DamageHazard:
+			HazardTime += 2.0 * deltaTime;
+			break;
+		case SECSPEC_DamageInstantDeath:
+			Actor(MO).Damage(none, none, 999);
+			break;
+		case SECSPEC_DamageSuperHazard:
+			HazardTime += 4.0 * deltaTime;
+			break;
+		}
+	}
+	else
+	{
+		//	Extended sector damage type.
+		switch (MO.Sector->special & SECSPEC_DAMAGE_MASK)
+		{
+		case 0x0100:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 5);
+			}
+			break;
+		case 0x0200:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 10);
+			}
+			break;
+		case 0x0300:
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, 20);
+			}
+			break;
+		}
+	}
+
+	//	Apply any customizable damage
+	if (MO.Sector->Damage)
+	{
+		if (MO.Sector->Damage < 20)
+		{
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, MO.Sector->Damage);
+			}
+		}
+		else if (MO.Sector->Damage < 50)
+		{
+			if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+			{
+				LastSectorDamageTime = Level.XLevel.Time;
+				Actor(MO).Damage(none, none, MO.Sector->Damage);
+			}
+		}
+		else if (Level.XLevel.Time - LastSectorDamageTime >= 1.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, MO.Sector->Damage);
+		}
+	}
+
+	switch (MO.Sector->special)
+	{
+	case SECSPEC_ScrollCurrent:
+		speed = itof((MO.Sector->tag - 100) % 10) / 16.0 * 35.0;
+		finean = itof((MO.Sector->tag - 100) / 10) * 45.0;
+		MO.Velocity.x += speed * cos(finean);
+		MO.Velocity.y += speed * sin(finean);
+		break;
+	case SECSPEC_ScrollNorthSlow:
+	case SECSPEC_ScrollNorthMedium:
+	case SECSPEC_ScrollNorthFast:
+		ThrustPlayer(90.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollEastSlow:
+	case SECSPEC_ScrollEastMedium:
+	case SECSPEC_ScrollEastFast:
+		ThrustPlayer(0.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollEastSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollSouthSlow:
+	case SECSPEC_ScrollSouthMedium:
+	case SECSPEC_ScrollSouthFast:
+		ThrustPlayer(270.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollWestSlow:
+	case SECSPEC_ScrollWestMedium:
+	case SECSPEC_ScrollWestFast:
+		ThrustPlayer(180.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollWestSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollNorthWestSlow:
+	case SECSPEC_ScrollNorthWestMedium:
+	case SECSPEC_ScrollNorthWestFast:
+		ThrustPlayer(135.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthWestSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollNorthEastSlow:
+	case SECSPEC_ScrollNorthEastMedium:
+	case SECSPEC_ScrollNorthEastFast:
+		ThrustPlayer(45.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthEastSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollSouthEastSlow:
+	case SECSPEC_ScrollSouthEastMedium:
+	case SECSPEC_ScrollSouthEastFast:
+		ThrustPlayer(315.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthEastSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollSouthWestSlow:
+	case SECSPEC_ScrollSouthWestMedium:
+	case SECSPEC_ScrollSouthWestFast:
+		ThrustPlayer(225.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthWestSlow], deltaTime);
+		break;
+	case SECSPEC_ScrollEast5:
+	case SECSPEC_ScrollEast10:
+	case SECSPEC_ScrollEast25:
+	case SECSPEC_ScrollEast30:
+	case SECSPEC_ScrollEast35:
+		ThrustPlayer(0.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollEast5], deltaTime);
+		break;
+	case SECSPEC_ScrollNorth5:
+	case SECSPEC_ScrollNorth10:
+	case SECSPEC_ScrollNorth25:
+	case SECSPEC_ScrollNorth30:
+	case SECSPEC_ScrollNorth35:
+		ThrustPlayer(90.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollNorth5], deltaTime);
+		break;
+	case SECSPEC_ScrollSouth5:
+	case SECSPEC_ScrollSouth10:
+	case SECSPEC_ScrollSouth25:
+	case SECSPEC_ScrollSouth30:
+	case SECSPEC_ScrollSouth35:
+		ThrustPlayer(270.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollSouth5], deltaTime);
+		break;
+	case SECSPEC_ScrollWest5:
+	case SECSPEC_ScrollWest10:
+	case SECSPEC_ScrollWest25:
+	case SECSPEC_ScrollWest30:
+	case SECSPEC_ScrollWest35:
+		ThrustPlayer(180.0, MainGameInfo(Level.Game).pushTab[(MO.Sector->special &
+			SECSPEC_BASE_MASK) - SECSPEC_ScrollWest5], deltaTime);
+		break;
+	}
+}
+
+//============================================================================
+//
+//  PlayerOnSpecialFlat
+//
+//============================================================================
+
+void PlayerOnSpecialFlat(VTerrainInfo* floorType)
+{
+	if (MO.Origin.z != MO.FloorZ)
+	{
+		// Player is not touching the floor
+		return;
+	}
+	if (floorType->DamageAmount && Level.XLevel.Time - LastSectorDamageTime >=
+		itof(floorType->DamageTimeMask + 1) / 35.0)
+	{
+		LastSectorDamageTime = Level.XLevel.Time;
+		Actor(MO).Damage(none, none, 10, 'Fire');
+		MO.PlaySound('LavaSizzle', CHAN_BODY);
+	}
+}
+
+//==========================================================================
+//
+//  PlayerInContents
+//
+//==========================================================================
+
+void PlayerInContents(float deltaTime)
+{
+	if (!MO.WaterLevel)
+	{
+		return;
+	}
+	switch (MO.WaterType)
+	{
+	case CONTENTS_LAVA:
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 10, 'Fire');
+			MO.PlaySound('LavaSizzle', CHAN_BODY);
+		}
+		break;
+
+	case CONTENTS_NUKAGE:
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 5);
+		}
+		break;
+
+	case CONTENTS_SLIME:
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 10);
+		}
+		break;
+
+	case CONTENTS_HELLSLIME:
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 20);
+		}
+		break;
+
+	case CONTENTS_SLUDGE:
+		if (Level.XLevel.Time - LastSectorDamageTime >= 32.0 / 35.0)
+		{
+			LastSectorDamageTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 4);
+		}
+		break;
+
+	case CONTENTS_HAZARD:
+		HazardTime += 2.0 * deltaTime;
+		break;
+	}
+}
+
+//==========================================================================
+//
+//  PrevWeapon
+//
+//==========================================================================
+
+void PrevWeapon()
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	Weapon Best = GetPrevWeapon(ReadyWeapon, true);
+	if (Best && Best != ReadyWeapon)
+	{
+		PendingWeapon = Best;
+	}
+}
+
+//==========================================================================
+//
+//  NextWeapon
+//
+//==========================================================================
+
+void NextWeapon()
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	Weapon Best = GetNextWeapon(ReadyWeapon, true);
+	if (Best && Best != ReadyWeapon)
+	{
+		PendingWeapon = Best;
+	}
+}
+
+//==========================================================================
+//
+//  PlayerImpulse
+//
+//==========================================================================
+
+void PlayerImpulse()
+{
+	int impulse;
+	int i;
+
+	impulse = Impulse;
+	Impulse = 0;
+	Inventory Arti = none;
+
+	if (impulse <= 4)
+	{
+		// The actual changing of the weapon is done when the weapon
+		// psprite can do it (A_WeaponReady), so it doesn't happen in
+		// the middle of an attack.
+		Weapon NewWpn = GetSlotChangeWeapon(impulse, ReadyWeapon, false);
+		if (NewWpn && NewWpn != ReadyWeapon && !MorphTime)
+		{
+			PendingWeapon = NewWpn;
+		}
+	}
+	else if (impulse == 13)
+	{
+		InventoryLeft();
+	}
+	else if (impulse == 14)
+	{
+		InventoryRight();
+	}
+	else if (impulse == 15)
+	{
+		Arti = InventoryUse();
+	}
+	else if (impulse == 16)
+	{
+		Actor(MO).Damage(none, none, 10000);
+	}
+	else if (impulse == 17)
+	{
+		PrevWeapon();
+	}
+	else if (impulse == 18)
+	{
+		NextWeapon();
+	}
+	// Hexen artifact hot keys
+	if (!Arti)
+	{
+		if (impulse == 12 && (Health < MAXHEALTH))
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiHealth);
+		}
+		else if (impulse == 10)
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiPoisonBag);
+		}
+		else if (impulse == 9)
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiBlastRadius);
+		}
+		else if (impulse == 8)
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiTeleport);
+		}
+		else if (impulse == 7)
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiTeleportOther);
+		}
+		else if (impulse == 6)
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiPork);
+		}
+		else if (impulse == 5 &&
+			!EntityEx(MO).FindInventory(PowerInvulnerable))
+		{
+			Arti = EntityEx(MO).FindInventory(ArtiInvulnerability);
+		}
+	}
+
+	if (Arti)
+	{
+		// Use an artifact
+		EntityEx(MO).UseInventory(Arti);
+	}
+}
+
+//==========================================================================
+//
+//  MorphPlayerThink
+//
+//==========================================================================
+
+void MorphPlayerThink()
+{
+	//FIXME this sucks
+	if (ftoi(32.0 * MorphTime) & 15)
+	{
+		return;
+	}
+	if (!(MO.Velocity.x + MO.Velocity.y) && P_Random() < 64)
+	{
+		// Snout sniff
+		Snout(ViewEnt).SnoutSniff();
+		MO.PlaySound('PigActive1', CHAN_VOICE);	// snort
+		return;
+	}
+	if (P_Random() < 48)
+	{
+		if (P_Random() < 128)
+		{
+			MO.PlaySound('PigActive1', CHAN_VOICE);
+		}
+		else
+		{
+			MO.PlaySound('PigActive2', CHAN_VOICE);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  UndoPlayerMorph
+//
+//==========================================================================
+
+bool UndoPlayerMorph()
+{
+	Actor fog;
+	Actor A;
+
+	MO.UnlinkFromWorld();
+	switch (BaseClass)
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		A = HexenLevelInfo(Level).Spawn(FighterPlayer, MO.Origin);
+		break;
+	case HexenDefs::PCLASS_CLERIC:
+		A = HexenLevelInfo(Level).Spawn(ClericPlayer, MO.Origin);
+		break;
+	case HexenDefs::PCLASS_MAGE:
+		A = HexenLevelInfo(Level).Spawn(MagePlayer, MO.Origin);
+		break;
+	default:
+		Error("UndoPlayerMorph: Unknown player class %d", BaseClass);
+	}
+	if (!A.TestLocation())
+	{
+		// Didn't fit
+		A.Destroy();
+		MO.LinkToWorld();
+		MorphTime = 2.0;
+		return false;
+	}
+	MO.LinkToWorld();
+	A.Angles = MO.Angles;
+	A.Player = self;
+	A.bIsPlayer = true;
+	A.ReactionTime = 0.5;
+	if (MO.bFly)
+	{
+		A.bFly = true;
+		A.bNoGravity = true;
+	}
+	MorphTime = 0.0;
+	A.Health = MAXHEALTH;
+	Health = A.Health;
+	PClass = BaseClass;
+	SetPlayerColour();
+	PostMorphWeapon(Weapon(Actor(MO).Tracer));
+
+	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
+		20.0 * sin(MO.Angles.yaw), Actor::TELEFOGHEIGHT));
+	fog.PlaySound('Teleport', CHAN_VOICE);
+
+	MO.SetState(Actor::S_FREETARGMOBJ);
+	MO = A;
+	return true;
+}
+
+//==========================================================================
+//
+//  SetPlayerRunState
+//
+//==========================================================================
+
+void SetPlayerRunState()
+{
+	if (MO.State == Actor(MO).IdleState)
+	{
+		MO.SetState(Actor(MO).SeeState);
+	}
+}
+
+//==========================================================================
+//
+//  DeathPlayerTick
+//
+//  Fall on your face when dying. Decrease POV height to floor height.
+//
+//==========================================================================
+
+void DeathPlayerTick(float deltaTime)
+{
+	int dir;
+	float delta;
+	int lookDelta;
+
+	MovePsprites(deltaTime);
+	if (MO.WaterLevel > 1)
+	{
+		MO.Velocity.z -= 60.0;	// drift towards bottom
+	}
+
+	onground = (MO.Origin.z <= MO.FloorZ);
+
+	if (MO.Class == BloodySkull || MO.Class == IceChunk)
+	{
+		// Flying bloody skull or flying ice chunk
+		ViewHeight = 6.0;
+		DeltaViewHeight = 0.0;
+		//player->damagecount = 20;
+		if (onground)
+		{
+#ifdef FIXME
+			if (lookdir < 60)
+			{
+				lookDelta = (60 - lookdir) / 8;
+				if (lookDelta < 1 && (Level.Game.level->tictime & 1))
+				{
+					lookDelta = 1;
+				}
+				else if (lookDelta > 6)
+				{
+					lookDelta = 6;
+				}
+				lookdir += lookDelta;
+			}
+#endif
+		}
+	}
+	else if (Actor(MO).DamageType != 'Ice')
+	{
+		// Fall to ground (if not frozen)
+		DeltaViewHeight = 0.0;
+		if (ViewHeight > 6.0)
+		{
+			ViewHeight -= 35.0 * deltaTime;
+		}
+		if (ViewHeight < 6.0)
+		{
+			ViewHeight = 6.0;
+		}
+#ifdef FIXME
+		if (lookdir > 0)
+		{
+			lookdir -= 6;
+		}
+		else if (lookdir < 0)
+		{
+			lookdir += 6;
+		}
+		if (abs(lookdir) < 6)
+		{
+			lookdir = 0;
+		}
+#endif
+	}
+	CalcHeight(deltaTime);
+
+	if (Attacker && Attacker != MO)
+	{
+		// Watch killer
+		dir = Actor(MO).FaceActor(Actor(Attacker), delta);
+		if (delta < 10.0)
+		{
+			// Looking at killer, so fade damage and poison counters
+			if (DamageFlash)
+			{
+				DamageFlash -= deltaTime;
+				if (DamageFlash <= 0.0)
+					DamageFlash = 0.0;
+			}
+			if (PoisonCount)
+			{
+				PoisonCount--;
+			}
+		}
+		delta = delta / 8.0;
+		if (delta > 5.0)
+		{
+			delta = 5.0;
+		}
+		if (dir)
+		{
+			// Turn clockwise
+			MO.Angles.yaw += delta;
+		}
+		else
+		{	// Turn counter clockwise
+			MO.Angles.yaw -= delta;
+		}
+	}
+	else if (DamageFlash || PoisonCount)
+	{
+		if (DamageFlash)
+		{
+			DamageFlash -= deltaTime;
+			if (DamageFlash <= 0.0)
+				DamageFlash = 0.0;
+		}
+		else
+		{
+			PoisonCount--;
+		}
+	}
+
+	if (Buttons & BT_USE)
+	{
+		WeaponCShift = 0;
+		InvPtr = none;
+		InvFirst = none;
+		PlayerState = PST_REBORN;
+		Actor(MO)._Special1 = PClass;
+		if (Actor(MO)._Special1 > 2)
+		{
+			Actor(MO)._Special1 = 0;
+		}
+		// Let the mobj know the player has entered the reborn state.  Some
+		// mobjs need to know when it's ok to remove themselves.
+		Actor(MO)._Special2 = 666;
+	}
+}
+
+//==========================================================================
+//
+//  PlayerTick
+//
+//==========================================================================
+
+void PlayerTick(float deltaTime)
+{
+	int newweapon;
+	Actor speedA;
+
+	if (bIsBot)
+	{
+		Bot.BotTick(deltaTime);
+	}
+
+	// Copy view angles
+	MO.Angles = ViewAngles;
+
+	// fixme: do this in the cheat code
+	if (Cheats & CF_NOCLIP)
+	{
+		MO.bColideWithThings = false;
+		MO.bColideWithWorld = false;
+	}
+	else
+	{
+		MO.bColideWithThings = true;
+		MO.bColideWithWorld = true;
+	}
+
+	if (Actor(MO).bJustAttacked)
+	{
+		ForwardMove = 100.0;
+		SideMove = 0.0;
+		Actor(MO).bJustAttacked = false;
+	}
+
+	WorldTimer += deltaTime;
+	InventoryTick(deltaTime);
+
+	if (PlayerState == PST_DEAD)
+	{
+		DeathPlayerTick(deltaTime);
+		return;
+	}
+
+	if (JumpTime)
+	{
+		JumpTime -= deltaTime;
+		if (JumpTime <= 0.0)
+			JumpTime = 0.0;
+	}
+	if (MorphTime)
+	{
+		MorphPlayerThink();
+	}
+
+	//  Move around.
+	//  ReactionTime is used to prevent movement for a bit after a teleport.
+	if (Actor(MO).ReactionTime)
+	{
+		Actor(MO).ReactionTime -= deltaTime;
+		if (Actor(MO).ReactionTime <= 0.0)
+			Actor(MO).ReactionTime = 0.0;
+		if (Actor(MO).bWaterJump)
+			WaterJump();
+	}
+	else
+	{
+		if (MO.WaterLevel >= 2)
+			WaterMove(deltaTime);
+		else
+			MovePlayer(deltaTime);
+		if (EntityEx(MO).FindInventory(PowerSpeed) &&
+			!(Level.XLevel.TicTime & 1) && Length(MO.Velocity) > 12.0 * 35.0)
+		{
+			speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
+			if (speedA)
+			{
+				speedA.Angles.yaw = MO.Angles.yaw;
+				speedA.Translation = MO.Translation;
+				speedA.Target = Actor(MO);
+				speedA._Special1 = PClass;
+				if (speedA._Special1 > 2)
+				{
+					speedA._Special1 = 0;
+				}
+				switch (PClass)
+				{
+				case HexenDefs::PCLASS_FIGHTER:
+					speedA.SetState(PlayerSpeed::S_PLAYER_F_SPEED1);
+					break;
+				case HexenDefs::PCLASS_CLERIC:
+					speedA.SetState(PlayerSpeed::S_PLAYER_C_SPEED1);
+					break;
+				case HexenDefs::PCLASS_MAGE:
+					speedA.SetState(PlayerSpeed::S_PLAYER_M_SPEED1);
+					break;
+				case HexenDefs::PCLASS_PIG:
+					speedA.SetState(PlayerSpeed::S_PLAYER_P_SPEED1);
+					break;
+				}
+				speedA.FloorClip = MO.FloorClip;
+#ifdef FIXME
+				if (self == GPlayers[consoleplayer])
+				{
+					speedA.bHidden = true;
+				}
+#endif
+			}
+		}
+	}
+
+	CalcHeight(deltaTime);
+
+	if (MO.Sector->special)
+	{
+		PlayerInSpecialSector(deltaTime);
+	}
+	PlayerOnSpecialFlat(Actor(MO).GetFloorType());
+	PlayerInContents(deltaTime);
+
+	if (MO.Velocity.z <= -35.0 * 35.0 && MO.Velocity.z >= -40.0 * 35.0 &&
+		!MorphTime && !GetSoundPlayingInfo(MO, GetSoundID('*falling')))
+	{
+		MO.PlaySound('*falling', CHAN_VOICE);
+	}
+
+	// Check for weapon change.
+	if (Impulse)
+	{
+		PlayerImpulse();
+	}
+
+	// check for use
+	if (Buttons & BT_USE)
+	{
+		if (!bUseDown)
+		{
+			P_UseLines();
+			bUseDown = true;
+		}
+	}
+	else
+	{
+		bUseDown = false;
+	}
+
+	// Morph counter
+	if (MorphTime)
+	{
+		MorphTime -= deltaTime;
+		if (MorphTime <= 0.0)
+		{
+			// Attempt to undo the pig
+			MorphTime = 0.0;
+			UndoPlayerMorph();
+		}
+	}
+
+	// cycle psprites
+	MovePsprites(deltaTime);
+
+	// Counters
+
+	if (PoisonCount && Level.XLevel.Time - LastPoisonTime >= 0.5)
+	{
+		PoisonCount -= 5;
+		if (PoisonCount < 0)
+		{
+			PoisonCount = 0;
+		}
+		LastPoisonTime = Level.XLevel.Time;
+		Actor(MO).PoisonDamage(Poisoner, 1, true);
+	}
+
+	if (DamageFlash)
+	{
+		DamageFlash -= deltaTime;
+		if (DamageFlash <= 0.0)
+			DamageFlash = 0.0;
+	}
+
+	if (BonusFlash)
+	{
+		BonusFlash -= deltaTime;
+		if (BonusFlash <= 0.0)
+			BonusFlash = 0.0;
+	}
+
+	if (HazardTime)
+	{
+		HazardTime -= deltaTime;
+		if (HazardTime <= 0.0)
+			HazardTime = 0.0;
+		if (Level.XLevel.Time - LastHazardTime >= 32.0 / 35.0 &&
+			HazardTime > 16.0)
+		{
+			LastHazardTime = Level.XLevel.Time;
+			Actor(MO).Damage(none, none, 5);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  PaletteFlash
+//
+//  Sets the new palette based upon the current values of
+// Player.DamageFlash and Player.BonusFlash.
+//
+//==========================================================================
+
+void PaletteFlash()
+{
+	CShifts[CSHIFT_Contents] = 0;
+	if (MO.WaterLevel == 3)
+	{
+		switch (MO.WaterType)
+		{
+		case CONTENTS_WATER:
+			CShifts[CSHIFT_Contents] = RGBA(130, 80, 50, 128);
+			break;
+
+		case CONTENTS_LAVA:
+			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
+			break;
+
+		case CONTENTS_NUKAGE:
+			CShifts[CSHIFT_Contents] = RGBA(50, 255, 50, 150);
+			break;
+
+		case CONTENTS_SLIME:
+			CShifts[CSHIFT_Contents] = RGBA(0, 25, 5, 150);
+			break;
+
+		case CONTENTS_HELLSLIME:
+			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
+			break;
+
+		case CONTENTS_BLOOD:
+			CShifts[CSHIFT_Contents] = RGBA(160, 16, 16, 150);
+			break;
+
+		case CONTENTS_SLUDGE:
+			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 150);
+			break;
+
+		case CONTENTS_HAZARD:
+			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 128);
+			break;
+		}
+	}
+
+	CShifts[CSHIFT_Damage] = 0;
+	if (DamageFlash)
+	{
+		int Amount = ftoi(114.0 * DamageFlash);
+		if (Amount >= 228)
+			Amount = 228;
+		CShifts[CSHIFT_Damage] = RGBA(255, 0, 0, Amount);
+	}
+
+	CShifts[CSHIFT_Bonus] = 0;
+	if (BonusFlash)
+	{
+		int Amount = ftoi(256.0 * BonusFlash);
+		if (Amount >= 128)
+			Amount = 128;
+		CShifts[CSHIFT_Bonus] = RGBA(215, 186, 68, Amount);
+	}
+
+	CShifts[CSHIFT_Poison] = 0;
+	if (PoisonCount)
+	{
+		int Amount = PoisonCount * 160 / 32;
+		if (Amount >= 160)
+		{
+			Amount = 160;
+		}
+		CShifts[CSHIFT_Poison] = RGBA(56, 118, 46, Amount);
+	}
+
+	if (Actor(MO).DamageType == 'Ice')
+	{
+		// Frozen player
+		CShifts[CSHIFT_Damage] = RGBA(2, 2, 255, 113);
+		CShifts[CSHIFT_Bonus] = 0;
+		CShifts[CSHIFT_Poison] = 0;
+	}
+
+	CShifts[CSHIFT_Weapon] = WeaponCShift;
+}
+
+//==========================================================================
+//
+//  SetViewPos
+//
+//==========================================================================
+
+void SetViewPos()
+{
+	int		i;
+
+	ViewOrg.x = MO.Origin.x;
+	ViewOrg.y = MO.Origin.y;
+
+	if (LocalQuakeHappening)
+	{
+		float intensity;
+
+		intensity = itof(LocalQuakeHappening);
+		ViewOrg.x += (Random() - 0.5) * (intensity * 4.0);
+		ViewOrg.y += (Random() - 0.5) * (intensity * 4.0);
+	}
+
+	ViewAngles = MO.Angles;
+
+	PaletteFlash();
+
+	ClientSetViewOrg(ViewOrg.x, ViewOrg.y, ViewOrg.z);
+}
+
+//==========================================================================
+//
+//  PlayerUseArtifact
+//
+//==========================================================================
+
+void PlayerUseArtifactType(class<Inventory> arti)
+{
+	Inventory Item = EntityEx(MO).FindInventory(arti);
+	if (Item)
+	{
+		EntityEx(MO).UseInventory(Item);
+	}
+}
+
+//==========================================================================
+//
+//  PlayerNextArtifact
+//
+//==========================================================================
+
+void PlayerNextArtifact()
+{
+	if (!InvPtr)
+	{
+		return;
+	}
+	Inventory NewPtr = InvPtr.PrevInv();
+	if (!NewPtr)
+	{
+		NewPtr = InvPtr;
+		while (NewPtr.NextInv())
+		{
+			NewPtr = NewPtr.NextInv();
+		}
+	}
+	InvPtr = NewPtr;
+	AdjustInvFirst();
+}
+
+//==========================================================================
+//
+//  AdjustPlayerAngle
+//
+//==========================================================================
+
+void AdjustPlayerAngle(EntityEx AimTarget)
+{
+	float angle;
+	float difference;
+
+	angle = atan2(AimTarget.Origin.y - MO.Origin.y,
+		AimTarget.Origin.x - MO.Origin.x);
+	difference = AngleMod180(angle - MO.Angles.yaw);
+	if (fabs(difference) > 5.0)
+	{
+		MO.Angles.yaw += difference > 0.0 ? 5.0 : -5.0;
+	}
+	else
+	{
+		MO.Angles.yaw = angle;
+	}
+	bFixAngle = true;
+}
+
+//**************************************************************************
+//
+//  WEAPON UTILITES
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	SetWeapon
+//
+//==========================================================================
+
+void SetWeapon(Weapon NewWeapon)
+{
+	ReadyWeapon = NewWeapon;
+	PendingWeapon = none;
+
+	ViewEnt = ReadyWeapon;
+	PSpriteSY = Weapon(ViewEnt).PSpriteSY;
+}
+
+//==========================================================================
+//
+//  BringUpWeapon
+//
+//  Starts bringing the pending weapon up from the bottom of the screen.
+//
+//==========================================================================
+
+void BringUpWeapon()
+{
+	PendingWeapon = none;
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetUpState());
+}
+
+//==========================================================================
+//
+//  DropWeapon
+//
+//  The player died, so put the weapon away.
+//
+//==========================================================================
+
+void DropWeapon()
+{
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetDownState());
+}
+
+//==========================================================================
+//
+//  SetupPsprites
+//
+//  Called at start of level for each player
+//
+//==========================================================================
+
+void SetupPsprites()
+{
+	int i;
+
+	// Remove all psprites
+	for (i = 0; i < NUMPSPRITES; i++)
+	{
+		SetViewState(i, none);
+	}
+	// Spawn the ready weapon
+	BringUpWeapon();
+}
+
+//==========================================================================
+//
+//  MovePsprites
+//
+//  Called every tic by player thinking routine
+//
+//==========================================================================
+
+void MovePsprites(float deltaTime)
+{
+	AdvanceViewStates(deltaTime);
+	ViewStates[ps_flash].SX = ViewStates[ps_weapon].SX;
+	ViewStates[ps_flash].SY = ViewStates[ps_weapon].SY;
+}
+
+//==========================================================================
+//
+//  FireWeapon
+//
+//==========================================================================
+
+void FireWeapon()
+{
+	if (!ReadyWeapon.CheckAmmo(true))
+	{
+		return;
+	}
+	MO.SetState(Actor(MO).MissileState);
+	SetViewState(ps_weapon, Weapon(ViewEnt).GetAttackState(Refire));
+	HexenLevelInfo(Level).NoiseAlert(Actor(MO), Actor(MO));
+}
+
+//==========================================================================
+//
+//  ActivateMorphWeapon
+//
+//==========================================================================
+
+void ActivateMorphWeapon()
+{
+	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
+	Weapon Wpn = Level.Spawn(Snout);
+	if (!Wpn.TryPickup(EntityEx(MO)))
+	{
+		Wpn.Destroy();
+	}
+	SetWeapon(Weapon(EntityEx(MO).FindInventory(Snout)));	// Snout is the first weapon
+	SetViewState(ps_weapon, Weapon(ViewEnt).ReadyState);
+}
+
+//==========================================================================
+//
+//  PostMorphWeapon
+//
+//==========================================================================
+
+void PostMorphWeapon(Weapon weapon)
+{
+	ReadyWeapon.Destroy();
+	SetWeapon(weapon);
+	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
+	SetViewState(ps_weapon, Weapon(ViewEnt).UpState);
+}
+
+//==========================================================================
+//
+//  P_UseLines
+//
+//  Looks for special lines in front of the player to activate.
+//
+//==========================================================================
+
+void P_UseLines()
+{
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+	intercept_t* in;
+	TVec useDir;
+
+	AngleVector(&MO.Angles, &useDir);
+	x1 = MO.Origin.x;
+	y1 = MO.Origin.y;
+	x2 = x1 + USERANGE * useDir.x;
+	y2 = y1 + USERANGE * useDir.y;
+	foreach MO.PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
+	{
+		line_t* line;
+		float pheight;
+		TVec hit_point;
+		opening_t *open;
+
+		line = in->line;
+		if (!line->special || (Level.GET_SPAC(line->flags) != SPAC_USE &&
+			Level.GET_SPAC(line->flags) != SPAC_USETHROUGH))
+		{
+			hit_point = MO.Origin + (USERANGE * in->frac) * useDir;
+			open = LineOpenings(line, hit_point);
+			open = FindOpening(open, hit_point.z + MO.Height / 2.0,
+				hit_point.z + MO.Height);
+			if (!open)
+			{
+				if (MorphTime)
+				{
+					MO.PlaySound('PigActive1', CHAN_VOICE);
+				}
+				else
+				{
+					MO.PlaySound('*usefail', CHAN_VOICE);
+				}
+				break;	// can't use through a wall
+			}
+			pheight = MO.Origin.z + MO.Height / 2.0;
+			if ((open->top < pheight) || (open->bottom > pheight))
+			{
+				if (MorphTime)
+				{
+					MO.PlaySound('PigActive1', CHAN_VOICE);
+				}
+				else
+				{
+					MO.PlaySound('*usefail', CHAN_VOICE);
+				}
+			}
+			continue;	// not a special line, but keep checking
+		}
+
+		if (PointOnPlaneSide(MO.Origin, line) == 1)
+		{
+			//	Don't use back side unless it's a two-sided line.
+			if (line->backsector != NULL)
+				continue;
+			break;
+		}
+
+		HexenLevelInfo(Level).ActivateLine(line, Actor(MO), 0, SPAC_USE);
+
+		//WAS can't use more than one special line in a row
+		//jff 3/21/98 NOW multiple use allowed with enabling line flag
+		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
+		{
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  Cheat_God
+//
+//==========================================================================
+
+void Cheat_God()
+{
+	Cheats ^= CF_GODMODE;
+	if (Cheats & CF_GODMODE)
+	{
+		cprint("GOD MODE ON");
+	}
+	else
+	{
+		cprint("GOD MODE OFF");
+	}
+}
+
+//==========================================================================
+//
+//  Cheat_NoClip
+//
+//==========================================================================
+
+void Cheat_NoClip()
+{
+	Cheats ^= CF_NOCLIP;
+	if (Cheats & CF_NOCLIP)
+	{
+		cprint("NO CLIPPING ON");
+	}
+	else
+	{
+		cprint("NO CLIPPING OFF");
+	}
+}
+
+//==========================================================================
+//
+//  Cheat_Gimme
+//
+//==========================================================================
+
+void Cheat_Gimme()
+{
+	class<Inventory>			Cls;
+	class<Weapon>				WpnCls;
+	class<FourthWeaponPiece>	PieceCls;
+	Inventory					Inv;
+
+	if (Cmd_CheckParm("weapons"))
+	{
+		int i;
+
+		HexenArmor HArmor = HexenArmor(EntityEx(MO).FindInventory(
+			HexenArmor));
+		for (i = 0; i < 4; i++)
+		{
+			HArmor.Slots[i] = HArmor.SlotsIncrement[i];
+		}
+		foreach AllClasses(Weapon, WpnCls)
+		{
+			if (!WpnCls.default.ReadyState)
+			{
+				//	Abstract class.
+				continue;
+			}
+			Weapon Wpn = Level.Spawn(WpnCls);
+			Wpn.AmmoGive1 = 0;
+			Wpn.AmmoGive2 = 0;
+			if (!Wpn.TryPickup(EntityEx(MO)))
+			{
+				Wpn.Destroy();
+			}
+		}
+		foreach AllClasses(Ammo, Cls)
+		{
+			//	Only direct descendants.
+			if (GetClassParent(Cls) != Ammo)
+			{
+				continue;
+			}
+			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
+			if (!AmmoItem)
+			{
+				AmmoItem = Level.Spawn(Cls);
+				if (!AmmoItem.TryPickup(EntityEx(MO)))
+				{
+					AmmoItem.Destroy();
+					AmmoItem = none;
+				}
+			}
+			if (AmmoItem)
+			{
+				AmmoItem.Amount = AmmoItem.MaxAmount;
+			}
+		}
+		foreach AllClasses(FourthWeaponPiece, PieceCls)
+		{
+			if (!PieceCls.default.IdleState)
+			{
+				//	Abstract class.
+				continue;
+			}
+			if (PieceCls.default.PieceClass != PClass)
+			{
+				//	Wrong class.
+				continue;
+			}
+			FourthWeaponHolder Hold = FourthWeaponHolder(
+				EntityEx(MO).FindInventory(FourthWeaponHolder));
+			if (!Hold)
+			{
+				Hold = Level.Spawn(FourthWeaponHolder);
+				Hold.AttachToOwner(EntityEx(MO));
+			}
+			Hold.PieceMask = 7;
+		}
+		cprint("ALL WEAPONS");
+	}
+	if (Cmd_CheckParm("health"))
+	{
+		if (MorphTime)
+		{
+			MO.Health = MAXMORPHHEALTH;
+			Health = MO.Health;
+		}
+		else
+		{
+			MO.Health = MAXHEALTH;
+			Health = MO.Health;
+		}
+		cprint("FULL HEALTH");
+	}
+	if (Cmd_CheckParm("keys"))
+	{
+		foreach AllClasses(Key, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
+		cprint("ALL KEYS");
+	}
+	if (Cmd_CheckParm("artifacts"))
+	{
+		foreach AllClasses(Inventory, Cls)
+		{
+			int j;
+
+			if (!Cls.default.bInvBar)
+			{
+				//	Not an inventory item.
+				continue;
+			}
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			if (ClassIsChildOf(Cls, PuzzleItem))
+			{
+				//	Not puzzle items.
+				continue;
+			}
+			for (j = 0; j < 25; j++)
+			{
+				EntityEx(MO).GiveInventoryType(Cls);
+			}
+		}
+		cprint("ALL ARTIFACTS");
+	}
+	if (Cmd_CheckParm("puzzles"))
+	{
+		foreach AllClasses(PuzzleItem, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
+		cprint("ALL ARTIFACTS");
+	}
+}
+
+//==========================================================================
+//
+//  P_Massacre
+//
+//  Kills all monsters.
+//
+//==========================================================================
+
+int P_Massacre()
+{
+	int count;
+	Actor mo;
+
+	count = 0;
+	foreach MO.AllThinkers(Actor, mo)
+	{
+		if (mo.bMonster && mo.Health > 0)
+		{
+			mo.bNonShootable = false;
+			mo.bInvulnerable = false;
+			mo.bShootable = true;
+			mo.Damage(none, none, 10000);
+			count++;
+		}
+	}
+	return count;
+}
+
+//==========================================================================
+//
+//  Cheat_KillAll
+//
+//==========================================================================
+
+void Cheat_KillAll()
+{
+	cprint("%d MONSTERS KILLED", P_Massacre());
+}
+
+//==========================================================================
+//
+//  Cheat_Morph
+//
+//==========================================================================
+
+void Cheat_Morph()
+{
+	if (MorphTime)
+	{
+		UndoPlayerMorph();
+	}
+	else
+	{
+		Actor(MO).MorphPlayer();
+	}
+	cprint("SQUEAL!!");
+}
+
+//==========================================================================
+//
+//  Cheat_NoWeapons
+//
+//==========================================================================
+
+void Cheat_NoWeapons()
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	//	Find weakest weapon.
+	Inventory Item;
+	Weapon Weakest = none;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		if (Weapon(Item) && (!Weakest ||
+			Weakest.SelectionOrder < Weapon(Item).SelectionOrder))
+		{
+			Weakest = Weapon(Item);
+		}
+	}
+	//	Removed all others.
+	for (Item = EntityEx(MO).Inventory; Item; )
+	{
+		Inventory Next = Item.Inventory;
+		if ((Weapon(Item) && Item != Weakest) || FourthWeaponHolder(Item))
+		{
+			Item.Destroy();
+		}
+		Item = Next;
+	}
+	SetWeapon(Weakest);
+	PendingWeapon = Weakest;
+	cprint("CHEATER - YOU DON'T DESERVE WEAPONS");
+}
+
+//==========================================================================
+//
+//  Cheat_Class
+//
+//==========================================================================
+
+void Cheat_Class()
+{
+	int i;
+	int pclass;
+
+	if (MorphTime)
+	{
+		// don't change class if the player is morphed
+		return;
+	}
+	if (Cmd_CheckParm("fighter"))
+		pclass = HexenDefs::PCLASS_FIGHTER;
+	else if (Cmd_CheckParm("cleric"))
+		pclass = HexenDefs::PCLASS_CLERIC;
+	else if (Cmd_CheckParm("mage"))
+		pclass = HexenDefs::PCLASS_MAGE;
+	else
+	{
+		cprint("INVALID PLAYER CLASS");
+		return;
+	}
+	//FIXME it doesn't work like this.
+	PClass = pclass;
+	HexenArmor HArmor = HexenArmor(EntityEx(MO).FindInventory(HexenArmor));
+	for (i = 0; i < 4; i++)
+	{
+		HArmor.Slots[i] = 0.0;
+	}
+	BaseClass = pclass;
+	//PostMorphWeapon(HexenDefs::WP_FIRST);
+	SetCvar('class', pclass);
+	SB_Start();
+}
+
+//==========================================================================
+//
+//  ClientBlood
+//
+//==========================================================================
+
+void ClientBlood(TVec org, int damage)
+{
+	int i, j;
+	particle_t *p;
+	int c;
+
+	for (i = 0; i < damage; i++)
+	{
+		p = Level.NewParticle();
+		if (!p)
+			return;
+
+		p->org = org;
+		c = P_Random() >> 1;
+		p->colour = RGB(32 + c, c >> 4, c >> 4);
+		p->die = Level.XLevel.Time + 0.5 * Random();
+		p->vel.x = 32.0 * (Random() - 0.5);
+		p->vel.y = 32.0 * (Random() - 0.5);
+		p->vel.z = 32.0 * (Random() - 0.5);
+	}
+}
+
+//==========================================================================
+//
+//  ClientExplosion
+//
+//==========================================================================
+
+void ClientExplosion(int colour, TVec org)
+{
+	dlight_t *dl;
+
+	dl = Level.AllocDlight(none);
+	dl->origin = org;
+	dl->radius = 350.0;
+	dl->colour = colour;
+	dl->die = Level.XLevel.Time + 0.5;
+	dl->decay = 300.0;
+}
+
+//==========================================================================
+//
+//  ArmorAbsorbDamage
+//
+//==========================================================================
+
+int ArmorAbsorbDamage(EntityEx inflictor, EntityEx source, int damage,
+	name DmgType)
+{
+	if (damage >= Health
+		&& ((Level.Game.gameskill == sk_baby) || Level.Game.deathmatch) && !MorphTime)
+	{
+		// Try to use some inventory health
+		Actor(MO).AutoUseHealth(damage - Health + 1);
+	}
+	return damage;
+}
+
+//==========================================================================
+//
+//  IsWeaponAlwaysExtremeDeath
+//
+//==========================================================================
+
+bool IsWeaponAlwaysExtremeDeath()
+{
+	// Always extreme death from fourth weapon
+	return ReadyWeapon.bExtremeDeath;
+}
+
+//==========================================================================
+//
+//  GetInvulnerabilityMode
+//
+//==========================================================================
+
+name GetInvulnerabilityMode()
+{
+	switch (PClass)
+	{
+	case HexenDefs::PCLASS_CLERIC:
+		return 'Ghost';
+	case HexenDefs::PCLASS_MAGE:
+		return 'Reflective';
+	}
+	return '';
+}
+
+defaultproperties
+{
+}

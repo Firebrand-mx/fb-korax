@@ -1,0 +1,70 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ZCorpseLynchedNoHeart.vc 2415 2007-07-06 18:07:35Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ZCorpseLynchedNoHeart : Decoration
+	__mobjinfo__(109);
+
+//============================================================================
+//
+//  BeginPlay
+//
+//============================================================================
+
+void BeginPlay()
+{
+	::BeginPlay();
+	// Special stuff
+	Spawn(BloodPool, vector(Origin.x, Origin.y, ONFLOORZ));
+}
+
+//============================================================================
+//
+//  A_CorpseBloodDrip
+//
+//============================================================================
+
+final void A_CorpseBloodDrip()
+{
+	if (Random() > 0.5)
+	{
+		return;
+	}
+	Spawn(CorpseBloodDrip, Origin + vector(0.0, 0.0, Height / 2.0));
+}
+
+__states__
+{
+	S_ZCORPSELYNCHED2('CPS5', 0, 140.0 / 35.0, S_ZCORPSELYNCHED2) = A_CorpseBloodDrip
+}
+
+defaultproperties
+{
+	Radius = 10.0;
+	Height = 100.0;
+	bSolid = true;
+	bSpawnCeiling = true;
+	bNoGravity = true;
+	IdleState = S_ZCORPSELYNCHED2;
+}
