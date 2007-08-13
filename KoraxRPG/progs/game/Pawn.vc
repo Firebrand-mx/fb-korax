@@ -1,0 +1,179 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Pawn.vc 2420 2007-07-07 14:26:57Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class Pawn : Actor
+	abstract;
+
+//============================================================================
+//
+//  IsNotAttackingMaster
+//
+//============================================================================
+
+bool IsNotAttackingMaster(EntityEx Other)
+{
+	return Class == MinotaurFriend && Other.Class == MinotaurFriend &&
+		Other.Target != Tracer;
+}
+
+//==========================================================================
+//
+//	IsMaster
+//
+//==========================================================================
+
+bool IsMaster(EntityEx Other)
+{
+	return Class == MinotaurFriend && Tracer == Other;
+}
+
+//============================================================================
+//
+//	A_FreezeDeath
+//
+//============================================================================
+
+final void A_FreezeDeath()
+{
+	StateTime = 2.0 + Random() * 8.0 + Random() * 8.0;
+	bSolid = true;
+	bShootable = true;
+	bNoBlood = true;
+	bPushable = true;
+	bTelestomp = true;
+	bSlide = true;
+	bNoPassMobj = false;
+	Height *= 4.0;
+	PlaySound('FreezeDeath', CHAN_VOICE);
+	Translation = 0;	//no translation
+	bIceCorpse = true;
+
+	if (bIsPlayer)
+	{
+		Player(Player).DamageFlash = 0.0;
+		Player(Player).PoisonCount = 0;
+		Player(Player).BonusFlash = 0.0;
+	}
+	else
+	{
+		if (bMonster && Special)
+		{
+			// Initiate monster death actions
+			Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
+				Args[3], Args[4], NULL, 0, self);
+		}
+	}
+}
+
+//============================================================================
+//
+//  A_FreezeDeathChunks
+//
+//============================================================================
+
+final void A_FreezeDeathChunks()
+{
+	int i;
+	Actor A;
+
+	if (Length(Velocity) > 1.0)
+	{
+		StateTime = 3.0;
+		return;
+	}
+	PlaySound('FreezeShatter', CHAN_VOICE);
+
+	for (i = 12 + (P_Random() & 15); i >= 0; i--)
+	{
+		A = Spawn(IceChunk, Origin + vector(
+			(Random() - 0.5) * 2.0 * Radius,
+			(Random() - 0.5) * 2.0 * Radius,
+			Random() * Height));
+		switch (P_Random() % 3)
+		{
+		case 0: A.SetState(IceChunk::S_ICECHUNK1); break;
+		case 1: A.SetState(IceChunk::S_ICECHUNK2); break;
+		case 2: A.SetState(IceChunk::S_ICECHUNK3); break;
+		}
+		if (A)
+		{
+			A.Velocity.z = (A.Origin.z - Origin.z) / Height * 4.0 * 35.0;
+			A.Velocity.x = (Random() - Random()) * 2.0 * 35.0;
+			A.Velocity.y = (Random() - Random()) * 2.0 * 35.0;
+			IceChunk(A).A_IceSetTics();	// set a random tic wait
+		}
+	}
+	for (i = 12 + (P_Random() & 15); i >= 0; i--)
+	{
+		A = Spawn(IceChunk, Origin + vector(
+			(Random() - 0.5) * 2.0 * Radius,
+			(Random() - 0.5) * 2.0 * Radius,
+			Random() * Height));
+		switch (P_Random() % 3)
+		{
+		case 0: A.SetState(IceChunk::S_ICECHUNK1); break;
+		case 1: A.SetState(IceChunk::S_ICECHUNK2); break;
+		case 2: A.SetState(IceChunk::S_ICECHUNK3); break;
+		}
+		if (A)
+		{
+			A.Velocity.z = (A.Origin.z - Origin.z) / Height * 4.0 * 35.0;
+			A.Velocity.x = (Random() - Random()) * 2.0 * 35.0;
+			A.Velocity.y = (Random() - Random()) * 2.0 * 35.0;
+			IceChunk(A).A_IceSetTics();	// set a random tic wait
+		}
+	}
+	if (bIsPlayer)
+	{
+		// attach the player's view to a chunk of ice
+		A = Spawn(IceChunkHead, Origin + vector(0.0, 0.0, Player::VIEWHEIGHT));
+		A.Velocity.x = (Random() - Random()) * 2.0 * 35.0;
+		A.Velocity.y = (Random() - Random()) * 2.0 * 35.0;
+		A.Velocity.z = (A.Origin.z - Origin.z) / Height * 4.0 * 35.0;
+		A.Player = Player;
+		A.bIsPlayer = true;
+		Player = none;
+		bIsPlayer = false;
+		A.Health = Health;
+		A.Angles.yaw = Angles.yaw;
+		A.Player.MO = A;
+		A.Angles.pitch = 0.0;
+	}
+	RemoveFromTIDList();
+	SetState(S_FREETARGMOBJ);
+	bHidden = true;
+}
+
+defaultproperties
+{
+	bSolid = true;
+	bShootable = true;
+	bCountKill = true;
+	bMonster = true;
+	bFloorClip = true;
+	bTelestomp = true;
+	bActivatePushWall = true;
+	bActivateMCross = true;
+}

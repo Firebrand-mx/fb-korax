@@ -1,0 +1,82 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ZFireBull.vc 1957 2007-01-10 23:55:03Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ZFireBull : Decoration
+	__mobjinfo__(8042);
+
+__states__
+{
+	S_ZFIREBULL1('FBUL', 0 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL2) = none
+	S_ZFIREBULL2('FBUL', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL3) = none
+	S_ZFIREBULL3('FBUL', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL4) = none
+	S_ZFIREBULL4('FBUL', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL5) = none
+	S_ZFIREBULL5('FBUL', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL6) = none
+	S_ZFIREBULL6('FBUL', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL7) = none
+	S_ZFIREBULL7('FBUL', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL1) = none
+	S_ZFIREBULL_DEATH('FBUL', 9 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL_DEATH2) = none
+	S_ZFIREBULL_DEATH2('FBUL', 8 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL_U) = none
+	S_ZFIREBULL_U('FBUL', 7, -1.0, none) = none
+	S_ZFIREBULL_BIRTH('FBUL', 8 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL_BIRTH2) = none
+	S_ZFIREBULL_BIRTH2('FBUL', 9 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZFIREBULL1) = none
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+bool Activate()
+{
+	SetState(S_ZFIREBULL_BIRTH);
+	PlaySound('Ignite', CHAN_VOICE);
+	bStaticLight = true;
+	return true;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+bool Deactivate()
+{
+	SetState(S_ZFIREBULL_DEATH);
+	bStaticLight = false;
+	return true;
+}
+
+defaultproperties
+{
+	Radius = 20.0;
+	Height = 80.0;
+	bSolid = true;
+	bStaticLight = true;
+	IdleState = S_ZFIREBULL1;
+	LightColour = RGB(255, 255, 0);
+	LightOffset = vector(0.0, 0.0, 72.0);
+	LightRadius = 200.0;
+}

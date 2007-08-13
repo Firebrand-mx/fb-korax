@@ -1,0 +1,99 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: CWeapMace.vc 2525 2007-07-28 09:42:36Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class CWeapMace : ClericWeapon;
+
+//===========================================================================
+//
+//  A_CMaceAttack
+//
+//===========================================================================
+
+final void A_CMaceAttack()
+{
+	int			damage;
+	TVec		vforward;
+	EntityEx	AimTarget;
+
+	damage = 25 + (P_Random() & 15);
+	AimTarget = Actor(Owner).AimEx(vforward, 2.0 * Actor::MELEERANGE,
+		45.0 / 16.0, 16, Actor::MELEERANGE);
+	if (AimTarget)
+	{
+		if (Actor(Owner).LineAttack(vforward, 2.0 * Actor::MELEERANGE, damage,
+			HammerPuff))
+		{
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		if (Actor(Owner).LineAttack(vforward, Actor::MELEERANGE, damage,
+			HammerPuff))
+		{
+			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+	}
+}
+
+__states__
+{
+	S_CMACEREADY('CMCE', 0, 1.0 / 35.0, S_CMACEREADY) = A_WeaponReady
+	S_CMACEDOWN('CMCE', 0, 1.0 / 35.0, S_CMACEDOWN) = A_Lower
+	S_CMACEUP('CMCE', 0, 1.0 / 35.0, S_CMACEUP) = A_Raise
+	S_CMACEATK_1('CMCE', 1, 2.0 / 35.0, S_CMACEATK_2, 60, 20) = none
+	S_CMACEATK_2('CMCE', 1, 1.0 / 35.0, S_CMACEATK_3, 30, 33) = none
+	S_CMACEATK_3('CMCE', 1, 2.0 / 35.0, S_CMACEATK_4, 8, 45) = none
+	S_CMACEATK_4('CMCE', 2, 1.0 / 35.0, S_CMACEATK_5, 8, 45) = none
+	S_CMACEATK_5('CMCE', 3, 1.0 / 35.0, S_CMACEATK_6, 8, 45) = none
+	S_CMACEATK_6('CMCE', 4, 1.0 / 35.0, S_CMACEATK_7, 8, 45) = none
+	S_CMACEATK_7('CMCE', 4, 1.0 / 35.0, S_CMACEATK_8, -11, 58) = A_CMaceAttack
+	S_CMACEATK_8('CMCE', 5, 1.0 / 35.0, S_CMACEATK_9, 8, 45) = none
+	S_CMACEATK_9('CMCE', 5, 2.0 / 35.0, S_CMACEATK_10, -8, 74) = none
+	S_CMACEATK_10('CMCE', 5, 1.0 / 35.0, S_CMACEATK_11, -20, 96) = none
+	S_CMACEATK_11('CMCE', 5, 8.0 / 35.0, S_CMACEATK_12, -33, 160) = none
+	S_CMACEATK_12('CMCE', 0, 2.0 / 35.0, S_CMACEATK_13, 8, 75) = A_ReFire
+	S_CMACEATK_13('CMCE', 0, 1.0 / 35.0, S_CMACEATK_14, 8, 65) = none
+	S_CMACEATK_14('CMCE', 0, 2.0 / 35.0, S_CMACEATK_15, 8, 60) = none
+	S_CMACEATK_15('CMCE', 0, 1.0 / 35.0, S_CMACEATK_16, 8, 55) = none
+	S_CMACEATK_16('CMCE', 0, 2.0 / 35.0, S_CMACEATK_17, 8, 50) = none
+	S_CMACEATK_17('CMCE', 0, 1.0 / 35.0, S_CMACEREADY, 8, 45) = none
+}
+
+defaultproperties
+{
+	WeaponClass = HexenDefs::PCLASS_CLERIC;
+	Slot = 1;
+	SelectionOrder = 3500;
+	PSpriteSY = -8.0;
+	BotCombatDist = 48.0;
+	UpState = S_CMACEUP;
+	DownState = S_CMACEDOWN;
+	ReadyState = S_CMACEREADY;
+	AttackState = S_CMACEATK_1;
+	HoldAttackState = S_CMACEATK_1;
+}

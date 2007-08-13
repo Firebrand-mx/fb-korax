@@ -1,0 +1,1239 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Actor.vc 2630 2007-08-12 07:18:37Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class Actor : ScriptedEntity
+	abstract;
+
+const float MORPHTIME 		= 40.0;
+const float MAULATORTIME 	= 25.0;
+
+const float TELEFOGHEIGHT	= 32.0;
+
+int _Special1;	// Special info
+int _Special2;	// Special info
+float Special2f;
+class<Actor> SpecialCID;
+
+//===========================================================================
+//
+//  IsTeleportSpot
+//
+//===========================================================================
+
+bool IsTeleportSpot()
+{
+	return !!TeleportDest(self);
+}
+
+//===========================================================================
+//
+//  IsTeleportSpot2
+//
+//===========================================================================
+
+bool IsTeleportSpot2()
+{
+	return !!TeleportDest2(self);
+}
+
+//===========================================================================
+//
+//  IsPointPusher
+//
+//===========================================================================
+
+bool IsPointPusher()
+{
+	return !!PointPusher(self);
+}
+
+//===========================================================================
+//
+//  IsPointPuller
+//
+//===========================================================================
+
+bool IsPointPuller()
+{
+	return !!PointPuller(self);
+}
+
+//==========================================================================
+//
+//  HITDICE
+//
+//  Most damage in HERETIC and HEXEN defined using HITDICE
+//
+//==========================================================================
+
+int HITDICE(int a)
+{
+	return (1 + (P_Random() & 7)) * a;
+}
+
+//==========================================================================
+//
+//	Destroyed
+//
+//==========================================================================
+
+void Destroyed()
+{
+	// Remove from creature queue
+	if (bMonster && bCorpse)
+	{
+		A_DeQueueCorpse();
+	}
+
+	::Destroyed();
+}
+
+//==========================================================================
+//
+//  ActiveMinotaur
+//
+//  Search thinker list for minotaur
+//
+//==========================================================================
+
+Actor ActiveMinotaur()
+{
+	MinotaurFriend mo;
+
+	foreach AllThinkers(MinotaurFriend, mo)
+	{
+		if (mo.Health <= 0)
+			continue;
+		if (!mo.bMonster)
+			continue;	// for morphed minotaurs
+		if (mo.bCorpse)
+			continue;
+		if ((XLevel.TicTime - mo.Args[0]) >= ftoi(MAULATORTIME * 35.0))
+			continue;
+		if (mo.Tracer == self)
+			return mo;
+	}
+	return none;
+}
+
+//==========================================================================
+//
+//	KilledByPlayer
+//
+//==========================================================================
+
+void KilledByPlayer(EntityEx source)
+{
+	// Check for frag changes
+	if (bIsPlayer)
+	{
+		if (source.Player.bIsBot)
+		{
+			Player(source.Player).Bot.Killed(self);
+		}
+
+		if (Player.bIsBot)
+		{
+			Player(Player).Bot.Died(Actor(source));
+		}
+
+		if (self == source)
+		{
+			// Self-frag
+			Player.FragsStats[Player.GetPlayerNum()]--;
+			Player.Frags--;
+		}
+		else
+		{
+			source.Player.FragsStats[Player.GetPlayerNum()]++;
+			source.Player.Frags++;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	PlayerKilled
+//
+//==========================================================================
+
+void PlayerKilled(EntityEx source, EntityEx inflictor)
+{
+	// Count environment kills against you
+	if (!source)
+	{
+		Player.FragsStats[Player.GetPlayerNum()]--;
+		Player.Frags--;
+	}
+}
+
+//==========================================================================
+//
+//  MinotaurSlam
+//
+//==========================================================================
+
+void MinotaurSlam(Actor source)
+{
+	float angle;
+	float thrust;
+
+	angle = atan2(Origin.y - source.Origin.y, Origin.x - source.Origin.x);
+	thrust = 16.0 + Random() * 4.0;
+	Velocity.x += thrust * cos(angle) * 35.0;
+	Velocity.y += thrust * sin(angle) * 35.0;
+	Damage(none, source, HITDICE(4));
+	if (bIsPlayer)
+	{
+		ReactionTime = 0.4 + Random() * 0.2;
+	}
+	source.Args[4] = 0;	// Stop charging
+}
+
+//==========================================================================
+//
+//  MorphPlayer
+//
+//  Returns true if the player gets turned into a pig
+//
+//==========================================================================
+
+bool MorphPlayer()
+{
+	Actor fog;
+	Actor beastMo;
+	int i;
+
+	if (bInvulnerable)
+	{
+		// Immune when invulnerable
+		return false;
+	}
+	if (Player(Player).MorphTime)
+	{
+		// Player is already a beast
+		return false;
+	}
+
+	fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
+	fog.PlaySound('Teleport', CHAN_VOICE);
+
+	beastMo = Spawn(PigPlayer, Origin);
+	beastMo.Tracer = Player(Player).ReadyWeapon;
+	beastMo.Angles = Angles;
+	beastMo.Player = Player;
+	beastMo.bIsPlayer = true;
+	beastMo.Health = Player::MAXMORPHHEALTH;
+	Player.Health = beastMo.Health;
+	Player.MO = beastMo;
+	HexenArmor HArmor = HexenArmor(FindInventory(HexenArmor));
+	for (i = 0; i < 4; i++)
+	{
+		HArmor.Slots[i] = 0.0;
+	}
+	Player.PClass = HexenDefs::PCLASS_PIG;
+	beastMo.bFly = bFly;
+	Player(Player).MorphTime = MORPHTIME;
+	Player(Player).ActivateMorphWeapon();
+
+	SetState(S_FREETARGMOBJ);
+
+	return true;
+}
+
+//==========================================================================
+//
+//  MorphMonster
+//
+//==========================================================================
+
+bool MorphMonster()
+{
+	Actor monster;
+	Actor fog;
+	int i;
+
+	if (bIsPlayer)
+		return false;
+	if (!bMonster)
+		return false;
+	if (bBoss)
+		return false;
+	if (bNoMorph)
+		return false;
+
+	fog = Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
+	fog.PlaySound('Teleport', CHAN_VOICE);
+
+	monster = Spawn(Pig, Origin);
+	monster.SpecialCID = class<Actor>(Class);
+	monster._Special1 = ftoi(MORPHTIME * 35.0) + P_Random();
+	monster.Alpha = Alpha;
+	monster.Target = Target;
+	monster.Angles.yaw = Angles.yaw;
+	monster.TID = TID;
+	monster.Special = Special;
+	monster.InsertIntoTIDList(TID);
+	for (i = 0; i < 5; i++)
+	{
+		monster.Args[i] = Args[i];
+	}
+
+	RemoveFromTIDList();
+
+	SetState(S_FREETARGMOBJ);
+
+	return true;
+}
+
+//==========================================================================
+//
+//  AutoUseHealth
+//
+//==========================================================================
+
+void AutoUseHealth(int saveHealth)
+{
+	int i;
+	int count;
+
+	Inventory normal = FindInventory(ArtiHealth);
+	Inventory super = FindInventory(ArtiSuperHealth);
+	if ((Level.Game.gameskill == sk_baby) && (normal.Amount * 25 >= saveHealth))
+	{
+		// Use quartz flasks
+		count = (saveHealth + 24) / 25;
+		for (i = 0; i < count; i++)
+		{
+			Health += 25;
+			if (!(--normal.Amount))
+			{
+				// Used last of a type - compact the artifact list
+				normal.Destroy();
+			}
+		}
+	}
+	else if (super.Amount * 100 >= saveHealth)
+	{
+		// Use mystic urns
+		count = (saveHealth + 99) / 100;
+		for (i = 0; i < count; i++)
+		{
+			Health += 100;
+			if (!(--super.Amount))
+			{
+				// Used last of a type - compact the artifact list
+				super.Destroy();
+			}
+		}
+	}
+	else if ((Level.Game.gameskill == sk_baby)
+		&& (super.Amount * 100 + normal.Amount * 25 >= saveHealth))
+	{
+		// Use mystic urns and quartz flasks
+		count = (saveHealth + 24) / 25;
+		saveHealth -= count * 25;
+		for (i = 0; i < count; i++)
+		{
+			Health += 25;
+			if (!(--normal.Amount))
+			{
+				// Used last of a type - compact the artifact list
+				normal.Destroy();
+			}
+		}
+		count = (saveHealth + 99) / 100;
+		for (i = 0; i < count; i++)
+		{
+			Health += 100;
+			// The same as in HERETIC
+			if (!(--super.Amount))
+			{
+				// Used last of a type - compact the artifact list
+				super.Destroy();
+			}
+		}
+	}
+	Player.Health = Health;
+}
+
+//==========================================================================
+//
+//  PoisonPlayer - Sets up all data concerning poisoning
+//
+//==========================================================================
+
+void PoisonPlayer(Actor poisoner, int poison)
+{
+	if ((Player(Player).Cheats & Player::CF_GODMODE) || bInvulnerable)
+	{
+		return;
+	}
+	Player(Player).PoisonCount += poison;
+	Player(Player).Poisoner = poisoner;
+	if (Player(Player).PoisonCount > 100)
+	{
+		Player(Player).PoisonCount = 100;
+	}
+	Player(Player).LastPoisonTime = XLevel.Time;
+}
+
+//==========================================================================
+//
+//  PoisonDamage
+//
+//  Similar to Actor::Damage
+//
+//==========================================================================
+
+void PoisonDamage(Actor source, int damage, bool playPainSound)
+{
+	Actor inflictor;
+
+	inflictor = source;
+	if (Health <= 0)
+	{
+		return;
+	}
+	if (bInvulnerable && damage < 10000)
+	{	// mobj is invulnerable
+		return;
+	}
+	if (bIsPlayer && Level.Game.gameskill == sk_baby)
+	{
+		// Take half damage in trainer mode
+		damage >>= 1;
+	}
+	if (damage < 1000 && ((Player(Player).Cheats & Player::CF_GODMODE) ||
+		bInvulnerable))
+	{
+		return;
+	}
+	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) ||
+		Level.Game.deathmatch) && !Player(Player).MorphTime)
+	{
+		// Try to use some inventory health
+		AutoUseHealth(damage - Player.Health + 1);
+	}
+	Player.Health -= damage;	// mirror mobj health here for Dave
+	if (Player.Health < 0)
+	{
+		Player.Health = 0;
+	}
+	Player(Player).Attacker = source;
+
+	//
+	// do the damage
+	//
+	Health -= damage;
+	if (Health <= 0)
+	{
+		// Death
+		_Special1 = damage;
+		if (bIsPlayer && inflictor && !Player(Player).MorphTime)
+		{
+			// Check for flame death
+			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
+			{
+				DamageType = 'Fire';
+			}
+			else
+			{
+				DamageType = inflictor.DamageType;
+			}
+		}
+		Died(source, inflictor);
+		return;
+	}
+	if (!(XLevel.TicTime & 63) && playPainSound)
+	{
+		SetState(PainState);
+	}
+}
+
+//==========================================================================
+//
+//  SpawnBloodSplatter
+//
+//==========================================================================
+
+void SpawnBloodSplatter(TVec org, int damage)
+{
+	Actor mo;
+	int i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		Player(Level.Game.Players[i]).ClientBlood(org,
+			damage > 255 ? 255 : damage);
+	}
+
+	mo = Spawn(BloodSplatter, org);
+	mo.Target = self;
+	mo.Velocity.x = (Random() - Random()) * 4.0 * 35.0;
+	mo.Velocity.y = (Random() - Random()) * 4.0 * 35.0;
+	mo.Velocity.z = 3.0 * 35.0 / 20.0;
+}
+
+//===========================================================================
+//
+//  SpawnBloodSplatter2
+//
+//===========================================================================
+
+void SpawnBloodSplatter2(TVec org)
+{
+	Actor mo;
+
+	org.x += (Random() - 0.5) * 8.0;
+	org.y += (Random() - 0.5) * 8.0;
+	mo = Spawn(AxeBlood, org);
+	mo.Target = self;
+}
+
+//==========================================================================
+//
+//  SpawnRipperBlood
+//
+//==========================================================================
+
+void SpawnRipperBlood()
+{
+	Actor th;
+	TVec org;
+
+	org.x = Origin.x + (Random() - Random()) * 16.0;
+	org.y = Origin.y + (Random() - Random()) * 16.0;
+	org.z = Origin.z + (Random() - Random()) * 16.0;
+	th = Spawn(Blood, org);
+	th.Velocity.x = Velocity.x / 2.0;
+	th.Velocity.y = Velocity.y / 2.0;
+	th.StateTime += Random() * 0.1;
+}
+
+//============================================================================
+//
+//  SpawnDirt
+//
+//  Dirt stuff
+//
+//============================================================================
+
+void SpawnDirt(float radius)
+{
+	float angle;
+	TVec org;
+	class<Actor> dtype;
+	Actor dirt;
+
+	angle = 360.0 * Random();
+	org.x = Origin.x + radius * cos(angle);
+	org.y = Origin.y + radius * sin(angle);
+	org.z = Origin.z + Random() * 2.0 + 1.0;
+	switch (P_Random() % 6)
+	{
+	case 0:
+		dtype = Dirt1;
+		break;
+	case 1:
+		dtype = Dirt2;
+		break;
+	case 2:
+		dtype = Dirt3;
+		break;
+	case 3:
+		dtype = Dirt4;
+		break;
+	case 4:
+		dtype = Dirt5;
+		break;
+	case 5:
+		dtype = Dirt6;
+		break;
+	}
+	dirt = Spawn(dtype, org);
+	if (dirt)
+	{
+		dirt.Velocity.z = Random() * 4.0 * 35.0;
+	}
+}
+
+//==========================================================================
+//
+//  TeleportToPlayerStarts
+//
+//==========================================================================
+
+void TeleportToPlayerStarts()
+{
+	int i;
+	int selections = 0;
+	float destX;
+	float destY;
+	float destAngle;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		selections++;
+	}
+	i = P_Random() % selections;
+	destX = Level.PlayerStarts[i].x;
+	destY = Level.PlayerStarts[i].y;
+	destAngle = itof(45 * (Level.PlayerStarts[i].angle / 45));
+	Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true, false);
+}
+
+//==========================================================================
+//
+//  TeleportToDeathmatchStarts
+//
+//==========================================================================
+
+void TeleportToDeathmatchStarts()
+{
+	int i;
+	float destX;
+	float destY;
+	float destAngle;
+
+	if (Level.NumDeathmatchStarts)
+	{
+		i = P_Random() % Level.NumDeathmatchStarts;
+		destX = Level.DeathmatchStarts[i].x;
+		destY = Level.DeathmatchStarts[i].y;
+		destAngle = itof(45 * (Level.DeathmatchStarts[i].angle / 45));
+		Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true,
+			false);
+	}
+	else
+	{
+		TeleportToPlayerStarts();
+	}
+}
+
+//==========================================================================
+//
+//  TeleportOther
+//
+//==========================================================================
+
+void TeleportOther()
+{
+	if (bIsPlayer)
+	{
+		if (Level.Game.deathmatch)
+			TeleportToDeathmatchStarts();
+		else
+			TeleportToPlayerStarts();
+	}
+	else
+	{
+		// If death action, run it upon teleport
+		if (bMonster && Special)
+		{
+			RemoveFromTIDList();
+			Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
+				Args[3], Args[4], NULL, 0, self);
+			Special = 0;
+		}
+
+		// Send all monsters to deathmatch spots
+		TeleportToDeathmatchStarts();
+	}
+}
+
+//**************************************************************************
+//
+//  OBJECT MOVEMENT
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  ClipVelocity
+//
+//  Slide off of the impacting object
+//
+//==========================================================================
+
+TVec ClipVelocity(TVec in, TVec normal, float overbounce)
+{
+	return in - normal * (DotProduct(in, normal) * overbounce);
+}
+
+//===========================================================================
+//
+//	PlayerIsMorphed
+//
+//===========================================================================
+
+bool PlayerIsMorphed()
+{
+	return !!Player(Player).MorphTime;
+}
+
+//===========================================================================
+//
+//	SpawnBlasterEffects
+//
+//===========================================================================
+
+void SpawnBlasterEffects()
+{
+	float z;
+	Actor A;
+
+	if (Class == MageWandMissile)
+	{
+		if (P_Random() < 128)
+		{
+			z = Origin.z - 8.0;
+			if (z < FloorZ)
+			{
+				z = FloorZ;
+			}
+			Spawn(MageWandSmoke, vector(Origin.x, Origin.y, z));
+		}
+	}
+	else
+	{
+		if (!--_Special1)
+		{
+			_Special1 = 4;
+			z = Origin.z - 12.0;
+			if (z < FloorZ)
+			{
+				z = FloorZ;
+			}
+			A = Spawn(CFlameFloor, vector(Origin.x, Origin.y, z));
+			if (A)
+			{
+				A.Angles.yaw = Angles.yaw;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	GetBaseViewHeight
+//
+//==========================================================================
+
+float GetBaseViewHeight()
+{
+	return Player::VIEWHEIGHT;
+}
+
+//==========================================================================
+//
+//  DoMissileExplosionEffects
+//
+//==========================================================================
+
+void DoMissileExplosionEffects()
+{
+	if (bDynamicLight)
+	{
+		SendExplosion(DLightColour, Origin);
+		bDynamicLight = false;
+	}
+}
+
+//==========================================================================
+//
+//  SendExplosion
+//
+//==========================================================================
+
+final void SendExplosion(int colour, TVec org)
+{
+	int i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		Player(Level.Game.Players[i]).ClientExplosion(colour, org);
+	}
+}
+
+//==========================================================================
+//
+//  Blast
+//
+//==========================================================================
+
+final void Blast(Actor source, float strength)
+{
+	float angle;
+	float ang;
+	Actor A;
+	float x;
+	float y;
+	float z;
+
+	angle = atan2(Origin.y - source.Origin.y, Origin.x - source.Origin.x);
+	if (strength < ArtiBlastRadius::BLAST_FULLSTRENGTH)
+	{
+		Velocity.x = strength * cos(angle) * 35.0;
+		Velocity.y = strength * sin(angle) * 35.0;
+		if (bIsPlayer)
+		{
+			// Players handled automatically
+		}
+		else
+		{
+			bSlide = true;
+			bBlasted = true;
+		}
+	}
+	else	// full strength blast from artifact
+	{
+		if (bMissile)
+		{
+			if (SorcBall(self))
+			{
+				// don't blast sorcerer balls
+				return;
+			}
+			else if (MageStaffFX2(self))
+			{
+				// Reflect to originator
+				Tracer = Target;
+				Target = source;
+			}
+		}
+		if (Class == HolySpirit)
+		{
+			if (Tracer == source)
+			{
+				Tracer = Target;
+				Target = source;
+			}
+		}
+		Velocity.x = ArtiBlastRadius::BLAST_SPEED * cos(angle) * 35.0;
+		Velocity.y = ArtiBlastRadius::BLAST_SPEED * sin(angle) * 35.0;
+
+		// Spawn blast puff
+		ang = atan2(source.Origin.y - Origin.y, source.Origin.x - Origin.x);
+		x = Origin.x + (Radius + 1.0) * cos(ang);
+		y = Origin.y + (Radius + 1.0) * sin(ang);
+		z = Origin.z - FloorClip + Height / 2.0;
+		A = Spawn(BlastEffect, vector(x, y, z));
+		if (A)
+		{
+			A.Velocity.x = Velocity.x;
+			A.Velocity.y = Velocity.y;
+		}
+
+		if (bMissile)
+		{
+			Velocity.z = 8.0 * 35.0;
+			A.Velocity.z = Velocity.z;
+		}
+		else
+		{
+			Velocity.z = 1000.0 / Mass * 35.0;
+		}
+		if (bIsPlayer)
+		{
+			// Players handled automatically
+		}
+		else
+		{
+			bSlide = true;
+			bBlasted = true;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  SpawnPuff
+//
+//==========================================================================
+
+void SpawnPuff(TVec org, float Range, class<EntityEx> PuffType, bool HitThing)
+{
+	EntityEx puff;
+
+	org.z += (Random() - Random()) * 4.0;
+	puff = Spawn(PuffType, org);
+	if (HitThing && puff.SightSound)
+	{
+		// Hit thing sound
+		puff.PlaySound(puff.SightSound, CHAN_VOICE);
+	}
+	else if (puff.AttackSound)
+	{
+		puff.PlaySound(puff.AttackSound, CHAN_VOICE);
+	}
+	if (PuffType == PunchPuff)
+	{
+		puff.Velocity.z = 1.0 * 35.0;
+	}
+	else if (PuffType == HammerPuff)
+	{
+		puff.Velocity.z = 8.0 / 10.0 * 35.0;
+	}
+	MainGameInfo(Level.Game).PuffSpawned = Actor(puff);
+}
+
+//===========================================================================
+//
+//  A_NoGravity
+//
+//===========================================================================
+
+final void A_NoGravity()
+{
+	bNoGravity = true;
+}
+
+//============================================================================
+//
+//  A_SetInvulnerable
+//
+//============================================================================
+
+final void A_SetInvulnerable()
+{
+	bInvulnerable = true;
+}
+
+//============================================================================
+//
+//  A_UnSetInvulnerable
+//
+//============================================================================
+
+final void A_UnSetInvulnerable()
+{
+	bInvulnerable = false;
+}
+
+//==========================================================================
+//
+//  A_HideThing
+//
+//==========================================================================
+
+final void A_HideThing()
+{
+	bHidden = true;
+}
+
+//==========================================================================
+//
+//  A_UnHideThing
+//
+//==========================================================================
+
+final void A_UnHideThing()
+{
+	bHidden = false;
+}
+
+//============================================================================
+//
+//  A_FreeTargMobj
+//
+//============================================================================
+
+final void A_FreeTargMobj()
+{
+	Velocity = vector(0.0, 0.0, 0.0);
+	Origin.z = CeilingZ + 4.0;
+	Gravity = 1.0;
+	bSolid = false;
+	bShootable = false;
+	bFloat = false;
+	bCountKill = false;
+	bMonster = false;
+	bSkullFly = false;
+	bDropOff = true;
+	bNoGravity = true;
+	bCorpse = true;
+	bNoPassMobj = true;
+	Alpha = 0.0;
+	Player = none;
+	bIsPlayer = false;
+	Health = -1000;	// Don't resurrect
+}
+
+//============================================================================
+//
+//  A_PlayerScream
+//
+//============================================================================
+
+final void A_PlayerScream()
+{
+	// Handle the different player death screams
+	if (Velocity.z <= -39.0 * 35.0)
+	{
+		// Falling splat
+		PlaySound('*splat', CHAN_VOICE);
+	}
+	else if (Health > -50)
+	{
+		// Normal death sound
+		PlaySound('*death', CHAN_VOICE);
+	}
+	else if (Health > -100)
+	{
+		// Crazy death sound
+		PlaySound('*crazydeath', CHAN_VOICE);
+	}
+	else
+	{
+		// Extreme death sound
+		PlaySound('*xdeath', CHAN_VOICE);
+	}
+}
+
+//============================================================================
+//
+//  A_Explode
+//
+//  Handles a bunch of exploding things.
+//
+//============================================================================
+
+final void A_Explode()
+{
+	int damage;
+	float distance;
+	int damageSelf;
+
+	damage = 128;
+	distance = 128.0;
+	damageSelf = true;
+	if (Class == FireBomb)
+	{
+		// Time Bombs
+		Origin.z += 32.0;
+		Alpha = 1.0;
+	}
+	else if (Class == MinotaurFX2)
+	{
+		// Minotaur floor fire
+		damage = 24;
+	}
+	else if (Class == Bishop)
+	{
+		// Bishop radius death
+		damage = 25 + (P_Random() & 15);
+	}
+	else if (Class == HammerMissile)
+	{
+		// Fighter Hammer
+		damage = 128;
+		damageSelf = false;
+	}
+	else if (Class == FSwordMissile)
+	{
+		// Fighter Runesword
+		damage = 64;
+		damageSelf = false;
+	}
+	else if (Class == CircleFlame)
+	{
+		// Cleric Flame secondary flames
+		damage = 20;
+		damageSelf = false;
+	}
+	else if (SorcBall(self))
+	{
+		// Sorcerer balls
+		distance = 255.0;
+		damage = 255;
+		Args[0] = 1;	// don't play bounce
+	}
+	else if (Class == SorcFX1)
+	{
+		// Sorcerer spell 1
+		damage = 30;
+	}
+	else if (Class == SorcFX4)
+	{
+		// Sorcerer spell 4
+		damage = 20;
+	}
+	else if (Class == TreeDestructible)
+	{
+		damage = 10;
+	}
+	else if (Class == DragonExplosion)
+	{
+		damage = 80;
+		damageSelf = false;
+	}
+	else if (Class == MageStaffFX)
+	{
+		damage = 64;
+		distance = 192.0;
+		damageSelf = false;
+	}
+	else if (Class == MageStaffFX2)
+	{
+		damage = 80;
+		distance = 192.0;
+		damageSelf = false;
+	}
+	else if (Class == ZXmasTree || Class == ZShrub2)
+	{
+		damage = 30;
+		distance = 64.0;
+	}
+	else if (Class == PoisonCloud)
+	{
+		damage = 4;
+		distance = 40.0;
+	}
+	RadiusAttack(Target, damage, distance, damageSelf);
+	if (Class != PoisonCloud && Origin.z <= FloorZ + distance)
+	{
+		HitFloorType();
+	}
+	if (ExplodeEffect)
+	{
+		SendExplosion(ExplodeEffect, Origin);
+	}
+}
+
+//============================================================================
+//
+//  A_AddPlayerCorpse
+//
+//============================================================================
+
+final void A_AddPlayerCorpse()
+{
+	if (HexenLevelInfo(Level).bodyqueslot >= HexenLevelInfo::BODYQUESIZE)
+	{
+		// Too many player corpses - remove an old one
+		HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo::BODYQUESIZE].Destroy();
+	}
+	HexenLevelInfo(Level).bodyque[HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo::BODYQUESIZE] = self;
+	HexenLevelInfo(Level).bodyqueslot++;
+}
+
+//============================================================================
+//
+//  A_CheckBurnGone
+//
+//============================================================================
+
+final void A_CheckBurnGone()
+{
+	if (_Special2 == 666)
+	{
+		SetState(S_PLAY_FDTH20);
+	}
+}
+
+//============================================================================
+//
+//  A_QueueCorpse
+//
+//  Throw another corpse on the queue.
+//
+//============================================================================
+
+final void A_QueueCorpse()
+{
+	EntityEx corpse;
+
+	if (HexenLevelInfo(Level).corpseQueueSlot >= HexenLevelInfo::CORPSEQUEUESIZE)
+	{
+		// Too many corpses - remove an old one
+		corpse = HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo::CORPSEQUEUESIZE];
+		if (corpse)
+			corpse.Destroy();
+	}
+	HexenLevelInfo(Level).corpseQueue[HexenLevelInfo(Level).corpseQueueSlot % HexenLevelInfo::CORPSEQUEUESIZE] = self;
+	HexenLevelInfo(Level).corpseQueueSlot++;
+}
+
+//============================================================================
+//
+//  A_DeQueueCorpse
+//
+//  Remove a mobj from the queue (for resurrection)
+//
+//============================================================================
+
+final void A_DeQueueCorpse()
+{
+	int slot;
+
+	for (slot = 0; slot < HexenLevelInfo::CORPSEQUEUESIZE; slot++)
+	{
+		if (HexenLevelInfo(Level).corpseQueue[slot] == self)
+		{
+			HexenLevelInfo(Level).corpseQueue[slot] = none;
+			break;
+		}
+	}
+}
+
+//============================================================================
+//
+//  A_PigPain
+//
+//============================================================================
+
+final void A_PigPain()
+{
+	A_Pain();
+	if (Origin.z <= FloorZ)
+	{
+		Velocity.z = 3.5 * 35.0;
+	}
+}
+
+__states__
+{
+	S_FREETARGMOBJ('ACLO', 4, 1050.0 / 35.0, none) = A_FreeTargMobj
+	S_GIBS1('GIBS', 0, -1.0, none) = none
+	S_PLAY_FDTH20('ACLO', 4, 8.0 / 35.0, none) = none
+}
+
+defaultproperties
+{
+	SoundClass = 'fighter';
+	CrunchState = S_GIBS1;
+	CrunchSound = '*splat';
+}

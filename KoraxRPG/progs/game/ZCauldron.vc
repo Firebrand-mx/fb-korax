@@ -1,0 +1,77 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ZCauldron.vc 1957 2007-01-10 23:55:03Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ZCauldron : Decoration
+	__mobjinfo__(8069);
+
+__states__
+{
+	S_ZCAULDRON1('CDRN', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON2) = none
+	S_ZCAULDRON2('CDRN', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON3) = none
+	S_ZCAULDRON3('CDRN', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON4) = none
+	S_ZCAULDRON4('CDRN', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON5) = none
+	S_ZCAULDRON5('CDRN', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON6) = none
+	S_ZCAULDRON6('CDRN', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON7) = none
+	S_ZCAULDRON7('CDRN', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_ZCAULDRON1) = none
+	S_ZCAULDRON_U('CDRN', 0, -1.0, none) = none
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+bool Activate()
+{
+	SetState(S_ZCAULDRON1);
+	PlaySound('Ignite', CHAN_VOICE);
+	bStaticLight = true;
+	return true;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+bool Deactivate()
+{
+	SetState(S_ZCAULDRON_U);
+	bStaticLight = false;
+	return true;
+}
+
+defaultproperties
+{
+	Radius = 12.0;
+	Height = 26.0;
+	bSolid = true;
+	bStaticLight = true;
+	IdleState = S_ZCAULDRON1;
+	LightColour = RGB(255, 255, 0);
+	LightOffset = vector(0.0, 0.0, 18.0);
+}

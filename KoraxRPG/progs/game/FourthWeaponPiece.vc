@@ -1,0 +1,204 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: FourthWeaponPiece.vc 2531 2007-07-29 10:30:14Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class FourthWeaponPiece : Inventory
+	abstract;
+
+const int
+	WPIECE1			= 1,
+	WPIECE2			= 2,
+	WPIECE3			= 4;
+
+int				PieceClass;
+int				PieceValue;
+class<Weapon>	WeaponType;
+Weapon			GivenWeapon;
+
+bool			gaveWeapon;
+
+//==========================================================================
+//
+//  TryPickup
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+	bool			checkAssembled;
+	int				gaveMana;
+	Inventory		Inv;
+
+	checkAssembled = true;
+	gaveWeapon = false;
+	if (Toucher.Player.PClass != PieceClass)
+	{
+		// Wrong class, but try to pick up for mana
+		if (ShouldStay())
+		{
+			// Can't pick up wrong-class weapons in coop netplay
+			return false;
+		}
+		checkAssembled = false;
+		gaveMana = Player(Toucher.Player).GiveMana(Mana1, 20) |
+			Player(Toucher.Player).GiveMana(Mana2, 20);
+		if (!gaveMana)
+		{
+			// Didn't need the mana, so don't pick it up
+			return false;
+		}
+		GoAwayAndDie();
+		return true;
+	}
+
+	FourthWeaponHolder Hold = FourthWeaponHolder(
+		Toucher.FindInventory(FourthWeaponHolder));
+	if (!Hold)
+	{
+		Hold = Spawn(FourthWeaponHolder);
+		Hold.AttachToOwner(Toucher);
+		Hold.PieceMask = 0;
+	}
+
+	if (ShouldStay() && (Hold.PieceMask & PieceValue))
+	{
+		// Already has the piece
+		return false;
+	}
+
+	gaveMana = Player(Toucher.Player).GiveMana(Mana1, 20) |
+		Player(Toucher.Player).GiveMana(Mana2, 20);
+	if (ShouldStay())
+	{
+		PieceValue = GetPieceValueTrans(PieceValue);
+	}
+
+	if ((Hold.PieceMask & PieceValue) == PieceValue)
+	{
+		// Already has the piece, check if mana needed
+		if (!gaveMana)
+		{
+			// Didn't need the mana, so don't pick it up
+			return false;
+		}
+	}
+
+	// Pick up the weapon piece
+
+	// Check if fourth weapon assembled
+	Hold.PieceMask |= PieceValue;
+	if (Hold.PieceMask == (WPIECE1 | WPIECE2 | WPIECE3))
+	{
+		gaveWeapon = true;
+		Weapon Wpn = Level.Spawn(WeaponType);
+		if (!Wpn.TryPickup(Toucher))
+		{
+			Wpn.Destroy();
+		}
+		else
+		{
+			Player(Toucher.Player).PendingWeapon = Wpn;
+			GivenWeapon = Wpn;
+		}
+	}
+	GoAwayAndDie();
+	return true;
+}
+
+//==========================================================================
+//
+//	GetPickupMessage
+//
+//==========================================================================
+
+string GetPickupMessage()
+{
+	if (gaveWeapon)
+	{
+		return Inventory(GivenWeapon).PickupMessage;
+	}
+	else
+	{
+		return ::GetPickupMessage();
+	}
+}
+
+//==========================================================================
+//
+//	PlayPickupSound
+//
+//==========================================================================
+
+void PlayPickupSound(EntityEx Toucher)
+{
+	if (gaveWeapon)
+	{
+		// Play the build-sound full volume for all players
+		Toucher.PlaySound('WeaponBuild', CHAN_ITEM, 1.0, ATTN_NONE);
+	}
+	else
+	{
+		::PlayPickupSound(Toucher);
+	}
+}
+
+//==========================================================================
+//
+//	ShouldStay
+//
+//==========================================================================
+
+bool ShouldStay()
+{
+	return Level.Game.netgame && !Level.Game.deathmatch;
+}
+
+//==========================================================================
+//
+//	GetPieceValueTrans
+//
+//==========================================================================
+
+final int GetPieceValueTrans(int Val)
+{
+	switch (Val)
+	{
+	case WPIECE1:
+		return WPIECE1 | WPIECE2 | WPIECE3;
+	case WPIECE2:
+		return WPIECE2 | WPIECE3;
+	case WPIECE3:
+		return WPIECE3;
+	}
+	//	Should not happen.
+	return 0;
+}
+
+defaultproperties
+{
+	Height = 32.0;
+	bFloatBob = true;
+	bFullVolPickupSound = true;
+	PickupSound = 'PickupWeapon';
+}

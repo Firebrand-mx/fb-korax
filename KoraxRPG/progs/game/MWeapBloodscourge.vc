@@ -1,0 +1,169 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: MWeapBloodscourge.vc 2527 2007-07-29 08:18:44Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class MWeapBloodscourge : MageWeapon;
+
+//==========================================================================
+//
+//	MStaffSpawn
+//
+//==========================================================================
+
+void MStaffSpawn(float angle)
+{
+	EntityEx	mo;
+
+	mo = Actor(Owner).SpawnPlayerMissileAngle(MageStaffFX2, angle);
+	if (mo)
+	{
+		mo.Target = Actor(Owner);
+		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
+	}
+}
+
+//==========================================================================
+//
+//  A_MStaffAttack
+//
+//==========================================================================
+
+final void A_MStaffAttack()
+{
+	float angle;
+
+	DepleteAmmo();
+	angle = Owner.Angles.yaw;
+
+	MStaffSpawn(angle);
+	MStaffSpawn(angle - 5.0);
+	MStaffSpawn(angle + 5.0);
+	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
+	Player(Owner.Player).DamageFlash = 0.0;
+	Player(Owner.Player).BonusFlash = 0.0;
+	Player(Owner.Player).WeaponCShift = RGBA(255, 187, 4, 76);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette1
+//
+//==========================================================================
+
+final void A_MStaffPalette1()
+{
+	Player(Owner.Player).WeaponCShift = RGBA(255, 187, 4, 63);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette2
+//
+//==========================================================================
+
+final void A_MStaffPalette2()
+{
+	Player(Owner.Player).WeaponCShift = RGBA(255, 187, 4, 51);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette3
+//
+//==========================================================================
+
+final void A_MStaffPalette3()
+{
+	// reset back to original playpal
+	Player(Owner.Player).WeaponCShift = 0;
+}
+
+__states__
+{
+	S_MSTAFFREADY('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY2) = A_WeaponReady
+	S_MSTAFFREADY2('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY3) = A_WeaponReady
+	S_MSTAFFREADY3('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY4) = A_WeaponReady
+	S_MSTAFFREADY4('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY5) = A_WeaponReady
+	S_MSTAFFREADY5('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY6) = A_WeaponReady
+	S_MSTAFFREADY6('MSTF', 0, 1.0 / 35.0, S_MSTAFFREADY7) = A_WeaponReady
+	S_MSTAFFREADY7('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY8) = A_WeaponReady
+	S_MSTAFFREADY8('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY9) = A_WeaponReady
+	S_MSTAFFREADY9('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY10) = A_WeaponReady
+	S_MSTAFFREADY10('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY11) = A_WeaponReady
+	S_MSTAFFREADY11('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY12) = A_WeaponReady
+	S_MSTAFFREADY12('MSTF', 1, 1.0 / 35.0, S_MSTAFFREADY13) = A_WeaponReady
+	S_MSTAFFREADY13('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY14) = A_WeaponReady
+	S_MSTAFFREADY14('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY15) = A_WeaponReady
+	S_MSTAFFREADY15('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY16) = A_WeaponReady
+	S_MSTAFFREADY16('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY17) = A_WeaponReady
+	S_MSTAFFREADY17('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY18) = A_WeaponReady
+	S_MSTAFFREADY18('MSTF', 2, 1.0 / 35.0, S_MSTAFFREADY19) = A_WeaponReady
+	S_MSTAFFREADY19('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY20) = A_WeaponReady
+	S_MSTAFFREADY20('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY21) = A_WeaponReady
+	S_MSTAFFREADY21('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY22) = A_WeaponReady
+	S_MSTAFFREADY22('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY23) = A_WeaponReady
+	S_MSTAFFREADY23('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY24) = A_WeaponReady
+	S_MSTAFFREADY24('MSTF', 3, 1.0 / 35.0, S_MSTAFFREADY25) = A_WeaponReady
+	S_MSTAFFREADY25('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY26) = A_WeaponReady
+	S_MSTAFFREADY26('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY27) = A_WeaponReady
+	S_MSTAFFREADY27('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY28) = A_WeaponReady
+	S_MSTAFFREADY28('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY29) = A_WeaponReady
+	S_MSTAFFREADY29('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY30) = A_WeaponReady
+	S_MSTAFFREADY30('MSTF', 4, 1.0 / 35.0, S_MSTAFFREADY31) = A_WeaponReady
+	S_MSTAFFREADY31('MSTF', 5, 1.0 / 35.0, S_MSTAFFREADY32) = A_WeaponReady
+	S_MSTAFFREADY32('MSTF', 5, 1.0 / 35.0, S_MSTAFFREADY33) = A_WeaponReady
+	S_MSTAFFREADY33('MSTF', 5, 1.0 / 35.0, S_MSTAFFREADY34) = A_WeaponReady
+	S_MSTAFFREADY34('MSTF', 5, 1.0 / 35.0, S_MSTAFFREADY35) = A_WeaponReady
+	S_MSTAFFREADY35('MSTF', 5, 1.0 / 35.0, S_MSTAFFREADY) = A_WeaponReady
+	S_MSTAFFDOWN('MSTF', 0, 1.0 / 35.0, S_MSTAFFDOWN) = A_Lower
+	S_MSTAFFUP('MSTF', 0, 1.0 / 35.0, S_MSTAFFUP) = A_Raise
+	S_MSTAFFATK_1('MSTF', 6, 4.0 / 35.0, S_MSTAFFATK_2, 0, 40) = none
+	S_MSTAFFATK_2('MSTF', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_MSTAFFATK_3, 0, 48) = A_MStaffAttack
+	S_MSTAFFATK_3('MSTF', 7 | FF_FULLBRIGHT, 2.0 / 35.0, S_MSTAFFATK_4, 0, 48) = A_MStaffPalette1
+	S_MSTAFFATK_4('MSTF', 8, 2.0 / 35.0, S_MSTAFFATK_5, 0, 48) = A_MStaffPalette2
+	S_MSTAFFATK_5('MSTF', 8, 2.0 / 35.0, S_MSTAFFATK_6, 0, 48) = A_MStaffPalette3
+	S_MSTAFFATK_6('MSTF', 8, 1.0 / 35.0, S_MSTAFFATK_7, 0, 40) = none
+	S_MSTAFFATK_7('MSTF', 9, 5.0 / 35.0, S_MSTAFFREADY, 0, 36) = none
+}
+
+defaultproperties
+{
+	WeaponClass = HexenDefs::PCLASS_MAGE;
+	Slot = 4;
+	SelectionOrder = 3100;
+	AmmoType1 = Mana1;
+	AmmoType2 = Mana2;
+	AmmoUse1 = 15;
+	AmmoUse2 = 15;
+	PSpriteSY = 20.0;
+	PickupMessage = "$txt_weapon_m4";
+	BotCombatDist= 384.0;
+	bBotProjectile = true;
+	bExtremeDeath = true;
+	UpState = S_MSTAFFUP;
+	DownState = S_MSTAFFDOWN;
+	ReadyState = S_MSTAFFREADY;
+	AttackState = S_MSTAFFATK_1;
+	HoldAttackState = S_MSTAFFATK_1;
+}

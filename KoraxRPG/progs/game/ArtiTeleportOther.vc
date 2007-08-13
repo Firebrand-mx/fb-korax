@@ -1,0 +1,66 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ArtiTeleportOther.vc 2562 2007-08-02 19:35:55Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ArtiTeleportOther : Inventory
+	__mobjinfo__(10040)
+	__scriptid__(17);
+
+//==========================================================================
+//
+//	Use
+//
+//==========================================================================
+
+bool Use(bool Pickup)
+{
+	EntityEx mo;
+
+	mo = EntityEx(Owner).SpawnPlayerMissile(TelOtherFX1);
+	if (mo)
+	{
+		mo.Target = EntityEx(Owner);
+	}
+	return true;
+}
+
+__states__
+{
+	S_ARTI_TELOTHER1('TELO', 0, 5.0 / 35.0, S_ARTI_TELOTHER2) = none
+	S_ARTI_TELOTHER2('TELO', 1, 5.0 / 35.0, S_ARTI_TELOTHER3) = none
+	S_ARTI_TELOTHER3('TELO', 2, 5.0 / 35.0, S_ARTI_TELOTHER4) = none
+	S_ARTI_TELOTHER4('TELO', 3, 5.0 / 35.0, S_ARTI_TELOTHER1) = none
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	PickupSound = 'PickupArtifact';
+	PickupMessage = "$txt_artiteleportother";
+	IconName = 'artitelo';
+	bFloatBob = true;
+	bPickupFlash = true;
+	bInvBar = true;
+	IdleState = S_ARTI_TELOTHER1;
+}

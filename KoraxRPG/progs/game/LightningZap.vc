@@ -1,0 +1,163 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: LightningZap.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class LightningZap : Projectile;
+
+Lightning LightningOwner;	//	Lightning missile that spawned zap.
+
+//==========================================================================
+//
+//	Touch
+//
+//==========================================================================
+
+bool Touch(Entity InOther)
+{
+	int damage;
+	EntityEx Other;
+
+	Other = EntityEx(InOther);
+	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
+		return true;
+
+	// Check for missile
+	if (bMissile)
+	{
+		// Check for a non-shootable mobj
+		if (Other.bNonShootable)
+		{
+			return true;
+		}
+		if (Other.bShootable && Other != Target)
+		{
+			if (LightningOwner)
+			{
+				if (LightningOwner.Class == LightningFloor)
+				{
+					if (LightningOwner.LightningLink &&
+						!LightningOwner.LightningLink.Tracer)
+					{
+						LightningOwner.LightningLink.Tracer = Other;
+					}
+				}
+				else if (!LightningOwner.Tracer)
+				{
+					LightningOwner.Tracer = Other;
+				}
+				if (!(XLevel.TicTime & 3))
+				{
+					LightningOwner.Health--;
+				}
+			}
+		}
+		if (Target && Target.Class == Other.Class)
+		{
+			// Don't hit same species as originator
+			if (Other == Target)
+			{
+				// Don't missile self
+				return true;
+			}
+			if (!Other.bIsPlayer)
+			{
+				// Hit same species as originator, explode, no damage
+				return false;
+			}
+		}
+		if (!Other.bShootable)
+		{
+			// Didn't do any damage
+			return !Other.bSolid;
+		}
+		// Do damage
+		damage = ((P_Random() % 8) + 1) * MissileDamage;
+		if (damage)
+		{
+			if (!Other.bNoBlood && !Other.bReflective &&
+				!Other.bInvulnerable && (P_Random() < 192))
+			{
+				Other.SpawnBloodSplatter(Origin, damage);
+			}
+			Other.Damage(self, Target, damage);
+		}
+		return false;
+	}
+	return !Other.bSolid;
+}
+
+//==========================================================================
+//
+//  A_ZapMimic
+//
+//==========================================================================
+
+final void A_ZapMimic()
+{
+	if (LightningOwner)
+	{
+		if (!LightningOwner.bMissile ||
+			LightningOwner.State == S_FREETARGMOBJ)
+		{
+			ExplodeMissile();
+		}
+		else
+		{
+			Velocity.x = LightningOwner.Velocity.x;
+			Velocity.y = LightningOwner.Velocity.y;
+		}
+	}
+}
+
+__states__
+{
+	S_LIGHTNING_ZAP1('MLFX', 8 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP2) = A_ZapMimic
+	S_LIGHTNING_ZAP2('MLFX', 9 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP3) = A_ZapMimic
+	S_LIGHTNING_ZAP3('MLFX', 10 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP4) = A_ZapMimic
+	S_LIGHTNING_ZAP4('MLFX', 11 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP5) = A_ZapMimic
+	S_LIGHTNING_ZAP5('MLFX', 12 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP1) = A_ZapMimic
+	S_LIGHTNING_ZAP_X1('MLFX', 13 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X2) = none
+	S_LIGHTNING_ZAP_X2('MLFX', 14 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X3) = none
+	S_LIGHTNING_ZAP_X3('MLFX', 15 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X4) = none
+	S_LIGHTNING_ZAP_X4('MLFX', 16 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X5) = none
+	S_LIGHTNING_ZAP_X5('MLFX', 17 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X6) = none
+	S_LIGHTNING_ZAP_X6('MLFX', 18 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X7) = none
+	S_LIGHTNING_ZAP_X7('MLFX', 19 | FF_FULLBRIGHT, 2.0 / 35.0, S_LIGHTNING_ZAP_X8) = none
+	S_LIGHTNING_ZAP_X8('MLFX', 20 | FF_FULLBRIGHT, 2.0 / 35.0, none) = none
+}
+
+defaultproperties
+{
+	Radius = 15.0;
+	Height = 35.0;
+	MissileDamage = 2;
+	bNoTeleport = false;
+	bActivateImpact = false;
+	bActivatePCross = false;
+	bLightning = true;
+	IdleState = S_LIGHTNING_ZAP1;
+	DeathState = S_LIGHTNING_ZAP_X8;
+	DLightColour = RGB(58, 158, 239);
+	DLightRadius = 200.0;
+}

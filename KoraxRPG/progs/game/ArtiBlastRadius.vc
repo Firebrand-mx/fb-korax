@@ -1,0 +1,121 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ArtiBlastRadius.vc 2562 2007-08-02 19:35:55Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ArtiBlastRadius : Inventory
+	__mobjinfo__(10110)
+	__scriptid__(74);
+
+const float BLAST_RADIUS_DIST	= 255.0;
+const float BLAST_FULLSTRENGTH	= 0.0038909912;
+const float BLAST_SPEED			= 20.0;
+
+//==========================================================================
+//
+//	Use
+//
+//  Blast all mobj things away
+//
+//==========================================================================
+
+bool Use(bool Pickup)
+{
+	Actor mo;
+	float dist;
+
+	Owner.PlaySound('BlastRadius', CHAN_ITEM);
+	HexenLevelInfo(Level).NoiseAlert(EntityEx(Owner), EntityEx(Owner));
+
+	foreach AllThinkers(Actor, mo)
+	{
+		if (mo == Owner || mo.bBoss)
+		{
+			// Not a valid monster
+			continue;
+		}
+		if (mo.Class == PoisonCloud ||	// poison cloud
+			mo.Class == HolySpirit ||	// holy fx
+			mo.bIceCorpse)	// frozen corpse
+		{
+			// Let these special cases go
+		}
+		else if (mo.bMonster && (mo.Health <= 0))
+		{
+			continue;
+		}
+		else if (!mo.bMonster && !mo.bIsPlayer && !mo.bMissile)
+		{
+			// Must be monster, player, or missile
+			continue;
+		}
+		if (mo.bDormant)
+		{
+			continue;	// no dormant creatures
+		}
+		if ((mo.Class == WraithBuried) && mo.bHidden)
+		{
+			continue;	// no underground wraiths
+		}
+		if ((mo.Class == WaterSplashBase) || (mo.Class == WaterSplash))
+		{
+			continue;
+		}
+		if (mo.Class == Serpent || mo.Class == SerpentLeader)
+		{
+			continue;
+		}
+		dist = Owner.DistTo(mo);
+		if (dist > BLAST_RADIUS_DIST)
+		{
+			// Out of range
+			continue;
+		}
+		mo.Blast(Actor(Owner), BLAST_FULLSTRENGTH);
+	}
+	return true;
+}
+
+__states__
+{
+	S_ARTI_BLAST1('BLST', 0 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST2) = none
+	S_ARTI_BLAST2('BLST', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST3) = none
+	S_ARTI_BLAST3('BLST', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST4) = none
+	S_ARTI_BLAST4('BLST', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST5) = none
+	S_ARTI_BLAST5('BLST', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST6) = none
+	S_ARTI_BLAST6('BLST', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST7) = none
+	S_ARTI_BLAST7('BLST', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST8) = none
+	S_ARTI_BLAST8('BLST', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_ARTI_BLAST1) = none
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	PickupSound = 'PickupArtifact';
+	PickupMessage = "$txt_artiblastradius";
+	IconName = 'artiblst';
+	bFloatBob = true;
+	bPickupFlash = true;
+	bInvBar = true;
+	IdleState = S_ARTI_BLAST1;
+}

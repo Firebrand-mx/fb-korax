@@ -1,0 +1,61 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: PoisonDart.vc 2405 2007-07-02 21:38:03Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PoisonDart : Projectile
+	__scriptid__(52);
+
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (victim.bIsPlayer)
+	{
+		Actor(victim).PoisonPlayer(Actor(source), 20);
+		damage >>= 1;
+	}
+	return damage;
+}
+
+__states__
+{
+	S_POISONDART_1('DART', 0, -1.0, none) = none
+	S_POISONDART_X1('DART', 0, 1.0 / 35.0, none) = none
+}
+
+defaultproperties
+{
+	Radius = 8.0;
+	Height = 4.0;
+	Speed = 210.0;
+	MissileDamage = 2;
+	bActivateImpact = false;
+	bActivatePCross = false;
+	IdleState = S_POISONDART_1;
+	DeathState = S_POISONDART_X1;
+}

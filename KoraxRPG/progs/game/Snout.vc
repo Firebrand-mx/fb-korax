@@ -1,0 +1,95 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Snout.vc 2525 2007-07-28 09:42:36Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class Snout : HexenWeapon;
+
+state SniffState;
+
+//============================================================================
+//
+//  A_SnoutAttack
+//
+//============================================================================
+
+final void A_SnoutAttack()
+{
+	int			damage;
+	TAVec		angles;
+	TVec		vforward;
+	EntityEx	AimTarget;
+
+	damage = 3 + (P_Random() & 3);
+	angles = Owner.Angles;
+	AimTarget = Actor(Owner).AimLineAttack(vforward, angles, Actor::MELEERANGE);
+	MainGameInfo(Level.Game).PuffSpawned = none;
+	Actor(Owner).LineAttack(vforward, Actor::MELEERANGE, damage, SnoutPuff);
+	Owner.PlaySound((P_Random() & 1) ? 'PigActive2' : 'PigActive1',
+		CHAN_VOICE);
+	if (AimTarget)
+	{
+		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		if (MainGameInfo(Level.Game).PuffSpawned)
+		{
+			// Bit something
+			Owner.PlaySound('PigAttack', CHAN_VOICE);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SnoutSniff
+//
+//==========================================================================
+
+void SnoutSniff()
+{
+	Owner.Player.SetViewState(ps_weapon, SniffState);
+}
+
+__states__
+{
+	S_SNOUTREADY('WPIG', 0, 1.0 / 35.0, S_SNOUTREADY) = A_WeaponReady
+	S_SNOUTDOWN('WPIG', 0, 1.0 / 35.0, S_SNOUTDOWN) = A_Lower
+	S_SNOUTUP('WPIG', 0, 1.0 / 35.0, S_SNOUTUP) = A_Raise
+	S_SNOUTATK1('WPIG', 0, 4.0 / 35.0, S_SNOUTATK2) = A_SnoutAttack
+	S_SNOUTATK2('WPIG', 1, 8.0 / 35.0, S_SNOUTREADY) = A_SnoutAttack
+	S_SNOUTSNIFF('WPIG', 1, 8.0 / 35.0, S_SNOUTREADY) = none
+}
+
+defaultproperties
+{
+	WeaponClass = HexenDefs::PCLASS_PIG;
+	Slot = 1;
+	SelectionOrder = 10000;
+	PSpriteSY = 10.0;
+	bDontBob = true;
+	UpState = S_SNOUTUP;
+	DownState = S_SNOUTDOWN;
+	ReadyState = S_SNOUTREADY;
+	AttackState = S_SNOUTATK1;
+	HoldAttackState = S_SNOUTATK1;
+	SniffState = S_SNOUTSNIFF;
+}
