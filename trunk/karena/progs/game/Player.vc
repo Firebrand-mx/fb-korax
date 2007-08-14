@@ -866,6 +866,7 @@ void SpawnPlayer(mthing_t * mthing)
 			pp.Inventory.Destroy();
 		}
 		AddDefaultInventory();
+		UpdateArmorPercentage();
 	}
 	SetupPsprites();
 	if (Level.Game.deathmatch)
@@ -964,10 +965,6 @@ void SpawnPlayer(mthing_t * mthing)
 final void AddDefaultInventory()
 {
 	int i;
-
-	KArenaArmor KArmor = Level.Spawn(KArenaArmor);
-	KArmor.Amount = 0;
-	KArmor.AttachToOwner(EntityEx(MO));
 
 	BasicArmor BArmor = Level.Spawn(BasicArmor);
 	BArmor.Amount = 0;
@@ -1275,6 +1272,8 @@ void ActivateLevel(int to_lvl, bool message)
 
 	}
 
+	UpdateArmorPercentage();
+
 	if (message)
 	{
 		cprint("YOU REACHED LEVEL %d", exp_level);
@@ -1326,6 +1325,8 @@ void DeactivateLevel(int to_lvl, bool message)
 		//}
 	}
 
+	UpdateArmorPercentage();
+
 	if (message)
 	{
 		cprint("YOU LOWERED TO LEVEL %d", exp_level);
@@ -1354,6 +1355,8 @@ void InitiateLevel()
 	dexterity = PlayerPawn(MO).InitialDexterity;
 	constitution = PlayerPawn(MO).InitialConstitution;
 	intelligence = PlayerPawn(MO).InitialIntelligence;
+
+	UpdateArmorPercentage();
 }
 
 //==========================================================================
@@ -4469,6 +4472,25 @@ bool IsWeaponAlwaysExtremeDeath()
 {
 	// Always extreme death from eight weapon
 	return ReadyWeapon.bExtremeDeath;
+}
+
+//==========================================================================
+//
+//  IsWeaponAlwaysExtremeDeath
+//
+//==========================================================================
+
+final void UpdateArmorPercentage()
+{
+	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
+	if (Armor && Armor.Amount)
+	{
+		Armor.SavePercent = 0.333 + itof(constitution) * 0.4;
+		if (Armor.SavePercent > 0.75)
+		{
+			Armor.SavePercent = 0.75;
+		}
+	}
 }
 
 defaultproperties
