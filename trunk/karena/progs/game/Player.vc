@@ -568,50 +568,50 @@ void AutoSelectTeam()
 	int free_team_slots = 0;
 	bool team_colours_free[HexenDefs::MAXPLAYERTEAMS];
 
-	MainGameInfo game = MainGameInfo(Level.Game);
+	MainGameInfo Game = MainGameInfo(Level.Game);
 
 	bool bKeepEqual = GetCvar('KeepTeamsEqual');
 	int count_limit = 0;
-	if (bKeepEqual && game.Teams[0] && game.Teams[1])
-		count_limit = game.Teams[0].GetPlayerCount();
+	if (bKeepEqual && Game.Teams[0] && Game.Teams[1])
+		count_limit = Game.Teams[0].GetPlayerCount();
 
 	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
 		team_colours_free[i] = true;
 	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 	{
-		if (game.Teams[i])
-			team_colours_free[game.Teams[i].Colour] = false;
+		if (Game.Teams[i])
+			team_colours_free[Game.Teams[i].Colour] = false;
 	}
 
-	for (i = 0; i < game.MaxTeamsInGame[game.GameType]; i++)
+	for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
 	{
-		if (game.Teams[i] == none)
+		if (Game.Teams[i] == none)
 			free_team_slots++;
 		else
 		{
 			if (bKeepEqual)
 			{
-				int count = game.Teams[i].GetPlayerCount();
+				int count = Game.Teams[i].GetPlayerCount();
 				if (count_limit > count)
 					count_limit = count;
 			}
 		}
 	}
 
-	if (free_team_slots == game.MaxTeamsInGame[game.GameType] ||
+	if (free_team_slots == Game.MaxTeamsInGame[Game.GameType] ||
 			free_team_slots > 0 && !(bKeepEqual && !team_colours_free[Colour]) && P_Random() > 127)
 		new_colour = Colour;
 	else
 	{
 		if (bKeepEqual)
 		{
-			for (i = 0; i < game.MaxTeamsInGame[game.GameType]; i++)
+			for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
 			{
-				if (game.Teams[i] == none)
+				if (Game.Teams[i] == none)
 					break;
-				if (game.Teams[i].GetPlayerCount() <= count_limit)
+				if (Game.Teams[i].GetPlayerCount() <= count_limit)
 				{
-					new_colour = game.Teams[i].Colour;
+					new_colour = Game.Teams[i].Colour;
 					break;
 				}
 			}
@@ -626,7 +626,7 @@ void AutoSelectTeam()
 		else
 		{
 			new_colour =
-				game.Teams[P_Random() % (game.MaxTeamsInGame[game.GameType] - free_team_slots)].Colour;
+				Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Colour;
 		}
 	}
 	Colour = new_colour;
