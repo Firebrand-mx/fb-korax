@@ -273,6 +273,36 @@ void IsDeathInflictor(EntityEx victim)
 
 //==========================================================================
 //
+//	IsTeammate
+//
+//==========================================================================
+
+bool IsTeammate(EntityEx Other)
+{
+	if (::IsTeammate(Other))
+	{
+		return true;
+	}
+	if (bIsPlayer)
+	{
+		if (MainGameInfo(Level.Game).GameModel &&
+			MainGameInfo(Level.Game).GameModel.TeamFactor(self, Other) ==
+			GameModel::teamfactor_coop)
+		{
+			return true;
+		}
+		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
+			Player(Player).Team == Player(Other.Player).Team)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
 //	KilledByPlayer
 //
 //==========================================================================
@@ -280,16 +310,9 @@ void IsDeathInflictor(EntityEx victim)
 void KilledByPlayer(EntityEx source)
 {
 	bool bKilledByAlly = false;
-	if (bIsPlayer)
+	if (source)
 	{
-		if (MainGameInfo(Level.Game).GameModel &&
-				MainGameInfo(Level.Game).GameModel.TeamFactor(self, source)
-					== GameModel::teamfactor_coop)
-			bKilledByAlly = true;
-		else if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
-				MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
-				Player(Player).Team == Player(source.Player).Team)
-			bKilledByAlly = true;
+		bKilledByAlly = IsTeammate(source);
 	}
 
 	// [FB] Increase the player's KillCount
@@ -1175,192 +1198,11 @@ final void A_PlayerScream()
 	}
 }
 
-//============================================================================
-//
-//  A_Explode
-//
-//  Handles a bunch of exploding things.
-//
-//============================================================================
-
-final void A_Explode()
-{
-	int damage;
-	float distance;
-	int damageSelf;
-	int i;
-
-	damage = 128;
-	distance = 128.0;
-	damageSelf = true;
-	if (Class == FireBomb)
-	{
-		// Time Bombs
-		Origin.z += 32.0;
-		Alpha = 1.0;
-	}
-	else if (Class == MinotaurFloorFire1)
-	{
-		// Minotaur floor fire
-		damage = 24;
-	}
-	else if (Class == Bishop)
-	{
-		// Bishop radius death
-		damage = 25 + (P_Random() & 15);
-	}
-	else if (Class == HammerMissile)
-	{
-		// Fighter Hammer
-		damage = 128;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == FighterSwordMissile)
-	{
-		// Fighter Runesword
-		damage = 64;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == CircleFlame)
-	{
-		// Cleric Flame secondary flames
-		damage = 20;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (SorcererBall(self))
-	{
-		// Sorcerer balls
-		distance = 255.0;
-		damage = 255;
-		damageSelf = false;
-		Args[0] = 1;	// don't play bounce
-	}
-	else if (Class == SorcererFX1)
-	{
-		// Sorcerer spell 1
-		damage = 30;
-	}
-	else if (Class == SorcererFX4)
-	{
-		// PlayerHeresiarch'es fire
-		if (Target && Target.bIsPlayer)
-		{
-			damage = SorcererFX4(self).ExplodeDamage;
-			damageSelf = false;
-		}
-		else
-		{
-			// Sorcerer spell 4
-			damage = 20;
-		}
-	}
-	else if (Class == TreeDestructible)
-	{
-		damage = 10;
-	}
-	else if (Class == DragonFX2)
-	{
-		damage = 80;
-		damageSelf = false;
-	}
-	else if (Class == MageStaffFX)
-	{
-		damage = 64;
-		distance = 192.0;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == MageStaffFX2)
-	{
-		damage = 80;
-		distance = 192.0;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == ZXmasTree || Class == ZShrub2)
-	{
-		damage = 30;
-		distance = 64.0;
-	}
-	else if (Class == MorningStarMissile)
-	{
-		damage = 80;		
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == WElectricBall)
-	{
-		damage = 120;
-		distance = 192.0;
-		damageSelf = false;
-		if (Target && Target.bIsPlayer)
-		{
-			damage = damage * Player(Target.Player).intelligence / 10;
-		}
-	}
-	else if (Class == InfernalHandFX)
-	{
-		damageSelf = false;
-		damage = InfernalHandFX(self).ExplodeDamage;
-		distance = InfernalHandFX(self).ExplodeDistance;
-	}
-	else if (Class == PoisonCloud)
-	{
-		damage = 4;
-		distance = 40.0;
-	}
-	RadiusAttack(Target, damage, distance, damageSelf);
-	if (Class != PoisonCloud && Origin.z <= FloorZ + distance)
-	{
-		HitFloorType();
-	}
-	if (EntityEx(self).bLeaveTrail && bDynamicLight)
-	{
-		//  Spawn explosion effects - dynamic light and particles
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!Level.Game.Players[i])
-				continue;
-			if (!Level.Game.Players[i].bSpawned)
-				continue;
-			Player(Level.Game.Players[i]).ClientParticleExplosion(DLightColour,
-				Origin + vector(0.0, 0.0, Height * 0.5));
-		}
-		//  Clear old dynamic light effect
-		EntityEx(self).bDynamicLight = false;
-		bLeaveTrail = false;
-	}
-	else if (ExplodeEffect)
-	{
-		SendExplosion(ExplodeEffect, Origin);
-	}
-}
-
-//============================================================================
+//==========================================================================
 //
 //  A_AddPlayerCorpse
 //
-//============================================================================
+//==========================================================================
 
 final void A_AddPlayerCorpse()
 {
