@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -27,6 +27,35 @@ class HexenWeapon : Weapon
 	abstract;
 
 int WeaponClass;
+
+
+//==========================================================================
+//
+//	DepleteAmmoEx
+//
+//==========================================================================
+
+bool DepleteAmmoEx(optional bool CheckEnough)
+{
+	//	Default parameter values
+	if (!specified_CheckEnough)
+	{
+		CheckEnough = true;
+	}
+	
+
+	if (CheckEnough && !CheckAmmo(false))
+	{
+		return false;
+	}
+
+	DepleteAmmo(false);
+
+	if (Ammo1)
+		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse1);
+	if (Ammo2)
+		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse2);
+}
 
 //==========================================================================
 //
