@@ -1,0 +1,162 @@
+//
+// put Head and Tail to Actor class
+//
+
+
+class ActorCondition : LinkedObject;
+
+
+// notified events
+enum
+{
+	notify_ManaUsed			// Actor = unused, param = mana amount
+};
+
+
+Actor	ARecepient;
+Actor	AInstigator;
+
+string  CastMessage;
+name	CastSound;
+
+bool	bIsActive;
+bool	bIsMagic;
+
+float	LifeTime;
+float	LifeDuration;
+
+enum
+{
+	CSHIFT_OP_NONE,
+	CSHIFT_OP_SET,
+	CSHIFT_OP_OR,
+	CSHIFT_OP_AND
+};
+
+int	CShiftOperation;		// Use OR operation when modifying player's CShift
+int	CShift;				// CShift value to set when active
+
+
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (!ARecepient)
+	{
+		Error("ActorCondition::Tick : no reference to Recepient actor, bad algorythm?");
+		Dispell();
+		return;
+	}
+
+	if (LifeDuration > 0.0)
+	{
+		LifeTime -= deltaTime;
+		if (LifeTime <= 0.0)
+		{
+			Dispell();
+			return;
+		}
+	}
+
+
+	if (bIsActive)
+		Do(deltaTime);
+}
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+}
+
+//==========================================================================
+//
+//	MakeCShift
+//
+//==========================================================================
+
+void MakeCShift(int * pCShift)
+{
+	if (bIsActive && CShiftOperation != CSHIFT_OP_NONE)
+	{
+		switch (CShiftOperation)
+		{
+		case CSHIFT_OP_SET: *pCShift = CShift; break;
+		case CSHIFT_OP_OR: *pCShift |= CShift; break;
+		case CSHIFT_OP_AND: *pCShift &= CShift; break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	Notify
+//
+//==========================================================================
+
+void Notify(int notification, Actor A, int param)
+{
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+void Activate()
+{
+	bIsActive = true;
+	LifeTime = LifeDuration;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+void Deactivate()
+{
+	bIsActive = false;
+}
+
+//==========================================================================
+//
+//	Dispell
+//
+//==========================================================================
+
+void Dispell()
+{
+	if (!ARecepient)
+		Error("ActorCondition::Dispell : no reference to Recepient actor, bad algorythm?");
+
+	Deactivate();
+	UnlinkFromList();
+	Destroy();
+}
+
+
+defaultproperties
+{
+	CastMessage = "";
+
+	bIsActive = false;
+	bIsMagic = false;
+
+	LifeTime = 0.0;
+	LifeDuration = 0.0;
+
+	CShiftOperation = CSHIFT_OP_NONE;
+	CShift = 0;
+}

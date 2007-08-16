@@ -1,0 +1,98 @@
+class LinkedObject : Object;
+
+
+LinkedList	List;
+LinkedObject	refPrev;
+LinkedObject	refNext;
+
+
+//==========================================================================
+//
+//	LinkNext
+//
+//==========================================================================
+
+void LinkNext(LinkedObject LO)
+{
+	if (LO)
+	{
+		LO.UnlinkFromList();
+		if (refNext)
+		{
+			refNext.refPrev = LO;
+			LO.refNext = refNext;
+		}
+		LO.refPrev = self;
+		refNext = LO;
+	}
+}
+
+//==========================================================================
+//
+//	LinkPrev
+//
+//==========================================================================
+
+void LinkPrev(LinkedObject LO)
+{
+	if (LO)
+	{
+		LO.UnlinkFromList();
+		if (refPrev)
+		{
+			refPrev.refNext = LO;
+			LO.refPrev = refPrev;
+		}
+		LO.refNext = self;
+		refPrev = LO;
+	}	
+}
+
+//==========================================================================
+//
+//	UnlinkFromList
+//
+//==========================================================================
+
+void UnlinkFromList()
+{
+	if (List)
+		List.IsBeingRemoved(self);
+
+	if (refPrev)
+		refPrev.refNext = refNext;
+	if (refNext)
+		refNext.refPrev = refPrev;
+	refPrev = none;
+	refNext = none;
+}
+
+//==========================================================================
+//
+//	UnlinkNext
+//
+//==========================================================================
+
+void UnlinkNext()
+{
+	if (refNext)
+		refNext.refPrev = none;
+	refNext = none;
+}
+
+//==========================================================================
+//
+//	UnlinkPrev
+//
+//==========================================================================
+
+void UnlinkPrev()
+{
+	if (refPrev)
+		refPrev.refNext = none;
+	refPrev= none;
+}
+
+defaultproperties
+{
+}
