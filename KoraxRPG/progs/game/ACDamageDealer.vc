@@ -1,0 +1,56 @@
+class ACDamageDealer : ActorCondition;
+
+
+bool		bDoDamage;
+bool		bConditional;
+bool		bProportionalToTimeDelta;	// use with DamageDelay = 0.0
+float		DamageTime;
+float		DamageDelay;
+int		DamageValue;
+int		AccumulatedDamage;
+name		DamageType;
+
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	if (DamageDelay > 0.0)
+	{
+		DamageTime -= deltaTime;
+		if (DamageTime > 0.0)
+			return;
+	}
+
+	if (!bConditional || bDoDamage)
+	{
+		int RealDamage;
+
+		if (AccumulatedDamage > 0)
+			DamageValue = AccumulatedDamage;
+
+		if (bProportionalToTimeDelta)
+			RealDamage = ftoi(itof(DamageValue) * deltaTime);
+		else
+			RealDamage = DamageValue;
+
+		ARecepient.Damage(none, AInstigator, RealDamage, DamageType);
+
+		DamageTime = DamageDelay;
+		bDoDamage = false;
+		AccumulatedDamage = 0;
+	}
+}
+
+
+
+defaultproperties
+{
+	bConditional = false;
+	bProportionalToTimeDelta = false;
+	DamageDelay = 0.0;	// do each tick (not recommended)
+}

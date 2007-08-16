@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -35,6 +35,10 @@ int _Special1;	// Special info
 int _Special2;	// Special info
 float Special2f;
 class<Actor> SpecialCID;
+
+
+LinkedList Conditions;
+
 
 //==========================================================================
 //
@@ -563,6 +567,27 @@ void TeleportOther()
 	}
 }
 
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (Conditions && Conditions.refHead)
+	{
+		ActorCondition ac = ActorCondition(Conditions.refHead);
+		while (ac)
+		{
+			ac.Tick(deltaTime);
+			ac = ActorCondition(ac.refNext);
+		};
+	}
+}
+
 //**************************************************************************
 //
 //  OBJECT MOVEMENT
@@ -912,6 +937,61 @@ final void A_PigPain()
 		Velocity.z = 3.5 * 35.0;
 	}
 }
+
+//==========================================================================
+//
+//	CastCondition
+//
+//==========================================================================
+
+ActorCondition CastCondition(class<ActorCondition> ConditionClass, Actor Instigator, float life_duration)
+{
+	if (!Conditions)
+	{
+		Conditions = LinkedList(SpawnObject(LinkedList));
+		if (!Conditions) return none;
+	}
+
+	ActorCondition AC = ActorCondition(SpawnObject(ConditionClass));
+	if (AC)
+	{
+		Conditions.Add(AC);
+
+		AC.ARecepient = self;
+		AC.AInstigator = Instigator;
+		AC.LifeDuration = life_duration;
+		AC.Activate();
+
+		if (Player && AC.CastMessage)
+			Player.cprint(AC.CastMessage);
+		if (AC.CastSound)
+			PlaySound(AC.CastSound, CHAN_VOICE);
+
+		return AC;
+	}
+
+	return none;
+}
+
+//==========================================================================
+//
+//	NotifyConditions
+//
+//==========================================================================
+
+void NotifyConditions(int notification, Actor A, int param)
+{
+	if (Conditions && Conditions.refHead)
+	{
+		ActorCondition ac = ActorCondition(Conditions.refHead);
+		while (ac)
+		{
+			ac.Notify(notification, A, param);
+			ac = ActorCondition(ac.refNext);
+		};
+	}
+}
+
 
 __states__
 {

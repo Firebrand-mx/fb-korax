@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -894,6 +894,34 @@ void PlayerImpulse()
 	Impulse = 0;
 	Inventory Arti = none;
 
+	/*---------------------------------------
+	-	[CW] Actor Conditions Test      -
+	---------------------------------------*/
+	switch (impulse)
+	{
+	case HexenDefs::IMPULSE__TEST_AC__CAST_ICE_DAMAGER:
+		{
+			ACDamageDealer ac = ACDamageDealer(Actor(MO).CastCondition(ACDamageDealer, none, 5.0));
+			ac.DamageValue = 10;
+			ac.DamageDelay = 1.5;
+			ac.DamageType = 'Ice';
+		}
+		break;
+	case HexenDefs::IMPULSE__TEST_AC__CAST_POISON_DAMAGER:
+		{
+			Actor(MO).CastCondition(ACPoisoned, none, 8.0);
+		}
+		break;
+	case HexenDefs::IMPULSE__TEST_AC__CAST_SPELL_MANA_BURN:
+		{
+			Actor(MO).CastCondition(ACSpellManaBurn, none, 20.0);
+		}
+		break;
+	}
+
+
+
+
 	if (impulse <= 4)
 	{
 		ChangeWeapon(impulse);
@@ -1490,6 +1518,16 @@ void PaletteFlash()
 	}
 
 	CShifts[CSHIFT_Weapon] = WeaponCShift;
+
+	if (Actor(MO).Conditions && Actor(MO).Conditions.refHead)
+	{
+		ActorCondition ac = ActorCondition(Actor(MO).Conditions.refHead);
+		while (ac)
+		{
+			ac.MakeCShift(&CShifts[CSHIFT_Power]);
+			ac = ActorCondition(ac.refNext);
+		};
+	}
 }
 
 //==========================================================================

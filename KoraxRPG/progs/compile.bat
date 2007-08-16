@@ -9,7 +9,7 @@ cd..
 cd progs
 @ECHO ON
 
-vcc -I../common -P../common hexndefs.vc shared.dat
+vcc -I../common -P../common shared.vc shared.dat
 vcc -I../common -P../common svprogs.vc svprogs.dat
 vcc -I../common -P../common clprogs.vc clprogs.dat
 @ECHO OFF
