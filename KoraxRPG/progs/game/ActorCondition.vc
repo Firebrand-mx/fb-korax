@@ -9,7 +9,8 @@ class ActorCondition : LinkedObject;
 // notified events
 enum
 {
-	notify_ManaUsed			// Actor = unused, param = mana amount
+	notify_RecepientDead,	// Actor = killer, param - unused
+	notify_ManaUsed			// Actor - unused, param = mana amount
 };
 
 
@@ -19,11 +20,15 @@ Actor	AInstigator;
 string  CastMessage;
 name	CastSound;
 
-bool	bIsActive;
+bool	bIsNegative;
 bool	bIsMagic;
+
+int		Level;
 
 float	LifeTime;
 float	LifeDuration;
+
+float	MaxAccumulatedLifePerLevel;
 
 enum
 {
@@ -33,8 +38,9 @@ enum
 	CSHIFT_OP_AND
 };
 
-int	CShiftOperation;		// Use OR operation when modifying player's CShift
-int	CShift;				// CShift value to set when active
+int		CShiftOperation;		// Use OR operation when modifying player's CShift
+int		CShift;					// CShift value to set when active
+bool	bCShiftDecreasePermanent;
 
 
 
@@ -64,8 +70,7 @@ void Tick(float deltaTime)
 	}
 
 
-	if (bIsActive)
-		Do(deltaTime);
+	Do(deltaTime);
 }
 
 //==========================================================================
@@ -86,13 +91,27 @@ void Do(float deltaTime)
 
 void MakeCShift(int * pCShift)
 {
-	if (bIsActive && CShiftOperation != CSHIFT_OP_NONE)
+	int Amount;
+
+	if (bCShiftDecreasePermanent)
+		Amount = ftoi(LifeTime / LifeDuration * 256.0);
+	else if (LifeTime / LifeDuration <= 0.25)
+		Amount = ftoi((LifeTime / (LifeDuration * 0.25) * 256.0));
+	else
+		Amount = 0xFF;
+
+	if (Amount > ((CShift >> 24) & 0x000000FF))
+		Amount = (CShift >> 24) & 0x000000FF;
+	Amount <<= 24;
+	Amount |= CShift & 0x00FFFFFF;
+
+	if (CShiftOperation != CSHIFT_OP_NONE)
 	{
 		switch (CShiftOperation)
 		{
-		case CSHIFT_OP_SET: *pCShift = CShift; break;
-		case CSHIFT_OP_OR: *pCShift |= CShift; break;
-		case CSHIFT_OP_AND: *pCShift &= CShift; break;
+		case CSHIFT_OP_SET: *pCShift = Amount; break;
+		case CSHIFT_OP_OR: *pCShift |= Amount; break;
+		case CSHIFT_OP_AND: *pCShift &= Amount; break;
 		}
 	}
 }
@@ -105,6 +124,13 @@ void MakeCShift(int * pCShift)
 
 void Notify(int notification, Actor A, int param)
 {
+	switch (notification)
+	{
+	// Common AC behavior is to dispell when recepient dies
+	case notify_RecepientDead:
+		Dispell();
+		break;
+	}
 }
 
 //==========================================================================
@@ -115,7 +141,6 @@ void Notify(int notification, Actor A, int param)
 
 void Activate()
 {
-	bIsActive = true;
 	LifeTime = LifeDuration;
 }
 
@@ -127,7 +152,6 @@ void Activate()
 
 void Deactivate()
 {
-	bIsActive = false;
 }
 
 //==========================================================================
@@ -151,7 +175,7 @@ defaultproperties
 {
 	CastMessage = "";
 
-	bIsActive = false;
+	bIsNegative = false;
 	bIsMagic = false;
 
 	LifeTime = 0.0;
@@ -159,4 +183,5 @@ defaultproperties
 
 	CShiftOperation = CSHIFT_OP_NONE;
 	CShift = 0;
+	bCShiftDecreasePermanent = false;
 }

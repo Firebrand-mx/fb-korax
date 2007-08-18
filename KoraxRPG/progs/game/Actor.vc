@@ -100,6 +100,20 @@ Actor ActiveMinotaur()
 
 //==========================================================================
 //
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	::Died(source, inflictor);
+
+														// FIXME!
+	NotifyConditions(ActorCondition::notify_RecepientDead, Actor(source), 0);
+}
+
+//==========================================================================
+//
 //	KilledByPlayer
 //
 //==========================================================================
@@ -340,7 +354,8 @@ void AutoUseHealth(int saveHealth)
 	Player.Health = Health;
 }
 
-//==========================================================================
+// KRPG
+/*//==========================================================================
 //
 //  PoisonPlayer - Sets up all data concerning poisoning
 //
@@ -359,9 +374,10 @@ void PoisonPlayer(Actor poisoner, int poison)
 		Player(Player).PoisonCount = 100;
 	}
 	Player(Player).LastPoisonTime = XLevel.Time;
-}
+}*/
 
-//==========================================================================
+// KRPG
+/*//==========================================================================
 //
 //  PoisonDamage
 //
@@ -432,7 +448,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	{
 		SetState(PainState);
 	}
-}
+}*/
 
 //============================================================================
 //
@@ -944,7 +960,8 @@ final void A_PigPain()
 //
 //==========================================================================
 
-ActorCondition CastCondition(class<ActorCondition> ConditionClass, Actor Instigator, float life_duration)
+ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
+											Actor Instigator, int level, float life_duration)
 {
 	if (!Conditions)
 	{
@@ -952,22 +969,82 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, Actor Instiga
 		if (!Conditions) return none;
 	}
 
-	ActorCondition AC = ActorCondition(SpawnObject(ConditionClass));
-	if (AC)
+	ActorCondition AC;
+	ActorCondition existingAC;
+
+	if (accumulative)
+		existingAC = GetCondition(ConditionClass, Instigator, level);
+
+	if (existingAC)
 	{
-		Conditions.Add(AC);
+		float limit;
 
-		AC.ARecepient = self;
-		AC.AInstigator = Instigator;
-		AC.LifeDuration = life_duration;
-		AC.Activate();
+		if (existingAC.MaxAccumulatedLifePerLevel < 0.0)
+			existingAC.LifeTime += life_duration;
+		else
+		{
+			limit = existingAC.MaxAccumulatedLifePerLevel * itof(existingAC.Level);
+			if (existingAC.LifeTime >= limit)
+				existingAC = none;	// [CW] to mark that no condition is added
+			else
+			{
+				existingAC.LifeTime += life_duration;
+				if (existingAC.LifeTime > limit)
+					existingAC.LifeTime = limit;
+			}
+		}
+	}
+	else
+	{
+		AC = ActorCondition(SpawnObject(ConditionClass));
 
+		if (AC)
+		{
+			Conditions.Add(AC);
+
+			AC.ARecepient = self;
+			AC.AInstigator = Instigator;
+			AC.Level = level;
+			AC.LifeDuration = life_duration;
+			AC.Activate();
+		}
+	}
+
+	if (existingAC || AC)
+	{
 		if (Player && AC.CastMessage)
-			Player.cprint(AC.CastMessage);
+				Player.cprint(AC.CastMessage);
 		if (AC.CastSound)
 			PlaySound(AC.CastSound, CHAN_VOICE);
+	}
 
-		return AC;
+	if (existingAC) return existingAC;
+	if (AC) return AC;
+
+	return none;
+}
+
+//==========================================================================
+//
+//	GetCondition
+//
+//==========================================================================
+
+ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
+{
+	if (Conditions && Conditions.refHead)
+	{
+		ActorCondition ac = ActorCondition(Conditions.refHead);
+		while (ac)
+		{
+			if (ac.Class == ConditionClass &&
+					ac.AInstigator == Instigator &&
+					ac.Level == level)
+			{
+				return ac;
+			}
+			ac = ActorCondition(ac.refNext);
+		};
 	}
 
 	return none;
