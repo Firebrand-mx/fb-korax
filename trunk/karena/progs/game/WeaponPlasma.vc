@@ -45,7 +45,7 @@ final void A_FirePlasma()
 	UseWeaponMana();
 
 	if (!(P_Random() & 1))
-		Owner.Player.SetViewState(ps_flash, FlashState);
+		Owner.Player.SetViewState(ps_flash, FindState('Flash'));
 	else
 		Owner.Player.SetViewState(ps_flash, S_PLASMAFLASH2);
 
@@ -65,11 +65,16 @@ final void A_FirePlasma()
 
 __states__
 {
+Ready:
 	S_PLASMA('PLSG', 0, 1.0 / 35.0, S_PLASMA) = A_WeaponReady
+Deselect:
 	S_PLASMADOWN('PLSG', 0, 1.0 / 35.0, S_PLASMADOWN) = A_Lower
+Select:
 	S_PLASMAUP('PLSG', 0, 1.0 / 35.0, S_PLASMAUP) = A_Raise
+Fire:
 	S_PLASMA1('PLSG', 0, 3.0 / 35.0, S_PLASMA2) = A_FirePlasma
 	S_PLASMA2('PLSG', 1, 20.0 / 35.0, S_PLASMA) = A_ReFire
+Flash:
 	S_PLASMAFLASH1('PLSF', 0 | FF_FULLBRIGHT, 4.0 / 35.0, S_PLASMA_LIGHTDONE) = A_Light1
 	S_PLASMAFLASH2('PLSF', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_PLASMA_LIGHTDONE) = A_Light1
 	S_PLASMA_LIGHTDONE('PLSG', 0, 0.0 / 35.0, none) = A_Light0
@@ -79,12 +84,6 @@ defaultproperties
 {
 	Slot = 7;
 	SelectionOrder = 1500;
-	UpState = S_PLASMAUP;
-	DownState = S_PLASMADOWN;
-	ReadyState = S_PLASMA;
-	AttackState = S_PLASMA1;
-	FlashState = S_PLASMAFLASH1;
-	HoldAttackState = S_PLASMA1;
 	AmmoType1 = ItemManaCombined;
 	AmmoUse1 = 8;
 	BotCombatDist = 384.0 + MISSILERANGE;

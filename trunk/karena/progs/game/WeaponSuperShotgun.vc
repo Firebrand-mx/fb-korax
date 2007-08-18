@@ -51,7 +51,7 @@ final void A_FireShotgun2()
 
 	UseWeaponMana();
 
-	Owner.Player.SetViewState(ps_flash, FlashState);
+	Owner.Player.SetViewState(ps_flash, FindState('Flash'));
 
 	Actor(Owner).Aim(aimDir, MISSILERANGE);
 	for (i = 0; i < 20; i++)
@@ -115,9 +115,13 @@ final void A_CloseShotgun2()
 
 __states__
 {
+Ready:
 	S_DSGUN('SHT2', 0, 1.0 / 35.0, S_DSGUN) = A_WeaponReady
+Deselect:
 	S_DSGUNDOWN('SHT2', 0, 1.0 / 35.0, S_DSGUNDOWN) = A_Lower
+Select:
 	S_DSGUNUP('SHT2', 0, 1.0 / 35.0, S_DSGUNUP) = A_Raise
+Fire:
 	S_DSGUN1('SHT2', 0, 3.0 / 35.0, S_DSGUN2) = none
 	S_DSGUN2('SHT2', 0, 7.0 / 35.0, S_DSGUN3) = A_FireShotgun2
 	S_DSGUN3('SHT2', 1, 7.0 / 35.0, S_DSGUN4) = none
@@ -134,6 +138,7 @@ __states__
 	S_DSGUN10('SHT2', 0, 5.0 / 35.0, S_DSGUN) = A_ReFire
 	S_DSNR1('SHT2', 1, 7.0 / 35.0, S_DSNR2) = none
 	S_DSNR2('SHT2', 0, 3.0 / 35.0, S_DSGUNDOWN) = none
+Flash:
 	S_DSGUNFLASH1('SHT2', 8 | FF_FULLBRIGHT, 5.0 / 35.0, S_DSGUNFLASH2) = A_Light1
 	S_DSGUNFLASH2('SHT2', 9 | FF_FULLBRIGHT, 4.0 / 35.0, S_DSGUN_LIGHTDONE) = A_Light2
 	S_DSGUN_LIGHTDONE('SHT2', 0, 0.0 / 35.0, none) = A_Light0
@@ -143,12 +148,6 @@ defaultproperties
 {
 	Slot = 6;
 	SelectionOrder = 2500;
-	UpState = S_DSGUNUP;
-	DownState = S_DSGUNDOWN;
-	ReadyState = S_DSGUN;
-	AttackState = S_DSGUN1;
-	FlashState = S_DSGUNFLASH1;
-	HoldAttackState = S_DSGUN1;
 	AmmoType1 = ItemManaGreen;
 	AmmoUse1 = 25;
 	BotCombatDist = 256.0 + MISSILERANGE;
