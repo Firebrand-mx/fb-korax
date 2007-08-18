@@ -34,11 +34,17 @@ class PoisonDart : Projectile
 
 int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
-	if (victim.bIsPlayer)
+	// KRPG
+	if (victim.bIsPlayer || victim.bMonster && P_Random() < 128)
+	{
+		Actor(victim).CastCondition(ACPoisoned, true, Actor(source), 1, 2.0);
+		damage >>= 1;
+	}
+	/*if (victim.bIsPlayer)
 	{
 		Actor(victim).PoisonPlayer(Actor(source), 20);
 		damage >>= 1;
-	}
+	}*/
 	return damage;
 }
 
