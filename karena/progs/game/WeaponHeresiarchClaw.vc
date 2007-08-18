@@ -32,8 +32,25 @@
 
 class WeaponHeresiarchClaw : KArenaWeapon;
 
+state HoldAttackState;
+
 ////////state Attack2State;
 ////////int PunchCount;
+
+//==========================================================================
+//
+//	GetAttackState
+//
+//==========================================================================
+
+state GetAttackState(bool Hold)
+{
+	if (Hold)
+	{
+		return HoldAttackState;
+	}
+	return ::GetAttackState(Hold);
+}
 
 //==========================================================================
 //
@@ -114,9 +131,13 @@ final void A_HClawAttack()
 
 __states__
 {
+Ready:
 	S_HCLAWREADY('HPLC', 0, 1.0 / 35.0, S_HCLAWREADY) = A_WeaponReady
+Deselect:
 	S_HCLAWDOWN('HPLC', 0, 1.0 / 35.0, S_HCLAWDOWN) = A_Lower
+Select:
 	S_HCLAWUP('HPLC', 0, 1.0 / 35.0, S_HCLAWUP) = A_Raise
+Fire:
 	S_HCLAWATK1_1('HPLC', 1, 5.0 / 35.0, S_HCLAWATK1_2) = none
 	S_HCLAWATK1_2('HPLC', 2, 4.0 / 35.0, S_HCLAWATK1_3) = none
 	S_HCLAWATK1_3('HPLC', 3, 4.0 / 35.0, S_HCLAWATK1_4) { A_HClawAttack(); HoldAttackState = S_HCLAWATK2_1; }
@@ -134,10 +155,6 @@ defaultproperties
 {
 	Slot = 1;
 	SelectionOrder = 7700;
-	UpState = S_HCLAWUP;
-	DownState = S_HCLAWDOWN;
-	ReadyState = S_HCLAWREADY;
-	AttackState = S_HCLAWATK1_1;
 	//Attack2State = S_PUNCHATK2_1;
 	HoldAttackState = S_HCLAWATK1_1;
 	PSpriteSY = 0.0;

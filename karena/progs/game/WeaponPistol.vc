@@ -47,7 +47,7 @@ final void A_FirePistol()
 	Owner.SetState(Actor(Owner).MissileState);
 	UseWeaponMana();
 
-	Owner.Player.SetViewState(ps_flash, FlashState);
+	Owner.Player.SetViewState(ps_flash, FindState('Flash'));
 
 	Actor(Owner).Aim(dir, MISSILERANGE);
 	GunShot(Actor(Owner), !Player(Owner.Player).Refire, dir);
@@ -57,13 +57,18 @@ final void A_FirePistol()
 
 __states__
 {
+Ready:
 	S_PISTOL('PISG', 0, 1.0 / 35.0, S_PISTOL) = A_WeaponReady
+Deselect:
 	S_PISTOLDOWN('PISG', 0, 1.0 / 35.0, S_PISTOLDOWN) = A_Lower
+Select:
 	S_PISTOLUP('PISG', 0, 1.0 / 35.0, S_PISTOLUP) = A_Raise
+Fire:
 	S_PISTOL1('PISG', 0, 4.0 / 35.0, S_PISTOL2) = none
 	S_PISTOL2('PISG', 1, 6.0 / 35.0, S_PISTOL3) = A_FirePistol
 	S_PISTOL3('PISG', 2, 4.0 / 35.0, S_PISTOL4) = none
 	S_PISTOL4('PISG', 1, 5.0 / 35.0, S_PISTOL) = A_ReFire
+Flash:
 	S_PISTOLFLASH('PISF', 0 | FF_FULLBRIGHT, 7.0 / 35.0, S_PISTOL_LIGHTDONE) = A_Light1
 	S_PISTOL_LIGHTDONE('PISG', 0, 0.0 / 35.0, none) = A_Light0
 }
@@ -72,12 +77,6 @@ defaultproperties
 {
 	Slot = 2;
 	SelectionOrder = 6500;
-	UpState = S_PISTOLUP;
-	DownState = S_PISTOLDOWN;
-	ReadyState = S_PISTOL;
-	AttackState = S_PISTOL1;
-	FlashState = S_PISTOLFLASH;
-	HoldAttackState = S_PISTOL1;
 	AmmoType1 = ItemManaBlue;
 	AmmoUse1 = 2;
 	BotCombatDist = 192.0 + MISSILERANGE;
