@@ -30,55 +30,38 @@
 //**
 //**************************************************************************
 
-class ZWallTorch2 : Decoration
+class ZWallTorch2 : SwitchableDecoration
 	__mobjinfo__(54);
 
-__states__
-{
-	S_ZWALLTORCH21('WLT2', 0 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH22) = none
-	S_ZWALLTORCH22('WLT2', 1 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH23) = none
-	S_ZWALLTORCH23('WLT2', 2 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH24) = none
-	S_ZWALLTORCH24('WLT2', 3 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH25) = none
-	S_ZWALLTORCH25('WLT2', 4 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH26) = none
-	S_ZWALLTORCH26('WLT2', 5 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH27) = none
-	S_ZWALLTORCH27('WLT2', 6 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH28) = none
-	S_ZWALLTORCH28('WLT2', 7 | FF_FULLBRIGHT, 5.0 / 35.0, S_ZWALLTORCH21) = none
-	S_ZWALLTORCH2_U('WLT2', 8, -1.0, none) = none
-}
-
 //==========================================================================
 //
-//	Activate
+//	A_IgniteSound
 //
 //==========================================================================
 
-bool Activate()
+final void A_IgniteSound()
 {
-	SetState(S_ZWALLTORCH21);
 	PlaySound('Ignite', CHAN_VOICE);
-	bStaticLight = true;
-	return true;
 }
 
-//==========================================================================
-//
-//	Deactivate
-//
-//==========================================================================
-
-bool Deactivate()
+states
 {
-	SetState(S_ZWALLTORCH2_U);
-	bStaticLight = false;
-	return true;
+Active:
+	WLT2 A 0 Bright A_IgniteSound
+Spawn:
+	WLT2 ABCDEFGH 5 Bright
+	Loop
+Inactive:
+	WLT2 I -1
+	Stop
 }
 
 defaultproperties
 {
 	bNoBlockmap = true;
 	bNoGravity = true;
+	bNoPassMobj = true;
 	bStaticLight = true;
-	IdleState = S_ZWALLTORCH21;
 	LightColour = RGB(0, 0, 255);
 	LightRadius = 128.0;
 	LightOffset = vector(0.0, 0.0, 48.0);

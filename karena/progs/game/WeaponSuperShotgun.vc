@@ -81,6 +81,19 @@ final void A_FireShotgun2()
 
 //===========================================================================
 //
+//  A_SSCheckAmmo
+//
+//===========================================================================
+
+final void A_SSCheckAmmo()
+{
+	/*A_CheckReload();*/
+	if (!CheckAmmo(false, true))
+		Owner.Player.SetViewState(ps_weapon, GetReadyState());
+}
+
+//===========================================================================
+//
 //  A_OpenShotgun2
 //
 //===========================================================================
@@ -113,35 +126,34 @@ final void A_CloseShotgun2()
 	A_ReFire();
 }
 
-__states__
+states
 {
 Ready:
-	S_DSGUN('SHT2', 0, 1.0 / 35.0, S_DSGUN) = A_WeaponReady
+	SHT2 A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_DSGUNDOWN('SHT2', 0, 1.0 / 35.0, S_DSGUNDOWN) = A_Lower
+	SHT2 A 1 A_Lower
+	Loop
 Select:
-	S_DSGUNUP('SHT2', 0, 1.0 / 35.0, S_DSGUNUP) = A_Raise
+	SHT2 A 1 A_Raise
+	Loop
 Fire:
-	S_DSGUN1('SHT2', 0, 3.0 / 35.0, S_DSGUN2) = none
-	S_DSGUN2('SHT2', 0, 7.0 / 35.0, S_DSGUN3) = A_FireShotgun2
-	S_DSGUN3('SHT2', 1, 7.0 / 35.0, S_DSGUN4) = none
-	S_DSGUN4('SHT2', 2, 7.0 / 35.0, S_DSGUN5)
-	{
-		if (!CheckAmmo(false, true))
-			Owner.Player.SetViewState(ps_weapon, S_DSGUN);/*A_CheckReload();*/
-	}
-	S_DSGUN5('SHT2', 3, 7.0 / 35.0, S_DSGUN6) = A_OpenShotgun2
-	S_DSGUN6('SHT2', 4, 7.0 / 35.0, S_DSGUN7) = none
-	S_DSGUN7('SHT2', 5, 7.0 / 35.0, S_DSGUN8) = A_LoadShotgun2
-	S_DSGUN8('SHT2', 6, 6.0 / 35.0, S_DSGUN9) = none
-	S_DSGUN9('SHT2', 7, 6.0 / 35.0, S_DSGUN10) = A_CloseShotgun2
-	S_DSGUN10('SHT2', 0, 5.0 / 35.0, S_DSGUN) = A_ReFire
-	S_DSNR1('SHT2', 1, 7.0 / 35.0, S_DSNR2) = none
-	S_DSNR2('SHT2', 0, 3.0 / 35.0, S_DSGUNDOWN) = none
+	SHT2 A 3
+	SHT2 A 7 A_FireShotgun2
+	SHT2 B 7
+	SHT2 C 7 A_SSCheckAmmo
+	SHT2 D 7 A_OpenShotgun2
+	SHT2 E 7
+	SHT2 F 7 A_LoadShotgun2
+	SHT2 G 6
+	SHT2 H 6 A_CloseShotgun2
+	SHT2 A 5 A_ReFire
+	Goto Ready
 Flash:
-	S_DSGUNFLASH1('SHT2', 8 | FF_FULLBRIGHT, 5.0 / 35.0, S_DSGUNFLASH2) = A_Light1
-	S_DSGUNFLASH2('SHT2', 9 | FF_FULLBRIGHT, 4.0 / 35.0, S_DSGUN_LIGHTDONE) = A_Light2
-	S_DSGUN_LIGHTDONE('SHT2', 0, 0.0 / 35.0, none) = A_Light0
+	SHT2 I 5 Bright A_Light1
+	SHT2 J 4 Bright A_Light2
+	SHT2 A 0 A_Light0
+	Stop
 }
 
 defaultproperties

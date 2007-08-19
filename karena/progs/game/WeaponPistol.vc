@@ -55,22 +55,27 @@ final void A_FirePistol()
 	EntityEx(Owner).DLightColour = RGB(195, 79, 0);
 }
 
-__states__
+states
 {
 Ready:
-	S_PISTOL('PISG', 0, 1.0 / 35.0, S_PISTOL) = A_WeaponReady
+	PISG A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_PISTOLDOWN('PISG', 0, 1.0 / 35.0, S_PISTOLDOWN) = A_Lower
+	PISG A 1 A_Lower
+	Loop
 Select:
-	S_PISTOLUP('PISG', 0, 1.0 / 35.0, S_PISTOLUP) = A_Raise
+	PISG A 1 A_Raise
+	Loop
 Fire:
-	S_PISTOL1('PISG', 0, 4.0 / 35.0, S_PISTOL2) = none
-	S_PISTOL2('PISG', 1, 6.0 / 35.0, S_PISTOL3) = A_FirePistol
-	S_PISTOL3('PISG', 2, 4.0 / 35.0, S_PISTOL4) = none
-	S_PISTOL4('PISG', 1, 5.0 / 35.0, S_PISTOL) = A_ReFire
+	PISG A 4
+	PISG B 6 A_FirePistol
+	PISG C 4
+	PISG B 5 A_ReFire
+	Goto Ready
 Flash:
-	S_PISTOLFLASH('PISF', 0 | FF_FULLBRIGHT, 7.0 / 35.0, S_PISTOL_LIGHTDONE) = A_Light1
-	S_PISTOL_LIGHTDONE('PISG', 0, 0.0 / 35.0, none) = A_Light0
+	PISF A 7 Bright A_Light1
+	PISG A 0 A_Light0
+	Stop
 }
 
 defaultproperties
