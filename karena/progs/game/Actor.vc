@@ -279,18 +279,18 @@ void IsDeathInflictor(EntityEx victim)
 
 bool IsTeammate(EntityEx Other)
 {
-	if (EntityEx(self).IsTeammate(Other))
+	if (::IsTeammate(Other))
 	{
 		return true;
 	}
-	if (bIsPlayer)
+	if (MainGameInfo(Level.Game).GameModel &&
+		MainGameInfo(Level.Game).GameModel.TeamFactor(self, Other) ==
+		GameModel::teamfactor_coop)
 	{
-		if (MainGameInfo(Level.Game).GameModel &&
-			MainGameInfo(Level.Game).GameModel.TeamFactor(self, Other) ==
-			GameModel::teamfactor_coop)
-		{
-			return true;
-		}
+		return true;
+	}
+	if (bIsPlayer && Other.bIsPlayer)
+	{
 		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
 			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
 			Player(Player).Team == Player(Other.Player).Team)
