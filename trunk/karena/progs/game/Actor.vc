@@ -283,14 +283,14 @@ bool IsTeammate(EntityEx Other)
 	{
 		return true;
 	}
-	if (MainGameInfo(Level.Game).GameModel &&
-		MainGameInfo(Level.Game).GameModel.TeamFactor(self, Other) ==
-		GameModel::teamfactor_coop)
-	{
-		return true;
-	}
 	if (bIsPlayer && Other.bIsPlayer)
 	{
+		if (MainGameInfo(Level.Game).GameModel &&
+			MainGameInfo(Level.Game).GameModel.TeamFactor(self, Other) ==
+			GameModel::teamfactor_coop)
+		{
+			return true;
+		}
 		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
 			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
 			Player(Player).Team == Player(Other.Player).Team)
@@ -1262,6 +1262,17 @@ final void A_PigPain()
 	{
 		Velocity.z = 3.5 * 35.0;
 	}
+}
+
+//==========================================================================
+//
+//	A_PlayerBurnScream
+//
+//==========================================================================
+
+final void A_PlayerBurnScream()
+{
+	PlaySound('*burndeath', CHAN_VOICE);
 }
 
 __states__
