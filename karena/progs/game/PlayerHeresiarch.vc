@@ -32,36 +32,32 @@
 
 class PlayerHeresiarch : PlayerPawn;
 
-__states__
+states
 {
-	S_HPLAY('SORC', 0, -1.0, none) = none
-	S_HPLAY_RUN1('SORC', 0, 4.0 / 35.0, S_HPLAY_RUN2) = none
-	S_HPLAY_RUN2('SORC', 1, 4.0 / 35.0, S_HPLAY_RUN3) = none
-	S_HPLAY_RUN3('SORC', 2, 4.0 / 35.0, S_HPLAY_RUN4) = none
-	S_HPLAY_RUN4('SORC', 3, 4.0 / 35.0, S_HPLAY_RUN1) = none
-	S_HPLAY_ATK1('SORC', 5, 8.0 / 35.0, S_HPLAY_ATK2) = none
-	S_HPLAY_ATK2('SORC', 4, 8.0 / 35.0, S_HPLAY) = none
-	S_HPLAY_PAIN('SORC', 6, 4.0 / 35.0, S_HPLAY_PAIN2) = none
-	S_HPLAY_PAIN2('SORC', 6, 4.0 / 35.0, S_HPLAY) = A_Pain
-	S_HPLAY_DIE1('SORC', 7 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE2) = none
-	S_HPLAY_DIE2('SORC', 8 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE3) = A_FaceTarget
-	S_HPLAY_DIE3('SORC', 9 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE4) = A_PlayerScream
-	S_HPLAY_DIE4('SORC', 10 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE5) = none
-	S_HPLAY_DIE5('SORC', 11 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE6) = none
-	S_HPLAY_DIE6('SORC', 12 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE7) = none
-	S_HPLAY_DIE7('SORC', 13 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE8) = none
-	S_HPLAY_DIE8('SORC', 14 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE9) = none
-	S_HPLAY_DIE9('SORC', 15 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIE0) = none
-	S_HPLAY_DIE0('SORC', 16 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEA) = none
-	S_HPLAY_DIEA('SORC', 17 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEB) = none
-	S_HPLAY_DIEB('SORC', 18 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEC) = none
-	S_HPLAY_DIEC('SORC', 19 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIED) = none
-	S_HPLAY_DIED('SORC', 20 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEE) = A_NoBlocking
-	S_HPLAY_DIEE('SORC', 21 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEF) = none
-	S_HPLAY_DIEF('SORC', 22 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEG) = none
-	S_HPLAY_DIEG('SORC', 23 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEH) = none
-	S_HPLAY_DIEH('SORC', 24 | FF_FULLBRIGHT, 5.0 / 35.0, S_HPLAY_DIEI) = none
-	S_HPLAY_DIEI('SORC', 25 | FF_FULLBRIGHT, -1.0, none) = A_AddPlayerCorpse
+Spawn:
+	SORC A -1
+	Stop
+See:
+	SORC ABCD 4
+	Loop
+Melee:
+Missile:
+	SORC F 8
+	SORC E 8
+	Goto Spawn
+Pain:
+	SORC G 4
+	SORC G 4 A_Pain
+	Goto Spawn
+Death:
+	SORC H 5 Bright
+	SORC I 5 Bright A_FaceTarget
+	SORC J 5 Bright A_PlayerScream
+	SORC KLMNOPQRST 5 Bright
+	SORC U 5 Bright A_NoBlocking
+	SORC VWXY 5 Bright
+	SORC Z -1 Bright A_AddPlayerCorpse
+	Stop
 }
 
 defaultproperties
@@ -74,14 +70,6 @@ defaultproperties
 	Mass = 100.0;
 	PainChance = 1.0;
 	bPickUp = true;
-	IdleState = S_HPLAY;
-	SeeState = S_HPLAY_RUN1;
-	MeleeState = S_HPLAY_ATK1;
-	MissileState = S_HPLAY_ATK1;
-	PainState = S_HPLAY_PAIN;
-	DeathState = S_HPLAY_DIE1;
-	GibsDeathState = S_HPLAY_DIE1;
-	IceDeathState = S_HPLAY_DIE1;
 	SoundClass = 'heresiarch';
 	InitialStrength = 15;
 	InitialWisdom = 15;
