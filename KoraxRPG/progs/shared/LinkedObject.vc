@@ -1,10 +1,26 @@
 class LinkedObject : Object;
 
 
-LinkedList	List;
+LinkedList		List;
 LinkedObject	refPrev;
 LinkedObject	refNext;
 
+
+//==========================================================================
+//
+//	Destroy
+//
+//==========================================================================
+
+void Destroy()
+{
+	if (List && List.DestroyingObject != self)
+	{
+		List.DestroyObject(self);
+		return;
+	}
+	::Destroy();
+}
 
 //==========================================================================
 //
@@ -63,6 +79,8 @@ void UnlinkFromList()
 		refPrev.refNext = refNext;
 	if (refNext)
 		refNext.refPrev = refPrev;
+
+	List = none;
 	refPrev = none;
 	refNext = none;
 }
