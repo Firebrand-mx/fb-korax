@@ -540,7 +540,7 @@ bool MorphPlayer(int pclass, class<Actor> moclass, bool timed, bool until_death)
 	Player(Player).InitiateLevel();
 	Player(Player).ActivateLevel(bak_level, false);
 
-	SetState(S_FREETARGMOBJ);
+	SetState(FindState('FreeTargMobj'));
 
 	return true;
 }
@@ -585,7 +585,7 @@ bool MorphMonster()
 
 	RemoveFromTIDList();
 
-	SetState(S_FREETARGMOBJ);
+	SetState(FindState('FreeTargMobj'));
 
 	return true;
 }
@@ -675,7 +675,7 @@ void PoisonDamage(Actor source, int damage, bool playPainSound)
 	}
 	if (!(XLevel.TicTime & 63) && playPainSound)
 	{
-		SetState(PainState);
+		SetState(FindState('Pain'));
 	}
 }
 
@@ -764,7 +764,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	}
 	if (playPainSound)
 	{
-		SetState(PainState);
+		SetState(FindState('Pain'));
 	}
 }
 
@@ -1275,9 +1275,15 @@ final void A_PlayerBurnScream()
 	PlaySound('*burndeath', CHAN_VOICE);
 }
 
+states
+{
+FreeTargMobj:
+	ACLO E 1050 A_FreeTargMobj
+	Stop
+}
+
 __states__
 {
-	S_FREETARGMOBJ('ACLO', 4, 1050.0 / 35.0, none) = A_FreeTargMobj
 	S_GIBS1('GIBS', 0, -1.0, none) = none
 	S_PLAY_FDTH20('ACLO', 4, 8.0 / 35.0, none) = none
 }

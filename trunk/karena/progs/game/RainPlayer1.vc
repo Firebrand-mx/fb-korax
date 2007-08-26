@@ -32,8 +32,6 @@
 
 class RainPlayer1 : Projectile;
 
-state AirDeathState;
-
 //===========================================================================
 //
 //  A_RainImpact
@@ -44,7 +42,7 @@ final void A_RainImpact()
 {
 	if (Origin.z > FloorZ)
 	{
-		SetState(AirDeathState);
+		SetState(FindState('AirDeath'));
 	}
 	else if (P_Random() < 40)
 	{
@@ -52,17 +50,18 @@ final void A_RainImpact()
 	}
 }
 
-__states__
+states
 {
-	S_RAINPLR_1('FX22', 0 | FF_FULLBRIGHT, -1.0, none) = none
-	S_RAINPLRX_1('FX22', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINPLRX_2) = A_RainImpact
-	S_RAINPLRX_2('FX22', 2 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINPLRX_3) = none
-	S_RAINPLRX_3('FX22', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINPLRX_4) = none
-	S_RAINPLRX_4('FX22', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINPLRX_5) = none
-	S_RAINPLRX_5('FX22', 5 | FF_FULLBRIGHT, 4.0 / 35.0, none) = none
-	S_RAINAIRXPLR_1('FX22', 6 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINAIRXPLR_2) = none
-	S_RAINAIRXPLR_2('FX22', 7 | FF_FULLBRIGHT, 4.0 / 35.0, S_RAINAIRXPLR_3) = none
-	S_RAINAIRXPLR_3('FX22', 8 | FF_FULLBRIGHT, 4.0 / 35.0, none) = none
+Spawn:
+	FX22 A -1 Bright
+	Stop
+Death:
+	FX22 B 4 Bright A_RainImpact
+	FX22 CDEF 4 Bright
+	Stop
+AirDeath:
+	FX22 GHI 4 Bright
+	Stop
 }
 
 defaultproperties
@@ -71,9 +70,6 @@ defaultproperties
 	Height = 12.0;
 	Speed = 420.0;
 	MissileDamage = 10;
-	IdleState = S_RAINPLR_1;
-	DeathState = S_RAINPLRX_1;
-	AirDeathState = S_RAINAIRXPLR_1;
 	DamageType = 'Fire';
 	Obituary = "$ob_skullrodrain";
 
