@@ -30,14 +30,18 @@
 //**
 //**************************************************************************
 
-class Rocket:Projectile;
+class Rocket : Projectile;
 
-__states__
+states
 {
-	S_ROCKET('MISL', 0 | FF_FULLBRIGHT, 1.0 / 35.0, S_ROCKET) = none
-	S_EXPLODE1('MISL', 1 | FF_FULLBRIGHT, 8.0 / 35.0, S_EXPLODE2) = A_Explode
-	S_EXPLODE2('MISL', 2 | FF_FULLBRIGHT, 6.0 / 35.0, S_EXPLODE3) = none
-	S_EXPLODE3('MISL', 3 | FF_FULLBRIGHT, 4.0 / 35.0, none) = none
+Spawn:
+	MISL A 1 Bright
+	Loop
+Death:
+	MISL B 8 Bright A_Explode
+	MISL C 6 Bright
+	MISL D 4 Bright
+	Stop
 }
 
 defaultproperties
@@ -55,8 +59,6 @@ defaultproperties
 	bNoTeleport = true;
 	bLeaveTrail = true;
 	bExplodeParticles = true;
-	IdleState = S_ROCKET;
-	DeathState = S_EXPLODE1;
 	SightSound = 'LauncherFire';
 	DeathSound = 'BarrelExplode';
 	DamageType = 'Fire';
