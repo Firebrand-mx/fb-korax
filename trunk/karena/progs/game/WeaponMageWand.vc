@@ -57,19 +57,23 @@ final void A_MWandAttack()
 	Owner.PlaySound('MageWandFire', CHAN_WEAPON);
 }
 
-__states__
+states
 {
 Ready:
-	S_MWANDREADY('MWND', 0, 1.0 / 35.0, S_MWANDREADY) = A_WeaponReady
+	MWND A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_MWANDDOWN('MWND', 0, 1.0 / 35.0, S_MWANDDOWN) = A_Lower
+	MWND A 1 A_Lower
+	Loop
 Select:
-	S_MWANDUP('MWND', 0, 1.0 / 35.0, S_MWANDUP) = A_Raise
+	MWND A 1 A_Raise
+	Loop
 Fire:
-	S_MWANDATK_1('MWND', 0, 6.0 / 35.0, S_MWANDATK_2) = none
-	S_MWANDATK_2('MWND', 1 | FF_FULLBRIGHT, 6.0 / 35.0, S_MWANDATK_3, 0, 48) = A_MWandAttack
-	S_MWANDATK_3('MWND', 0, 3.0 / 35.0, S_MWANDATK_4, 0, 40) = none
-	S_MWANDATK_4('MWND', 0, 3.0 / 35.0, S_MWANDREADY, 0, 36) = A_ReFire
+	MWND A 6
+	MWND B 6 Bright Offset(0, 48) A_MWandAttack
+	MWND A 3 Offset(0, 40)
+	MWND A 3 Offset(0, 36) A_ReFire
+	Goto Ready
 }
 
 

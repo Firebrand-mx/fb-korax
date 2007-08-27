@@ -119,23 +119,24 @@ final void A_GauntletAttack()
 	Actor(Owner).bJustAttacked = true;
 }
 
-__states__
+states
 {
 Ready:
-	S_GAUNTLETREADY('CGAU', 0, 1.0 / 35.0, S_GAUNTLETREADY) = A_WeaponReady
+	CGAU A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_GAUNTLETDOWN('CGAU', 0, 1.0 / 35.0, S_GAUNTLETDOWN) = A_Lower
+	CGAU A 1 A_Lower
+	Loop
 Select:
-	S_GAUNTLETUP('CGAU', 0, 1.0 / 35.0, S_GAUNTLETUP) { Owner.PlaySound('GauntletActive', CHAN_WEAPON);A_Raise(); }
+	CGAU A 1 A_Raise
+	Loop
 Fire:
-	S_GAUNTLETATK1_1('CGAU', 1, 4.0 / 35.0, S_GAUNTLETATK1_2) = none
-	S_GAUNTLETATK1_2('CGAU', 2, 4.0 / 35.0, S_GAUNTLETATK1_3) = none
+	CGAU BC 4
 Hold:
-	S_GAUNTLETATK1_3('CGAU', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_GAUNTLETATK1_4) = A_GauntletAttack
-	S_GAUNTLETATK1_4('CGAU', 4 | FF_FULLBRIGHT, 4.0 / 35.0, S_GAUNTLETATK1_5) = A_GauntletAttack
-	S_GAUNTLETATK1_5('CGAU', 5 | FF_FULLBRIGHT, 4.0 / 35.0, S_GAUNTLETATK1_6) = A_GauntletAttack
-	S_GAUNTLETATK1_6('CGAU', 2, 4.0 / 35.0, S_GAUNTLETATK1_7) = A_ReFire
-	S_GAUNTLETATK1_7('CGAU', 1, 4.0 / 35.0, S_GAUNTLETREADY) = A_Light0
+	CGAU DEF 4 Bright A_GauntletAttack
+	CGAU C 4 A_ReFire
+	CGAU B 4 A_Light0
+	Goto Ready
 }
 
 defaultproperties
@@ -152,5 +153,6 @@ defaultproperties
 	bBotChooseMedium = false;
 	bBotChooseRanged = false;
 	bWimpyWeapon = true;
+	UpSound = 'weapons/gauntletsactivate';
 	Obituary = "$ob_gauntlets";
 }

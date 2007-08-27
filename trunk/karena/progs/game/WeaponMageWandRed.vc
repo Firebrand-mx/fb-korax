@@ -60,23 +60,27 @@ final void A_MWandAttack(int when)
 	}
 }
 
-__states__
+states
 {
 Ready:
-	S_MWANDREDREADY('MWN3', 0, 1.0 / 35.0, S_MWANDREDREADY) = A_WeaponReady
+	MWN3 A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_MWANDREDDOWN('MWN3', 0, 1.0 / 35.0, S_MWANDREDDOWN) = A_Lower
+	MWN3 A 1 A_Lower
+	Loop
 Select:
-	S_MWANDREDUP('MWN3', 0, 1.0 / 35.0, S_MWANDREDUP) = A_Raise
+	MWN3 A 1 A_Raise
+	Loop
 Fire:
-	S_MWANDREDATK_1('MWN3', 0, 6.0 / 35.0, S_MWANDREDATK_2) = none
-	S_MWANDREDATK_2('MWN3', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_MWANDREDATK_3, 0, 48) { A_MWandAttack(1); }
-	S_MWANDREDATK_3('MWN3', 0, 2.0 / 35.0, S_MWANDREDATK_4) = none
-	S_MWANDREDATK_4('MWN3', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_MWANDREDATK_5, 0, 48) { A_MWandAttack(2); }
-	S_MWANDREDATK_5('MWN3', 0, 2.0 / 35.0, S_MWANDREDATK_6) = none
-	S_MWANDREDATK_6('MWN3', 1 | FF_FULLBRIGHT, 2.0 / 35.0, S_MWANDREDATK_7, 0, 48) { A_MWandAttack(3); }
-	S_MWANDREDATK_7('MWN3', 0, 3.0 / 35.0, S_MWANDREDATK_8, 0, 40) = none
-	S_MWANDREDATK_8('MWN3', 0, 8.0 / 35.0, S_MWANDREDREADY, 0, 36) = A_ReFire
+	MWN3 A 6
+	MWN3 B 2 Bright Offset(0, 48) { A_MWandAttack(1); }
+	MWN3 A 2
+	MWN3 B 2 Bright Offset(0, 48) { A_MWandAttack(2); }
+	MWN3 A 2
+	MWN3 B 2 Bright Offset(0, 48) { A_MWandAttack(3); }
+	MWN3 A 3 Offset(0, 40)
+	MWN3 A 8 Offset(0, 36) A_ReFire
+	Goto Ready
 }
 
 /*THIRD*/

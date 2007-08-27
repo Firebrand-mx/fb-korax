@@ -25,8 +25,6 @@
 
 class WeaponPigSnout : KArenaWeapon;
 
-state SniffState;
-
 //============================================================================
 //
 //  A_SnoutAttack
@@ -66,21 +64,27 @@ final void A_SnoutAttack()
 
 void SnoutSniff()
 {
-	Owner.Player.SetViewState(ps_weapon, SniffState);
+	Owner.Player.SetViewState(ps_weapon, FindState('Sniff'));
 }
 
-__states__
+states
 {
 Ready:
-	S_SNOUTREADY('WPIG', 0, 1.0 / 35.0, S_SNOUTREADY) = A_WeaponReady
+	WPIG A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_SNOUTDOWN('WPIG', 0, 1.0 / 35.0, S_SNOUTDOWN) = A_Lower
+	WPIG A 1 A_Lower
+	Loop
 Select:
-	S_SNOUTUP('WPIG', 0, 1.0 / 35.0, S_SNOUTUP) = A_Raise
+	WPIG A 1 A_Raise
+	Loop
 Fire:
-	S_SNOUTATK1('WPIG', 0, 4.0 / 35.0, S_SNOUTATK2) = A_SnoutAttack
-	S_SNOUTATK2('WPIG', 1, 8.0 / 35.0, S_SNOUTREADY) = A_SnoutAttack
-	S_SNOUTSNIFF('WPIG', 1, 8.0 / 35.0, S_SNOUTREADY) = none
+	WPIG A 4 A_SnoutAttack
+	WPIG B 8 A_SnoutAttack
+	Goto Ready
+Sniff:
+	WPIG B 8
+	Goto Ready
 }
 
 defaultproperties
@@ -88,7 +92,6 @@ defaultproperties
 	Slot = 1;
 	SelectionOrder = 10000;
 	bDontBob = true;
-	SniffState = S_SNOUTSNIFF;
 	PSpriteSY = 10.0;
 	Obituary = "$ob_pigsnout";
 }

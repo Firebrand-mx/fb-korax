@@ -32,7 +32,6 @@
 
 class WeaponClericMorningStar : KArenaWeapon;
 
-state NoMoreManaState;
 float MStarRange;
 
 //==========================================================================
@@ -106,34 +105,36 @@ final void A_CMSAttack()
 		UseWeaponMana();
 		if (!CheckAmmo(false, true))
 		{
-			Owner.Player.SetViewState(ps_weapon, NoMoreManaState);
+			Owner.Player.SetViewState(ps_weapon,
+				GetStatePlus(GetAttackState(false), 4));
 		}
 	}
 }
 
-__states__
+states
 {
 Ready:
-	S_CMSREADY1('WMST', 0, 1.0 / 35.0, S_CMSREADY2) = A_WeaponReady
-	S_CMSREADY2('WMST', 0, 1.0 / 35.0, S_CMSREADY3) = A_WeaponReady
-	S_CMSREADY3('WMSB', 0, 1.0 / 35.0, S_CMSREADY4) = A_WeaponReady
-	S_CMSREADY4('WMSB', 0, 1.0 / 35.0, S_CMSREADY1) = A_WeaponReady
+	WMST A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_CMSDOWN('WMST', 0, 1.0 / 35.0, S_CMSDOWN) = A_Lower
+	WMST A 1 A_Lower
+	Loop
 Select:
-	S_CMSUP('WMSB', 0, 1.0 / 35.0, S_CMSUP) = A_Raise
+	WMSB A 1 A_Raise
+	Loop
 Fire:
-	S_CMSATK_1('WMST', 1, 6.0 / 35.0, S_CMSATK_2) = none
-	S_CMSATK_2('WMST', 2, 3.0 / 35.0, S_CMSATK_3) = none
-	S_CMSATK_3('WMST', 3, 3.0 / 35.0, S_CMSATK_4) = none
-	S_CMSATK_4('WMST', 4, 2.0 / 35.0, S_CMSATK_5) = none
-	S_CMSATK_5('WMST', 4, 3.0 / 35.0, S_CMSATK_6, -25, 0) = none
-	S_CMSATK_6('WMST', 5, 2.0 / 35.0, S_CMSATK_7) = A_CMSAttack
-	S_CMSATK_7('WMST', 6, 3.0 / 35.0, S_CMSATK_8) = none
-	S_CMSATK_8('WMSB', 0, 1.0 / 35.0, S_CMSATK_9, 0, 60) = A_ReFire
-	S_CMSATK_9('WMST', 0, 1.0 / 35.0, S_CMSATK_10, 0, 52) = none
-	S_CMSATK_10('WMSB', 0, 1.0 / 35.0, S_CMSATK_11, 0, 44) = none
-	S_CMSATK_11('WMST', 0, 1.0 / 35.0, S_CMSREADY1, 0, 36) = none
+	WMST B 6
+	WMST C 3
+	WMST D 3
+	WMST E 2
+	WMST E 3 Offset(-25, 0)
+	WMST F 2 A_CMSAttack
+	WMST G 3
+	WMSB A 1 Offset(0, 60) A_ReFire
+	WMST A 1 Offset(0, 52)
+	WMSB A 1 Offset(0, 44)
+	WMST A 1 Offset(0, 36)
+	Goto Ready
 }
 
 /*THIRD*/
@@ -144,7 +145,6 @@ defaultproperties
 	AmmoType1 = ItemManaGreen;
 	AmmoUse1 = 8;
 	//needsnomana = true;
-	NoMoreManaState = S_CMSATK_5;
 	PSpriteSY = 0.0;
 	MStarRange = MELEERANGE * 3.0;
 	BotCombatDist = MELEERANGE * 3.0;
