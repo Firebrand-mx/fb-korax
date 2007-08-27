@@ -47,7 +47,8 @@ final void A_FirePlasma()
 	if (!(P_Random() & 1))
 		Owner.Player.SetViewState(ps_flash, FindState('Flash'));
 	else
-		Owner.Player.SetViewState(ps_flash, S_PLASMAFLASH2);
+		Owner.Player.SetViewState(ps_flash, GetStatePlus(FindState('Flash'),
+			2, true));
 
 	mo = Actor(Owner).SpawnPlayerMissile(PlasmaShot);
 	if (mo && int_mod)
@@ -63,21 +64,27 @@ final void A_FirePlasma()
 	}
 }
 
-__states__
+states
 {
 Ready:
-	S_PLASMA('PLSG', 0, 1.0 / 35.0, S_PLASMA) = A_WeaponReady
+	PLSG A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_PLASMADOWN('PLSG', 0, 1.0 / 35.0, S_PLASMADOWN) = A_Lower
+	PLSG A 1 A_Lower
+	Loop
 Select:
-	S_PLASMAUP('PLSG', 0, 1.0 / 35.0, S_PLASMAUP) = A_Raise
+	PLSG A 1 A_Raise
+	Loop
 Fire:
-	S_PLASMA1('PLSG', 0, 3.0 / 35.0, S_PLASMA2) = A_FirePlasma
-	S_PLASMA2('PLSG', 1, 20.0 / 35.0, S_PLASMA) = A_ReFire
+	PLSG A 3 A_FirePlasma
+	PLSG B 20 A_ReFire
+	Goto Ready
 Flash:
-	S_PLASMAFLASH1('PLSF', 0 | FF_FULLBRIGHT, 4.0 / 35.0, S_PLASMA_LIGHTDONE) = A_Light1
-	S_PLASMAFLASH2('PLSF', 1 | FF_FULLBRIGHT, 4.0 / 35.0, S_PLASMA_LIGHTDONE) = A_Light1
-	S_PLASMA_LIGHTDONE('PLSG', 0, 0.0 / 35.0, none) = A_Light0
+	PLSF A 4 Bright A_Light1
+	PLSG A 0 A_Light0
+	Stop
+	PLSF B 4 Bright A_Light1
+	Goto Flash+1
 }
 
 defaultproperties

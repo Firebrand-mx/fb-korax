@@ -52,7 +52,7 @@ void Tick(float deltaTime)
 		{
 			bAttacking = true;
 			bHidden = false;
-			SetState(S_UNHOLY_FX_X1);
+			SetState(GetStatePlus(IdleState, 1, true));
 		}
 	}
 
@@ -65,7 +65,7 @@ void Tick(float deltaTime)
 //
 //==========================================================================
 
-void AttackDie()
+final void AttackDie()
 {
 	Pawn pawn;
 
@@ -82,15 +82,15 @@ void AttackDie()
 }
 
 
-__states__
+states
 {
-	S_UNHOLY_FX1('SPI2', 0, 2.0 / 35.0, S_UNHOLY_FX1) { }
-	S_UNHOLY_FX_X1('SPI2', 3, 4.0 / 35.0, S_UNHOLY_FX_X2) { }
-	S_UNHOLY_FX_X2('SPI2', 4, 4.0 / 35.0, S_UNHOLY_FX_X3) { AttackDie(); }
-	S_UNHOLY_FX_X3('SPI2', 5, 4.0 / 35.0, S_UNHOLY_FX_X4) { }
-	S_UNHOLY_FX_X4('SPI2', 6, 4.0 / 35.0, S_UNHOLY_FX_X5) { }
-	S_UNHOLY_FX_X5('SPI2', 7, 4.0 / 35.0, S_UNHOLY_FX_X6) { }
-	S_UNHOLY_FX_X6('SPI2', 8, 4.0 / 35.0, none) { }
+Spawn:
+	SPI2 A 2
+	Loop
+	SPI2 D 4
+	SPI2 E 4 AttackDie
+	SPI2 FGHI 4
+	Stop
 }
 
 defaultproperties
@@ -105,6 +105,5 @@ defaultproperties
 	DLightColour = RGB(155, 0, 0);
 	DLightRadius = 200.0;
 	bDamageInvulnerable = true;
-	IdleState = S_UNHOLY_FX1;
 	Obituary = "$ob_heresiarchunholy";
 }

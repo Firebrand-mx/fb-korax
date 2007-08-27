@@ -32,7 +32,6 @@
 
 class WeaponWitchavenPunch : KArenaWeapon;
 
-state Attack2State;
 int PunchCount;
 
 //==========================================================================
@@ -107,40 +106,42 @@ final void A_WPunchAttack()
 	if (PunchCount == 3)
 	{
 		PunchCount = 0;
-		Owner.Player.SetViewState(ps_weapon, Attack2State);
+		Owner.Player.SetViewState(ps_weapon,
+			GetStatePlus(GetAttackState(false), 7));
 		//pmo.PlaySound('FighterGrunt', CHAN_VOICE);
 	}
 }
 
-__states__
+states
 {
 Ready:
-	S_WPUNCHREADY('WPCH', 0, 1.0 / 35.0, S_WPUNCHREADY) = A_WeaponReady
+	WPCH A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_WPUNCHDOWN('WPCH', 0, 1.0 / 35.0, S_WPUNCHDOWN) = A_Lower
+	WPCH A 1 A_Lower
+	Loop
 Select:
-	S_WPUNCHUP('WPCH', 0, 1.0 / 35.0, S_WPUNCHUP) = A_Raise
+	WPCH A 1 A_Raise
+	Loop
 Fire:
-	S_WPUNCHATK1_1('WPCH', 1, 5.0 / 35.0, S_WPUNCHATK1_2) = none
-	S_WPUNCHATK1_2('WPCH', 2, 4.0 / 35.0, S_WPUNCHATK1_3) = none
-	S_WPUNCHATK1_3('WPCH', 3, 4.0 / 35.0, S_WPUNCHATK1_4) = none
-	S_WPUNCHATK1_4('WPCH', 4, 4.0 / 35.0, S_WPUNCHATK1_5) = A_WPunchAttack
-	S_WPUNCHATK1_5('WPCH', 5, 4.0 / 35.0, S_WPUNCHATK1_6) = none
-	S_WPUNCHATK1_6('WPCH', 2, 4.0 / 35.0, S_WPUNCHATK1_7) = none
-	S_WPUNCHATK1_7('WPCH', 1, 5.0 / 35.0, S_WPUNCHREADY) = A_ReFire
-	S_WPUNCHATK1_8('WPCH', 6, 5.0 / 35.0, S_WPUNCHATK1_9) = none
-	S_WPUNCHATK1_9('WPCH', 7, 4.0 / 35.0, S_WPUNCHATK1_10) = none
-	S_WPUNCHATK1_10('WPCH', 8, 4.0 / 35.0, S_WPUNCHATK1_11) = none
-	S_WPUNCHATK1_11('WPCH', 9, 4.0 / 35.0, S_WPUNCHATK1_12) = A_WPunchAttack
-	S_WPUNCHATK1_12('WPCH', 7, 4.0 / 35.0, S_WPUNCHATK1_13) = none
-	S_WPUNCHATK1_13('WPCH', 6, 5.0 / 35.0, S_WPUNCHREADY) = none
+	WPCH B 5
+	WPCH CD 4
+	WPCH E 4 A_WPunchAttack
+	WPCH FC 4
+	WPCH B 5 A_ReFire
+	Goto Ready
+	WPCH G 5
+	WPCH HI 4
+	WPCH J 4 A_WPunchAttack
+	WPCH H 4
+	WPCH G 5
+	Goto Ready
 }
 
 defaultproperties
 {
 	Slot = 1;
 	SelectionOrder = 7600;
-	Attack2State = S_WPUNCHATK1_8;
 	PSpriteSY = 0.0;
 	BotCombatDist = MELEERANGE;
 	wis_mod = false;

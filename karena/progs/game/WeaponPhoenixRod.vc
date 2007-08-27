@@ -34,8 +34,6 @@ class WeaponPhoenixRod : KArenaWeapon;
 
 int FlameCount;	// for flame thrower duration
 
-state Attack2ShutdownState;
-
 //==========================================================================
 //
 //	WeaponLevel2Fade
@@ -107,7 +105,8 @@ final void A_FirePhoenixPL2()
 	if (--FlameCount == 0)
 	{
 		// Out of flame
-		Owner.Player.SetViewState(ps_weapon, Attack2ShutdownState);
+		Owner.Player.SetViewState(ps_weapon,
+			GetStatePlus(GetAttackState(false), 3));
 		Player(Owner.Player).Refire = 0;
 		return;
 	}
@@ -150,20 +149,24 @@ final void A_ShutdownPhoenixPL2()
 	UseWeaponMana();
 }
 
-__states__
+states
 {
 Ready:
-	S_PHOENIXREADY('PHNX', 0, 1.0 / 35.0, S_PHOENIXREADY) = A_WeaponReady
+	PHNX A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_PHOENIXDOWN('PHNX', 0, 1.0 / 35.0, S_PHOENIXDOWN) = A_Lower
+	PHNX A 1 A_Lower
+	Loop
 Select:
-	S_PHOENIXUP('PHNX', 0, 1.0 / 35.0, S_PHOENIXUP) = A_Raise
+	PHNX A 1 A_Raise
+	Loop
 Fire:
-	S_PHOENIXATK1_1('PHNX', 1, 5.0 / 35.0, S_PHOENIXATK1_2) = none
-	S_PHOENIXATK1_2('PHNX', 2, 7.0 / 35.0, S_PHOENIXATK1_3) = A_FirePhoenixPL1
-	S_PHOENIXATK1_3('PHNX', 3, 4.0 / 35.0, S_PHOENIXATK1_4) = none
-	S_PHOENIXATK1_4('PHNX', 1, 4.0 / 35.0, S_PHOENIXATK1_5) = none
-	S_PHOENIXATK1_5('PHNX', 1, 0.0 / 35.0, S_PHOENIXREADY) = A_ReFire
+	PHNX B 5
+	PHNX C 7 A_FirePhoenixPL1
+	PHNX D 4
+	PHNX B 4
+	PHNX B 0 A_ReFire
+	Goto Ready
 }
 
 /*SEVENTH*/

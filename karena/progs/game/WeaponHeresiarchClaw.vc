@@ -45,7 +45,7 @@ state HoldAttackState;
 
 state GetAttackState(bool Hold)
 {
-	if (Hold)
+	if (Hold && HoldAttackState)
 	{
 		return HoldAttackState;
 	}
@@ -129,25 +129,31 @@ final void A_HClawAttack()
 	//}
 }
 
-__states__
+states
 {
 Ready:
-	S_HCLAWREADY('HPLC', 0, 1.0 / 35.0, S_HCLAWREADY) = A_WeaponReady
+	HPLC A 1 A_WeaponReady
+	Loop
 Deselect:
-	S_HCLAWDOWN('HPLC', 0, 1.0 / 35.0, S_HCLAWDOWN) = A_Lower
+	HPLC A 1 A_Lower
+	Loop
 Select:
-	S_HCLAWUP('HPLC', 0, 1.0 / 35.0, S_HCLAWUP) = A_Raise
+	HPLC A 1 A_Raise
+	Loop
 Fire:
-	S_HCLAWATK1_1('HPLC', 1, 5.0 / 35.0, S_HCLAWATK1_2) = none
-	S_HCLAWATK1_2('HPLC', 2, 4.0 / 35.0, S_HCLAWATK1_3) = none
-	S_HCLAWATK1_3('HPLC', 3, 4.0 / 35.0, S_HCLAWATK1_4) { A_HClawAttack(); HoldAttackState = S_HCLAWATK2_1; }
-	S_HCLAWATK1_4('HPLC', 2, 4.0 / 35.0, S_HCLAWATK1_5) = none
-	S_HCLAWATK1_5('HPLC', 1, 5.0 / 35.0, S_HCLAWREADY) = A_ReFire
-	S_HCLAWATK2_1('HPLC', 1, 4.0 / 35.0, S_HCLAWATK2_2) = none
-	S_HCLAWATK2_2('HPLC', 2, 4.0 / 35.0, S_HCLAWATK2_3) = none
-	S_HCLAWATK2_3('HPLC', 3, 4.0 / 35.0, S_HCLAWATK2_4) { A_HClawAttack(); HoldAttackState = S_HCLAWATK1_1; }
-	S_HCLAWATK2_4('HPLC', 2, 4.0 / 35.0, S_HCLAWATK2_5) = none
-	S_HCLAWATK2_5('HPLC', 1, 5.0 / 35.0, S_HCLAWREADY) = A_ReFire
+	HPLC B 5
+	HPLC C 4
+	HPLC D 4 { A_HClawAttack();
+		HoldAttackState = GetStatePlus(GetAttackState(false), 5, true); }
+	HPLC C 4
+	HPLC B 5 A_ReFire
+	Goto Ready
+	HPLC B 4
+	HPLC C 4
+	HPLC D 4 { A_HClawAttack(); HoldAttackState = GetAttackState(false); }
+	HPLC C 4
+	HPLC B 5 A_ReFire
+	Goto Ready
 }
 
 /*FIRST HERESIARCH*/
@@ -155,8 +161,6 @@ defaultproperties
 {
 	Slot = 1;
 	SelectionOrder = 7700;
-	//Attack2State = S_PUNCHATK2_1;
-	HoldAttackState = S_HCLAWATK1_1;
 	PSpriteSY = 0.0;
 	BotCombatDist = 2.0 * MELEERANGE;
 	wis_mod = false;
