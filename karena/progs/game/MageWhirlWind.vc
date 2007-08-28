@@ -91,6 +91,39 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 
 //==========================================================================
 //
+//  TouchWhirlwind
+//
+//==========================================================================
+
+void TouchWhirlwind(Actor Other)
+{
+	float randVal;
+
+	Other.Angles.yaw = AngleMod360(Other.Angles.yaw +
+		(Random() - Random()) * 45.0 / 2.0);
+	Other.Velocity.x += (Random() - Random()) * 4.0 * 35.0;
+	Other.Velocity.y += (Random() - Random()) * 4.0 * 35.0;
+	if (XLevel.TicTime & 16 && !Other.bBoss)
+	{
+		randVal = Random() * 4.0;
+		if (randVal > 2.5)
+		{
+			randVal = 2.5;
+		}
+		Other.Velocity.z += randVal * 35.0;
+		if (Other.Velocity.z > 12.0 * 35.0)
+		{
+			Other.Velocity.z = 12.0 * 35.0;
+		}
+	}
+	if (!(XLevel.TicTime & 7))
+	{
+		Other.Damage(none, Target, 6);
+	}
+}
+
+//==========================================================================
+//
 //  A_WhirlwindSeek
 //
 //==========================================================================
@@ -105,10 +138,10 @@ final void A_WhirlwindSeek()
 		bMissile = false;
 		return;
 	}
-	ExploCountSpec2 -= 3;
-	if (ExploCountSpec2 < 0)
+	Special2 -= 3;
+	if (Special2 < 0)
 	{
-		ExploCountSpec2 = 58 + (P_Random() & 31);
+		Special2 = 58 + (P_Random() & 31);
 		PlaySound('WhirlWind3', CHAN_WEAPON);
 	}
 	if (!Tracer && (P_Random() < 50))
@@ -140,6 +173,6 @@ defaultproperties
 	Speed = 350.0;
 	MissileDamage = 1;
 	Alpha = 0.666;
-	ExploCountSpec1 = 60;
-	ExploCountSpec2 = 50;
+	Special1 = 60;
+	Special2 = 50;
 }
