@@ -596,10 +596,15 @@ void Tick(float deltaTime)
 	if (Conditions && Conditions.refHead)
 	{
 		ActorCondition ac = ActorCondition(Conditions.refHead);
+		ActorCondition ac2;
 		while (ac)
 		{
+			// [CW] AC destroys automatically when its lifetime
+			// ends, before this it unlinks itself from the LinkedList
+
+			ac2 = ActorCondition(ac.refNext);
 			ac.Tick(deltaTime);
-			ac = ActorCondition(ac.refNext);
+			ac = ac2;
 		};
 	}
 }
