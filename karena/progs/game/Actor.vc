@@ -309,7 +309,6 @@ void KilledByPlayer(EntityEx source)
 		if (self == source)
 		{
 			// Self-frag
-			Player.FragsStats[Player.GetPlayerNum()]--;
 			Player.Frags--;
 
 			Player(Player).UpdateScore(HexenDefs::scoreevent_SelfFrag);
@@ -320,12 +319,10 @@ void KilledByPlayer(EntityEx source)
 
 			if (bKilledByAlly)
 			{
-				source.Player.FragsStats[Player.GetPlayerNum()]--;
 				source.Player.Frags--;
 			}
 			else
 			{
-				source.Player.FragsStats[Player.GetPlayerNum()]++;
 				source.Player.Frags++;
 				Player(source.Player).GiveExperience(500 * Player(Player).exp_level / Player(source.Player).exp_level);
 			}
@@ -367,16 +364,6 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 	if (!source)
 	{
 		// Fragged by enviroment
-		// [CW] I don't get the idea of the following piece of code...
-		// perhaps it is wrong, i'll comment it for a while
-		/*if (MainGameInfo(Level.Game).GameType == HexenDefs::game_dmteam)
-		{
-			Player.FragsStats[Player.Colour]--;
-		}
-		else
-		{*/
-			Player.FragsStats[Player.GetPlayerNum()]--;
-		//}
 		Player.Frags--;
 	}
 

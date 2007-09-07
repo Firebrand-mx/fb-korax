@@ -107,7 +107,6 @@ int pcount; // [FB] counter
 int Score;	//[CW] personal player's score value (depends on game mode)
 int TeamFrags; // [FB] Frags from each team	// [CW] you mean THIS PLAYER's team
 int TeamKills; // [FB] How many enemies has each team killed	// [CW] you mean THIS PLAYER's team
-int Deaths;
 int TeamPosition; // [CW] team position in global competition list
 int PlayerPosition; // [CW] player position in team inner competition list
 
@@ -155,7 +154,7 @@ bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player re
 replication
 {
 	reliable if (!bIsClient)
-		Score, TeamFrags, TeamKills, Deaths, TeamPosition, PlayerPosition,
+		Score, TeamFrags, TeamKills, TeamPosition, PlayerPosition,
 		experience, exp_level, next_level, old_level, strength,
 		intelligence, wisdom, dexterity, constitution, max_health,
 		old_maxhealth, bak_health, use_power, altWeapon, teamscores,
@@ -868,7 +867,7 @@ void SpawnPlayer(mthing_t * mthing)
 		// Give all keys in death match mode
 		foreach AllClasses(Key, Cls)
 		{
-			if (!Cls.default.IdleState)
+			if (!FindClassState(Cls, 'Spawn'))
 			{
 				//	Abstract class.
 				continue;
