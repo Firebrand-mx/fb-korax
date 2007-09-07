@@ -73,7 +73,6 @@ int totalFrags[MAXPLAYERS];
 struct team_t
 {
 	bool bActive;
-	int frags[MAXPLAYERS];
 };
 team_t teams[MAXPLAYERS];
 
@@ -229,15 +228,7 @@ void IM_InitStats()
 				{
 					int coo = atoi(col);
 					teams[coo].bActive = true;
-					for (j = 0; j < MAXPLAYERS; j++)
-					{
-						if (i==0)
-						{
-							teams[coo].frags[j] = 0;
-						}
-						totalFrags[coo] += RepInfo.FragsStats[j];
-						teams[coo].frags[j] += RepInfo.FragsStats[j];
-					}
+					totalFrags[coo] += RepInfo.Frags;
 				}
 			}
 			else
@@ -445,38 +436,6 @@ void IM_DrawDeathTally(GC gc)
 	{
 		i = RepInfo.PlayerNum;
 		xPos = xStart;
-		for (j = 0; j < MAXPLAYERS; j++, xPos += xDelta)
-		{
-			x = ftoi(xPos);
-			bold = ((i == ClGame.cl.ClientNum || j == ClGame.cl.ClientNum) && ClGame.deathmatch != 2) ||
-				(GetCvar('colour') == i || GetCvar('colour') == j);
-			if (ClGame.deathmatch != 2 ||
-				(ClGame.deathmatch == 2 && teams[i].bActive && teams[j].bActive))
-			{
-				int frr = (ClGame.deathmatch == 2 ? teams[i].frags[j] : RepInfo.FragsStats[j]);
-				if (bold)
-				{
-					IM_DrawNumberBold(frr, x, y, 100);
-				}
-				else
-				{
-					IM_DrawNumber(frr, x, y, 100);
-				}
-			}
-			else
-			{
-				if (bold)
-				{
-					T_SetFont(font_yellow);
-				}
-				else
-				{
-					T_SetFont(font_small);
-				}
-				T_SetAlign(hcentre, vtop);
-				T_DrawText(x, y, "--");
-			}
-		}
 		if (showTotals && !((slaughterboy & (1 << i)) &&
 				!(ftoi(32.0 * intertime) & 16)))
 		{
