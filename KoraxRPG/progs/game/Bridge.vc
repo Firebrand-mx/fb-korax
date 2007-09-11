@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: Bridge.vc 2273 2007-05-27 21:23:27Z dj_jl $
+//**    $Id: Bridge.vc 2681 2007-08-27 22:26:06Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -41,7 +41,7 @@ final void A_BridgeInit()
 	BridgeBall ball3;
 
 	StartAngle = Random() * 360.0;
-	_Special1 = 0;
+	Special1 = 0;
 
 	// Spawn triad into world
 	ball1 = BridgeBall(Spawn(BridgeBall, Origin));
@@ -61,13 +61,16 @@ final void A_BridgeInit()
 	ball3.A_BridgeOrbit();
 }
 
-__states__
+states
 {
-	S_BRIDGE1('TLGL', 0, 2.0 / 35.0, S_BRIDGE2) = none
-	S_BRIDGE2('TLGL', 0, 2.0 / 35.0, S_BRIDGE3) = A_BridgeInit
-	S_BRIDGE3('TLGL', 0, -1.0, none) = none
-	S_FREE_BRIDGE1('TLGL', 0, 2.0 / 35.0, S_FREE_BRIDGE2) = none
-	S_FREE_BRIDGE2('TLGL', 0, 300.0 / 35.0, none) = none
+Spawn:
+	TLGL A 2
+	TLGL A 2 A_BridgeInit
+	TLGL A -1
+	Stop
+	TLGL A 2
+	TLGL A 300
+	Stop
 }
 
 //==========================================================================
@@ -78,9 +81,9 @@ __states__
 
 void RemoveThing()
 {
-	_Special1 = true;	// Removing the bridge
+	Special1 = true;	// Removing the bridge
 	bSolid = false;
-	SetState(S_FREE_BRIDGE1);
+	SetState(GetStatePlus(IdleState, 3, true));
 }
 
 defaultproperties
@@ -91,5 +94,4 @@ defaultproperties
 	bSolid = true;
 	bNoGravity = true;
 	bNoPassMobj = true;
-	IdleState = S_BRIDGE1;
 }

@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: TelOtherFX1.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**    $Id: TelOtherFX1.vc 2681 2007-08-27 22:26:06Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -35,9 +35,97 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
 	if (victim.bMonster && !Actor(victim).bBoss && !Serpent(victim))
 	{
-		Actor(victim).TeleportOther();
+		TeleportOther(Actor(victim));
 	}
 	return -1;
+}
+
+//==========================================================================
+//
+//  TeleportOther
+//
+//==========================================================================
+
+final void TeleportOther(Actor victim)
+{
+	if (victim.bIsPlayer)
+	{
+		if (Level.Game.deathmatch)
+			TeleportToDeathmatchStarts(victim);
+		else
+			TeleportToPlayerStarts(victim);
+	}
+	else
+	{
+		// If death action, run it upon teleport
+		if (victim.bMonster && victim.Special)
+		{
+			victim.RemoveFromTIDList();
+			Level.ExecuteActionSpecial(victim.Special, victim.Args[0],
+				victim.Args[1], victim.Args[2], victim.Args[3],
+				victim.Args[4], NULL, 0, victim);
+			victim.Special = 0;
+		}
+
+		// Send all monsters to deathmatch spots
+		TeleportToDeathmatchStarts(victim);
+	}
+}
+
+//==========================================================================
+//
+//  TeleportToDeathmatchStarts
+//
+//==========================================================================
+
+final void TeleportToDeathmatchStarts(Actor victim)
+{
+	int i;
+	float destX;
+	float destY;
+	float destAngle;
+
+	if (Level.NumDeathmatchStarts)
+	{
+		i = P_Random() % Level.NumDeathmatchStarts;
+		destX = Level.DeathmatchStarts[i].x;
+		destY = Level.DeathmatchStarts[i].y;
+		destAngle = itof(45 * (Level.DeathmatchStarts[i].angle / 45));
+		victim.Teleport(vector(destX, destY, ONFLOORZ), destAngle, true,
+			true, false);
+	}
+	else
+	{
+		TeleportToPlayerStarts(victim);
+	}
+}
+
+//==========================================================================
+//
+//  TeleportToPlayerStarts
+//
+//==========================================================================
+
+final void TeleportToPlayerStarts(Actor victim)
+{
+	int i;
+	int selections = 0;
+	float destX;
+	float destY;
+	float destAngle;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		selections++;
+	}
+	i = P_Random() % selections;
+	destX = Level.PlayerStarts[i].x;
+	destY = Level.PlayerStarts[i].y;
+	destAngle = itof(45 * (Level.PlayerStarts[i].angle / 45));
+	victim.Teleport(vector(destX, destY, ONFLOORZ), destAngle, true, true,
+		false);
 }
 
 //==========================================================================
@@ -116,17 +204,21 @@ final void A_TeloSpawnD()
 	}
 }
 
-__states__
+states
 {
-	S_TELO_FX1('TRNG', 4 | FF_FULLBRIGHT, 5.0 / 35.0, S_TELO_FX2) = none
-	S_TELO_FX2('TRNG', 3 | FF_FULLBRIGHT, 4.0 / 35.0, S_TELO_FX3) = none
-	S_TELO_FX3('TRNG', 2 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX4) = A_TeloSpawnC
-	S_TELO_FX4('TRNG', 1 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX5) = A_TeloSpawnB
-	S_TELO_FX5('TRNG', 0 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX6) = A_TeloSpawnA
-	S_TELO_FX6('TRNG', 1 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX7) = A_TeloSpawnB
-	S_TELO_FX7('TRNG', 2 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX8) = A_TeloSpawnC
-	S_TELO_FX8('TRNG', 3 | FF_FULLBRIGHT, 3.0 / 35.0, S_TELO_FX3) = A_TeloSpawnD
-	S_TELO_FX9('TRNG', 4 | FF_FULLBRIGHT, 3.0 / 35.0, none) = none
+Spawn:
+	TRNG E 5 Bright
+	TRNG D 4 Bright
+	TRNG C 3 Bright A_TeloSpawnC
+	TRNG B 3 Bright A_TeloSpawnB
+	TRNG A 3 Bright A_TeloSpawnA
+	TRNG B 3 Bright A_TeloSpawnB
+	TRNG C 3 Bright A_TeloSpawnC
+	TRNG D 3 Bright A_TeloSpawnD
+	Goto Spawn+2
+Death:
+	TRNG E 3 Bright
+	Stop
 }
 
 defaultproperties
@@ -139,6 +231,4 @@ defaultproperties
 	bBloodlessImpact = true;
 	DLightColour = RGB(243, 0, 0);
 	DLightRadius = 100.0;
-	IdleState = S_TELO_FX1;
-	DeathState = S_TELO_FX9;
 }

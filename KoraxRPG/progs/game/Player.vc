@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: Player.vc 2641 2007-08-15 11:19:53Z dj_jl $
+//**    $Id: Player.vc 2707 2007-09-07 17:47:04Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -505,7 +505,7 @@ void SpawnPlayer(mthing_t * mthing)
 		// Give all keys in death match mode
 		foreach AllClasses(Key, Cls)
 		{
-			if (!Cls.default.IdleState)
+			if (!FindClassState(Cls, 'Spawn'))
 			{
 				//	Abstract class.
 				continue;
@@ -823,12 +823,12 @@ void AdjustInvFirst()
 	{
 		FirstOffs++;
 	}
-	while (FirstOffs > 5)
+	while (FirstOffs > 6)
 	{
 		InvFirst = InvFirst.NextInv();
 		FirstOffs--;
 	}
-	while (NumFollowing + FirstOffs < 5 && InvFirst.PrevInv())
+	while (NumFollowing + FirstOffs < 6 && InvFirst.PrevInv())
 	{
 		InvFirst = InvFirst.PrevInv();
 		FirstOffs++;
@@ -1081,7 +1081,7 @@ bool UndoPlayerMorph()
 		20.0 * sin(MO.Angles.yaw), Actor::TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
-	MO.SetState(Actor::S_FREETARGMOBJ);
+	MO.SetState(MO.FindState('FreeTargMobj'));
 	MO = A;
 	return true;
 }
@@ -1165,10 +1165,10 @@ void DeathPlayerTick(float deltaTime)
 	if (Attacker && Attacker != MO)
 	{
 		// Watch killer
-		dir = Actor(MO).FaceActor(Actor(Attacker), delta);
+		dir = EntityEx(MO).FaceActor(EntityEx(Attacker), delta);
 		if (delta < 10.0)
 		{
-			// Looking at killer, so fade damage counters
+			// Looking at killer, so fade damage and poison counters
 			if (DamageFlash)
 			{
 				DamageFlash -= deltaTime;
@@ -1217,14 +1217,14 @@ void DeathPlayerTick(float deltaTime)
 		InvPtr = none;
 		InvFirst = none;
 		PlayerState = PST_REBORN;
-		Actor(MO)._Special1 = PClass;
-		if (Actor(MO)._Special1 > 2)
+		Actor(MO).Special1 = PClass;
+		if (Actor(MO).Special1 > 2)
 		{
-			Actor(MO)._Special1 = 0;
+			Actor(MO).Special1 = 0;
 		}
 		// Let the mobj know the player has entered the reborn state.  Some
 		// mobjs need to know when it's ok to remove themselves.
-		Actor(MO)._Special2 = 666;
+		Actor(MO).Special2 = 666;
 	}
 }
 
@@ -1311,26 +1311,28 @@ void PlayerTick(float deltaTime)
 				speedA.Angles.yaw = MO.Angles.yaw;
 				speedA.Translation = MO.Translation;
 				speedA.Target = Actor(MO);
-				speedA._Special1 = PClass;
-				if (speedA._Special1 > 2)
+				speedA.Special1 = PClass;
+				if (speedA.Special1 > 2)
 				{
-					speedA._Special1 = 0;
+					speedA.Special1 = 0;
 				}
+				int Idx;
 				switch (PClass)
 				{
 				case HexenDefs::PCLASS_FIGHTER:
-					speedA.SetState(PlayerSpeed::S_PLAYER_F_SPEED1);
+					Idx = 0;
 					break;
 				case HexenDefs::PCLASS_CLERIC:
-					speedA.SetState(PlayerSpeed::S_PLAYER_C_SPEED1);
+					Idx = 2;
 					break;
 				case HexenDefs::PCLASS_MAGE:
-					speedA.SetState(PlayerSpeed::S_PLAYER_M_SPEED1);
+					Idx = 4;
 					break;
 				case HexenDefs::PCLASS_PIG:
-					speedA.SetState(PlayerSpeed::S_PLAYER_P_SPEED1);
+					Idx = 6;
 					break;
 				}
+				speedA.SetState(GetStatePlus(speedA.IdleState, Idx, true));
 				speedA.FloorClip = MO.FloorClip;
 #ifdef FIXME
 				if (self == GPlayers[consoleplayer])
@@ -1648,7 +1650,7 @@ void ActivateMorphWeapon()
 		Wpn.Destroy();
 	}
 	SetWeapon(Weapon(EntityEx(MO).FindInventory(Snout)));	// Snout is the first weapon
-	SetViewState(ps_weapon, Weapon(ViewEnt).ReadyState);
+	SetViewState(ps_weapon, ReadyWeapon.GetReadyState());
 }
 
 //==========================================================================
@@ -1662,7 +1664,7 @@ void PostMorphWeapon(Weapon weapon)
 	ReadyWeapon.Destroy();
 	SetWeapon(weapon);
 	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
-	SetViewState(ps_weapon, Weapon(ViewEnt).UpState);
+	SetViewState(ps_weapon, ReadyWeapon.GetUpState());
 }
 
 //==========================================================================
@@ -1845,7 +1847,7 @@ void Cheat_Gimme()
 		}
 		foreach AllClasses(Weapon, WpnCls)
 		{
-			if (!WpnCls.default.ReadyState)
+			if (!FindClassState(WpnCls, 'Ready'))
 			{
 				//	Abstract class.
 				continue;
@@ -1941,7 +1943,7 @@ void Cheat_Gimme()
 				//	Not an inventory item.
 				continue;
 			}
-			if (!Cls.default.IdleState)
+			if (!FindClassState(Cls, 'Spawn'))
 			{
 				//	Abstract class
 				continue;
@@ -1951,9 +1953,11 @@ void Cheat_Gimme()
 				//	Not puzzle items.
 				continue;
 			}
-			for (j = 0; j < 25; j++)
+			Inv = Level.Spawn(Cls);
+			Inv.Amount = Inv.MaxAmount;
+			if (!Inv.TryPickup(EntityEx(MO)))
 			{
-				EntityEx(MO).GiveInventoryType(Cls);
+				Inv.Destroy();
 			}
 		}
 		cprint("ALL ARTIFACTS");
@@ -1962,7 +1966,7 @@ void Cheat_Gimme()
 	{
 		foreach AllClasses(PuzzleItem, Cls)
 		{
-			if (!Cls.default.IdleState)
+			if (!FindClassState(Cls, 'Spawn'))
 			{
 				//	Abstract class
 				continue;
@@ -2026,7 +2030,9 @@ void Cheat_Morph()
 	}
 	else
 	{
-		Actor(MO).MorphPlayer();
+		PorkFX Tmp = Level.Spawn(PorkFX);
+		Tmp.MorphPlayer(Actor(MO));
+		Tmp.Destroy();
 	}
 	cprint("SQUEAL!!");
 }

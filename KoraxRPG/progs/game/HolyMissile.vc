@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: HolyMissile.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**    $Id: HolyMissile.vc 2675 2007-08-27 17:45:50Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -100,20 +100,20 @@ final void A_CHolyAttack2()
 		for (i = 1; i < 3; i++)
 		{
 			next = Spawn(HolyTail, A.Origin);
-			next.SetState(HolyTail::S_HOLY_TAIL2);
+			next.SetState(GetStatePlus(next.IdleState, 1));
 			HolyTail(tail).NextTail = HolyTail(next);
 			tail = next;
 		}
 	}
 }
 
-__states__
+states
 {
-	S_HOLY_MISSILE1('SPIR', 15 | FF_FULLBRIGHT, 3.0 / 35.0, S_HOLY_MISSILE2) = A_CHolySpawnPuff
-	S_HOLY_MISSILE2('SPIR', 15 | FF_FULLBRIGHT, 3.0 / 35.0, S_HOLY_MISSILE3) = A_CHolySpawnPuff
-	S_HOLY_MISSILE3('SPIR', 15 | FF_FULLBRIGHT, 3.0 / 35.0, S_HOLY_MISSILE4) = A_CHolySpawnPuff
-	S_HOLY_MISSILE4('SPIR', 15 | FF_FULLBRIGHT, 3.0 / 35.0, S_HOLY_MISSILE_X) = A_CHolySpawnPuff
-	S_HOLY_MISSILE_X('SPIR', 15 | FF_FULLBRIGHT, 1.0 / 35.0, none) = A_CHolyAttack2
+Spawn:
+	SPIR PPPP 3 Bright A_CHolySpawnPuff
+Death:
+	SPIR P 1 Bright A_CHolyAttack2
+	Stop
 }
 
 defaultproperties
@@ -125,8 +125,6 @@ defaultproperties
 	bActivateImpact = false;
 	bActivatePCross = false;
 	bExtremeDeath = true;
-	IdleState = S_HOLY_MISSILE1;
-	DeathState = S_HOLY_MISSILE_X;
 	DLightColour = RGB(221, 221, 221);
 	DLightRadius = 200.0;
 }

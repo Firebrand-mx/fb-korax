@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: SorcBall.vc 2643 2007-08-15 17:52:49Z dj_jl $
+//**    $Id: SorcBall.vc 2681 2007-08-27 22:26:06Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -150,7 +150,7 @@ final void A_SorcOffense2()
 	mo = Actor(Target).SpawnMissileAngle(SorcFX4, ang1, 0.0);
 	if (mo)
 	{
-		Actor(mo)._Special2 = 35 * 5 / 2;	// 5 seconds
+		Actor(mo).Special2 = 35 * 5 / 2;	// 5 seconds
 		dist = Target.Target.DistTo2(mo);
 		dist = dist / mo.Speed;
 		if (dist < 1.0)
@@ -192,7 +192,7 @@ final void A_SorcBallOrbit()
 	float prevangle = Special1f;
 
 	if (Target.Health <= 0)
-		SetState(PainState);
+		SetState(FindState('Pain'));
 
 	baseangle = Actor(Target).Special1f;
 	angle = AngleMod360(baseangle + BallAngleOffset);
@@ -234,7 +234,7 @@ final void A_SorcBallOrbit()
 		{
 			// Put sorcerer into special throw spell anim
 			if (Target.Health > 0)
-				Target.SetState(Heresiarch::S_SORC_ATTACK1);
+				Target.SetState(Target.FindState('Attack1'));
 
 			PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
 
@@ -244,13 +244,13 @@ final void A_SorcBallOrbit()
 	case Heresiarch::SORC_FIRING_SPELL:
 		if (Actor(Target).SpecialCID == Class)
 		{
-			if (_Special2-- <= 0)
+			if (Special2-- <= 0)
 			{
 				// Done rapid firing 
 				Target.Args[3] = Heresiarch::SORC_STOPPED;
 				// Back to orbit balls
 				if (Target.Health > 0)
-					Target.SetState(Heresiarch::S_SORC_ATTACK4);
+					Target.SetState(Target.FindState('Attack2'));
 			}
 			else
 			{
@@ -308,7 +308,7 @@ final void A_BounceCheck()
 	{
 		if (Args[3]-- <= 0)
 		{
-			SetState(DeathState);
+			SetState(FindState('Death'));
 			PlaySound('SorcererBigBallExplode', CHAN_VOICE, 1.0, ATTN_NONE);
 		}
 		else
