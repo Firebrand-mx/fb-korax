@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: StatusBarScreen.vc 2632 2007-08-12 08:02:24Z dj_jl $
+//**    $Id: StatusBarScreen.vc 2693 2007-09-02 15:47:17Z firebrand_kh $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -436,22 +436,37 @@ void SB_DrawMainBar()
 	{
 		// Draw Dim Mana icon
 		sb_mana1 = 0;
+		sb_manaVial1 = 0;
 	}
 	else
 	{
 		sb_mana1 = 1;
+		sb_manaVial1 = 1;
 	}
 	if (!ManaItem2 || ManaItem2.Amount == 0)
 	{
 		// Draw Dim Mana icon
 		sb_mana2 = 0;
+		sb_manaVial2 = 0;
 	}
 	else
 	{
 		sb_mana2 = 1;
+		sb_manaVial2 = 1;
 	}
 
 	// Update mana graphics based upon mana count/weapon type
+	if (cl.ReadyWeapon.AmmoType1 != Mana1 && cl.ReadyWeapon.AmmoType2 != Mana1)
+	{
+		sb_mana1 = 0;
+		sb_manaVial1 = 0;
+	}
+	if (cl.ReadyWeapon.AmmoType1 != Mana2 && cl.ReadyWeapon.AmmoType2 != Mana2)
+	{
+		sb_mana2 = 0;
+		sb_manaVial2 = 0;
+	}
+
 	SB_DrawMNumber(BAR_X + 79, BAR_Y + 20, ManaItem1 ? ManaItem1.Amount : 0);
 	SB_DrawMNumber(BAR_X + 111, BAR_Y + 20, ManaItem2 ? ManaItem2.Amount : 0);
 	R_DrawPic(BAR_X + 77, BAR_Y + 3, pic_manadim1[sb_mana1]);
