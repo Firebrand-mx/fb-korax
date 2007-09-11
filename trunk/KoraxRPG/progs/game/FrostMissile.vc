@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: FrostMissile.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**    $Id: FrostMissile.vc 2681 2007-08-27 22:26:06Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -38,7 +38,7 @@ bool bShardSpawnDown;
 
 int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
-	switch (_Special2)
+	switch (Special2)
 	{
 	case 3:
 		damage <<= 3;
@@ -62,11 +62,11 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 final void A_ShedShard()
 {
 	FrostMissile mo;
-	int spermcount = _Special2;
+	int spermcount = Special2;
 
 	if (spermcount <= 0)
 		return;	// No sperm left
-	_Special2 = 0;
+	Special2 = 0;
 	spermcount--;
 
 	// every so many calls, spawn a new missile in it's set directions
@@ -77,7 +77,7 @@ final void A_ShedShard()
 		if (mo)
 		{
 			mo.bShardSpawnLeft = true;
-			mo._Special2 = spermcount;
+			mo.Special2 = spermcount;
 			mo.Velocity.z = Velocity.z;
 			mo.Target = Target;
 			mo.Args[0] = (spermcount == 3) ? 2 : 0;
@@ -90,7 +90,7 @@ final void A_ShedShard()
 		if (mo)
 		{
 			mo.bShardSpawnRight = true;
-			mo._Special2 = spermcount;
+			mo.Special2 = spermcount;
 			mo.Velocity.z = Velocity.z;
 			mo.Target = Target;
 			mo.Args[0] = (spermcount == 3) ? 2 : 0;
@@ -110,7 +110,7 @@ final void A_ShedShard()
 				mo.bShardSpawnRight = true;
 			}
 			mo.bShardSpawnUp = true;
-			mo._Special2 = spermcount;
+			mo.Special2 = spermcount;
 			mo.Target = Target;
 			mo.Args[0] = (spermcount == 3) ? 2 : 0;
 		}
@@ -129,24 +129,23 @@ final void A_ShedShard()
 				mo.bShardSpawnRight = true;
 			}
 			mo.bShardSpawnDown = true;
-			mo._Special2 = spermcount;
+			mo.Special2 = spermcount;
 			mo.Target = Target;
 			mo.Args[0] = (spermcount == 3) ? 2 : 0;
 		}
 	}
 }
 
-__states__
+states
 {
-	S_SHARDFX1_1('SHRD', 0 | FF_FULLBRIGHT, 2.0 / 35.0, S_SHARDFX1_2) = none
-	S_SHARDFX1_2('SHRD', 0 | FF_FULLBRIGHT, 3.0 / 35.0, S_SHARDFX1_3) = A_ShedShard
-	S_SHARDFX1_3('SHRD', 1 | FF_FULLBRIGHT, 3.0 / 35.0, S_SHARDFX1_4) = none
-	S_SHARDFX1_4('SHRD', 2 | FF_FULLBRIGHT, 3.0 / 35.0, S_SHARDFX1_1) = none
-	S_SHARDFXE1_1('SHEX', 0 | FF_FULLBRIGHT, 5.0 / 35.0, S_SHARDFXE1_2) = none
-	S_SHARDFXE1_2('SHEX', 1 | FF_FULLBRIGHT, 5.0 / 35.0, S_SHARDFXE1_3) = none
-	S_SHARDFXE1_3('SHEX', 2 | FF_FULLBRIGHT, 5.0 / 35.0, S_SHARDFXE1_4) = none
-	S_SHARDFXE1_4('SHEX', 3 | FF_FULLBRIGHT, 5.0 / 35.0, S_SHARDFXE1_5) = none
-	S_SHARDFXE1_5('SHEX', 4 | FF_FULLBRIGHT, 5.0 / 35.0, none) = none
+Spawn:
+	SHRD A 2 Bright
+	SHRD A 3 Bright A_ShedShard
+	SHRD BC 3 Bright
+	Loop
+Death:
+	SHEX ABCDE 5 Bright
+	Stop
 }
 
 defaultproperties
@@ -156,8 +155,6 @@ defaultproperties
 	Speed = 875.0;
 	MissileDamage = 1;
 	DamageType = 'Ice';
-	IdleState = S_SHARDFX1_1;
-	DeathState = S_SHARDFXE1_1;
 	DeathSound = 'MageShardsExplode';
 	DLightColour = RGB(74, 77, 196);
 	DLightRadius = 90.0;

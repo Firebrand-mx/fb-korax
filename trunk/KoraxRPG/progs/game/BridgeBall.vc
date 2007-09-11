@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: BridgeBall.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**    $Id: BridgeBall.vc 2681 2007-08-27 22:26:06Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -47,7 +47,7 @@ float OrbitAngle;		// Angle of ball
 
 final void A_BridgeOrbit()
 {
-	if (Actor(Target)._Special1)
+	if (Actor(Target).Special1)
 	{
 		SetState(none);
 	}
@@ -58,10 +58,12 @@ final void A_BridgeOrbit()
 	Origin.z = Target.Origin.z;
 }
 
-__states__
+states
 {
-	S_BBALL1('TLGL', 0, 2.0 / 35.0, S_BBALL2) = none
-	S_BBALL2('TLGL', 0, 5.0 / 35.0, S_BBALL2) = A_BridgeOrbit
+Spawn:
+	TLGL A 2
+	TLGL A 5 A_BridgeOrbit
+	Wait
 }
 
 defaultproperties
@@ -70,5 +72,4 @@ defaultproperties
 	bDynamicLight = true;
 	DLightColour = RGB(91, 94, 211);
 	DLightRadius = 100.0;
-	IdleState = S_BBALL1;
 }
