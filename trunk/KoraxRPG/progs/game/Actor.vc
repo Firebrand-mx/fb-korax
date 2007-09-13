@@ -31,7 +31,23 @@ const float MAULATORTIME 	= 25.0;
 
 const float TELEFOGHEIGHT	= 32.0;
 
+
+//
+// [KoraxRPG] Advanced AI
+//
+const float	DEFAULT_THREAT_VICINITY		= MISSILERANGE;
+
+TVec *			pTargetVec;
+
+bool			bIgnoreTeams;
+int				Team;
+
+//
+// [KoraxRPG] Actor Conditions
+//
 LinkedList Conditions;
+
+
 //==========================================================================
 //
 //  HITDICE
@@ -124,6 +140,465 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 	}
 }
 
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Advanced AI
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	LookForEnemy
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool LookForEnemy(bool allaround, optional bool nearest,
+					optional TVec At, optional float maxdist, optional Actor ExcludeActor)
+{
+	Actor		mo;
+	float		an;
+	float		dist;
+	float		min_dist;
+
+	if (!specified_nearest)
+		nearest = true;
+
+	if (!specified_At)
+		At = Origin;
+
+	Target = none;
+	min_dist = -1.0;
+
+	foreach AllThinkers(Actor, mo)
+	{
+		if (mo == self)
+			continue;	// self
+
+		if (specified_ExcludeActor)
+		{
+			if (mo == ExcludeActor)
+				continue;
+		}
+
+		if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
+			continue;
+
+		if (mo.Health <= 0)
+			continue;	// dead
+
+		if (!bIgnoreTeams && (Team == mo.Team))
+			continue;	// friendly
+
+		if (!CanSee(mo))
+			continue;	// out of sight
+
+		if (specified_maxdist)
+		{
+			if (Length(mo.Origin - At) > maxdist)
+				continue;
+		}
+
+		if (P_Random() > 200)
+			continue;	// sometimes skip
+
+		dist = DistTo(mo);
+
+		if (!allaround)
+		{
+			an = AngleMod360(atan2(mo.Origin.y - Origin.y,
+				mo.Origin.x - Origin.x) - Angles.yaw);
+
+			if (an > 90.0 && an < 270.0)
+			{
+				//dist = DistTo(mo);
+				// if real close, react anyway
+				if (dist > MELEERANGE)
+					continue;	// behind back
+			}
+		}
+
+		if (nearest)
+		{
+			if (min_dist < 0.0 || min_dist > dist)
+			{
+				min_dist = dist;
+				Target = mo;
+			}
+
+			continue;
+		}
+
+		Target = mo;
+		return true;
+	}
+
+
+	return Target != none;
+}
+
+//==========================================================================
+//
+//	A_LookEx
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool A_LookEx(bool autoSetChase)
+{
+	Actor	targ;
+
+	Threshold = 0;	// any shot will wake up
+	pTargetVec = NULL;
+	targ = Actor(Sector->SoundTarget);
+
+	if (targ && targ.bShootable && (bIgnoreTeams || targ.Team != Team))
+	{
+		Target = targ;
+
+		if (bAmbush)
+		{
+			if (!CanSee(Target))
+			{
+				if (!LookForEnemy(false))
+					return false;
+			}
+		}
+	}
+	else
+	{
+		if (!LookForEnemy(bLookAllAround))
+			return false;
+	}
+
+	// go into chase state
+	if (SightSound)
+	{
+		if (bBoss)
+		{
+			// Full volume
+			PlaySound(SightSound, CHAN_VOICE, 1.0, ATTN_NONE);
+		}
+		else
+		{
+			PlaySound(SightSound, CHAN_VOICE);
+		}
+	}
+
+	if (autoSetChase)
+		SetState(SeeState);
+	return true;
+}
+
+//==========================================================================
+//
+//	A_ChaseEx
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool A_ChaseEx(bool autoSetIdle)
+{
+	float delta;
+
+	if (ReactionCount)
+	{
+		ReactionCount--;
+	}
+
+	//  Remove muzzle flash
+	if (bMuzzleFlash)
+	{
+		bMuzzleFlash = false;
+	}
+
+	if (!pTargetVec)
+	{
+		Error("A_ChaseEx: called with pTargetVec = NULL");
+		return false;
+	}
+
+	//if (!pTargetVec && Target)
+	//	pTargetVec = &Target.Origin;
+
+	bInCombat = true;
+	// modify target threshold
+	if (Threshold)
+	{
+		if (!pTargetVec || (Target && Target.Health <= 0))
+		{
+			Threshold = 0;
+		}
+		else
+		{
+			Threshold--;
+		}
+	}
+
+	if (Target && !Target.bShootable)
+	{
+		//[CW] ??
+		/*// look for a new target
+		if (LookForEnemy(true))
+		{
+			return true;	// got a new target
+		}*/
+		if (autoSetIdle)
+		{
+			SetState(IdleState);
+			bInCombat = false;
+		}
+		return false;
+	}
+
+	if (LineSpecialGameInfo(Level.Game).bNightmareFastChase &&
+		Level.Game.fastparm)
+	{
+		// Monsters move faster in nightmare mode
+		StateTime *= 0.5;
+		if (StateTime < 0.1)
+		{
+			StateTime = 0.1;
+		}
+	}
+
+	// turn towards movement direction if not there yet
+	if (MoveDir < 8)
+	{
+		Angles.yaw = itof(ftoi(Angles.yaw / 45.0)) * 45.0;
+		delta = AngleMod180(Angles.yaw - itof(MoveDir) * 45.0);
+
+		if (delta > 0.0)
+		{
+			Angles.yaw = AngleMod360(Angles.yaw - 45.0);
+		}
+		else if (delta < 0.0)
+		{
+			Angles.yaw = AngleMod360(Angles.yaw + 45.0);
+		}
+	}
+
+	// do not attack twice in a row
+	if (bJustAttacked)
+	{
+		bJustAttacked = false;
+		if (!Level.Game.fastparm)
+		{
+			NewChaseDirEx();
+		}
+		return true;
+	}
+
+	// check for melee attack
+	if (MeleeState && CheckMeleeRange())
+	{
+		if (AttackSound)
+		{
+			PlaySound(AttackSound, CHAN_WEAPON);
+		}
+		SetState(MeleeState);
+		return true;
+	}
+
+	// check for missile attack
+	if (MissileState)
+	{
+		if (Level.Game.fastparm || !MoveCount)
+		{
+			if (CheckMissileRange())
+			{
+				SetState(MissileState);
+				bJustAttacked = true;
+				return true;
+			}
+		}
+	}
+
+	//[CW] ??
+	/*// possibly choose another target
+	if (Level.Game.netgame && !Threshold)
+	{
+		if (!CanSee(Target))
+		{
+			if (LookForEnemy(true))
+				return true;	// got a new target
+		}
+	}*/
+
+	// chase towards enemy
+	if (--MoveCount < 0 || !StepMove())
+	{
+		NewChaseDirEx();
+	}
+
+	// make active sound
+	if (P_Random() < 3)
+	{
+		PlayActiveSound();
+	}
+
+	return true;
+}
+
+//=============================================================================
+//
+// NewChaseDirEx
+//
+//	[KoraxRPG] Advanced AI
+//
+//=============================================================================
+
+void NewChaseDirEx()
+{
+	float deltax;
+	float deltay;
+
+	if (!pTargetVec)
+	{
+		Error("NewChaseDirEx: called with pTargetVec = NULL");
+		return;
+	}
+
+	deltax = pTargetVec->x - Origin.x;
+	deltay = pTargetVec->y - Origin.y;
+
+	tmtrace_t tmtrace;
+	CheckRelPosition(&tmtrace, Origin);
+
+	// Try to move away from a dropoff
+	if (FloorZ - tmtrace.DropOffZ > MaxDropoffHeight &&
+		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat)
+	{
+		avoiddropoff_t a;
+		// We call CheckDropoff here to determine if the
+		// bounding box actually needs to be used below
+		CheckDropOff(&a);
+
+		if (a.deltax || a.deltay)
+		{
+			// [Graf Zahl] I have changed TryMove to only apply this logic when
+			// being called from here. bAavoidingDropoff activates the code that
+			// allows monsters to move away from a dropoff. This is different from
+			// MBF which requires unconditional use of the altered logic and therefore
+			// forcing a massive change in the monster behavior to use this.
+
+			// use different dropoff movement logic in TryMove
+			bAvoidingDropoff = true;
+			DO_NewChaseDir(a.deltax, a.deltay);
+			bAvoidingDropoff = false;
+		
+			// If moving away from dropoff, set movecount to 1 so that
+			// small steps are taken to get monster away from dropoff.
+			MoveCount = 1;
+			return;
+		}
+	}
+	DO_NewChaseDir(deltax, deltay);
+}
+
+//==========================================================================
+//
+//	CanReach
+//
+//	[KoraxRPG] Advanced AI
+//
+//  Checks whether this Actor can pass to target directly
+//	(along the straight line).
+//	TargetEntity is optional.
+//
+//==========================================================================
+
+bool CanReach(TVec TargetPos, optional Entity TargetEntity)
+{
+	bool canreach;
+	ReachTraverse::reach_traverse_data_t CRTRData;
+
+	if (!TargetEntity)
+	{
+		TargetEntity = none;
+	}
+	
+	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData);
+	
+	if (TargetEntity)
+	{
+		if (CRTRData.linetarget != TargetEntity)
+			return false;
+	}
+	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
+		return false;
+
+	return canreach;
+}
+
+//==========================================================================
+//
+//	PTR_CanReachTraverse
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool DoCanReachPathTraverse(TVec TargetPos,
+							ReachTraverse::reach_traverse_data_t * pCRTRData)
+{
+	intercept_t * in;
+	pCRTRData->intercepted_once = false;
+	pCRTRData->prev_sector = Sector;
+
+	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		pCRTRData->intercepted_once = true;
+
+		if (in->bIsALine)
+		{
+			sector_t * p_sector;
+
+			// single-sided lines abort traverse
+			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					!in->line->backsector)
+				return false;
+
+
+			// in case of two-sided lines a passability check is made
+			if (in->line->frontsector == pCRTRData->prev_sector)
+				p_sector = in->line->backsector;
+			else if (in->line->backsector == pCRTRData->prev_sector)
+				p_sector = in->line->frontsector;
+			else
+				// something was really messed up		
+				return false;
+
+			if (p_sector->ceilingheight < pCRTRData->prev_sector->floorheight - Height ||
+				p_sector->floorheight + Height > pCRTRData->prev_sector->ceilingheight)
+				// will stuck in low ceiling...
+				return false;
+			if (p_sector->floorheight > pCRTRData->prev_sector->floorheight + MaxStepHeight)
+				// will stuck in high floor
+				return false;
+			if (p_sector->floorheight < pCRTRData->prev_sector->floorheight - MaxDropoffHeight)
+				// must avoid dropoffs
+				return false;
+
+			pCRTRData->prev_sector = p_sector;
+		}
+		else
+		{
+			// TODO: check this precisely...
+			////if (in->Thing.Origin.z <= CRTRData.prev_sector->floorheight + Height)
+				pCRTRData->linetarget = Actor(in->Thing);
+		}
+	}
+
+	return true;
+}
+
 //==========================================================================
 //
 //  AutoUseHealth
@@ -198,102 +673,6 @@ final void AutoUseHealth(int saveHealth)
 	}
 	Player.Health = Health;
 }
-
-// KRPG
-/*//==========================================================================
-//
-//  PoisonPlayer - Sets up all data concerning poisoning
-//
-//==========================================================================
-
-final void PoisonPlayer(Actor poisoner, int poison)
-{
-	if ((Player(Player).Cheats & Player::CF_GODMODE) || bInvulnerable)
-	{
-		return;
-	}
-	Player(Player).PoisonCount += poison;
-	Player(Player).Poisoner = poisoner;
-	if (Player(Player).PoisonCount > 100)
-	{
-		Player(Player).PoisonCount = 100;
-	}
-	Player(Player).LastPoisonTime = XLevel.Time;
-}*/
-
-// KRPG
-/*//==========================================================================
-//
-//  PoisonDamage
-//
-//  Similar to Actor::Damage
-//
-//==========================================================================
-
-final void PoisonDamage(Actor source, int damage, bool playPainSound)
-{
-	Actor inflictor;
-
-	inflictor = source;
-	if (Health <= 0)
-	{
-		return;
-	}
-	if (bInvulnerable && damage < 10000)
-	{	// mobj is invulnerable
-		return;
-	}
-	if (bIsPlayer && Level.Game.gameskill == sk_baby)
-	{
-		// Take half damage in trainer mode
-		damage >>= 1;
-	}
-	if (damage < 1000 && ((Player(Player).Cheats & Player::CF_GODMODE) ||
-		bInvulnerable))
-	{
-		return;
-	}
-	if (damage >= Player.Health && ((Level.Game.gameskill == sk_baby) ||
-		Level.Game.deathmatch) && !Player(Player).MorphTime)
-	{
-		// Try to use some inventory health
-		AutoUseHealth(damage - Player.Health + 1);
-	}
-	Player.Health -= damage;	// mirror mobj health here for Dave
-	if (Player.Health < 0)
-	{
-		Player.Health = 0;
-	}
-	Player(Player).Attacker = source;
-
-	//
-	// do the damage
-	//
-	Health -= damage;
-	if (Health <= 0)
-	{
-		// Death
-		Special1 = damage;
-		if (bIsPlayer && inflictor && !Player(Player).MorphTime)
-		{
-			// Check for flame death
-			if (inflictor.DamageType == 'Fire' && (Health > -50) && (damage > 25))
-			{
-				DamageType = 'Fire';
-			}
-			else
-			{
-				DamageType = inflictor.DamageType;
-			}
-		}
-		Died(source, inflictor);
-		return;
-	}
-	if (!(XLevel.TicTime & 63) && playPainSound)
-	{
-		SetState(FindState('Pain'));
-	}
-}*/
 
 //==========================================================================
 //
@@ -547,13 +926,13 @@ final void A_PlayerBurnScream()
 	PlaySound('*burndeath', CHAN_VOICE);
 }
 
-//==========================================================================
+//**************************************************************************
 //
 //
-//	[CW] Actor Condtions
+//	[KoraxRPG] Actor Condtions
 //
 //
-//==========================================================================
+//**************************************************************************
 
 //==========================================================================
 //
@@ -571,27 +950,26 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 	}
 
 	ActorCondition AC;
-	ActorCondition existingAC;
 
 	if (accumulative)
-		existingAC = GetCondition(ConditionClass, Instigator, level);
+		AC = GetCondition(ConditionClass, Instigator, level);
 
-	if (existingAC)
+	if (AC)
 	{
 		float limit;
 
-		if (existingAC.MaxAccumulatedLifePerLevel < 0.0)
-			existingAC.LifeTime += life_duration;
+		if (AC.MaxAccumulatedLifePerLevel < 0.0)
+			AC.LifeTime += life_duration;
 		else
 		{
-			limit = existingAC.MaxAccumulatedLifePerLevel * itof(existingAC.Level);
-			if (existingAC.LifeTime >= limit)
-				existingAC = none;	// [CW] to mark that no condition is added
+			limit = AC.MaxAccumulatedLifePerLevel * itof(AC.Level);
+			if (AC.LifeTime >= limit)
+				AC = none;	// [CW] to mark that no condition is added
 			else
 			{
-				existingAC.LifeTime += life_duration;
-				if (existingAC.LifeTime > limit)
-					existingAC.LifeTime = limit;
+				AC.LifeTime += life_duration;
+				if (AC.LifeTime > limit)
+					AC.LifeTime = limit;
 			}
 		}
 	}
@@ -611,18 +989,15 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 		}
 	}
 
-	if (existingAC || AC)
+	if (AC)
 	{
 		if (Player && AC.CastMessage)
-				Player.cprint(AC.CastMessage);
+			Player.cprint(AC.CastMessage);
 		if (AC.CastSound)
 			PlaySound(AC.CastSound, CHAN_VOICE);
 	}
 
-	if (existingAC) return existingAC;
-	if (AC) return AC;
-
-	return none;
+	return AC;
 }
 
 //==========================================================================
@@ -671,8 +1046,6 @@ void NotifyConditions(int notification, Actor A, int param)
 }
 
 
-
-
 states
 {
 Crunch:
@@ -684,4 +1057,8 @@ defaultproperties
 {
 	SoundClass = 'fighter';
 	CrunchSound = '*splat';
+
+	// KoraxRPG
+	bIgnoreTeams = false;
+	Team = 0;
 }

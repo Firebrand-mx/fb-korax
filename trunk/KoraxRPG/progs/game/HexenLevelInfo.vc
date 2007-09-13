@@ -35,6 +35,28 @@ int bodyqueslot;
 EntityEx corpseQueue[CORPSEQUEUESIZE];
 int corpseQueueSlot;
 
+
+//
+// [KoraxRPG] Node Graph
+//
+const float	MAXNODELINKLENGTH		= 512.0;
+bool bNodeGraphBuild;
+
+
+//==========================================================================
+//
+//  SpawnSpecials
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+void SpawnSpecials()
+{
+	::SpawnSpecials();
+	BuildNodeGraph();
+}
+
 //==========================================================================
 //
 //  ExecuteActionSpecial
@@ -184,6 +206,359 @@ int GetPClassSpawnFlags()
 #endif
 	return 0;
 }
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Node Graph
+//
+//
+//**************************************************************************
+
+//===========================================================================
+//
+//  BuildNodeGraph
+//
+//===========================================================================
+
+void BuildNodeGraph()
+{
+	dprint("CWAIEX : DLI::BuildNodeGraph : IN");
+	BuildLinks();
+	//BuildPaths();	// ?? TODO
+	//BuildPathIntersections();	// ?? TODO
+	dprint("CWAIEX : DLI::BuildNodeGraph : OUT");
+}
+
+//===========================================================================
+//
+//  BuildLinks
+//
+//	Builds common links between all nodes.
+//
+//===========================================================================
+
+void BuildLinks()
+{
+	int i;
+	Node		N_Base;
+	Node		N_LinkCandidate;
+	int			linked_count;
+	bool		candidate_is_linked_to_base;
+	int			candidate_linked_count;
+	float		dest;
+	float		dest_linked_max;
+
+	//
+	// Debug statistics
+	//------------------------
+	int			stats_TotalBaseNodes = 0;
+	int			stats_TotalLinkedNodes = 0;
+	int			stats_TotalUnlinkedNodes = 0;
+	int			stats_AverageLinksPerNode = 0;
+	int			stats_TotalLinks = 0;
+	float		stats_MaximalLinkLength = 0.0;
+	float		stats_MinimalLinkLength = -1.0;
+	// etc etc etc.....
+	//------------------------
+	//
+
+	dprint("CWAIEX : DLI::BuildLinks : IN");
+
+	foreach AllThinkers(Node, N_Base)
+	{
+		stats_TotalBaseNodes++;
+
+		N_LinkCandidate = none;
+		linked_count = 0;
+		dest = -1.0;
+		dest_linked_max = -1.0;
+
+		dprint(" -- take N_Base");
+
+		for (i = 0; i < Node::MAXNODELINKS; i++)
+		{
+			if (N_Base.Links[i]._Node)
+				linked_count++;
+		}
+
+		dprint(" -- N_Base Tag = %i", N_Base.TID);
+		dprint(" -- linked count = %i", linked_count);
+		
+		if (linked_count >= Node::MAXNODELINKS)
+		{
+			stats_TotalLinkedNodes++;
+			continue;
+		}
+		
+		foreach AllThinkers(Node, N_LinkCandidate)
+		{
+			dprint(" -- take N_LinkCandidate");
+			dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
+			candidate_is_linked_to_base = false;
+			candidate_linked_count = 0;
+			if (N_LinkCandidate == N_Base)
+			{
+				dprint(" -- self as candidate, rejected");
+				continue;
+			}
+			for (i = 0; i < Node::MAXNODELINKS; i++)
+			{
+				if (N_LinkCandidate.Links[i]._Node)
+				{
+					if (N_LinkCandidate.Links[i]._Node == N_Base)
+					{
+						candidate_is_linked_to_base = true;
+						break;
+					}						
+					candidate_linked_count++;
+				}
+			}
+			if (candidate_is_linked_to_base)
+			{
+				dprint(" -- candidate already linked to base, rejected");
+				continue;
+			}
+			if (candidate_linked_count == Node::MAXNODELINKS)
+			{
+				dprint(" -- all candidate link slots used, rejected");
+				continue;
+			}
+
+			dprint(" -- candidate linked count = %i", candidate_linked_count);
+
+			dest = Length(N_Base.Origin - N_LinkCandidate.Origin);
+			dprint(" -- candidate dest = %f", dest);
+			if (dest <= MAXNODELINKLENGTH &&
+				(dest_linked_max < 0.0 || dest < dest_linked_max) )
+			{
+				Node::nodelink_t _link;
+
+				dprint(" -- dest accepted");
+
+				if (BuildNodeLink(N_Base, N_LinkCandidate, &_link))
+				{
+					if (dest_linked_max < 0.0)
+					{
+						dprint(" -- free link for the base");
+						N_Base.ApplyLink(&_link, linked_count, true);
+						dprint(" -- candidate accepted as no %i", linked_count);
+					}
+					if (dest < dest_linked_max)
+					{
+						dprint(" -- link replacement");
+						// Get linked node with maximal dest and replace it by a new one
+						for (i = 0; i < Node::MAXNODELINKS; i++)
+						{
+							if (N_Base.Links[i].length == dest_linked_max)
+							{
+								linked_count--;
+								stats_TotalLinks--;
+								N_Base.ApplyLink(&_link, i, true);
+								break;
+							}
+						}
+						dprint(" -- candidate accepted as no %i", i);
+					}
+
+					linked_count++;
+					stats_TotalLinks++;
+					if (linked_count == Node::MAXNODELINKS)
+					{
+						// Store maximal link length
+						dest_linked_max = -1.0;
+						for (i = 0; i < Node::MAXNODELINKS; i++)
+						{
+							if (dest_linked_max < 0.0 || N_Base.Links[i].length > dest_linked_max)
+								dest_linked_max = N_Base.Links[i].length;
+						}
+						dprint(" -- new max_dest = %f", dest_linked_max);
+					}
+				}
+				else
+					dprint(" -- candidate rejected");
+			}
+			else
+				dprint(" -- dest rejected");
+		}
+		dprint(" -- no more candidates");
+
+
+		if (linked_count)
+			stats_TotalLinkedNodes++;
+		else
+			stats_TotalUnlinkedNodes++;
+		stats_AverageLinksPerNode += linked_count;
+		for (i = 0; i < linked_count; i++)
+		{
+			Node::nodelink_t * p_link = &N_Base.Links[i];
+			if (stats_MaximalLinkLength < p_link->length)
+				stats_MaximalLinkLength = p_link->length;
+			if (stats_MinimalLinkLength < 0.0 || stats_MinimalLinkLength > p_link->length)
+				stats_MinimalLinkLength = p_link->length;
+		}
+
+	}
+	dprint(" -- no more bases");
+
+	if (stats_TotalBaseNodes)
+		stats_AverageLinksPerNode /= stats_TotalBaseNodes;
+
+	//
+	// Debug info output
+	//------------------------
+	print("");
+	print(" ============= Node Graph Info =============");
+	print("   Total Nodes found:               %i      ", stats_TotalBaseNodes);
+	print("   Total Bidirect Links build:      %i      ", stats_TotalLinks);
+	print("   Total Linked Nodes:              %i      ", stats_TotalLinkedNodes);
+	print("   Total Unlinked Nodes:            %i      ", stats_TotalUnlinkedNodes);
+	print("   Average Links per Node:          %i      ", stats_AverageLinksPerNode);
+	print("   Maximal Link Length:             %f      ", stats_MaximalLinkLength);
+	print("   Minimal Link Length:             %f      ", stats_MinimalLinkLength);
+	print(" ===========================================");
+	print("");
+	//------------------------
+	//
+
+	bNodeGraphBuild = (stats_TotalBaseNodes > 0);
+
+	dprint("CWAIEX : DLI::BuildLinks : OUT");
+}
+
+//===========================================================================
+//
+//  BuildNodeLink
+//
+//	Tries to build a link between two nodes and sets link parameters.
+//
+//===========================================================================
+
+bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
+{
+	bool canreach;
+	ReachTraverse::linkreach_traverse_data LRTRData;
+	dprint("CWAIEX : DLI::BuildNodeLink : IN");
+	dprint(" --- N_From tag = %i", N_From.TID);
+	dprint(" --- N_To tag = %i", N_To.TID);
+
+	canreach = BuildNodeLinkTraverse(N_From, N_To, &LRTRData);
+
+	if (!canreach)
+	{
+		dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE");
+		return false;
+	}
+	if (!LRTRData.intercepted_once && N_From.Sector != N_To.Sector)
+	{
+		dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE EX");
+		return false;
+	}
+	
+	_link->_Node = N_To;
+	_link->length = Length(N_From.Origin - N_To.Origin);
+	_link->minyspace = LRTRData.minyspace;
+	_link->maxstepheight = LRTRData.maxstepheight;
+	_link->maxdropoff = LRTRData.maxdropoff;
+	
+	dprint(" --- Link length = %f", _link->length);
+	dprint(" --- Link minyspace = %f", _link->minyspace);
+	dprint(" --- Link maxstepheight = %f", _link->maxstepheight);
+	dprint(" --- Link maxdropoff = %f", _link->maxdropoff);
+
+	dprint("CWAIEX : DLI::BuildNodeLink : OUT TRUE");
+	return true;
+}
+
+//==========================================================================
+//
+//	BuildNodeLinkTraverse
+//
+//==========================================================================
+
+bool BuildNodeLinkTraverse(Node N_From, Node N_To,
+							ReachTraverse::linkreach_traverse_data * pLRTRData)
+{
+	dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : IN");
+
+	intercept_t * in;
+	pLRTRData->intercepted_once = false;
+	pLRTRData->prev_sector = N_From.Sector;
+	pLRTRData->minyspace = N_From.Sector->ceilingheight - N_From.Sector->floorheight;	
+	pLRTRData->maxstepheight = 0.0;
+	pLRTRData->maxdropoff = 0.0;
+
+
+	foreach PathTraverse(in, N_From.Origin.x, N_From.Origin.y, N_To.Origin.x, N_To.Origin.y,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		pLRTRData->intercepted_once = true;
+
+		if (in->bIsALine)
+		{
+			sector_t * p_sector;
+			float ceiling;
+			float floor;
+			float yspace;
+			float fheightdelta;
+
+			// single-sided lines abort traverse
+			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					!in->line->backsector)
+			{
+				dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE");
+				return false;
+			}
+
+
+			// in case of two-sided lines we update link info
+			if (in->line->frontsector == pLRTRData->prev_sector)
+				p_sector = in->line->backsector;
+			else if (in->line->backsector == pLRTRData->prev_sector)
+				p_sector = in->line->frontsector;
+			else
+			{
+				// something was really messed up
+				dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE EX");
+				return false;
+			}
+
+			if (p_sector->ceilingheight < pLRTRData->prev_sector->ceilingheight)
+				ceiling = p_sector->ceilingheight;
+			else
+				ceiling = pLRTRData->prev_sector->ceilingheight;
+			if (p_sector->floorheight > pLRTRData->prev_sector->floorheight)
+				floor = p_sector->floorheight;
+			else
+				floor = pLRTRData->prev_sector->floorheight;
+			yspace = ceiling - floor;
+			fheightdelta = p_sector->floorheight - pLRTRData->prev_sector->floorheight;
+
+			if (yspace < pLRTRData->minyspace)
+				pLRTRData->minyspace = yspace;
+			if (fheightdelta > 0.0)
+			{
+				if (fheightdelta > pLRTRData->maxstepheight)
+					pLRTRData->maxstepheight = fheightdelta;
+			}
+			else if (fheightdelta < 0.0)
+			{
+				if (fheightdelta < -pLRTRData->maxdropoff)
+					pLRTRData->maxdropoff = -fheightdelta;
+			}
+
+			pLRTRData->prev_sector = p_sector;
+		}
+		else
+		{
+			// TODO: check this precisely...
+		}
+	}
+
+	dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT TRUE");
+	return true;
+}
+
 
 defaultproperties
 {
