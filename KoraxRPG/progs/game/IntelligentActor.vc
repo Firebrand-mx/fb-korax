@@ -1,0 +1,1512 @@
+
+class IntelligentActor : Actor;
+
+//
+// [KoraxRPG] Advanced AI
+//
+
+const float ACCEPTABLE_WAYPOINT_VICINITY	= 96.0;
+
+enum
+{
+	THREATREACTION__NONE,			// do not react on any threat at all
+	THREATREACTION__LOHEALTH,		// react only if damaged by thread source and health dropped below 1/3
+	THREATREACTION__DAMAGE,			// react only if damaged by threat source (at any health)
+	THREATREACTION__SEE,			// react on any seen threat in preset range (see Behavior.ThreatVicinity)
+	THREATREACTION__DETECT			// react on any threat detected by any means in preset range
+};
+
+struct pawn_behavior_t
+{
+	int				ThreatReaction;
+	float			ThreatVicinity;			// maximal distance of threat source to react on
+
+
+
+	bool			bKnowFTargetPos;		// if TRUE, pawn knows current FTarget position.
+
+	bool			bLostFTarget;			// if TRUE, pawn has just lost an FTarget,
+											// i.e. he can not see it and/or reach him;
+											// if both bKnowEnemyPos and bLostEnemy flags
+											// are TRUE, this means that pawn can SEE FTarget,
+											// but cannot REACH it
+	int				LostFTargetTolerance;	// how long a pawn will try to find lost FTarget
+											// until he finally decides to build new route
+											// or retarget
+											// (in times DoChase is called)
+	int				LostFTargetTime;		// how much strokes left until route build/retarget
+
+
+
+	bool			bNeverUseRoutes;		// obvious..
+	bool			bBuildingRoute;				// 
+	int				RouteBuildContinuesCount;	//
+	int				RouteBuildIterationsCount;	//
+	bool			bUsingRoute;			// if TRUE, pawn walks along the route
+	int				RouteRebuildRate;		// how often this pawn rebuilds its
+											// route from scratch
+											// (lower value mean higher rate)
+											// (in times DoChase is called)
+	int				RouteRebuildRateLow;	// special rate used in case when pawn failed
+											// to build a route; it should be at least a bit
+											// lower than RouteRebuildRate (use higher value)
+	int				RouteRebuildTime;		// how much strokes left until route rebuild
+	int				CheckFTargetPosRate;	// how often pawn checks its target's position
+	int				CheckFTargetPosTime;	// how much strokes left until target's position check
+	float			FTargetPosChangeLimit;	// when target is beyond this range relative
+											// to its previous known position, pawn should
+											// rebuild the route;
+											// (pawns with ranged attack may perhaps have higher values)
+};
+
+pawn_behavior_t		Behavior;
+
+generic_target_t	FGnTarget;			// final aim
+generic_target_t	IGnTarget;			// immediate aim
+TVec				LastKnownPosition;	// for moving targets
+
+
+bool				bIsGroupLeader;
+int					Group;
+
+
+
+//
+// [KoraxRPG] Actor Tasks
+//
+
+struct generic_target_t
+{
+	TVec		Pos;
+	Entity		Thing;
+	Node		Node;
+};
+
+
+LinkedList		Tasks;
+ActorTask		CurrentTask;
+
+enum
+{
+	STATE_ACTION__NONE,
+	STATE_ACTION__LOOK,
+	STATE_ACTION__CHASE
+};
+
+int				StateAction;
+
+
+
+//==========================================================================
+//
+//	Destroy
+//
+//==========================================================================
+
+void Destroy()
+{
+	if (Tasks)
+		Tasks.Destroy();
+	if (CurrentRoute)
+		CurrentRoute.Destroy();
+	if (RouteList)
+		RouteList.Destroy();
+	::Destroy();
+}
+
+//==========================================================================
+//
+//  OkayToSwitchTarget
+//
+//==========================================================================
+
+bool OkayToSwitchTarget(EntityEx source)
+{
+	// TODO: add some specific condtions here
+	//
+	bool okaytoswitch = !CurrentTask && ::OkayToSwitchTarget(source);
+
+	//
+	// [CW] We know that Damage method will set new Target itself,
+	// so we have to set F & I generic target datas
+	if (okaytoswitch)
+	{
+		generic_target_t gnTarget;
+		gnTarget.Thing = source;
+		A_SetFinalTarget(&gnTarget);
+		A_SetImmediateTarget(&gnTarget);
+	}
+
+	return okaytoswitch;
+}
+
+//==========================================================================
+//
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	if (Tasks)
+		Tasks.Destroy();
+	if (CurrentRoute)
+		CurrentRoute.Destroy();
+	if (RouteList)
+		RouteList.Destroy();
+
+	Tasks = none;
+	CurrentRoute = none;
+	RouteList = none;
+
+	::Died(source, inflictor);
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (Tasks && Tasks.refHead)
+	{
+		ActorTask AT = ActorTask(Tasks.refHead);
+		while (AT.refNext)
+		{
+			AT = ActorTask(AT.refNext);
+			ActorTask(AT.refPrev).Tick(deltaTime);
+		};
+		AT.Tick(deltaTime);
+	}
+}
+
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Advanced AI
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	A_SetFinalTarget
+//
+//==========================================================================
+
+void A_SetFinalTarget(generic_target_t * pGnTarget)
+{
+	if (pGnTarget)
+	{
+		print("Final target is determined! Thing = %i", pGnTarget->Thing);
+		Behavior.bKnowFTargetPos = true;
+		FGnTarget.Thing = (pGnTarget->Thing && !pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none;
+		FGnTarget.Node = Node((pGnTarget->Thing && pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none);
+		FGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.Origin : pGnTarget->Pos;
+		LastKnownPosition = FGnTarget.Pos;
+	}
+	else
+	{
+		FGnTarget.Thing = none;
+		FGnTarget.Node = none;
+		FGnTarget.Pos = Origin;	// just in case
+	}
+}
+
+//==========================================================================
+//
+//	A_SetImmediateTarget
+//
+//==========================================================================
+
+void A_SetImmediateTarget(generic_target_t * pGnTarget)
+{
+	if (pGnTarget)
+	{
+		IGnTarget.Thing = (pGnTarget->Thing && !pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none;
+		IGnTarget.Node = Node((pGnTarget->Thing && pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none);
+		IGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.Origin : pGnTarget->Pos;
+	}
+	else
+	{
+		IGnTarget.Thing = none;
+		IGnTarget.Node = none;
+		IGnTarget.Pos = Origin;	// just in case
+	}
+}
+
+//==========================================================================
+//
+//	A_LookAI
+//
+//==========================================================================
+
+final void A_LookAI()
+{
+	// TODO: check, do we need to reset FGn & IGn targets when SeeState was just set
+
+	StateAction = STATE_ACTION__LOOK;
+
+	if (DoTasks())
+		return;
+
+	if (A_LookEx(false))
+	{
+		generic_target_t gnTarget;
+		gnTarget.Thing = Target;
+		A_SetFinalTarget(&gnTarget);
+		A_SetImmediateTarget(&gnTarget);
+		
+		SetState(SeeState);
+	}
+}
+
+//==========================================================================
+//
+//	A_ChaseAI
+//
+//==========================================================================
+
+final void A_ChaseAI()
+{
+	StateAction = STATE_ACTION__CHASE;
+
+	if (DoTasks())
+		return;
+
+	// Update known info about target position, if this is a moving target
+	if (FGnTarget.Thing)
+	{
+		// TODO: some monsters do not need to SEE enemy
+		if (CanSee(FGnTarget.Thing))
+		{
+			if (!Behavior.bKnowFTargetPos)
+				print("Target is seen!");
+			Behavior.bKnowFTargetPos = true;
+			LastKnownPosition = FGnTarget.Thing.Origin;
+		}
+		else
+		{
+			if (Behavior.bKnowFTargetPos)
+				print("Cannot see enemy!");
+			Behavior.bKnowFTargetPos = false;
+		}
+	}
+
+	if (!Behavior.bNeverUseRoutes)
+		DoRoute();
+
+	// [CW] This looks a bit clumsy, perhaps should modify later..
+	// ( Then again, may be not. (c) Korax )
+	if (FGnTarget.Thing && !Behavior.bUsingRoute)
+		IGnTarget.Pos = LastKnownPosition;
+
+	if (!bIsPlayer)
+	{
+		if (Behavior.bUsingRoute)
+			pTargetVec = &IGnTarget.Node.Origin;
+		else
+			pTargetVec = &IGnTarget.Pos;
+	}
+
+	if (A_ChaseEx(false))
+	{
+		//
+		// [CW] Chase is going on, check possible threat sources nearby...
+		//
+	}
+	else
+	{
+		//
+		// [CW] Chase ended, think out what to do next
+		//
+		print("A_ChaseAI = chase ended");
+
+		if (IGnTarget.Thing == FGnTarget.Thing || IGnTarget.Pos == FGnTarget.Pos)
+			// we have to check Thing and Pos in case Thing is 'none' in both I & F
+		{
+			// Final target gone, kill the route if any, prepare for new task
+			A_CleanRoutes();
+			A_SetFinalTarget(NULL);
+			A_SetImmediateTarget(NULL);
+			bInCombat = false;
+			SetState(IdleState);
+		}
+		else
+		{
+			// Final target is still there, go for it
+			if (Behavior.bUsingRoute)
+			{
+				IGnTarget.Thing = none;
+				IGnTarget.Node = CurrentRoute.Nodes[RouteWayIndex];
+				IGnTarget.Pos = IGnTarget.Node.Origin;
+			}
+			else
+			{
+				A_SetImmediateTarget(&FGnTarget);
+			}
+		}
+	}
+}
+
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Actor Tasks
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  A_SetThreatReaction
+//
+//==========================================================================
+
+void A_SetThreatReaction(int Reaction, float Vicinity)
+{
+	Behavior.ThreatReaction = Reaction;
+	Behavior.ThreatVicinity = Vicinity;
+}
+
+//==========================================================================
+//
+//  A_OrderCancelAll
+//
+//==========================================================================
+
+void A_OrderCancelAll()
+{
+	if (Tasks)
+	{
+		Tasks.DestroyAll();
+		CurrentTask = none;
+
+		if (StateAction != STATE_ACTION__LOOK)
+			SetState(IdleState);
+	}
+}
+
+//==========================================================================
+//
+//  A_OrderCancelCurrent
+//
+//==========================================================================
+
+void A_OrderCancelCurrent()
+{
+	if (Tasks && Tasks.refHead)
+	{
+		Tasks.refHead.Destroy();
+		CurrentTask = none;
+
+		if (StateAction != STATE_ACTION__LOOK)
+			SetState(IdleState);
+	}
+}
+
+//==========================================================================
+//
+//  A_OrderAttackAll
+//
+//==========================================================================
+
+void A_OrderAttackAll(int priority, float duration)
+{
+	if (Health <= 0)
+		return;
+
+	if (!Tasks)
+		Tasks = LinkedList(SpawnObject(LinkedList));
+
+	ActorTask AT = ActorTask(SpawnObject(ActorTask));
+	AT.Order = ActorTask::ORDER__ATTACKALL;
+	AT.Priority = priority;
+	AT.Duration = duration;
+	AT.Time = duration;
+
+	Tasks.Add(AT);
+}
+
+//==========================================================================
+//
+//  A_OrderAttackThing
+//
+//==========================================================================
+
+void A_OrderAttackThing(int priority, float duration, Actor Thing)
+{
+	if (Health <= 0)
+		return;
+
+	if (!Tasks)
+		Tasks = LinkedList(SpawnObject(LinkedList));
+
+	ActorTask AT = ActorTask(SpawnObject(ActorTask));
+	AT.Order = ActorTask::ORDER__ATTACKTHING;
+	AT.Priority = priority;
+	AT.Duration = duration;
+	AT.Time = duration;
+
+	AT.GnTarget.Pos = Thing.Origin;
+	AT.GnTarget.Thing = Thing;
+
+	Tasks.Add(AT);
+}
+
+//==========================================================================
+//
+//  A_OrderStandStill
+//
+//==========================================================================
+
+void A_OrderStandStill(int priority, float duration)
+{
+	if (Health <= 0)
+		return;
+
+	if (!Tasks)
+		Tasks = LinkedList(SpawnObject(LinkedList));
+
+	ActorTask AT = ActorTask(SpawnObject(ActorTask));
+	AT.Order = ActorTask::ORDER__STANDSTILL;
+	AT.Priority = priority;
+	AT.Duration = duration;
+	AT.Time = duration;
+
+	Tasks.Add(AT);
+}
+
+//==========================================================================
+//
+//  A_OrderWalkTo
+//
+//==========================================================================
+
+void A_OrderWalkTo(int priority, float duration, TVec position)
+{
+	if (Health <= 0)
+		return;
+
+	if (!Tasks)
+		Tasks = LinkedList(SpawnObject(LinkedList));
+
+	ActorTask AT = ActorTask(SpawnObject(ActorTask));
+	AT.Order = ActorTask::ORDER__WALKTO;
+	AT.Priority = priority;
+	AT.Duration = duration;
+	AT.Time = duration;
+
+	AT.GnTarget.Pos = position;
+
+	Tasks.Add(AT);
+}
+
+//==========================================================================
+//
+//	DoTasks
+//
+//==========================================================================
+
+bool DoTasks()
+{
+	if (Tasks)
+	{
+		bool taskCompleted = false;
+
+		if (CurrentTask && CurrentTask.CheckCompleted())
+		{
+			taskCompleted = true;
+			switch (CurrentTask.Order)
+			{
+			case ActorTask::ORDER__ATTACKALL:
+				bIgnoreTeams = default.bIgnoreTeams;
+				CurrentTask.GnTarget.Thing = none;
+				break;
+			default:
+				CurrentTask.Destroy();
+				break;
+			};
+			CurrentTask = none;
+		}
+
+		if (Tasks.refHead)
+		{
+			//
+			// TODO: Handle priorities
+			//
+			ActorTask AT = ActorTask(Tasks.refHead);
+			do
+			{
+				break;
+			}
+			while (AT);
+
+			//
+			// Perform first-priority task
+			//
+			return PerformTask(ActorTask(Tasks.refHead));
+		}
+		else if (taskCompleted)
+		{
+			if (StateAction != STATE_ACTION__LOOK)
+			{
+				SetState(IdleState);
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	PerformTask
+//
+//==========================================================================
+
+bool PerformTask(ActorTask AT)
+{
+	bool bSkipCommonActions = false;
+	ActorTask OldTask = CurrentTask;
+	CurrentTask = AT;
+
+	AT.Owner = self;
+
+	switch (AT.Order)
+	{
+	case ActorTask::ORDER__STANDSTILL:
+		{
+			bSkipCommonActions = true;
+			if (StateAction != STATE_ACTION__LOOK)
+				SetState(IdleState);
+		}
+		break;
+	case ActorTask::ORDER__ATTACKTHING:
+	case ActorTask::ORDER__ATTACKALL:
+		{
+			if (AT != OldTask)
+			{
+				bSkipCommonActions = true;
+
+				if (AT.GnTarget.Thing)
+					Target = EntityEx(AT.GnTarget.Thing); // FIXME
+				else
+				{
+					bIgnoreTeams = true;
+					LookForEnemy(true, true);
+				}
+
+				if (Target)
+				{
+					AT.GnTarget.Thing = Target;
+					A_SetFinalTarget(&AT.GnTarget);
+					A_SetImmediateTarget(&AT.GnTarget);
+					SetState(SeeState);
+				}
+				else
+				{
+					if (StateAction != STATE_ACTION__LOOK)
+						SetState(IdleState);
+				}
+			}
+		}
+		break;
+	case ActorTask::ORDER__WALKTO:
+		{
+			if (AT != OldTask)
+			{
+				bSkipCommonActions = true;
+				A_SetFinalTarget(&AT.GnTarget);
+				A_SetImmediateTarget(&AT.GnTarget);
+				if (StateAction != STATE_ACTION__CHASE)
+					SetState(SeeState);
+			}
+		}
+		break;
+	}
+
+	return bSkipCommonActions;
+}
+
+
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Route Management
+//
+//
+//**************************************************************************
+
+const int			RouteBuildContinuesLimit = 16;
+const int			RouteBuildIterationsLimit = 16;
+
+Node				CurrentNode;		// a node this pawn is currently linked with
+
+
+LinkedList			RouteList;		// used during waypoints building
+Route				CurrentRoute;	// route (list of waypts) currently used
+int					RouteWayIndex;	// Index of the waypoint pawn currently goes to
+
+//==========================================================================
+//
+//	A_CleanRoutes
+//
+//==========================================================================
+
+void A_CleanRoutes()
+{
+	Behavior.bBuildingRoute = false;
+	Behavior.bUsingRoute = false;
+
+	Behavior.RouteBuildContinuesCount = 0;
+	Behavior.RouteBuildIterationsCount = 0;
+	Behavior.RouteRebuildTime = 0;
+
+	if (RouteList)
+	{
+		RouteList.Destroy();
+		RouteList = none;
+	}
+	if (CurrentRoute)
+	{
+		CurrentRoute.Destroy();
+		CurrentRoute = none;
+	}
+}
+
+//==========================================================================
+//
+//	DoRoute
+//
+//==========================================================================
+
+void DoRoute()
+{
+	if (!HexenLevelInfo(Level).bNodeGraphBuild)
+		return;
+
+	// update timers
+	if (Behavior.RouteRebuildTime > 0)
+		Behavior.RouteRebuildTime--;
+	if (Behavior.bUsingRoute && Behavior.CheckFTargetPosTime > 0)
+		Behavior.CheckFTargetPosTime--;
+	if (Behavior.bLostFTarget && Behavior.LostFTargetTime > 0)
+		Behavior.LostFTargetTime--;
+
+	//
+	// [CW]
+	//
+	// Now, here's the task: IA may use route method to reach not only
+	// things (entity objects), but custom map positions as well.
+	// We must remember this all the way 'round here.
+	// Also, important - FGnTarget should be used here as a final target,
+	// IGnTarget is to set up next node, Entity::Target is no use here at all.
+	//
+	// If FGnTarget.Thing is set, FGnTarget.Pos is used to store the target
+	// thing position at certain moments of time only, this is needed to
+	// check if target has moved far away from it's previous position.
+	//
+	//
+
+	
+	if (	FGnTarget.Thing ?
+		(Behavior.bKnowFTargetPos && CanReach(FGnTarget.Thing.Origin, FGnTarget.Thing)) :
+		CanReach(FGnTarget.Pos, none)	)
+	{
+		print("canreach");
+		if (FGnTarget.Thing && (Behavior.bLostFTarget || Behavior.bUsingRoute))
+		{
+			print("Target is reachable!");
+			Behavior.bLostFTarget = false;
+		}
+		A_CleanRoutes();
+		// Set immediate target
+		IGnTarget.Thing = FGnTarget.Thing;
+		IGnTarget.Node = Node((FGnTarget.Thing && FGnTarget.Thing.IsA('Node')) ? FGnTarget.Thing : none);
+		IGnTarget.Pos = FGnTarget.Thing ? FGnTarget.Thing.Origin : FGnTarget.Pos;
+		return;
+	}
+	else if (Behavior.bUsingRoute)
+	{
+		print("use route, checkpostime = %i", Behavior.CheckFTargetPosTime);
+		// If check target pos timer run out, pawn should reconsider its target position
+		if (FGnTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
+		{
+			print("checking enemy movement delta...");
+			// If enemy moved away too far from his previous stored position,
+			// update that position and force rebuild route
+			if (Length(LastKnownPosition - FGnTarget.Pos) > Behavior.FTargetPosChangeLimit)
+			{
+				print("Target moved too far away, must remake route");
+				Behavior.RouteRebuildTime = 0;
+			}
+			else
+				Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+
+			FGnTarget.Pos = LastKnownPosition;
+		}
+
+		if (Behavior.RouteRebuildTime > 0)
+		{
+			// check target route waypoint vicinity
+			AcceptTargetNode();
+			return;
+		}
+	}
+	else/* if (FGnTarget.Thing)*/
+	{
+		if (Behavior.bLostFTarget)
+		{
+			print("still lost ftarget %i, must rebild %i", Behavior.LostFTargetTime, Behavior.RouteRebuildTime);
+			if (Behavior.LostFTargetTime > 0 || Behavior.RouteRebuildTime > 0)
+				return;
+		}
+		else
+		{
+			print("Set lost ftarget");
+			Behavior.bLostFTarget = true;
+			Behavior.LostFTargetTime = Behavior.LostFTargetTolerance;
+			return;
+		}
+	}
+
+	// Well, it looks like it is right time for pawn to build a route
+	if (FGnTarget.Thing)
+	{
+		if (Behavior.bKnowFTargetPos)
+			BuildRoute(FGnTarget.Thing.Origin, FGnTarget.Thing);
+		else
+			BuildRoute(LastKnownPosition, none);
+	}
+	else
+		BuildRoute(FGnTarget.Pos, none);
+}
+
+//==========================================================================
+//
+//	BuildRoute
+//
+//	Tries to build a route using nodes.
+//	AimActor is optional.
+//
+//==========================================================================
+
+void BuildRoute(TVec AimPos, Entity AimEntity)
+{
+	int i;
+
+	if (Behavior.bBuildingRoute)
+		print("Try continue build route");
+	else
+		print("Try build route");
+
+	Behavior.bUsingRoute = false;
+
+	if (!Behavior.bBuildingRoute)
+	{
+		CurrentNode = FindNearestReachableNode();
+		if (CurrentNode == none)
+		{
+			print("no current node");
+			return;			// no luck
+		}
+
+		print("CurrentNode = %i", CurrentNode.Args[2]);
+
+		FGnTarget.Node = FindAcceptableTargetNode(AimPos, AimEntity);
+
+		if (FGnTarget.Node == none)
+		{
+			print("no final target node");
+			return;				// no luck
+		}
+		
+		print("Final Target node = %i", FGnTarget.Node.Args[2]);
+	}
+
+	if (BuildWaypoints(CurrentNode, FGnTarget.Node))
+	{
+		// succeeded, route was build, so set next path node to go to
+
+		if (CurrentRoute)
+		{
+			Behavior.bUsingRoute = true;
+			Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+
+			//// DEBUG -------------------------- DEBUG
+			print("succeeded build route");
+			int ii;
+			for (ii = 0; ii < CurrentRoute.Size; ii++)
+			{
+				print("   --- %i", CurrentRoute.Nodes[ii].TID);
+			}
+			//// DEBUG -------------------------- DEBUG
+		}
+		else
+			print("no current route --> target is too near");
+		
+		Behavior.bLostFTarget = false;
+		Behavior.RouteRebuildTime = Behavior.RouteRebuildRate;
+
+		RouteWayIndex = 0;
+		IGnTarget.Node = CurrentNode;
+	}
+	else
+	{
+		if (Behavior.bBuildingRoute)
+		{
+			print("delayed build route");
+		}
+		else
+		{
+			print("failed build route");
+			Behavior.RouteRebuildTime = Behavior.RouteRebuildRateLow;
+			RouteWayIndex = -1;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SetNextTargetNode
+//
+//==========================================================================
+
+void SetNextTargetNode()
+{
+	if (!Behavior.bUsingRoute)
+		return;
+
+	print("set next node");
+	
+	if (IGnTarget.Node)
+	{
+		RouteWayIndex++;
+		if (RouteWayIndex >= Route::WAYLISTSIZE ||
+				CurrentRoute.Nodes[RouteWayIndex] == none)
+		{
+			print("route finished");
+			Behavior.bUsingRoute = false;
+		}
+		else
+		{
+			IGnTarget.Node = CurrentRoute.Nodes[RouteWayIndex];
+			print("new target node = %i", IGnTarget.Node.Args[2]);
+		}
+	}
+	else
+	{
+		// something wrong has happened
+		print("Lost route!!!");
+		Behavior.bUsingRoute = false;
+	}
+}
+
+//==========================================================================
+//
+//	AcceptTargetNode
+//
+//	Checks whether actor is in vicinity of target node
+//
+//==========================================================================
+
+void AcceptTargetNode()
+{
+	if (!Behavior.bUsingRoute)
+		return;
+
+	if (!IGnTarget.Node)
+		return;
+
+	if (Length(Origin - IGnTarget.Node.Origin) <= ACCEPTABLE_WAYPOINT_VICINITY)
+	{
+		print("node accepted! %i", IGnTarget.Node.Args[2]);
+		CurrentNode = IGnTarget.Node;
+		SetNextTargetNode();
+	}
+}
+
+//==========================================================================
+//
+//	FindNearestReachableNode
+//
+//==========================================================================
+
+Node FindNearestReachableNode()
+{
+	float		distance;
+	float		compdist;
+	Node		_Node;
+	Node		NodeSelected;
+	
+	NodeSelected = none;
+	distance = -1.0;
+	
+	foreach AllThinkers(Node, _Node)
+	{
+		dprint("Actor::FindNearestReachableNode : _Node = %i", _Node.Args[2]);
+		compdist = Length(_Node.Origin - Origin);
+		if (distance < 0.0 || compdist < distance)
+		{
+			dprint("Actor::FindNearestReachableNode : check canreach");
+			if (CanReach(_Node.Origin, none))
+			{
+				dprint("Actor::FindNearestReachableNode : remember this one");
+				distance = compdist;
+				NodeSelected = _Node;
+			}
+		}
+	}
+	return NodeSelected;
+}
+
+//==========================================================================
+//
+//	FindAcceptableTargetNode
+//
+//==========================================================================
+
+Node FindAcceptableTargetNode(TVec VTarget, Entity ETarget)
+{
+	float		distance;
+	float		compdist;
+	Node		_Node;
+	Node		NodeSelectedCanReach;
+	Node		NodeSelectedCanSee;
+	TVec		OriginalOrigin;		// [CW] I like how it sounds :)
+	TAVec		OriginalAngles;
+	TVec		VectorToTarget;
+	
+	distance = -1.0;
+	OriginalOrigin = Origin;
+	OriginalAngles = Angles;
+	
+	foreach AllThinkers(Node, _Node)
+	{
+		compdist = Length(_Node.Origin - VTarget);
+		if (distance < 0.0 || compdist < distance)
+		{
+			UnlinkFromWorld();
+			Origin = _Node.Origin;
+			LinkToWorld();
+			VectorToTarget = (VTarget - Origin);
+			VectorAngles(&VectorToTarget, &Angles);
+			
+			if (CanReach(VTarget, ETarget))
+			{
+				distance = compdist;
+				NodeSelectedCanReach = _Node;
+			}
+			else if (MissileState && ETarget && CanSee(ETarget))
+			{
+				distance = compdist;
+				NodeSelectedCanSee = _Node;
+			}
+		}
+	}
+	
+	UnlinkFromWorld();
+	Origin = OriginalOrigin;
+	Angles = OriginalAngles;
+	LinkToWorld();
+	return (MissileState && (!NodeSelectedCanReach || NodeSelectedCanSee && Length(NodeSelectedCanSee.Origin - VTarget) < 
+								Length(NodeSelectedCanReach.Origin - VTarget)))
+				? NodeSelectedCanSee : NodeSelectedCanReach;
+}
+
+
+
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Route Building
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	BuildWaypoints
+//
+//==========================================================================
+
+bool BuildWaypoints(Node N_From, Node N_To)
+{
+	int i;
+	
+	print("try build waypoints");
+	
+	//
+	// Algorythm for optimal route build, as written in AI Tutorial :)
+	//
+	//	 create a list P
+	//	 add the start node S, to P giving it one element
+	//	 Until first path of P ends with G, or P is empty
+	//		extract the first path from P
+    //		extend first path one step to all neighbors creating X new paths
+    //		reject all paths with loops
+    //			for all paths that end at the same node,
+	//								keep only the shortest one.
+	//		add each remaining new path to of P
+    //		Sort all paths by total underestimate, shortest first.
+	//	 If G found -> success. Else -> failure.
+	//
+	//	total underestimate is:
+	//		distance of partial path travelled + straight-line distance
+	//										from last node in path to goal
+	//
+	//
+
+	bool						failed;
+	LinkedList					route_list;
+	Route						R;
+
+	failed = false;
+	if (Behavior.bBuildingRoute)
+	{
+		print("continue %i", Behavior.RouteBuildContinuesCount);
+		Behavior.RouteBuildContinuesCount++;
+		Behavior.RouteBuildIterationsCount = 0;
+	}
+	else
+	{
+		// TODO: think this out
+		if (CurrentRoute)
+		{
+			CurrentRoute.Destroy();
+			CurrentRoute = none;
+		}
+
+		if (N_From == N_To)
+		{
+			print("succeeded (same node)");
+			return true;
+		}
+
+		Behavior.bBuildingRoute = true;
+		Behavior.RouteBuildContinuesCount = 0;
+		Behavior.RouteBuildIterationsCount = 0;
+
+		if (RouteList)
+			Error ("Actor::BuildWaypoints : RouteList existed before Route build was started");
+
+		RouteList = LinkedList(SpawnObject(LinkedList));
+	
+		R = Route(SpawnObject(Route));
+		R.Nodes[0] = N_From;
+		R.Size = 1;
+		RouteList.Add(R);
+	}
+
+	route_list = LinkedList(SpawnObject(LinkedList));
+
+	while (!IsNodeInRoute(Route(RouteList.refHead), N_To))
+	{
+		if (Behavior.RouteBuildIterationsCount == RouteBuildIterationsLimit)
+		{
+			if (Behavior.RouteBuildContinuesCount == RouteBuildContinuesLimit)
+			{
+				failed = true;
+				break;
+			}
+
+			route_list.Destroy();
+			return false;
+		}
+		else
+			print("iteration %i", Behavior.RouteBuildIterationsCount);
+
+		if (route_list.refHead)
+			Error ("Actor::BuildWaypoints : temporary route list is not empty at the beginning of iteration");
+
+		R = Route(RouteList.refHead);
+		route_list.Add(R);
+		ExtendRoute(route_list, N_To);
+		if (route_list.refHead != none)
+			AddExtendedRoutes(route_list, RouteList);
+		ExcludeExcessRoutes(RouteList);
+		if (RouteList.refHead == none)
+		{
+			failed = true;
+			break;
+		}
+		
+		Behavior.RouteBuildIterationsCount++;
+	};
+	
+	Behavior.bBuildingRoute = false;
+
+	if (!failed)
+	{
+		// Store successful route, destroy others
+		CurrentRoute = Route(RouteList.refHead);
+		RouteList.refHead.UnlinkFromList();
+	}
+	
+	route_list.Destroy();
+	RouteList.Destroy();
+	RouteList = none;
+
+	return !failed;
+}
+
+//==========================================================================
+//
+//	IsNodeInRoute
+//
+//==========================================================================
+
+bool IsNodeInRoute(Route R, Node N)
+{
+	int i;
+	
+	dprint("IsNodeInRoute : nodes currently in list:");
+	for (i = 0; i < R.Size; i++)
+	{
+		dprint("    ---- %i", R.Nodes[i].TID);
+		if (R.Nodes[i] == N)
+			return true;
+	}
+	
+	return false;
+}
+
+//==========================================================================
+//
+//	ExtendRoute
+//
+//	It is assumed that route list passed to this method contains
+//	only one route that need to be extended.
+//
+//==========================================================================
+
+void ExtendRoute(LinkedList route_list, Node NDest)
+{
+	if (route_list.refHead == none)
+		return;
+
+	int i, j;
+	bool found;
+	float PreviousMeasure;
+	float LinkMeasureFactor;
+	Route R;
+	Route ExtendableRoute;
+	Node NExtendable;
+	
+	ExtendableRoute = Route(route_list.refHead);
+	
+	dprint("ExtendRoute : ExtendableRoute.Measure = %f", ExtendableRoute.Measure);
+	dprint("ExtendRoute : ExtendableRoute.Size = %i", ExtendableRoute.Size);
+	
+	PreviousMeasure = ExtendableRoute.Measure;
+	NExtendable = ExtendableRoute.Nodes[ExtendableRoute.Size - 1];
+	
+	dprint("ExtendRoute : NExtendable.TID = %i", NExtendable.TID);
+	
+	// Do extension
+	for (i = 0; i < Node::MAXNODELINKS; i++)
+	{
+		if (NExtendable.Links[i]._Node)
+		{
+			dprint("ExtendRoute : try link to %i", NExtendable.Links[i]._Node.TID);
+			found = false;
+			// Check if this node isn't already in route
+			for (j = 0; j < Route(route_list.refHead).Size; j++)
+			{
+				dprint("ExtendRoute : compare w old %i", Route(route_list.refHead).Nodes[j].TID);
+				if (Route(route_list.refHead).Nodes[j] == NExtendable.Links[i]._Node)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (found)
+				continue;
+		
+			// Test current link for pawn's reachability
+			LinkMeasureFactor = GetNodeLinkMeasureFactor(NExtendable, i);
+			dprint("ExtendRoute : LinkMeasureFactor = %f", LinkMeasureFactor);
+			
+			if (LinkMeasureFactor <= 0.0)
+			{
+				continue;
+			}
+			
+			R = Route(SpawnObject(Route));
+			route_list.Add(R);
+			ExtendableRoute = R;
+
+			// Calculate underestimate
+			if (PreviousMeasure > 0.0)
+				ExtendableRoute.Measure = PreviousMeasure - Length(NDest.Origin - NExtendable.Origin);
+			else
+				ExtendableRoute.Measure = 0.0;
+			ExtendableRoute.Measure += NExtendable.Links[i].length * LinkMeasureFactor;
+			ExtendableRoute.Measure += Length(NDest.Origin - NExtendable.Links[i]._Node.Origin);
+			dprint("ExtendRoute : total measure for this extension = %f", ExtendableRoute.Measure);
+			
+			// Copy head route original nodes to the new one
+			for (j = 0; j < Route(route_list.refHead).Size; j++)
+				ExtendableRoute.Nodes[j] = Route(route_list.refHead).Nodes[j];
+				
+			// Add new node
+			ExtendableRoute.Nodes[j] = NExtendable.Links[i]._Node;
+			ExtendableRoute.Size = j + 1;
+		}
+	}
+	
+	
+	// Remove original head route
+	route_list.DestroyObject(route_list.refHead);
+}
+
+//==========================================================================
+//
+//	GetNodeLinkMeasureFactor
+//
+//	Actors with special movement restrictions or extra abilities should
+//	override this function to reflect their peculiarities.
+//
+//==========================================================================
+
+float GetNodeLinkMeasureFactor(Node NOrigin, int iLink)
+{
+	// Default test is made to know if pawn has physical chance
+	// to pass by the link
+
+	// Minimal vertical space
+	if (NOrigin.Links[iLink].minyspace < Height)
+		return -1.0;
+
+	// Maximal step
+	if (NOrigin.Links[iLink].maxstepheight > MaxStepHeight)
+		return -1.0;
+
+	// Maximal dropoff
+	if (NOrigin.Links[iLink].maxdropoff > MaxDropoffHeight)
+		return -1.0;
+
+	return 1.0;
+}
+
+//==========================================================================
+//
+//	ExcludeExcessRoutes
+//
+//==========================================================================
+
+void ExcludeExcessRoutes(LinkedList route_list)
+{
+	if (route_list.refHead == none)
+		return;
+	
+	int i;
+	bool found, lightest_saved, rpass_excluded;
+	Route RPass;
+	Route RSeek;
+	Route RSeekEnd;
+	Route RExclude;
+	Node NEnding;
+	float LighterMeasure;
+	
+	dprint("ExcludeExcessRoutes");
+	
+	RPass = Route(route_list.refHead);
+	while (RPass != none)
+	{
+		dprint("ExcludeExcessRoutes : rpass go");
+	
+		// Remember RPass'es last Node and route Measure
+		NEnding = RPass.Nodes[RPass.Size - 1];
+		LighterMeasure = RPass.Measure;
+		
+		// Pass through the left of the route list, seeking for routes with same ending
+		found = false;
+		RSeek = Route(RPass.refNext);
+		while (RSeek != none)
+		{
+			if (RSeek.Nodes[RSeek.Size - 1] == NEnding)
+			{
+				found = true;
+				if (RSeek.Measure < LighterMeasure)
+					LighterMeasure = RSeek.Measure;
+			}
+			
+			RSeekEnd = RSeek;
+			RSeek = Route(RSeek.refNext);
+		};
+		
+		// If any route with same ending was found, remove each of them, that have
+		// heavier measure than stored in LighterMeasure
+		if (found)
+		{
+			found = false;				// [CW] used here for detecting last check candidate
+			rpass_excluded = false;
+			lightest_saved = false;
+			
+			RSeek = RPass;
+			while (RSeek != none)
+			{
+				RExclude = none;
+				if (RSeek.Nodes[RSeek.Size - 1] == NEnding)
+				{
+					if (RSeek.Measure > LighterMeasure)
+						RExclude = RSeek;
+					else if (RSeek.Measure == LighterMeasure)
+					{
+						if (lightest_saved)
+							RExclude = RSeek;
+						else
+							lightest_saved = true;
+					}
+				}
+				if (RSeek.Size == Route::WAYLISTSIZE)
+					RExclude = RSeek;
+			
+				if (RSeek == RSeekEnd)
+					found = true;			// [CW] no need to search any more
+				else
+					RSeek = Route(RSeek.refNext);
+					
+				if (RExclude != none)
+				{
+					if (RPass == RExclude)
+					{
+						rpass_excluded = true;
+						RPass = Route(RPass.refNext);
+					}
+					route_list.DestroyObject(RExclude);
+				}
+					
+				if (found)
+					break;
+			};
+		}
+		
+		if (rpass_excluded)
+			rpass_excluded = false;
+		else
+			RPass = Route(RPass.refNext);
+	};
+}
+
+//==========================================================================
+//
+//	AddExtendedRoutes
+//
+//==========================================================================
+
+void AddExtendedRoutes(LinkedList extended_route_list, LinkedList route_list)
+{
+	if (extended_route_list.refHead == none)
+		return;
+
+	float HeaviestExtendedMeasure;
+	Route R;
+	Route HeaviestRoute;
+	LinkedList sort_extended_route_list = LinkedList(SpawnObject(LinkedList));
+	
+	dprint("AddExtendedRoutes");
+
+	// Find largest measure in extended routes
+	HeaviestExtendedMeasure = -1.0;
+	R = Route(extended_route_list.refHead);
+	while (R != none)
+	{
+		dprint("AddExtendedRoutes : passcheck");
+	
+		if (HeaviestExtendedMeasure < 0.0 || R.Measure > HeaviestExtendedMeasure)
+		{
+			HeaviestExtendedMeasure = R.Measure;
+			HeaviestRoute = R;
+		}
+			
+		R = Route(R.refNext);
+	};
+
+	dprint("AddExtendedRoutes : HeaviestExtendedMeasure = %f", HeaviestExtendedMeasure);
+	
+	// Find all previously existed routes from the list that
+	// have lighter measures and move them to extended routes list
+	R = Route(route_list.refHead);
+	while (R != none)
+	{
+		if (R.Measure < HeaviestExtendedMeasure)
+		{
+			extended_route_list.Add(R);
+		}
+		R = Route(R.refNext);
+	};
+	
+	//
+	// Sort extended routes list
+	//
+	sort_extended_route_list.Add(HeaviestRoute);
+	
+	while (extended_route_list.refHead != none)
+	{
+		HeaviestExtendedMeasure = -1.0;
+		R = Route(extended_route_list.refHead);
+		while (R != none)
+		{
+			dprint("AddExtendedRoutes : compare for sort: HeaviestMeasure = %f, R.Measure = %f", HeaviestExtendedMeasure, R.Measure);
+			if (HeaviestExtendedMeasure < 0.0 || R.Measure > HeaviestExtendedMeasure)
+			{
+				dprint("AddExtendedRoutes : select R as heaviest for this place");
+				HeaviestExtendedMeasure = R.Measure;
+				HeaviestRoute = R;
+			}			
+			R = Route(R.refNext);
+		};
+		
+		dprint("AddExtendedRoutes : add R with measure = %f in front of sorted list", HeaviestRoute.Measure);
+		sort_extended_route_list.AddFront(HeaviestRoute);
+	};
+	
+	//
+	// Add sorted routes list at the beginning of the remaining old routes list
+	//
+	route_list.MoveContentsFront(sort_extended_route_list);
+	
+	
+	sort_extended_route_list.Destroy();
+
+	
+	/// DEBUG!!! FIXME!!!
+	R = Route(route_list.refHead);
+	while (R != none)
+	{
+		dprint("AddExtendedRoutes : final passcheck");
+		R = Route(R.refNext);
+	};
+	/// DEBUG!!! FIXME!!!
+
+	dprint("AddExtendedRoutes : lightest (head) route measure = %f", Route(route_list.refHead).Measure);
+}
+
+
+defaultproperties
+{
+	bIsGroupLeader					= false;
+	Group							= 0;
+	
+	Behavior.ThreatReaction			= THREATREACTION__DETECT;
+	Behavior.ThreatVicinity			= DEFAULT_THREAT_VICINITY;
+
+	Behavior.bNeverUseRoutes		= false;
+	Behavior.RouteRebuildRate		= 512;
+	Behavior.RouteRebuildRateLow	= 1024;
+	Behavior.LostFTargetTolerance	= 32;
+	Behavior.CheckFTargetPosRate	= 128;
+	Behavior.FTargetPosChangeLimit	= 256.0;
+}

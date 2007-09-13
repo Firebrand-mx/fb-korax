@@ -1,0 +1,149 @@
+﻿
+class Node : MapSpot
+	__mobjinfo__(15004);
+
+//
+//	Node extended classes should use Args to store specific data
+//
+
+
+const int	MAXNODELINKS	= 8;
+
+// [CW] TODO: make nodelink an Object? to save ~2x mem space
+struct nodelink_t
+{
+	Node		_Node;			// linked node object
+	float		length;			// distance from one linked node to another
+	float		minyspace;		// minimal space between height and ceiling
+	float		maxstepheight;	// maximal step height
+	float		maxdropoff;		// maximal dropoff height
+};
+
+int				Attributes;		// specific Node attributes, should be read from mthing_t arg1
+nodelink_t		Links[MAXNODELINKS]; // TODO: use linked list
+
+//==========================================================================
+//
+//	OnMapSpawn
+//
+//==========================================================================
+
+void OnMapSpawn(mthing_t * mthing)
+{
+	dprint("CWAIEX : Node::OnMapSpawn : ");
+
+	Attributes = mthing->arg1;
+
+	::OnMapSpawn(mthing);
+}
+
+//==========================================================================
+//
+//	ApplyLink
+//
+//	Apllies new link to the node in defined slot; if node already has link in
+//	that slot, ApplyLink removes previous link from that slot.
+//	Function also tries to apply same link to the opposite node if
+//	corresponding flag is set.
+//
+//==========================================================================
+
+void ApplyLink(nodelink_t * _link, int index, bool dual_connect)
+{
+	dprint("CWAIEX : Node::ApplyLink : IN");
+	if (index < 0)
+	{
+		int i;
+		for (i = 0; i < MAXNODELINKS; i++)
+		{
+			if (!Links[i]._Node)
+			{
+				index = i;
+				break;
+			}
+		}
+		if (index < 0)
+		{
+			dprint("CWAIEX : Node::ApplyLink : OUT SKIP");
+			return;
+		}
+	}
+
+	if (Links[index]._Node)
+		RemoveLinkByIndex(index, false);
+
+	Links[index]._Node = _link->_Node;
+	Links[index].length = _link->length;
+	Links[index].minyspace = _link->minyspace;
+	Links[index].maxstepheight = _link->maxstepheight;
+	Links[index].maxdropoff = _link->maxdropoff;
+
+	_link->_Node = self;
+	if (dual_connect)
+		Links[index]._Node.ApplyLink(_link, -1, false);
+
+	dprint("CWAIEX : Node::ApplyLink : OUT DONE");
+}
+
+//==========================================================================
+//
+//	RemoveLinkByIndex
+//
+//==========================================================================
+
+void RemoveLinkByIndex(int index, bool dual_removal)
+{
+	dprint("CWAIEX : Node::RemoveLinkByIndex : IN");
+
+	if (dual_removal && Links[index]._Node)
+		Links[index]._Node.RemoveLinkByNode(self, false);
+
+	Links[index]._Node = none;
+	Links[index].length = 0.0;
+	Links[index].minyspace = 0.0;
+	Links[index].maxstepheight = 0.0;
+	Links[index].maxdropoff = 0.0;
+
+	dprint("CWAIEX : Node::RemoveLinkByIndex : OUT");
+}
+
+//==========================================================================
+//
+//	RemoveLinkByNode
+//
+//==========================================================================
+
+void RemoveLinkByNode(Node _Node, bool dual_removal)
+{
+	int i;
+	int index;
+	dprint("CWAIEX : Node::RemoveLinkByNode : IN");
+	for (i = 0; i < MAXNODELINKS; i++)
+	{
+		if (Links[i]._Node == _Node)
+		{
+			index = i;
+			break;
+		}
+	}
+	if (index < 0)
+	{
+		dprint("CWAIEX : Node::RemoveLinkByNode : OUT SKIP");
+		return;
+	}
+
+	if (dual_removal && Links[index]._Node)
+		Links[index]._Node.RemoveLinkByNode(self, false);
+
+	Links[index]._Node = none;
+	Links[index].length = 0.0;
+	Links[index].minyspace = 0.0;
+	Links[index].maxstepheight = 0.0;
+	Links[index].maxdropoff = 0.0;
+
+	dprint("CWAIEX : Node::RemoveLinkByNode : OUT DONE");
+}
+
+defaultproperties
+{
+}

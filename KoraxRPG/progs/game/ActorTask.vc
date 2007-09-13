@@ -1,0 +1,78 @@
+class ActorTask : LinkedObject;
+
+
+enum
+{
+	ORDER__NONE,
+	ORDER__STANDSTILL,			// stand idle, looking in one direction
+	ORDER__STANDLOOK180,		// stand idle, turning left and right consequently
+	ORDER__STANDLOOK360,		// stand idle, looking 360 degrees around
+	ORDER__WALKTO,				// walk to a point on map
+	ORDER__PATROL2PT,			// walk continiously between two points
+	ORDER__PATROLROUTE,			// walk continiously along the route, first fw, then bw
+	ORDER__PATROLLOOP,			// walk continiously along the route, interpreting it as a loop
+	ORDER__FOLLOW,				// follow actor
+	ORDER__ATTACKTHING,			// attack single target until its death
+	ORDER__ATTACKALL			// havoc! attack everyone on map
+};
+
+
+int							Order;
+int							Priority;	// 0 is highest (unquestioned order)
+
+float						Duration;	// 0.0 means unlimited duration
+float						Time;
+
+IntelligentActor::generic_target_t		GnTarget;
+
+IntelligentActor			Owner;
+
+
+//==========================================================================
+//
+//	CheckCompleted
+//
+//==========================================================================
+
+bool CheckCompleted()
+{
+	switch (Order)
+	{
+	case ORDER__NONE:
+		return true;
+	case ORDER__ATTACKTHING:
+	case ORDER__ATTACKALL:
+		return !GnTarget.Thing || GnTarget.Thing.IsDestroyed() || (GnTarget.Thing.Health <= 0);
+	case ORDER__WALKTO:
+		return (Length(Owner.Origin - GnTarget.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY );
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (Duration > 0.0)
+	{
+		Time -= deltaTime;
+		if (Time <= 0.0)
+		{
+			Destroy();
+			return;
+		}
+	}
+}
+
+
+defaultproperties
+{
+	Order = ORDER__NONE;
+	Priority = 0;
+	Duration = 0.0;
+	Time = 0.0;
+}
