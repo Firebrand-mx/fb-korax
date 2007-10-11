@@ -374,11 +374,11 @@ bool CheckItem(Actor item)
 
 bool CheckPNodes(Actor node)
 {
-	if (player.MO.CanSee(node) && (prev != node && botmo.DistTo(node) <= 32.0))
+	if (/*player.MO.CanSee(node) &&*/ (node != prev /*&& botmo.DistTo(node) <= 32.0*/))
 	{
 		if (MainGameInfo(player.Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
-		    MainGameInfo(player.Level.Game).GameType == HexenDefs::game_dmteam && node.Class == PathNode 
-		    /*|| node.Class == SniperSpot*/)
+		    MainGameInfo(player.Level.Game).GameType == HexenDefs::game_dmteam && (node.Class == PathNode 
+		    /*|| node.Class == SniperSpot*/))
 			return true;
 
 		// [FB] Node checking routine for team game
@@ -706,6 +706,7 @@ bool CheckPath(float ang, float dist)
 			if (dheight >= 24.0 && dheight <= 56.0)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
+				continue;
 			}
 		}
 	}
@@ -762,7 +763,7 @@ void CheckStuff()
 
 	if (node)
 	{
-		if (!CheckTo(node.Origin) || (botmo.DistTo(node) < botmo.Radius))
+		if (!CheckTo(node.Origin)/* || (botmo.DistTo(node) < botmo.Radius)*/)
 		{
 			prev = node;
 			node = none;
@@ -1447,17 +1448,6 @@ void Roam()
 {
 	TVec dest;
 
-	if (lastpos_valid)
-	{
-		TVec dir;
-
-		dir = lastpos - botmo.Origin;
-		dir.z = 0.0;
-		if (Length(dir) <= 32.0)
-		{
-			lastpos_valid = false;
-		}
-	}
 
 	// Order of item response precedence:
 	if (goal)
@@ -1478,7 +1468,19 @@ void Roam()
 	}
 	else if (lastpos_valid)
 	{
-		dest = lastpos;
+		TVec dir;
+		
+		dir = lastpos - botmo.Origin;
+		dir.z = 0.0;
+		if (Length(dir) <= 32.0)
+		{
+			lastpos_valid = false;
+			return;
+		}
+		else
+		{
+			dest = lastpos;
+		}
 	}
 	else if (posdest_valid)
 	{
@@ -1487,41 +1489,49 @@ void Roam()
 	else
 	{
 		// No target, so just run around until we find something
-		int r = P_Random();
 		float an = GetAngle();
 		float dist;
+		float ang_inc;
 
-		for (dist = 256.0; dist >= 0.0/*>= 64.0*/; dist -= 64.0)
+		// [FB] Create a circle of possible destinations around the bot's current Origin
+		//	  with the given distances
+		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
 		{
-			if (CheckPath(an, dist))
+			for (ang_inc = 0.0; ang_inc <= 360.0; ang_inc += 45.0 / 3.0) /*45.0*/
 			{
-				posdest_valid = true;
-				posdest.x = botmo.Origin.x + dist * cos(an);
-				posdest.y = botmo.Origin.y + dist * sin(an);
-				posdest.z = botmo.Origin.z;
-				SetAngle(an);
-				break;
-			}
+				if (CheckPath(an, dist))
+				{
+					posdest_valid = true;
+					posdest.x = botmo.Origin.x + dist * cos(an);
+					posdest.y = botmo.Origin.y + dist * sin(an);
+//				posdest.z = botmo.Origin.z;
+					posdest.z = botmo.FloorZ;
+					SetAngle(an);
+					break;
+				}
 
-			if (CheckPath(an + 45.0, dist))
-			{
-				posdest_valid = true;
-				posdest.x = botmo.Origin.x + dist * cos(an + 45.0);
-				posdest.y = botmo.Origin.y + dist * sin(an + 45.0);
-				posdest.z = botmo.Origin.z;
-				SetAngle(an + 45.0);
-				break;
-			}
+				if (CheckPath(an + ang_inc, dist))
+				{
+					posdest_valid = true;
+					posdest.x = botmo.Origin.x + dist * cos(an + ang_inc);
+					posdest.y = botmo.Origin.y + dist * sin(an + ang_inc);
+//				posdest.z = botmo.Origin.z;
+					posdest.z = botmo.FloorZ;
+					SetAngle(an + ang_inc);
+					break;
+				}
 
-			// Left is no good, try right
-			if (CheckPath(an - 45.0, dist))
-			{
-				posdest_valid = true;
-				posdest.x = botmo.Origin.x + dist * cos(an - 45.0);
-				posdest.y = botmo.Origin.y + dist * sin(an - 45.0);
-				posdest.z = botmo.Origin.z;
-				SetAngle(an - 45.0);
-				break;
+				// Left is no good, try right
+				if (CheckPath(an - ang_inc, dist))
+				{
+					posdest_valid = true;
+					posdest.x = botmo.Origin.x + dist * cos(an - ang_inc);
+					posdest.y = botmo.Origin.y + dist * sin(an - ang_inc);
+//				posdest.z = botmo.Origin.z;
+					posdest.z = botmo.FloorZ;
+					SetAngle(an - ang_inc);
+					break;
+				}
 			}
 		}
 
@@ -1537,8 +1547,21 @@ void Roam()
 		}
 	}
 
-	forwardmove = FORWARDRUN;
-	SetAngle(AngleTo(dest));
+	// [FB] The problem of stuck bots seems to be here,
+	//	   it seems bots sometimes like to see things behind solid
+	//	   walls and tend to "walk" to them, but they just get stuck
+	//	  stupidly, we add a check to avoid this
+	if (CheckTo(dest))
+	{
+		forwardmove = FORWARDRUN;
+		SetAngle(AngleTo(dest));
+	}
+	else
+	{
+		SetAngle(GetAngle() + 45.0 / 3.0);
+		forwardmove = -FORWARDWALK;
+		return;
+	}
 }
 
 //==========================================================================
@@ -1770,7 +1793,7 @@ void Move(float deltaTime)
 		balldist = botmo.DistTo(ball);
 
 		// [FB] We are close enough to kick the ball
-		if (CheckTo(ball.Origin) && dist <= Actor::MELEERANGE * 6.0)
+		if (CheckTo(ball.Origin) && balldist <= Actor::MELEERANGE * 6.0)
 		{
 			botmo.Player.Buttons |= BT_USE;
 			return;
@@ -1926,19 +1949,132 @@ void Turn()
 
 void Pitch()
 {
-	if (enemy)
-	{
-		TVec dir;
-		TAVec ang;
+	TVec dir;
+	TAVec ang;
 
-		dir = enemy.Origin - botmo.Origin;
-		VectorAngles(&dir, &ang);
-		botmo.Angles.pitch = ang.pitch;
+	// [FB] Set pitch for underwater areas
+	if (player.MO.WaterLevel > 2)
+	{
+		if (missile)
+		{
+			/*float missiledist;
+		
+			missiledist = botmo.DistTo(missile);
+			SetAngle(AngleTo(missile.Origin));
+
+			if (missile.Origin.z > botmo.Origin.z)
+			{
+				//[FB] Missile comes from over our head, move down
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + missiledist);
+			}
+			else if (missile.Origin.z < botmo.Origin.z)
+			{
+				//[FB] Missile comes from under us, move up
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - missiledist);
+			}*/
+			dir = missile.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = -ang.pitch;
+
+			// Look at the missile and sidestep it
+			SetAngle(AngleTo(missile.Origin));
+			forwardmove = -FORWARDRUN;
+			return;
+		}
+
+		if (enemy)
+		{
+			dir = enemy.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = -ang.pitch;
+			return;
+		}
+
+		if (item)
+		{
+			/*float itemdist;
+
+			itemdist = botmo.DistTo(item);
+
+			if (item.Origin.z < botmo.Origin.z)
+			{
+				//[FB] Item is below us, let's go down
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + itemdist);
+			}
+			else if (item.Origin.z > botmo.Origin.z)
+			{
+				//[FB] Item is over us, let's go up
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - itemdist);
+			}*/
+			dir = item.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = -ang.pitch;
+			return;
+		}
+
+		// [FB] Follow our buddy if we're tagging along
+		if (ally || (ally && !enemy))
+		{
+			/*float allydist;
+
+			allydist = botmo.DistTo(ally);
+		
+			if (ally.Origin.z > botmo.Origin.z)
+			{
+				//[FB] Ally is over us, let's go down
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + allydist);
+			}
+			else if (ally.Origin.z < botmo.Origin.z)
+			{
+				//[FB] Ally is beluw us, let's go up
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - allydist);
+			}*/
+			dir = ally.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = -ang.pitch;
+			return;
+		}
+
+		if (ball)
+		{
+			float balldist;
+
+			balldist = botmo.DistTo(ball);
+
+			/*if (ball.Origin.z > botmo.Origin.z)
+			{
+				//[FB] Ball is over us, let's go down
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + balldist);
+			}
+			else if (ball.Origin.z < botmo.Origin.z)
+			{
+				//[FB] Ball is below us, let's go up
+				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - balldist);
+			}*/
+			dir = ball.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = -ang.pitch;
+
+			// [FB] We are close enough to kick the ball
+			if (CheckTo(ball.Origin) && balldist <= Actor::MELEERANGE * 6.0)
+			{
+				botmo.Player.Buttons |= BT_USE;
+			}
+			return;
+		}
 	}
 	else
 	{
-		botmo.Angles.pitch = 0.0;
+		if (enemy)
+		{
+			dir = enemy.Origin - botmo.Origin;
+			VectorAngles(&dir, &ang);
+			botmo.Angles.pitch = ang.pitch;
+			return;
+		}
 	}
+
+	botmo.Angles.pitch = 0.0;
 }
 
 //==========================================================================
@@ -2076,47 +2212,54 @@ void OnSpawn()
 
 void B_AffectStat()
 {
-	if (player.BlindCount == 50 && !accuracy_r)
+	if (!accuracy_r)
 	{
 		old_accuracy = info.accuracy;
-		// [FB] Make sure this stat isn't zero
-		if (info.accuracy)
-			info.accuracy--;
-		// [FB] We don't want to get here, but anyway...
-		else if (info.accuracy < 0)
-			info.accuracy = 0;
-
 		accuracy_r = true;
 	}
-	else if (player.BlindCount == 100 && !intelect_r)
+	if (!intelect_r)
 	{
 		old_intelect = info.intelect;
+		intelect_r = true;
+	}
+	if (!evade_r)
+	{
+		old_evade = info.evade;
+		evade_r = true;
+	}
+	if (!anticip_r)
+	{
+		old_anticip = info.anticip;
+		anticip_r = true;
+	}
+	if (accuracy_r && player.BlindCount <= 50)
+	{
+		if (info.accuracy)
+			info.accuracy--;
+		// [FB] Make sure this stat isn't zero
+		else if (info.accuracy < 0)
+			info.accuracy = 0;
+	}
+	else if (intelect_r && (player.BlindCount > 50 && player.BlindCount <= 100))
+	{
 		if (info.intelect)
 			info.intelect--;
 		else if (info.intelect < 0)
 			info.intelect = 0;
-
-		intelect_r = true;
 	}
-	else if (player.BlindCount == 150 && !evade_r)
+	else if (evade_r && (player.BlindCount > 100 && player.BlindCount <= 150))
 	{
-		old_evade = info.evade;
 		if (info.evade)
 			info.evade--;
 		else if (info.evade < 0)
 			info.evade = 0;
-
-		evade_r = true;
 	}
-	else if (player.BlindCount == 200 && !anticip_r)
+	else if (anticip_r && (player.BlindCount > 150 && player.BlindCount <= 200))
 	{
-		old_anticip = info.anticip;
 		if (info.anticip)
 			info.anticip--;
 		else if (info.anticip < 0)
 			info.anticip = 0;
-
-		anticip_r = true;
 	}
 }
 
@@ -2142,7 +2285,7 @@ void BotTick(float deltaTime)
 //		return;
 
 	// We're dead, so hit space to respawn
-	if (!player.Health && player.respawn_counter <= 0.0)
+	if (botmo.Health <= 0 && player.respawn_counter <= 0.0)
 	{
 		player.Buttons |= BT_USE;
 		return;
@@ -2151,7 +2294,7 @@ void BotTick(float deltaTime)
 	// [FB] Apply blind status
 	if(player.BlindCount)
 		B_AffectStat();
-	else if (player.BlindCount < 0)
+	else if (player.BlindCount <= 0)
 	{
 		//[FB] Darkness effects faded out, now restore everything back!
 		if (anticip_r)
