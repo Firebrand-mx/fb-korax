@@ -746,13 +746,13 @@ bool CheckTo(TVec pos)
 
 void CheckStuff()
 {
-/*	if (goal)
+	if (goal)
 	{
 		if (!CheckTo(goal.Origin) || (botmo.DistTo(goal) < botmo.Radius))
 		{
 			goal = none;
 		}
-	}*/
+	}
 
 	if (item)
 	{
@@ -1302,6 +1302,114 @@ Weapon B_ChooseWeapon(float dist)
 
 //==========================================================================
 //
+//	B_ChooseAltWeapon
+//
+//	[FB] Decide which alternate weapon would be best to use in our situation
+//
+//==========================================================================
+
+void B_ChooseAltWeapon(float dist)
+{
+	Ammo AltWpn;
+
+	if (enemy)
+	{
+		if (dist <= Actor::MELEERANGE)
+		{
+			player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+			player.PlayerImpulse();
+			// [FB] We've got several choices here so we'll cycle them
+			switch(player.altWeaponMode[player.altWeapon])
+			{
+				case HexenDefs::ALTFIRE_BLASTRADIUS_DEFAULT:
+				{
+					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+					if (AltWpn && AltWpn.Amount > 10)
+					{
+						// [FB] We can keep this alternate weapon
+						return;
+					}
+					break;
+				}
+				case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+				case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+				{
+					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+					if (AltWpn && AltWpn.Amount > 10)
+					{
+						// [FB] We can keep this alternate weapon
+						return;
+					}
+					break;
+				}
+				default:
+				{
+					player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+					player.PlayerImpulse();
+					return;
+				}
+			}
+		}
+		else if (dist <= 512.0)
+		{
+			player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+			player.PlayerImpulse();
+			// [FB] We've got several choices here so we'll cycle them
+			switch(player.altWeaponMode[player.altWeapon])
+			{
+				case HexenDefs::ALTFIRE_BLASTRADIUS_DEFAULT:
+				{
+					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+					if (AltWpn && AltWpn.Amount > 10)
+					{
+						// [FB] We can keep this alternate weapon
+						return;
+					}
+					break;
+				}
+				default:
+				{
+					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+					if (AltWpn && AltWpn.Amount > 10)
+					{
+						// [FB] We can keep this alternate weapon
+						return;
+					}
+					break;
+				}
+			}
+		}
+		else
+		{
+			player.Impulse = HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+			player.PlayerImpulse();
+			// [FB] We've got several choices here so we'll cycle them
+			switch(player.altWeaponMode[player.altWeapon])
+			{
+				case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+				{
+					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+					if (AltWpn && AltWpn.Amount > 10)
+					{
+						// [FB] We can keep this alternate weapon
+						return;
+					}
+					break;
+				}
+				default:
+				{
+					player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+					player.PlayerImpulse();
+					return;
+				}
+			}
+		}
+	}
+	return;
+}
+
+//==========================================================================
+//
 //	B_SetAlly
 //
 //	[FB] This function is called every tick (for each bot) to set the
@@ -1447,7 +1555,6 @@ Actor B_SetAlly()
 void Roam()
 {
 	TVec dest;
-
 
 	// Order of item response precedence:
 	if (goal)
@@ -1878,8 +1985,62 @@ void Attack()
 	}
 	if (botmo.DistTo(enemy) > combatdist)
 		return;
-	
+
 	player.Buttons |= BT_ATTACK;
+}
+
+//==========================================================================
+//
+//	Alternate_Attack
+//
+//	[FB] Similar to Attack, but using alternate weapons
+//
+//==========================================================================
+
+void Alternate_Attack()
+{
+	Ammo type;
+
+	// Still reacting to something or we don't have an enemy to fight
+	if (t_react || !enemy)
+		return;
+
+	B_ChooseAltWeapon(botmo.DistTo2(enemy));
+	// [FB] We just simply check which weapon is active and do what it's needed for it to work
+	switch (player.altWeapon)
+	{
+	case HexenDefs::ALTFIRE_BLASTRADIUS:
+		type = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+		if (type && type.Amount > 10)
+		{
+			// [FB] Check if our allies are out of the way of the attack
+			if (ally && Check_LOS(ally, 255.0))
+				return;
+
+			// No point in firing if we won't hit them
+			if (!Check_LOS(enemy, 255.0))
+				return;
+
+			if (botmo.DistTo(enemy) > 255.0)
+				return;
+
+			// [FB] We've got enough ammo
+			player.AlternateAttack();
+		}
+		break;
+	case HexenDefs::ALTFIRE_POISONBAG:
+		type = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+		if (type && type.Amount > 10)
+		{
+			// No point in firing if we won't hit them
+			if (!Check_LOS(enemy, SHOOTFOV))
+				return;
+
+			// [FB] We've got enough ammo
+			player.AlternateAttack();
+		}
+		break;
+	}
 }
 
 //==========================================================================
@@ -2358,6 +2519,7 @@ void BotTick(float deltaTime)
 	BotAim();
 	Turn();
 	Attack();
+	Alternate_Attack();
 	Move(deltaTime);
 
 	Pitch();
