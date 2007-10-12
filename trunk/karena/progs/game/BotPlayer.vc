@@ -746,12 +746,25 @@ bool CheckTo(TVec pos)
 
 void CheckStuff()
 {
+	// [FB] The order MUST be the same as in the roaming method
 	if (goal)
 	{
 		if (!CheckTo(goal.Origin) || (botmo.DistTo(goal) < botmo.Radius))
 		{
 			goal = none;
 		}
+	}
+
+	if (missile)
+	{
+		if (!missile.bMissile || missile.IsDestroyed())
+			missile = none;
+	}
+
+	if (enemy)
+	{
+		if (!CheckTo(enemy.Origin) || enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
+			enemy = none;
 	}
 
 	if (item)
@@ -778,17 +791,6 @@ void CheckStuff()
 		}
 	}
 
-	if (posdest_valid)
-	{
-		TVec dir;
-		dir = posdest - botmo.Origin;
-		dir.z = 0.0;
-		if (!CheckTo(posdest) || (Length(dir) < botmo.Radius))
-		{
-			posdest_valid = false;
-		}
-	}
-
 	if (lastpos_valid)
 	{
 		TVec dir;
@@ -800,16 +802,15 @@ void CheckStuff()
 		}
 	}
 
-	if (enemy)
+	if (posdest_valid)
 	{
-		if (!CheckTo(enemy.Origin) || enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
-			enemy = none;
-	}
-
-	if (missile)
-	{
-		if (!missile.bMissile || missile.IsDestroyed())
-			missile = none;
+		TVec dir;
+		dir = posdest - botmo.Origin;
+		dir.z = 0.0;
+		if (!CheckTo(posdest) || (Length(dir) < botmo.Radius))
+		{
+			posdest_valid = false;
+		}
 	}
 }
 
@@ -1556,6 +1557,18 @@ void Roam()
 {
 	TVec dest;
 
+	if (lastpos_valid)
+	{
+		TVec dir;
+		
+		dir = lastpos - botmo.Origin;
+		dir.z = 0.0;
+		if (Length(dir) < botmo.Radius/*32.0*/)
+		{
+			lastpos_valid = false;
+		}
+	}
+
 	// Order of item response precedence:
 	if (goal)
 	{
@@ -1575,19 +1588,7 @@ void Roam()
 	}
 	else if (lastpos_valid)
 	{
-		TVec dir;
-		
-		dir = lastpos - botmo.Origin;
-		dir.z = 0.0;
-		if (Length(dir) <= 32.0)
-		{
-			lastpos_valid = false;
-			return;
-		}
-		else
-		{
-			dest = lastpos;
-		}
+		dest = lastpos;
 	}
 	else if (posdest_valid)
 	{
@@ -1611,8 +1612,7 @@ void Roam()
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an);
 					posdest.y = botmo.Origin.y + dist * sin(an);
-//				posdest.z = botmo.Origin.z;
-					posdest.z = botmo.FloorZ;
+					posdest.z = botmo.Origin.z;
 					SetAngle(an);
 					break;
 				}
@@ -1622,8 +1622,7 @@ void Roam()
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an + ang_inc);
 					posdest.y = botmo.Origin.y + dist * sin(an + ang_inc);
-//				posdest.z = botmo.Origin.z;
-					posdest.z = botmo.FloorZ;
+					posdest.z = botmo.Origin.z;
 					SetAngle(an + ang_inc);
 					break;
 				}
@@ -1634,8 +1633,7 @@ void Roam()
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an - ang_inc);
 					posdest.y = botmo.Origin.y + dist * sin(an - ang_inc);
-//				posdest.z = botmo.Origin.z;
-					posdest.z = botmo.FloorZ;
+					posdest.z = botmo.Origin.z;
 					SetAngle(an - ang_inc);
 					break;
 				}
@@ -1654,21 +1652,8 @@ void Roam()
 		}
 	}
 
-	// [FB] The problem of stuck bots seems to be here,
-	//	   it seems bots sometimes like to see things behind solid
-	//	   walls and tend to "walk" to them, but they just get stuck
-	//	  stupidly, we add a check to avoid this
-	if (CheckTo(dest))
-	{
 		forwardmove = FORWARDRUN;
 		SetAngle(AngleTo(dest));
-	}
-	else
-	{
-		SetAngle(GetAngle() + 45.0 / 3.0);
-		forwardmove = -FORWARDWALK;
-		return;
-	}
 }
 
 //==========================================================================
