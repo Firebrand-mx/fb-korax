@@ -19,6 +19,12 @@ class KMenuScreenExpMod:public KMenuScreen
 		ButtonDefaults[4] = FButtonDefault("200%", MA_Custom, MENU_NONE, 200);
 	}
 
+	void InitWindow(void)
+	{
+		Super::InitWindow();
+		CycleNextChoice();
+	}
+
 	void ProcessCustomMenuAction(int Key)
 	{
 		MenuPExpMod = Key;

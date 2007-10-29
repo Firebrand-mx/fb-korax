@@ -557,40 +557,119 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	}
 	
 	//cmd->speccmd=0;
+
+	if (actions[H2A_USESPELL].on)
+	{
+		actions[H2A_USESPELL].on = false;
+
+		switch (players[consoleplayer].currentspell)
+		{
+			case 1:
+			case 8:
+			case 12:
+				cmd->speccmd |= SPECCMD_SPELL1;
+				break;
+			case 2:
+			case 9:
+				cmd->speccmd |= SPECCMD_SPELL2;
+				break;
+			case 3:
+			case 10:
+				cmd->speccmd |= SPECCMD_SPELL3;
+				break;
+			case 4:
+			case 11:
+				cmd->speccmd |= SPECCMD_SPELL4;
+				break;
+			case 5:
+				cmd->speccmd |= SPECCMD_SPELL5;
+				break;
+			case 6:
+				cmd->speccmd |= SPECCMD_SPELL6;
+				break;
+			case 7:
+				cmd->speccmd |= SPECCMD_SPELL7;
+				break;
+			default:
+				break;
+		}
+	}
+
 	if (actions[H2A_SPELL1].on)
 	{
 		actions[H2A_SPELL1].on = false;
-		cmd->speccmd |= SPECCMD_SPELL1;
+		if (players[consoleplayer].pclass == 0)
+		{
+			players[consoleplayer].currentspell = 12;
+		}
+		else if (players[consoleplayer].pclass == 1)
+		{
+			players[consoleplayer].currentspell = 8;
+		}
+		else
+		{
+			players[consoleplayer].currentspell = 1;
+		}
 	}
 	if (actions[H2A_SPELL2].on)
 	{
 		actions[H2A_SPELL2].on = false;
-		cmd->speccmd |= SPECCMD_SPELL2;
+		if (players[consoleplayer].pclass == 1)
+		{
+			players[consoleplayer].currentspell = 9;
+		}
+		else if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 2;
+		}
 	}
 	if (actions[H2A_SPELL3].on)
 	{
 		actions[H2A_SPELL3].on = false;
-		cmd->speccmd |= SPECCMD_SPELL3;
+		if (players[consoleplayer].pclass == 1)
+		{
+			players[consoleplayer].currentspell = 10;
+		}
+		else if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 3;
+		}
 	}
 	if (actions[H2A_SPELL4].on)
 	{
 		actions[H2A_SPELL4].on = false;
-		cmd->speccmd |= SPECCMD_SPELL4;
+		if (players[consoleplayer].pclass == 1)
+		{
+			players[consoleplayer].currentspell = 11;
+		}
+		else if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 4;
+		}
 	}
 	if (actions[H2A_SPELL5].on)
 	{
 		actions[H2A_SPELL5].on = false;
-		cmd->speccmd |= SPECCMD_SPELL5;
+		if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 5;
+		}
 	}
 	if (actions[H2A_SPELL6].on)
 	{
 		actions[H2A_SPELL6].on = false;
-		cmd->speccmd |= SPECCMD_SPELL6;
+		if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 6;
+		}
 	}
 	if (actions[H2A_SPELL7].on)
 	{
 		actions[H2A_SPELL7].on = false;
-		cmd->speccmd |= SPECCMD_SPELL7;
+		if (players[consoleplayer].pclass > 1)
+		{
+			players[consoleplayer].currentspell = 7;
+		}
 	}
 	if (actions[H2A_DUCK].on && !players[consoleplayer].morphTics)
 	{

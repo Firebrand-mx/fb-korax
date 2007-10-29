@@ -174,7 +174,7 @@ void SB_SetClassData(void)
 	PatchNumPIECE1 = W_GetNumForName("wpiecef1")+pclass;
 	PatchNumPIECE2 = W_GetNumForName("wpiecef2")+pclass;
 	PatchNumPIECE3 = W_GetNumForName("wpiecef3")+pclass;
-	PatchNumCHAIN =W_GetNumForName("chain")+pclass;
+	PatchNumCHAIN = W_GetNumForName("chain")+pclass;
 	if(!netgame)
 	{ // single player game uses red life gem (the second gem)
 		PatchNumLIFEGEM = W_GetNumForName("lifegem")+MAXPLAYERS*pclass+1;
@@ -858,7 +858,11 @@ void DrawMainBar(void)
 	temp = CPlayer->sp_power;
 	DrINumber(temp, 385, 141);
 	// Selected Spell
-	GCanvas->DrawPatch1(430, 156, W_GetNumForName(hudspell[CPlayer->currentspell]));
+	GCanvas->DrawPatch1(430, 156, W_GetNumForName(hudspell[0]));
+	if (CPlayer->currentspell > 0)
+	{
+		GCanvas->DrawPatch1(430, 156, W_GetNumForName(hudspell[CPlayer->currentspell]));
+	}
 }
 
 //==========================================================================
@@ -997,17 +1001,30 @@ void DrawFullScreenStuff(void)
 	int i;
 	int x;
 	int temp;
+	int explvl_width = 88-(88*CPlayer->experience)/CPlayer->next_level;
 	
+	GCanvas->DrawPatch1(17, 498, W_GetNumForName("PTN1A0"));
 	if(CPlayer->mo->health > 0)
 	{
-		DrBNumber(CPlayer->mo->health, 5, 440);
+		DrBNumber(CPlayer->mo->health, 22, 455);
 	}
 	else
 	{
-		DrBNumber(0, 5, 440);
+		DrBNumber(0, 10, 455);
 	}
 
-	DrRedINumber(CPlayer->sp_power, 600, 13);
+	GCanvas->DrawPatch1(17, 474, W_GetNumForName("ARM1A0"));
+	temp = AutoArmorSave[CPlayer->pclass]+CPlayer->armorpoints[ARMOR_ARMOR]
+		+CPlayer->armorpoints[ARMOR_SHIELD]+CPlayer->armorpoints[ARMOR_HELMET]+CPlayer->armorpoints[ARMOR_AMULET];
+	temp = FixedDiv(temp, 5*FRACUNIT)>>FRACBITS;
+	if(temp > 0)
+	{
+		DrBNumber(temp, 10, 435);
+	}
+	else
+	{
+		DrBNumber(0, 10, 435);
+	}
 
 	if (CPlayer->pclass <PCLASS_CORVUS)
 	{
@@ -1057,12 +1074,12 @@ void DrawFullScreenStuff(void)
 	{
 		if (CPlayer->readyArtifact > 0)
 		{
-			GCanvas->DrawFuzzPatch(586, 430, W_GetNumForName("ARTIBOX"));
-			GCanvas->DrawPatch1(584, 429,
+			GCanvas->DrawFuzzPatch(305, 444, W_GetNumForName("ARTIBOX"));
+			GCanvas->DrawPatch1(303, 443,
 				W_GetNumForName(patcharti[CPlayer->readyArtifact]));
 			if(CPlayer->inventory[inv_ptr].count > 1)
 			{
-				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 602, 452);
+				DrSmallNumber(CPlayer->inventory[inv_ptr].count, 321, 466);
 			}
 		}
 	}
@@ -1096,6 +1113,25 @@ void DrawFullScreenStuff(void)
 			GCanvas->DrawPatch1(428, 427, !(leveltime&4) ? PatchNumINVRTGEM1 : PatchNumINVRTGEM2);
 		}
 	}
+	// SP Power
+	temp = CPlayer->sp_power;
+	DrRedINumber(temp, 576, 463);
+	// Selected Spell
+	GCanvas->DrawFuzzPatch(602, 442, W_GetNumForName(hudspell[0]));
+	if (CPlayer->currentspell > 0)
+	{
+		GCanvas->DrawPatch1(602, 442, W_GetNumForName(hudspell[CPlayer->currentspell]));
+	}
+	// Level
+	GL_SetColorAndAlpha(1, 1, 1, 1);
+	GCanvas->SetFont(GCanvas->SmallFont);
+	GCanvas->DrawText(545, 4, "LEVEL:");
+	temp = CPlayer->exp_level;
+	DrINumber(temp, 612, 4);
+	// EXP Bar
+	GCanvas->DrawPatch1(545, 19, PatchNumEXPLVL);
+	GL_SetNoTexture();
+	GCanvas->DrawRect(547+(88-explvl_width), 20, explvl_width, 3, 0,0,0,1);
 }
 
 //==========================================================================
