@@ -61,6 +61,7 @@ typedef enum
 	H2A_SPELL6,		
 	H2A_SPELL7,		
 	H2A_SPELL8,		
+	H2A_USESPELL,
 
 	NUM_ACTIONS
 } h2action_t;

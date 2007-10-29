@@ -873,14 +873,14 @@ boolean MN_Responder(event_t *event)
 					paused = true;
 				}
 				return true;
-/*			case 's':
+			case 'z':
 				SetMenu(MENU_SPELL);
 				MenuActive = true;
 				if(!netgame && !demoplayback && !demorecording)
 				{
 					paused = true;
 				}
-				return true;*/
+				return true;
 		}
 
 	}

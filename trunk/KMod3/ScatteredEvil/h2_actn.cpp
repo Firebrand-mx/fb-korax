@@ -75,6 +75,7 @@ action_t actions[NUM_ACTIONS+1] =
 	"spell6", 0,
 	"spell7", 0,
 	"spell8", 0,
+	"usespell", 0,
 /*	"sell", 0,
 	"reply", 0,*/
 	"", 0

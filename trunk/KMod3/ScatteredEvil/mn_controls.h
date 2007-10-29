@@ -25,7 +25,7 @@ static Control_t controls[] =
 	"strafer",		CLF_ACTION,		'd', 0, 0,
 	"jump",			CLF_ACTION,		' ', 0, 5,
 	"fire",			CLF_ACTION,		DDKEY_RCTRL, 1, 1,
-	"use",			CLF_ACTION,		'e', 2, 4,
+	"use",			CLF_ACTION,		'e', 0, 4,
 	"strafe",		CLF_ACTION,		DDKEY_RALT, 3, 2,
 	
 	"speed",		CLF_ACTION,		DDKEY_RSHIFT, 0, 3,
@@ -69,6 +69,7 @@ static Control_t controls[] =
 	"spell6",		CLF_ACTION,		DDKEY_NUMPAD6, 0, 0,
 	"spell7",		CLF_ACTION,		DDKEY_NUMPAD7, 0, 0,
 	"spell8",		CLF_ACTION,		DDKEY_NUMPAD8, 0, 0,
+	"usespell",		CLF_ACTION,		0, 2, 0,
 /*	"sell",		    CLF_ACTION,		0, 0, 0,
 	"reply",	    CLF_ACTION,		0, 0, 0,*/
 
@@ -327,6 +328,7 @@ class KMenuScreenControls:public KMenuScreen
 		AddControl("JUMP :", H2A_JUMP);
 		AddControl("DUCK :", H2A_DUCK);
 		AddControl("FIRE :", H2A_FIRE);
+		AddControl("USE SPELL :", H2A_USESPELL);
 		AddControl("USE :", H2A_USE);
 		AddControl("STRAFE :", H2A_STRAFE);
 		AddControl("SPEED :", H2A_SPEED);
