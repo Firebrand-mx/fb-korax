@@ -351,16 +351,16 @@ void SB_DrawBackground()
 	}
 
 	// draw something in the blank spaces
-	R_FillRectWithFlat(0, 441, 640, 39, 'f_022');
+	FillRectWithFlat(0, 441, 640, 39, 'f_022');
 
-	R_DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
+	DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
 	if (m_h)
 	{
-		R_DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
-		R_DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem);
+		DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
+		DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem);
 	}
-	R_DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
-	R_DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
+	DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
+	DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
 }
 
 //==========================================================================
@@ -380,25 +380,25 @@ void SB_DrawNumber9(int x, int y, int num, int colour)
 	}
 
 	x = x + 27;
-    
+
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawPic(x - w, y, pic_innum[colour * 10]);
+		DrawPic(x - w, y, pic_innum[colour * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawPic(x, y, pic_innum[colour * 10 + num % 10]);
+		DrawPic(x, y, pic_innum[colour * 10 + num % 10]);
 		num /= 10;
 	}
 
 	// draw a minus sign if necessary
 	if (neg)
 	{
-		R_DrawPic(x - 8, y, pic_minus);
+		DrawPic(x - 8, y, pic_minus);
 	}
 }
 
@@ -421,25 +421,25 @@ void SB_DrawNumber92(int x, int y, int num, int colour)
 	}
 
 	x = x + 27;
-    
+
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawShadowedPic(x - w, y, pic_innum[colour * 10]);
+		DrawShadowedPic(x - w, y, pic_innum[colour * 10]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		R_DrawShadowedPic(x, y, pic_innum[colour * 10 + num % 10]);
+		DrawShadowedPic(x, y, pic_innum[colour * 10 + num % 10]);
 		num /= 10;
 	}
 
 	// draw a minus sign if necessary
 	if (neg)
 	{
-		R_DrawShadowedPic(x - 8, y, pic_minus);
+		DrawShadowedPic(x - 8, y, pic_minus);
 	}
 }
 
@@ -452,18 +452,18 @@ void SB_DrawNumber92(int x, int y, int num, int colour)
 void SB_DrawNumber12(int x, int y, int num)
 {
 	x = x + 36;
-    
+
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		R_DrawShadowedPic(x - bignumwidth[0], y, pic_bignum[0]);
+		DrawShadowedPic(x - bignumwidth[0], y, pic_bignum[0]);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= bignumwidth[num % 10];
-		R_DrawShadowedPic(x, y, pic_bignum[num % 10]);
+		DrawShadowedPic(x, y, pic_bignum[num % 10]);
 		num /= 10;
 		x -= 3;
 	}
@@ -480,12 +480,12 @@ void SB_DrawINumber(int x, int y, int num)
 	if (num > 1)
 	{
 		x = x + 8;
-    
+
 		// draw the new number
 		while (num)
 		{
 			x -= 4;
-			R_DrawPic(x, y, pic_smallinnum[num % 10]);
+			DrawPic(x, y, pic_smallinnum[num % 10]);
 			num /= 10;
 		}
 	}
@@ -502,12 +502,12 @@ void SB_DrawMNumber(int x, int y, int num)
 	if (num > 0)
 	{
 		x = x + 12;
-    
+
 		// draw the new number
 		while (num)
 		{
 			x -= 4;
-			R_DrawPic(x, y, pic_smallinnum[num % 10]);
+			DrawPic(x, y, pic_smallinnum[num % 10]);
 			num /= 10;
 		}
 	}
@@ -534,7 +534,7 @@ void SB_DrawMainBar()
 	int Mana5DimBase;
 
 	SB_DrawBackground();
-	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
+	DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
 
 	if (!cl.MO)
 	{
@@ -550,7 +550,7 @@ void SB_DrawMainBar()
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
-/*		R_DrawPic(38, 162, pic_kills);
+/*		DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl.Frags, 0);
 		*/
 		SB_DrawNumber92(32, 20, cl.Frags, 0);
@@ -657,8 +657,8 @@ void SB_DrawMainBar()
 		break;
 	}
 
-	R_DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
-	R_DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
+	DrawPic(BAR_X + 231, BAR_Y + 4, pic_manavial6);
+	DrawPic(BAR_X + 238, BAR_Y + 4, pic_manavial7);
 	DrawMana(ItemManaBlue, 77, sb_manaVial1, 0, sb_mana1);
 	DrawMana(ItemManaGreen, 107, 2 + sb_manaVial2, 2, sb_mana2);
 	DrawMana(ItemManaRed, 138, 4 + sb_manaVial3, 4, sb_mana3);
@@ -666,18 +666,18 @@ void SB_DrawMainBar()
 	DrawMana(ArtifactFlechette, 200, 8 + sb_manaVial5, 8 + Mana5DimBase, sb_mana5);
 	if (cl.next_level != cl.old_level)
 	{
-	   R_ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
+	   ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
 	}
-	R_ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
+	ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
 
 	// Ready artifact
 /*	if (cl.ArtifactFlash)
 	{
-		R_DrawPic(148, 164, pic_artiflash[cl.ArtifactFlash]);
+		DrawPic(148, 164, pic_artiflash[cl.ArtifactFlash]);
 	}
 	else if (cl.readyArtifact > 0)
 	{
-		R_DrawPic(143, 163, pic_arti[cl.readyArtifact]);
+		DrawPic(143, 163, pic_arti[cl.readyArtifact]);
 		SB_DrawINumber(166, 184, cl.inventory[cl.inv_ptr].count);
 	}
 */
@@ -685,23 +685,23 @@ void SB_DrawMainBar()
 	//[Korax]
 /*	if ((cl.stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
 	{
-		R_DrawPic(190, 162, pic_wpslot);
+		DrawPic(190, 162, pic_wpslot);
 		if (cl.stats.flags & SBF_PIECE1)
 		{
-			R_DrawPic(wppiecex[0], 162, pic_wppiece[0]);
+			DrawPic(wppiecex[0], 162, pic_wppiece[0]);
 		}
 		if (cl.stats.flags & SBF_PIECE2)
 		{
-			R_DrawPic(wppiecex[1], 162, pic_wppiece[1]);
+			DrawPic(wppiecex[1], 162, pic_wppiece[1]);
 		}
 		if (cl.stats.flags & SBF_PIECE3)
 		{
-			R_DrawPic(wppiecex[2], 162, pic_wppiece[2]);
+			DrawPic(wppiecex[2], 162, pic_wppiece[2]);
 		}
 	}
 	else
 	{
-		R_DrawPic(190, 162, pic_wpfull);
+		DrawPic(190, 162, pic_wpfull);
 	}
 */
 
@@ -727,18 +727,18 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 		// Draw Dim Mana icon
 		UsesMana = 0;
 	}
-	R_DrawPic(BAR_X + X, BAR_Y + 3, pic_manadim[DimBase + UsesMana]);
-	R_DrawPic(BAR_X + X + 17, BAR_Y + 3, pic_manavial[manaVial]);
+	DrawPic(BAR_X + X, BAR_Y + 3, pic_manadim[DimBase + UsesMana]);
+	DrawPic(BAR_X + X + 17, BAR_Y + 3, pic_manavial[manaVial]);
 	if (ManaItem)
 	{
 		SB_DrawMNumber(BAR_X + X + 2, BAR_Y + 20, ManaItem.Amount);
-		R_ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3,
+		ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3,
 			22 - (22 * ManaItem.Amount) / ManaItem.MaxAmount, 0.99);
 	}
 	else
 	{
 		SB_DrawMNumber(BAR_X + X + 2, BAR_Y + 20, 0);
-		R_ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3, 22, 0.99);
+		ShadeRect(BAR_X + X + 18, BAR_Y + 4, 3, 22, 0.99);
 	}
 }
 
@@ -755,7 +755,7 @@ void SB_DrawKeyBar()
 	Inventory Item;
 
 	SB_DrawBackground();
-	R_DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
+	DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
 
 	//  Keys
 	Item = EntityEx(cl.MO).Inventory;
@@ -763,7 +763,7 @@ void SB_DrawKeyBar()
 	{
 		if (Key(Item))
 		{
-			R_DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3,
+			DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3,
 				R_RegisterPic(Item.IconName));
 			num++;
 		}
@@ -790,7 +790,7 @@ void SB_DrawKeyBar()
 		{
 			num = 0;
 		}
-		R_DrawPic2(150 + 31 * i, 164, pic_armor[i], num);
+		DrawPic(150 + 31 * i, 164, pic_armor[i], num);
 	}*/
 }
 
@@ -818,11 +818,11 @@ void SB_DrawFullscreenStats()
 	//  [FB] Armorpoints
 	BasicArmor Armor = BasicArmor(EntityEx(cl.MO).FindInventory(BasicArmor));
 	SB_DrawNumber12(50, 430, Armor ? Armor.Amount : 0);
-	R_DrawShadowedPic(30, 470, pic_armor2);
+	DrawShadowedPic(30, 470, pic_armor2);
 
 	//  [FB] Health
 	SB_DrawNumber12(50, 450, cl.Health);
-	R_DrawShadowedPic(30, 494, pic_health);
+	DrawShadowedPic(30, 494, pic_health);
 
 //[Korax]
 /*	SB_DrawNumber92(320, 20, 0+cl.exp_level, 1);
@@ -833,7 +833,7 @@ void SB_DrawFullscreenStats()
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
-/*		R_DrawPic(38, 162, pic_kills);
+/*		DrawPic(38, 162, pic_kills);
 		SB_DrawNumber92(40, 176, cl.Frags, 0);
 		*/
 		SB_DrawNumber92(32, 20, cl.Frags, 0);
@@ -913,13 +913,13 @@ void SB_DrawFullscreenStats()
 	DrawFullscreenMana(ItemManaRed, 355, 4, sb_mana3);
 	DrawFullscreenMana(ArtifactBlastRadius, 415, 6, sb_mana4);
 	DrawFullscreenMana(ArtifactFlechette, 475, 8 + Mana5DimBase, sb_mana5);
-	R_DrawShadowedPic(534, 439, pic_manavial6);
-	R_DrawShadowedPic(546, 439, pic_manavial7);
+	DrawShadowedPic(534, 439, pic_manavial6);
+	DrawShadowedPic(546, 439, pic_manavial7);
 	if (cl.next_level != cl.old_level)
 	{
-		R_ShadeRect(535, 440, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
+		ShadeRect(535, 440, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
 	}
-	R_ShadeRect(547, 440, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
+	ShadeRect(547, 440, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
 
 //[Korax]
 /*	if (cl.InventoryTime)
@@ -928,30 +928,30 @@ void SB_DrawFullscreenStats()
 		x = cl.inv_ptr - cl.curpos;
 		for (i = 0; i < 7; i++)
 		{
-			R_DrawPic2(210 + i * 31, 448, pic_arti[0], 40);
+			DrawPic(210 + i * 31, 448, pic_arti[0], 40);
 			if (cl.inventorySlotNum > x + i
 				&& cl.inventory[x + i].type != HexenDefs::arti_none)
 			{
-				R_DrawShadowedPic(209 + i * 31, 447,
+				DrawShadowedPic(209 + i * 31, 447,
 					pic_arti[cl.inventory[x + i].type]);
 				SB_DrawINumber(229 + i * 31, 468, cl.inventory[x + i].count);
 			}
 		}
-		R_DrawPic(210 + cl.curpos * 31, 447, pic_selectbox);
+		DrawPic(210 + cl.curpos * 31, 447, pic_selectbox);
 		if (x != 0)
 		{
-			R_DrawShadowedPic(200, 447, pic_invgeml[!(ClGame.level->tictime & 4) ? 0 : 1]);
+			DrawShadowedPic(200, 447, pic_invgeml[!(ClGame.level->tictime & 4) ? 0 : 1]);
 		}
 		if (cl.inventorySlotNum - x > 7)
 		{
-			R_DrawShadowedPic(428, 447, pic_invgemr[!(ClGame.level->tictime & 4) ? 0 : 1]);
+			DrawShadowedPic(428, 447, pic_invgemr[!(ClGame.level->tictime & 4) ? 0 : 1]);
 		}
 	}
 	else if (cl.readyArtifact > 0)
 	{
 		//  Ready artifact
-		R_DrawShadowedPic(286, 170, pic_arti[0], 40);
-		R_DrawShadowedPic(284, 169, pic_arti[cl.readyArtifact]);
+		DrawShadowedPic(286, 170, pic_arti[0], 40);
+		DrawShadowedPic(284, 169, pic_arti[cl.readyArtifact]);
 		SB_DrawINumber(306, 192, cl.inventory[cl.inv_ptr].count);
 	}*/
 }
@@ -972,7 +972,7 @@ void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 		// Draw Dim Mana icon
 		UsesMana = 0;
 	}
-	R_DrawShadowedPic(X + 5, 440, pic_manadim[DimBase + UsesMana]);
+	DrawShadowedPic(X + 5, 440, pic_manadim[DimBase + UsesMana]);
 	SB_DrawNumber92(X, 454, ManaItem ? ManaItem.Amount : 0, 0);
 }
 
@@ -996,7 +996,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		R_DrawShadowedPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawShadowedPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
 
 	// Defensive power
@@ -1005,7 +1005,7 @@ void SB_DrawIcons()
 		(Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		R_DrawShadowedPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawShadowedPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
 
 	// Minotaur Active
@@ -1013,7 +1013,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		R_DrawShadowedPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawShadowedPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15]);
 	}
 
 	// [FB] PI Damage Active
@@ -1022,7 +1022,7 @@ void SB_DrawIcons()
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		// [FB] This one should appear where the wings of wrath are supposed to do
-		R_DrawShadowedPic(20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7]);
+		DrawShadowedPic(20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7]);
 	}
 
 	// [FB] Invisibility power
@@ -1032,7 +1032,7 @@ void SB_DrawIcons()
 		if (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 			!(ftoi(Pw.EffectTime * 35.0) & 16))
 		{
-			R_DrawPic2(220, 19, pic_shsp, 0.6);
+			DrawPic(220, 19, pic_shsp, 0.6);
 		}
 	}
 }
@@ -1047,7 +1047,7 @@ void SB_DrawPause()
 {
 	if (ClGame.bPaused && GetCvar('draw_pause'))
 	{
-		R_DrawShadowedPic(320, ClGame.maxclients > 1 ? 140 : 40, pic_paused);
+		DrawShadowedPic(320, ClGame.maxclients > 1 ? 140 : 40, pic_paused);
 	}
 }
 
