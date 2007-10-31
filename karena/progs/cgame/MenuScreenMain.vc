@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -25,11 +25,29 @@
 
 class MenuScreenMain : MenuScreen;
 
-void CreateTitle()
+//==========================================================================
+//
+//	InitWindow
+//
+//==========================================================================
+
+void InitWindow()
 {
 	if (!ClGame)
+	{
 		return;
+	}
+	::InitWindow();
+}
 
+//==========================================================================
+//
+//	CreateTitle
+//
+//==========================================================================
+
+void CreateTitle()
+{
 	if (!ClGame.IsInGame)
 	{
 		NewChild(MenuMainTitleImage);
@@ -45,37 +63,158 @@ void CreateTitle()
 
 }
 
-void InitWindow()
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
 {
-	if (!ClGame)
-		return;
+	MenuBigTextButton	btn;
+	int					currentY;
 
 	ChoicesStartX = 110;
 	if (ClGame.IsInGame)
 	{
-		int i = 0;
-
-		ChoicesStartY = 120;
+		currentY = 120;
 		if (GetCvar('DeathMatch') >= HexenDefs::NUMGAMESNOTEAM)
 		{
-			ChoicesStartY -= 20;
-			Choices[i++] = MenuChoice_SelectTeam;
+			currentY -= 20;
+			btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+			btn.SetPos(ChoicesStartX, currentY);
+			btn.Text = "Select Team";
+			btn.Activated = ActivateSelectTeam;
+			currentY += btn.Height;
 		}
-		Choices[i++] = MenuChoice_AddBot;
-		Choices[i++] = MenuChoice_RemoveBot;
-		Choices[i++] = MenuChoice_Options;
-		Choices[i++] = MenuChoice_LeaveArena;
-		Choices[i++] = MenuChoice_QuitGame;
+
+		btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+		btn.SetPos(ChoicesStartX, currentY);
+		btn.Text = "Add Bot";
+		btn.Activated = ActivateAddBot;
+		currentY += btn.Height;
+
+		btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+		btn.SetPos(ChoicesStartX, currentY);
+		btn.Text = "Remove Bot";
+		btn.Activated = ActivateRemoveBot;
+		currentY += btn.Height;
+
+		btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+		btn.SetPos(ChoicesStartX, currentY);
+		btn.Text = "Leave Arena";
+		btn.Activated = ActivateLeaveArena;
+		currentY += btn.Height;
 	}
 	else
 	{
-		ChoicesStartY = 120;//56;
-		Choices[0] = MenuChoice_Multiplayer;
-		Choices[1] = MenuChoice_Options;
-		Choices[2] = MenuChoice_QuitGame;
+		currentY = 120;//56;
+		btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+		btn.SetPos(ChoicesStartX, currentY);
+		btn.Text = "Multiplayer";
+		btn.Activated = ActivateMP;
+		currentY += btn.Height;
 	}
 
-	::InitWindow();
+	btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+	btn.SetPos(ChoicesStartX, currentY);
+	btn.Text = "Options";
+	btn.Activated = ActivateOpt;
+	currentY += btn.Height;
+
+	btn = MenuBigTextButton(NewChild(MenuBigTextButton));
+	btn.SetPos(ChoicesStartX, currentY);
+	btn.Text = "Quit game";
+	btn.Activated = ActivateQuit;
+}
+
+//==========================================================================
+//
+//	ActivateSelectTeam
+//
+//==========================================================================
+
+void ActivateSelectTeam(Object Sender)
+{
+	Player(ClGame.cl).ServerTeamSelect();
+}
+
+//==========================================================================
+//
+//	ActivateAddBot
+//
+//==========================================================================
+
+void ActivateAddBot(Object Sender)
+{
+	CmdBuf_AddText("addbot\n");
+}
+
+//==========================================================================
+//
+//	ActivateRemoveBot
+//
+//==========================================================================
+
+void ActivateRemoveBot(Object Sender)
+{
+	KArenaPlayerReplicationInfo RepInfo;
+
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KArenaPlayerReplicationInfo, RepInfo)
+	{
+		if (RepInfo.IsBot)
+		{
+			Player(ClGame.cl).ServerDisconnectBot(RepInfo.PlayerNum);
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	ActivateLeaveArena
+//
+//==========================================================================
+
+void ActivateLeaveArena(Object Sender)
+{
+	LocalSound('Chat');
+	ClGame.MessageBoxStartMessage("ARE YOU SURE YOU WANT TO LEAVE CURRENT ARENA?",
+								ClientGame::MB_EndGame, true);
+	ClGame.ForceMenuOff();
+}
+
+//==========================================================================
+//
+//	ActivateMP
+//
+//==========================================================================
+
+void ActivateMP(Object Sender)
+{
+	ClGame.PushMenuScreen(ClGame.SpawnMenu(MenuScreenMultiplayer));
+}
+
+//==========================================================================
+//
+//	ActivateOpt
+//
+//==========================================================================
+
+void ActivateOpt(Object Sender)
+{
+	ClGame.PushMenuScreen(ClGame.SpawnMenu(MenuScreenOptions));
+}
+
+//==========================================================================
+//
+//	ActivateQuit
+//
+//==========================================================================
+
+void ActivateQuit(Object Sender)
+{
+	ClGame.menu_quit();
 }
 
 defaultproperties
