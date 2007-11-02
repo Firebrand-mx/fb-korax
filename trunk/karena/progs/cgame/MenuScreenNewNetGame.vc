@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -25,60 +25,321 @@
 
 class MenuScreenNewNetGame : MenuScreen;
 
-MenuChoice_Players Players;
-MenuChoice_Bots Bots;
-MenuChoice_Monsters Monsters;
-MenuChoice_DeathMatch DeathMatch;
-MenuChoice_MPSkill Skill;
-MenuChoice_TimeLimit TimeLimit;
-MenuChoice_Level Level;
-MenuChoice_ServerSettings ServSettings;
+const int MAXMAPSPERGAMEMODE = 32;
+
+name				MapLumpNames[MAXMAPSPERGAMEMODE];
+
+MenuChoiceEnum		Players;
+MenuChoiceEnum		Bots;
+MenuChoiceEnum		Monsters;
+MenuChoiceEnum		DeathMatch;
+MenuChoiceEnum		Skill;
+MenuChoiceEnum		TimeLimit;
+MenuChoiceEnum		Level;
+MenuTextButton		ServSettings;
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
 
 void CreateChoices()
 {
-	MenuChoice newChoice;
+	MenuTextButton		Btn;
 
-	newChoice = MenuChoice(NewChild(MenuChoice_StartGame));
-	newChoice.SetPos(ChoicesStartX, ChoicesStartY);
-	ChoicesStartY += newChoice.Height;
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetPos(ChoicesStartX, ChoicesStartY);
+	Btn.Text = "Start Game";
+	Btn.Activated = ActivateStartNewGame;
+	ChoicesStartY += Btn.Height;
 
-	ServSettings = MenuChoice_ServerSettings(MenuChoice(NewChild(MenuChoice_ServerSettings)));
+	ServSettings = MenuTextButton(MenuChoice(NewChild(MenuSmallTextButton)));
 	ServSettings.SetPos(ChoicesStartX, ChoicesStartY);
+	ServSettings.Text = "Server Settings";
+	ServSettings.Activated = ActivateServerSettings;
 	ChoicesStartY += ServSettings.Height;
 
-	Players = MenuChoice_Players(NewChild(MenuChoice_Players));
+	Players = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Players.SetPos(ChoicesStartX, ChoicesStartY);
+	Players.Text = "Max players";
+	Players.AddItem("2");
+	Players.AddItem("3");
+	Players.AddItem("4");
+	Players.AddItem("5");
+	Players.AddItem("6");
+	Players.AddItem("7");
+	Players.AddItem("8");
+	Players.SetInitialValue(6);
 	ChoicesStartY += Players.Height;
 
-	Bots = MenuChoice_Bots(NewChild(MenuChoice_Bots));
+	Bots = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Bots.SetPos(ChoicesStartX, ChoicesStartY);
+	Bots.Text = "Bots";
+	Bots.AddItem("0");
+	Bots.AddItem("1");
+	Bots.AddItem("2");
+	Bots.AddItem("3");
+	Bots.AddItem("4");
+	Bots.AddItem("5");
+	Bots.AddItem("6");
+	Bots.AddItem("7");
 	ChoicesStartY += Bots.Height;
 
-	Monsters = MenuChoice_Monsters(NewChild(MenuChoice_Monsters));
+	Monsters = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
 	Monsters.SetPos(ChoicesStartX, ChoicesStartY);
+	Monsters.Text = "Monsters";
 	ChoicesStartY += Monsters.Height;
 
-	DeathMatch = MenuChoice_DeathMatch(NewChild(MenuChoice_DeathMatch));
+	DeathMatch = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	DeathMatch.SetPos(ChoicesStartX, ChoicesStartY);
+	DeathMatch.Text = "Game type";
+	DeathMatch.AddItem("Deathmatch");
+	DeathMatch.AddItem("Kill the Heresiarch");
+	DeathMatch.AddItem("Castle Sweep");
+	DeathMatch.AddItem("Team Deathmatch");
+	DeathMatch.AddItem("Capture The Flag");
+	DeathMatch.AddItem("Team Castle Sweep");
+	DeathMatch.AddItem("Football");
+	DeathMatch.SetInitialValue(HexenDefs::game_dm - 1);
+	DeathMatch.ValueChanging = ChangeDeathmatch;
 	ChoicesStartY += DeathMatch.Height;
 
-	Skill = MenuChoice_MPSkill(NewChild(MenuChoice_MPSkill));
+	Skill = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Skill.SetPos(ChoicesStartX, ChoicesStartY);
+	Skill.Text = "Skill";
+	Skill.AddItem("Baby");
+	Skill.AddItem("Easy");
+	Skill.AddItem("Normal");
+	Skill.AddItem("Hard");
+	Skill.AddItem("Nightmare");
+	Skill.SetInitialValue(2);
 	ChoicesStartY += Skill.Height;
 
-	TimeLimit = MenuChoice_TimeLimit(NewChild(MenuChoice_TimeLimit));
+	TimeLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	TimeLimit.SetPos(ChoicesStartX, ChoicesStartY);
+	TimeLimit.Text = "Time limit";
+	TimeLimit.AddItem("0");
+	TimeLimit.AddItem("5");
+	TimeLimit.AddItem("10");
+	TimeLimit.AddItem("15");
+	TimeLimit.AddItem("20");
+	TimeLimit.AddItem("25");
+	TimeLimit.AddItem("30");
+	TimeLimit.AddItem("35");
+	TimeLimit.AddItem("40");
+	TimeLimit.AddItem("45");
+	TimeLimit.AddItem("50");
+	TimeLimit.AddItem("55");
+	TimeLimit.AddItem("60");
 	ChoicesStartY += TimeLimit.Height;
 
-	Level = MenuChoice_Level(NewChild(MenuChoice_Level));
+	Level = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Level.SetPos(ChoicesStartX, ChoicesStartY);
+	Level.Text = "Level";
 	ChoicesStartY += Level.Height;
 
-	DeathMatch.Level = Level;
-	DeathMatch.Monsters = Monsters;
+	InitMonsters(HexenDefs::game_dm - 1);
+	InitMapList(HexenDefs::game_dm - 1);
 }
 
-void StartNewGame()
+//==========================================================================
+//
+//	InitMonsters
+//
+//==========================================================================
+
+void InitMonsters(int GameType)
+{
+	switch (GameType + 1)
+	{
+	case HexenDefs::game_sweepteam: //	Team Castle Sweep
+	case HexenDefs::game_sweep:	//	Castle Sweep
+		Monsters.Value = 1;
+		break;
+	case HexenDefs::game_kth:
+	case HexenDefs::game_dm:	//	Deathmatch
+	case HexenDefs::game_dmteam:	//	Team deathmatch.
+		Monsters.Value = 0;
+		break;
+	case HexenDefs::game_ctf: //	Capture the Flag
+		Monsters.Value = 0;
+		break;
+	case HexenDefs::game_football: //	Football
+	}
+}
+
+//==========================================================================
+//
+//	ChangeDeathmatch
+//
+//==========================================================================
+
+bool ChangeDeathmatch(Object Sender, int newValue)
+{
+	if (Level)
+		InitMapList(newValue);
+	InitMonsters(newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	InitMapList
+//
+// [CW] Load and parse maps table for selected game mode
+//
+//==========================================================================
+
+void InitMapList(int GameType)
+{
+	string rawTable;
+	string mapLumpName;
+
+	switch (GameType + 1)
+	{
+	case HexenDefs::game_sweep:	//	Castle Sweep
+		rawTable = LoadTextLump('gm_swp');
+		break;
+	case HexenDefs::game_sweepteam:	//	Team Castle Sweep
+		rawTable = LoadTextLump('gm_tswp');
+		break;
+	case HexenDefs::game_kth:
+		rawTable = LoadTextLump('gm_kth');
+		break;
+	case HexenDefs::game_dm:	//	Deathmatch
+		rawTable = LoadTextLump('gm_dm');
+		break;
+	case HexenDefs::game_dmteam:	//	Team deathmatch.
+		rawTable = LoadTextLump('gm_tdm');
+		break;
+	case HexenDefs::game_ctf: //	Capture the Flag
+		rawTable = LoadTextLump('gm_ctf');
+		break;
+	case HexenDefs::game_football: //	Football
+		rawTable = LoadTextLump('gm_ftb');
+		break;
+	default:
+		Error("MenuChoice_Level::InitMapList : unknown game type %i", GameType + 1);
+		return;
+	}
+
+	int n = strlen(rawTable);
+	if (!n)
+	{
+		Error("MenuChoice_Level::InitMapList : maps table missing for game type %i", GameType + 1);
+		return;
+	}
+
+	//
+	// Begin parsing...
+	//
+	bool reading = false;
+	bool skipping = false;
+	bool expecting_newline = false;
+	int i = -1;
+	int substr_from = 0;
+	int Idx = 0;
+
+	while (++i < n && Idx < MAXMAPSPERGAMEMODE)
+	{
+		if (skipping)
+		{
+			if (strcmp(substr(rawTable, i, 1), "\n") == 0)
+			{
+				skipping = false;
+				expecting_newline = true;
+			}
+			continue;
+		}
+
+		if (strcmp(substr(rawTable, i, 1), "0") >= 0 && strcmp(substr(rawTable, i, 1), "9") <= 0 ||
+			strcmp(substr(rawTable, i, 1), "A") >= 0 && strcmp(substr(rawTable, i, 1), "Z") <= 0 ||
+			strcmp(substr(rawTable, i, 1), "_") == 0 ||
+			strcmp(substr(rawTable, i, 1), "a") >= 0 && strcmp(substr(rawTable, i, 1), "z") <= 0)
+		{
+			expecting_newline = false;
+			if (!reading)
+			{
+				reading = true;
+				substr_from = i;
+			}
+		}
+		else
+		{
+			if (expecting_newline && strcmp(substr(rawTable, i, 1), " ") < 0)
+				continue;
+			skipping = true;
+			if (reading)
+			{
+				reading = false;
+				mapLumpName = substr(rawTable, substr_from, i - substr_from);
+				if (!strcmp(substr(rawTable, i, 1), "*"))
+					Idx += AddMapsToList(Idx, mapLumpName, true);
+				else
+					AddMapsToList(Idx++, mapLumpName, false);
+			}
+		}
+	};
+
+	if (reading)
+	{
+		if (!strcmp(substr(rawTable, i, 1), "*"))
+			Idx += AddMapsToList(Idx, mapLumpName, true);
+		else
+			Idx += AddMapsToList(Idx, mapLumpName, false);
+	}
+
+	Level.MaxValue = Idx;
+	Level.Value = 0;
+}
+
+//==========================================================================
+//
+//	AddMapsToList
+//
+//==========================================================================
+
+int AddMapsToList(int Idx, string mapLumpName, bool useAsPrefix)
+{
+	int i, count, len;
+	string testmapname;
+
+	for (i = 0, count = 0; i < 99 && Idx < MAXMAPSPERGAMEMODE; i++)
+	{
+		// If the lump found after any others is the first possible map, it means
+		// no appropriate lump may be found any more, so cycle should end here 
+		if (i > 0 && P_GetMapLumpName(i) == P_GetMapLumpName(0))
+			break;
+
+		testmapname = va("%n", P_GetMapLumpName(i));
+		len = strlen(mapLumpName);
+		if (strlen(testmapname) < len)
+			continue;
+
+		if (!stricmp(substr(testmapname, 0, len), mapLumpName))
+		{
+			count++;
+			MapLumpNames[Idx] = P_GetMapLumpName(i);
+			Level.EnumNames[Idx] = P_GetMapName(i);
+			
+			if (!useAsPrefix)
+				break;
+
+			Idx++;
+		}
+	}
+
+	return count;
+}
+
+//==========================================================================
+//
+//	ActivateStartNewGame
+//
+//==========================================================================
+
+void ActivateStartNewGame(Object Sender)
 {
 	CmdBuf_AddText("Disconnect\n");
 	CmdBuf_AddText("MaxPlayers %d\n", Players.Value + 2);
@@ -87,7 +348,18 @@ void StartNewGame()
 	CmdBuf_AddText("DeathMatch %d\n", DeathMatch.Value + 1);
 	CmdBuf_AddText("TimeLimit %d\n", TimeLimit.Value * 5);
 	CmdBuf_AddText("Skill %d\n", Skill.Value);
-	CmdBuf_AddText("Map %n\n", Level.MapLumpNames[Level.Value]);
+	CmdBuf_AddText("Map %n\n", MapLumpNames[Level.Value]);
+}
+
+//==========================================================================
+//
+//	ActivateServerSettings
+//
+//==========================================================================
+
+void ActivateServerSettings(Object Sender)
+{
+	ClGame.PushMenuScreen(ClGame.SpawnMenu(MenuScreenServerSettings));
 }
 
 defaultproperties
