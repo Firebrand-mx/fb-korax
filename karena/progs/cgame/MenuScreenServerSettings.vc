@@ -25,13 +25,124 @@
 
 class MenuScreenServerSettings : MenuScreen;
 
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	MenuChoiceSlider	Slider;
+	MenuChoiceEnum		Enum;
+	int					currentY;
+
+	currentY = ChoicesStartY;
+
+	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
+	Slider.SetPos(ChoicesStartX, currentY);
+	Slider.Text = "Player corpses amount";
+	Slider.MinValue = 8.0;
+	Slider.MaxValue = 64.0;
+	Slider.ValueDelta = 8.0;
+	Slider.SetInitialValue(itof(GetCvar('BodyQueSize')));
+	Slider.ValueChanging = ChangeBodyQueueSize;
+	currentY += Slider.Height;
+
+	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
+	Slider.SetPos(ChoicesStartX, currentY);
+	Slider.Text = "Monster corpses amount";
+	Slider.MinValue = 16.0;
+	Slider.MaxValue = 128.0;
+	Slider.ValueDelta = 16.0;
+	Slider.SetInitialValue(itof(GetCvar('CorpseQueSize')));
+	Slider.ValueChanging = ChangeCorpseQueueSize;
+	currentY += Slider.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetPos(ChoicesStartX, currentY);
+	Enum.Text = "Team Autoselect";
+	Enum.SetInitialValue(GetCvar('TeamAutoSelect'));
+	Enum.ValueChanging = ChangeTeamAutoSelect;
+	currentY += Enum.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetPos(ChoicesStartX, currentY);
+	Enum.Text = "Keep Teams Equal";
+	Enum.SetInitialValue(GetCvar('KeepTeamsEqual'));
+	Enum.ValueChanging = ChangeKeepTeamsEqual;
+	currentY += Enum.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetPos(ChoicesStartX, currentY);
+	Enum.Text = "Friendy Fire";
+	Enum.SetInitialValue(GetCvar('FriendlyFire'));
+	Enum.ValueChanging = ChangeFriendlyFire;
+	currentY += Enum.Height;
+}
+
+//==========================================================================
+//
+//	ChangeBodyQueueSize
+//
+//==========================================================================
+
+bool ChangeBodyQueueSize(Object Sender, float newValue)
+{
+	SetCvar('BodyQueSize', ftoi(newValue));
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeCorpseQueueSize
+//
+//==========================================================================
+
+bool ChangeCorpseQueueSize(Object Sender, float newValue)
+{
+	SetCvar('CorpseQueSize', ftoi(newValue));
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeTeamAutoSelect
+//
+//==========================================================================
+
+bool ChangeTeamAutoSelect(Object Sender, int newValue)
+{
+	SetCvar('TeamAutoSelect', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeKeepTeamsEqual
+//
+//==========================================================================
+
+bool ChangeKeepTeamsEqual(Object Sender, int newValue)
+{
+	SetCvar('KeepTeamsEqual', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeFriendlyFire
+//
+//==========================================================================
+
+bool ChangeFriendlyFire(Object Sender, int newValue)
+{
+	SetCvar('FriendlyFire', newValue);
+	return true;
+}
+
 defaultproperties
 {
-	Choices[0] = MenuChoice_BodyQueSize;
-	Choices[1] = MenuChoice_CorpseQueSize;
-	Choices[2] = MenuChoice_TeamAutoSelect;
-	Choices[3] = MenuChoice_KeepTeamsEqual;
-	Choices[4] = MenuChoice_FriendlyFire;
 	ChoicesStartX = 160;
 	ChoicesStartY = 37;
 	SelectorType = MenuSelector_SmallRight;
