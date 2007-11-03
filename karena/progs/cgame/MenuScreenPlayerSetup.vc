@@ -25,9 +25,123 @@
 
 class MenuScreenPlayerSetup : MenuScreen;
 
-MenuSpriteAnim Anim;
-int Colour;
-int PClass;
+MenuSpriteAnim		Anim;
+MenuInputLine		PName;
+MenuChoiceEnum		EnumColour;
+MenuChoiceEnum		EnumPClass;
+int					Colour;
+int					PClass;
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	int					currentY;
+
+	R_InstallSprite("PLAY", 500);
+	R_InstallSprite("CLER", 501);
+	R_InstallSprite("MAGE", 502);
+	R_InstallSprite("PLHR", 503);//Heretic
+	R_InstallSprite("PLDM", 504);
+	R_InstallSprite("WITC", 505);
+
+	Anim = MenuSpriteAnim(NewChild(MenuSpriteAnim));
+	Anim.SetPos(260, 120);
+	Anim.SprDef = 500;
+	Anim.Speed = 8;
+	Anim.NumFrames = 4;
+
+	currentY = ChoicesStartY;
+
+	PName = MenuInputLine(NewChild(MenuInputLine));
+	PName.SetPos(ChoicesStartX, currentY);
+	PName.Text = "Name";
+	PName.Value = GetCvarS('Name');
+	currentY += PName.Height;
+
+	EnumColour = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	EnumColour.SetPos(ChoicesStartX, currentY);
+	EnumColour.Text = "Colour";
+	EnumColour.bLeftAlign = true;
+	EnumColour.AddItem("blue");
+	EnumColour.AddItem("red");
+	EnumColour.AddItem("gold");
+	EnumColour.AddItem("light green");
+	EnumColour.AddItem("green");
+	EnumColour.AddItem("gray");
+	EnumColour.AddItem("brown");
+	EnumColour.AddItem("magenta");
+	EnumColour.SetInitialValue(GetCvar('colour'));
+	EnumColour.ValueChanging = ChangeColour;
+	currentY += EnumColour.Height;
+
+	EnumPClass = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	EnumPClass.SetPos(ChoicesStartX, currentY);
+	EnumPClass.Text = "Class";
+	EnumPClass.bLeftAlign = true;
+	EnumPClass.AddItem("fighter");
+	EnumPClass.AddItem("cleric");
+	EnumPClass.AddItem("mage");
+	EnumPClass.AddItem("heretic");
+	EnumPClass.AddItem("marine");
+	EnumPClass.AddItem("hero");
+	EnumPClass.SetInitialValue(GetCvar('class'));
+	EnumPClass.ValueChanging = ChangeClass;
+	currentY += EnumPClass.Height;
+
+	Colour = EnumColour.Value;
+	PClass = EnumPClass.Value;
+	SetColour();
+}
+
+//==========================================================================
+//
+//	ChangeName
+//
+//==========================================================================
+
+void ChangeName(Object Sender)
+{
+	SetCvarS('Name', PName.Value);
+}
+
+//==========================================================================
+//
+//	ChangeColour
+//
+//==========================================================================
+
+bool ChangeColour(Object Sender, int newValue)
+{
+	SetCvar('colour', newValue);
+	Colour = newValue;
+	SetColour();
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeClass
+//
+//==========================================================================
+
+bool ChangeClass(Object Sender, int newValue)
+{
+	SetCvar('class', newValue);
+	PClass = newValue;
+	SetColour();
+	return true;
+}
+
+//==========================================================================
+//
+//	SetColour
+//
+//==========================================================================
 
 void SetColour()
 {
@@ -68,41 +182,8 @@ void SetColour()
 	}
 }
 
-void SetSpriteColour(int newColour)
-{
-	Colour = newColour;
-	SetColour();
-}
-
-void SetPClass(int newPClass)
-{
-	PClass = newPClass;
-	SetColour();
-}
-
-void CreateChoices()
-{
-	R_InstallSprite("PLAY", 500);
-	R_InstallSprite("CLER", 501);
-	R_InstallSprite("MAGE", 502);
-	R_InstallSprite("PLHR", 503);//Heretic
-	R_InstallSprite("PLDM", 504);
-	R_InstallSprite("WITC", 505);
-
-	Anim = MenuSpriteAnim(NewChild(MenuSpriteAnim));
-	Anim.SetPos(260, 120);
-	Anim.SprDef = 500;
-	Anim.Speed = 8;
-	Anim.NumFrames = 4;
-
-	::CreateChoices();
-}
-
 defaultproperties
 {
-	Choices[0] = MenuChoice_PlayerName;
-	Choices[1] = MenuChoice_Colour;
-	Choices[2] = MenuChoice_PClass;
 	ChoicesStartX = 16;
 	ChoicesStartY = 40;
 	SelectorType = MenuSelector_SmallLeft;
