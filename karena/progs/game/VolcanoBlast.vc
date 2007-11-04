@@ -69,7 +69,7 @@ final void A_VolcBallImpact()
 		Gravity = 1.0;
 		Origin.z += 28.0;
 	}
-	RadiusAttack(Target, 25, 25.0, false);
+	RadiusAttack(Target, 25, 25.0, true);
 	for (i = 0; i < 4; i++)
 	{
 		tiny = Spawn(VolcanoTBlast, Origin);
@@ -83,6 +83,27 @@ final void A_VolcBallImpact()
 	}
 }
 
+//===========================================================================
+//
+//  A_Particles
+//
+//===========================================================================
+
+final void A_Particles()
+{
+	int i;
+	
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		PlayerEx(Level.Game.Players[i]).ParticleEffect(10, LineSpecialLevelInfo::pt_static, 0, Origin, 10.0,
+				vector(256.0, 256.0, 256.0), 0.3, 20.0, 85.0, RGB(255, 128, 0), 1.0, 2.0);
+	}
+}
+
 states
 {
 Spawn:
@@ -90,7 +111,8 @@ Spawn:
 	Loop
 Death:
 	XPL1 A 4 A_VolcBallImpact
-	XPL1 BCDEF 4
+	XPL1 B 4 A_Particles
+	XPL1 CDEF 4
 	Stop
 }
 
@@ -99,11 +121,12 @@ defaultproperties
 	Radius = 8.0;
 	Height = 8.0;
 	Speed = 70.0;
-	Gravity = 0.125;	
+	Gravity = 0.125;
 	MissileDamage = 2;
 	DamageType = 'Fire';
 	bNoGravity = false;
+	bDynamicLight = true;
 	DeathSound = 'VolcanoHit';
 	DLightColour = RGB(255, 128, 0);
-	DLightRadius = 200.0;
+	DLightRadius = 126.0;
 }

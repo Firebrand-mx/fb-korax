@@ -72,6 +72,7 @@ final void A_FreezeDeath()
 	bTelestomp = true;
 	bSlide = true;
 	bNoPassMobj = false;
+	bDynamicLight = false;
 	Height *= 4.0;
 	PlaySound('FreezeDeath', CHAN_VOICE);
 	Translation = 0;	//no translation
@@ -105,15 +106,6 @@ final void A_FreezeDeathChunks()
 	int i;
 	Actor A;
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!Level.Game.Players[i])
-			continue;
-		if (!Level.Game.Players[i].bSpawned)
-			continue;
-		Player(Level.Game.Players[i]).ClientIceChunks(Origin + vector(0.0, 0.0, Height * 0.5));
-	}
-
 	if (Length(Velocity) > 1.0)
 	{
 		StateTime = 3.0;
@@ -121,6 +113,16 @@ final void A_FreezeDeathChunks()
 	}
 	PlaySound('FreezeShatter', CHAN_VOICE);
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!Level.Game.Players[i])
+			continue;
+		if (!Level.Game.Players[i].bSpawned)
+			continue;
+		PlayerEx(Level.Game.Players[i]).ParticleEffect(256, LineSpecialLevelInfo::pt_static, HexenLevelInfo::pt_ice_chunk,
+			Origin + vector(Radius, Radius, Height), 0.8, vector(64.0, 64.0, 96.0), 0.6, 6.0,
+			80.0, RGB(127, 130, 240), 10.0, 16.0);
+	}
 	for (i = 12 + (P_Random() & 15); i >= 0; i--)
 	{
 		A = Spawn(IceChunk, Origin + vector(
