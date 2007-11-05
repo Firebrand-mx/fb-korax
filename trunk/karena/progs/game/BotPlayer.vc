@@ -129,8 +129,8 @@ enum { NUMBOTTYPES = 336 };
 //
 struct enemyinfo_t
 {
-	int		health;
-	int		weap;
+	int		Health;
+	Weapon	Weap;
 };
 
 //
@@ -188,7 +188,7 @@ float t_frust;
 float t_fire;			// Tics left until our gun will actually fire again
 float t_anticip;
 float t_chat;			// Tics left until bots completes "typing" in what he's saying.
-				// Bot also doesn't do anything during this time.
+						// Bot also doesn't do anything during this time.
 
 float forwardmove;	// For building ucmd
 float sidemove;
@@ -225,6 +225,8 @@ bool anticip_r;
 //
 //	AngleTo
 //
+//	Returns yaw angle to a certain location
+//
 //==========================================================================
 
 float AngleTo(TVec dest)
@@ -235,6 +237,24 @@ float AngleTo(TVec dest)
 	dir = dest - botmo.Origin;
 	VectorAngles(&dir, &ang);
 	return ang.yaw;
+}
+
+//==========================================================================
+//
+//	AngleTo2
+//
+//	Returns pitch angle to a certain location
+//
+//==========================================================================
+
+float AngleTo2(TVec dest)
+{
+	TVec dir;
+	TAVec ang;
+
+	dir = dest - botmo.Origin;
+	VectorAngles(&dir, &ang);
+	return ang.pitch;
 }
 
 //==========================================================================
@@ -453,6 +473,12 @@ void SetEnemy()
 	if (enemy && enemy.Health > 0 && player.MO &&
 	    player.MO.CanSee(enemy))
 	{
+		// [FB] Update enemy info
+		if(enemy.Player)
+		{
+			enemyinfo.Health = enemy.Health;
+			enemyinfo.Weap = Player(enemy.Player).ReadyWeapon;
+		}
 		return;
 	}
 
@@ -461,10 +487,20 @@ void SetEnemy()
 
 	if (!enemy)
 		return;
-	
+
 	// Double check the validity of the enemy
 	if (!enemy.bShootable || enemy.bDormant)
+	{
 		enemy = none;
+		return;
+	}
+
+	// [FB] Update enemy info
+	if(enemy.Player)
+	{
+		enemyinfo.Health = enemy.Health;
+		enemyinfo.Weap = Player(enemy.Player).ReadyWeapon;
+	}
 }
 
 //==========================================================================
@@ -749,7 +785,7 @@ void CheckStuff()
 	// [FB] The order MUST be the same as in the roaming method
 	if (goal)
 	{
-		if (!CheckTo(goal.Origin) || (botmo.DistTo(goal) < botmo.Radius))
+		if (!CheckTo(goal.Origin)/* || (botmo.DistTo(goal) < botmo.Radius)*/)
 		{
 			goal = none;
 		}
@@ -796,7 +832,7 @@ void CheckStuff()
 		TVec dir;
 		dir = lastpos - botmo.Origin;
 		dir.z = 0.0;
-		if (!CheckTo(lastpos) || (Length(dir) < botmo.Radius))
+		if (!CheckTo(lastpos)/* || (Length(dir) < botmo.Radius)*/)
 		{
 			lastpos_valid = false;
 		}
@@ -807,9 +843,13 @@ void CheckStuff()
 		TVec dir;
 		dir = posdest - botmo.Origin;
 		dir.z = 0.0;
-		if (!CheckTo(posdest) || (Length(dir) < botmo.Radius))
+		if (!CheckTo(posdest) && posdest != lastpos/* || (Length(dir) < botmo.Radius)*/)
 		{
 			posdest_valid = false;
+		}
+		else
+		{
+			lastpos = posdest;
 		}
 	}
 }
@@ -921,7 +961,36 @@ int SkillLower(int skill, int num)
 
 void SetAngle(float an)
 {
+	if (t_turn)
+		return;
+
 	angle = AngleMod360(an);
+//	angle = an;
+
+	if (!enemy)
+		return;
+
+	switch (info.accuracy)
+	{
+		case bsk_verypoor:
+		case bsk_poor:
+			t_turn = 4.0 / 3.0;
+			break;
+		case bsk_low:
+			t_turn = 2.0 / 3.0;
+			break;
+		case bsk_medium:
+			t_turn = 1.0 / 2.0;
+			break;
+		case bsk_high:
+			t_turn = 1.0 / 4.0;
+			break;
+		case bsk_excellent:
+			t_turn = 1.0 / 8.0;
+			break;
+		case bsk_supreme:
+			break;
+	}
 }
 
 //==========================================================================
@@ -949,20 +1018,110 @@ void AimProjectile(float dist, bool right, float an)
 	{
 		case bsk_verypoor:
 		case bsk_poor:
+			if (MainGameInfo(player.Level.Game).botskill > 3 && Random() < 0.01)
+			{
+				// [BC] Cajun prediction
+				// Here goes the prediction.
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+/*				SetAngle(R_PointToAngle2(MO->x,
+							      MO->y,
+							      enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
+							      enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));*/	
+			}
+			else
+			{
+				// Aim right at the enemy
+				SetAngle(an);
+			}
+			break;
 		case bsk_low:
-			// Aim right at the enemy
-			SetAngle(an);
+			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.03)
+			{
+				// Here goes the prediction.
+				float m = (dist / 875.0);
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+			}
+			else
+			{
+				// Aim right at the enemy
+				SetAngle(an);
+			}
 			break;
 		case bsk_medium:
-		case bsk_high:
-		case bsk_excellent:
-		case bsk_supreme:
-			if (right)
-				SetAngle(an + Random() * 20.0);
-			else
-				SetAngle(an - Random() * 20.0);
-			break;
+			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.09)
+			{
+				float m = (dist / 875.0);
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+			}
+			else
+			{
+				if (right)
+					SetAngle(an + Random() * 20.0);
+				else
+					SetAngle(an - Random() * 20.0);
+			}
+			break;
+		case bsk_high:
+			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.9)
+			{
+				float m = (dist / 875.0);
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+			}
+			else
+			{
+				if (right)
+					SetAngle(an + Random() * 20.0);
+				else
+					SetAngle(an - Random() * 20.0);
+			}
+			break;
+		case bsk_excellent:
+			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.3)
+			{
+				float m = (dist / 875.0);
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+			}
+			else
+			{
+				if (right)
+					SetAngle(an + Random() * 20.0);
+				else
+					SetAngle(an - Random() * 20.0);
+			}
+			break;
+		case bsk_supreme:
+			if (MainGameInfo(player.Level.Game).botskill > 0 && Random() < 0.1)
+			{
+				float m = (dist / 875.0);
+				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
+				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
+			}
+			else
+			{
+				if (right)
+					SetAngle(an + Random() * 20.0);
+				else
+					SetAngle(an - Random() * 20.0);
+			}
+			break;
 		default:
 			Error("Unknown bot skill level: %d", info.accuracy);
 			return;
@@ -979,6 +1138,7 @@ void AimProjectile(float dist, bool right, float an)
 
 void AimInstant(float dist, bool right, float an)
 {
+	// Fix me: Implement botskill, accuracy, and intelligence
 	switch (info.accuracy)
 	{
 		case bsk_verypoor:
@@ -1031,6 +1191,7 @@ void BotAim()
 	float dist;
 	bool right;
 	float an;
+	int i;
 
 	if (!enemy)
 		return;
@@ -1045,7 +1206,7 @@ void BotAim()
 	an = AngleTo(enemy.Origin);
 
 	// [FB] Decide our weapon if we have an enemy
-	//NOTE the old code didn't change weapon correctly meaning this would
+	// [JL] NOTE the old code didn't change weapon correctly meaning this would
 	// never work. I'll enable fixed version but with very low chance.
 	if (Random() < 0.001)
 	{
@@ -1056,20 +1217,20 @@ void BotAim()
 		}
 	}
 
-	// [BC] Cajun prediction... maybe use this somewhere
-	/*
-			{
-			//Here goes the prediction.
-			dist = P_AproxDistance(MO->x - enemy->x, MO->y - enemy->y);
-			fixed_t m = (dist/FRACUNIT) / mobjinfo[MT_PLASMA].speed;
-			bot->SetAngle(R_PointToAngle2(MO->x,
-						      MO->y,
-						      enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
-						      enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));
-			}
-	*/
-
-	// Fix me: Implement botskill, accuracy, and intelligence
+	// [FB] Set fire time
+	t_fire = KArenaWeapon(player.ReadyWeapon).fire_tics;
+	// [FB] Not sure if this is the right way to do it, anyway....
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		// [FB] Set t_anticip for our enemies
+		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
+			player.Level.Game.Players[i].bIsBot &&
+			Player(player.Level.Game.Players[i]).Bot.enemy && 
+			Player(player.Level.Game.Players[i]).Bot.enemy == botmo)
+			Player(player.Level.Game.Players[i]).Bot.t_anticip = 
+					KArenaWeapon(player.ReadyWeapon).refire_tics;
+	}
+	
 	// [FB] Decide which kind of aiming the bot will use...
 	if (player.ReadyWeapon.bBotProjectile)
 	{
@@ -1557,17 +1718,17 @@ void Roam()
 {
 	TVec dest;
 
-	if (lastpos_valid)
+/*	if (lastpos_valid)
 	{
 		TVec dir;
 		
 		dir = lastpos - botmo.Origin;
 		dir.z = 0.0;
-		if (Length(dir) < botmo.Radius/*32.0*/)
+		if (Length(dir) < 32.0)
 		{
 			lastpos_valid = false;
 		}
-	}
+	}*/
 
 	// Order of item response precedence:
 	if (goal)
@@ -1605,9 +1766,9 @@ void Roam()
 		//	  with the given distances
 		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
 		{
-			for (ang_inc = 0.0; ang_inc <= 360.0; ang_inc += 45.0 / 3.0) /*45.0*/
+			for (ang_inc = 360.0; ang_inc > 0.0; ang_inc -= 45.0)
 			{
-				if (CheckPath(an, dist))
+				if (CheckPath(AngleMod360(an), dist))
 				{
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an);
@@ -1617,7 +1778,7 @@ void Roam()
 					break;
 				}
 
-				if (CheckPath(an + ang_inc, dist))
+				if (CheckPath(AngleMod360(an + ang_inc), dist))
 				{
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an + ang_inc);
@@ -1628,7 +1789,7 @@ void Roam()
 				}
 
 				// Left is no good, try right
-				if (CheckPath(an - ang_inc, dist))
+				if (CheckPath(AngleMod360(an - ang_inc), dist))
 				{
 					posdest_valid = true;
 					posdest.x = botmo.Origin.x + dist * cos(an - ang_inc);
@@ -1652,8 +1813,8 @@ void Roam()
 		}
 	}
 
-		forwardmove = FORWARDRUN;
-		SetAngle(AngleTo(dest));
+	forwardmove = FORWARDRUN;
+	SetAngle(AngleTo(dest));
 }
 
 //==========================================================================
@@ -1960,6 +2121,10 @@ void Attack()
 	if (!Check_LOS(enemy, SHOOTFOV))
 		return;
 
+/*	// [FB] We are still shooting
+	if (t_fire)
+		return;*/
+	
 	// [FB] Don't attack if the distance is not the right one for this weapon
 	float combatdist = player.ReadyWeapon.BotCombatDist;
 	if ((MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
@@ -1972,6 +2137,29 @@ void Attack()
 		return;
 
 	player.Buttons |= BT_ATTACK;
+}
+
+//==========================================================================
+//
+//	React
+//
+//	[FB] Called when bot receives damage
+//
+//==========================================================================
+
+void React(EntityEx inflictor)
+{
+	bAllRound = true;
+
+	// [BC] 
+	if (inflictor && inflictor != botmo && ally != inflictor)
+	{
+		if (!enemy)
+		{
+			enemy = Actor(inflictor);
+			t_react = itof(info.reaction) * 2.0;
+		}
+	}
 }
 
 //==========================================================================
@@ -2103,24 +2291,10 @@ void Pitch()
 	{
 		if (missile)
 		{
-			/*float missiledist;
-		
-			missiledist = botmo.DistTo(missile);
-			SetAngle(AngleTo(missile.Origin));
-
-			if (missile.Origin.z > botmo.Origin.z)
-			{
-				//[FB] Missile comes from over our head, move down
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + missiledist);
-			}
-			else if (missile.Origin.z < botmo.Origin.z)
-			{
-				//[FB] Missile comes from under us, move up
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - missiledist);
-			}*/
-			dir = missile.Origin - botmo.Origin;
+/*			dir = missile.Origin - botmo.Origin;
 			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;
+			botmo.Angles.pitch = -ang.pitch;*/
+			botmo.Angles.pitch = -AngleTo2(missile.Origin);
 
 			// Look at the missile and sidestep it
 			SetAngle(AngleTo(missile.Origin));
@@ -2130,54 +2304,20 @@ void Pitch()
 
 		if (enemy)
 		{
-			dir = enemy.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;
+			botmo.Angles.pitch = -AngleTo2(enemy.Origin);
 			return;
 		}
 
 		if (item)
 		{
-			/*float itemdist;
-
-			itemdist = botmo.DistTo(item);
-
-			if (item.Origin.z < botmo.Origin.z)
-			{
-				//[FB] Item is below us, let's go down
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + itemdist);
-			}
-			else if (item.Origin.z > botmo.Origin.z)
-			{
-				//[FB] Item is over us, let's go up
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - itemdist);
-			}*/
-			dir = item.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;
+			botmo.Angles.pitch = -AngleTo2(item.Origin);
 			return;
 		}
 
 		// [FB] Follow our buddy if we're tagging along
 		if (ally || (ally && !enemy))
 		{
-			/*float allydist;
-
-			allydist = botmo.DistTo(ally);
-		
-			if (ally.Origin.z > botmo.Origin.z)
-			{
-				//[FB] Ally is over us, let's go down
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + allydist);
-			}
-			else if (ally.Origin.z < botmo.Origin.z)
-			{
-				//[FB] Ally is beluw us, let's go up
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - allydist);
-			}*/
-			dir = ally.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;
+			botmo.Angles.pitch = -AngleTo2(ally.Origin);
 			return;
 		}
 
@@ -2186,20 +2326,7 @@ void Pitch()
 			float balldist;
 
 			balldist = botmo.DistTo(ball);
-
-			/*if (ball.Origin.z > botmo.Origin.z)
-			{
-				//[FB] Ball is over us, let's go down
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw + balldist);
-			}
-			else if (ball.Origin.z < botmo.Origin.z)
-			{
-				//[FB] Ball is below us, let's go up
-				player.ViewAngles.pitch = AngleMod360(botmo.Angles.yaw - balldist);
-			}*/
-			dir = ball.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;
+			botmo.Angles.pitch = -AngleTo2(ball.Origin);
 
 			// [FB] We are close enough to kick the ball
 			if (CheckTo(ball.Origin) && balldist <= Actor::MELEERANGE * 6.0)
@@ -2213,9 +2340,7 @@ void Pitch()
 	{
 		if (enemy)
 		{
-			dir = enemy.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = ang.pitch;
+			botmo.Angles.pitch = AngleTo2(enemy.Origin);
 			return;
 		}
 	}
@@ -2383,28 +2508,28 @@ void B_AffectStat()
 		if (info.accuracy)
 			info.accuracy--;
 		// [FB] Make sure this stat isn't zero
-		else if (info.accuracy < 0)
+		else if (info.accuracy <= 0)
 			info.accuracy = 0;
 	}
 	else if (intelect_r && (player.BlindCount > 50 && player.BlindCount <= 100))
 	{
 		if (info.intelect)
 			info.intelect--;
-		else if (info.intelect < 0)
+		else if (info.intelect <= 0)
 			info.intelect = 0;
 	}
 	else if (evade_r && (player.BlindCount > 100 && player.BlindCount <= 150))
 	{
 		if (info.evade)
 			info.evade--;
-		else if (info.evade < 0)
+		else if (info.evade <= 0)
 			info.evade = 0;
 	}
 	else if (anticip_r && (player.BlindCount > 150 && player.BlindCount <= 200))
 	{
 		if (info.anticip)
-			info.anticip--;
-		else if (info.anticip < 0)
+			info.anticip++;
+		else if (info.anticip <= 0)
 			info.anticip = 0;
 	}
 }
@@ -2527,14 +2652,35 @@ void BotTick(float deltaTime)
 
 	t_react -= deltaTime;
 	if (t_react <= 0.0)
-	{
 		t_react = 0.0;
-	}
+
 	t_anticip -= deltaTime;
 	if (t_anticip <= 0.0)
-	{
 		t_anticip = 0.0;
-	}
+
+/*	t_fight -= deltaTime;
+	if (t_fight <= 0.0)
+		t_fight = 0.0;
+
+	t_rocket -= deltaTime;
+	if (t_rocket <= 0.0)
+		t_rocket = 0.0;*/
+
+	t_turn -= deltaTime;
+	if (t_turn <= 0.0)
+		t_turn = 0.0;
+
+/*	t_pissed -= deltaTime;
+	if (t_pissed <= 0.0)
+		t_pissed = 0.0;
+
+	t_frust -=deltaTime;
+	if (t_frust <= 0.0)
+		t_frust = 0.0;*/
+
+	t_fire -= deltaTime;
+	if (t_fire <= 0.0)
+		t_fire = 0.0;
 }
 
 defaultproperties
