@@ -209,6 +209,8 @@ void StartMap()
 		bignumwidth[i] = info.width;
 	}
 	pic_minus = R_RegisterPic('negnum');
+//	pic_artibox = R_RegisterPic('artibox');
+
 	//
 	//  MAIN BAR
 	//
@@ -796,6 +798,43 @@ void SB_DrawKeyBar()
 
 //==========================================================================
 //
+//	SB_DrawInventoryBar
+//
+//==========================================================================
+
+/*void SB_DrawInventoryBar()
+{
+	int i;
+
+	SB_DrawBackground();
+	DrawPic(BAR_X + 38, BAR_Y + 1, pic_invbar);
+
+	//  Inventory
+	Inventory Item = cl.InvFirst;
+	for (i = 0; Item && i < 7; i++)
+	{
+		DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2,
+			R_RegisterPic(Item.IconName));
+		SB_DrawINumber(BAR_X + 71 + i * 31, BAR_Y + 24, Item.Amount);
+		if (Item == cl.InvPtr)
+		{
+			DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2, pic_selectbox);
+		}
+		Item = Item.NextInv();
+	}
+
+	if (cl.InvFirst && cl.InvFirst.PrevInv())
+	{
+		DrawPic(BAR_X + 42, BAR_Y + 2, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+	}
+	if (Item)
+	{
+		DrawPic(BAR_X + 269, BAR_Y + 2, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
+	}
+}*/
+
+//==========================================================================
+//
 //	SB_DrawFullscreenStats
 //
 //==========================================================================
@@ -984,11 +1023,40 @@ void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 
 void SB_DrawIcons()
 {
+	int frame;
 	Powerup Pw;
 
 	if (!cl.MO)
 	{
 		return;
+	}
+
+	// Wings of wrath
+	Pw = Powerup(EntityEx(cl.MO).FindInventory(PowerFlight));
+	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
+		!(ftoi(Pw.EffectTime * 35.0) & 16)))
+	{
+		frame = (ClGame.GLevel.TicTime / 3) & 15;
+		if (cl.MO.bFly)
+		{
+			if (hitCentreFrame && frame != 15 && frame != 0)
+			{
+				frame = 15;
+			}
+			else
+			{
+				hitCentreFrame = false;
+			}
+		}
+		else
+		{
+			if (hitCentreFrame || frame == 15 || frame == 0)
+			{
+				frame = 15;
+				hitCentreFrame = true;
+			}
+		}
+		DrawPic(20, 19, pic_fly[frame]);
 	}
 
 	// Speed Boots
@@ -1065,7 +1133,11 @@ void SB_Drawer(int sb_view)
 	{
 		SB_DrawFullscreenStats();
 	}
-/*	else if (sb_view == SB_VIEW_AUTOMAP)
+/*	else if (cl.InventoryTime)
+	{
+		SB_DrawInventoryBar();
+	}
+	else if (sb_view == SB_VIEW_AUTOMAP)
 	{
 		SB_DrawKeyBar();
 	}*/
@@ -1087,7 +1159,7 @@ void SB_Drawer(int sb_view)
 	{
 		T_SetAlign(hcentre, vcentre);
 		T_SetFont((cl.targetinfo.type == Player::targetinfo_shoot) ? font_small : font_yellow);
-		T_DrawText(320, 240, cl.targetinfo.sname);
+		DrawText(320, 240, cl.targetinfo.sname);
 		
 		if (tinfoFormat > 1)
 		{
@@ -1105,7 +1177,7 @@ void SB_Drawer(int sb_view)
 				s = strcat(s, va("     %i%%", cl.targetinfo.healthpc));
 			}
 
-			T_DrawText(320, 254, s);
+			DrawText(320, 254, s);
 		}
 	}
 
