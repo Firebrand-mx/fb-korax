@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -34,20 +41,18 @@ enum
 
 ClientGameBase ClGame;
 
-const float
-	TALLY_EFFECT_TIME	= 0.625,
-	TALLY_FINAL_X_DELTA	= 23.0,
-	TALLY_FINAL_Y_DELTA	= 13.0,
-	TALLY_START_XPOS	= 338.0,
-	TALLY_STOP_XPOS		= 250.0,
-	TALLY_START_YPOS	= 272.0,
-	TALLY_STOP_YPOS		= 223.0;
-const int
-	TALLY_TOP_X			= 245,
-	TALLY_TOP_Y			= 149,
-	TALLY_LEFT_X		= 167,
-	TALLY_LEFT_Y		= 211,
-	TALLY_TOTALS_X		= 451;
+const float TALLY_EFFECT_TIME	= 0.625;
+const float TALLY_FINAL_X_DELTA	= 23.0;
+const float TALLY_FINAL_Y_DELTA	= 13.0;
+const float TALLY_START_XPOS	= 338.0;
+const float TALLY_STOP_XPOS		= 250.0;
+const float TALLY_START_YPOS	= 272.0;
+const float TALLY_STOP_YPOS		= 223.0;
+const int TALLY_TOP_X			= 245;
+const int TALLY_TOP_Y			= 149;
+const int TALLY_LEFT_X			= 167;
+const int TALLY_LEFT_Y			= 211;
+const int TALLY_TOTALS_X		= 451;
 
 float TextSpeed;
 float TextWait;
@@ -190,6 +195,7 @@ void IM_InitStats()
 	int slaughtercount;
 	int playercount;
 	PlayerReplicationInfo RepInfo;
+	PlayerReplicationInfo Other;
 
 	ClGame.skipintermission = false;
 	intertime = 0.0;
@@ -403,10 +409,9 @@ void IM_DrawDeathTally()
 	int x, y;
 	bool bold;
 	PlayerReplicationInfo RepInfo;
+	PlayerReplicationInfo Other;
 
 	DrawFullScreenPic(patchINTERPIC);
-	DrawPic(TALLY_TOP_X, TALLY_TOP_Y, tallytop);
-	DrawPic(TALLY_LEFT_X, TALLY_LEFT_Y, tallylft);
 	if (intertime < TALLY_EFFECT_TIME)
 	{
 		showTotals = false;
@@ -435,10 +440,20 @@ void IM_DrawDeathTally()
 	{
 		i = RepInfo.PlayerNum;
 		xPos = xStart;
+		T_SetFont(i == ClGame.cl.ClientNum ? font_yellow : font_small);
+		T_SetAlign(hleft, vtop);
+		DrawText(ftoi(xPos), y, RepInfo.PlayerName);
 		if (showTotals && !((slaughterboy & (1 << i)) &&
 			!(ftoi(32.0 * intertime) & 16)))
 		{
-			IM_DrawNumber(totalFrags[i], TALLY_TOTALS_X, y, 1000);
+			if (i == ClGame.cl.ClientNum)
+			{
+				IM_DrawNumberBold(RepInfo.Frags, TALLY_TOTALS_X, y, 1000);
+			}
+			else
+			{
+				IM_DrawNumber(RepInfo.Frags, TALLY_TOTALS_X, y, 1000);
+			}
 		}
 		yPos += yDelta;
 		y = ftoi(yPos);
