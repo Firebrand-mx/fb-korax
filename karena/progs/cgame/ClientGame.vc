@@ -321,14 +321,8 @@ bool MenuResponder(event_t * event)
 			SpawnMainMenu();
 			return true;
 		}
-		return false;
 	}
-
-	if (event->type != ev_keydown)
-	{
-		return false;
-	}
-	return CurrentMenuScreen.Key(event->data1);
+	return false;
 }
 
 //==========================================================================
@@ -504,6 +498,7 @@ void PushMenuScreen(MenuScreen menu)
 	}
 
 	CurrentMenuScreen = menu;
+	CurrentMenuScreen.SetFocus();
 }
 
 //==========================================================================
@@ -529,6 +524,7 @@ void PopMenu()
 		CurrentMenuScreen = menu_stack[menu_sp - 1];
 		CurrentMenuScreen.Show();
 		CurrentMenuScreen.Raise();
+		CurrentMenuScreen.SetFocus();
 		LocalSound('menu/backup');
 	}
 	else
