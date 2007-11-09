@@ -30,13 +30,13 @@
 //**
 //**************************************************************************
 
-class MenuScreen : MenuObject;
+class MenuScreen : Widget;
 
 const int MAX_MENU_ITEMS		= 32;
 
 ClientGame ClGame;
 
-MenuObject Items[MAX_MENU_ITEMS];
+MenuChoice Items[MAX_MENU_ITEMS];
 int NumItems;
 int CursorPos;
 int CursorPrev;
@@ -44,8 +44,8 @@ int CursorPrev;
 int ChoicesStartX;
 int ChoicesStartY;
 
-class<MenuObject> SelectorType;
-MenuObject Selector;
+class<Widget> SelectorType;
+Widget Selector;
 
 string Title;
 int TitleX;
@@ -53,13 +53,13 @@ int TitleY;
 
 void OnChildAdded(Widget Child)
 {
-	if (MenuObject(Child))
+	if (MenuChoice(Child))
 	{
 		if (NumItems >= MAX_MENU_ITEMS)
 		{
 			FatalError("Too many menu items");
 		}
-		Items[NumItems++] = MenuObject(Child);
+		Items[NumItems++] = MenuChoice(Child);
 	}
 	::OnChildAdded(Child);
 }
@@ -84,7 +84,7 @@ void CreateSelector()
 {
 	if (SelectorType)
 	{
-		Selector = MenuObject(NewChild(SelectorType));
+		Selector = NewChild(SelectorType);
 	}
 }
 
@@ -93,16 +93,9 @@ void CursorMoved()
 	if (CursorPrev == CursorPos)
 		return;
 
-	if (CursorPrev >= 0 && CursorPrev < NumItems)
-	{
-		Items[CursorPrev].OnFocusLost();
-		Items[CursorPrev].bSelected = false;
-	}
-
 	if (CursorPos >= 0 && CursorPos < NumItems)
 	{
-		Items[CursorPos].OnFocusReceived();
-		Items[CursorPos].bSelected = true;
+		SetCurrentFocusChild(Items[CursorPos]);
 	}
 
 	if (Selector)
@@ -169,13 +162,8 @@ void CycleNextChoice()
 	CursorMoved();
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
-	if (Items[CursorPos].Key(key))
-	{
-		return true;
-	}
-
 	switch (key)
 	{
 	case K_DOWNARROW:
@@ -213,8 +201,11 @@ void OnDraw()
 
 defaultproperties
 {
+	Focusable = true;
 	X = 160;
 	Y = 140;
+	Width = 320;
+	Height = 200;
 	TitleX = 160;
 	TitleY = 24;
 }
