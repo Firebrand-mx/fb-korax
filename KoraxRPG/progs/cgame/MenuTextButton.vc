@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuTextButton.vc 1676 2006-08-22 21:09:43Z dj_jl $
+//**    $Id: MenuTextButton.vc 2781 2007-11-10 13:24:12Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -32,11 +32,15 @@ int TextSelectedFont;
 int TextHAlign;
 int TextVAlign;
 
+delegate void Activated(Object Sender);
+
 void ActivateEvent()
 {
+	if (Activated)
+		Activated(self);
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
 	if (key == K_ENTER || key == K_PADENTER ||
 		key == K_MOUSE1 || key == K_JOY1)
@@ -48,11 +52,11 @@ bool Key(int key)
 	return false;
 }
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
-	T_SetFont(bSelected ? TextSelectedFont : TextFont);
+	T_SetFont(IsFocus() ? TextSelectedFont : TextFont);
 	T_SetAlign(TextHAlign, TextVAlign);
-	gc.DrawText(0, 0, Text);
+	DrawText(CursorXOffs, 0, Text);
 }
 
 defaultproperties

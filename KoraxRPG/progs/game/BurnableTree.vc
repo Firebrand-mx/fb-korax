@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: BurnableTree.vc 2526 2007-07-28 23:25:44Z firebrand_kh $
+//**    $Id: BurnableTree.vc 2773 2007-11-09 23:11:21Z firebrand_kh $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -34,21 +34,34 @@ class BurnableTree : Decoration
 
 final void A_TreeDeath()
 {
-	if (DamageType != 'Fire')
+	if (DamageType == 'Fire')
+	{
+		int i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!Level.Game.Players[i])
+				continue;
+			if (!Level.Game.Players[i].bSpawned)
+				continue;
+			PlayerEx(Level.Game.Players[i]).ParticleEffect(20, LineSpecialLevelInfo::pt_static, 0, Origin, 10.0,
+					vector(384.0, 384.0, 256.0), 0.3, 20.0, 85.0, RGB(255, 128, 0), 1.0, 2.0);
+		}
+
+		SetState(MeleeState);
+		bDynamicLight = true;
+		DLightColour = RGB(255, 127, 0);
+		DLightRadius = 86.0;
+		SendExplosion(DLightColour, DLightRadius, Origin);
+		return;
+	}
+	else
 	{
 		Height *= 4.0;
 		bShootable = true;
 		bDropOff = false;
 		bCorpse = false;
-		Health = 35;
-		return;
-	}
-	else
-	{
-		bDynamicLight = true;
-		DLightColour = RGB(255, 127, 0);
-		SetState(MeleeState);
-		SendExplosion(DLightColour, Origin);
+		Health = 35;		
 	}
 }
 

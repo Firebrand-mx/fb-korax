@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuInputLine.vc 1583 2006-06-27 19:05:42Z dj_jl $
+//**    $Id: MenuInputLine.vc 2764 2007-11-09 22:45:46Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -30,28 +30,34 @@ string	Text;
 string	Value;
 string	EnterText;
 
-void InitWindow()
+delegate void ValueChanged(Object Sender);
+
+void OnCreate()
 {
-	::InitWindow();
+	::OnCreate();
 	InitSlot();
 }
 
-void ValueChanged()
+void OnValueChanged()
 {
+	if (ValueChanged)
+	{
+		ValueChanged(self);
+	}
 }
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	T_SetFont(font_small);
 	T_SetAlign(hleft, vtop);
-	gc.DrawText(0, 0, Text);
+	DrawText(0, 0, Text);
 	if (bEnteringText)
-		DrawSlot(gc, 12, EnterText, true);
+		DrawSlot(12, EnterText, true);
 	else
-		DrawSlot(gc, 12, Value, false);
+		DrawSlot(12, Value, false);
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
 	int Len;
 	
@@ -69,7 +75,7 @@ bool Key(int key)
 		case K_MOUSE1:
 			bEnteringText = false;
 			Value = EnterText;
-			ValueChanged();
+			OnValueChanged();
 			break;
 
     	case K_BACKSPACE:

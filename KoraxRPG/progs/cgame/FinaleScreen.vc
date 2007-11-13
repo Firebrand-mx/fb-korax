@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: FinaleScreen.vc 1943 2007-01-07 12:11:37Z dj_jl $
+//**    $Id: FinaleScreen.vc 2761 2007-11-09 19:40:07Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class FinaleScreen : Window;
+class FinaleScreen : Widget;
 
 const float TEXTSPEED	= 0.1;
 const float TEXTWAIT	= 7.0;
@@ -121,11 +121,11 @@ void Tick(float DeltaTime)
 
 //==========================================================================
 //
-//  DrawWindow
+//  OnDraw
 //
 //==========================================================================
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	F_DrawPic();
 	switch (FinaleStage)
@@ -207,7 +207,7 @@ void F_TextWrite()
 
 	T_SetFont(font_small);
 	T_SetAlign(hleft, vtop);
-	T_DrawText(180, (FinaleStage == 5) ? 275 : 145, substr(FinaleText, 0, count));
+	DrawText(180, (FinaleStage == 5) ? 275 : 145, substr(FinaleText, 0, count));
 }
 
 //==========================================================================
@@ -224,7 +224,7 @@ void F_FadeOut()
 		fade = 0.0;
 	if (fade > 0.99)
 		fade = 0.99;
-	R_ShadeRect(0, 0, 640, 480, fade);
+	ShadeRect(0, 0, 640, 480, fade);
 }
 
 //==========================================================================
@@ -241,16 +241,16 @@ void F_FadeIn()
 		fade = 0.0;
 	if (fade > 0.99)
 		fade = 0.99;
-	R_ShadeRect(0, 0, 640, 480, fade);
+	ShadeRect(0, 0, 640, 480, fade);
 }
 
 //==========================================================================
 //
-//	VisibilityChanged
+//	OnVisibilityChanged
 //
 //==========================================================================
 
-void VisibilityChanged(bool bNewVisibility)
+void OnVisibilityChanged(bool bNewVisibility)
 {
 	bTickEnabled = bNewVisibility;
 }
@@ -258,6 +258,7 @@ void VisibilityChanged(bool bNewVisibility)
 defaultproperties
 {
 	bTickEnabled = true;
+	Focusable = true;
 	Width = 640;
 	Height = 480;
 }

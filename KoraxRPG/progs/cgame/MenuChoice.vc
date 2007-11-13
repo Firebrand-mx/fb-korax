@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuChoice.vc 1583 2006-06-27 19:05:42Z dj_jl $
+//**    $Id: MenuChoice.vc 2781 2007-11-10 13:24:12Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,9 +23,23 @@
 //**
 //**************************************************************************
 
-class MenuChoice : MenuObject;
+class MenuChoice : Widget;
 
 int pic_M_FSLOT;
+
+int CursorXOffs;
+int CursorYOffs;
+
+//==========================================================================
+//
+//  SetOrigin
+//
+//==========================================================================
+
+void SetOrigin(int x, int y)
+{
+	SetPos(x, y);
+}
 
 ClientGame GetClGame()
 {
@@ -55,16 +69,16 @@ void InitSlot()
 //
 //==========================================================================
 
-int DrawSlot(GC gc, int y, string text, bool entering)
+int DrawSlot(int y, string text, bool entering)
 {
 	int xx;
 	int j;
 
-	gc.DrawIcon(0, y, pic_M_FSLOT);
+	DrawPic(0, y, pic_M_FSLOT);
 
 	T_SetFont(font_small);
 	T_SetAlign(hleft, vtop);
-	gc.DrawText(5, y + 5, text);
+	DrawText(5, y + 5, text);
 	if (entering)
 	{
 		T_DrawCursor();
@@ -74,4 +88,7 @@ int DrawSlot(GC gc, int y, string text, bool entering)
 
 defaultproperties
 {
+	Focusable = true;
+	Width = 320;
+	Height = 200;
 }

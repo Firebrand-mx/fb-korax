@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuScreen.vc 1943 2007-01-07 12:11:37Z dj_jl $
+//**    $Id: MenuScreen.vc 2781 2007-11-10 13:24:12Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,39 +23,38 @@
 //**
 //**************************************************************************
 
-class MenuScreen : MenuObject;
+class MenuScreen : Widget;
 
 const int MAX_MENU_ITEMS		= 32;
 
 ClientGame ClGame;
 
-MenuObject Items[MAX_MENU_ITEMS];
+MenuChoice Items[MAX_MENU_ITEMS];
 int NumItems;
 int CursorPos;
 int CursorPrev;
 
-class<MenuChoice> Choices[MAX_MENU_ITEMS];
 int ChoicesStartX;
 int ChoicesStartY;
 
-class<MenuObject> SelectorType;
-MenuObject Selector;
+class<Widget> SelectorType;
+Widget Selector;
 
 string Title;
 int TitleX;
 int TitleY;
 
-void ChildAdded(Window Child)
+void OnChildAdded(Widget Child)
 {
-	if (MenuObject(Child))
+	if (MenuChoice(Child))
 	{
 		if (NumItems >= MAX_MENU_ITEMS)
 		{
 			FatalError("Too many menu items");
 		}
-		Items[NumItems++] = MenuObject(Child);
+		Items[NumItems++] = MenuChoice(Child);
 	}
-	::ChildAdded(Child);
+	::OnChildAdded(Child);
 }
 
 void CreateTitle()
@@ -72,27 +71,13 @@ void CreateTitle()
 
 void CreateChoices()
 {
-	MenuChoice newChoice;
-	int currentY;
-	int i;
-
-	currentY = ChoicesStartY;
-	for (i = 0; i < MAX_MENU_ITEMS; i++)
-	{
-		if (Choices[i])
-		{
-			newChoice = MenuChoice(NewChild(Choices[i]));
-			newChoice.SetPos(ChoicesStartX, currentY);
-			currentY += newChoice.Height;
-		}
-	}
 }
 
 void CreateSelector()
 {
 	if (SelectorType)
 	{
-		Selector = MenuObject(NewChild(SelectorType));
+		Selector = NewChild(SelectorType);
 	}
 }
 
@@ -101,21 +86,15 @@ void CursorMoved()
 	if (CursorPrev == CursorPos)
 		return;
 
-	if (CursorPrev >= 0 && CursorPrev < NumItems)
-	{
-		Items[CursorPrev].FocusLost();
-		Items[CursorPrev].bSelected = false;
-	}
-
 	if (CursorPos >= 0 && CursorPos < NumItems)
 	{
-		Items[CursorPos].FocusReceived();
-		Items[CursorPos].bSelected = true;
+		SetCurrentFocusChild(Items[CursorPos]);
 	}
 
 	if (Selector)
 	{
-		Selector.SetPos(Items[CursorPos].X, Items[CursorPos].Y);
+		Selector.SetPos(Items[CursorPos].X + Items[CursorPos].CursorXOffs,
+			Items[CursorPos].Y + Items[CursorPos].CursorYOffs);
 	}
 }
 
@@ -130,7 +109,7 @@ void SetDefaultChoice()
 	// force first available item to have focus
 	for (i = 0; i < NumItems; i++)
 	{
-		if (Items[i].IsSensitive())
+		if (Items[i].Enabled)
 		{
 			CursorPrev = -1;
 			CursorPos = i;
@@ -140,9 +119,9 @@ void SetDefaultChoice()
 	}
 }
 
-void InitWindow()
+void OnCreate()
 {
-	::InitWindow();
+	::OnCreate();
 	CreateTitle();
 	CreateChoices();
 	CreateSelector();
@@ -159,7 +138,7 @@ void CyclePrevChoice()
 		else
 			CursorPos--;
 	}
-	while (!Items[CursorPos].IsSensitive() && CursorPrev != CursorPos);
+	while (!Items[CursorPos].Enabled && CursorPrev != CursorPos);
 	CursorMoved();
 }
 
@@ -173,17 +152,12 @@ void CycleNextChoice()
 		else
 			CursorPos++;
 	}
-	while (!Items[CursorPos].IsSensitive() && CursorPrev != CursorPos);
+	while (!Items[CursorPos].Enabled && CursorPrev != CursorPos);
 	CursorMoved();
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
-	if (Items[CursorPos].Key(key))
-	{
-		return true;
-	}
-
 	switch (key)
 	{
 	case K_DOWNARROW:
@@ -207,22 +181,25 @@ bool Key(int key)
 
 //==========================================================================
 //
-//	DrawWindow
+//	OnDraw
 //
 //  Fade all the screen buffer, so that the menu is more readable,
 // especially now that we use the small hufont in the menus...
 //
 //==========================================================================
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
-	R_ShadeRect(0, 0, 640, 480, GetCvarF('menu_darkening'));
+	ShadeRect(0, 0, 640, 480, GetCvarF('menu_darkening'));
 }
 
 defaultproperties
 {
 	X = 160;
 	Y = 140;
+	Width = 320;
+	Height = 200;
 	TitleX = 160;
 	TitleY = 24;
+	Focusable = true;
 }
