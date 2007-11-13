@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuStaticAnim.vc 1583 2006-06-27 19:05:42Z dj_jl $
+//**    $Id: MenuStaticAnim.vc 2778 2007-11-09 23:51:49Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class MenuStaticAnim : MenuObject;
+class MenuStaticAnim : Widget;
 
 int Speed;
 int NumFrames;
@@ -33,11 +33,11 @@ int Frames[32];
 name FrameNames[32];
 float Time;
 
-void InitWindow()
+void OnCreate()
 {
 	int i;
 
-	::InitWindow();
+	::OnCreate();
 
 	bTickEnabled = true;
 	Disable();
@@ -57,16 +57,23 @@ void Tick(float DeltaTime)
 	Time += DeltaTime;
 }
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	int frame = (ftoi(Time * itof(Speed)) + StartFrame) % NumFrames;
 	if (bBackwards)
 	{
 		frame = NumFrames - frame - 1;
 	}
-	gc.DrawIcon(0, 0, Frames[frame]);
+	DrawPic(30, 80, Frames[frame]);
+}
+
+void SetPos(int X, int Y)
+{
+	::SetPos(X - 30, Y - 80);
 }
 
 defaultproperties
 {
+	Width = 320;
+	Height = 200;
 }

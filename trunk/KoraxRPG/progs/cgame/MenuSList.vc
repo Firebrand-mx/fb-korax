@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuSList.vc 1741 2006-09-26 23:26:48Z dj_jl $
+//**    $Id: MenuSList.vc 2764 2007-11-09 22:45:46Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -28,13 +28,13 @@ class MenuSList : MenuChoice;
 int			Cursor;
 slist_t*	slist;
 
-void InitWindow()
+void OnCreate()
 {
-	::InitWindow();
+	::OnCreate();
 	StartSearch();
 }
 
-void DrawTextBox(GC gc, string text)
+void DrawTextBox(string text)
 {
 	int x;
 	int y;
@@ -54,13 +54,13 @@ void DrawTextBox(GC gc, string text)
 	x = (640 - w) / 2;
 	y = (480 - h) / 2;
 
-	R_FillRectWithFlat(x, y, w, h, 'f_019');
+	FillRectWithFlat(x, y, w, h, 'f_019');
 	GetClGame().DrawBorder(x, y, w, h);
 
-	gc.DrawText(160, 100, text);
+	DrawText(160, 100, text);
 }
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	int i;
 	int x;
@@ -73,18 +73,18 @@ void DrawWindow(GC gc)
 	T_SetAlign(hleft, vtop);
 	for (i = 0; i < slist->Count; i++)
 	{
-		gc.DrawText(16, 32 + 10 * i, slist->Cache[i].Name);
-		gc.DrawText(16 + 128, 32 + 10 * i, slist->Cache[i].Map);
+		DrawText(16, 32 + 10 * i, slist->Cache[i].Name);
+		DrawText(16 + 128, 32 + 10 * i, slist->Cache[i].Map);
 		if (slist->Cache[i].MaxUsers)
 		{
-			gc.DrawText(16 + 256, 32 + 10 * i, va("%d/%d",
+			DrawText(16 + 256, 32 + 10 * i, va("%d/%d",
 				slist->Cache[i].Users, slist->Cache[i].MaxUsers));
 		}
 	}
-	gc.DrawText(8, 32 + Cursor * 10, ">");
+	DrawText(8, 32 + Cursor * 10, ">");
 
 	if (slist->ReturnReason)
-		gc.DrawText(16, 116, slist->ReturnReason);
+		DrawText(16, 116, slist->ReturnReason);
 
 	if (slist->Count)
 	{
@@ -100,22 +100,22 @@ void DrawWindow(GC gc)
 				if (y > 190)
 					break;
 			}
-			gc.DrawText(x, y, slist->Cache[Cursor].WadFiles[i]);
+			DrawText(x, y, slist->Cache[Cursor].WadFiles[i]);
 			x += w + 8;
 		}
 	}
 
 	if (slist->bInProgress)
 	{
-		DrawTextBox(gc, "Searching...");
+		DrawTextBox("Searching...");
 	}
 	else if (!slist->Count)
 	{
-		DrawTextBox(gc, "No servers found");
+		DrawTextBox("No servers found");
 	}
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
 	slist = GetSlist();
 

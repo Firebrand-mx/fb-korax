@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: IntermissionScreen.vc 2707 2007-09-07 17:47:04Z dj_jl $
+//**    $Id: IntermissionScreen.vc 2761 2007-11-09 19:40:07Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class IntermissionScreen : Window;
+class IntermissionScreen : Widget;
 
 enum
 {
@@ -122,11 +122,11 @@ void Tick(float DeltaTime)
 
 //==========================================================================
 //
-//  DrawWindow
+//  OnDraw
 //
 //==========================================================================
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	if (interstate == IMS_Done)
 	{
@@ -136,11 +136,11 @@ void DrawWindow(GC gc)
 	switch (interstate)
 	{
 	case IMS_Stats:
-		IM_DrawDeathTally(gc);
+		IM_DrawDeathTally();
 		break;
 
 	case IMS_Text:
-		IM_DrawHubText(gc);
+		IM_DrawHubText();
 	}
 }
 
@@ -290,15 +290,15 @@ void IM_InitHubText()
 //
 //===========================================================================
 
-void IM_DrawHubText(GC gc)
+void IM_DrawHubText()
 {
 	if (TextPic)
 	{
-		gc.DrawFullScreenPic(TextPic);
+		DrawFullScreenPic(TextPic);
 	}
 	else if (TextFlat)
 	{
-		R_FillRectWithFlat(0, 0, 640, 480, TextFlat);
+		FillRectWithFlat(0, 0, 640, 480, TextFlat);
 	}
 	else
 	{
@@ -315,7 +315,7 @@ void IM_DrawHubText(GC gc)
 	}
 	T_SetFont(font_small);
 	T_SetAlign(hleft, vtop);
-	T_DrawText(170, 145, substr(HubText, 0, count));
+	DrawText(170, 145, substr(HubText, 0, count));
 }
 
 //==========================================================================
@@ -330,12 +330,12 @@ void IM_DrawNumber(int val, int x, int y, int wrapThresh)
 	T_SetAlign(hcentre, vtop);
 	if (!(val < -9 && wrapThresh < 1000))
 	{
-		T_DrawText(x, y, va("%d",
+		DrawText(x, y, va("%d",
 				val >= wrapThresh ? val % wrapThresh : val));
 	}
 	else
 	{
-		T_DrawText(x, y, "XX");
+		DrawText(x, y, "XX");
 	}
 }
 
@@ -351,12 +351,11 @@ void IM_DrawNumberBold(int val, int x, int y, int wrapThresh)
 	T_SetAlign(hcentre, vtop);
 	if (!(val < -9 && wrapThresh < 1000))
 	{
-		T_DrawText(x, y, va("%d",
-				val >= wrapThresh ? val % wrapThresh : val));
+		DrawText(x, y, va("%d", val >= wrapThresh ? val % wrapThresh : val));
 	}
 	else
 	{
-		T_DrawText(x, y, "XX");
+		DrawText(x, y, "XX");
 	}
 }
 
@@ -366,7 +365,7 @@ void IM_DrawNumberBold(int val, int x, int y, int wrapThresh)
 //
 //========================================================================
 
-void IM_DrawDeathTally(GC gc)
+void IM_DrawDeathTally()
 {
 	int i, j;
 	float xPos, yPos;
@@ -377,7 +376,7 @@ void IM_DrawDeathTally(GC gc)
 	PlayerReplicationInfo RepInfo;
 	PlayerReplicationInfo Other;
 
-	gc.DrawFullScreenPic(patchINTERPIC);
+	DrawFullScreenPic(patchINTERPIC);
 	if (intertime < TALLY_EFFECT_TIME)
 	{
 		showTotals = false;
@@ -408,7 +407,7 @@ void IM_DrawDeathTally(GC gc)
 		xPos = xStart;
 		T_SetFont(i == ClGame.cl.ClientNum ? font_yellow : font_small);
 		T_SetAlign(hleft, vtop);
-		T_DrawText(ftoi(xPos), y, RepInfo.PlayerName);
+		DrawText(ftoi(xPos), y, RepInfo.PlayerName);
 		if (showTotals && !((slaughterboy & (1 << i)) &&
 			!(ftoi(32.0 * intertime) & 16)))
 		{
@@ -428,11 +427,11 @@ void IM_DrawDeathTally(GC gc)
 
 //==========================================================================
 //
-//	VisibilityChanged
+//	OnVisibilityChanged
 //
 //==========================================================================
 
-void VisibilityChanged(bool bNewVisibility)
+void OnVisibilityChanged(bool bNewVisibility)
 {
 	bTickEnabled = bNewVisibility;
 }
@@ -440,6 +439,7 @@ void VisibilityChanged(bool bNewVisibility)
 defaultproperties
 {
 	bTickEnabled = true;
+	Focusable = true;
 	Width = 640;
 	Height = 480;
 	TextSpeed = 0.1;

@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: MenuChoiceSlider.vc 1676 2006-08-22 21:09:43Z dj_jl $
+//**    $Id: MenuChoiceSlider.vc 2781 2007-11-10 13:24:12Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -38,25 +38,47 @@ int pic_M_SLDMD2;
 int pic_M_SLDRT;
 int pic_M_SLDKB;
 
+delegate bool ValueChanging(Object Sender, float NewValue);
+
+//==========================================================================
+//
+//  SetOrigin
+//
+//==========================================================================
+
+void SetOrigin(int x, int y)
+{
+	SetPos(x - 160, y);
+}
+
 float GetInitialValue()
 {
 	return 0.0;
 }
 
-bool SetNewValue(float newValue)
+bool SetNewValue(float NewValue)
 {
+	if (ValueChanging)
+	{
+		return ValueChanging(self, NewValue);
+	}
 	return true;
 }
 
-void InitWindow()
+void SetInitialValue(float AValue)
 {
-	::InitWindow();
-
-	Value = GetInitialValue();
+	Value = AValue;
 	if (Value < MinValue)
 		Value = MinValue;
 	if (Value > MaxValue)
 		Value = MaxValue;
+}
+
+void OnCreate()
+{
+	::OnCreate();
+
+	SetInitialValue(GetInitialValue());
 
 	pic_M_SLDLT = R_RegisterPic('m_sldlt');
 	pic_M_SLDMD1 = R_RegisterPic('m_sldmd1');
@@ -65,33 +87,33 @@ void InitWindow()
 	pic_M_SLDKB = R_RegisterPic('m_sldkb');
 }
 
-void DrawWindow(GC gc)
+void OnDraw()
 {
 	int i;
 	int xx;
 
 	T_SetFont(font_small);
-	if (bSelected)
+	if (IsFocus())
 	{
 		T_SetFont(font_yellow);
 	}
 	T_SetAlign(hright, vtop);
-	gc.DrawText(0, 0, Text);
+	DrawText(160, 0, Text);
 
-	xx = 0;
-	gc.DrawIcon(xx, 0, pic_M_SLDLT);
+	xx = 160;
+	DrawPic(xx, 0, pic_M_SLDLT);
 	xx += 32;
 	for (i = 0; i < 12; i++)
 	{
-		gc.DrawIcon(xx, 0, i & 1 ? pic_M_SLDMD1 : pic_M_SLDMD2);
+		DrawPic(xx, 0, i & 1 ? pic_M_SLDMD1 : pic_M_SLDMD2);
 		xx += 8;
 	}
-	gc.DrawIcon(xx, 0, pic_M_SLDRT);
-	xx = 30 + ftoi((Value - MinValue) * 100.0 / (MaxValue - MinValue));
-	gc.DrawIcon(xx, 7, pic_M_SLDKB);
+	DrawPic(xx, 0, pic_M_SLDRT);
+	xx = 160 + 30 + ftoi((Value - MinValue) * 100.0 / (MaxValue - MinValue));
+	DrawPic(xx, 7, pic_M_SLDKB);
 }
 
-bool Key(int key)
+bool OnKeyDown(int key)
 {
 	float newValue;
 
@@ -123,12 +145,13 @@ bool Key(int key)
 		}
 		return true;
 	}
-	return ::Key(key);
+	return ::OnKeyDown(key);
 }
 
 defaultproperties
 {
 	Height = 20;
+	CursorXOffs = 160;
 	Value = 0.0;
 	ValueDelta = 1.0;
 	MinValue = 0.0;
