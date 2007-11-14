@@ -919,6 +919,23 @@ void PlayerImpulse()
 	}
 
 	/*---------------------------------------
+	-	[CW] Spells Test      -
+	---------------------------------------*/
+
+	switch (impulse)
+	{
+	case HexenDefs::IMPULSE__TEST_SPELL__CAST_SPELL_GRAVITATOR:
+		{
+			SpellGravitator SG = SpellGravitator(Level.Spawn(SpellGravitator));
+			SG.Level = 2;
+			SG.LifeDuration = 10.0;
+			SG.Origin = MO.Origin;
+			SG.Activate();
+		}
+		break;
+	}
+
+	/*---------------------------------------
 	-	[CW] Actor Tasks Test      -
 	---------------------------------------*/
 	switch (impulse)
@@ -1554,31 +1571,20 @@ void PaletteFlash()
 		CShifts[CSHIFT_Bonus] = RGBA(215, 186, 68, Amount);
 	}
 
-	// KRPG
-	/*CShifts[CSHIFT_Poison] = 0;
-	if (PoisonCount)
-	{
-		int Amount = PoisonCount * 160 / 32;
-		if (Amount >= 160)
-		{
-			Amount = 160;
-		}
-		CShifts[CSHIFT_Poison] = RGBA(56, 118, 46, Amount);
-	}*/
-
 	CShifts[CSHIFT_Weapon] = WeaponCShift;
 
 	CShifts[CSHIFT_Power] = 0;
 	if (Actor(MO).Conditions && Actor(MO).Conditions.refHead)
 	{
-		ActorCondition ac = ActorCondition(Actor(MO).Conditions.refHead);
-		while (ac)
+		LinkedReferer acref = LinkedReferer(Actor(MO).Conditions.refHead);
+		while (acref)
 		{
+			ActorCondition ac = ActorCondition(acref.refObject);
 			if (ac.bIsNegative)
 				ac.MakeCShift(&CShifts[CSHIFT_Poison]);
 			else
 				ac.MakeCShift(&CShifts[CSHIFT_Power]);
-			ac = ActorCondition(ac.refNext);
+			acref = LinkedReferer(acref.refNext);
 		};
 	}
 

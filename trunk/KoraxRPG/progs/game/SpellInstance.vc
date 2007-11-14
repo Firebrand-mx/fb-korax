@@ -1,0 +1,95 @@
+
+class SpellInstance : Thinker
+	abstract;
+
+
+
+EntityEx	EInstigator;	// the caster object
+
+name	CastSound;
+
+bool	bIsNegative;
+bool	bIsMagic;
+
+int		Level;
+
+float	LifeTime;
+float	LifeDuration;
+
+
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (LifeDuration > 0.0)
+	{
+		LifeTime -= deltaTime;
+		if (LifeTime <= 0.0)
+		{
+			Dispell();
+			return;
+		}
+	}
+
+	Do(deltaTime);
+}
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+}
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+void Activate()
+{
+	LifeTime = LifeDuration;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+void Deactivate()
+{
+}
+
+//==========================================================================
+//
+//	Dispell
+//
+//==========================================================================
+
+void Dispell()
+{
+	Deactivate();
+	Destroy();
+}
+
+
+defaultproperties
+{
+	bIsNegative = false;
+	bIsMagic = false;
+
+	LifeTime = 0.0;
+	LifeDuration = 0.0;
+}

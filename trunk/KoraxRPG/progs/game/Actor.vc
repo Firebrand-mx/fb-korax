@@ -88,8 +88,7 @@ void Died(EntityEx source, EntityEx inflictor)
 {
 	::Died(source, inflictor);
 
-														// FIXME!
-	NotifyConditions(ActorCondition::notify_RecepientDead, Actor(source), 0);
+	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
 }
 
 //==========================================================================
@@ -721,31 +720,6 @@ final void SpawnDirt(float radius)
 	}
 }
 
-//==========================================================================
-//
-//	Tick
-//
-//==========================================================================
-
-void Tick(float deltaTime)
-{
-	::Tick(deltaTime);
-
-	if (Conditions && Conditions.refHead)
-	{
-		ActorCondition ac = ActorCondition(Conditions.refHead);
-		ActorCondition ac2;
-		while (ac)
-		{
-			// [CW] AC destroys itself automatically when its lifetime
-			// ends, before this it unlinks itself from the LinkedList
-
-			ac2 = ActorCondition(ac.refNext);
-			ac.Tick(deltaTime);
-			ac = ac2;
-		};
-	}
-}
 
 //**************************************************************************
 //
@@ -975,14 +949,17 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 	}
 	else
 	{
-		AC = ActorCondition(SpawnObject(ConditionClass));
+		AC = ActorCondition(Spawn(ConditionClass));
 
 		if (AC)
 		{
-			Conditions.Add(AC);
+			LinkedReferer ref = LinkedReferer(SpawnObject(LinkedReferer));
+			ref.refObject = AC;
+			AC.Referer = ref;
+			Conditions.Add(ref);
 
 			AC.ARecepient = self;
-			AC.AInstigator = Instigator;
+			AC.EInstigator = Instigator;
 			AC.Level = level;
 			AC.LifeDuration = life_duration;
 			AC.Activate();
@@ -1010,16 +987,17 @@ ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigat
 {
 	if (Conditions && Conditions.refHead)
 	{
-		ActorCondition ac = ActorCondition(Conditions.refHead);
-		while (ac)
+		LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		while (acref)
 		{
+			ActorCondition ac = ActorCondition(acref.refObject);
 			if (ac.Class == ConditionClass &&
-					ac.AInstigator == Instigator &&
+					ac.EInstigator == Instigator &&
 					ac.Level == level)
 			{
 				return ac;
 			}
-			ac = ActorCondition(ac.refNext);
+			acref = LinkedReferer(acref.refNext);
 		};
 	}
 
@@ -1032,15 +1010,15 @@ ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigat
 //
 //==========================================================================
 
-void NotifyConditions(int notification, Actor A, int param)
+void NotifyConditions(int notification, EntityEx E, int param)
 {
 	if (Conditions && Conditions.refHead)
 	{
-		ActorCondition ac = ActorCondition(Conditions.refHead);
-		while (ac)
+		LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		while (acref)
 		{
-			ac.Notify(notification, A, param);
-			ac = ActorCondition(ac.refNext);
+			ActorCondition(acref.refObject).Notify(notification, E, param);
+			acref = LinkedReferer(acref.refNext);
 		};
 	}
 }

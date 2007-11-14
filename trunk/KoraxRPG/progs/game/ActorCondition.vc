@@ -1,9 +1,6 @@
-//
-// put Head and Tail to Actor class
-//
 
-
-class ActorCondition : LinkedObject;
+class ActorCondition : SpellInstance
+	abstract;
 
 
 // notified events
@@ -14,19 +11,10 @@ enum
 };
 
 
-Actor	ARecepient;
-Actor	AInstigator;
+Actor			ARecepient;
+LinkedReferer	Referer;
 
 string  CastMessage;
-name	CastSound;
-
-bool	bIsNegative;
-bool	bIsMagic;
-
-int		Level;
-
-float	LifeTime;
-float	LifeDuration;
 
 float	MaxAccumulatedLifePerLevel;
 
@@ -38,7 +26,7 @@ enum
 	CSHIFT_OP_AND
 };
 
-int		CShiftOperation;		// Use OR operation when modifying player's CShift
+int		CShiftOperation;		// Logical operation to use when modifying player's CShift
 int		CShift;					// CShift value to set when active
 bool	bCShiftDecreasePermanent;
 
@@ -59,28 +47,7 @@ void Tick(float deltaTime)
 		return;
 	}
 
-	if (LifeDuration > 0.0)
-	{
-		LifeTime -= deltaTime;
-		if (LifeTime <= 0.0)
-		{
-			Dispell();
-			return;
-		}
-	}
-
-
-	Do(deltaTime);
-}
-
-//==========================================================================
-//
-//	Do
-//
-//==========================================================================
-
-void Do(float deltaTime)
-{
+	::Tick(deltaTime);
 }
 
 //==========================================================================
@@ -122,7 +89,7 @@ void MakeCShift(int * pCShift)
 //
 //==========================================================================
 
-void Notify(int notification, Actor A, int param)
+void Notify(int notification, EntityEx E, int param)
 {
 	switch (notification)
 	{
@@ -135,27 +102,6 @@ void Notify(int notification, Actor A, int param)
 
 //==========================================================================
 //
-//	Activate
-//
-//==========================================================================
-
-void Activate()
-{
-	LifeTime = LifeDuration;
-}
-
-//==========================================================================
-//
-//	Deactivate
-//
-//==========================================================================
-
-void Deactivate()
-{
-}
-
-//==========================================================================
-//
 //	Dispell
 //
 //==========================================================================
@@ -164,9 +110,11 @@ void Dispell()
 {
 	if (!ARecepient)
 		Error("ActorCondition::Dispell : no reference to Recepient actor, bad algorythm?");
+	if (!Referer)
+		Error("ActorCondition::Dispell : no reference to Referer linked object, bad algorythm?");
 
 	Deactivate();
-	UnlinkFromList();
+	Referer.Destroy();	// remove reference to this AC from recepient's conditions list
 	Destroy();
 }
 
@@ -174,12 +122,6 @@ void Dispell()
 defaultproperties
 {
 	CastMessage = "";
-
-	bIsNegative = false;
-	bIsMagic = false;
-
-	LifeTime = 0.0;
-	LifeDuration = 0.0;
 
 	MaxAccumulatedLifePerLevel = -1.0;
 
