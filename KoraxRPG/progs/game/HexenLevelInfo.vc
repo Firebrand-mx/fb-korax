@@ -47,6 +47,62 @@ enum
 const float	MAXNODELINKLENGTH		= 512.0;
 bool bNodeGraphBuild;
 
+//
+// New Action Specials
+
+// [CW] in order not to mix these with common line specials,
+//	their ids should be greater than 255;
+//  AFAIK "Doom Builder" supports >255 linespecial values with
+//  specific format tag set in configuration file; if mapper is using
+//  different editor, he may still run those using scripts
+enum
+{
+	//
+	// Advanced thing manipulation
+
+	ACTSPEC_Thing_Thrust3d			= 256,
+	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
+	ACTSPEC_Thing_SetTeam,
+
+	//
+	// Miscellaneous, that could be useful
+
+	ACTSPEC_IsConditionTrue			= 755,	/* this id is taken equal to same actspec in Korax Arena*/
+	ACTSPEC_RunACSConditional,
+
+	//
+	// Intelligent Actors
+	//
+	// Generic behavior
+	ACTSPEC_IA_SetThreatReaction	= 800,
+
+	// Orders
+	ACTSPEC_IA_Order_CancelAll		= 900,
+	ACTSPEC_IA_Order_CancelCurrent,
+	ACTSPEC_IA_Order_StandStill,
+	ACTSPEC_IA_Order_StandLook180,
+	ACTSPEC_IA_Order_StandLook360,
+	ACTSPEC_IA_Order_WalkTo,
+	ACTSPEC_IA_Order_WalkPath,
+	ACTSPEC_IA_Order_Patrol2pt,
+	ACTSPEC_IA_Order_PatrolPath,
+	ACTSPEC_IA_Order_PatrolLoop,
+	ACTSPEC_IA_Order_Follow,		/* 910 */
+	ACTSPEC_IA_Order_EvadePos,			
+	ACTSPEC_IA_Order_EvadeThing,
+	ACTSPEC_IA_Order_AttackAll,		
+	ACTSPEC_IA_Order_AttackThing,
+
+
+	ACTSPEC_Last
+};
+
+// [CW] Conditions for ACTSPEC_IsConditionTrue and ACTSPEC_RunACSConditional
+enum
+{
+	CNDT_Unused		// just to be...
+};
+
 
 //==========================================================================
 //
@@ -64,6 +120,40 @@ void SpawnSpecials()
 
 //==========================================================================
 //
+//  ExecuteActionSpecialForTID
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* Line, int Side)
+{
+	Entity E;
+	bool result = false;
+	if (TID)
+	{
+		int searcher = -1;
+		for (E = Entity(FindMobjFromTID(TID, &searcher)); E;
+			E = Entity(FindMobjFromTID(TID, &searcher)))
+		{
+			if (E && ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
+				result = true;
+		}
+	}
+	else
+	{
+		foreach AllThinkers(Entity, E)
+		{
+			if (ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
+				result = true;
+		}
+	}
+	return result;
+}
+
+//==========================================================================
+//
 //  ExecuteActionSpecial
 //
 //==========================================================================
@@ -72,14 +162,191 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	int Arg4, int Arg5, line_t* Line, int Side, Entity E)
 {
 	bool buttonSuccess;
-	EntityEx A;
 
-	A = EntityEx(E);
 	buttonSuccess = false;
+
+	if ( ( Special >= ACTSPEC_Thing_Thrust3d && Special < ACTSPEC_IsConditionTrue 
+		&& Special != ACTSPEC_Thing_SetPlayerMOTag
+		||
+		Special >= ACTSPEC_IA_SetThreatReaction ) 
+		&& !E )
+	{
+		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1, Arg2, Arg3, Arg4, Arg5, Line, Side);
+		return buttonSuccess;
+	}
+
 	switch (Special)
 	{
 	case LNSPEC_QuakeTremor:
 		buttonSuccess = A_LocalQuake(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+
+		//
+		// [KoraxRPG]
+		//
+	//
+	// Advanced thing manipulation
+	case ACTSPEC_Thing_Thrust3d:
+		if (E && E.IsA('Actor'))
+		{
+			A_Thing3dThrust(Actor(E), Arg2, Arg3, Arg4, Arg5);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_Thing_SetPlayerMOTag:
+		if (Game.Players[Arg1] && Game.Players[Arg1].MO)
+		{
+			Game.Players[Arg1].MO.RemoveFromTIDList();
+			Game.Players[Arg1].MO.InsertIntoTIDList(Arg2);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_Thing_SetTeam:
+		if (E && E.IsA('Actor'))
+		{
+			Actor(E).SetTeam(Arg2);
+			buttonSuccess = true;
+		}
+		break;
+
+
+	//
+	// Intelligent Actors
+	//
+	// Generic behavior
+	case ACTSPEC_IA_SetThreatReaction:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_SetThreatReaction(Arg2, itof(Arg3));
+			buttonSuccess = true;
+		}
+		break;
+
+	// Orders
+	case ACTSPEC_IA_Order_CancelAll:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderCancelAll();
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_CancelCurrent:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderCancelCurrent();
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandStill:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandLook180:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandLook360:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_WalkTo:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target = FindMobjFromTID(Arg4, &s);
+			IntelligentActor(E).A_OrderWalkTo(false, Arg2, itof(Arg3) / 1000.0,
+										target ? target.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_WalkPath:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_Patrol2pt:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target1 = FindMobjFromTID(Arg4, &s);
+			s = -1;
+			Entity target2 = FindMobjFromTID(Arg5, &s);
+			IntelligentActor(E).A_OrderPatrol2Pt(false, Arg2, itof(Arg3) / 1000.0,
+							target1 ? target1.Origin : E.Origin,
+							target2 ? target2.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_PatrolPath:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_PatrolLoop:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_Follow:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderFollowThing(false, Arg2, itof(Arg3) / 1000.0,
+										FindMobjFromTID(Arg4, &s));
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_EvadePos:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target = FindMobjFromTID(Arg4, &s);
+			IntelligentActor(E).A_OrderEvadePos(false, Arg2, itof(Arg3) / 1000.0,
+										target ? target.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_EvadeThing:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderEvadeThing(false, Arg2, itof(Arg3) / 1000.0,
+										FindMobjFromTID(Arg4, &s));
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_AttackAll:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderAttackAll(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_AttackThing:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, FindMobjFromTID(Arg4, &s));
+			buttonSuccess = true;
+		}
 		break;
 
 	// Inert Line specials
@@ -181,6 +448,31 @@ bool A_LocalQuake(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
 	return success;
 }
 
+//**************************************************************************
+//
+//	[KoraxRPG] New Action Specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  A_Thing3dThrust
+//
+//  [CW] A three-dimensional vector variant of ThingThrust action special
+//
+//==========================================================================
+
+void A_Thing3dThrust(Actor A, int angle2d, int angle3, int move, int move2)
+{
+	if (A)
+	{
+      if (angle3)
+         Actor(A).Thrust3d(itof(angle2d), itof(angle3), itof(move));
+      else
+         Actor(A).Thrust3d2(itof(angle2d), itof(move), itof(move2));
+	}
+}
+
 //==========================================================================
 //
 //  GetClassSpawnFlags
@@ -252,11 +544,11 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 
 void BuildNodeGraph()
 {
-	dprint("CWAIEX : DLI::BuildNodeGraph : IN");
+	//dprint("CWAIEX : DLI::BuildNodeGraph : IN");
 	BuildLinks();
-	//BuildPaths();	// ?? TODO
+	BuildPaths();
 	//BuildPathIntersections();	// ?? TODO
-	dprint("CWAIEX : DLI::BuildNodeGraph : OUT");
+	//dprint("CWAIEX : DLI::BuildNodeGraph : OUT");
 }
 
 //===========================================================================
@@ -292,7 +584,7 @@ void BuildLinks()
 	//------------------------
 	//
 
-	dprint("CWAIEX : DLI::BuildLinks : IN");
+	//dprint("CWAIEX : DLI::BuildLinks : IN");
 
 	foreach AllThinkers(Node, N_Base)
 	{
@@ -303,7 +595,7 @@ void BuildLinks()
 		dest = -1.0;
 		dest_linked_max = -1.0;
 
-		dprint(" -- take N_Base");
+		//dprint(" -- take N_Base");
 
 		for (i = 0; i < Node::MAXNODELINKS; i++)
 		{
@@ -311,8 +603,8 @@ void BuildLinks()
 				linked_count++;
 		}
 
-		dprint(" -- N_Base Tag = %i", N_Base.TID);
-		dprint(" -- linked count = %i", linked_count);
+		//dprint(" -- N_Base Tag = %i", N_Base.TID);
+		//dprint(" -- linked count = %i", linked_count);
 		
 		if (linked_count >= Node::MAXNODELINKS)
 		{
@@ -322,13 +614,13 @@ void BuildLinks()
 		
 		foreach AllThinkers(Node, N_LinkCandidate)
 		{
-			dprint(" -- take N_LinkCandidate");
-			dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
+			//dprint(" -- take N_LinkCandidate");
+			//dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
 			candidate_is_linked_to_base = false;
 			candidate_linked_count = 0;
 			if (N_LinkCandidate == N_Base)
 			{
-				dprint(" -- self as candidate, rejected");
+				//dprint(" -- self as candidate, rejected");
 				continue;
 			}
 			for (i = 0; i < Node::MAXNODELINKS; i++)
@@ -345,37 +637,37 @@ void BuildLinks()
 			}
 			if (candidate_is_linked_to_base)
 			{
-				dprint(" -- candidate already linked to base, rejected");
+				//dprint(" -- candidate already linked to base, rejected");
 				continue;
 			}
 			if (candidate_linked_count == Node::MAXNODELINKS)
 			{
-				dprint(" -- all candidate link slots used, rejected");
+				//dprint(" -- all candidate link slots used, rejected");
 				continue;
 			}
 
-			dprint(" -- candidate linked count = %i", candidate_linked_count);
+			//dprint(" -- candidate linked count = %i", candidate_linked_count);
 
 			dest = Length(N_Base.Origin - N_LinkCandidate.Origin);
-			dprint(" -- candidate dest = %f", dest);
+			//dprint(" -- candidate dest = %f", dest);
 			if (dest <= MAXNODELINKLENGTH &&
 				(dest_linked_max < 0.0 || dest < dest_linked_max) )
 			{
 				Node::nodelink_t _link;
 
-				dprint(" -- dest accepted");
+				//dprint(" -- dest accepted");
 
 				if (BuildNodeLink(N_Base, N_LinkCandidate, &_link))
 				{
 					if (dest_linked_max < 0.0)
 					{
-						dprint(" -- free link for the base");
+						//dprint(" -- free link for the base");
 						N_Base.ApplyLink(&_link, linked_count, true);
-						dprint(" -- candidate accepted as no %i", linked_count);
+						//dprint(" -- candidate accepted as no %i", linked_count);
 					}
 					if (dest < dest_linked_max)
 					{
-						dprint(" -- link replacement");
+						//dprint(" -- link replacement");
 						// Get linked node with maximal dest and replace it by a new one
 						for (i = 0; i < Node::MAXNODELINKS; i++)
 						{
@@ -387,7 +679,7 @@ void BuildLinks()
 								break;
 							}
 						}
-						dprint(" -- candidate accepted as no %i", i);
+						//dprint(" -- candidate accepted as no %i", i);
 					}
 
 					linked_count++;
@@ -401,16 +693,16 @@ void BuildLinks()
 							if (dest_linked_max < 0.0 || N_Base.Links[i].length > dest_linked_max)
 								dest_linked_max = N_Base.Links[i].length;
 						}
-						dprint(" -- new max_dest = %f", dest_linked_max);
+						//dprint(" -- new max_dest = %f", dest_linked_max);
 					}
 				}
-				else
-					dprint(" -- candidate rejected");
+				//else
+				//	dprint(" -- candidate rejected");
 			}
-			else
-				dprint(" -- dest rejected");
+			//else
+			//	dprint(" -- dest rejected");
 		}
-		dprint(" -- no more candidates");
+		//dprint(" -- no more candidates");
 
 
 		if (linked_count)
@@ -428,7 +720,7 @@ void BuildLinks()
 		}
 
 	}
-	dprint(" -- no more bases");
+	//dprint(" -- no more bases");
 
 	if (stats_TotalBaseNodes)
 		stats_AverageLinksPerNode /= stats_TotalBaseNodes;
@@ -452,7 +744,7 @@ void BuildLinks()
 
 	bNodeGraphBuild = (stats_TotalBaseNodes > 0);
 
-	dprint("CWAIEX : DLI::BuildLinks : OUT");
+	//dprint("CWAIEX : DLI::BuildLinks : OUT");
 }
 
 //===========================================================================
@@ -467,20 +759,20 @@ bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
 {
 	bool canreach;
 	ReachTraverse::linkreach_traverse_data LRTRData;
-	dprint("CWAIEX : DLI::BuildNodeLink : IN");
-	dprint(" --- N_From tag = %i", N_From.TID);
-	dprint(" --- N_To tag = %i", N_To.TID);
+	//dprint("CWAIEX : DLI::BuildNodeLink : IN");
+	//dprint(" --- N_From tag = %i", N_From.TID);
+	//dprint(" --- N_To tag = %i", N_To.TID);
 
 	canreach = BuildNodeLinkTraverse(N_From, N_To, &LRTRData);
 
 	if (!canreach)
 	{
-		dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE");
+		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE");
 		return false;
 	}
 	if (!LRTRData.intercepted_once && N_From.Sector != N_To.Sector)
 	{
-		dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE EX");
+		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE EX");
 		return false;
 	}
 	
@@ -490,12 +782,12 @@ bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
 	_link->maxstepheight = LRTRData.maxstepheight;
 	_link->maxdropoff = LRTRData.maxdropoff;
 	
-	dprint(" --- Link length = %f", _link->length);
-	dprint(" --- Link minyspace = %f", _link->minyspace);
-	dprint(" --- Link maxstepheight = %f", _link->maxstepheight);
-	dprint(" --- Link maxdropoff = %f", _link->maxdropoff);
+	//dprint(" --- Link length = %f", _link->length);
+	//dprint(" --- Link minyspace = %f", _link->minyspace);
+	//dprint(" --- Link maxstepheight = %f", _link->maxstepheight);
+	//dprint(" --- Link maxdropoff = %f", _link->maxdropoff);
 
-	dprint("CWAIEX : DLI::BuildNodeLink : OUT TRUE");
+	//dprint("CWAIEX : DLI::BuildNodeLink : OUT TRUE");
 	return true;
 }
 
@@ -508,7 +800,7 @@ bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
 bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 							ReachTraverse::linkreach_traverse_data * pLRTRData)
 {
-	dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : IN");
+	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : IN");
 
 	intercept_t * in;
 	pLRTRData->intercepted_once = false;
@@ -535,7 +827,7 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
 					!in->line->backsector)
 			{
-				dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE");
+				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE");
 				return false;
 			}
 
@@ -548,7 +840,7 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 			else
 			{
 				// something was really messed up
-				dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE EX");
+				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE EX");
 				return false;
 			}
 
@@ -584,8 +876,102 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 		}
 	}
 
-	dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT TRUE");
+	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT TRUE");
 	return true;
+}
+
+
+//===========================================================================
+//
+//  BuildPaths
+//
+//	Make special connections between path nodes (if any of them exist)
+//
+//===========================================================================
+
+void BuildPaths()
+{
+	PathNode	PN_Base;
+	PathNode	PN_Candidate;
+	int			PathIndex;
+	int			PNIndex;
+	bool		bPNLinked;
+
+	//
+	// Debug statistics
+	//------------------------
+	int			stats_TotalPathNodes = 0;
+	int			stats_TotalLinkedPathNodes = 0;
+	int			stats_TotalUnlinkedPathNodes = 0;
+	int			stats_TotalPaths = 0;
+	int			stats_AverageNodesPerPath = 0;
+	float		stats_MaximalLinkLength = 0.0;
+	float		stats_MinimalLinkLength = -1.0;
+	float		stats_MaximalPathLength = 0.0;
+	float		stats_MinimalPathLength = -1.0;
+	// etc etc etc.....
+	//------------------------
+	//
+
+
+	foreach AllThinkers(PathNode, PN_Base)
+	{
+		bPNLinked = false;
+		stats_TotalPathNodes++;
+
+		PathIndex = PN_Base.Args[PathNode::ARG__PATHINDEX];
+		PNIndex = PN_Base.Args[PathNode::ARG__NODEINDEX];
+
+		// Find next path node
+		PN_Candidate = none;
+		foreach AllThinkers(PathNode, PN_Candidate)
+		{
+			if (PN_Candidate == PN_Base)
+				continue;
+
+			if (PN_Candidate.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
+					PN_Candidate.Args[PathNode::ARG__NODEINDEX] == PNIndex + 1)
+			{
+				PN_Base.FW = PN_Candidate;
+				bPNLinked = true;
+				break;
+			}
+		}
+
+		// Find prev path node
+		PN_Candidate = none;
+		foreach AllThinkers(PathNode, PN_Candidate)
+		{
+			if (PN_Candidate == PN_Base)
+				continue;
+
+			if (PN_Candidate.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
+					PN_Candidate.Args[PathNode::ARG__NODEINDEX] == PNIndex - 1)
+			{
+				PN_Base.BW = PN_Candidate;
+				bPNLinked = true;
+				break;
+			}
+		}
+
+		if (bPNLinked)
+			stats_TotalLinkedPathNodes++;
+		else
+			stats_TotalUnlinkedPathNodes++;
+	}
+
+	//
+	// Debug info output
+	//------------------------
+	print("");
+	print(" ================ Paths Info ===============");
+	print("   Total Path Nodes found:          %i      ", stats_TotalPathNodes);
+	print("   Total Linked Path Nodes:         %i      ", stats_TotalLinkedPathNodes);
+	print("   Total Unlinked Path Nodes:       %i      ", stats_TotalUnlinkedPathNodes);
+	print(" ===========================================");
+	print("");
+	//------------------------
+	//
 }
 
 
