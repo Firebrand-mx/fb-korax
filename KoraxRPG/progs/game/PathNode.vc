@@ -1,0 +1,101 @@
+﻿
+class PathNode : Node
+	__mobjinfo__(15102);
+
+enum
+{
+	ARG__PATHINDEX	= 1,	// global path index on map
+	ARG__NODEINDEX	= 2		// index of the node in path
+};
+
+//
+//	It is not oligatory that Path Node is linked with preious and next path nodes
+//	by common node links; thus we should use explicit links for that connections;
+//
+
+PathNode	FW;
+PathNode	BW;
+
+
+//==========================================================================
+//
+//	GetPathNodeByLocalIndex
+//
+//==========================================================================
+
+PathNode GetPathNodeByLocalIndex(int Index)
+{
+
+}
+
+//==========================================================================
+//
+//	GetPathNodeByOrdinalNumber
+//
+//==========================================================================
+
+PathNode GetPathNodeByOrdinalNumber(int Number)
+{
+
+}
+
+//==========================================================================
+//
+//	GetPathNode
+//
+//==========================================================================
+
+PathNode GetPathHead()
+{
+	PathNode PN;
+	PathNode PNHead;
+	int PathIndex = Args[ARG__PATHINDEX];
+	int MinIndex = -1;
+
+	foreach AllThinkers(PathNode, PN)
+	{
+		if (PN.Args[ARG__PATHINDEX] == PathIndex)
+		{
+			if (MinIndex < 0 || PN.Args[ARG__NODEINDEX] < MinIndex)
+			{
+				MinIndex = PN.Args[ARG__NODEINDEX];
+				PNHead = PN;
+			}
+		}
+	}
+
+	return PNHead;
+}
+
+//==========================================================================
+//
+//	GetPathTail
+//
+//==========================================================================
+
+PathNode GetPathTail()
+{
+	PathNode PN;
+	PathNode PNTail;
+	int PathIndex = Args[ARG__PATHINDEX];
+	int MaxIndex = -1;
+
+	foreach AllThinkers(PathNode, PN)
+	{
+		if (PN.Args[ARG__PATHINDEX] == PathIndex)
+		{
+			if (PN.Args[ARG__NODEINDEX] > MaxIndex)
+			{
+				MaxIndex = PN.Args[ARG__NODEINDEX];
+				PNTail = PN;
+			}
+		}
+	}
+
+	return PNTail;
+}
+
+
+defaultproperties
+{
+}

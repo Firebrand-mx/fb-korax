@@ -39,6 +39,9 @@ const float	DEFAULT_THREAT_VICINITY		= MISSILERANGE;
 
 TVec *			pTargetVec;
 
+const float HIGH_ALERTNESS				= 10.0;
+
+float			Alertness;		// while alert, creature will look for enemies all around
 bool			bIgnoreTeams;
 int				Team;
 
@@ -80,6 +83,19 @@ void Destroyed()
 
 //==========================================================================
 //
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (Alertness > 0.0)
+		Alertness -= deltaTime;
+	::Tick(deltaTime);
+}
+
+//==========================================================================
+//
 //	Died
 //
 //==========================================================================
@@ -89,6 +105,25 @@ void Died(EntityEx source, EntityEx inflictor)
 	::Died(source, inflictor);
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
+}
+
+//==========================================================================
+//
+//  OkayToSwitchTarget
+//
+//==========================================================================
+
+bool OkayToSwitchTarget(EntityEx source)
+{
+	Alertness = HIGH_ALERTNESS;
+
+	// [CW] TODO: add extra conditions here?
+	if (source.IsA('Actor') && !bIgnoreTeams && Team == Actor(source).Team)
+	{
+		return false;
+	}
+
+	return ::OkayToSwitchTarget(source);
 }
 
 //==========================================================================
@@ -149,6 +184,23 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 
 //==========================================================================
 //
+//	SetTeam
+//
+//==========================================================================
+
+void SetTeam(int team)
+{
+	Team = team;
+
+	if (Target && Actor(Target).Team == Team)
+	{
+		Target = none;
+		SetState(IdleState);
+	}
+}
+
+//==========================================================================
+//
 //	LookForEnemy
 //
 //	[KoraxRPG] Advanced AI
@@ -169,7 +221,13 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	if (!specified_At)
 		At = Origin;
 
-	Target = none;
+	if (!specified_maxdist)
+		maxdist = DEFAULT_THREAT_VICINITY;
+
+	if (!specified_ExcludeActor)
+		ExcludeActor = none;
+
+	Actor NewTarget;
 	min_dist = -1.0;
 
 	foreach AllThinkers(Actor, mo)
@@ -177,11 +235,8 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (mo == self)
 			continue;	// self
 
-		if (specified_ExcludeActor)
-		{
-			if (mo == ExcludeActor)
-				continue;
-		}
+		if (mo == ExcludeActor)
+			continue;
 
 		if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
 			continue;
@@ -192,14 +247,8 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (!bIgnoreTeams && (Team == mo.Team))
 			continue;	// friendly
 
-		if (!CanSee(mo))
-			continue;	// out of sight
-
-		if (specified_maxdist)
-		{
-			if (Length(mo.Origin - At) > maxdist)
-				continue;
-		}
+		if (Length(mo.GetCentre() - At) > maxdist)
+			continue;
 
 		if (P_Random() > 200)
 			continue;	// sometimes skip
@@ -225,18 +274,20 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 			if (min_dist < 0.0 || min_dist > dist)
 			{
 				min_dist = dist;
-				Target = mo;
+				NewTarget = mo;
 			}
 
 			continue;
 		}
+		else
+			NewTarget = mo;
 
-		Target = mo;
-		return true;
+		break;
 	}
 
-
-	return Target != none;
+	if (NewTarget)
+		Target = NewTarget;
+	return NewTarget != none;
 }
 
 //==========================================================================
@@ -255,7 +306,7 @@ bool A_LookEx(bool autoSetChase)
 	pTargetVec = NULL;
 	targ = Actor(Sector->SoundTarget);
 
-	if (targ && targ.bShootable && (bIgnoreTeams || targ.Team != Team))
+	if (targ && targ.bShootable && (bIgnoreTeams || Team != targ.Team))
 	{
 		Target = targ;
 
@@ -263,16 +314,18 @@ bool A_LookEx(bool autoSetChase)
 		{
 			if (!CanSee(Target))
 			{
-				if (!LookForEnemy(false))
+				if (!LookForEnemy(false || (Alertness > 0.0)))
 					return false;
 			}
 		}
 	}
 	else
 	{
-		if (!LookForEnemy(bLookAllAround))
+		if (!LookForEnemy(bLookAllAround || (Alertness > 0.0)))
 			return false;
 	}
+
+	Alertness = HIGH_ALERTNESS;
 
 	// go into chase state
 	if (SightSound)
@@ -295,41 +348,50 @@ bool A_LookEx(bool autoSetChase)
 
 //==========================================================================
 //
-//	A_ChaseEx
+//	A_LookExAuto
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_LookExAuto()
+{
+	A_LookEx(true);
+}
+
+//==========================================================================
+//
+//	A_MoveEx
 //
 //	[KoraxRPG] Advanced AI
 //
 //==========================================================================
 
-bool A_ChaseEx(bool autoSetIdle)
+bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
 {
 	float delta;
 
+	if (!specified_Evade)
+		Evade = false;
+
 	if (ReactionCount)
-	{
 		ReactionCount--;
-	}
 
 	//  Remove muzzle flash
 	if (bMuzzleFlash)
-	{
 		bMuzzleFlash = false;
-	}
 
 	if (!pTargetVec)
 	{
-		Error("A_ChaseEx: called with pTargetVec = NULL");
+		Error("Actor::A_MoveEx: called with pTargetVec = NULL");
 		return false;
 	}
-
-	//if (!pTargetVec && Target)
-	//	pTargetVec = &Target.Origin;
 
 	bInCombat = true;
 	// modify target threshold
 	if (Threshold)
 	{
-		if (!pTargetVec || (Target && Target.Health <= 0))
+		if (Target && Target.Health <= 0)
 		{
 			Threshold = 0;
 		}
@@ -339,19 +401,16 @@ bool A_ChaseEx(bool autoSetIdle)
 		}
 	}
 
-	if (Target && !Target.bShootable)
+	if (!Evade && Target && !Target.bShootable)
 	{
-		//[CW] ??
-		/*// look for a new target
-		if (LookForEnemy(true))
-		{
-			return true;	// got a new target
-		}*/
 		if (autoSetIdle)
 		{
 			SetState(IdleState);
 			bInCombat = false;
 		}
+		else
+			Target = none;
+
 		return false;
 	}
 
@@ -388,13 +447,13 @@ bool A_ChaseEx(bool autoSetIdle)
 		bJustAttacked = false;
 		if (!Level.Game.fastparm)
 		{
-			NewChaseDirEx();
+			NewChaseDirEx(Evade);
 		}
 		return true;
 	}
 
 	// check for melee attack
-	if (MeleeState && CheckMeleeRange())
+	if (autoSetAttack && !Evade && MeleeState && CheckMeleeRange())
 	{
 		if (AttackSound)
 		{
@@ -405,7 +464,7 @@ bool A_ChaseEx(bool autoSetIdle)
 	}
 
 	// check for missile attack
-	if (MissileState)
+	if (autoSetAttack && MissileState)
 	{
 		if (Level.Game.fastparm || !MoveCount)
 		{
@@ -418,21 +477,10 @@ bool A_ChaseEx(bool autoSetIdle)
 		}
 	}
 
-	//[CW] ??
-	/*// possibly choose another target
-	if (Level.Game.netgame && !Threshold)
-	{
-		if (!CanSee(Target))
-		{
-			if (LookForEnemy(true))
-				return true;	// got a new target
-		}
-	}*/
-
 	// chase towards enemy
 	if (--MoveCount < 0 || !StepMove())
 	{
-		NewChaseDirEx();
+		NewChaseDirEx(Evade);
 	}
 
 	// make active sound
@@ -444,6 +492,32 @@ bool A_ChaseEx(bool autoSetIdle)
 	return true;
 }
 
+//==========================================================================
+//
+//	A_ChaseExAuto
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_ChaseExAuto()
+{
+	A_MoveEx(true, true, false);
+}
+
+//==========================================================================
+//
+//	A_Evade
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_EvadeAuto()
+{
+	A_MoveEx(true, true, true);
+}
+
 //=============================================================================
 //
 // NewChaseDirEx
@@ -452,7 +526,7 @@ bool A_ChaseEx(bool autoSetIdle)
 //
 //=============================================================================
 
-void NewChaseDirEx()
+void NewChaseDirEx(optional bool bEvade)
 {
 	float deltax;
 	float deltay;
@@ -463,8 +537,19 @@ void NewChaseDirEx()
 		return;
 	}
 
-	deltax = pTargetVec->x - Origin.x;
-	deltay = pTargetVec->y - Origin.y;
+	if (!specified_bEvade)
+		bEvade = false;
+
+	if (bEvade)
+	{
+		deltax = Origin.x - pTargetVec->x;
+		deltay = Origin.y - pTargetVec->y;
+	}
+	else
+	{
+		deltax = pTargetVec->x - Origin.x;
+		deltay = pTargetVec->y - Origin.y;
+	}
 
 	tmtrace_t tmtrace;
 	CheckRelPosition(&tmtrace, Origin);

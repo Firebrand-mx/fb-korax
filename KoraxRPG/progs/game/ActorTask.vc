@@ -1,4 +1,6 @@
-class ActorTask : LinkedObject;
+
+class ActorTask : LinkedObject
+	abstract;
 
 
 enum
@@ -8,14 +10,18 @@ enum
 	ORDER__STANDLOOK180,		// stand idle, turning left and right consequently
 	ORDER__STANDLOOK360,		// stand idle, looking 360 degrees around
 	ORDER__WALKTO,				// walk to a point on map
+	ORDER__WALKPATH,			// walk along a path of nodes
 	ORDER__PATROL2PT,			// walk continiously between two points
-	ORDER__PATROLROUTE,			// walk continiously along the route, first fw, then bw
-	ORDER__PATROLLOOP,			// walk continiously along the route, interpreting it as a loop
+	ORDER__PATROLPATH,			// walk continiously along the path, first fw, then bw
+	ORDER__PATROLLOOP,			// walk continiously along the path, interpreting it as a loop
 	ORDER__FOLLOW,				// follow actor
+	ORDER__ATTACKALL,			// havoc! attack everyone on map
 	ORDER__ATTACKTHING,			// attack single target until its death
-	ORDER__ATTACKALL			// havoc! attack everyone on map
+	ORDER__EVADETHING,
+	ORDER__EVADEPOS
 };
 
+bool						bSituative;
 
 int							Order;
 int							Priority;	// 0 is highest (unquestioned order)
@@ -24,6 +30,11 @@ float						Duration;	// 0.0 means unlimited duration
 float						Time;
 
 IntelligentActor::generic_target_t		GnTarget;
+
+bool									bTargetMustBeAlive;
+
+TVec									NextPos;
+bool									Direction;	// 0 = fw; 1 = bw
 
 IntelligentActor			Owner;
 
@@ -36,15 +47,23 @@ IntelligentActor			Owner;
 
 bool CheckCompleted()
 {
+	if (Duration > 0.0 && Time <= 0.0)
+		return true;
+
 	switch (Order)
 	{
 	case ORDER__NONE:
 		return true;
 	case ORDER__ATTACKTHING:
 	case ORDER__ATTACKALL:
-		return !GnTarget.Thing || GnTarget.Thing.IsDestroyed() || (GnTarget.Thing.Health <= 0);
+	case ORDER__FOLLOW:
+	case ORDER__EVADETHING:
+		return !GnTarget.Thing || GnTarget.Thing.IsDestroyed() || (bTargetMustBeAlive && GnTarget.Thing.Health <= 0);
 	case ORDER__WALKTO:
-		return (Length(Owner.Origin - GnTarget.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY );
+	case ORDER__WALKPATH:
+	case ORDER__PATROLPATH:
+	case ORDER__PATROLLOOP:
+		return (Length(Owner.Origin - GnTarget.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
 	}
 	return false;
 }
@@ -60,11 +79,6 @@ void Tick(float deltaTime)
 	if (Duration > 0.0)
 	{
 		Time -= deltaTime;
-		if (Time <= 0.0)
-		{
-			Destroy();
-			return;
-		}
 	}
 }
 
