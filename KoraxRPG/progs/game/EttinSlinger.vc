@@ -1,0 +1,34 @@
+
+
+class EttinSlinger : Ettin
+	__mobjinfo__(16001);
+
+//============================================================================
+//
+//  A_EttinMissileAttack
+//
+//============================================================================
+
+final void A_EttinMissileAttack()
+{
+	EntityEx M;
+
+	M = SpawnMissile(Target, EttinArrow);
+	if (M)
+		PlaySound('EttinAttack', CHAN_WEAPON);
+}
+
+states
+{
+Melee:
+Missile:
+	ETTN EF 6 A_FaceTarget
+	ETTN G 8 A_EttinMissileAttack
+	Goto Super::See
+}
+
+defaultproperties
+{
+	Behavior.bEvadeMelee	= true;
+	Behavior.bRunOnEvade	= true;
+}
