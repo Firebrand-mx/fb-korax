@@ -102,19 +102,31 @@ final void A_FiredRocks()
 
 //============================================================================
 //
-//  A_FiredChase
+//  A_MoveEx
+//
+//	Overloaded movement method for FireDemon
+//	Contents copied from original A_FiredChase method
 //
 //============================================================================
 
-final void A_FiredChase()
+bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
 {
 	float ang;
 	float dist;
+
+	if (!specified_Evade)
+		Evade = false;
 
 	if (ReactionCount)
 		ReactionCount--;
 	if (Threshold)
 		Threshold--;
+
+	if (!pTargetVec)
+	{
+		Error("FireDemon::A_MoveEx: called with pTargetVec = NULL");
+		return false;
+	}
 
 	// Float up and down
 	if(TestMobjZ())
@@ -133,11 +145,25 @@ final void A_FiredChase()
 		}
 	}
 
-	if (!Target || !Target.bShootable)
+	if (!Evade)
 	{
-		// Invalid enemy
-		LookForPlayers(true);
-		return;
+		if (Origin.z - pTargetVec->z > Height * 8.0)
+		{
+			Velocity.z -= 2.5;
+		}
+	}
+
+	if (!Evade && Target && !Target.bShootable)
+	{
+		if (autoSetIdle)
+		{
+			SetState(IdleState);
+			bInCombat = false;
+		}
+		else
+			Target = none;
+
+		return false;
 	}
 
 	// Strafe
@@ -145,7 +171,7 @@ final void A_FiredChase()
 	{
 		StrafeCount--;
 	}
-	else
+	else if (Target)
 	{
 		StrafeCount = 0;
 		Velocity.x = 0.0;
@@ -175,18 +201,18 @@ final void A_FiredChase()
 	{
 		if (--MoveCount < 0 || !StepMove())
 		{
-			NewChaseDir();
+			NewChaseDirEx(Evade); // KoraxRPG
 		}
 	}
 
 	// Do missile attack
-	if (!bJustAttacked)
+	if (autoSetAttack && Target && !bJustAttacked)
 	{
 		if (CheckMissileRange() && (P_Random() < 20))
 		{
 			SetState(MissileState);
 			bJustAttacked = true;
-			return;
+			return true;
 		}
 	}
 	else
@@ -199,6 +225,8 @@ final void A_FiredChase()
 	{
 		PlaySound(ActiveSound, CHAN_VOICE);
 	}
+
+	return true;
 }
 
 //============================================================================
@@ -259,7 +287,7 @@ See:
 	FDMN F 7 Bright A_FiredRocks
 	FDMN HI 5 Bright
 	FDMN J 5 Bright A_UnSetInvulnerable
-	FDMN ABC 5 Bright A_FiredChase
+	FDMN ABC 5 Bright A_ChaseAI
 	Goto See+9
 Pain:
 	FDMN D 6 Bright A_Pain

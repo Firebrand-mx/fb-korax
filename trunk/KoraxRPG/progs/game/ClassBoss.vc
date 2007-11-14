@@ -51,25 +51,33 @@ final void A_ClassBossHealth()
 
 //============================================================================
 //
-//  A_FastChase
+//  A_MoveEx
+//
+//	Overloaded movement method for ClassBoss
+//	Contents copied from original A_FastChase method
 //
 //============================================================================
 
-final void A_FastChase()
+bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
 {
 	float delta;
 	float dist;
 	float ang;
 
+	if (!specified_Evade)
+		Evade = false;
+
 	if (ReactionCount)
-	{
 		ReactionCount--;
-	}
 
 	// Modify target threshold
 	if (Threshold)
-	{
 		Threshold--;
+
+	if (!pTargetVec)
+	{
+		Error("ClassBoss::A_MoveEx: called with pTargetVec = NULL");
+		return false;
 	}
 
 	if (Level.Game.gameskill == sk_nightmare)
@@ -99,16 +107,17 @@ final void A_FastChase()
 		}
 	}
 
-	if (!Target || !Target.bShootable)
+	if (!Evade && Target && !Target.bShootable)
 	{
-		// look for a new enemy
-		if (LookForPlayers(true))
+		if (autoSetIdle)
 		{
-			// got a new enemy
-			return;
+			SetState(IdleState);
+			bInCombat = false;
 		}
-		SetState(IdleState);
-		return;
+		else
+			Target = none;
+
+		return false;
 	}
 
 	//
@@ -118,8 +127,8 @@ final void A_FastChase()
 	{
 		bJustAttacked = false;
 		if (Level.Game.gameskill != sk_nightmare)
-			NewChaseDir();
-		return;
+			NewChaseDirEx(Evade);
+		return true;
 	}
 
 	// Strafe
@@ -127,7 +136,7 @@ final void A_FastChase()
 	{
 		StrafeCount--;
 	}
-	else
+	else if (Target)
 	{
 		StrafeCount = 0;
 		Velocity.x = 0.0;
@@ -153,7 +162,7 @@ final void A_FastChase()
 	//
 	// check for missile attack
 	//
-	if (MissileState)
+	if (autoSetAttack && MissileState)
 	{
 		if ((Level.Game.gameskill == sk_nightmare) || !MoveCount)
 		{
@@ -161,18 +170,9 @@ final void A_FastChase()
 			{
 				SetState(MissileState);
 				bJustAttacked = true;
-				return;
+				return true;
 			}
 		}
-	}
-
-	//
-	// possibly choose another enemy
-	//
-	if (Level.Game.netgame && !Threshold && !CanSee(Target))
-	{
-		if (LookForPlayers(true))
-			return;	// got a new enemy
 	}
 
 	//
@@ -182,10 +182,13 @@ final void A_FastChase()
 	{
 		if (--MoveCount < 0 || !StepMove())
 		{
-			NewChaseDir();
+			NewChaseDirEx(Evade);
 		}
 	}
+
+	return true;
 }
+
 
 defaultproperties
 {
