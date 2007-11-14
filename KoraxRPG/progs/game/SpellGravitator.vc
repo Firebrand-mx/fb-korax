@@ -1,0 +1,37 @@
+
+class SpellGravitator : SpellPointBased;
+
+
+const float POWER_BASE = 1000.0;
+const float POWER_PER_LEVEL = 125.0;
+
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	Entity E;
+	float range = BaseRange + RangePerLevel * itof(Level);
+	float power = POWER_BASE + POWER_PER_LEVEL * itof(Level);
+
+	foreach AllThinkers(Entity, E)
+	{
+		if (Length(E.GetCentre() - Origin) < range)
+		{
+			E.Velocity.z += power * deltaTime;
+		}
+	}
+}
+
+
+
+
+defaultproperties
+{
+	BaseRange = 512.0;
+	RangePerLevel = 64.0;
+}
