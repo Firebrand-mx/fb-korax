@@ -41,6 +41,34 @@ void SetOrigin(int x, int y)
 	SetPos(x, y);
 }
 
+//==========================================================================
+//
+//	OnFocusReceived
+//
+//==========================================================================
+
+void OnFocusReceived()
+{
+	if (MenuScreen(Parent) && MenuScreen(Parent).Selector)
+	{
+		LocalSound('menu/cursor');
+		MenuScreen(Parent).Selector.SetPos(X + CursorXOffs,
+			Y + CursorYOffs);
+	}
+	::OnFocusReceived();
+}
+
+//==========================================================================
+//
+//	OnMouseEnter
+//
+//==========================================================================
+
+void OnMouseEnter()
+{
+	SetFocus();
+}
+
 ClientGame GetClGame()
 {
 	return MenuScreen(Parent).ClGame;
@@ -76,12 +104,12 @@ int DrawSlot(int y, string text, bool entering)
 
 	DrawPic(0, y, pic_M_FSLOT);
 
-	T_SetFont(font_small);
-	T_SetAlign(hleft, vtop);
+	SetFont(font_small);
+	SetTextAlign(hleft, vtop);
 	DrawText(5, y + 5, text);
 	if (entering)
 	{
-		T_DrawCursor();
+		DrawCursor();
 	}
 	return 20;
 }
