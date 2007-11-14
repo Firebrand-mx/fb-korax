@@ -33,6 +33,13 @@ const float TELEFOGHEIGHT	= 32.0;
 
 
 //
+// [KoraxRPG] Advanced behavior
+//
+bool			bXYAnchored;	// Stuck in floor/ceiling (won't move freely along X & Y axes)
+bool			bZAnchored;		// Stuck in floor/ceiling (won't move freely along Z axis)
+
+
+//
 // [KoraxRPG] Advanced AI
 //
 const float	DEFAULT_THREAT_VICINITY		= MISSILERANGE;
@@ -79,6 +86,56 @@ void Destroyed()
 	}
 
 	::Destroyed();
+}
+
+//==========================================================================
+//
+//  Thrust3d
+//
+//	[CW] A three-dimensional vector variant of Thrust, that
+//		 uses vector angles and single vector length.
+//
+//==========================================================================
+
+void Thrust3d(float angle2d, float angle3, float move)
+{
+	Thrust(angle2d, move * cos(angle3));
+	Velocity.z += move * sin(angle3) * 35.0;
+}
+
+//==========================================================================
+//
+//  Thrust3d2
+//
+//	[CW] Variant of Thrust3d, that allows explicit definition
+//	     of horizontal and vertical velocities.
+//
+//==========================================================================
+
+void Thrust3d2(float angle2d, float move2d, float move3)
+{
+	Thrust(angle2d, move2d);
+	Velocity.z += move3 * 35.0;
+}
+
+//==========================================================================
+//
+//	Physics
+//
+//==========================================================================
+
+bool Physics(float DeltaTime)
+{
+	if (bXYAnchored)
+	{
+		Velocity.x = 0.0;
+		Velocity.y = 0.0;
+	}
+
+	if (bZAnchored)
+		Velocity.z = 0.0;
+
+	return ::Physics(DeltaTime);
 }
 
 //==========================================================================
@@ -1239,6 +1296,9 @@ defaultproperties
 	CrunchSound = '*splat';
 
 	// KoraxRPG
+	bXYAnchored = false;
+	bZAnchored = false;
+
 	bIgnoreTeams = false;
 	Team = 0;
 }
