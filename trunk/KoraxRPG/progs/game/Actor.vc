@@ -38,6 +38,11 @@ const float TELEFOGHEIGHT	= 32.0;
 bool			bXYAnchored;	// Stuck in floor/ceiling (won't move freely along X & Y axes)
 bool			bZAnchored;		// Stuck in floor/ceiling (won't move freely along Z axis)
 
+bool			bCombatant;		// fighting actor
+
+bool			bLiving;		// has a chance to spawn "dying spirit" on death
+								// [CW] currently just for fun, though it may get some sense later
+
 
 //
 // [KoraxRPG] Advanced AI
@@ -162,6 +167,11 @@ void Died(EntityEx source, EntityEx inflictor)
 	::Died(source, inflictor);
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
+
+	if (bLiving && P_Random() < 33)
+	{
+		Spawn(DyingSpirit, Origin);
+	}
 }
 
 //==========================================================================
@@ -249,10 +259,24 @@ void SetTeam(int team)
 {
 	Team = team;
 
-	if (Target && Actor(Target).Team == Team)
+	//
+	// TODO: special code needed for Intelligent Actors
+	//
+
+	if (bCombatant && Target && Actor(Target).Team == Team)
 	{
 		Target = none;
 		SetState(IdleState);
+	}
+
+	Actor A;
+	foreach AllThinkers(Actor, A)
+	{
+		if (A.bCombatant && A.Target == self && A.Team == Team)
+		{
+			A.Target = none;
+			A.SetState(IdleState);
+		}
 	}
 }
 
@@ -304,16 +328,19 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (!bIgnoreTeams && (Team == mo.Team))
 			continue;	// friendly
 
+		// TODO: extra parameter to ignore this
+		if (!CanSee(mo))
+			continue;	// out of sight
+
 		if (Length(mo.GetCentre() - At) > maxdist)
 			continue;
 
 		if (P_Random() > 200)
 			continue;	// sometimes skip
 
-		dist = DistTo(mo);
-
-		if (!allaround)
+		if (!allaround && At == Origin)
 		{
+			dist = DistTo(mo);
 			an = AngleMod360(atan2(mo.Origin.y - Origin.y,
 				mo.Origin.x - Origin.x) - Angles.yaw);
 
@@ -325,6 +352,8 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 					continue;	// behind back
 			}
 		}
+
+		dist = Length(mo.GetCentre() - At);
 
 		if (nearest)
 		{
@@ -1294,11 +1323,4 @@ defaultproperties
 {
 	SoundClass = 'fighter';
 	CrunchSound = '*splat';
-
-	// KoraxRPG
-	bXYAnchored = false;
-	bZAnchored = false;
-
-	bIgnoreTeams = false;
-	Team = 0;
 }
