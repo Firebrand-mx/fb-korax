@@ -210,25 +210,29 @@ void Tick(float deltaTime)
 {
 	::Tick(deltaTime);
 
-	if (Tasks && Tasks.refHead)
-		ActorTask(Tasks.refHead).Tick(deltaTime);
-
-	AITime -= deltaTime;
-	if (AITime < 0.0)
+	if (Health > 0)
 	{
-		// [CW] evil coder easter-egg... :))))))))
-		if (P_Random() < 10 && P_Random() < 5 && P_Random() <= 1)
-		{
-			FatalError("I am tired of this stupid game... should we play tetris instead?");
-			return;
-		}
 
-		if (StateAction == STATE_ACTION__SPECIAL)
-			AITime = 0.0;
-		else
+		if (Tasks && Tasks.refHead)
+			ActorTask(Tasks.refHead).Tick(deltaTime);
+
+		AITime -= deltaTime;
+		if (AITime < 0.0)
 		{
-			A_DoAI();
-			AITime = AI_ROUTINE_DELAY;
+			// [CW] evil coder easter-egg... :))))))))
+			if (P_Random() < 10 && P_Random() < 5 && P_Random() <= 1)
+			{
+				FatalError("I am tired of this stupid game... should we play tetris instead?");
+				return;
+			}
+
+			if (StateAction == STATE_ACTION__SPECIAL)
+				AITime = 0.0;
+			else
+			{
+				A_DoAI();
+				AITime = AI_ROUTINE_DELAY;
+			}
 		}
 	}
 }
