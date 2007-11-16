@@ -1,0 +1,81 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: BloodySkull.vc 2670 2007-08-25 07:27:44Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class BloodySkull2 : PlayerPawn;
+
+//==========================================================================
+//
+//	A_CheckSkullFloor
+//
+//==========================================================================
+
+final void A_CheckSkullFloor()
+{
+	if (Origin.z <= FloorZ)
+	{
+		SetState(FindState('Done1'));
+	}
+}
+
+//==========================================================================
+//
+//	A_CheckSkullDone
+//
+//==========================================================================
+
+final void A_CheckSkullDone()
+{
+	if (bSafeToRemove)
+	{
+		SetState(FindState('Done2'));
+	}
+}
+
+states
+{
+Spawn:
+	BSKL ABCDE 5 A_CheckSkullFloor
+	Loop
+Done1:
+	BSKL F 16 A_CheckSkullDone
+	Loop
+Done2:
+	BSKL F 1050
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 4.0;
+	Height = 4.0;
+	Gravity = 0.125;
+	bSolid = false;
+	bShootable = false;
+	bNoBlockmap = true;
+	bNoPassMobj = true;
+	bCannotPush = true;
+	bFloorClip = false;
+	bBounceSky = true;
+}

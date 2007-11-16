@@ -161,7 +161,7 @@ replication
 		altWeaponMode, targetinfo;
 
 	unreliable if (!bIsClient)
-		ClientIceChunks, ClientDynamicLightEx;
+		ClientDynamicLightEx;
 
 	reliable if (!bIsClient)
 		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound;
@@ -996,6 +996,12 @@ final void AddDefaultInventory()
 
 void PlayerReborn()
 {
+	BotPlayer B;
+
+	B = Bot;
+	ClearPlayer();
+	Bot = B;
+
 	PClass = BaseClass;
 
 	bUseDown = true;	// don't do anything immediately
@@ -1798,8 +1804,7 @@ void DeathPlayerTick(float deltaTime)
 			MO.Angles.yaw += delta;
 		}
 		else
-		{	
-			// Turn counter clockwise
+		{	// Turn counter clockwise
 			MO.Angles.yaw -= delta;
 		}
 	}
@@ -3598,43 +3603,6 @@ void UpdateTimedTrophies(float deltaTime)
 
 //==========================================================================
 //
-//  ClientIceChunks
-//
-//==========================================================================
-
-void ClientIceChunks(TVec org)
-{
-	int i, c;
-	particle_t *p;
-
-	for (i = 0; i < 1024; i++)
-	{
-		p = Level.NewParticle();
-		if (!p)
-			return;
-		p->die = Level.XLevel.Time + 5.0;
-		c = P_Random() >> 1; 
-		p->colour = RGB(c, c, c);
-		p->ramp = Random() * 4.0;
-		if (i & 1)
-		{
-			p->type = HexenLevelInfo::pt_chunks;
-		}
-		else
-		{
-			p->type = HexenLevelInfo::pt_chunks2;
-		}
-		p->org.x = org.x + ((Random() * 16.0) - 8.0);
-		p->org.y = org.y + ((Random() * 16.0) - 8.0);
-		p->org.z = org.z + ((Random() * 16.0) - 8.0);
-		p->vel.x = (Random() * 256.0) - 128.0;
-		p->vel.y = (Random() * 256.0) - 128.0;
-		p->vel.z = (Random() * 256.0) - 128.0;
-	}
-}
-
-//==========================================================================
-//
 //  ClientDynamicLightEx
 //
 //	[CW] Full data dlight parsing
@@ -3736,6 +3704,7 @@ void Damaged(EntityEx inflictor)
 		Bot.React(inflictor);
 	}
 }
+
 defaultproperties
 {
 }
