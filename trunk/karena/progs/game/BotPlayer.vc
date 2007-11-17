@@ -1123,7 +1123,7 @@ void AimProjectile(float dist, bool right, float an)
 			}
 			break;
 		default:
-			Error("Unknown bot skill level: %d", info.accuracy);
+			Error("BotPlayer::AimProjectile::Unknown bot accuracy skill level: %d", info.accuracy);
 			return;
 	}
 }
@@ -1175,7 +1175,7 @@ void AimInstant(float dist, bool right, float an)
 			SetAngle(AngleTo(enemy.Origin + enemy.Velocity * 0.1));
 			break;
 		default:
-			Error("Unknown bot skill level: %d", info.accuracy);
+			Error("BotPlayer::AimInstant::Unknown bot accuracy skill level: %d", info.accuracy);
 			return;
 	}
 }
@@ -1196,7 +1196,7 @@ void BotAim()
 	if (!enemy)
 		return;
 
-	if (t_react)
+	if (t_react > 4.0)
 		return;
 
 	// Distance to enemy.
@@ -1322,6 +1322,11 @@ Actor FindEnemy()
 			{
 				dist = botmo.DistTo(actor);
 				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
+				if (actor.Sector->floor.LightSourceSector)
+				{
+					//[FB] Add static or dynamic lights?
+					light += actor.Sector->floor.LightSourceSector;
+				}
 				// [FB] Too dark?
 				if (light < WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
 					continue;
@@ -1764,9 +1769,9 @@ void Roam()
 
 		// [FB] Create a circle of possible destinations around the bot's current Origin
 		//	  with the given distances
-		for (dist = 256.0; dist >= 64.0; dist -= 64.0)
+		for (ang_inc = 0.0; ang_inc <= 360.0; ang_inc += 45.0)
 		{
-			for (ang_inc = 360.0; ang_inc > 0.0; ang_inc -= 45.0)
+			for (dist = 256.0; dist >= 64.0; dist -= 64.0)
 			{
 				if (CheckPath(AngleMod360(an), dist))
 				{
@@ -1777,18 +1782,6 @@ void Roam()
 					SetAngle(an);
 					break;
 				}
-
-				if (CheckPath(AngleMod360(an + ang_inc), dist))
-				{
-					posdest_valid = true;
-					posdest.x = botmo.Origin.x + dist * cos(an + ang_inc);
-					posdest.y = botmo.Origin.y + dist * sin(an + ang_inc);
-					posdest.z = botmo.Origin.z;
-					SetAngle(an + ang_inc);
-					break;
-				}
-
-				// Left is no good, try right
 				if (CheckPath(AngleMod360(an - ang_inc), dist))
 				{
 					posdest_valid = true;
@@ -1796,6 +1789,15 @@ void Roam()
 					posdest.y = botmo.Origin.y + dist * sin(an - ang_inc);
 					posdest.z = botmo.Origin.z;
 					SetAngle(an - ang_inc);
+					break;
+				}
+				if (CheckPath(AngleMod360(an + ang_inc), dist))
+				{
+					posdest_valid = true;
+					posdest.x = botmo.Origin.x + dist * cos(an + ang_inc);
+					posdest.y = botmo.Origin.y + dist * sin(an + ang_inc);
+					posdest.z = botmo.Origin.z;
+					SetAngle(an + ang_inc);
 					break;
 				}
 			}
@@ -1807,14 +1809,24 @@ void Roam()
 		}
 		else
 		{
-			SetAngle(GetAngle() + 45.0 / 3.0);
+			SetAngle(an + 45.0 / 3.0);
 			forwardmove = -FORWARDWALK;
 			return;
 		}
 	}
 
-	forwardmove = FORWARDRUN;
-	SetAngle(AngleTo(dest));
+	// [FB] Hopefully will fix the problem with stuck bots
+	if(CheckTo(dest))
+	{
+		forwardmove = FORWARDRUN;
+		SetAngle(AngleTo(dest));
+	}
+	else
+	{
+		SetAngle(GetAngle() + 45.0 / 3.0);
+		forwardmove = -FORWARDWALK;
+		return;
+	}
 }
 
 //==========================================================================
@@ -1944,7 +1956,7 @@ void Move(float deltaTime)
 			break;
 
 		default:
-			Error("Unknown bot skill level: %d", info.anticip);
+			Error("BotPlayer::Move::Unknown bot anticipation skill level: %d", info.anticip);
 			return;
 		}
 	}
@@ -2110,7 +2122,7 @@ void Ally_Tag(float deltaTime)
 void Attack()
 {
 	// Still reacting to something or we don't have an enemy to fight
-	if (t_react || !enemy)
+	if (t_react > 2.0 || !enemy)
 		return;
 
 	// [FB] Check if our allies are out of the way of the attack
@@ -2157,7 +2169,112 @@ void React(EntityEx inflictor)
 		if (!enemy)
 		{
 			enemy = Actor(inflictor);
-			t_react = itof(info.reaction) * 2.0;
+//			t_react = player.DamageFlash + itof(info.reaction) * 2.0;
+		}
+		// Fix me: Implement botskill, accuracy, and intelligence
+		switch (info.reaction)
+		{
+			case bsk_verypoor:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 2.0;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 2.0;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 2.0;
+				}
+				break;
+			case bsk_poor:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.8;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.8;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.8;
+				}
+				break;
+			case bsk_low:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.6;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.6;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.6;
+				}
+				break;
+			case bsk_medium:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.5;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.5;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.5;
+				}
+				break;
+			case bsk_high:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.2;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.2;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.2;
+				}
+				break;
+			case bsk_excellent:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.1;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.1;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.1;
+				}
+				break;
+			case bsk_supreme://FIXME
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 1.0;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 1.0;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 1.0;
+				}
+				break;
+			default:
+				Error("BotPlayer::React::Unknown bot reaction skill level: %d", info.reaction);
+				return;
 		}
 	}
 }
@@ -2175,7 +2292,7 @@ void Alternate_Attack()
 	Ammo type;
 
 	// Still reacting to something or we don't have an enemy to fight
-	if (t_react || !enemy)
+	if (t_react > 2.0 || !enemy)
 		return;
 
 	B_ChooseAltWeapon(botmo.DistTo2(enemy));
@@ -2528,7 +2645,7 @@ void B_AffectStat()
 	else if (anticip_r && (player.BlindCount > 150 && player.BlindCount <= 200))
 	{
 		if (info.anticip)
-			info.anticip++;
+			info.anticip--;
 		else if (info.anticip <= 0)
 			info.anticip = 0;
 	}
