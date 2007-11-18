@@ -107,6 +107,7 @@ void OnDraw()
 	string tmp;
 	KArenaPlayerReplicationInfo RepInfo;
 
+	SetFont('smallfont');
 	ShadeRect(SHADE_LEFT, SHADE_TOP, SHADE_WIDTH, SHADE_HEIGHT, 0.6);
 
 	// Game mode
@@ -114,8 +115,7 @@ void OnDraw()
 	gamemode = GetCvar('deathmatch');
 
 	SetTextAlign(hleft, vtop);
-	SetFont('smallfont2');
-	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y , va("game mode:   %s", gamemodenames[gamemode]));
+	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y , va("game mode:   %s", gamemodenames[gamemode]), CR_BRICK);
 
 	/*--------------------------------------
 		General Scoring Table
@@ -123,17 +123,14 @@ void OnDraw()
 
 	/* Table Head		*/
 
-	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y + TABLE_STRING_DELTA , "player");
-	DrawText(TABLE_COL2, TABLE_HEAD_Y + TABLE_STRING_DELTA, "score");
-	DrawText(TABLE_COL3, TABLE_HEAD_Y + TABLE_STRING_DELTA, "ctrl");
+	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y + TABLE_STRING_DELTA , "player", CR_BLUE);
+	DrawText(TABLE_COL2, TABLE_HEAD_Y + TABLE_STRING_DELTA, "score", CR_GREEN);
+	DrawText(TABLE_COL3, TABLE_HEAD_Y + TABLE_STRING_DELTA, "ctrl", CR_ORANGE);
 
 	// Those are mode dependent
-	DrawText(TABLE_COL4, TABLE_HEAD_Y + TABLE_STRING_DELTA, "frags");
-	DrawText(TABLE_COL5, TABLE_HEAD_Y + TABLE_STRING_DELTA, "kills");
-	DrawText(TABLE_COL6, TABLE_HEAD_Y + TABLE_STRING_DELTA, "deaths");
-	//
-
-	SetFont('smallfont');
+	DrawText(TABLE_COL4, TABLE_HEAD_Y + TABLE_STRING_DELTA, "frags", CR_RED);
+	DrawText(TABLE_COL5, TABLE_HEAD_Y + TABLE_STRING_DELTA, "kills", CR_RED);
+	DrawText(TABLE_COL6, TABLE_HEAD_Y + TABLE_STRING_DELTA, "deaths", CR_RED);
 
 	y = TABLE_TOP_Y;
 	
@@ -176,10 +173,8 @@ void OnDraw()
 			if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
 			{
 				if (gamemode < HexenDefs::NUMGAMESNOTEAM)
-					R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
-				else
 				{
-					SetFont('smallfont2');
+					R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
 				}
 			}
 
@@ -190,7 +185,7 @@ void OnDraw()
 			y += 6;
 
 			// Player's name
-			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName);
+			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName, ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : SetColourTeam(RepInfo.team));
 
 			// Level + class
 			switch (RepInfo.level)
@@ -201,29 +196,25 @@ void OnDraw()
 				default: tmp = "th";
 			}
 			DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]));
+				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : SetColourClass(RepInfo.plclass));
 
 			y += TABLE_STRING_DELTA >> 1;
 
 			// Player's score
-			DrawText(TABLE_COL2, y, va("%d", RepInfo.score));
+			DrawText(TABLE_COL2, y, va("%d", RepInfo.score), SetColourTeam(RepInfo.team), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
 
 			// Player is human/cpu
 			if (RepInfo.IsBot)
-				DrawText(TABLE_COL3, y, "bot");
+				DrawText(TABLE_COL3, y, "bot", ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_ORANGE);
 			else
-				DrawText(TABLE_COL3, y, "hum");
+				DrawText(TABLE_COL3, y, "hum", ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_ORANGE);
 
 			// Those are mode dependent
-			DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags));
-			DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", RepInfo.KillCount));
-			DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", RepInfo.deaths));
+			DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
+			DrawText(TABLE_COL5 + TABLE_VALINDENT5, y, va("%d", RepInfo.KillCount), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
+			DrawText(TABLE_COL6 + TABLE_VALINDENT6, y, va("%d", RepInfo.deaths), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
 
 			y += TABLE_ENTRY_DELTA - (TABLE_STRING_DELTA >> 1);
-
-			if (gamemode >= HexenDefs::NUMGAMESNOTEAM)
-				SetFont('smallfont');
-
 			current_player_inteam_idx++;
 		}
 		
@@ -232,6 +223,88 @@ void OnDraw()
 			current_team_idx++;
 			current_player_inteam_idx = 0;
 		}
+	}
+}
+
+//==========================================================================
+//
+//  SetColourTeam
+//
+//==========================================================================
+
+int SetColourTeam(int team)
+{
+	switch(team)
+	{
+		case 0:
+			return CR_BLUE;
+			break;
+		case 1:
+			return CR_RED;
+			break;
+		case 2:
+			return CR_GOLD;
+			break;
+		case 3:
+			return CR_GREEN;
+			break;
+		case 4:
+			return CR_DARKGREEN;
+			break;
+		case 5:
+			return CR_DARKGRAY;
+			break;
+		case 6:
+			return CR_DARKBROWN;
+			break;
+		case 7:
+			return CR_PURPLE;
+			break;
+		default:
+			return CR_UNTRANSLATED;
+			break;
+	}
+
+	return 0;
+}
+
+//==========================================================================
+//
+//  SetColourClass
+//
+//==========================================================================
+
+int SetColourClass(int cls)
+{
+	switch(cls)
+	{
+		case 0:
+			return CR_GREEN;
+			break;
+		case 1:
+			return CR_BLUE;
+			break;
+		case 2:
+			return CR_RED;
+			break;
+		case 3:
+			return CR_DARKGREEN;
+			break;
+		case 4:
+			return CR_GRAY;
+			break;
+		case 5:
+			return CR_TAN;
+			break;
+		case 6:
+			return CR_BROWN;
+			break;
+		case 7:
+			return CR_PURPLE;
+			break;
+		default:
+			return CR_UNTRANSLATED;
+			break;
 	}
 }
 
