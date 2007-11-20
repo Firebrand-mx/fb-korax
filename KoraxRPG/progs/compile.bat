@@ -5,7 +5,7 @@ vcc -I../common/progs -P../common/progs ../common/uibase/classes.vc ../common/pr
 cd..
 cd common
 vlumpy basepak.ls
-copy basepak.pk3 "<TYPE YOUR PATH HERE>\KoraxRPG\basev\common\"
+copy basepak.pk3 "D:\Korax\KoraxRPG\basev\common\"
 cd..
 cd progs
 @ECHO ON
@@ -17,6 +17,6 @@ vcc -I../common -P../common/progs clprogs.vc clprogs.dat
 pause
 cd..
 vlumpy basepak.ls
-copy basepak.pk3 "<TYPE YOUR PATH HERE>\KoraxRPG\koraxrpg\"
+copy basepak.pk3 "D:\Korax\KoraxRPG\koraxrpg\"
 cd progs
 pause
