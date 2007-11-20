@@ -1,5 +1,6 @@
-vcc -I../common -P../common/progs ../common/engine/classes.vc ../common/progs/engine.dat
-vcc -I../common -P../common/progs ../common/linespec/classes.vc ../common/progs/linespec.dat
+vcc -I../common/progs -P../common/progs ../common/engine/classes.vc ../common/progs/engine.dat
+vcc -I../common/progs -P../common/progs ../common/linespec/classes.vc ../common/progs/linespec.dat
+vcc -I../common/progs -P../common/progs ../common/uibase/classes.vc ../common/progs/uibase.dat
 @ECHO OFF
 cd..
 cd common
