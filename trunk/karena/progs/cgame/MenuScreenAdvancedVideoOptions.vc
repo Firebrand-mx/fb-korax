@@ -48,6 +48,17 @@ void CreateChoices()
 
 	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Enum.SetOrigin(ChoicesStartX, currentY);
+	Enum.Text = "Target info";
+	Enum.AddItem("Off");
+	Enum.AddItem("Name only");
+	Enum.AddItem("Name and Level");
+	Enum.AddItem("Name, Level / Health");
+	Enum.SetInitialValue(GetCvar('TargetInfo'));
+	Enum.ValueChanging = ChangeTargetInfo;
+	currentY += Enum.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	Enum.SetOrigin(ChoicesStartX, currentY);
 	Enum.Text = "Message Text Colour";
 	Enum.AddItem("Brick");
 	Enum.AddItem("Tan");
@@ -252,6 +263,18 @@ void CreateChoices()
 			currentY += Enum.Height;
 		}
 	}
+}
+
+//==========================================================================
+//
+//	ChangeTargetInfo
+//
+//==========================================================================
+
+bool ChangeTargetInfo(Object Sender, int newValue)
+{
+	SetCvar('TargetInfo', newValue);
+	return true;
 }
 
 //==========================================================================
