@@ -43,7 +43,8 @@ void CreateTitle()
 	MenuStaticBitmap	Img;
 	MenuStaticAnim		Anim;
 
-	if (!ClientGame(ClGame).IsInGame)
+	if (!(ClientGame(ClGame).IsInGame &&
+		GetCvar('DeathMatch') >= HexenDefs::NUMGAMESNOTEAM))
 	{
 		Img = NewChild(MenuStaticBitmap);
 		Img.SetOrigin(88, 0);
@@ -90,12 +91,16 @@ void CreateChoices()
 		currentY = ChoicesStartY;
 		if (GetCvar('DeathMatch') >= HexenDefs::NUMGAMESNOTEAM)
 		{
-			currentY -= 20;
+			currentY -= 35;
 			btn = MenuBigTextButton(NewChild(MenuBigTextButton));
 			btn.SetPos(ChoicesStartX, currentY);
 			btn.Text = "Select Team";
 			btn.Activated = ActivateSelectTeam;
 			currentY += btn.Height;
+		}
+		else
+		{
+			currentY -= 15;
 		}
 
 		btn = MenuBigTextButton(NewChild(MenuBigTextButton));
