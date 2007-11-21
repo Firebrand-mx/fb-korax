@@ -3699,6 +3699,33 @@ void Damaged(EntityEx inflictor)
 	}
 }
 
+//==========================================================================
+//
+// FireWeapon
+//
+// [FB] We need to override this method to make bots update their reaction timer
+//
+//==========================================================================
+
+void FireWeapon()
+{
+	int i;
+
+	// [FB] Not sure if this is the right way to do it, anyway....
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		// [FB] Set t_anticip for our bot enemies
+		if (Level.Game.Players[i] && Level.Game.Players[i].MO &&
+			Level.Game.Players[i].bIsBot &&
+			Player(Level.Game.Players[i]).Bot.enemy && 
+			Player(Level.Game.Players[i]).Bot.enemy == MO)
+			Player(Level.Game.Players[i]).Bot.t_anticip = 
+					KArenaWeapon(ReadyWeapon).refire_tics;
+	}
+
+	::FireWeapon();
+}
+
 defaultproperties
 {
 }
