@@ -86,21 +86,21 @@ struct botinfo_t
 	int evade;			// Ability to dodge incoming missiles
 	int anticip;		// Ability to anticipate "instant" shots
 	int reaction;		// Overall reaction time (lower is "better")
-	int pisschance;		// Chance the bot will get pissed when his threshold is reached
+/*	int pisschance;		// Chance the bot will get pissed when his threshold is reached
 	int threshold;		// How much it takes to frustrate/piss off the bot
 	int dangerlevel;	// When health is below this, we need some health
-//	int wpfav;			// Favorite weapon
+	int wpfav;			// Favorite weapon
 	int chatinfo;		// Bot's chat strings
 	int chattime;		// How long it takes us to type a line
 	int chatty;			// How talkative the bot is
-//	char *colour;		// Colour (in form of a string)
-//	char *gender;		// Male/female/it :)
-//	char *skin;			// Skin
+	char *colour;		// Colour (in form of a string)
+	char *gender;		// Male/female/it :)
+	char *skin;			// Skin
 	int railcolour;		// Railgun trail colour
-//	bool revealed;		// Hidden bots must be revealed
+	bool revealed;		// Hidden bots must be revealed*/
 	string userinfo;
 };
-
+/*
 struct chatline_t
 {
 //	string		*string;
@@ -120,18 +120,9 @@ struct chatinfo_t
 	chatline_t		frustrated[5];
 	chatline_t		special[20];
 };
-
+*/
 enum { NUMTOTALBOTS = 336 };
 enum { NUMBOTTYPES = 336 };
-
-//
-// The things the bot knows about their enemy
-//
-struct enemyinfo_t
-{
-	int		Health;
-	Weapon	Weap;
-};
 
 //
 // Bot states
@@ -169,25 +160,23 @@ Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
 				// necessary.
 Actor ball;			// Active Soccer Ball ingame
 
-enemyinfo_t enemyinfo;		// Things we know about our enemy
 botstate_t botstate;		// What we're doing in teamgame mode
 
 float	lastx;			// Last known x location of bot's enemy (go there if enemy goes out of sight)
 float	lasty;			// Last known y location of bot's enemy
 
 // Tickers
-
 float t_respawn;
 float t_strafe;
 float t_react;
-float t_fight;
-float t_rocket;
+/*float t_fight;
+float t_rocket;*/
 float t_turn;
-float t_pissed;
-float t_frust;
+/*float t_pissed;
+float t_frust;*/
 float t_fire;			// Tics left until our gun will actually fire again
 float t_anticip;
-float t_chat;			// Tics left until bots completes "typing" in what he's saying.
+//float t_chat;			// Tics left until bots completes "typing" in what he's saying.
 						// Bot also doesn't do anything during this time.
 
 float forwardmove;	// For building ucmd
@@ -198,9 +187,9 @@ bool bAllRound;
 bool bNewItemIsWeapon;
 bool bNewItemIsPowerup;
 
-chatline_t	*chatline;	// For when t_chat expires
+/*chatline_t	*chatline;	// For when t_chat expires
 
-//bottype_t	bottype;	// Bot type
+bottype_t	bottype;	// Bot type*/
 botinfo_t info;			// Aiming, name, perfection, yadda yadda
 
 int angerlevel;
@@ -470,18 +459,6 @@ bool CheckPNodes(Actor node)
 
 void SetEnemy()
 {
-	if (enemy && enemy.Health > 0 && player.MO &&
-	    player.MO.CanSee(enemy))
-	{
-		// [FB] Update enemy info
-		if(enemy.Player)
-		{
-			enemyinfo.Health = enemy.Health;
-			enemyinfo.Weap = Player(enemy.Player).ReadyWeapon;
-		}
-		return;
-	}
-
 	bAllRound = !!enemy;
 	enemy = FindEnemy();
 
@@ -493,13 +470,6 @@ void SetEnemy()
 	{
 		enemy = none;
 		return;
-	}
-
-	// [FB] Update enemy info
-	if(enemy.Player)
-	{
-		enemyinfo.Health = enemy.Health;
-		enemyinfo.Weap = Player(enemy.Player).ReadyWeapon;
 	}
 }
 
@@ -1042,7 +1012,7 @@ void AimProjectile(float dist, bool right, float an)
 			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.03)
 			{
 				// Here goes the prediction.
-				float m = (dist / 875.0);
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
 				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
 				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
@@ -1057,7 +1027,7 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_medium:
 			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.09)
 			{
-				float m = (dist / 875.0);
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
 				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
 				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
@@ -1074,7 +1044,7 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_high:
 			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.9)
 			{
-				float m = (dist / 875.0);
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
 				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
 				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
@@ -1091,7 +1061,7 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_excellent:
 			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.3)
 			{
-				float m = (dist / 875.0);
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
 				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
 				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
@@ -1108,7 +1078,7 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_supreme:
 			if (MainGameInfo(player.Level.Game).botskill > 0 && Random() < 0.1)
 			{
-				float m = (dist / 875.0);
+				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
 				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
 				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
 
@@ -1208,7 +1178,7 @@ void BotAim()
 	// [FB] Decide our weapon if we have an enemy
 	// [JL] NOTE the old code didn't change weapon correctly meaning this would
 	// never work. I'll enable fixed version but with very low chance.
-	if (Random() < 0.001)
+	if (Random() < 0.001 || player.ReadyWeapon.bWimpyWeapon)
 	{
 		Weapon Best = B_ChooseWeapon(dist);
 		if (Best && Best != player.ReadyWeapon)
@@ -1230,8 +1200,11 @@ void BotAim()
 			Player(player.Level.Game.Players[i]).Bot.t_anticip = 
 					KArenaWeapon(player.ReadyWeapon).refire_tics;
 	}
+
+	// [FB] set pitch accordingly...
+	Pitch();
 	
-	// [FB] Decide which kind of aiming the bot will use...
+	// [FB] ...and Decide which kind of aiming the bot will use
 	if (player.ReadyWeapon.bBotProjectile)
 	{
 		AimProjectile(dist, right, an);
@@ -2171,38 +2144,10 @@ void React(EntityEx inflictor)
 			enemy = Actor(inflictor);
 //			t_react = player.DamageFlash + itof(info.reaction) * 2.0;
 		}
-		// Fix me: Implement botskill, accuracy, and intelligence
+		// [FB] Set reaction time
 		switch (info.reaction)
 		{
 			case bsk_verypoor:
-				if(player.PoisonCount)
-				{
-					t_react = itof(player.PoisonCount) * 2.0;
-				}
-				else if(player.BlindCount)
-				{
-					t_react = itof(player.BlindCount) * 2.0;
-				}
-				else
-				{
-					t_react = player.DamageFlash * 2.0;
-				}
-				break;
-			case bsk_poor:
-				if(player.PoisonCount)
-				{
-					t_react = itof(player.PoisonCount) * 1.8;
-				}
-				else if(player.BlindCount)
-				{
-					t_react = itof(player.BlindCount) * 1.8;
-				}
-				else
-				{
-					t_react = player.DamageFlash * 1.8;
-				}
-				break;
-			case bsk_low:
 				if(player.PoisonCount)
 				{
 					t_react = itof(player.PoisonCount) * 1.6;
@@ -2216,7 +2161,7 @@ void React(EntityEx inflictor)
 					t_react = player.DamageFlash * 1.6;
 				}
 				break;
-			case bsk_medium:
+			case bsk_poor:
 				if(player.PoisonCount)
 				{
 					t_react = itof(player.PoisonCount) * 1.5;
@@ -2230,7 +2175,7 @@ void React(EntityEx inflictor)
 					t_react = player.DamageFlash * 1.5;
 				}
 				break;
-			case bsk_high:
+			case bsk_low:
 				if(player.PoisonCount)
 				{
 					t_react = itof(player.PoisonCount) * 1.2;
@@ -2244,7 +2189,7 @@ void React(EntityEx inflictor)
 					t_react = player.DamageFlash * 1.2;
 				}
 				break;
-			case bsk_excellent:
+			case bsk_medium:
 				if(player.PoisonCount)
 				{
 					t_react = itof(player.PoisonCount) * 1.1;
@@ -2258,7 +2203,7 @@ void React(EntityEx inflictor)
 					t_react = player.DamageFlash * 1.1;
 				}
 				break;
-			case bsk_supreme://FIXME
+			case bsk_high:
 				if(player.PoisonCount)
 				{
 					t_react = itof(player.PoisonCount) * 1.0;
@@ -2270,6 +2215,34 @@ void React(EntityEx inflictor)
 				else
 				{
 					t_react = player.DamageFlash * 1.0;
+				}
+				break;
+			case bsk_excellent:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 0.8;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 0.8;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 0.8;
+				}
+				break;
+			case bsk_supreme:
+				if(player.PoisonCount)
+				{
+					t_react = itof(player.PoisonCount) * 0.6;
+				}
+				else if(player.BlindCount)
+				{
+					t_react = itof(player.BlindCount) * 0.6;
+				}
+				else
+				{
+					t_react = player.DamageFlash * 0.6;
 				}
 				break;
 			default:
@@ -2408,9 +2381,6 @@ void Pitch()
 	{
 		if (missile)
 		{
-/*			dir = missile.Origin - botmo.Origin;
-			VectorAngles(&dir, &ang);
-			botmo.Angles.pitch = -ang.pitch;*/
 			botmo.Angles.pitch = -AngleTo2(missile.Origin);
 
 			// Look at the missile and sidestep it
@@ -2624,7 +2594,7 @@ void B_AffectStat()
 	{
 		if (info.accuracy)
 			info.accuracy--;
-		// [FB] Make sure this stat isn't zero
+		// [FB] Make sure this stat isn't less than zero
 		else if (info.accuracy <= 0)
 			info.accuracy = 0;
 	}
