@@ -86,10 +86,10 @@ struct botinfo_t
 	int evade;			// Ability to dodge incoming missiles
 	int anticip;		// Ability to anticipate "instant" shots
 	int reaction;		// Overall reaction time (lower is "better")
-/*	int pisschance;		// Chance the bot will get pissed when his threshold is reached
+	int pisschance;		// Chance the bot will get pissed when his threshold is reached
 	int threshold;		// How much it takes to frustrate/piss off the bot
 	int dangerlevel;	// When health is below this, we need some health
-	int wpfav;			// Favorite weapon
+/*	int wpfav;			// Favorite weapon
 	int chatinfo;		// Bot's chat strings
 	int chattime;		// How long it takes us to type a line
 	int chatty;			// How talkative the bot is
@@ -121,8 +121,8 @@ struct chatinfo_t
 	chatline_t		special[20];
 };
 */
-enum { NUMTOTALBOTS = 336 };
-enum { NUMBOTTYPES = 336 };
+enum { NUMTOTALBOTS = 24 };
+enum { NUMBOTTYPES = 24 };
 
 //
 // Bot states
@@ -150,10 +150,11 @@ Actor prev;			// Previous node we were at
 TVec posdest;			// Position of our destination (doesn't have to be an actor)
 bool posdest_valid;
 Actor enemy;			// The dead meat.
+Actor nemesis;			// Prefered enemy to chase when pissed off
 TVec lastpos;			// Last place we saw our enemy
 bool lastpos_valid;
 Actor missile;			// A threathing missile that got to be avoided.
-
+Actor flag;				// A CTF banner
 Actor ally;			// Ally to tag along with
 Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
 				// pointed to by this. Allows bot to roam to it if
@@ -172,8 +173,8 @@ float t_react;
 /*float t_fight;
 float t_rocket;*/
 float t_turn;
-/*float t_pissed;
-float t_frust;*/
+float t_pissed;
+float t_frust;
 float t_fire;			// Tics left until our gun will actually fire again
 float t_anticip;
 //float t_chat;			// Tics left until bots completes "typing" in what he's saying.
@@ -198,6 +199,12 @@ float angle;			// The wanted angle that the bot tries to get every tic.
 
 float count;			// [FB] Roam Count
 
+// -----------------------------------------------------------
+//
+// Darkness Stats Update
+//
+// -----------------------------------------------------------
+
 // [FB] Copy of certain affected stats for Darkness
 int old_intelect;
 int old_anticip;
@@ -209,6 +216,21 @@ bool accuracy_r;
 bool intelect_r;
 bool evade_r;
 bool anticip_r;
+
+// -----------------------------------------------------------
+//
+// Pissed off Stats Update
+//
+// -----------------------------------------------------------
+
+// [FB] Copy of certain affected stats for Darkness
+int n_anticip;
+int n_evade;
+int n_accuracy;
+
+// [FB] Used to determine if stats have been updated when pissed off
+bool p_init;
+
 
 //==========================================================================
 //
@@ -244,6 +266,48 @@ float AngleTo2(TVec dest)
 	dir = dest - botmo.Origin;
 	VectorAngles(&dir, &ang);
 	return ang.pitch;
+}
+
+//==========================================================================
+//
+//	CheckFlag
+// 
+//	Determines if we should get a flag
+//
+//==========================================================================
+
+bool CheckFlag(Actor flag)
+{
+	if (!flag)
+		return false;
+
+	//[FB] Check if this is really a CTF banner
+	if (flag.Class != CTFBanner)
+	{
+		return false;		
+	}
+
+	//[FB] Our own team's banner, it's on it's base, so don't bother with it
+	if (CTFBanner(flag).Status == CTFBanner::BANNER_STATUS__BASE &&
+			CTFBanner(flag).Team == player.Team)
+	{
+		return false;
+	}
+	
+	//[FB] A carried flag
+	if (CTFBanner(flag).Status == CTFBanner::BANNER_STATUS__CARRIED)
+	{
+		//[FB] Someone is carrying our flag?! That's an enemy for sure!
+		if (CTFBanner(flag).Team == player.Team)
+			enemy = Actor(CTFBanner(flag).Capturer.MO);
+		//[FB] On the other hand, this could be an ally!
+		else if (CTFBanner(flag).Team != player.Team)
+			ally = Actor(CTFBanner(flag).Capturer.MO);
+
+		return false;
+	}
+
+	return true;
 }
 
 //==========================================================================
@@ -394,55 +458,52 @@ bool CheckPNodes(Actor node)
 		//	This is mainly used in CTF for now so...
 		if(MainGameInfo(player.Level.Game).GameModel && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf)
 		{
-			if (player.Team)
+			// [FB] Blue Team ... err, Team 1 :)
+			if (player.Team && player.Team == MainGameInfo(player.Level.Game).Teams[0])
 			{
-				// [FB] Blue Team ... err, Team 1 :)
-				if (MainGameInfo(player.Level.Game).Teams[0])
+				switch (botstate.BState)
 				{
-					switch (botstate.BState)
-					{
-						// [FB] Offense
-						case 1:
-							if (node.Class == BlueNode)
-								return true;
-								break;
-						// [FB] Defense
-						case 2:
-							if (node.Class == BlueGuardSpot)
-								return true;
-								break;
-						// [FB] Return
-						case 3:
-							if (node.Class == BlueGoalSpot)
-								return true;
-								break;
-						default:
-								return false;
-					}
+					// [FB] Offense
+					case 1:
+						if (node.Class == RedNode/*BlueNode*/)
+							return true;
+							break;
+					// [FB] Defense
+					case 2:
+						if (node.Class == BlueNode || node.Class == BlueGuardSpot)
+							return true;
+							break;
+					// [FB] Return
+					case 3:
+						if (node.Class == BlueGoalSpot || node.Class == BlueNode)
+							return true;
+							break;
+					default:
+							return false;
 				}
-				// [FB] Team 2
-				else if (MainGameInfo(player.Level.Game).Teams[1])
+			}
+			// [FB] Team 2
+			else if (player.Team && player.Team == MainGameInfo(player.Level.Game).Teams[1])
+			{
+				switch (botstate.BState)
 				{
-					switch (botstate.BState)
-					{
-						// [FB] Offense
-						case 1:
-							if (node.Class == RedNode)
-								return true;
-								break;
-						// [FB] Defense
-						case 2:
-							if (node.Class == RedGuardSpot)
-								return true;
-								break;
-						// [FB] Return
-						case 3:
-							if (node.Class == RedGoalSpot)
-								return true;
-								break;
-						default:
-								return false;
-					}
+					// [FB] Offense
+					case 1:
+						if (node.Class == BlueNode/*RedNode*/)
+							return true;
+							break;
+					// [FB] Defense
+					case 2:
+						if (node.Class == RedGuardSpot || node.Class == RedNode)
+							return true;
+							break;
+					// [FB] Return
+					case 3:
+						if (node.Class == RedGoalSpot || node.Class == RedNode)
+							return true;
+							break;
+					default:
+							return false;
 				}
 			}
 		}
@@ -460,7 +521,8 @@ bool CheckPNodes(Actor node)
 void SetEnemy()
 {
 	bAllRound = !!enemy;
-	enemy = FindEnemy();
+	//[FB] Do we have a main target?
+	enemy = nemesis ? nemesis : FindEnemy();
 
 	if (!enemy)
 		return;
@@ -470,6 +532,43 @@ void SetEnemy()
 	{
 		enemy = none;
 		return;
+	}
+}
+
+//==========================================================================
+//
+//	SetGoal
+//
+//==========================================================================
+
+void B_SetGoal()
+{
+	Actor actor;
+
+	if (!player.Team)
+		return;
+
+	// [FB] Are we in CTF gameplay mode?
+	if(MainGameInfo(player.Level.Game).GameModel && MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
+ 	{
+		if(!goal)
+		{
+			foreach botmo.AllThinkers(Actor, actor)
+			{
+				//[FB] Offense
+				if (botstate.BState == 1)
+				{
+					if (actor.Class == CTFBanner && CTFBanner(actor).Team != player.Team)
+						goal = actor;
+				}
+				//[FB] Heading to scoring place
+				else if (botstate.BState == 3)
+				{
+					if (actor.Class == CTFBanner && CTFBanner(actor).Team == player.Team)
+						goal = actor;
+				}
+			}
+		}
 	}
 }
 
@@ -761,6 +860,12 @@ void CheckStuff()
 		}
 	}
 
+	if (flag)
+	{
+		if(!CheckTo(flag.Origin) || flag.IsDestroyed())
+			flag = none;
+	}
+
 	if (missile)
 	{
 		if (!missile.bMissile || missile.IsDestroyed())
@@ -873,9 +978,17 @@ void Scan()
 		}
 		if (Check_LOS(actor, 90.0))
 		{
-			// Look for special items
-			if (!item && actor.bSpecial)
+			if (!flag)
 			{
+				// First look for dropped flags!
+				if (CheckFlag(actor))
+				{
+					flag = actor;
+				}
+			}
+			else if (!item && actor.bSpecial)
+			{
+				// Look for special items
 				if (CheckItem(actor))
 				{
 					item = actor;
@@ -1643,7 +1756,8 @@ Actor B_SetAlly()
 			if ((player.Level.Game.Players[j])
 			    && (botmo != player.Level.Game.Players[j].MO)
 			    && (Player(player.Level.Game.Players[j]).Team == player.Team)
-			    && (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2))
+			    && (player.Level.Game.Players[j].MO.Health <=
+				Player(player.Level.Game.Players[j]).Bot.info.dangerlevel))
 			{
 				if (botmo.CanSee(player.Level.Game.Players[j].MO))
 				{
@@ -1712,6 +1826,10 @@ void Roam()
 	if (goal)
 	{
 		dest = goal.Origin;
+	}
+	else if (flag)
+	{
+		dest = flag.Origin;
 	}
 	else if (item)
 	{
@@ -1974,7 +2092,7 @@ void Move(float deltaTime)
 			     (enemy.bIsPlayer && bItemIsWeapon && 
 			     player.ReadyWeapon.Slot < Player(enemy.Player).ReadyWeapon.Slot) || 
 			     ((item.Class == ItemHealingBottle || item.Class == ArtifactHealthFlask ||
-			       item.Class == ArtifactSuperHeal) && (botmo.Health <= (player.max_health / 2))) &&
+			       item.Class == ArtifactSuperHeal) && (botmo.Health <= info.dangerlevel)) &&
 			     itemdist <= GETINCOMBAT)
 			{
 				Roam();
@@ -2459,6 +2577,28 @@ void Killed(Actor victim)
 
 void Died(Actor killer)
 {
+	// [FB Accumulate anger
+	angerlevel += 10;
+
+	if(angerlevel > info.threshold)
+	{
+		//[FB] There's a chance that we can get pissed off
+		if(P_Random() < info.pisschance && !t_pissed)
+		{
+			//[FB] Now we are pissed off!
+			//	this actor will temporarily become our main target now....
+			nemesis = killer;
+			//FIXME Determine which value would be the best here
+			t_pissed = 120.0;
+		}
+		else if(t_pissed)
+		{
+			//[FB] Nope, we are now pissed and frustrated
+			//FIXME Determine which value would be the best here
+			t_frust = 120.0;
+		}
+		angerlevel = 0;
+	}
 }
 
 //==========================================================================
@@ -2558,6 +2698,7 @@ void OnSpawn()
 	intelect_r = false;
 	evade_r = false;
 	anticip_r = false;
+	p_init = false;
 }
 
 //==========================================================================
@@ -2595,30 +2736,59 @@ void B_AffectStat()
 		if (info.accuracy)
 			info.accuracy--;
 		// [FB] Make sure this stat isn't less than zero
-		else if (info.accuracy <= 0)
-			info.accuracy = 0;
+		else if (info.accuracy <= bsk_verypoor)
+			info.accuracy = bsk_verypoor;
 	}
 	else if (intelect_r && (player.BlindCount > 50 && player.BlindCount <= 100))
 	{
 		if (info.intelect)
 			info.intelect--;
-		else if (info.intelect <= 0)
-			info.intelect = 0;
+		else if (info.intelect <= bsk_verypoor)
+			info.intelect = bsk_verypoor;
 	}
 	else if (evade_r && (player.BlindCount > 100 && player.BlindCount <= 150))
 	{
 		if (info.evade)
 			info.evade--;
-		else if (info.evade <= 0)
-			info.evade = 0;
+		else if (info.evade <= bsk_verypoor)
+			info.evade = bsk_verypoor;
 	}
 	else if (anticip_r && (player.BlindCount > 150 && player.BlindCount <= 200))
 	{
 		if (info.anticip)
 			info.anticip--;
-		else if (info.anticip <= 0)
-			info.anticip = 0;
+		else if (info.anticip <= bsk_verypoor)
+			info.anticip = bsk_verypoor;
 	}
+}
+
+//==========================================================================
+//
+//	SetPissStats
+//
+//  [FB] We are pissed off, so certain stats are boosted
+//
+//==========================================================================
+
+void SetPissStats()
+{
+	if (!p_init)
+	{
+		n_accuracy = info.accuracy;
+		n_evade = info.evade;
+		n_anticip = info.anticip;
+	}
+	info.accuracy++;
+	info.evade++;
+	info.anticip++;
+
+	// [FB] Make sure stats don't go beyond
+	if (info.accuracy > bsk_supreme)
+		info.accuracy = bsk_supreme;
+	else if (info.evade > bsk_supreme)
+		info.evade = bsk_supreme;
+	else if (info.anticip > bsk_supreme)
+		info.anticip = bsk_supreme;
 }
 
 //==========================================================================
@@ -2682,19 +2852,15 @@ void BotTick(float deltaTime)
 	{
 		if (angerlevel)
 			angerlevel--;
-		else if (angerlevel < 0)
+		else if (angerlevel <= 0)
 			angerlevel = 0;
 	}
 
-	// [FB] Set an ally if we're in a mode that has one...
-	if (((MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
-			MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) || 
-			MainGameInfo(player.Level.Game).GameModel) && !ally)
+	// [FB] Set an ally if we're in a mode that has one
+	if ((MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
+			MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) && !ally)
 	{
 		ally = B_SetAlly();
-		// [FB] ...and decide what action we'll take
-		if (MainGameInfo(player.Level.Game).GameType != HexenDefs::game_dmteam)
-			SetAction();
 	}
 	else
 		ally = none;
@@ -2704,6 +2870,15 @@ void BotTick(float deltaTime)
 	{
 		Ally_Tag(deltaTime);
 	}
+
+	// [FB] Decide what action we'll take and set a goal
+	if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
+		(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf
+		|| MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football))
+		{
+			SetAction();
+			B_SetGoal();
+		}
 
 	// Weed out any bad destinations/enemies
 	CheckStuff();
@@ -2757,17 +2932,66 @@ void BotTick(float deltaTime)
 	if (t_turn <= 0.0)
 		t_turn = 0.0;
 
-/*	t_pissed -= deltaTime;
+	t_pissed -= deltaTime;
 	if (t_pissed <= 0.0)
+	{
 		t_pissed = 0.0;
+
+		//[FB] Stop chasing our main target
+		if(nemesis)
+			nemesis = none;
+
+		//[FB] Return stats to their original
+		if(p_init)
+		{
+			info.accuracy = n_accuracy;
+			info.evade = n_evade;
+			info.anticip = n_anticip;
+			p_init = false;
+		}
+	}
 
 	t_frust -=deltaTime;
 	if (t_frust <= 0.0)
-		t_frust = 0.0;*/
+		t_frust = 0.0;
 
 	t_fire -= deltaTime;
 	if (t_fire <= 0.0)
 		t_fire = 0.0;
+
+	// [FB] Apply pissed off stats
+	if (t_pissed && !p_init)
+	{
+		SetPissStats();
+	}
+
+	// [FB] Apply blind stats
+	if(player.BlindCount)
+		B_AffectStat();
+	else if (player.BlindCount <= 0)
+	{
+		//[FB] Darkness effects faded out, now restore everything back!
+		if (anticip_r)
+		{
+			info.anticip = old_anticip;
+			anticip_r = false;
+		}
+		if (evade_r)
+		{
+			info.evade = old_evade;
+			evade_r = false;
+		}
+		if (intelect_r)
+		{
+			info.intelect = old_intelect;
+			intelect_r = false;
+		}
+		if (accuracy_r)
+		{
+			info.accuracy = old_accuracy;
+			accuracy_r = false;
+		}
+	}
 }
 
 defaultproperties
