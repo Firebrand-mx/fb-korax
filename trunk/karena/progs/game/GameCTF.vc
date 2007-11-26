@@ -82,15 +82,13 @@ void BeginState(int newstate)
 	switch(newstate)
 	{
 	case state_preparegame:
-	
 		if (!PrepareGame())
 		{
 			dprint("GameCTF : failed to prepare game, delay start");
 			State = -1;
 			return;
 		}
-		
-		
+
 		dprint("GameCTF : starting game!");
 		
 		HandleEvent(event_playablestatebegins, none, 0,0,0,0);
@@ -108,9 +106,8 @@ void BeginState(int newstate)
 			Game.Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
 		EndCurrentState(state_gameplay);
 		return;
-		
+
 	case state_gameplay:
-		
 		if (!Game.Teams[0] || !Game.Teams[1])
 		{
 			dprint("GameCTF::BeginState : state_gameplay : not enouph teams, ending game");
@@ -142,7 +139,7 @@ void BeginState(int newstate)
 		Game.bcentreprint("go for it!");
 		
 		break;
-		
+
 	case state_finished:
 		//
 		// do something here?
@@ -347,7 +344,7 @@ bool PrepareGame()
 				}
 			}
 		}
-		
+
 		if (Banners[i] && !spot_banners[i])
 		{
 			spot_banners[i] = HexenLevelInfo(Level).Spawn(MapSpot, Banners[i].Origin);
@@ -380,7 +377,7 @@ bool PrepareGame()
 				}
 			}
 		}
-		
+
 		if (Banners[i] && spot_banners[i])
 		{
 			dprint("PrepareGame : both banner and spot_banner ready");
@@ -402,7 +399,7 @@ bool PrepareGame()
 			}
 		} 
 	}
-	
+
 	return true;
 }
 
@@ -418,6 +415,12 @@ void CommitCapture(CTFBanner Banner)
 {
 	// TADA!!
 	// play some sound here
+	Game.BroadcastLocalSound((P_Random() > 127 ? (P_Random() > 127 ?
+			HexenDefs::lsid_ctf_fanfare1 : HexenDefs::lsid_ctf_fanfare3) : 
+			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare4 : 
+			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare6 : 
+			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare8 :
+			HexenDefs::lsid_ctf_fanfare11)))),	true, 2.0);
 	Game.bcentreprint(va("%s flag captured by %s! %s team scores!",
 						Game.ColourNames[Banner.Team.Colour],
 						Banner.Capturer.PlayerName,
