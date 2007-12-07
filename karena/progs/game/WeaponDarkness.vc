@@ -122,19 +122,23 @@ final void A_DarknessThrow()
 	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
 	org.z -= pmo.FloorClip;
 	
-	Actor mo = HexenLevelInfo(Level).Spawn(DarknessMissile, org);
-	mo.Target = pmo;
-	mo.Angles = angles;
+	Actor mo = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, DarknessMissile, org);
+	if (mo)
+	{
+		mo.Target = pmo;
+		mo.PInstigator = Player(Owner.Player);
+		mo.Angles = angles;
 
-	mo.Speed = 128.0;//10.0;
-	mo.bMissile = true;
-	mo.bRip = true;
+		mo.Speed = 128.0;//10.0;
+		mo.bMissile = true;
+		mo.bRip = true;
 
-	mo.Velocity = vforward * mo.Speed;
-	mo.TryMove(mo.Origin + mo.Velocity);
+		mo.Velocity = vforward * mo.Speed;
+		mo.TryMove(mo.Origin + mo.Velocity);
 
-	DarknessMissile dm = DarknessMissile(mo);
-	dm.InitMe(pmo);
+		DarknessMissile dm = DarknessMissile(mo);
+		dm.InitMe(pmo);
+	}
 	
 	UseWeaponMana();
 }
@@ -186,5 +190,6 @@ defaultproperties
 	PickupMessage = "WEAPON OF DARKNESS";
 	refire_tics = 31.0;
 	fire_tics = 24.0;
-	Obituary = "$ob_darknesshit";
+	MeleeObituary = "$ob_darknesshit";
+	RangedObituary = "$ob_darkness";
 }

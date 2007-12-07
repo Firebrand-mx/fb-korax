@@ -63,11 +63,15 @@ bool TryPickup(EntityEx Toucher)
 	fog = Spawn(TeleportFog, Spot.Origin);
 	fog.PlaySound('Teleport', CHAN_VOICE);
 	newmobj = Spawn(SummonMissile, Spot.Origin);
-	newmobj.Origin = Spot.Origin;
-	newmobj.Angles.yaw = Spot.Angles.yaw;
-	newmobj.Velocity.z = 5.0 * 35.0;
-	newmobj.Target = Toucher;
-	newmobj.bTelestomp = true;
+	if (newmobj)
+	{
+		newmobj.Origin = Spot.Origin;
+		newmobj.Angles.yaw = Spot.Angles.yaw;
+		newmobj.Velocity.z = 5.0 * 35.0;
+		newmobj.Target = Toucher;
+		newmobj.PInstigator = Player(Toucher.Player);
+		newmobj.bTelestomp = true;
+	}
 
 	GoAwayAndDie();
 	return true;

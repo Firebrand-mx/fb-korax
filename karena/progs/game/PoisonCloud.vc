@@ -48,7 +48,7 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 	{
 		if (Player(victim.Player).PoisonCount < 4)
 		{
-			Actor(victim).PoisonDamage(Actor(source), 15 + (P_Random() & 15), false);	// Don't play painsound
+			Actor(victim).PoisonDamage(self, Actor(source), 15 + (P_Random() & 15), false);	// Don't play painsound
 			Actor(victim).PoisonPlayer(Actor(source), 50);
 			victim.PlaySound('*poison', CHAN_VOICE);
 		}
@@ -76,6 +76,8 @@ void InitCloud(Actor InstigatedBy)
 	LifeCount = 24 + (P_Random() & 7);
 	BobIndex = 0;
 	Target = InstigatedBy;
+	if (Target)
+		PInstigator = Player(Target.Player);
 	Radius = 20.0;
 	Height = 30.0;
 	bColideWithThings = true;
@@ -150,6 +152,7 @@ final void A_SpawnChildren()
 				else
 				{
 					pc.InitCloud(Actor(Target));
+					pc.Obituary = Obituary;
 					pc.LifeCount >> 2;
 					pc.Velocity.x = 0.00001;
 					if (!pc.TryMove(pc.Origin + pc.Velocity))
