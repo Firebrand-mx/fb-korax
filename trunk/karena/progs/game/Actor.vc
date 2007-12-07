@@ -42,10 +42,15 @@ const float BONUSADD		= 0.2;
 
 int experience;
 
-// [CW] Death messages; used by those who can damage directly
+// [CW] Since there are sometimes references to pawn stored for future use,
+// it is important to store reference to player as well (in case it is player pawn)
+// so that if that pawn die, player reference will be still accessible.
+Player		PInstigator;
+
+// [CW] Obituary; used by those who can damage directly
 //		(anything from enviroment to pawns with melee attacks)
 string		Obituary;
-string		HitObituary;
+
 
 //==========================================================================
 //
@@ -350,8 +355,8 @@ void KilledByPlayer(EntityEx source)
 
 void PlayerKilled(EntityEx source, EntityEx inflictor)
 {
-	//[CW] process deathmessage
-	Player(Player).DisplayDeathMessage(inflictor, source, DamageType);
+	//[CW] process obituary
+	Player(Player).DisplayObituary(inflictor, source, DamageType);
 	Player(Player).Deaths++;
 
 	//[CW] Show scoreboard for died player
@@ -451,12 +456,16 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass, bool timed,
 
 final void PoisonPlayer(Actor poisoner, int poison)
 {
+	if (!Player)
+		Error("Actor::PoisonPlayer : Player reference not set to an instance of an object");
+
 	if ((Player(Player).Cheats & Player::CF_GODMODE) || bInvulnerable)
 	{
 		return;
 	}
 	Player(Player).PoisonCount += poison;
-	Player(Player).Poisoner = poisoner;
+	if (poisoner)
+		Player(Player).Poisoner = Player(poisoner.Player);
 	if (Player(Player).PoisonCount > 100)
 	{
 		Player(Player).PoisonCount = 100;
@@ -472,11 +481,11 @@ final void PoisonPlayer(Actor poisoner, int poison)
 //
 //==========================================================================
 
-final void PoisonDamage(Actor source, int damage, bool playPainSound)
+final void PoisonDamage(Actor inflictor, Actor source, int damage, bool playPainSound)
 {
-	Actor inflictor;
+	//Actor inflictor;
 
-	inflictor = source;
+	//inflictor = source;
 	if (Health <= 0)
 	{
 		return;
@@ -547,7 +556,8 @@ void BlindPlayer(Actor blinder, int blind)
 		return;
 	}
 	Player(Player).BlindCount += blind;
-	Player(Player).Blinder = blinder;
+	if (blinder)
+		Player(Player).Blinder = Player(blinder.Player);
 	if (Player(Player).BlindCount > 220)
 	{
 		Player(Player).BlindCount = 220;
@@ -619,6 +629,141 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 	{
 		SetState(FindState('Pain'));
 	}
+}
+
+//==========================================================================
+//
+//  SpawnCombatAttributes
+//
+//==========================================================================
+
+void SpawnCombatAttributes(Actor master, Thinker shooter)
+{
+	Target = master;
+	PInstigator = Player(master.Player);
+	if (shooter)
+	{
+		if (shooter.IsA('KArenaWeapon'))
+			Obituary = KArenaWeapon(shooter).RangedObituary;
+		else if (shooter.IsA('Pawn'))
+			Obituary = Pawn(shooter).RangedObituary;
+		else if (shooter.IsA('Actor'))
+			Obituary = Actor(shooter).Obituary;
+	}
+}
+
+//==========================================================================
+//
+//  Spawn_2
+//
+//==========================================================================
+
+Actor Spawn_2(Thinker shooter, class<Thinker> Type, optional TVec AOrigin,
+	optional TAVec AAngles, optional mthing_t* mthing)
+{
+	TVec org = specified_AOrigin ? AOrigin : Origin;
+	TAVec angles;
+	if (specified_AAngles)
+		angles = AAngles;
+	if (!specified_mthing)
+		mthing = NULL;
+	Actor A = Actor(Spawn(Type, AOrigin, AAngles, mthing));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
+//==========================================================================
+//
+//  SpawnMissileAngles_2
+//
+//==========================================================================
+
+Actor SpawnMissileAngles_2(Thinker shooter, class<EntityEx> type, float yaw, float pitch,
+	optional float SpawnHeight)
+{
+	TVec org = Origin;
+	if (specified_SpawnHeight)
+	{
+		org.z = Origin.z + SpawnHeight;
+	}
+	else if (type.default.bIgnoreFloorStep)
+	{
+		org.z = ONFLOORZ + FloorClip;
+	}
+	else if (type.default.bIgnoreCeilingStep)
+	{
+		org.z = ONCEILINGZ;
+	}
+	else
+	{
+		org.z = Origin.z + 32.0;
+	}
+
+	Actor A = Actor(SpawnMissileAngles(type, yaw, pitch, SpawnHeight));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
+//==========================================================================
+//
+//  SpawnPlayerMissile_2
+//
+//==========================================================================
+
+Actor SpawnPlayerMissile_2(Thinker shooter, class<EntityEx> type)
+{
+	Actor A = Actor(SpawnPlayerMissile(type));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
+//==========================================================================
+//
+//  SpawnPlayerMissileAngle_2
+//
+//==========================================================================
+
+Actor SpawnPlayerMissileAngle_2(Thinker shooter, class<EntityEx> type, float angle)
+{
+	Actor A = Actor(SpawnPlayerMissileAngle(type, angle));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
+//===========================================================================
+//
+//  SpawnPlayerMissileAngleXYZ_2
+//
+//===========================================================================
+
+Actor SpawnPlayerMissileAngleXYZ_2(Thinker shooter, TVec org, class<EntityEx> type,
+	float angle)
+{
+	Actor A = Actor(SpawnPlayerMissileAngleXYZ(org, type, angle));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
+//==========================================================================
+//
+//  SpawnPlayerMissileEx_2
+//
+//==========================================================================
+
+Actor SpawnPlayerMissileEx_2(Thinker shooter, class<EntityEx> type, bool RetExploded,
+	out EntityEx AimTarget, optional float angle, optional TVec SpawnOrg)
+{
+	angle = specified_angle ? angle : 0.0;
+	TVec org = specified_SpawnOrg ? SpawnOrg : Origin;
+	Actor A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle, SpawnOrg));
+	if (A)
+		A.SpawnCombatAttributes(self, shooter);
+	return A;
 }
 
 //==========================================================================

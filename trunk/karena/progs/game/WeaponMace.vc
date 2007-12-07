@@ -44,7 +44,7 @@ final void A_FireMacePL1B()
 	float angle;
 
 	UseWeaponMana();
-	ball = HexenLevelInfo(Level).Spawn(MaceFX2, Owner.Origin +
+	ball = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, MaceFX2, Owner.Origin +
 		vector(0.0, 0.0, 28.0 - Owner.FloorClip));
 	ball.Velocity.z =
 		(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
@@ -60,7 +60,8 @@ final void A_FireMacePL1B()
 			ball.MissileDamage = (ball.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
 		}
 	}
-	ball.Target = Actor(Owner);
+	//ball.Target = Actor(Owner);
+	//ball.PInstigator = Player(Owner.Player);
 	ball.Angles.yaw = angle;
 	ball.Origin.z += 173.0 * -tan(Owner.Angles.pitch) / 16.0;
 	ball.Velocity.x = Owner.Velocity.x / 2.0 + ball.Speed * cos(angle);
@@ -87,7 +88,7 @@ final void A_FireMacePL1()
 	UseWeaponMana();
 	Owner.Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
 	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
-	ball = Actor(Owner).SpawnPlayerMissileAngle(MaceFX1,
+	ball = Actor(Owner).SpawnPlayerMissileAngle_2(self, MaceFX1,
 		AngleMod360(Owner.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
 	if (ball)
 	{
@@ -119,7 +120,7 @@ final void A_FireMacePL2()
 	EntityEx	AimTarget;
 
 	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissileEx(MaceFX4, false, AimTarget);
+	A = Actor(Owner).SpawnPlayerMissileEx_2(self, MaceFX4, false, AimTarget);
 	if (A)
 	{
 		A.Target = Actor(Owner);

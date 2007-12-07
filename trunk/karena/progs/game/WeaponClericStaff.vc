@@ -122,13 +122,24 @@ final void A_CStaffAttack()
 
 	UseWeaponMana();
 	playPawn = PlayerPawn(Owner);
-	mo = Actor(Owner).SpawnPlayerMissileAngle(ClericStaffMissile,
+	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, ClericStaffMissile,
 		playPawn.Angles.yaw - (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 32;
+		if (int_mod)
+		{
+			if(!active_damage)
+			{
+				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
+			}
+			else // [FB] PI Damage
+			{
+				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
+			}
+		}
 	}
-	mo = Actor(Owner).SpawnPlayerMissileAngle(ClericStaffMissile,
+	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, ClericStaffMissile,
 		playPawn.Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
@@ -199,5 +210,6 @@ defaultproperties
 	PickupMessage = "SERPENT STAFF";
 	refire_tics = 10.0;
 	fire_tics = 2.0;
-	Obituary = "$ob_cstaff";
+	MeleeObituary = "$ob_cstaff";
+	RangedObituary = "$ob_cstaff";
 }

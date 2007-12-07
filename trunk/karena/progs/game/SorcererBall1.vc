@@ -35,25 +35,31 @@ class SorcererBall1 : SorcererBall;
 
 final void A_SorcOffense1()
 {
-	EntityEx mo;
+	Actor mo;
 	float ang1, ang2;
 
 	ang1 = AngleMod360(Angles.yaw + 70.0);
 	ang2 = AngleMod360(Angles.yaw - 70.0);
-	mo = Actor(Target).SpawnMissileAngle(SorcererFX1, ang1, 0.0,
-		PlayerHeresiarch(Target) ? Target.Height / 2.0 : 32.0);
+	mo = Actor(Actor(Target).SpawnMissileAngle(SorcererFX1, ang1, 0.0,
+		PlayerHeresiarch(Target) ? Target.Height / 2.0 : 32.0));
 	if (mo)
 	{
-		mo.Target = Target;
+		/*mo.Target = Target;
+		if (Target)
+			mo.PInstigator = Player(Target.Player);*/
+		mo.SpawnCombatAttributes(Actor(Target), self);
 		mo.Tracer = Target.Target;
 		mo.Args[4] = Sorcerer::BOUNCE_TIME_UNIT;
 		mo.Args[3] = 15;	// Bounce time in seconds
 	}
-	mo = Actor(Target).SpawnMissileAngle(SorcererFX1, ang2, 0.0,
-		PlayerHeresiarch(Target) ? Target.Height / 2.0 : 32.0);
+	mo = Actor(Actor(Target).SpawnMissileAngle(SorcererFX1, ang2, 0.0,
+		PlayerHeresiarch(Target) ? Target.Height / 2.0 : 32.0));
 	if (mo)
 	{
-		mo.Target = Target;
+		/*mo.Target = Target;
+		if (Target)
+			mo.PInstigator = Player(Target.Player);*/
+		mo.SpawnCombatAttributes(Actor(Target), self);
 		mo.Tracer = Target.Target;
 		mo.Args[4] = Sorcerer::BOUNCE_TIME_UNIT;
 		mo.Args[3] = 15;	// Bounce time in seconds
