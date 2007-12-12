@@ -23,6 +23,7 @@ terrain.txt				scripts/terrain.txt
 
 gm_ctf.txt				scripts/gm_ctf.txt
 gm_dm.txt				scripts/gm_dm.txt
+gm_dom.txt				scripts/gm_dom.txt
 gm_ftb.txt				scripts/gm_ftb.txt
 gm_kth.txt				scripts/gm_kth.txt
 gm_swp.txt			scripts/gm_swp.txt
