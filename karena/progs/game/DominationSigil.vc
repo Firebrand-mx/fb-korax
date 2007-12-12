@@ -1,0 +1,197 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: DominationSigil.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class DominationSigil : Actor
+	__mobjinfo__(15031);
+
+
+const float SCORE_DELAY	= 2.0;	// Time (in seconds) that must pass between two score events
+const float ROTATION_SPEED_YAW = 200.0;
+
+
+PlayerTeam	Team;		// Which team this sigil currently belongs to
+float		score_timer;
+
+//==========================================================================
+//
+//	IsTouched
+//
+//	[CW]
+//
+//==========================================================================
+
+bool IsTouched(Entity Toucher)
+{
+	if(Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+	{
+		if (Player(Toucher.Player).Team != Team)
+		{
+			CaptureBy(Toucher);
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	CaptureBy
+//
+//	[CW] Called when player captures domination sigil
+//
+//==========================================================================
+
+void CaptureBy(Entity Capturer)
+{
+	if (!Capturer)
+		return;
+
+	score_timer = SCORE_DELAY;
+
+	// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
+
+	if (Capturer.Player)
+	{
+		MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
+			(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+			ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
+		Team = Player(Capturer.Player).Team;
+		Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
+
+		switch (Team.Colour)
+		{
+		case 0:
+			SetState(FindState('Blue'));
+			DLightColour = RGB(0, 0, 255);
+			break;
+		case 1:
+			SetState(FindState('Red'));
+			DLightColour = RGB(255, 0, 0);
+			break;
+		case 2:
+			SetState(FindState('Gold'));
+			DLightColour = RGB(255, 255, 0);
+			break;
+		case 3:
+			SetState(FindState('Lime'));
+			DLightColour = RGB(0, 0, 255);
+			break;
+		case 4:
+			SetState(FindState('Green'));
+			DLightColour = RGB(0, 0, 128);
+			break;
+		case 5:
+			SetState(FindState('Gray'));
+			DLightColour = RGB(128, 128, 128);
+			break;
+		case 6:
+			SetState(FindState('Brown'));
+			DLightColour = RGB(128, 64, 0);
+			break;
+		case 7:
+			SetState(FindState('Magenta'));
+			DLightColour = RGB(255, 0, 255);
+			break;
+		default:
+			SetState(FindState('Spawn'));
+			DLightColour = default.DLightColour;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	Angles.yaw += ROTATION_SPEED_YAW * deltaTime;
+
+	if (Team)
+	{
+		score_timer -= deltaTime;
+
+		if (score_timer <= 0.0)
+		{
+			Team.UpdateScore(HexenDefs::scoreevent_DomSigilKept);
+			score_timer = SCORE_DELAY;
+		}
+	}
+}
+
+states
+{
+Spawn:
+	SIGL I 35
+	Loop
+Blue:
+	SIGL A 35
+	Loop
+Red:
+	SIGL B 35
+	Loop
+Gold:
+	SIGL C 35
+	Loop
+Lime:
+	SIGL D 35
+	Loop
+Green:
+	SIGL E 35
+	Loop
+Gray:
+	SIGL F 35
+	Loop
+Brown:
+	SIGL G 35
+	Loop
+Magenta:
+	SIGL H 35
+	Loop
+}
+
+defaultproperties
+{
+	Radius = 32.0;
+	Height = 32.0;
+	bSolid = false;
+	bNoPassMobj = true;
+	bFloatBob = true;
+
+	RenderStyle = STYLE_Translucent;
+	Alpha = 0.666;
+	DLightColour = RGB(255, 255, 255);
+	DLightRadius = 200.0;
+}
