@@ -252,6 +252,11 @@ void UpdateScore(int event)
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM &&
 				Game.GetTeamCount() > 1)
 			CompetitionAnnouncements(Score - mod);
+
+		if (mod > 0)
+			Game.bCompetitionOpened = true;
+
+		Game.ScoreboardsUpdate(none);
 	}
 }
 
@@ -280,7 +285,6 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Announce new leader!
 				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Leads + Colour, true, 0.0);
-				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Lost_Lead + Game.Teams[1].Colour, true, 1.0);
 				Game.Level.bprint(va("%s team leads!", Game.ColourNames[Colour]));
 			}
 		}
@@ -313,10 +317,9 @@ void CompetitionAnnouncements(int oldScore)
 		// Was he a single leader or tied?
 		else if (Game.Teams[0].Score <= oldScore)
 		{
-			// [FB] Announce new leader!
-			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Leads + Colour, true, 0.0);
-			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Lost_Lead + Game.Teams[1].Colour, true, 1.0);
-			Game.Level.bprint(va("%s team leads!", Game.ColourNames[Game.Teams[0].Colour]));
+			// [FB] Announce new leader! // [CW] (another team leads now)
+			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Leads + Game.Teams[1].Colour, true, 0.0);
+			Game.Level.bprint(va("%s team leads!", Game.ColourNames[Game.Teams[1].Colour]));
 		}
 	}
 }

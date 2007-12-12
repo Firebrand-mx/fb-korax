@@ -9,9 +9,6 @@ graphics/croshai3.lmp		graphics/croshai3.lmp
 graphics/fonta30.lmp		graphics/fonta30.lmp
 graphics/fonta63.lmp		graphics/fonta63.lmp
 
-//	Autopage for Automap
-graphics/autopage.lmp		graphics/autopage.lmp
-
 //	Progs
 progs/shared.dat		progs/shared.dat
 progs/clprogs.dat		progs/clprogs.dat
