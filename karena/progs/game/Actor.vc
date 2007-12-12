@@ -662,13 +662,15 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 Actor Spawn_2(Thinker shooter, class<Thinker> Type, optional TVec AOrigin,
 	optional TAVec AAngles, optional mthing_t* mthing)
 {
-	TVec org = specified_AOrigin ? AOrigin : Origin;
-	TAVec angles;
-	if (specified_AAngles)
-		angles = AAngles;
-	if (!specified_mthing)
-		mthing = NULL;
-	Actor A = Actor(Spawn(Type, AOrigin, AAngles, mthing));
+	Actor A;
+	if (specified_mthing)
+		A = Actor(Spawn(Type, AOrigin, AAngles, mthing));
+	else if (specified_AAngles)
+		A = Actor(Spawn(Type, AOrigin, AAngles));
+	else if (specified_AOrigin)
+		A = Actor(Spawn(Type, AOrigin));
+	else
+		A = Actor(Spawn(Type));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -683,25 +685,11 @@ Actor Spawn_2(Thinker shooter, class<Thinker> Type, optional TVec AOrigin,
 Actor SpawnMissileAngles_2(Thinker shooter, class<EntityEx> type, float yaw, float pitch,
 	optional float SpawnHeight)
 {
-	TVec org = Origin;
+	Actor A;
 	if (specified_SpawnHeight)
-	{
-		org.z = Origin.z + SpawnHeight;
-	}
-	else if (type.default.bIgnoreFloorStep)
-	{
-		org.z = ONFLOORZ + FloorClip;
-	}
-	else if (type.default.bIgnoreCeilingStep)
-	{
-		org.z = ONCEILINGZ;
-	}
+		A = Actor(SpawnMissileAngles(type, yaw, pitch, SpawnHeight));
 	else
-	{
-		org.z = Origin.z + 32.0;
-	}
-
-	Actor A = Actor(SpawnMissileAngles(type, yaw, pitch, SpawnHeight));
+		A = Actor(SpawnMissileAngles(type, yaw, pitch));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -759,9 +747,13 @@ Actor SpawnPlayerMissileAngleXYZ_2(Thinker shooter, TVec org, class<EntityEx> ty
 Actor SpawnPlayerMissileEx_2(Thinker shooter, class<EntityEx> type, bool RetExploded,
 	out EntityEx AimTarget, optional float angle, optional TVec SpawnOrg)
 {
-	angle = specified_angle ? angle : 0.0;
-	TVec org = specified_SpawnOrg ? SpawnOrg : Origin;
-	Actor A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle, SpawnOrg));
+	Actor A;
+	if (specified_SpawnOrg)
+		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle, SpawnOrg));
+	else if (specified_angle)
+		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle));
+	else
+		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
