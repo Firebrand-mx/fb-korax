@@ -63,17 +63,8 @@ final void A_FirePhoenixPL1()
 
 	UseWeaponMana();
 	A = Actor(Owner).SpawnPlayerMissile_2(self, PhoenixFX1);
-	if (A && int_mod)
-	{
-		if(!active_damage)
-		{
-			A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
-		}
-		else // [FB] PI Damage
-		{
-			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-		}
-	}
+	if (A)
+		ApplyDamageModifiers(A.MissileDamage);
 	AngleVector(&Owner.Angles, &vforward);
 	Owner.Velocity -= vforward * 140.0;
 }
@@ -115,27 +106,19 @@ final void A_FirePhoenixPL2()
 	org.z = Owner.Origin.z + 26.0 - sin(Owner.Angles.pitch);
 	org.z -= Owner.FloorClip;
 	A = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, PhoenixFX2, org);
-	if (int_mod)
+	if (A)
 	{
-		if(!active_damage)
+		ApplyDamageModifiers(A.MissileDamage);
+		A.Angles.yaw = Owner.Angles.yaw;
+		A.Angles.pitch = Owner.Angles.pitch;
+		AngleVector(&A.Angles, &dir);
+		A.Velocity = Owner.Velocity + A.Speed * dir;
+		if (!Player(Owner.Player).Refire || !(XLevel.TicTime % 38))
 		{
-			A.MissileDamage = A.MissileDamage * Player(Owner.Player).intelligence / 10;
+			Owner.PlaySound('PhoenixHit2', CHAN_WEAPON);
 		}
-		else // [FB] PI Damage
-		{
-			A.MissileDamage = (A.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-		}
+		A.CheckMissileSpawn();
 	}
-	A.Target = Actor(Owner);
-	A.Angles.yaw = Owner.Angles.yaw;
-	A.Angles.pitch = Owner.Angles.pitch;
-	AngleVector(&A.Angles, &dir);
-	A.Velocity = Owner.Velocity + A.Speed * dir;
-	if (!Player(Owner.Player).Refire || !(XLevel.TicTime % 38))
-	{
-		Owner.PlaySound('PhoenixHit2', CHAN_WEAPON);
-	}
-	A.CheckMissileSpawn();
 }
 
 //===========================================================================

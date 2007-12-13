@@ -54,17 +54,7 @@ final void A_FireConePL1()
 	pmo.PlaySound('MageShardsFire', CHAN_WEAPON);
 
 	damage = 97; //90 + (P_Random() & 15);
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 	for (i = 0; i < 16; i++)
 	{
 		ang = pmo.Angles;
@@ -84,17 +74,7 @@ final void A_FireConePL1()
 		mo = ShardMissile(Actor(Owner).SpawnPlayerMissile_2(self, ShardMissile));
 		if (mo)
 		{
-			if (int_mod)
-			{
-				if(!active_damage)
-				{
-					damage = damage * Player(Owner.Player).strength / 10;
-				}
-				else // [FB] PI Damage
-				{
-					damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-				}
-			}
+			ApplyDamageModifiers(mo.MissileDamage);
 			mo.bShardSpawnLeft = true;
 			mo.bShardSpawnRight = true;
 			mo.bShardSpawnUp = true;

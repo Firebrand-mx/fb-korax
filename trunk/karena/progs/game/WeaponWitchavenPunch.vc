@@ -51,17 +51,7 @@ final void A_WPunchAttack()
 	EntityEx		AimTarget;
 
 	damage = 9; //5 + (P_Random() & 15);
-	if (str_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 	power = 2.0;
 	PuffType = PunchPuff;
 	AimTarget = pmo.AimEx(vforward, MELEERANGE, 45.0 / 16.0, 16, MELEERANGE);
@@ -107,7 +97,7 @@ final void A_WPunchAttack()
 	{
 		PunchCount = 0;
 		Owner.Player.SetViewState(ps_weapon,
-			GetStatePlus(GetAttackState(false), 7));
+			GetStatePlus(GetAttackState(false), 7, true));
 		//pmo.PlaySound('FighterGrunt', CHAN_VOICE);
 	}
 }

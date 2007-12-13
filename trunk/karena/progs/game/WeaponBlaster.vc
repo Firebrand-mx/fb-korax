@@ -50,17 +50,7 @@ final void A_FireBlasterPL1()
 	angles = Owner.Angles;
 	Actor(Owner).AimLineAttack(dir, angles, 3.0 * MELEERANGE / 2.0);
 	damage = 42; //30 + (P_Random() & 25);
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 	if (Player(Owner.Player).Refire)
 	{
 		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
@@ -85,17 +75,7 @@ final void A_FireBlasterPL2()
 	if (A)
 	{
 		A.bBlaster = true;
-		if (int_mod)
-		{
-			if(!active_damage)
-			{
-				A.MissileDamage = A.MissileDamage * Player(Owner.Player).strength / 10;
-			}
-			else // [FB] PI Damage
-			{
-				A.MissileDamage = (A.MissileDamage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-			}
-		}
+		ApplyDamageModifiers(A.MissileDamage);
 	}
 	Owner.PlaySound('BlasterFire', CHAN_WEAPON);
 }

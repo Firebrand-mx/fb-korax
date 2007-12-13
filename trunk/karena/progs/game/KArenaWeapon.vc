@@ -242,18 +242,7 @@ final void GunShot(Actor A, int accurate, TVec dir)
 	}
 
 	damage = 10;//5 * (P_Random() % 3 + 1);
-
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 
 	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
 	A.LineAttack(dir, MISSILERANGE, damage, DoomPuff);
@@ -282,20 +271,32 @@ final void GunShot2(Actor A, int accurate, TVec dir)
 
 	damage = 14;//7 * (P_Random() % 3 + 1);
 
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 
 	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
 	A.LineAttack(dir, MISSILERANGE, damage, DoomPuff);
+}
+
+//===========================================================================
+//
+//  ApplyDamageModifiers
+//
+//===========================================================================
+
+void ApplyDamageModifiers(out int damage)
+{
+	if (dex_mod)
+		damage = damage * Player(Owner.Player).dexterity / 10;
+	if (str_mod)
+		damage = damage * Player(Owner.Player).strength / 10;
+	if (int_mod)
+		damage = damage * Player(Owner.Player).intelligence / 10;
+	if (wis_mod)
+		damage = damage * Player(Owner.Player).wisdom / 10;
+
+	// PI Damage
+	if(active_damage)
+		damage *= ftoi(3.1415);
 }
 
 defaultproperties
