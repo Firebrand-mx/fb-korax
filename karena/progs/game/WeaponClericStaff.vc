@@ -77,17 +77,7 @@ final void A_CStaffCheck()
 	pmo = Actor(Owner);
 	damage = 27; //20 + (P_Random() & 15);
 
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).intelligence / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 	AimTarget = pmo.AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
 	if (AimTarget)
 	{
@@ -127,34 +117,14 @@ final void A_CStaffAttack()
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 32;
-		if (int_mod)
-		{
-			if(!active_damage)
-			{
-				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
-			}
-			else // [FB] PI Damage
-			{
-				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-			}
-		}
+		ApplyDamageModifiers(mo.MissileDamage);
 	}
 	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, ClericStaffMissile,
 		playPawn.Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 0;
-		if (int_mod)
-		{
-			if(!active_damage)
-			{
-				mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
-			}
-			else // [FB] PI Damage
-			{
-				mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-			}
-		}
+		ApplyDamageModifiers(mo.MissileDamage);
 	}
 	playPawn.PlaySound('ClericCStaffFire', CHAN_WEAPON);
 }

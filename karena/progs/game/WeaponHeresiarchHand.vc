@@ -46,23 +46,10 @@ final void A_HHandAttack()
 	mo = InfernalHandFX(Actor(Owner).SpawnPlayerMissile_2(self, InfernalHandFX));
 	if (mo)
 	{
-		//mo.Target = Actor(Owner);	// [CW] not needed here? check later
 		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
-		if (int_mod)
-		{
-			if(!active_damage)
-			{
-				mo.ExplodeDamage = mo.ExplodeDamage * Player(Owner.Player).intelligence / 10;
-				mo.BlastDamage = mo.ExplodeDamage * Player(Owner.Player).intelligence / 10;
-				mo.ExplodeDistance += mo.ExplodeDistance * 0.1 * itof( Player(Owner.Player).intelligence / 10 );
-			}
-			else // [FB] PI Damage
-			{
-				mo.ExplodeDamage = (mo.ExplodeDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-				mo.BlastDamage = (mo.BlastDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-				mo.ExplodeDistance += mo.ExplodeDistance * 0.1 * itof( Player(Owner.Player).intelligence / 10 ) * 3.1415;		
-			}
-		}
+		ApplyDamageModifiers(mo.ExplodeDamage);
+		ApplyDamageModifiers(mo.BlastDamage);
+		mo.ExplodeDistance += mo.ExplodeDistance * 0.1 * itof( Player(Owner.Player).intelligence / 10 );
 	}
 	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
 	Player(Owner.Player).DamageFlash = 0.0;

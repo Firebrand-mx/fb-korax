@@ -46,17 +46,7 @@ final void A_FireGoldWandPL1()
 
 	UseWeaponMana();
 	damage = 10; //7 + (P_Random() & 7);
-	if (int_mod)
-	{
-		if(!active_damage)
-		{
-			damage = damage * Player(Owner.Player).strength / 10;
-		}
-		else // [FB] PI Damage
-		{
-			damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-		}
-	}
+	ApplyDamageModifiers(damage);
 	angles = Owner.Angles;
 	Actor(Owner).Aim(dir, MISSILERANGE);
 	if (Player(Owner.Player).Refire)
@@ -90,39 +80,17 @@ final void A_FireGoldWandPL2()
 	VectorAngles(&dir, &angles);
 	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, GoldWandMissile2,
 		AngleMod360(angles.yaw - (45.0 / 8.0))/*, angles.pitch*/);
-	if (mo && int_mod)
-	{
-		if(!active_damage)
-		{
-			mo.MissileDamage = mo.MissileDamage * Player(Owner.Player).intelligence / 10;
-		}
-		else // [FB] PI Damage
-		{
-			mo.MissileDamage = (mo.MissileDamage * Player(Owner.Player).intelligence / 10) * ftoi(3.1415);
-		}
-
-	}
+	if (mo)
+		ApplyDamageModifiers(mo.MissileDamage);
 	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, GoldWandMissile2,
 		AngleMod360(angles.yaw + (45.0 / 8.0))/*, angles.pitch*/);
-	if (mo && int_mod)
-	{
-		mo.MissileDamage = mo.MissileDamage *Player(Owner.Player).intelligence/10;
-	}
+	if (mo)
+		ApplyDamageModifiers(mo.MissileDamage);
 	VectorRotateAroundZ(&dir, -45.0 / 8.0);
 	for (i = 0; i < 5; i++)
 	{
 		damage = 20; //12 + (P_Random() & 7);
-		if (int_mod)
-		{
-			if(!active_damage)
-			{
-				damage = damage * Player(Owner.Player).strength / 10;
-			}
-			else // [FB] PI Damage
-			{
-				damage = (damage * Player(Owner.Player).strength / 10) * ftoi(3.1415);
-			}
-		}
+		ApplyDamageModifiers(damage);
 		ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
 		Actor(Owner).LineAttack(dir, MISSILERANGE, damage, GoldWandPuff2);
 		VectorRotateAroundZ(&dir, (45.0 / 8.0) / 2.0);
