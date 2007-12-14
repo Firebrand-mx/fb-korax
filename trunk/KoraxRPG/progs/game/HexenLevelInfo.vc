@@ -156,6 +156,8 @@ bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
 //
 //  ExecuteActionSpecial
 //
+//	KRPG override for new action specials
+//
 //==========================================================================
 
 bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
@@ -169,21 +171,14 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		&& Special != ACTSPEC_Thing_SetPlayerMOTag
 		||
 		Special >= ACTSPEC_IA_SetThreatReaction ) 
-		&& !E )
+		&& (!E || ((Arg1 & 0x80000000) != 0)) )
 	{
-		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1, Arg2, Arg3, Arg4, Arg5, Line, Side);
+		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1 & 0x7fffffff, Arg2, Arg3, Arg4, Arg5, Line, Side);
 		return buttonSuccess;
 	}
 
 	switch (Special)
 	{
-	case LNSPEC_QuakeTremor:
-		buttonSuccess = A_LocalQuake(Arg1, Arg2, Arg3, Arg4, Arg5);
-		break;
-
-		//
-		// [KoraxRPG]
-		//
 	//
 	// Advanced thing manipulation
 	case ACTSPEC_Thing_Thrust3d:
@@ -272,7 +267,7 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).A_OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+									Arg4, Arg5 & 0x7fffffff, (Arg5 & 0x80000000) != 0);
 			buttonSuccess = true;
 		}
 		break;
