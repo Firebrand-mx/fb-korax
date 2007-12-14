@@ -1,0 +1,66 @@
+
+class SaddleDemon : Demon1
+	__mobjinfo__(17001);
+
+
+//==========================================================================
+//
+//	IsBeingMountedOn
+//
+//==========================================================================
+
+void IsBeingMountedOn(Actor Rider, bool bGainControl)
+{
+	::IsBeingMountedOn(Rider, bGainControl);
+	PlaySound(SightSound, CHAN_VOICE);
+	SetState(SeeState);
+}
+
+//==========================================================================
+//
+//	IsBeingDismountedFrom
+//
+//==========================================================================
+
+void IsBeingDismountedFrom()
+{
+	::IsBeingDismountedFrom();
+	SetState(IdleState);
+}
+
+//==========================================================================
+//
+//	RideCommand
+//
+//==========================================================================
+
+void RideCommand(float forward, float side, optional float vertical)
+{
+	if (StateAction != STATE_ACTION__CHASE && StateAction != STATE_ACTION__SPECIAL)
+		SetState(SeeState);
+
+	StepSpeed = default.StepSpeed;
+	if (forward)
+	{
+		MoveCount = 15;
+		StepSpeed *= forward * 0.5;
+	}
+	if (side)
+	{
+		MoveCount = 15;
+		Angles.yaw -= side * 0.5;
+	}
+	if (specified_vertical)
+	{
+		Velocity.z += vertical * 1000.0;
+	}
+}
+
+defaultproperties
+{
+	StepSpeed = 18.0;
+
+	bLiving = true;
+	bSaddleHorse = true;
+	Team = 1;
+}
