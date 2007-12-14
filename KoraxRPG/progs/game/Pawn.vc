@@ -4,6 +4,9 @@ class Pawn : IntelligentActor
 	abstract;
 
 
+bool			bCanRide;		// pawn is allowed to ride saddlehorses
+
+
 //============================================================================
 //
 //  IsNotAttackingMaster
@@ -48,6 +51,11 @@ bool TryUse(optional float fUseRange, optional float fUseThingRange, optional na
 		return true;
 	else
 	{
+		if (RidePartner && (bIsMountedOn || bRideControl))
+		{
+			Dismount();
+			return true;
+		}
 	}
 
 	return false;
@@ -181,6 +189,12 @@ bool UseThing(Actor Thing)
 	// [CW] that's how it could look like if we used Strife-like dialogs
 	//if (Thing.ConversationID && HexenLevelInfo(Level).StartConversation(self, Actor(in->Thing)))
 	//	return true;
+	// Possible generic 'use' types
+	if (bCanRide && Thing.bSaddleHorse && !Thing.RidePartner)
+	{
+		MountOn(Thing, true);
+		return true;
+	}
 
 	return Thing.IsBeingUsed(self);
 }
