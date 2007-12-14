@@ -1365,10 +1365,14 @@ void PlayerTick(float deltaTime)
 	}
 	else
 	{
-		if (MO.WaterLevel >= 2)
+		// KRPG
+		if (Actor(MO).RidePartner && Actor(MO).bIsMountedOn && Actor(MO).bRideControl)
+			PlayerRide(deltaTime);
+		else if (MO.WaterLevel >= 2)
 			WaterMove(deltaTime);
 		else
 			MovePlayer(deltaTime);
+
 		if (EntityEx(MO).FindInventory(PowerSpeed) &&
 			!(Level.XLevel.TicTime & 1) && Length(MO.Velocity) > 12.0 * 35.0)
 		{
@@ -1492,6 +1496,21 @@ void PlayerTick(float deltaTime)
 			Actor(MO).Damage(none, none, 5);
 		}
 	}
+}
+
+//==========================================================================
+//
+//  PlayerRide
+//
+//==========================================================================
+
+void PlayerRide(float deltaTime)
+{
+	float forward = ForwardMove;
+	float side = SideMove;
+	float vertical = (Buttons & BT_JUMP) ? deltaTime : 0.0;
+
+	Actor(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
 }
 
 //==========================================================================

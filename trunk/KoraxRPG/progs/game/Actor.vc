@@ -43,6 +43,11 @@ bool			bCombatant;		// fighting actor
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
 
+bool			bSaddleHorse;	// actor can be ridden by pawns
+bool			bIsMountedOn;
+bool			bRideControl;
+Actor			RidePartner;	// either 'rider' or 'horse', depending on flags
+
 
 //
 // [KoraxRPG] Advanced AI
@@ -140,6 +145,24 @@ bool Physics(float DeltaTime)
 	if (bZAnchored)
 		Velocity.z = 0.0;
 
+	if (RidePartner)
+	{
+		if (bIsMountedOn)
+		{
+			TVec saddle = RidePartner.Origin;
+			saddle.z += RidePartner.Height;
+
+			Velocity = RidePartner.Velocity + ((saddle - Origin) * 5.0);
+
+			float lx = Origin.x - saddle.x;
+			float ly = Origin.y - saddle.y;
+			float limit = (RidePartner.Radius + Radius) * 2.0;
+
+			if (fabs(lx) > limit|| fabs(ly) > limit)
+				Dismount();
+		}
+	}
+
 	return ::Physics(DeltaTime);
 }
 
@@ -164,6 +187,12 @@ void Tick(float deltaTime)
 
 void Died(EntityEx source, EntityEx inflictor)
 {
+	if (RidePartner)
+	{
+		if (bIsMountedOn) Dismount();
+		else RidePartner.Dismount();
+	}
+
 	::Died(source, inflictor);
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
@@ -238,6 +267,103 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 	if (!source)
 	{
 		Player.Frags--;
+	}
+}
+
+//==========================================================================
+//
+//	IsBeingUsed
+//
+//	[CW] Override for actors that could be 'used'
+//
+//==========================================================================
+
+bool IsBeingUsed(Pawn User)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	MountOn
+//
+//==========================================================================
+
+void MountOn(Actor Horse, bool bGainControl)
+{
+	RidePartner = Horse;
+	bIsMountedOn = true;
+	bRideControl = bGainControl;
+	bXYAnchored = true;
+	bZAnchored = true;
+	Horse.IsBeingMountedOn(self, !bGainControl);
+}
+
+//==========================================================================
+//
+//	IsBeingMountedOn
+//
+//	[CW] Override for extra effects
+//
+//==========================================================================
+
+void IsBeingMountedOn(Actor Rider, bool bGainControl)
+{
+	RidePartner = Rider;
+	bIsMountedOn = false;
+	bRideControl = bGainControl;
+}
+
+//==========================================================================
+//
+//	MountOn
+//
+//==========================================================================
+
+void Dismount()
+{
+	bIsMountedOn = false;
+	bRideControl = false;
+	bXYAnchored = default.bXYAnchored;
+	bZAnchored = default.bZAnchored;
+	RidePartner.IsBeingDismountedFrom();
+	RidePartner = none;
+}
+
+//==========================================================================
+//
+//	IsBeingDismountedFrom
+//
+//	[CW] Override for extra effects
+//
+//==========================================================================
+
+void IsBeingDismountedFrom()
+{
+	RidePartner = none;
+	bRideControl = false;
+}
+
+//==========================================================================
+//
+//	RideCommand
+//
+//	[CW] override for different behavior
+//
+//==========================================================================
+
+void RideCommand(float forward, float side, optional float vertical)
+{
+	if (forward)
+	{
+		Velocity.x += forward * cos(Angles.yaw);
+		Velocity.y += forward * sin(Angles.yaw);
+	}
+	if (side)
+	{
+		float angle = AngleMod360(Angles.yaw - 90.0);
+		Velocity.x += side * cos(angle);
+		Velocity.y += side * sin(angle);
 	}
 }
 
