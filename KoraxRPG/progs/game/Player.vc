@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -603,7 +603,6 @@ void PlayerExitMap(bool clusterChange)
 	FixedColourmap = 0;	// Remove torch
 	DamageFlash = 0.0;	// No palette changes
 	BonusFlash = 0.0;
-	//PoisonCount = 0;// KRPG
 	SavedInventory = EntityEx(MO).Inventory;
 }
 
@@ -1438,7 +1437,10 @@ void PlayerTick(float deltaTime)
 	{
 		if (!bUseDown)
 		{
-			P_UseLines();
+			//[KoraxRPG]
+			//P_UseLines();
+			if (MO.IsA('PlayerPawn'))
+				PlayerPawn(MO).TryUse(USERANGE, USETHINGRANGE, MorphTime > 0.0 ? 'PigActive1' : '*usefail');
 			bUseDown = true;
 		}
 	}
@@ -1463,18 +1465,6 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	// Counters
-
-	// KRPG
-	/*if (PoisonCount && Level.XLevel.Time - LastPoisonTime >= 0.5)
-	{
-		PoisonCount -= 5;
-		if (PoisonCount < 0)
-		{
-			PoisonCount = 0;
-		}
-		LastPoisonTime = Level.XLevel.Time;
-		Actor(MO).PoisonDamage(Poisoner, 1, true);
-	}*/
 
 	if (DamageFlash)
 	{
@@ -1724,7 +1714,10 @@ void PostMorphWeapon(Weapon weapon)
 	SetViewState(ps_weapon, ReadyWeapon.GetUpState());
 }
 
-//==========================================================================
+//
+// [KRPG] [CW] moved to PlayerPawn
+//
+/*//==========================================================================
 //
 //  P_UseLines
 //
@@ -1839,7 +1832,7 @@ void P_UseLines()
 			break;
 		}
 	}
-}
+}*/
 
 //==========================================================================
 //
