@@ -141,6 +141,8 @@ bool			targetinfo_enabled;
 int				targetinfo_counter;	//[CW]
 targetinfo_t	targetinfo;
 
+bool bNoHUD;
+
 // [CW] for trophy announcements
 trophies_t	Trophies;
 
@@ -425,6 +427,7 @@ void ServerDisconnectBot(int pl)
 void UserinfoChanged()
 {
 	targetinfo_enabled = !bIsBot && GetCvar('TargetInfo');
+	bNoHUD = !bIsBot && GetCvar('NoHUD');
 
 	if (!bSpawned)
 	{
@@ -1277,6 +1280,8 @@ void ActivateLevel(int to_lvl, bool message)
 		cprint("YOU REACHED LEVEL %d", exp_level);
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
+
+	pcount = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1330,6 +1335,8 @@ void DeactivateLevel(int to_lvl, bool message)
 		cprint("YOU LOWERED TO LEVEL %d", exp_level);
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
+
+	pcount = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1915,13 +1922,22 @@ void PlayerTick(float deltaTime)
 	int newweapon;
 	Actor speedA;
 
+	if (bNoHUD)
+		ViewStates[ps_weapon].SY += 1000.0;
+
+	/*if (bNoHUD)
+	{
+		MO.RenderStyle = Entity::STYLE_None;
+		MO.Alpha = 0.0;
+		//ViewEnt.RenderStyle = Entity::STYLE_None;
+		//ViewEnt.Alpha = 0.0;
+	}*/
+
 	if (bUnControllable)
 	{
 		Buttons = 0;
 		ForwardMove = 0.0;
 		SideMove = 0.0;
-		//ViewOrg.z = MO.Origin.z + PlayerPawn(MO).ViewHeight;
-		//return;
 	}
 
 	if (!MO)
@@ -1968,6 +1984,8 @@ void PlayerTick(float deltaTime)
 	if (PlayerState == PST_DEAD)
 	{
 		DeathPlayerTick(deltaTime);
+		if (bNoHUD)
+			ViewStates[ps_weapon].SY -= 1000.0;
 		return;
 	}
 
@@ -2188,6 +2206,9 @@ void PlayerTick(float deltaTime)
 	{
 		pcount = 0;
 	}
+
+	if (bNoHUD)
+		ViewStates[ps_weapon].SY -= 1000.0;
 }
 
 //==========================================================================
