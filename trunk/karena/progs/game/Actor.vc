@@ -42,6 +42,9 @@ const float BONUSADD		= 0.2;
 
 int experience;
 
+bool bOverrideCoop;	// [CW] Override IsTeammate method by always returning false
+					// currently is used as a temporary fix for targetinfo not showing for allies
+
 // [CW] Since there are sometimes references to pawn stored for future use,
 // it is important to store reference to player as well (in case it is player pawn)
 // so that if that pawn die, player reference will be still accessible.
@@ -251,6 +254,9 @@ void IsDeathInflictor(EntityEx victim)
 
 bool IsTeammate(EntityEx Other)
 {
+	if (bOverrideCoop)
+		return false;
+
 	if (::IsTeammate(Other))
 	{
 		return true;
