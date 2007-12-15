@@ -1359,13 +1359,14 @@ void InitiateLevel()
 
 //==========================================================================
 //
-//  PlayerCamping
+//  LooseExperience
 //
 //  [FB] If the player camps much time he'll lost experience too
+//	[CW] Now it works all the time..
 //
 //==========================================================================
 
-void PlayerCamping()
+void LooseExperience()
 {
 	// [FB] Let's see, if a tic is 1/35 of a second, a second should
 	//	be multiplied by 35 to have an equality, every 3 secs. the
@@ -1852,7 +1853,9 @@ void UpdateTargetInfo()
 		TVec Dir;
 		
 		angles = MO.Angles;
+		Actor(MO).bOverrideCoop = true;
 		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
+		Actor(MO).bOverrideCoop = false;
 		if (AimTarget)
 		{
 			if (AimTarget.Player)
@@ -2172,13 +2175,13 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if(!bUnControllable && MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
+	if(!bUnControllable)// && MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
 	{
-		// [CW] No need for camping processing when player has lost all experience
+		// [CW] No need for this processing when player has lost all experience
 		if (experience > 0)
 		{
 			pcount++;
-			PlayerCamping();
+			LooseExperience();
 		}
 	}
 	else
@@ -3385,8 +3388,6 @@ void UpdateCompetition()
 void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 {
 	string		Msg;
-
-	print("DDM: self = %i, i = %i, s = %i, type = %n", self, inflictor, source, DmgType);
 
 	if (DmgType == 'Falling')
 	{
