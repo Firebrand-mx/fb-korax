@@ -1,0 +1,64 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: DominationSigilOffensive.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class DominationSigilPoison : DominationSigilOffensive
+	__mobjinfo__(15035);
+
+//==========================================================================
+//
+//	Shoot
+//
+//==========================================================================
+
+void Shoot()
+{
+	if (CurrentEnemy)
+	{
+		Actor mo = Spawn(PoisonCloud, Origin);
+		if (mo)
+		{
+			PoisonCloud pc = PoisonCloud(mo);
+			pc.InitCloud(self);
+			pc.SpawnChildren = 4;
+			pc.A_SpawnChildren();
+			pc.LifeCount = 1;
+		}
+	}
+}
+
+
+
+defaultproperties
+{
+	FireRepeatDelay = 0.0;
+	MaxAmmo = 1;
+}

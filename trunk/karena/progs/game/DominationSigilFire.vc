@@ -1,0 +1,63 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: DominationSigilOffensive.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class DominationSigilFire : DominationSigilOffensive
+	__mobjinfo__(15032);
+
+//==========================================================================
+//
+//	Shoot
+//
+//==========================================================================
+
+void Shoot()
+{
+	if (CurrentEnemy)
+	{
+		TVec dest = CurrentEnemy.GetCentre() - GetCentre();
+		TAVec ang;
+		VectorAngles(&dest, &ang);
+		MorningStarMissile missile = MorningStarMissile(SpawnMissileAngles(MorningStarMissile, ang.yaw, ang.pitch, -Height/2.0));
+		if (missile)
+		{
+			missile.Target = self;
+			PlaySound('Fireball', CHAN_WEAPON);
+		}
+	}
+}
+
+
+
+defaultproperties
+{
+	FireRepeatDelay = 2.0;
+}

@@ -1,0 +1,125 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: DominationSigilOffensive.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class DominationSigilOffensive : DominationSigil
+	abstract;
+
+float ReloadDelay;
+float FireRepeatDelay;
+int MaxAmmo;
+
+float ready_time;
+int Ammo;
+EntityEx CurrentEnemy;
+
+//==========================================================================
+//
+//	CaptureBy
+//
+//==========================================================================
+
+void CaptureBy(Entity Capturer)
+{
+	::CaptureBy(Capturer);
+
+	if (Team)
+	{
+		CurrentEnemy = none;
+		Ammo = 0;
+		ready_time = ReloadDelay;
+	}
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (Team)
+	{
+		ready_time -= deltaTime;
+		if (ready_time <= 0.0)
+		{
+			if (!Ammo)
+				Ammo = MaxAmmo;
+			if (!CurrentEnemy || CurrentEnemy.Health <= 0 || !CanSee(CurrentEnemy))
+			{
+				int i;
+				float dist = -1.0;
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					Player Pl = Player(MainGameInfo(Level.Game).Players[i]);
+					if (Pl && Pl.MO && Pl.Team != Team && CanSee(Pl.MO))
+					{
+						if (dist < 0.0 || Length(Origin - Pl.MO.Origin) < dist)
+						{
+							dist = Length(Origin - Pl.MO.Origin);
+							CurrentEnemy = EntityEx(Pl.MO);
+						}
+					}
+				}
+			}
+			Shoot();
+			Ammo--;
+			if (Ammo)
+				ready_time = FireRepeatDelay;
+			else
+				ready_time = ReloadDelay;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	Shoot
+//
+//	[CW] Override to implement shooting
+//
+//==========================================================================
+
+void Shoot()
+{
+}
+
+
+
+defaultproperties
+{
+	ReloadDelay = 8.0;
+	FireRepeatDelay = 1.0;
+	MaxAmmo = 10;
+}
