@@ -36,6 +36,7 @@ TitleScreen			GTitle;
 ScoreBoardScreen	GScBoard;	// [CW]
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
+LoadingScreen		GLoadingScreen;	// [CW]
 
 MenuScreenTeamSelect	TeamSelectScreen;	//[CW]
 
@@ -79,6 +80,7 @@ void RootWindowCreated()
 	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));		// [CW]
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
+	GLoadingScreen = LoadingScreen(GRoot.NewChild(LoadingScreen));		// [CW]
 	Announcer = LocalSoundQueue(SpawnObject(LocalSoundQueue));
 	GTitle.ClGame = self;
 	GSBar.ClGame = self;
@@ -92,6 +94,7 @@ void RootWindowCreated()
 	GImission.Hide();
 	GFinale.ClGame = self;
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 }
 
 //==========================================================================
@@ -107,6 +110,7 @@ void Connected()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 
 	IsInGame = true;
 }
@@ -140,6 +144,7 @@ void DemoPlaybackStarted()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 }
 
 //==========================================================================
@@ -155,6 +160,7 @@ void DemoPlaybackStopped()
 	GScBoard.Hide();	// [CW]
 	GImission.Hide();
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 }
 
 //==========================================================================
@@ -176,7 +182,23 @@ void OnHostEndGame()
 
 void OnHostError()
 {
+	GLoadingScreen.Hide();
 	GTitle.OnHostError();
+}
+
+//==========================================================================
+//
+//  LoadingScreenStart
+//
+//==========================================================================
+
+void LoadingScreenStart(name MapName, string MapTitle)
+{
+	ForceMenuOff();
+	GTitle.Hide();
+	GLoadingScreen.MapName = MapName;
+	GLoadingScreen.MapTitle = MapTitle;
+	GLoadingScreen.Show();
 }
 
 //==========================================================================
@@ -193,6 +215,7 @@ void StatusBarStartMap()
 	GScBoard.StartMap();	// [CW]
 	GImission.Hide();
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 }
 
 //==========================================================================
@@ -233,6 +256,7 @@ void IintermissionStart()
 	GImission.Show();
 	GImission.Start();
 	GFinale.Hide();
+	GLoadingScreen.Hide();
 }
 
 //==========================================================================
@@ -248,6 +272,7 @@ void StartFinale(name FinaleType)
 	GImission.Hide();
 	GFinale.Show();
 	GFinale.StartFinale(FinaleType);
+	GLoadingScreen.Hide();
 }
 
 //===========================================================================
@@ -280,7 +305,7 @@ void DeactivateMenu()
 
 bool MenuResponder(event_t * event)
 {
-	if (!CurrentMenuScreen)
+	if (!CurrentMenuScreen && !GLoadingScreen.Visible)
 	{
 		// Pop-up menu?
 		if (event->type == ev_keydown && event->data1 == K_ESCAPE)
@@ -311,6 +336,9 @@ bool MenuActive()
 
 void SetMenu(string Name)
 {
+	if (GLoadingScreen.Visible)
+		return;
+
 	if (!stricmp(Name, "Main"))
 	{
 		PushMenuScreen(SpawnMenu(MenuScreenMain));

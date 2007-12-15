@@ -1,0 +1,112 @@
+
+class LoadingScreen : Widget;
+
+name MapName;
+string MapTitle;
+string info;
+int pic;
+
+float Delay;
+
+//==========================================================================
+//
+//  Tick
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	Delay -= DeltaTime;
+	if (Delay <= 0.0)
+	{
+		bTickEnabled = false;
+		CmdBuf_AddText(va("Map %n\n", MapName));
+	}
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	if (pic >= 0)
+		R_DrawPic(0,0,pic);
+	else
+		FillRectWithFlat(0,0,640,480,'f_001');
+
+	SetFont('smallfont');
+	SetTextAlign(hcentre, vcentre);
+	DrawText(320,160,"now engaging at...");
+	DrawText(320,180,MapTitle,CR_GREEN);
+
+	string gametype;
+	switch (GetCvar('deathmatch'))
+	{
+	case HexenDefs::game_dm:
+		gametype = "deathmatch"; break;
+	case HexenDefs::game_dmteam:
+		gametype = "team deathmatch"; break;
+	case HexenDefs::game_sweep:
+		gametype = "castle sweep"; break;
+	case HexenDefs::game_sweepteam:
+		gametype = "team castle sweep"; break;
+	case HexenDefs::game_kth:
+		gametype = "kill the heresiarch"; break;
+	case HexenDefs::game_ctf:
+		gametype = "capture the flag"; break;
+	case HexenDefs::game_domination:
+		gametype = "domination"; break;
+	case HexenDefs::game_football:
+		gametype = "football"; break;
+	default:
+		gametype = "unknown game type";
+	}
+
+	DrawText(320,220,va("-= %s =-", gametype),CR_YELLOW);
+	DrawText(320,320,info);
+	DrawText(320,440,va("loading, please wait...", gametype));
+}
+
+//==========================================================================
+//
+//	OnVisibilityChanged
+//
+//==========================================================================
+
+void OnVisibilityChanged(bool bNewVisibility)
+{
+	if (bNewVisibility)
+	{
+		Delay = 1.0;
+		string picname = va("%nim", MapName);
+		pic = R_RegisterPic(StrToName(picname));
+		// TODO: put map info text here?
+		switch (P_Random() % 6)
+		{
+		case 0:
+			info = "korax kola makes you stronger and faster"; break;
+		case 1:
+			info = "do you like our loading screens?"; break;
+		case 2:
+			info = "vavoom rocks!"; break;
+		case 3:
+			info = "korax lives, punks die"; break;
+		case 4:
+			info = "why is it every punk with a dragon thinks he's a serpent rider?"; break;
+		case 5:
+			info = "there's no end after death...  while respawn works"; break;
+		}
+	}
+	bTickEnabled = bNewVisibility;
+}
+
+defaultproperties
+{
+	bTickEnabled = true;
+	Focusable = true;
+	Width = 640;
+	Height = 480;
+}
