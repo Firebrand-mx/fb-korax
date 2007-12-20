@@ -1,0 +1,52 @@
+
+class BlastRadiusBomb : Actor;
+
+float Life;
+
+//==========================================================================
+//
+//  Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (Life > 0.0)
+	{
+		Life -= deltaTime;
+		if (Life <= 0.0)
+		{
+			SetState(FindState('Death'));
+		}
+	}
+}
+
+
+states
+{
+Spawn:
+	BLST ABCDEF 1 Bright
+	BLST G 1 Bright { BlastRadius(1); bDynamicLight = !bDynamicLight; }
+	BLST H 1 Bright
+	Loop
+Death:
+	RADE A 4
+	RADE BCDEFGHI 4
+	Stop
+}
+
+defaultproperties
+{
+	RenderStyle = STYLE_Translucent;
+	Alpha = 0.666;
+	bNoGravity = true;
+	bNoPassMobj = true;
+	bDynamicLight = true;
+	DLightColour = RGB(255, 255, 0);
+	DLightRadius = 172.0;
+	DeathSound = 'BlastRadius';
+
+	Life = 3.0;
+}
