@@ -3791,6 +3791,84 @@ void FireWeapon()
 	::FireWeapon();
 }
 
+//==========================================================================
+//
+// IsOutOfAmmo
+//
+// [CW] Returns TRUE if cannot attack with any weapon that requires ammo
+//
+//==========================================================================
+
+bool IsOutOfAmmo(optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType)
+{
+	Inventory Item;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		//	Must be a weapon
+		KArenaWeapon Wpn = KArenaWeapon(Item);
+		if (!Wpn)
+		{
+			continue;
+		}
+
+		if (WeaponClass)
+		{
+			if (Wpn.Class != WeaponClass)
+				continue;
+		}
+
+		if (AmmoType)
+		{
+			if (Wpn.AmmoType1 != AmmoType && Wpn.AmmoType2 != AmmoType && Wpn.AmmoType3 != AmmoType)
+				continue;
+		}
+
+		if (Wpn.CheckAmmo(false, true))
+			return false;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+// IsAmmoBelowLevel
+//
+//==========================================================================
+
+bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType)
+{
+	Inventory Item;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		//	Must be an Ammo
+		Ammo ammo = Ammo(Item);
+		if (!ammo)
+		{
+			continue;
+		}
+
+		if (WeaponClass)
+		{
+			if (WeaponClass.default.AmmoType1 != ammo.Class &&
+					WeaponClass.default.AmmoType2 != ammo.Class &&
+					WeaponClass.default.AmmoType3 != ammo.Class)
+				continue;
+		}
+
+		if (AmmoType)
+		{
+			if (ammo.Class != AmmoType)
+				continue;
+		}
+
+		if (ammo.Amount > AmountLimit)
+			return false;
+	}
+	return true;
+}
+
+
+
 defaultproperties
 {
 }
