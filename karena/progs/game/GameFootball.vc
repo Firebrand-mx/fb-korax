@@ -60,14 +60,14 @@ enum
 acsnotifier_t	AcsNotifiersFootball[num_footballevents];
 
 
-SoccerBall	Ball;
-MapSpot		spot_ball;
-bool		bBallCreated;
-bool		bSpotBallCreated;
+SoccerBall			Ball;
+SoccerBallSpot		spot_ball;
+bool				bBallCreated;
+bool				bSpotBallCreated;
 
 struct spot_players_t
 {
-	MapSpot	ms[MAXPLAYERS];
+	KickOffSpot		ms[MAXPLAYERS];
 };
 spot_players_t spot_players[2];
 
@@ -215,7 +215,6 @@ void EndCurrentState(int nextstate)
 
 void NotifyUpdateTeams()
 {
-	dprint("NotifyUpdateTeams : State = %i, T1 = %i, T2 = %i", State, Game.Teams[0], Game.Teams[1]);
 	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
 		BeginState(state_preparematch);
 	else if (State == state_freeplay && (!Game.Teams[0] || !Game.Teams[1]))
@@ -298,56 +297,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 	}
 	
 	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
-}
-
-//==========================================================================
-//
-//	SetGameObject
-//
-//	ACS callable
-//
-//==========================================================================
-
-void SetGameObject(EntityEx A, int object, int arg1, int arg2, int arg3)
-{
-	if ((object == object_ballspot || object == object_playerspot) &&
-			!A.IsA('MapSpot'))
-	{
-		dprint("GameFootball::SetGameObject : object is not of MapSpot class");
-		return;
-	}
-
-	switch (object)
-	{
-	case object_ballspot:
-		if (bSpotBallCreated)
-		{
-			spot_ball.Destroy();
-			spot_ball = none;
-		}
-		spot_ball = MapSpot(A);
-		break;
-	case object_playerspot:
-		if (arg1 >= 0 && arg1 < AllowedTeams() && arg2 >= 0 && arg2 < MAXPLAYERS)
-			spot_players[arg1].ms[arg2] = MapSpot(A);
-		else
-			dprint("GameFootball::SetGameObject : bad argument(s) for playerspot");
-		break;
-	case object_ball:
-		if (A.IsA('SoccerBall'))
-		{
-			if (bBallCreated)
-			{
-				Ball.Destroy();
-				Ball = none;
-			}
-			Ball = SoccerBall(A);
-		}
-		else
-			dprint("GameFootball::SetGameObject : A is not of Ball class");
-		break;		
-	}
-}
+}	
 
 //==========================================================================
 //
@@ -418,10 +368,43 @@ void End()
 
 bool PrepareMatch()
 {
+	int i;
+	KickOffSpot kos;
+
 	if (!Game.Teams[0] || !Game.Teams[1])
 	{
 		dprint("GameFootball : not enouph teams");
 		return false;
+	}
+
+	Ball = none;
+	spot_ball = none;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		spot_players[0].ms[i] = none;
+		spot_players[1].ms[i] = none;
+	}
+
+	foreach Level.AllThinkers(SoccerBall, Ball)
+	{
+		print("SoccerBall --> found!");
+		break;
+	}
+
+	foreach Level.AllThinkers(SoccerBallSpot, spot_ball)
+	{
+		print("SoccerBallSpot --> found!");
+		break;
+	}
+
+	foreach Level.AllThinkers(KickOffSpot, kos)
+	{
+		if (kos.Args[0] >= 0 && kos.Args[0] < AllowedTeams() && kos.Args[1] >= 0 && kos.Args[1] < MAXPLAYERS)
+			spot_players[kos.Args[0]].ms[kos.Args[1]] = kos;
+		else
+			dprint("GameFootball::SetGameObject : bad argument(s) for kick off spot at %f,%f,%f",
+				kos.Origin.x, kos.Origin.y, kos.Origin.z);
 	}
 
 	if (!Ball)
@@ -439,19 +422,14 @@ bool PrepareMatch()
 		}
 		else
 		{
-			foreach Level.AllThinkers(SoccerBall, Ball)
-				break;
-			if (!Ball)
-			{
-				dprint("GameFootball::PrepareMatch : there are no spot_ball nor ball objects on map");
-				return false;
-			}
+			dprint("GameFootball::PrepareMatch : there are no spot_ball nor ball objects on map");
+			return false;
 		}
 	}
 	
 	if (Ball && !spot_ball)
 	{
-		spot_ball = HexenLevelInfo(Level).Spawn(MapSpot, Ball.Origin);
+		spot_ball = HexenLevelInfo(Level).Spawn(SoccerBallSpot, Ball.Origin);
 		if (spot_ball)
 			bSpotBallCreated = true;
 		else
