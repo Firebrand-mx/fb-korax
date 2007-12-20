@@ -831,6 +831,117 @@ final TVec ClipVelocity(TVec in, TVec normal, float overbounce)
 	return in - normal * (DotProduct(in, normal) * overbounce);
 }
 
+//==========================================================================
+//
+//	CanReach
+//
+//  Checks whether this Actor can pass to target directly
+//	(along the straight line).
+//	TargetEntity is optional.
+//
+//==========================================================================
+
+bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
+			  // [CW] use these two to override default passability calculations
+			  optional float MaxPassableStep,
+			  optional float MaxPassableDropOff,
+			  optional float MinPassableOpening,
+			  optional bool bCanUseLines)
+{
+	bool canreach;
+	ReachTraverse::reach_traverse_data_t CRTRData;
+
+	if (!specified_TargetEntity)
+		TargetEntity = none;
+
+	if (!specified_MaxPassableStep)
+		MaxPassableStep = MaxStepHeight;
+	if (!specified_MaxPassableDropOff)
+		MaxPassableDropOff = MaxDropoffHeight;
+	if (!specified_MinPassableOpening)
+		MinPassableOpening = Height;
+	
+	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData,
+		MaxPassableStep, MaxPassableDropOff, MinPassableOpening, bCanUseLines);
+	
+	//
+	// [CW] FIXME -- TargetEntity does not work and spoils everything, do not use
+	//
+	if (TargetEntity)
+	{
+		if (CRTRData.linetarget != TargetEntity)
+			return false;
+	}
+	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
+		return false;
+
+	return canreach;
+}
+
+//==========================================================================
+//
+//	PTR_CanReachTraverse
+//
+//==========================================================================
+
+bool DoCanReachPathTraverse(TVec TargetPos,
+							ReachTraverse::reach_traverse_data_t * pCRTRData,
+							float MaxPassableStep,
+							float MaxPassableDropOff,
+							float MinPassableOpening,
+							bool bCanUseLines)
+{
+	intercept_t * in;
+	pCRTRData->intercepted_once = false;
+	pCRTRData->prev_sector = Sector;
+
+	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		pCRTRData->intercepted_once = true;
+
+		if (in->bIsALine)
+		{
+			sector_t * p_sector;
+
+			// single-sided lines abort traverse
+			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					!in->line->backsector)
+				return false;
+
+
+			// in case of two-sided lines a passability check is made
+			if (in->line->frontsector == pCRTRData->prev_sector)
+				p_sector = in->line->backsector;
+			else if (in->line->backsector == pCRTRData->prev_sector)
+				p_sector = in->line->frontsector;
+			else
+				// something was really messed up		
+				return false;
+
+			if (p_sector->floorheight > pCRTRData->prev_sector->floorheight + MaxPassableStep)
+				// will stuck in high floor
+				return false;
+			if (p_sector->floorheight < pCRTRData->prev_sector->floorheight - MaxPassableDropOff)
+				// must avoid dropoffs
+				return false;
+			if (p_sector->ceilingheight < pCRTRData->prev_sector->floorheight + MinPassableOpening ||
+				p_sector->floorheight + MinPassableOpening > pCRTRData->prev_sector->ceilingheight)
+				// will stuck in low ceiling...
+				return false;
+
+			pCRTRData->prev_sector = p_sector;
+		}
+		else
+		{
+			// TODO: check this precisely...
+			pCRTRData->linetarget = Actor(in->Thing);
+		}
+	}
+
+	return true;
+}
+
 //===========================================================================
 //
 //	PlayerIsMorphed
@@ -988,6 +1099,32 @@ final void A_PigPain()
 final void A_PlayerBurnScream()
 {
 	PlaySound('*burndeath', CHAN_VOICE);
+}
+
+//==========================================================================
+//
+//	A_GetNearestEntity
+//
+//==========================================================================
+
+final EntityEx A_GetNearestEntity(class<EntityEx> EClass, optional bool bReachable)
+{
+	EntityEx EE;
+	EntityEx ee;
+	float dist = -1.0;
+
+	foreach AllThinkers(EClass, ee)
+	{
+		if (dist < 0.0 || Length(ee.Origin - Origin) < dist)
+		{
+			if (bReachable && !CanReach(ee.Origin))
+				continue;
+			EE = ee;
+			dist = Length(ee.Origin - Origin);
+		}
+	}
+
+	return EE;
 }
 
 states
