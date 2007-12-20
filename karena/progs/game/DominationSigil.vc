@@ -80,9 +80,17 @@ void CaptureBy(Entity Capturer)
 
 	if (Capturer.Player)
 	{
-		MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
-			(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
-			ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
+		string lvlname = strlwr(StrReplace(Level.LevelName, " ", ""));
+		string place = va("%s_sigil_%i", lvlname, TID);
+		string place_lang = GetLangString(StrToName(place));
+		if (strcmp(place, place_lang))
+			MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.Player.PlayerName,
+				(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+				place_lang));
+		else
+			MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
+				(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+				ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
 		Team = Player(Capturer.Player).Team;
 		Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
 
@@ -125,6 +133,11 @@ void CaptureBy(Entity Capturer)
 			DLightColour = default.DLightColour;
 		}
 	}
+
+	// Useful for some custom level effects
+	if (Special)
+		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
+			Args[3], Args[4], NULL, 0, self);
 }
 
 //==========================================================================
