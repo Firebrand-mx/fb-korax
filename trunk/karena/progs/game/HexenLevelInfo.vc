@@ -43,7 +43,6 @@ enum
 	ACTSPEC_AdvancedGame_EndState,
 	ACTSPEC_AdvancedGame_HandleEvent,
 	ACTSPEC_AdvancedGame_SetACSNotifier,
-	ACTSPEC_AdvancedGame_SetGameObject,
 	ACTSPEC_IsConditionTrue,
 	ACTSPEC_RunACSConditional,
 	ACTSPEC_Last
@@ -91,6 +90,31 @@ void SpawnSpecials()
 	::SpawnSpecials();
 
 	MainGameInfo(Game).InitLevel(self);
+	Purge();
+}
+
+//============================================================================
+//
+//  Purge
+//
+//============================================================================
+
+void Purge()
+{
+	EntityEx ee;
+	foreach AllThinkers(EntityEx, ee)
+	{
+		if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
+					ee.IsA('CTFBanner') ||
+				MainGameInfo(Game).GameType != HexenDefs::game_domination &&
+					ee.IsA('DominationSigil') ||
+				MainGameInfo(Game).GameType != HexenDefs::game_football &&
+					(ee.IsA('SoccerBall') || ee.IsA('SoccerBallSpot') || ee.IsA('KickOffSpot')))
+		{
+			dprint("HexenLevelInfo::Purge : destroyed %n", GetClassName(ee.Class));
+			ee.Destroy();
+		}
+	}
 }
 
 //==========================================================================
@@ -138,16 +162,6 @@ bool ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		{
 			buttonSuccess = true;
 			MainGameInfo(Game).GameModel.HandleEvent(Arg1, A, Arg2, Arg3, Arg4, Arg5);
-		}
-		break;
-	case ACTSPEC_AdvancedGame_SetGameObject:
-		if(Arg1 > 0)
-		{
-			buttonSuccess = EV_SetAdvancedGameObject(Arg1, Arg2, Arg3, Arg4, Arg5, none);
-		}
-		else if(A)
-		{
-			buttonSuccess = EV_SetAdvancedGameObject(0, Arg2, Arg3, Arg4, Arg5, A);
 		}
 		break;
 	case ACTSPEC_IsConditionTrue:
@@ -262,43 +276,6 @@ bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Ent
 //  Advanced game model specials
 //
 //**************************************************************************
-
-//==========================================================================
-//
-//	EV_SetAdvancedGameObject
-//
-//	[CW]
-//
-//==========================================================================
-
-bool EV_SetAdvancedGameObject(int tid, int Arg2, int Arg3, int Arg4, int Arg5, EntityEx a)
-{
-	if (!MainGameInfo(Game).GameModel)
-		return false;
-
-	if (tid)
-	{
-		EntityEx A;
-		int searcher;
-
-		searcher = -1;
-		for (A = EntityEx(FindMobjFromTID(tid, &searcher)); A;
-			A = EntityEx(FindMobjFromTID(tid, &searcher)))
-		{
-			if (A)
-			{
-			   MainGameInfo(Game).GameModel.SetGameObject(A, Arg2, Arg3, Arg4, Arg5);
-			   return true;
-			}
-		}
-	}
-	else if (a)
-	{
-		MainGameInfo(Game).GameModel.SetGameObject(a, Arg2, Arg3, Arg4, Arg5);
-		return true;
-	}
-	return false;
-}
 
 //==========================================================================
 //
