@@ -3,10 +3,33 @@ class LoadingScreen : Widget;
 
 name MapName;
 string MapTitle;
-string info;
+string intro;
 int pic;
 
+int NumIntros;
+
 float Delay;
+
+//==========================================================================
+//
+//  Init
+//
+//==========================================================================
+
+void Init()
+{
+	string intro_txt;
+	string intro_txt_lang;
+
+	NumIntros = -1;
+
+	do
+	{
+		intro_txt = va("intro_rand_%i", ++NumIntros);
+		intro_txt_lang = GetLangString(StrToName(intro_txt));
+	}
+	while(strcmp(intro_txt, intro_txt_lang));
+}
 
 //==========================================================================
 //
@@ -66,7 +89,7 @@ void OnDraw()
 	}
 
 	DrawText(320,220,va("-= %s =-", gametype),CR_YELLOW);
-	DrawText(320,320,info);
+	DrawText(320,320,intro);
 	DrawText(320,440,va("loading, please wait...", gametype));
 }
 
@@ -83,22 +106,8 @@ void OnVisibilityChanged(bool bNewVisibility)
 		Delay = 1.0;
 		string picname = va("%nim", MapName);
 		pic = R_RegisterPic(StrToName(picname));
-		// TODO: put map info text here?
-		switch (P_Random() % 6)
-		{
-		case 0:
-			info = "korax kola makes you stronger and faster"; break;
-		case 1:
-			info = "do you like our loading screens?"; break;
-		case 2:
-			info = "vavoom rocks!"; break;
-		case 3:
-			info = "korax lives, punks die"; break;
-		case 4:
-			info = "why is it every punk with a dragon thinks he's a serpent rider?"; break;
-		case 5:
-			info = "there's no end after death...  while respawn works"; break;
-		}
+		if (NumIntros)
+			intro = GetLangString(StrToName(va("intro_rand_%i", P_Random() % NumIntros)));
 	}
 	bTickEnabled = bNewVisibility;
 }
