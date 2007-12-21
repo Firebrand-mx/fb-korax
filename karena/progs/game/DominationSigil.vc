@@ -51,11 +51,15 @@ float		score_timer;
 
 bool IsTouched(Entity Toucher)
 {
-	if(Toucher.IsA('PlayerPawn') && Toucher.Player && Toucher.Health > 0)
+	GameDomination DO = GameDomination(MainGameInfo(Level.Game).GameModel);
+	if (DO && DO.IsInPlayableState())
 	{
-		if (Player(Toucher.Player).Team != Team)
+		if(Toucher.IsA('PlayerPawn') && Toucher.Player && Toucher.Health > 0)
 		{
-			CaptureBy(Toucher);
+			if (Player(Toucher.Player).Team != Team)
+			{
+				CaptureBy(Toucher);
+			}
 		}
 	}
 	return true;
@@ -74,70 +78,97 @@ void CaptureBy(Entity Capturer)
 	if (!Capturer)
 		return;
 
-	score_timer = SCORE_DELAY;
-
-	// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
-
-	if (Capturer.Player)
+	GameDomination DO = GameDomination(MainGameInfo(Level.Game).GameModel);
+	if (DO && DO.IsInPlayableState())
 	{
-		string lvlname = strlwr(StrReplace(Level.LevelName, " ", ""));
-		string place = va("%s_sigil_%i", lvlname, TID);
-		string place_lang = GetLangString(StrToName(place));
-		if (strcmp(place, place_lang))
-			MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.Player.PlayerName,
-				(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
-				place_lang));
-		else
-			MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
-				(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
-				ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
-		Team = Player(Capturer.Player).Team;
-		Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
+		score_timer = SCORE_DELAY;
 
-		switch (Team.Colour)
+		// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
+
+		if (Capturer.Player)
 		{
-		case 0:
-			SetState(FindState('Blue'));
-			DLightColour = RGB(0, 0, 255);
-			break;
-		case 1:
-			SetState(FindState('Red'));
-			DLightColour = RGB(255, 0, 0);
-			break;
-		case 2:
-			SetState(FindState('Gold'));
-			DLightColour = RGB(255, 255, 0);
-			break;
-		case 3:
-			SetState(FindState('Lime'));
-			DLightColour = RGB(0, 0, 255);
-			break;
-		case 4:
-			SetState(FindState('Green'));
-			DLightColour = RGB(0, 0, 128);
-			break;
-		case 5:
-			SetState(FindState('Gray'));
-			DLightColour = RGB(128, 128, 128);
-			break;
-		case 6:
-			SetState(FindState('Brown'));
-			DLightColour = RGB(128, 64, 0);
-			break;
-		case 7:
-			SetState(FindState('Magenta'));
-			DLightColour = RGB(255, 0, 255);
-			break;
-		default:
+			string lvlname = strlwr(StrReplace(Level.LevelName, " ", ""));
+			string place = va("%s_sigil_%i", lvlname, TID);
+			string place_lang = GetLangString(StrToName(place));
+			if (strcmp(place, place_lang))
+				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.Player.PlayerName,
+					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+					place_lang));
+			else
+				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
+					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+					ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
+			SetTeam(Player(Capturer.Player).Team);
+			Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
+		}
+
+		// Useful for some custom level effects
+		if (Special)
+			Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
+				Args[3], Args[4], NULL, 0, self);
+	}
+}
+
+//==========================================================================
+//
+//	SetTeam
+//
+//==========================================================================
+
+void SetTeam(PlayerTeam PT)
+{
+	GameDomination DO = GameDomination(MainGameInfo(Level.Game).GameModel);
+	if (DO && DO.IsInPlayableState())
+	{
+		Team = PT;
+
+		if (Team)
+		{
+			switch (Team.Colour)
+			{
+			case 0:
+				SetState(FindState('Blue'));
+				DLightColour = RGB(0, 0, 255);
+				break;
+			case 1:
+				SetState(FindState('Red'));
+				DLightColour = RGB(255, 0, 0);
+				break;
+			case 2:
+				SetState(FindState('Gold'));
+				DLightColour = RGB(255, 255, 0);
+				break;
+			case 3:
+				SetState(FindState('Lime'));
+				DLightColour = RGB(0, 0, 255);
+				break;
+			case 4:
+				SetState(FindState('Green'));
+				DLightColour = RGB(0, 0, 128);
+				break;
+			case 5:
+				SetState(FindState('Gray'));
+				DLightColour = RGB(128, 128, 128);
+				break;
+			case 6:
+				SetState(FindState('Brown'));
+				DLightColour = RGB(128, 64, 0);
+				break;
+			case 7:
+				SetState(FindState('Magenta'));
+				DLightColour = RGB(255, 0, 255);
+				break;
+			default:
+				SetState(FindState('Spawn'));
+				DLightColour = default.DLightColour;
+			}
+		}
+		else
+		{
 			SetState(FindState('Spawn'));
 			DLightColour = default.DLightColour;
 		}
 	}
-
-	// Useful for some custom level effects
-	if (Special)
-		Level.ExecuteActionSpecial(Special, Args[0], Args[1], Args[2],
-			Args[3], Args[4], NULL, 0, self);
 }
 
 //==========================================================================
