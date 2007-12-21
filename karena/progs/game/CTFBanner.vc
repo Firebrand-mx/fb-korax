@@ -50,6 +50,7 @@ CTFBase		BaseOrigin;	// This Banner's Base; it spawns and respawns here
 Player		Capturer;	// A player who is carrying this banner
 int			Status;		// Current status (on base, carried, lost).
 float		lost_timer;
+bool		TransSet;
 
 //==========================================================================
 //
@@ -113,6 +114,7 @@ bool IsTouched(Entity Toucher)
 								CTF.Banners[i].Capturer == Player(Toucher.Player))
 								CTF.CommitCapture(CTF.Banners[i]);
 						}
+						Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
 					}
 				}
 				else
@@ -249,6 +251,7 @@ bool Physics(float DeltaTime)
 		{
 			TVec forward;
 			Origin = Capturer.MO.Origin;
+			Origin.z = Origin.z + Capturer.MO.Height;
 			AngleVector(&Capturer.MO.Angles, &forward);
 			VectorRotateAroundZ(&forward, -90.0);
 			forward = forward * (Capturer.MO.Radius / 2.0);
@@ -263,13 +266,36 @@ bool Physics(float DeltaTime)
 
 //==========================================================================
 //
+//	SetTranslation
+//
+//	[FB] Set the team colour for this Banner
+//
+//==========================================================================
+
+void SetTranslation()
+{
+	if (!Team)
+		return;
+
+	// [FB] Just select the Banner team
+	// FIXME:
+	// I'll make a small hack and consider the flag to be
+	// a Mage or Cleric, so blue translations are applied to 
+	// it, I'll find a better way to make this work later
+	Translation = Team.Colour + HexenDefs::PCLASS_CLERIC * (MAXPLAYERS - 1);
+	TransSet = 1;
+}
+
+//==========================================================================
+//
 //	Tick
 //
 //==========================================================================
 
 void Tick(float deltaTime)
 {
-	::Tick(deltaTime);
+	if (!TransSet)
+		SetTranslation();
 
 	// Lost flag counts a timer down until auto-respawn; it also should be returned in case it was dropped in dangerous area
 	if (Status == BANNER_STATUS__LOST)
@@ -278,6 +304,8 @@ void Tick(float deltaTime)
 		if (lost_timer <= 0.0)
 			ReturnToBase(none, false);
 	}
+
+	::Tick(deltaTime);
 }
 
 states
