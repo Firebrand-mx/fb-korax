@@ -82,7 +82,7 @@ void CaptureBy(Entity newCapturer)
 	GameDomination DO = GameDomination(MainGameInfo(Level.Game).GameModel);
 	if (DO && DO.IsInPlayableState())
 	{
-		Capturer = newCapturer.Player;
+		Capturer = Player(newCapturer.Player);
 		score_timer = SCORE_DELAY;
 
 		// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
@@ -92,16 +92,15 @@ void CaptureBy(Entity newCapturer)
 			string place = va("%s_sigil_%i", lvlname, TID);
 			string place_lang = GetLangString(StrToName(place));
 			if (strcmp(place, place_lang))
-				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.Player.PlayerName,
+				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.PlayerName,
 					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
 					place_lang));
 			else
-				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.Player.PlayerName,
+				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.PlayerName,
 					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
 					ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
-			SetTeam(Player(Capturer.Player).Team);
-			Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
-			
+			SetTeam(Player(Capturer).Team);
+			Player(Capturer).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
 		}
 
 		// Useful for some custom level effects
