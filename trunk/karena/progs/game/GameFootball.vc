@@ -50,12 +50,6 @@ enum
 	num_footballevents	= event_dokickoff - GameModel::event_custom + 1
 };
 
-enum
-{
-	object_ballspot,
-	object_playerspot,
-	object_ball
-};
 
 acsnotifier_t	AcsNotifiersFootball[num_footballevents];
 
@@ -181,6 +175,17 @@ void BeginState(int newstate)
 
 //==========================================================================
 //
+//	IsInPlayableState
+//
+//==========================================================================
+
+bool IsInPlayableState()
+{
+	return (State >= 0 && State != state_preparematch && State != state_finished);
+}
+
+//==========================================================================
+//
 //	EndCurrentState
 //
 //	ACS callable
@@ -192,16 +197,7 @@ void EndCurrentState(int nextstate)
 	dprint("GameFootball::EndCurrentState : state = %i, next_state = %i", State, nextstate);
 	if (nextstate == state_finished)
 	{
-		if (bBallCreated)
-		{
-			Ball.Destroy();
-			Ball = none;
-		}
-		if (bSpotBallCreated)
-		{
-			spot_ball.Destroy();
-			spot_ball = none;
-		}
+		Cleanup();
 	}
 
 	BeginState(nextstate);
@@ -215,9 +211,9 @@ void EndCurrentState(int nextstate)
 
 void NotifyUpdateTeams()
 {
-	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
+	if (!IsInPlayableState() && (Game.Teams[0] && Game.Teams[1]))
 		BeginState(state_preparematch);
-	else if (State == state_freeplay && (!Game.Teams[0] || !Game.Teams[1]))
+	else if (IsInPlayableState() && (!Game.Teams[0] || !Game.Teams[1]))
 		EndCurrentState(state_finished);
 }
 
@@ -350,14 +346,33 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 
 //==========================================================================
 //
-//	End
+//	Cleanup
 //
 //==========================================================================
 
-void End()
+void Cleanup()
 {
-	EndCurrentState(state_finished);
-	::End();
+	if (bBallCreated)
+	{
+		if (Ball)
+			Ball.Destroy();
+		bBallCreated = false;
+	}
+	Ball = none;
+	if (bSpotBallCreated)
+	{
+		if (spot_ball)
+			spot_ball.Destroy();
+		bSpotBallCreated = false;
+	}
+	spot_ball = none;
+
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		spot_players[0].ms[i] = none;
+		spot_players[1].ms[i] = none;
+	}
 }
 
 //==========================================================================
@@ -377,24 +392,17 @@ bool PrepareMatch()
 		return false;
 	}
 
-	Ball = none;
-	spot_ball = none;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		spot_players[0].ms[i] = none;
-		spot_players[1].ms[i] = none;
-	}
+	Cleanup();	
 
 	foreach Level.AllThinkers(SoccerBall, Ball)
 	{
-		print("SoccerBall --> found!");
+		dprint("SoccerBall --> found!");
 		break;
 	}
 
 	foreach Level.AllThinkers(SoccerBallSpot, spot_ball)
 	{
-		print("SoccerBallSpot --> found!");
+		dprint("SoccerBallSpot --> found!");
 		break;
 	}
 
@@ -403,7 +411,7 @@ bool PrepareMatch()
 		if (kos.Args[0] >= 0 && kos.Args[0] < AllowedTeams() && kos.Args[1] >= 0 && kos.Args[1] < MAXPLAYERS)
 			spot_players[kos.Args[0]].ms[kos.Args[1]] = kos;
 		else
-			dprint("GameFootball::SetGameObject : bad argument(s) for kick off spot at %f,%f,%f",
+			dprint("GameFootball::PrepareMatch : bad argument(s) for kick off spot at %f,%f,%f",
 				kos.Origin.x, kos.Origin.y, kos.Origin.z);
 	}
 

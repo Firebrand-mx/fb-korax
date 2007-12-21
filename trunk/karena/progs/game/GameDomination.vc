@@ -40,10 +40,6 @@ enum
 	state_finished
 };
 
-enum
-{
-	object_domsigil
-};
 
 array<DominationSigil>	DomSigils;
 
@@ -108,8 +104,15 @@ void BeginState(int newstate)
 			EndCurrentState(state_finished);
 			return;
 		}
+
+		for (i = 0; i < DomSigils.Num; i++)
+		{
+			count++;
+			if (DomSigils[i])
+				break;			// 1 is enouph
+		}
 		
-		if (!DomSigils.Num)
+		if (!count)
 		{
 			dprint("GameDomination::BeginState : state_gameplay : not enouph domination sigils, ending game");
 			EndCurrentState(state_finished);
@@ -128,6 +131,40 @@ void BeginState(int newstate)
 	};
 
 	State = newstate;
+}
+
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void EndCurrentState(int nextstate)
+{
+	if (nextstate == state_finished)
+	{
+		int i;
+		for (i = 0; i < DomSigils.Num; i++)
+		{
+			if (DomSigils[i])
+				DomSigils[i].SetTeam(none);
+		}
+		Cleanup();
+	}
+	BeginState(nextstate);
+}
+
+//==========================================================================
+//
+//	IsInPlayableState
+//
+//==========================================================================
+
+bool IsInPlayableState()
+{
+	return (State >= 0 && State == state_gameplay);
 }
 
 //==========================================================================
@@ -153,34 +190,21 @@ int TeamFactor(EntityEx a1, EntityEx a2)
 void NotifyUpdateTeams()
 {
 	dprint("GameCTF::NotifyUpdateTeams : State = %i, Teams[0] = %i, Teams[1] = %i", State, Game.Teams[0], Game.Teams[1]);
-	if (State < 0 && (Game.Teams[0] && Game.Teams[1]))
+	if (!IsInPlayableState() && (Game.Teams[0] && Game.Teams[1]))
 		BeginState(state_preparegame);
-	else if (State == state_gameplay && (!Game.Teams[0] || !Game.Teams[1]))
+	else if (IsInPlayableState() && (!Game.Teams[0] || !Game.Teams[1]))
 		EndCurrentState(state_finished);
 }
 
 //==========================================================================
 //
-//	SetGameObject
-//
-//	ACS callable
+//	Cleanup
 //
 //==========================================================================
 
-void SetGameObject(EntityEx A, int object, int arg1, int arg2, int arg3)
+void Cleanup()
 {
-	switch (object)
-	{
-	case object_domsigil:
-		if (!A.IsA('DominationSigil'))
-		{
-			dprint("GameDomination::SetGameObject : A is not of DominationSigil class");
-			break;
-		}
-		DomSigils.Num = DomSigils.Num + 1;
-		DomSigils[DomSigils.Num - 1] = DominationSigil(A);
-		break;
-	}
+	DomSigils.Num = 0;
 }
 
 //==========================================================================
@@ -195,6 +219,15 @@ bool PrepareGame()
 	{
 		dprint("GameDomination : not enouph teams");
 		return false;
+	}
+
+	Cleanup();
+
+	DominationSigil ds;
+	foreach Level.AllThinkers(DominationSigil, ds)
+	{
+		DomSigils.Num = DomSigils.Num + 1;
+		DomSigils[DomSigils.Num - 1] = ds;
 	}
 
 	if (!DomSigils.Num)

@@ -52,8 +52,12 @@ Player	Owner;					// a player who kicked the ball last
 
 bool IsTouched(Entity Toucher)
 {
-	if(!nokick_timer && Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
-		DoKick(Player(Toucher.Player));
+	GameFootball FB = GameFootball(MainGameInfo(Level.Game).GameModel);
+	if (FB && FB.IsInPlayableState())
+	{
+		if(!nokick_timer && Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+			DoKick(Player(Toucher.Player));
+	}
 	return true;
 }
 
@@ -107,6 +111,10 @@ final void A_LetKick()
 	int	playernum;
 	float dist;
 
+	GameFootball FB = GameFootball(MainGameInfo(Level.Game).GameModel);
+	if (!FB || !FB.IsInPlayableState())
+		return;
+
 	if (nokick_timer)
 	{
 		nokick_timer--;
@@ -152,7 +160,7 @@ final void A_LetKick()
 states
 {
 Spawn:
-	FDMN X 1.5 Bright A_LetKick
+	FDMN X 2 Bright A_LetKick
 	Loop
 }
 
