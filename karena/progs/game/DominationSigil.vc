@@ -37,7 +37,7 @@ class DominationSigil : Actor
 const float SCORE_DELAY	= 2.0;	// Time (in seconds) that must pass between two score events
 const float ROTATION_SPEED_YAW = 200.0;
 
-
+Player		Capturer;
 PlayerTeam	Team;		// Which team this sigil currently belongs to
 float		score_timer;
 
@@ -59,6 +59,7 @@ bool IsTouched(Entity Toucher)
 			if (Player(Toucher.Player).Team != Team)
 			{
 				CaptureBy(Toucher);
+				Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
 			}
 		}
 	}
@@ -73,19 +74,19 @@ bool IsTouched(Entity Toucher)
 //
 //==========================================================================
 
-void CaptureBy(Entity Capturer)
+void CaptureBy(Entity newCapturer)
 {
-	if (!Capturer)
+	if (!newCapturer)
 		return;
 
 	GameDomination DO = GameDomination(MainGameInfo(Level.Game).GameModel);
 	if (DO && DO.IsInPlayableState())
 	{
+		Capturer = newCapturer.Player;
 		score_timer = SCORE_DELAY;
 
 		// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
-
-		if (Capturer.Player)
+		if (Capturer)
 		{
 			string lvlname = strlwr(StrReplace(Level.LevelName, " ", ""));
 			string place = va("%s_sigil_%i", lvlname, TID);
@@ -100,6 +101,7 @@ void CaptureBy(Entity Capturer)
 					ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
 			SetTeam(Player(Capturer.Player).Team);
 			Player(Capturer.Player).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
+			
 		}
 
 		// Useful for some custom level effects
@@ -198,32 +200,32 @@ void Tick(float deltaTime)
 states
 {
 Spawn:
-	SIGL I 35
-	Loop
+	SIGL I -1
+	Stop
 Blue:
-	SIGL A 35
-	Loop
+	SIGL A -1
+	Stop
 Red:
-	SIGL B 35
-	Loop
+	SIGL B -1
+	Stop
 Gold:
-	SIGL C 35
-	Loop
+	SIGL C -1
+	Stop
 Lime:
-	SIGL D 35
-	Loop
+	SIGL D -1
+	Stop
 Green:
-	SIGL E 35
-	Loop
+	SIGL E -1
+	Stop
 Gray:
-	SIGL F 35
-	Loop
+	SIGL F -1
+	Stop
 Brown:
-	SIGL G 35
-	Loop
+	SIGL G -1
+	Stop
 Magenta:
-	SIGL H 35
-	Loop
+	SIGL H -1
+	Stop
 }
 
 defaultproperties
@@ -233,6 +235,7 @@ defaultproperties
 	bSolid = false;
 	bNoPassMobj = true;
 	bFloatBob = true;
+	bDynamicLight = true;
 
 	RenderStyle = STYLE_Translucent;
 	Alpha = 0.666;
