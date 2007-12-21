@@ -1,0 +1,138 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: ColoredDecoration.vc 696 2007-01-13 21:44:38Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ColoredDecoration : Decoration
+	abstract;
+
+bool TransSet;
+int Team; // [FB] An argument to use for detecting team 0 or 1
+int Colour; // [FB] The appropiate colour for this decoration
+
+//// [FB] These methods should be here for switchable colored decorations
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+bool Activate()
+{
+	SetState(FindState('Active'));
+	bDynamicLight = true;
+	DLightRadius = Args[0] ? itof(Args[0]) * 8.0 : LightRadius;
+	DLightColour = LightColour;
+
+	return true;
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+bool Deactivate()
+{
+	SetState(FindState('Inactive'));
+	bDynamicLight = false;
+
+	return true;
+}
+////
+
+//==========================================================================
+//
+//	SetTranslation
+//
+//	[FB] Set the team colour for this Banner
+//
+//==========================================================================
+
+void SetTranslation()
+{
+	// [FB] Just select the Banner team
+	// FIXME:
+	// I'll make a small hack and consider the flag to be
+	// a Mage or Cleric, so blue translations are applied to 
+	// it, I'll find a better way to make this work later
+	Translation = Colour + HexenDefs::PCLASS_CLERIC * (MAXPLAYERS - 1);
+	
+	// [FB] We'll set the dynamic light colour here
+	switch(Colour)
+	{
+		case 1: // BLUE
+			DLightColour = RGB(0, 0, 255);
+			break;
+		case 2: // RED
+			DLightColour = RGB(255, 0, 0);
+			break;
+		case 3: // GOLD
+			DLightColour = RGB(255, 255, 0);
+			break;
+		case 4: // LIME
+			DLightColour = RGB(0, 255, 0);
+			break;
+		case 5: // GREEN
+			DLightColour = RGB(44, 86, 37);
+			break;
+		case 6: // GRAY
+			DLightColour = RGB(127, 127, 127);
+			break;
+		case 7: // BROWN
+			DLightColour = RGB(151, 99, 59);
+			break;
+		case 8: // MAGENTA
+			DLightColour = RGB(178, 17, 222);
+			break;
+	}
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (Colour && !TransSet)
+		SetTranslation();
+
+	::Tick(deltaTime);
+}
+
+defaultproperties
+{
+	Colour = 0;
+	DLightColour = RGB(0, 0, 255);
+	bDynamicLight = true;
+}
