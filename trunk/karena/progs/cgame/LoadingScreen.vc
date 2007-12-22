@@ -1,12 +1,45 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**			##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: LoadingScreen.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
 
 class LoadingScreen : Widget;
 
 name MapName;
 string MapTitle;
 string intro;
+string enter;
 int pic;
 
 int NumIntros;
+int NumEnter;
 
 float Delay;
 
@@ -20,8 +53,18 @@ void Init()
 {
 	string intro_txt;
 	string intro_txt_lang;
+	string enter_txt;
+	string enter_txt_lang;
 
 	NumIntros = -1;
+	NumEnter = -1;
+
+	do
+	{
+		enter_txt = va("enter_rand_%i", ++NumEnter);
+		enter_txt_lang = GetLangString(StrToName(enter_txt));
+	}
+	while(strcmp(enter_txt, enter_txt_lang));
 
 	do
 	{
@@ -56,14 +99,14 @@ void Tick(float DeltaTime)
 void OnDraw()
 {
 	if (pic >= 0)
-		R_DrawPic(0,0,pic);
+		R_DrawPic(0, 0, pic);
 	else
-		FillRectWithFlat(0,0,640,480,'f_001');
+		FillRectWithFlat(0, 0, 640, 480, 'f_001');
 
 	SetFont('smallfont');
 	SetTextAlign(hcentre, vcentre);
-	DrawText(320,160,"now engaging at...");
-	DrawText(320,180,MapTitle,CR_GREEN);
+	DrawText(320, 160, enter);
+	DrawText(320, 180, MapTitle, CR_GREEN);
 
 	string gametype;
 	switch (GetCvar('deathmatch'))
@@ -88,9 +131,9 @@ void OnDraw()
 		gametype = "unknown game type";
 	}
 
-	DrawText(320,220,va("-= %s =-", gametype),CR_YELLOW);
-	DrawText(320,320,intro);
-	DrawText(320,440,va("loading, please wait...", gametype));
+	DrawText(320, 220, va("-= %s =-", gametype), CR_YELLOW);
+	DrawText(320, 320, intro);
+	DrawText(320, 440, va("loading, please wait...", gametype));
 }
 
 //==========================================================================
@@ -106,6 +149,8 @@ void OnVisibilityChanged(bool bNewVisibility)
 		Delay = 1.0;
 		string picname = va("%nim", MapName);
 		pic = R_RegisterPic(StrToName(picname));
+		if (NumEnter)
+			enter = GetLangString(StrToName(va("enter_rand_%i", P_Random() % NumEnter)));
 		if (NumIntros)
 			intro = GetLangString(StrToName(va("intro_rand_%i", P_Random() % NumIntros)));
 	}
