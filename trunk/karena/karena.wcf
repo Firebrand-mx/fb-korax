@@ -61,18 +61,24 @@ LightingInc=0
 0x003   0x0000  255     255     0       Key
 0x004   0x0000  0       192     0       Armor
 0x005   0x0000  128     128     0       Weapon
-0x006   0x0000  128     128     000     Ammo
+0x006   0x0000  192     192     0		Ammo
 0x007   0x0000  0       255     255     Powerup
 0x008   0x0000  192     192     192     Scenery
 0x009   0x0000  96      96      96      Sounds
 0x00a   0x0001  255     0       255     Teleport
 0x00b   0x0000  0       0       255     Healing
 0x00c   0x0000  192     0       0       Hazard
-0x00d   0x0000  0       128     128     Special
+0x00d   0x0000  0       128     255     Special
 0x00e   0x0000  128     0       128     Puzzle piece
-0x00f	0x0000	42		252		42		Bot Stuff
+0x00f   0x0000  96      96      96      Sound sequences
+0x010   0x0000  128     255     128     Particle effects
+0x012	0x0001	128		128		255		Cameras
+0x013	0x0000	255		128		128		Slopes
+0x014	0x0000	255		255		255		Static/Dynamic Lights
+0x015	0x0000	42		252		42		Bot Stuff
+0X016	0X0001	255		95		0		Net Match
 
-;       ID                              used to uniquely identify things in a map
+;       ID                      used to uniquely identify things in a map
 ;       Class                   classification (defined above)
 ;       Size                    approximate thing size (in map units)
 ;       Sprite                  name of the sprite to use for display purposes
@@ -199,12 +205,12 @@ LightingInc=0
 0x580   9       20      telea0          Earth crack
 0x581   9       20      telea0          Metal2
 0x582   9       20      telea0          Wind blowing
-0x5dc   13      20      icprd0          Floor slope
-0x5dd   13      20      icprd0          Ceiling slope
-0x5de   13      20      icprd0          Static light *( radius, -, -, -, - )
-0x5df   13      20      icprd0          Static colored light *( radius, r, g, b, - )
-0x5e0   13      20      icprd0          Vertex floor height
-0x5e1   13      20      icprd0          Vertex ceiling height
+0x5dc   19      20      icprd0          Floor slope
+0x5dd   19      20      icprd0          Ceiling slope
+0x5de   20      20      icprd0          Static light *( radius, -, -, -, - )
+0x5df   20      20      icprd0          Static colored light *( radius, r, g, b, - )
+0x5e0   19      20      icprd0          Vertex floor height
+0x5e1   19      20      icprd0          Vertex ceiling height
 0xbb8   13      20      icprd0          Polyobject anchor
 0xbb9   13      20      sbfxh0          Start spot
 0xbba   13      20      sbfxc0          Start spot w/crush
@@ -273,6 +279,14 @@ LightingInc=0
 0x2137  8       20      tst4a0          Candle (short)
 0x2138  8       20      tst5a0          Candle (tall)
 0x2139  8       20      tst6a0          Goblet (spilled)
+0x2341  18      16      aplsa0          Security Camera *( pitch, angles, speed, -, - )
+0x2343  16      20      bal1a0          Fountain (red)
+0x2344  16      20      bal1a0          Fountain (green)
+0x2345  16      20      bal1a0          Fountain (blue)
+0x2346  16      20      bal1a0          Fountain (yellow)
+0x2347  16      20      bal1a0          Fountain (purple)
+0x2348  16      20      bal1a0          Fountain (black)
+0x2349  16      20      bal1a0          Fountain (white)
 0x213a  8       20      tst7a0          Goblet (tall)
 0x213b  8       20      tst8a0          Goblet (short)
 0x213c  8       20      tst9a0          Goblet w/silver bands
@@ -298,6 +312,12 @@ LightingInc=0
 0x233b  14      20      artiger2        Clock gear (bronze)
 0x233c  14      20      artiger3        Clock gear (bronze hub)
 0x233d  14      20      artiger4        Clock gear (bronze ring)
+0x236e	18		16		fx17b0			Interp pt *( pitch, traveltime, holdtime, next, hinext )
+0x236f	18		16		fx17b0			Path follower *( pt, hipt, bLinear, -, - )
+0x2370	18		16		fx17b0			Moving camera *( pt, hipt, bLinear, lookat, - )
+0x2371	18		16		fx17b0			Aiming camera *( pitch, maxang, maxpitch, tid, - )
+0x2372	18		16		aclob0			Actor mover *( pt, hipt, bLinear, tid, - )
+0x2373	18		16		aclod0			Interp special
 0x2454  13      20      icprd0          Polyobject anchor
 0x2455  13      20      sbfxh0          Start spot
 0x2456  13      20      sbfxc0          Start spot w/crush
@@ -321,45 +341,53 @@ LightingInc=0
 0x2905  8       20      ffsmc0          Flame (small, continuous)
 0x2906  8       20      fflga0          Flame (large, timed) *( duration, -, -, -, - )
 0x2907  8       20      fflgf0          Flame (large, continuous)
-0x36f2  9       20      telea0          Sound sequence *( number, mode, -, -, - )
+0x36f2  15      20      telea0          Sound sequence *( number, mode, -, -, - )
 ; NEW KORAX ARENA THINGTYPES
 0x3A98  6       20      man4a0          Combined mana (25)
 0x3A99  6		20		bmn1a0			Big Blue mana (20)
 0x3A9A	6		20		bmn2a0			Big Green mana (20)
 0x3A9B	6		20		bmn3a0			Big Red mana (20)
-0x3A9C	15		10		nodea0			Path Nodes
+0x3A9C	21		10		nodea0			Path Nodes
 0x3A9D	13		10		mnsmg0			Minotaur Spot
 0x3A9E	7		20		invsa0			Shadow Sphere
 0x3A9F	7		20		pidma0			PI Damage
-0x3AA0  15  	32      playa2          Bot Spawner *( bot )
+0x3AA0  21  	32      playa2          Bot Spawner *( bot )
 0x3AA1	2       40  	impxb1      	Gargoyle
 ;0x3AA2	2       40      impxa1			Gargoyle leader
 0x3AA3  2       40      mumme1			Golem
 ;0x3AA4  2      40      mumme5			Golem ghost
 ;0x3AA5  2      40      mummy1			Nitrogolem
 ;0x3AA6  2      40      mummy5			Nitrogolem ghost
-0x3AA7	 15	 	10	 	nodec0			Blue Team Path Node
-0x3AA8	 15	 	10	 	nodec0			Blue Team Guard Spot
-0x3AA9	 15		10	 	nodec0			Blue Team Goal Spot
-0x3AAA	 15	 	10	 	nodeb0			Red Team Path Node
-0x3AAB	 15	 	10	 	nodeb0			Red Team Guard Spot
-0x3AAC	 15	 	10	 	nodeb0			Red Team Goal Spot
-0x3AAD	 13	 	20	 	fdmne0			Soccer ball	
-0x3AAE	 13	 	20	 	bnr1a0			CTF Banner
-0x3AAF   8      20      cnd2a0			Colored Candle (CTF)
-0x3AB0   8      20      fbu2a0          Colored Minotaur statue w/flame (CTF)
-0x3AB1   8      10      twtra0          Colored Brazier w/flame (CTF)
-0x3AB2   8      20      fsk2a0          Colored Fire skull (CTF)
-0x3AB3   8      20      ffl2f0          Colored Flame (large, continuous) (CTF)
-0x3AB4   8      20      ffs2c0          Colored Flame (small, continuous) (CTF)
-0x3AB5   8      10      brt2a0          Colored Brazier w/flame (small) (CTF)
-0x3AB6	 8      20      wlt2a0          Colored Wall torch w/flame (CTF) *( radius, -, -, -, - )
+0x3AA7	 21	 	10	 	nodec0			Blue Team Path Node
+0x3AA8	 21	 	10	 	nodec0			Blue Team Guard Spot
+0x3AA9	 21		10	 	nodec0			Blue Team Goal Spot
+0x3AAA	 21	 	10	 	nodeb0			Red Team Path Node
+0x3AAB	 21	 	10	 	nodeb0			Red Team Guard Spot
+0x3AAC	 21	 	10	 	nodeb0			Red Team Goal Spot
+0x3AAD	 22	 	20	 	fdmne0			Soccer ball	
+0x3AAE	 22	 	20	 	flaga0			CTF Banner
+0x3AAF   8      20      cnd2a0			Colored Candle (CTF) *( team 0/1, -, -, -, - )
+0x3AB0   8      20      fbu2a0          Colored Minotaur statue w/flame (CTF) *( team 0/1, -, -, -, - )
+0x3AB1   8      10      twtra0          Colored Brazier w/flame (CTF) *( team 0/1, -, -, -, - )
+0x3AB2   8      20      fsk2a0          Colored Fire skull (CTF) *( team 0/1, -, -, -, - )
+0x3AB3   8      20      ffl2f0          Colored Flame (large, continuous) (CTF) *( team 0/1, -, -, -, - )
+0x3AB4   8      20      ffs2c0          Colored Flame (small, continuous) (CTF) *( team 0/1, -, -, -, - )
+0x3AB5   8      10      brt2a0          Colored Brazier w/flame (small) (CTF) *( team 0/1, -, -, -, - )
+0x3AB6	 8      20      wlt2a0          Colored Wall torch w/flame (CTF) *( team 0/1, radius, -, -, - )
+0x3AB7	 22		20		sigli0			Common Domination Sigil
+0x3AB8	 22		20		siglb0			Fire Domination Sigil (offensive)
+0X3AB9	 22		20		sigla0			Ice Domination Sigil (offensive)
+0X3ABA	 22		20		siglf0			Lightning Domination Sigil (offensive)
+0X3ABB	 22		20		sigle0			Poison Domination Sigil (offensive)
+0X3ABC	 22		20		fx17c0			Soccer Ball Spot
+0X3ABD	 22		20		fx17d0			Soccer Kickoff Spot *( team 0/1, player )
+0X3ABE	 22		20		fx17d0			CTF Base *( team 0/1, index )
 
-;       ID                      used to classify specials
-;       Name                    textual description of class
+;	ID				used to classify linedefs
+;	Name			textual description of class
 ;
-;       Note:   When converting a sector to a door, the special types
-;                       available are those in class number two.
+;	Note:	When converting a sector to a door, the linedef types
+;			available are those in class number two.
 
 [Specials.Classes]
 0x001   Special
@@ -380,7 +408,7 @@ LightingInc=0
 
 ;       ID
 ;       class
-;       Name( arg0, arg1, arg2, arg3, arg4 )
+;       description
 
 [Specials.Types]
 
@@ -395,10 +423,18 @@ LightingInc=0
 0x0a1	1	Contents( type, trans, flags, -, - )
 0x0ad	1	NoiseAlert( source, target, -, -, - )
 0x0b5	1	Plane_Align( floor, ceiling, line_id, -, - )
+0x0b7	1	Line_AlignCeiling( line, side, -, -, - )
+0x0b8	1	Line_AlignFloor( line, side, -, -, - )
+0x0b9	1	Sector_SetRotation( tag, f_angle, c_angle, -, - )
+0x0ba	1	Sector_SetCeilingPanning( tag, x_int, x_frac, y_int, y_frac )
+0x0bb	1	Sector_SetFloorPanning( tag, x_int, x_frac, y_int, y_frac )
+0x0bc	1	Sector_SetCeilingScale( tag, x_int, x_frac, y_int, y_frac )
+0x0bd	1	Sector_SetFloorScale( tag, x_int, x_frac, y_int, y_frac )
 0x0d0	1	TranslucentLine( line, amount, -, -, - )
 0x0d1	1	Transfer_Heights( tag, flags, -, -, - )
 0x0d2	1	Transfer_FloorLight( tag, -, -, -, - )
 0x0d3	1	Transfer_CeilingLight( tag, -, -, -, - )
+0x0d4	1	Sector_SetColor( tag, red, green, blue, - )
 0x0d5	1	Sector_SetFade( tag, red, green, blue, - )
 0x0d6	1	Sector_SetDamage( tag, damage, mod, -, - )
 0x0d8   1	Sector_SetGravity( tag, int, frac, -, - )
@@ -406,6 +442,7 @@ LightingInc=0
 0x0db	1	Sector_SetFriction( tag, amount, -, -, - )
 0x0de	1	Sector_SetCurrent( tag, strength, angle, line_vector, - )
 0x0de	1	PointPush_SetForce( tag, tid, strength, line_vector, - )
+0x0ed	1	ChangeCamera( tag, who, revert, -, - )
 
 ; Door
 0x00a	2	Door_Close( tag, speed, light_tag, -, - )
@@ -569,7 +606,7 @@ LightingInc=0
 0x0f3	14	Exit_Normal( position, -, -, -, - )
 0x0f4	14	Exit_Secret( position, -, -, -, - )
 
-; Floor and ceiling
+; Elevator
 0x05f	15	FloorAndCeiling_LowerByValue( tag, speed, height, -, - )
 0x060	15	FloorAndCeiling_RaiseByValue( tag, speed, height, -, - )
 0x0f5	15	Elevator_RaiseToNearest( tag, speed, -, -, - )
