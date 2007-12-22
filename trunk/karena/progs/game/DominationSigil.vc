@@ -59,7 +59,6 @@ bool IsTouched(Entity Toucher)
 			if (Player(Toucher.Player).Team != Team)
 			{
 				CaptureBy(Toucher);
-				Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
 			}
 		}
 	}
@@ -85,7 +84,7 @@ void CaptureBy(Entity newCapturer)
 		Capturer = Player(newCapturer.Player);
 		score_timer = SCORE_DELAY;
 
-		// TODO: play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
+		// play some sound here like 'DZING', 'CLING', 'BANG' or whatever :)
 		if (Capturer)
 		{
 			string lvlname = strlwr(StrReplace(Level.LevelName, " ", ""));
@@ -101,6 +100,7 @@ void CaptureBy(Entity newCapturer)
 					ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
 			SetTeam(Player(Capturer).Team);
 			Player(Capturer).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
+			Capturer.MO.PlaySound('misc/p_pkup', CHAN_AUTO);
 		}
 
 		// Useful for some custom level effects
@@ -239,5 +239,5 @@ defaultproperties
 	RenderStyle = STYLE_Translucent;
 	Alpha = 0.666;
 	DLightColour = RGB(255, 255, 255);
-	DLightRadius = 200.0;
+	DLightRadius = 146.0;
 }
