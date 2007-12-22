@@ -40,7 +40,7 @@ class PlayerFighter : PlayerPawn;
 
 final void A_SkullPop()
 {
-	Actor A;
+	EntityEx A;
 
 	if (!bIsPlayer)
 	{
@@ -55,6 +55,7 @@ final void A_SkullPop()
 	// Attach player mobj to bloody skull
 	A.Player = Player;
 	A.bIsPlayer = true;
+	A.ObtainInventory(EntityEx(Player.MO));
 	Player = none;
 	bIsPlayer = false;
 	Special1 = A.Player.PClass;
@@ -102,10 +103,10 @@ Ice:
 	PLAY X 1 A_FreezeDeathChunks
 	Wait
 Burn:
-	FDTH A 5 Bright A_PlayerBurnScream
+	FDTH A 5 Bright { A_PlayerBurnScream(); DLightRadius = 118.0; DLightColour = RGB(255, 255, 0); bMuzzleFlash = true; }
 	FDTH B 4 Bright
 	FDTH G 5 Bright
-	FDTH H 4 Bright A_PlayerScream
+	FDTH H 4 Bright { A_PlayerScream(); bMuzzleFlash = true; }
 	FDTH I 5 Bright
 	FDTH J 4 Bright
 	FDTH K 5 Bright
@@ -116,10 +117,10 @@ Burn:
 	FDTH P 4 Bright
 	FDTH Q 5 Bright
 	FDTH R 4 Bright
-	FDTH S 5 Bright A_NoBlocking
+	FDTH S 5 Bright { A_NoBlocking(); bMuzzleFlash = true; }
 	FDTH T 4 Bright
 	FDTH U 5 Bright
-	FDTH V 4 Bright
+	FDTH V 4 Bright { bMuzzleFlash = false; }
 	ACLO E 35 A_CheckBurnGone
 	Wait
 BurnGone:
