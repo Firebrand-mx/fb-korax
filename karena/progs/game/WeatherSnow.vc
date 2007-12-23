@@ -1,0 +1,139 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeatherSnow.vc 1001 2007-08-18 09:07:16Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeatherSnow : Sequencer;
+
+float FarDistance;
+float OriginSpacing;
+int Amount;
+int ParticleType;
+int ParticleType2;
+float Spread;
+TVec InitialVelocity;
+float VelocityRange;
+float InitialAcceleration;
+float AppliedGravity;
+int Colour;
+float ParticleDuration;
+float ParticleRamp;
+
+
+
+//==========================================================================
+//
+//	Continue
+//
+//==========================================================================
+
+void Continue()
+{
+	int i;
+	float x,y,mx,my;
+	TVec Origin;
+	sector_t * sector;
+	float pd;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		Player pl = Player(Level.Game.Players[i]);
+		if (!pl)
+			continue;
+		if (pl.bIsBot)
+			continue;
+		if (!pl.bSpawned)
+			continue;
+		if (!pl.MO)	// TODO: change to Camera MO
+			continue;
+
+		x = pl.MO.Origin.x - FarDistance;
+		y = pl.MO.Origin.y - FarDistance;
+		mx = pl.MO.Origin.x + FarDistance;
+		my = pl.MO.Origin.y + FarDistance;
+
+		dprint("player MO = %f,%f", pl.MO.Origin.x, pl.MO.Origin.y);
+		dprint("Weather bound box = (%f,%f) - (%f,%f)", x,y,mx,my);
+
+		for (Origin.x = x; Origin.x < mx; Origin.x += OriginSpacing)
+		{
+			for (Origin.y = y; Origin.y < my; Origin.y += OriginSpacing)
+			{
+				sector = XLevel.PointInSector(Origin);
+				if (sector)
+					dprint("sector->ceiling.pic = %i", sector->ceiling.pic);
+				if (sector && sector->ceiling.pic == 1578/*FIXME!!!*/)
+				{
+					if (ParticleDuration)
+						pd = ParticleDuration;
+					else
+					{
+						//pd = 
+					}
+
+					dprint("Spawn particles at %f,%f,%f", Origin.x, Origin.y, sector->ceilingheight);
+
+					pl.ParticleEffect(
+						Amount,
+						ParticleType,
+						ParticleType2,
+						vector(Origin.x, Origin.y,sector->ceilingheight / 2.0 /*FIXME!*/),
+						Spread,
+						InitialVelocity,
+						VelocityRange,
+						InitialAcceleration,
+						AppliedGravity,
+						Colour,
+						pd,
+						ParticleRamp);
+				}
+			}
+		}
+	}
+}
+
+defaultproperties
+{
+	time_limit = 0.8;
+
+	FarDistance = 512.0;
+	OriginSpacing = 256.0;
+	Amount = 140;
+	ParticleType = LineSpecialLevelInfo::pt_static;
+	ParticleType2 = 0;
+	Spread = 512.0;
+	InitialVelocity = vector(0.0,0.0,32.0);
+	VelocityRange = 1.0;
+	InitialAcceleration = 0.0;
+	AppliedGravity = 2.0;
+	Colour = RGB(220, 220, 220);
+	ParticleDuration = 6.0;	// FIXME!!
+	ParticleRamp = 0.0;
+}
