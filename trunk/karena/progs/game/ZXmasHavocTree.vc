@@ -1,0 +1,93 @@
+
+class ZXmasHavocTree:ZXmasTree
+	__mobjinfo__(16003);
+
+//==========================================================================
+//
+//	KilledByPlayer
+//
+//==========================================================================
+
+void KilledByPlayer(EntityEx source)
+{
+	if (!source.Player)
+		Error("ZXmasHavocTree::KilledByPlayer : source.Player reference is not set to an object");
+
+	if (DamageType == 'Fire')
+	{
+		GameXMasHavoc XM = GameXMasHavoc(MainGameInfo(Level.Game).GameModel);
+		if (XM && XM.IsInPlayableState())
+		{
+			XM.NotifyXMasTreeBurnt(self);
+			Player(source.Player).UpdateScore(HexenDefs::scoreevent_XMasTree);
+			XmasBurn xmaa = XmasBurn(Spawn(XmasBurn, Origin + vector(0.0, 0.0, Height)));
+			if (xmaa)
+				xmaa.Velocity.z = 64.0;
+		}
+
+		if (Health < 0)
+		{
+			ZXmasHavocTree xmtree;
+			foreach AllThinkers(ZXmasHavocTree, xmtree)
+			{
+				if (CanSee(xmtree) && (Length(xmtree.Origin - Origin) <= 128.0))
+				{
+					xmtree.Damage(self, source, -Health, 'Fire');
+					Health += default.Health;
+					if (Health >= 0)
+					{
+						Health = 0;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	Revive
+//
+//==========================================================================
+
+final void Revive()
+{
+	bSolid = true;
+
+	bShootable = true;
+	bDropOff = false;
+	bCorpse = false;
+
+	Health = default.Health;
+	Height = default.Height;
+
+	bDynamicLight = false;
+	DLightColour = 0;
+	DLightRadius = 0.0;
+
+	Spawn(TeleportFog, Origin + vector(0.0, 0.0, TELEFOGHEIGHT));
+	PlaySound('Teleport', CHAN_VOICE);
+}
+
+
+states
+{
+Melee:
+	XMAS B 6 Bright
+	XMAS C 6 Bright A_Scream
+	XMAS D 5 Bright
+	XMAS E 5 Bright A_Explode
+	XMAS F 5 Bright
+	XMAS G 4 Bright
+	XMAS H 5
+	XMAS I 4 A_NoBlocking
+	XMAS J 4
+	XMAS K 2100	// [CW] that's ~ 1 minute
+	XMAS K 2 Revive
+	Goto ZXmasTree::Spawn
+}
+
+defaultproperties
+{
+}

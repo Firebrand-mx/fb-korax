@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id$
+//**    $Id: BotPlayer.vc 1133 2007-11-26 23:13:04Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -2535,9 +2535,27 @@ EntityEx B_GetNearestEnemy(optional bool bReachable)
 {
 	EntityEx oldEnemy = enemy;
 	FindEnemy();
+	if (!enemy)
+		enemy = B_GetSpecialEnemy();
 	if (!enemy && oldEnemy)
 		enemy = oldEnemy;
 	return enemy;
+}
+
+//==========================================================================
+//
+//	B_GetSpecialEnemy
+//
+//==========================================================================
+
+EntityEx B_GetSpecialEnemy()
+{
+	switch (gameInfo.GameType)
+	{
+	case HexenDefs::game_xmas:
+		return botmo.A_GetNearestEntity(ZXmasHavocTree);
+	}
+	return none;
 }
 
 //==========================================================================
