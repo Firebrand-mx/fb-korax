@@ -2940,8 +2940,6 @@ void UpdateScore(int event)
 	int mod = 0;
 	bool force_update = false;
 
-	dprint("Player::UpdateScore : ");
-
 	switch(event)
 	{
 		case HexenDefs::scoreevent_PlayerDiscard:
@@ -2956,6 +2954,7 @@ void UpdateScore(int event)
 			break;
 		
 		case HexenDefs::scoreevent_PlayerReset:
+			dprint("Player::UpdateScore : scoreevent_PlayerReset");
 			mod = -Score;
 			force_update = true;
 			break;	// this should always set Score to 0
@@ -2999,7 +2998,7 @@ void UpdateScore(int event)
 
 	Score += mod;
 
-	if (Level && MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && Team)
+	if (Level && Level.Game && (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM) && Team)
 	{
 		Team.UpdateScore(event);
 		// update team stats for clientstate	
@@ -3011,15 +3010,16 @@ void UpdateScore(int event)
 	{
 		UpdateCompetition();
 		// No player-referred announces in team games
-		if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
-				MainGameInfo(Level.Game).GetPlayerCount() > 1)
+		if (Level && Level.Game && (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM) &&
+				(MainGameInfo(Level.Game).GetPlayerCount() > 1))
 			CompetitionAnnouncements(Score - mod);
-		
-		if (mod > 0)
-			MainGameInfo(Level.Game).bCompetitionOpened = true;
 
-		if (Level)	// in case score is somehow updated between levels
+		if (Level && Level.Game)	// in case score is somehow updated between levels
+		{
+			if (mod > 0)
+				MainGameInfo(Level.Game).bCompetitionOpened = true;
 			MainGameInfo(Level.Game).ScoreboardsUpdate(none);
+		}
 	}
 
 	dprint("Player::UpdateScore : OUT");

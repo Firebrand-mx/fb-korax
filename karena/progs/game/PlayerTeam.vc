@@ -196,6 +196,7 @@ void UpdateScore(int event)
 	switch(event)
 	{
 	case HexenDefs::scoreevent_TeamDiscard:
+		dprint("PlayerTeam::UpdateScore : scoreevent_TeamDiscard");
 		i = Game.GetTeamCount();
 		if (i > 1)
 			mod = Game.Teams[--i].Score - Score - 1;
@@ -204,6 +205,7 @@ void UpdateScore(int event)
 		force_update = true;
 		break;
 	case HexenDefs::scoreevent_TeamReset:
+		dprint("PlayerTeam::UpdateScore : scoreevent_TeamReset");
 		Frags = 0;
 		Kills = 0;
 		Goals = 0;
@@ -255,12 +257,15 @@ void UpdateScore(int event)
 
 		UpdateCompetition();
 
-		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM &&
-				Game.GetTeamCount() > 1)
+		if (Game && Game.Level && (Game.GameType >= HexenDefs::NUMGAMESNOTEAM) &&
+				(Game.GetTeamCount() > 1))
 			CompetitionAnnouncements(Score - mod);
 
-		if (mod > 0)
-			Game.bCompetitionOpened = true;
+		if (Game && Game.Level)
+		{
+			if (mod > 0)
+				Game.bCompetitionOpened = true;
+		}
 
 		Game.ScoreboardsUpdate(none);
 	}
