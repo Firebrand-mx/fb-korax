@@ -79,17 +79,12 @@ void Continue()
 		mx = pl.MO.Origin.x + FarDistance;
 		my = pl.MO.Origin.y + FarDistance;
 
-		dprint("player MO = %f,%f", pl.MO.Origin.x, pl.MO.Origin.y);
-		dprint("Weather bound box = (%f,%f) - (%f,%f)", x,y,mx,my);
-
 		for (Origin.x = x; Origin.x < mx; Origin.x += OriginSpacing)
 		{
 			for (Origin.y = y; Origin.y < my; Origin.y += OriginSpacing)
 			{
 				sector = XLevel.PointInSector(Origin);
-				if (sector)
-					dprint("sector->ceiling.pic = %i", sector->ceiling.pic);
-				if (sector && sector->ceiling.pic == 1578/*FIXME!!!*/)
+				if (sector && sector->ceiling.pic == Level.Game.skyflatnum)
 				{
 					if (ParticleDuration)
 						pd = ParticleDuration;
@@ -97,8 +92,6 @@ void Continue()
 					{
 						//pd = 
 					}
-
-					dprint("Spawn particles at %f,%f,%f", Origin.x, Origin.y, sector->ceilingheight);
 
 					pl.ParticleEffect(
 						Amount,
