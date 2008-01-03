@@ -82,11 +82,9 @@ float LastBlindTime;
 /*Actor*/Player Blinder;		///// none for non-player mobjs
 int count;
 
-int PoisonCount;	// screen flash for poison damage
 float LastPoisonTime;
 /*Actor*/Player Poisoner;		///// none for non-player mobjs
 
-int WeaponCShift;
 morph_t	Morph;
 
 BotPlayer Bot;
@@ -429,66 +427,11 @@ void UserinfoChanged()
 	{
 		return;
 	}
-	SetPlayerColour();
-
-	//[CW] update all server clients' scoreboards
-	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
-}
-
-//==========================================================================
-//
-//  SetPlayerColour
-//
-//==========================================================================
-
-void SetPlayerColour()
-{
-	MO.Translation = 0;
-	if (PClass == HexenDefs::PCLASS_WITCHAVEN)
-	{
-		// [FB] The first type should be blue, and the second should be the
-		// Hero's original red colour
-		if (Colour == 0)
-			MO.Translation = 1 + PClass * (MAXPLAYERS - 1);
-		else if (Colour != 1)
-			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
-	}
-	else if (PClass == HexenDefs::PCLASS_FIGHTER)
-	{
-		// The first type should be blue, and the third should be the
-		// Fighter's original gold colour
-		if (Colour == 0)
-		{
-			MO.Translation = 2;
-		}
-		else if (Colour != 2)
-		{
-			MO.Translation = Colour;
-		}
-	}
-	else if (PClass == HexenDefs::PCLASS_HERETIC)
-	{
-		if (Colour == 0)
-			MO.Translation = 3 + PClass * (MAXPLAYERS - 1);
-		else if (Colour != 3)
-			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
-	}
-	else if (PClass == HexenDefs::PCLASS_MARINE)
-	{
-		if (Colour == 0)
-			MO.Translation = 4 + PClass * (MAXPLAYERS - 1);
-		else if (Colour != 4)
-			MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
-	}
-	else if (Colour)
-	{
-		// Set colour translation bits for player sprites
-		MO.Translation = Colour + PClass * (MAXPLAYERS - 1);
-	}
 
 	// [CW] respawn player if team is selected or re-selected
-	if (TeamSelection == HexenDefs::teamselection_wait || TeamSelection == HexenDefs::teamselection_reselect
-		|| TeamSelection == HexenDefs::teamselection_autoselect)
+	if (TeamSelection == HexenDefs::teamselection_wait ||
+		TeamSelection == HexenDefs::teamselection_reselect ||
+		TeamSelection == HexenDefs::teamselection_autoselect)
 	{		
 		if (TeamSelection != HexenDefs::teamselection_autoselect &&
 			!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
@@ -513,6 +456,9 @@ void SetPlayerColour()
 
 		oldColour = Colour;
 	}
+
+	//[CW] update all server clients' scoreboards
+	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 }
 
 //==========================================================================
@@ -879,11 +825,33 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
-		TeamSelection == HexenDefs::teamselection_autoselect)
+	if (PClass == HexenDefs::PCLASS_FIGHTER)
 	{
-		SetPlayerColour();
+		TranslStart = 246;
+		TranslEnd = 254;
 	}
+	else if (PClass == HexenDefs::PCLASS_HERETIC)
+	{
+		TranslStart = 51;
+		TranslEnd = 66;
+	}
+	else if (PClass == HexenDefs::PCLASS_MARINE)
+	{
+		TranslStart = 186;
+		TranslEnd = 202;
+	}
+	else if (PClass == HexenDefs::PCLASS_WITCHAVEN)
+	{
+		TranslStart = 164;
+		TranslEnd = 185;
+	}
+	else
+	{
+		TranslStart = 146;
+		TranslEnd = 163;
+	}
+	pp.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
+		GetPlayerNum();
 	if (bIsBot)
 	{
 		Bot.OnSpawn();
@@ -1071,6 +1039,7 @@ void PlayerExitMap(bool clusterChange)
 	PoisonCount = 0;
 	BlindCount = 0; // [FB] Reset the blind count too!
 	SavedInventory = EntityEx(MO).Inventory;
+	EntityEx(MO).Inventory = none;
 }
 
 //==========================================================================
@@ -1680,7 +1649,8 @@ bool UndoPlayerMorph()
 	A.Health = max_health;
 	Health = A.Health;
 	PClass = BaseClass;
-	SetPlayerColour();
+	A.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
+		GetPlayerNum();
 	PostMorphWeapon(Weapon(Actor(MO).Tracer));
 
 	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
@@ -2211,97 +2181,28 @@ void PlayerTick(float deltaTime)
 //
 //  PaletteFlash
 //
-//  Sets the new palette based upon the current values of
-// Player.DamageFlash and Player.BonusFlash.
+//  Sets the new palette colour shift based upon the current values of
+// Player.DamageFlash and Player.BonusFlash, contents and other inventory
+// items.
 //
 //==========================================================================
 
 void PaletteFlash()
 {
-	CShifts[CSHIFT_Contents] = 0;
-	if (MO.WaterLevel == 3)
-	{
-		switch (MO.WaterType)
-		{
-		case CONTENTS_WATER:
-			CShifts[CSHIFT_Contents] = RGBA(130, 80, 50, 128);
-			break;
-
-		case CONTENTS_LAVA:
-			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
-			break;
-
-		case CONTENTS_NUKAGE:
-			CShifts[CSHIFT_Contents] = RGBA(50, 255, 50, 150);
-			break;
-
-		case CONTENTS_SLIME:
-			CShifts[CSHIFT_Contents] = RGBA(0, 25, 5, 150);
-			break;
-
-		case CONTENTS_HELLSLIME:
-			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
-			break;
-
-		case CONTENTS_BLOOD:
-			CShifts[CSHIFT_Contents] = RGBA(160, 16, 16, 150);
-			break;
-
-		case CONTENTS_SLUDGE:
-			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 150);
-			break;
-
-		case CONTENTS_HAZARD:
-			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 128);
-			break;
-		}
-	}
+	::PaletteFlash();
 
 	// [FB] Black palette for blinding effect
-	CShifts[CSHIFT_Power] = 0;
 	if (BlindCount)
 	{
-		CShifts[CSHIFT_Power] = RGBA(0, 0, 0, BlindCount);
+		float r = 0.0;
+		float g = 0.0;
+		float b = 0.0;
+		float a = 0.0;
+		AddBlend(r, g, b, a, CShift);
+		AddBlend(r, g, b, a, RGBA(0, 0, 0, BlindCount));
+		CShift = RGBA(ftoi(r * 255.0), ftoi(g * 255.0),
+			ftoi(b * 255.0), ftoi(a * 255.0));
 	}
-
-	CShifts[CSHIFT_Damage] = 0;
-	if (DamageFlash)
-	{
-		int Amount = ftoi(114.0 * DamageFlash);
-		if (Amount >= 228)
-			Amount = 228;
-		CShifts[CSHIFT_Damage] = RGBA(255, 0, 0, Amount);
-	}
-
-	CShifts[CSHIFT_Bonus] = 0;
-	if (BonusFlash)
-	{
-		int Amount = ftoi(256.0 * BonusFlash);
-		if (Amount >= 128)
-			Amount = 128;
-		CShifts[CSHIFT_Bonus] = RGBA(215, 186, 68, Amount);
-	}
-
-	CShifts[CSHIFT_Poison] = 0;
-	if (PoisonCount)
-	{
-		int Amount = PoisonCount * 160 / 32;
-		if (Amount >= 160)
-		{
-			Amount = 160;
-		}
-		CShifts[CSHIFT_Poison] = RGBA(56, 118, 46, Amount);
-	}
-
-	if (Actor(MO).DamageType == 'Ice')
-	{
-		// Frozen player
-		CShifts[CSHIFT_Damage] = RGBA(2, 2, 255, 113);
-		CShifts[CSHIFT_Bonus] = 0;
-		CShifts[CSHIFT_Poison] = 0;
-	}
-
-	CShifts[CSHIFT_Weapon] = WeaponCShift;
 }
 
 //==========================================================================
