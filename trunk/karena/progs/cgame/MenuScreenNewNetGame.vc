@@ -32,9 +32,7 @@
 
 class MenuScreenNewNetGame : MenuScreen;
 
-const int MAXMAPSPERGAMEMODE = 32;
-
-name				MapLumpNames[MAXMAPSPERGAMEMODE];
+array<name>			MapLumpNames;
 
 MenuChoiceEnum		Players;
 MenuChoiceEnum		Bots;
@@ -204,34 +202,33 @@ bool ChangeDeathmatch(Object Sender, int newValue)
 
 void InitMapList(int GameType)
 {
-	string rawTable;
-	string mapLumpName;
+	ScriptsParser sc = ScriptsParser(SpawnObject(ScriptsParser));
 
 	switch (GameType + 1)
 	{
 	case HexenDefs::game_sweep:	//	Castle Sweep
-		rawTable = LoadTextLump('gm_swp');
+		sc.OpenLumpName('gm_swp');
 		break;
 	case HexenDefs::game_sweepteam:	//	Team Castle Sweep
-		rawTable = LoadTextLump('gm_tswp');
+		sc.OpenLumpName('gm_tswp');
 		break;
 	case HexenDefs::game_kth:
-		rawTable = LoadTextLump('gm_kth');
+		sc.OpenLumpName('gm_kth');
 		break;
 	case HexenDefs::game_dm:	//	Deathmatch
-		rawTable = LoadTextLump('gm_dm');
+		sc.OpenLumpName('gm_dm');
 		break;
 	case HexenDefs::game_dmteam:	//	Team deathmatch.
-		rawTable = LoadTextLump('gm_tdm');
+		sc.OpenLumpName('gm_tdm');
 		break;
 	case HexenDefs::game_ctf: //	Capture the Flag
-		rawTable = LoadTextLump('gm_ctf');
+		sc.OpenLumpName('gm_ctf');
 		break;
 	case HexenDefs::game_domination: //	Domination
-		rawTable = LoadTextLump('gm_dom');
+		sc.OpenLumpName('gm_dom');
 		break;
 	case HexenDefs::game_football: //	Football
-		rawTable = LoadTextLump('gm_ftb');
+		sc.OpenLumpName('gm_ftb');
 		break;
 	case HexenDefs::game_xmas: // XMas Havoc
 		rawTable = LoadTextLump('gm_xmas');
@@ -241,8 +238,7 @@ void InitMapList(int GameType)
 		return;
 	}
 
-	int n = strlen(rawTable);
-	if (!n)
+	if (sc.AtEnd())
 	{
 		Error("MenuChoice_Level::InitMapList : maps table missing for game type %i", GameType + 1);
 		return;
@@ -251,64 +247,24 @@ void InitMapList(int GameType)
 	//
 	// Begin parsing...
 	//
-	bool reading = false;
-	bool skipping = false;
-	bool expecting_newline = false;
-	int i = -1;
-	int substr_from = 0;
-	int Idx = 0;
+	Level.EnumNames.Num = 0;
+	MapLumpNames.Num = 0;
 
-	while (++i < n && Idx < MAXMAPSPERGAMEMODE)
+	while (!sc.AtEnd())
 	{
-		if (skipping)
+		sc.ExpectString();
+		if (StrEndsWith(sc.String, "*"))
 		{
-			if (strcmp(substr(rawTable, i, 1), "\n") == 0)
-			{
-				skipping = false;
-				expecting_newline = true;
-			}
-			continue;
-		}
-
-		if (strcmp(substr(rawTable, i, 1), "0") >= 0 && strcmp(substr(rawTable, i, 1), "9") <= 0 ||
-			strcmp(substr(rawTable, i, 1), "A") >= 0 && strcmp(substr(rawTable, i, 1), "Z") <= 0 ||
-			strcmp(substr(rawTable, i, 1), "_") == 0 ||
-			strcmp(substr(rawTable, i, 1), "a") >= 0 && strcmp(substr(rawTable, i, 1), "z") <= 0)
-		{
-			expecting_newline = false;
-			if (!reading)
-			{
-				reading = true;
-				substr_from = i;
-			}
+			AddMapsToList(substr(sc.String, 0, strlen(sc.String) - 1), true);
 		}
 		else
 		{
-			if (expecting_newline && strcmp(substr(rawTable, i, 1), " ") < 0)
-				continue;
-			skipping = true;
-			if (reading)
-			{
-				reading = false;
-				mapLumpName = substr(rawTable, substr_from, i - substr_from);
-				if (!strcmp(substr(rawTable, i, 1), "*"))
-					Idx += AddMapsToList(Idx, mapLumpName, true);
-				else
-					AddMapsToList(Idx++, mapLumpName, false);
-			}
+			AddMapsToList(sc.String, false);
 		}
-	};
-
-	if (reading)
-	{
-		if (!strcmp(substr(rawTable, i, 1), "*"))
-			Idx += AddMapsToList(Idx, mapLumpName, true);
-		else
-			Idx += AddMapsToList(Idx, mapLumpName, false);
 	}
+	sc.Destroy();
 
-	Level.MaxValue = Idx;
-	Level.Value = 0;
+	Level.SetInitialValue(0);
 }
 
 //==========================================================================
@@ -317,12 +273,13 @@ void InitMapList(int GameType)
 //
 //==========================================================================
 
-int AddMapsToList(int Idx, string mapLumpName, bool useAsPrefix)
+void AddMapsToList(string mapLumpName, bool useAsPrefix)
 {
 	int i, count, len;
 	string testmapname;
 
-	for (i = 0, count = 0; i < 99 && Idx < MAXMAPSPERGAMEMODE; i++)
+	mapLumpName = strlwr(mapLumpName);
+	for (i = 0, count = 0; i < 99; i++)
 	{
 		// If the lump found after any others is the first possible map, it means
 		// no appropriate lump may be found any more, so cycle should end here 
@@ -334,20 +291,18 @@ int AddMapsToList(int Idx, string mapLumpName, bool useAsPrefix)
 		if (strlen(testmapname) < len)
 			continue;
 
-		if (!stricmp(substr(testmapname, 0, len), mapLumpName))
+		if (useAsPrefix ? StrStartsWith(testmapname, mapLumpName) :
+			!strcmp(testmapname, mapLumpName))
 		{
 			count++;
-			MapLumpNames[Idx] = P_GetMapLumpName(i);
-			Level.EnumNames[Idx] = P_GetMapName(i);
+			MapLumpNames.Num = MapLumpNames.Num + 1;
+			MapLumpNames[MapLumpNames.Num - 1] = P_GetMapLumpName(i);
+			Level.AddItem(P_GetMapName(i));
 			
 			if (!useAsPrefix)
 				break;
-
-			Idx++;
 		}
 	}
-
-	return count;
 }
 
 //==========================================================================
