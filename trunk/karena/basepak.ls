@@ -26,9 +26,10 @@ gm_dm.txt				scripts/gm_dm.txt
 gm_dom.txt				scripts/gm_dom.txt
 gm_ftb.txt				scripts/gm_ftb.txt
 gm_kth.txt				scripts/gm_kth.txt
-gm_swp.txt			scripts/gm_swp.txt
-gm_tdm.txt			scripts/gm_tdm.txt
-gm_tswp.txt			scripts/gm_tswp.txt
+gm_swp.txt				scripts/gm_swp.txt
+gm_tdm.txt				scripts/gm_tdm.txt
+gm_tswp.txt				scripts/gm_tswp.txt
+gm_xmas.txt				scripts/gm_xmas.txt
 
 //	Language strings
 language.en				language.en
