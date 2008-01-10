@@ -343,7 +343,8 @@ void PlayDeathSequence()
 		{
 			FlameLargeTemp flame;
 			flame = FlameLargeTemp(Level.Spawn(FlameLargeTemp, DeathSpot.Origin));
-			if (flame) flame.Args[0] = 8;
+			if (flame)
+				flame.Args[0] = 8;
 		}
 		break;
 	case 30:
@@ -422,13 +423,14 @@ void PlayDeathSequence()
 
 void PlayBirthSequence()
 {
-	plHeresiarch.MO.Velocity = vector(0.0,0.0,plHeresiarch.MO.Velocity.z);
+	plHeresiarch.MO.Velocity = vector(0.0, 0.0, plHeresiarch.MO.Velocity.z);
 
 	switch(birthsequence_state)
 	{
 	case 0:
 		// Make heresiarch-morphing player invulnerable & immobile for the period
 		// of birth sequence
+		EntityEx(plHeresiarch.MO).bInvulnerable = true;
 		dlDelay2 = 0;
 		dmDelay = 0;
 		plHeresiarch.MO.SetState(plHeresiarch.MO.FindState('Pain'));
@@ -562,10 +564,11 @@ void PlayBirthSequence()
 			{
 				birthSequencer.Destroy();
 			}
+			EntityEx(plHeresiarch.MO).bInvulnerable = false;
 			Actor(plHeresiarch.MO).HeresiarchMorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch, false, true);
-			EntityEx(plHeresiarch.MO).GiveInventoryType(
-				InitialInvulnerability);
+			EntityEx(plHeresiarch.MO).GiveInventoryType(InitialInvulnerability);
 			plHeresiarch.SetControllable(true);
+			plHeresiarch.MO.bNoGravity = false;
 			////////ChangeMusic(va("%n", originalMusic));
 			break;
 		}

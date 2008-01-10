@@ -127,7 +127,6 @@ struct chatinfo_t
 enum { NUMTOTALBOTS = 24 };
 enum { NUMBOTTYPES = 24 };
 
-
 //
 // [CW] Okay, here I'll begin to add something =)
 //
@@ -216,7 +215,6 @@ EntityEx ITarget;	// immediate target (where to go)
 PathNode node_current;
 array<PathNode> nodes; // list of visited nodes (to make bot move freely along the map)
 
-
 EntityEx enemy;			// The dead meat.
 Actor nemesis;			// Prefered enemy to chase when pissed off
 
@@ -226,7 +224,6 @@ Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
 				// necessary.
 
 botstate_t botstate;		// What we're doing in teamgame mode
-
 
 // Tickers
 float t_respawn;
@@ -249,8 +246,6 @@ bool bSoftContact;	// Target is something that could be passed through without s
 bool bMeleeUrge;	// Must come closer to enemy as quickly as possible
 bool bKeepDistant;	// Enemy should be attacked from distance
 
-
-
 // Misc booleans
 bool bAllRound;
 
@@ -262,7 +257,6 @@ botinfo_t info;			// Aiming, name, perfection, yadda yadda
 int angerlevel;
 
 float angle;			// The wanted angle that the bot tries to get every tic.
-
 
 // -----------------------------------------------------------
 //
@@ -295,7 +289,6 @@ int n_accuracy;
 
 // [FB] Used to determine if stats have been updated when pissed off
 bool p_init;
-
 
 //==========================================================================
 //
@@ -870,7 +863,7 @@ void Aim()
 	// [CW] removed JL's limit
 	if (/*Random() < 0.001 || */player.ReadyWeapon.bWimpyWeapon)
 	{
-		Weapon Best = B_ChooseWeapon(dist);
+		Weapon Best = ChooseWeapon(dist);
 		if (Best && Best != player.ReadyWeapon)
 		{
 			player.PendingWeapon = Best;
@@ -1084,13 +1077,13 @@ Actor FindEnemy()
 
 //==========================================================================
 //
-//	B_ChooseWeapon
+//	ChooseWeapon
 //
 //	[FB] Decide which weapon would be best to use in our situation
 //
 //==========================================================================
 
-Weapon B_ChooseWeapon(float dist)
+Weapon ChooseWeapon(float dist)
 {
 	Inventory		Item;
 	KArenaWeapon	Wpn;
@@ -1148,13 +1141,13 @@ Weapon B_ChooseWeapon(float dist)
 
 //==========================================================================
 //
-//	B_ChooseAltWeapon
+//	ChooseAltWeapon
 //
 //	[FB] Decide which alternate weapon would be best to use in our situation
 //
 //==========================================================================
 
-void B_ChooseAltWeapon(float dist)
+void ChooseAltWeapon(float dist)
 {
 	Ammo AltWpn;
 
@@ -1256,14 +1249,14 @@ void B_ChooseAltWeapon(float dist)
 
 //==========================================================================
 //
-//	B_SetAlly
+//	SetAlly
 //
 //	[FB] This function is called every tick (for each bot) to set the
 //	     mate (teammate coop mate).
 //
 //==========================================================================
 
-Actor B_SetAlly()
+Actor SetAlly()
 {
 	float closest_dist, test;
 	Actor target;
@@ -1647,7 +1640,7 @@ void Alternate_Attack()
 	if (t_react > 2.0 || !enemy)
 		return;
 
-	B_ChooseAltWeapon(botmo.DistTo2(enemy));
+	ChooseAltWeapon(botmo.DistTo2(enemy));
 	// [FB] We just simply check which weapon is active and do what it's needed for it to work
 	switch (player.altWeapon)
 	{
@@ -1929,13 +1922,13 @@ void OnSpawn()
 
 //==========================================================================
 //
-//	B_AffectStat
+//	AffectStat
 //
 //  [FB] Check if we are blind by darkness!!
 //
 //==========================================================================
 
-void B_AffectStat()
+void AffectStat()
 {
 	if (!accuracy_r)
 	{
@@ -2065,7 +2058,7 @@ void BotTick(float deltaTime)
 	// ---------------------------
 	// Timed effects
 	// ---------------------------
-	B_UpdateTimedEffects(deltaTime);
+	UpdateTimedEffects(deltaTime);
 
 	// ---------------------------
 	// General DECIDE
@@ -2080,14 +2073,14 @@ void BotTick(float deltaTime)
 		if (!ally && (gameInfo.bIsCoopGame[gameInfo.GameType] ||
 				// [CW] this may change by time in some game modes
 				gameInfo.GameModel && gameInfo.GameModel.AllowAllies()))
-			ally = B_SetAlly();
+			ally = SetAlly();
 		else
 			ally = none;
 
-		B_ProcessPriorities();
+		ProcessPriorities();
 	}
 
-	B_ProcessImmediate();
+	ProcessImmediate();
 
 	//
 	// [CW] assuming we have have what to do, or decided just to roam around
@@ -2121,15 +2114,15 @@ void BotTick(float deltaTime)
 
 //==========================================================================
 //
-//	B_UpdateTimedEffects
+//	UpdateTimedEffects
 //
 //==========================================================================
 
-void B_UpdateTimedEffects(float deltaTime)
+void UpdateTimedEffects(float deltaTime)
 {
 	// [FB] Apply blind status
 	if(player.BlindCount)
-		B_AffectStat();
+		AffectStat();
 	else if (player.BlindCount <= 0)
 	{
 		//[FB] Darkness effects faded out, now restore everything back!
@@ -2164,10 +2157,8 @@ void B_UpdateTimedEffects(float deltaTime)
 			angerlevel = 0;
 	}
 
-
 	//--------------------------------------------------------
 	//--------------------------------------------------------
-
 
 	t_react -= deltaTime;
 	if (t_react <= 0.0)
@@ -2225,11 +2216,11 @@ void B_UpdateTimedEffects(float deltaTime)
 
 //==========================================================================
 //
-//	B_ProcessPriorities
+//	ProcessPriorities
 //
 //==========================================================================
 
-void B_ProcessPriorities()
+void ProcessPriorities()
 {
 	int i,j;
 	for (i = 0; i < NUM_PRIORITIES; i++)
@@ -2244,7 +2235,7 @@ void B_ProcessPriorities()
 	//----------------------------------------
 	Weapon wpn = Player(self.player).BestWeapon();
 	int my_weapon = wpn ? wpn.Slot : 0;
-	int heaviest_weapon = B_GetHeaviestEnemyWeapon();
+	int heaviest_weapon = GetHeaviestEnemyWeapon();
 	int opponent_weapon = 0;
 	int opponent_weapon_current = 0;
 	if (enemy && enemy.Player)
@@ -2265,7 +2256,6 @@ void B_ProcessPriorities()
 		Priority[priort_Weapons] += priorv_Weapons_HeavyOffence;
 	if (my_weapon < 7)
 		Priority[priort_Weapons] += priorv_Weapons_NotTheBest;
-
 
 	//----------------------------------------
 	// Ammo
@@ -2303,8 +2293,7 @@ void B_ProcessPriorities()
 				Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 		}
 	}
-			
-			
+	
 	//----------------------------------------
 	// Health & Armor
 	//
@@ -2319,7 +2308,6 @@ void B_ProcessPriorities()
 		Priority[priort_Health] += priorv_Health_NotMaximum;
 	//priorv_Health_ArmorNotMaximum
 	
-		
 	//----------------------------------------
 	// Game Mode
 	//----------------------------------------
@@ -2350,10 +2338,8 @@ void B_ProcessPriorities()
 			Priority[priort_GameMode] += priorv_GameMode_NoScore;
 	}
 
-	if (B_GetGameModeGoal(false))
+	if (GetGameModeGoal(false))
 		Priority[priort_GameMode] += priorv_GameMode_Normal;
-
-
 
 	int prior_max;
 	int prior_limit = -1;
@@ -2389,11 +2375,11 @@ void B_ProcessPriorities()
 
 //==========================================================================
 //
-//	B_GetHeaviestEnemyWeapon
+//	GetHeaviestEnemyWeapon
 //
 //==========================================================================
 
-int B_GetHeaviestEnemyWeapon()
+int GetHeaviestEnemyWeapon()
 {
 	int i;
 	Weapon wpn;
@@ -2417,13 +2403,13 @@ int B_GetHeaviestEnemyWeapon()
 
 //==========================================================================
 //
-//	B_GetFirstPriorityTarget
+//	GetFirstPriorityTarget
 //
 //	[CW] Handles Bot hunt for Inventory items
 //
 //==========================================================================
 
-EntityEx B_GetFirstPriorityTarget()
+EntityEx GetFirstPriorityTarget()
 {
 	EntityEx ee;
 	EntityEx candidates[NUM_PRIORITIES];
@@ -2433,7 +2419,7 @@ EntityEx B_GetFirstPriorityTarget()
 	for (i = 0; i < NUM_PRIORITIES; i++)
 		dist[i] = -1.0;
 
-	candidates[priort_GameMode] = B_GetGameModeGoal(true);
+	candidates[priort_GameMode] = GetGameModeGoal(true);
 
 	foreach botmo.AllThinkers(EntityEx, ee)
 	{
@@ -2479,11 +2465,11 @@ EntityEx B_GetFirstPriorityTarget()
 
 //==========================================================================
 //
-//	B_ProcessImmediate
+//	ProcessImmediate
 //
 //==========================================================================
 
-void B_ProcessImmediate()
+void ProcessImmediate()
 {
 	// Whatever bot is doing, he should be ready to attack an enemy
 	// TODO: if bot has high Evade priority he should not draw attention to himself...
@@ -2492,11 +2478,11 @@ void B_ProcessImmediate()
 
 	if (!ITarget)
 	{
-		ITarget = B_GetFirstPriorityTarget();
+		ITarget = GetFirstPriorityTarget();
 
 		if (!ITarget)
 		{
-			ITarget = B_GetNearestPathNode();
+			ITarget = GetNearestPathNode();
 		}
 
 		if (!ITarget && enemy && CheckTo(enemy.Origin))
@@ -2527,16 +2513,16 @@ void B_ProcessImmediate()
 
 //==========================================================================
 //
-//	B_GetNearestEnemy
+//	GetNearestEnemy
 //
 //==========================================================================
 
-EntityEx B_GetNearestEnemy(optional bool bReachable)
+EntityEx GetNearestEnemy(optional bool bReachable)
 {
 	EntityEx oldEnemy = enemy;
 	FindEnemy();
 	if (!enemy)
-		enemy = B_GetSpecialEnemy();
+		enemy = GetSpecialEnemy();
 	if (!enemy && oldEnemy)
 		enemy = oldEnemy;
 	return enemy;
@@ -2544,11 +2530,11 @@ EntityEx B_GetNearestEnemy(optional bool bReachable)
 
 //==========================================================================
 //
-//	B_GetSpecialEnemy
+//	GetSpecialEnemy
 //
 //==========================================================================
 
-EntityEx B_GetSpecialEnemy()
+EntityEx GetSpecialEnemy()
 {
 	switch (gameInfo.GameType)
 	{
@@ -2560,11 +2546,11 @@ EntityEx B_GetSpecialEnemy()
 
 //==========================================================================
 //
-//	B_GetGameModeGoal
+//	GetGameModeGoal
 //
 //==========================================================================
 
-EntityEx B_GetGameModeGoal(optional bool bReachable)
+EntityEx GetGameModeGoal(optional bool bReachable)
 {
 	EntityEx EE;
 	EntityEx ee;
@@ -2579,10 +2565,10 @@ EntityEx B_GetGameModeGoal(optional bool bReachable)
 				if (GameKTH(gameInfo.GameModel).plHeresiarch != player)
 					EE = EntityEx(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
 				else
-					EE = B_GetNearestEnemy(true);
+					EE = GetNearestEnemy(true);
 			}
 			else if (GameKTH(gameInfo.GameModel).State == GameKTH::state_freeramble)
-				EE = B_GetNearestEnemy(true);
+				EE = GetNearestEnemy(true);
 		}
 		break;
 	case HexenDefs::game_ctf:
@@ -2613,7 +2599,7 @@ EntityEx B_GetGameModeGoal(optional bool bReachable)
 		}
 		break;
 	default:
-		EE = B_GetNearestEnemy(true);
+		EE = GetNearestEnemy(true);
 	}
 
 	return EE;
@@ -2621,11 +2607,11 @@ EntityEx B_GetGameModeGoal(optional bool bReachable)
 
 //==========================================================================
 //
-//	B_GetNearestPathNode
+//	GetNearestPathNode
 //
 //==========================================================================
 
-EntityEx B_GetNearestPathNode()
+EntityEx GetNearestPathNode()
 {
 	PathNode PN;
 	PathNode pn;

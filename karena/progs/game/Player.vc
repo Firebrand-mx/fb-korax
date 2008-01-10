@@ -191,7 +191,6 @@ void PutClientIntoServer()
 
 void SpawnClient()
 {
-	int j;
 	bool playerWasReborn;
 	Weapon bestWeapon;
 	EntityEx OldMO = EntityEx(MO);
@@ -545,7 +544,9 @@ void AutoSelectTeam()
 
 	if (free_team_slots == Game.MaxTeamsInGame[Game.GameType] ||
 			free_team_slots > 0 && !(bKeepEqual && !team_colours_free[Colour]) && P_Random() > 127)
+	{
 		new_colour = Colour;
+	}
 	else
 	{
 		if (bKeepEqual)
@@ -1091,7 +1092,7 @@ bool GiveMana(class<Ammo> ammo, int count)
 	Ammo AmmoItem = Ammo(EntityEx(MO).FindInventory(ammo));
 	if (!AmmoItem)
 	{
-		AmmoItem = Level.Spawn(ammo);
+		AmmoItem = Level.Spawn(ammo,,,, false);
 		AmmoItem.AttachToOwner(EntityEx(MO));
 		AmmoItem.Amount = 0;
 	}
@@ -1555,8 +1556,6 @@ void AlternateAttack()
 	}
 }
 
-
-
 //==========================================================================
 //
 //  MorphPlayerThink
@@ -1799,7 +1798,6 @@ void DeathPlayerTick(float deltaTime)
 	if (respawn_counter <= 0.0 &&
 		(bIsBot || (Buttons & BT_USE || Buttons & BT_ATTACK || Buttons & BT_JUMP )))
 	{
-		WeaponCShift = 0;
 		PlayerState = PST_REBORN;
 		Actor(MO).Special1 = PClass;
 		if (Actor(MO).Special1 > 2)
