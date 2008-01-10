@@ -736,22 +736,22 @@ void SpawnPlayer(mthing_t * mthing)
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_FIGHTER:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerFighter, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerFighter, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_CLERIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerCleric, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerCleric, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MAGE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMage, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMage, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_HERETIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerHeretic, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerHeretic, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MARINE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMarine, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMarine, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_WITCHAVEN:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerWitchaven, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerWitchaven, vector(x, y, z),,, false));
 		break;
 	default:
 		Error("Player::SpawnPlayer : Unknown class type");
@@ -928,13 +928,13 @@ final void AddDefaultInventory()
 {
 	int i;
 
-	BasicArmor BArmor = Level.Spawn(BasicArmor);
+	BasicArmor BArmor = Level.Spawn(BasicArmor,,,, false);
 	BArmor.Amount = 0;
 	BArmor.AttachToOwner(EntityEx(MO));
 
 	for (i = 0; i < PlayerPawn(MO).InitialInventory.Num; i++)
 	{
-		Inventory Item = Level.Spawn(PlayerPawn(MO).InitialInventory[i].Type);
+		Inventory Item = Level.Spawn(PlayerPawn(MO).InitialInventory[i].Type,,,, false);
 		Item.bIgnoreSkill = true;
 		Item.Amount = PlayerPawn(MO).InitialInventory[i].Amount;
 		if (Weapon(Item))
@@ -2588,7 +2588,7 @@ void Cheat_Gimme()
 		Armor.Amount = 200;
 		foreach AllClasses(WeaponPickup, WpnCls)
 		{
-			WeaponPickup Wpn = Level.Spawn(WpnCls);
+			WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
 			Wpn.AmmoGive3 = 0;
@@ -2607,7 +2607,7 @@ void Cheat_Gimme()
 			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
 			if (!AmmoItem)
 			{
-				AmmoItem = Level.Spawn(Cls);
+				AmmoItem = Level.Spawn(Cls,,,, false);
 				if (!AmmoItem.TryPickup(EntityEx(MO)))
 				{
 					AmmoItem.Destroy();
