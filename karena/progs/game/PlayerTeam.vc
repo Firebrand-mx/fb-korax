@@ -34,9 +34,14 @@ class PlayerTeam : Object;
 
 MainGameInfo	Game;
 
+int		Index;	// team definition
+string	Name;
+int		Colour;
+int		FontColour;
+name	sndAnLeads;
+
 int		Position;
 int		Score;
-int		Colour;	// team definition
 int		Frags;	// player kills
 int		Kills;	// monster kills
 int		Goals;
@@ -53,6 +58,8 @@ Player	Players[MAXPLAYERS];
 void EnlistPlayer(Player pl)
 {
 	int i;
+
+	dprint("PlayerTeam::EnlistPlayer : ");
 
 	// first check if player already has reference to this team
 	if (pl.Team == self)
@@ -97,7 +104,8 @@ void EnlistPlayer(Player pl)
 
 			if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
-				pl.Level.bprint("%s joins %s team", pl.PlayerName, Game.ColourNames[Colour]);
+				pl.Colour = Colour;
+				pl.Level.bprint("%s joins %s team", pl.PlayerName, Name/*Game.ColourNames[Colour]*/);
 			}
 			else
 			{
@@ -140,7 +148,7 @@ void DiscardPlayer(Player pl)
 
 	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
-		pl.Level.bprint("%s has left %s team", pl.PlayerName, Game.ColourNames[Colour]);
+		pl.Level.bprint("%s has left %s team", pl.PlayerName, Name/*Game.ColourNames[Colour]*/);
 	}
 
 	// if there's no players, team is gone...
@@ -157,7 +165,7 @@ void DiscardPlayer(Player pl)
 		}
 
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
-		   pl.Level.bprint("team %s is no longer in competition", Game.ColourNames[Colour]);
+		   pl.Level.bprint("team %s is no longer in competition", Name/*Game.ColourNames[Colour]*/);
 
 		Game.Teams[Position] = none;
 		Destroy();
@@ -293,8 +301,8 @@ void CompetitionAnnouncements(int oldScore)
 					Score > 0 && !Game.bCompetitionOpened)
 			{
 				// [FB] Announce new leader!
-				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Leads + Colour, true, 0.0);
-				Game.Level.bprint(va("%s team leads!", Game.ColourNames[Colour]));
+				Game.BroadcastLocalSoundNamed(sndAnLeads, true, 0.0);
+				Game.Level.bprint(va("%s team leads!", Name/*Game.ColourNames[Colour]*/));
 			}
 		}
 		// Is he tied for the lead then?
@@ -304,7 +312,7 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Tied for the lead!
 				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_teams_are_tied, true, HexenDefs::STANDART_LSQ_DELAY);
-				Game.Level.bprint(va("teams are tied!", Game.ColourNames[Colour]));
+				Game.Level.bprint("teams are tied!");
 			}
 		}
 	}
@@ -320,15 +328,15 @@ void CompetitionAnnouncements(int oldScore)
 				//      If there will be more than 2 teams, we should modify this.
 				// [FB] Tied for the lead!
 				Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_teams_are_tied, true, HexenDefs::STANDART_LSQ_DELAY);
-				Game.Level.bprint(va("teams are tied!", Game.ColourNames[Colour]));
+				Game.Level.bprint("teams are tied!");
 			}
 		}
 		// Was he a single leader or tied?
 		else if (Game.Teams[0].Score <= oldScore)
 		{
 			// [FB] Announce new leader! // [CW] (another team leads now)
-			Game.BroadcastLocalSound(HexenDefs::lsid_gen_an_Blue_Leads + Game.Teams[1].Colour, true, 0.0);
-			Game.Level.bprint(va("%s team leads!", Game.ColourNames[Game.Teams[1].Colour]));
+			Game.BroadcastLocalSoundNamed(Game.Teams[1].sndAnLeads, true, 0.0);
+			Game.Level.bprint(va("%s team leads!", Game.Teams[1].Name/*Game.ColourNames[Game.Teams[1].Colour]*/));
 		}
 	}
 }
@@ -419,4 +427,5 @@ void UpdateCompetition()
 
 defaultproperties
 {
+	Name = "$team_noname";
 }

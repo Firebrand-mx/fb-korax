@@ -20,6 +20,7 @@ lockdefs.txt			lockdefs.txt
 sndinfo.txt				scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
 terrain.txt				scripts/terrain.txt
+teaminfo.txt			scripts/teaminfo.txt
 
 gm_ctf.txt				scripts/gm_ctf.txt
 gm_dm.txt				scripts/gm_dm.txt

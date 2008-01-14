@@ -1,0 +1,131 @@
+
+class TeamInfoParser : ScriptsParser;
+
+
+struct teaminfo_t
+{
+	bool bTeamInPlay;
+	string Name;
+	int Colour;
+	int FontColour;
+	name sndAnLeads;
+};
+
+enum
+{
+	readstate_teamtoken,
+	readstate_openbracket,
+	readstate_teamblock,
+	readstate_name,
+	readstate_colour,
+	readstate_fontcolour,
+	readstate_anleads,
+	readstate_teamend
+};
+
+//==========================================================================
+//
+//	ReadTeam
+//
+//==========================================================================
+
+bool ReadTeam(teaminfo_t * p_tinfo)
+{
+	bool eof;
+	bool missing;
+	int readstate = readstate_teamtoken;
+	p_tinfo->Name = "";
+	p_tinfo->Colour = 0;
+	p_tinfo->FontColour = 0;
+	p_tinfo->sndAnLeads = '';
+
+	while (!AtEnd())
+	{
+		missing = false;
+
+		if (readstate == readstate_colour ||
+			readstate == readstate_fontcolour)
+		{
+			ExpectNumber();
+			dprint("TeamInfoParser : Number = %i", Number);
+		}
+		else
+		{
+			ExpectString();
+			dprint("TeamInfoParser : String = %s", String);
+		}
+
+		switch (readstate)
+		{
+		case readstate_teamtoken:
+			if (strcmp(String, "team"))
+				missing = true;
+			else
+			{
+				eof = true;
+				readstate = readstate_openbracket;
+			}
+			break;
+		case readstate_openbracket:
+			if (strcmp(String, "{"))
+				missing = true;
+			else
+				readstate = readstate_teamblock;
+			break;
+		case readstate_teamblock:
+			if (!strcmp(String, "}"))
+				readstate = readstate_teamend;
+			else if (!strcmp(String, "name"))
+				readstate = readstate_name;
+			else if (!strcmp(String, "colour"))
+				readstate = readstate_colour;
+			else if (!strcmp(String, "fontcolour"))
+				readstate = readstate_fontcolour;
+			else if (!strcmp(String, "an_leads"))
+				readstate = readstate_anleads;
+			else
+				missing = true;
+			break;
+		case readstate_name:
+			p_tinfo->Name = String;
+			readstate = readstate_teamblock;
+			break;
+		case readstate_colour:
+			p_tinfo->Colour = Number;
+			readstate = readstate_teamblock;
+			break;
+		case readstate_fontcolour:
+			p_tinfo->FontColour = Number;
+			readstate = readstate_teamblock;
+			break;
+		case readstate_anleads:
+			p_tinfo->sndAnLeads = StrToName(String);
+			readstate = readstate_teamblock;
+			break;
+		}
+
+		if (missing)
+		{
+			ScriptError("unexpected \"%s\"", String);
+			return false;
+		}
+
+		if (readstate == readstate_teamend)
+		{
+			eof = false;
+			break;
+		}
+	}
+
+	if (eof && !missing)
+	{
+		ScriptError("unexpected end of file");
+		return false;
+	}
+
+	return (readstate == readstate_teamend);
+}
+
+defaultproperties
+{
+}

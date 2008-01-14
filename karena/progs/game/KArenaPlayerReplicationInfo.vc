@@ -35,7 +35,10 @@ class KArenaPlayerReplicationInfo : PlayerReplicationInfo;
 int		plclass;
 int		level;
 bool	IsBot;		// true if player is bot, false if is human
-int		team;		// colour
+//int		team;		// colour
+string	teamname;
+int		teamcolour;
+int		teamfont;
 int		score;		// player score (game mode dependent)
 int		deaths;
 int		teampos;	// [CW] team position in global competition list
@@ -44,7 +47,8 @@ int		playerpos;	// [CW] player position in team inner competition list
 replication
 {
 	reliable if (Role == ROLE_Authority)
-		plclass, level, IsBot, team, score, deaths, teampos, playerpos;
+		plclass, level, IsBot, /*team*/teamname, teamcolour, teamfont,
+		score, deaths, teampos, playerpos;
 }
 
 //==========================================================================
@@ -64,7 +68,10 @@ void Tick(float DeltaTime)
 	plclass = P.PClass;
 	level = P.exp_level;
 	IsBot = P.bIsBot;
-	team = P.Colour;
+	//team = P.Colour;
+	teamname = P.Team ? P.Team.Name : "";
+	teamcolour = P.Team ? P.Team.Colour : 0;
+	teamfont = P.Team ? P.Team.FontColour : CR_UNTRANSLATED;
 	score = P.Score;
 	deaths = P.Deaths;//0;
 	teampos = P.TeamPosition;

@@ -92,11 +92,11 @@ void CaptureBy(Entity newCapturer)
 			string place_lang = GetLangString(StrToName(place));
 			if (strcmp(place, place_lang))
 				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %s", Capturer.PlayerName,
-					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+					(Team ? /*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/Team.Name : "neutral"),
 					place_lang));
 			else
 				MainGameInfo(Level.Game).bcentreprint(va("%s captured %s sigil at %i,%i,%i", Capturer.PlayerName,
-					(Team ? MainGameInfo(Level.Game).ColourNames[Team.Colour] : "neutral"),
+					(Team ? /*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/Team.Name : "neutral"),
 					ftoi(Origin.x), ftoi(Origin.y), ftoi(Origin.z)));
 			SetTeam(Player(Capturer).Team);
 			Player(Capturer).UpdateScore(HexenDefs::scoreevent_DomSigilCapture);
@@ -123,9 +123,12 @@ void SetTeam(PlayerTeam PT)
 	{
 		Team = PT;
 
+		//
+		// [CW] FIXME!! -- this works only for original team list
+		//
 		if (Team)
 		{
-			switch (Team.Colour)
+			switch (Team.Index)
 			{
 			case 0:
 				SetState(FindState('Blue'));
@@ -196,11 +199,15 @@ void Tick(float deltaTime)
 	}
 }
 
+
 states
 {
 Spawn:
 	SIGL I -1
 	Stop
+//
+// [CW] FIXME!! -- this works only for original team list
+//
 Blue:
 	SIGL A -1
 	Stop

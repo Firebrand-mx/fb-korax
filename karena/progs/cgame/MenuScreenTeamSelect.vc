@@ -32,27 +32,40 @@
 
 class MenuScreenTeamSelect : MenuScreen;
 
-bool 	Ready;
-bool	bIsSelected;
-string	TeamNames[HexenDefs::MAXPLAYERTEAMS];
-int		Teams[HexenDefs::MAXTEAMSINGAME];
-int		Counts[HexenDefs::MAXTEAMSINGAME];
-int		maxTeams;
-int		activeTeams;
-int		curSelection;
+bool 			Ready;
+bool			bIsSelected;
+array<string>	TeamNames;//[HexenDefs::MAXPLAYERTEAMS];
+int				Teams[HexenDefs::MAXTEAMSINGAME];
+int				Counts[HexenDefs::MAXTEAMSINGAME];
+int				maxTeams;
+int				registeredTeams;
+int				activeTeams;
+int				curSelection;
+
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
 
 void CreateChoices()
 {
 	int i, y;
 	MenuStaticText staticText;
 	MenuChoice_Team newChoice;
-	bool teams_active[HexenDefs::MAXPLAYERTEAMS];
+	//bool teams_active[HexenDefs::MAXPLAYERTEAMS];
+	array<bool> teams_active;
 
-	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
-		teams_active[i] = false;
+	teams_active.Num = registeredTeams;
+	// CHECKME
+	//for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+	//	teams_active[i] = false;
 
 	if (!Ready)
 		return;
+
+	ReadTeams();
 
 	bool bKeepEqual = GetCvar('KeepTeamsEqual');
 	int count_limit = activeTeams > 1 ? Counts[0] : 0;
@@ -86,12 +99,20 @@ void CreateChoices()
 			if (bKeepEqual)
 			{
 				newChoice.Text = va("%s (%i)", newChoice.Text, Counts[i]);
-				if (Counts[i] <= count_limit)
+				if (curSelection == Teams[i])
+				{
+					newChoice.Text = va("%s (YOUR TEAM)", newChoice.Text);
+					newChoice.bAllowed = true;
+				}
+				else if (Counts[i] < count_limit || curSelection == -1 && Counts[i] == count_limit)
+				{
 					newChoice.Text = va("%s (CAN JOIN)", newChoice.Text);
+					newChoice.bAllowed = true;
+				}
 				else
 				{
 					newChoice.Text = va("%s (CANNOT JOIN)", newChoice.Text);
-					newChoice.Disable();
+					newChoice.bAllowed = false;
 				}
 			}
 			newChoice.Team = Teams[i];
@@ -108,7 +129,7 @@ void CreateChoices()
 		staticText.Text = "AVAILABLE TEAMS";
 		staticText.SetPos(ChoicesStartX, y);
 		y += 24;
-		for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
+		for (i = 0; i < /*HexenDefs::MAXPLAYERTEAMS*/registeredTeams; i++)
 		{
 			if (teams_active[i])
 			{
@@ -127,30 +148,47 @@ void CreateChoices()
 	SetDefaultChoice();
 }
 
+//==========================================================================
+//
+//	ReInit
+//
+//==========================================================================
+
 void ReInit()
 {
-	//DestroyAllChildren();
 	int i;
 	for (i = 1; i < NumItems; i++)
 	{
 		Items[i].Destroy();
 		Items[i] = none;
 	}
-	NumItems = 1;
+	NumItems = 0;
 	CreateChoices();
 
 	// re-position selection
 	SetDefaultChoice();
 }
 
+//==========================================================================
+//
+//	OnDestroy
+//
+//==========================================================================
+
 void OnDestroy()
 {
 	if (!bIsSelected)
 	{
-		dprint("MenuScreenTeamSelect : cancelled");
-		SetCvar('Colour', curSelection);
+		//SetCvar('Colour', curSelection);
+		Player(ClGame.cl).ServerJoinTeam(curSelection);
 	}
 }
+
+//==========================================================================
+//
+//	SetDefaultChoice
+//
+//==========================================================================
 
 void SetDefaultChoice()
 {
@@ -162,13 +200,13 @@ void SetDefaultChoice()
 
 	for (i = 0; i < NumItems; i++)
 	{
-		if (Items[i].Enabled)
+		if (Items[i] && Items[i].Enabled)
 		{
 			if (firstEnabled == -1)
 				firstEnabled = i;
 			if (!Items[i].IsA('MenuChoice_Team'))
 				continue;
-			if (MenuChoice_Team(Items[i]).Team == curSelection)
+			if (curSelection == -1 || MenuChoice_Team(Items[i]).Team == curSelection)
 			{
 				CursorPrev = -1;
 				CursorPos = i;
@@ -185,22 +223,43 @@ void SetDefaultChoice()
 	}
 }
 
+//==========================================================================
+//
+//	ReadTeams
+//
+//==========================================================================
+
+void ReadTeams()
+{
+	TeamInfoParser::teaminfo_t tinfo;
+	TeamInfoParser sc = TeamInfoParser(SpawnObject(TeamInfoParser));
+
+	TeamNames.Num = 0;
+
+	sc.OpenLumpName('teaminfo');
+	if (sc.AtEnd())
+	{
+		sc.Destroy();
+		Error("MenuScreenTeamSelect::ReadTeams : TEAMINFO lump missing or empty");
+		return;
+	}
+
+	while(sc.ReadTeam(&tinfo))
+	{
+		TeamNames.Num = TeamNames.Num + 1;
+		TeamNames[TeamNames.Num - 1] = tinfo.Name;
+	}
+
+	sc.Destroy();
+}
+
 defaultproperties
 {
-	TeamNames[0] = "blue";
-	TeamNames[1] = "red";
-	TeamNames[2] = "gold";
-	TeamNames[3] = "lime";
-	TeamNames[4] = "green";
-	TeamNames[5] = "gray";
-	TeamNames[6] = "brown";
-	TeamNames[7] = "magenta";
-
 	Teams[0] = 0;
 	Teams[1] = 1;
 
 	maxTeams = HexenDefs::MAXTEAMSINGAME;
-	curSelection = 0;
+	curSelection = -1;
 
 	ChoicesStartX = 120;
 	ChoicesStartY = 44;
