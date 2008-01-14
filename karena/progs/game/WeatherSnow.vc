@@ -37,14 +37,16 @@ float OriginSpacing;
 int Amount;
 int ParticleType;
 int ParticleType2;
-float Spread;
+TVec Spread;
 TVec InitialVelocity;
-float VelocityRange;
-float InitialAcceleration;
+TVec VelocityRange;
+TVec InitialAcceleration;
 float AppliedGravity;
 int Colour;
 float ParticleDuration;
 float ParticleRamp;
+int Pattern;
+
 
 //==========================================================================
 //
@@ -57,8 +59,6 @@ void Continue()
 	int i;
 	float x,y,mx,my;
 	TVec Origin;
-	sector_t * sector;
-	float pd;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -69,42 +69,33 @@ void Continue()
 			continue;
 		if (!pl.bSpawned)
 			continue;
-		if (!pl.MO)	// TODO: change to Camera MO
+		if (!pl.Camera)
 			continue;
 
-		x = pl.MO.Origin.x - FarDistance;
-		y = pl.MO.Origin.y - FarDistance;
-		mx = pl.MO.Origin.x + FarDistance;
-		my = pl.MO.Origin.y + FarDistance;
+		x = pl.Camera.Origin.x - FarDistance;
+		y = pl.Camera.Origin.y - FarDistance;
+		mx = pl.Camera.Origin.x + FarDistance;
+		my = pl.Camera.Origin.y + FarDistance;
 
 		for (Origin.x = x; Origin.x < mx; Origin.x += OriginSpacing)
 		{
 			for (Origin.y = y; Origin.y < my; Origin.y += OriginSpacing)
 			{
-				sector = XLevel.PointInSector(Origin);
-				if (sector && sector->ceiling.pic == Level.Game.skyflatnum)
-				{
-					if (ParticleDuration)
-						pd = ParticleDuration;
-					else
-					{
-						//pd = 
-					}
-
-					pl.ParticleEffect(
+				dprint("WeatherSnow : call ParticleEffectEx : %i,%i,%i, vel.z=%f", Amount,ParticleType,ParticleType2,InitialVelocity.z);
+				pl.ParticleEffectEx(
 						Amount,
 						ParticleType,
 						ParticleType2,
-						vector(Origin.x, Origin.y, sector->ceilingheight / 2.0 /*FIXME!*/),
+						vector(Origin.x, Origin.y, 0.0),
 						Spread,
 						InitialVelocity,
 						VelocityRange,
 						InitialAcceleration,
 						AppliedGravity,
 						Colour,
-						pd,
-						ParticleRamp);
-				}
+						ParticleDuration,
+						ParticleRamp,
+						Pattern);
 			}
 		}
 	}
@@ -114,17 +105,19 @@ defaultproperties
 {
 	time_limit = 0.8;
 
-	FarDistance = 512.0;
-	OriginSpacing = 256.0;
-	Amount = 140;
-	ParticleType = LineSpecialLevelInfo::pt_static;
+	FarDistance = 768.0;
+	OriginSpacing = 512.0;
+	Amount = 120;
+	ParticleType = HexenLevelInfo::pt_weather_snow;
 	ParticleType2 = 0;
-	Spread = 512.0;
-	InitialVelocity = vector(0.0, 0.0, 32.0);
-	VelocityRange = 1.0;
-	InitialAcceleration = 0.0;
+	Spread = vector(512.0,512.0,512.0);
+	InitialVelocity = vector(0.0,0.0,32.0);
+	VelocityRange = vector(0.0,0.0,1.0);
+	InitialAcceleration = vector(0.0,0.0,0.0);
 	AppliedGravity = 2.0;
 	Colour = RGB(220, 220, 220);
-	ParticleDuration = 6.0;	// FIXME!!
+	// [CW] real duration is calculated for each particle in HexenLevelInfo::ParticleEffectEx
+	ParticleDuration = 0.0;
 	ParticleRamp = 0.0;
+	Pattern = HexenLevelInfo::pt_pattern_none;
 }
