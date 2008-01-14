@@ -39,6 +39,39 @@ int NextBot;
 
 //===========================================================================
 //
+//  Randomize
+//
+//===========================================================================
+
+void Randomize()
+{
+	bool unique;
+	int i,j;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		BotIndices[i] = -1;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		unique = false;
+		while(!unique)
+		{
+			unique = true;
+			BotIndices[i] = P_Random() % MainGameInfo::NUMTOTALBOTS;
+			for (j = 0; j < i; j++)
+			{
+				if (BotIndices[i] == BotIndices[j])
+				{
+					unique = false;
+					break;
+				}
+			}
+		}
+	}
+}
+
+//===========================================================================
+//
 //  Continue
 //
 //  [FB] Search for a bot and spawn it
@@ -67,6 +100,7 @@ void Continue()
 	}
 
 	// [FB] Spawn the bot
+	dprint("BotSpawner : Addbot %s", Bot);
 	CmdBuf_AddText("Addbot %s\n", Bot);
 
 	NextBot++;

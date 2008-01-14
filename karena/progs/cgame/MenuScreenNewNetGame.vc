@@ -33,6 +33,8 @@
 class MenuScreenNewNetGame : MenuScreen;
 
 array<name>			MapLumpNames;
+// [CW] an order of game modes in list
+int					GameTypes[HexenDefs::NUMGAMES];
 
 MenuChoiceEnum		Players;
 MenuChoiceEnum		Bots;
@@ -100,15 +102,15 @@ void CreateChoices()
 	DeathMatch.SetOrigin(ChoicesStartX, ChoicesStartY);
 	DeathMatch.Text = "Game type";
 	DeathMatch.AddItem("Deathmatch");
-	DeathMatch.AddItem("Kill the Heresiarch");
-	DeathMatch.AddItem("Castle Sweep");
-	DeathMatch.AddItem("XMas Havoc");
 	DeathMatch.AddItem("Team Deathmatch");
-	DeathMatch.AddItem("Capture The Flag");
+	DeathMatch.AddItem("Kill the Heresiarch");
 	DeathMatch.AddItem("Domination");
+	DeathMatch.AddItem("Capture The Flag");
+	DeathMatch.AddItem("Castle Sweep");
 	DeathMatch.AddItem("Team Castle Sweep");
 	DeathMatch.AddItem("Football");
-	DeathMatch.SetInitialValue(HexenDefs::game_dm - 1);
+	DeathMatch.AddItem("XMas Havoc");	
+	DeathMatch.SetInitialValue(0);
 	DeathMatch.ValueChanging = ChangeDeathmatch;
 	ChoicesStartY += DeathMatch.Height;
 
@@ -146,8 +148,8 @@ void CreateChoices()
 	Level.Text = "Level";
 	ChoicesStartY += Level.Height;
 
-	InitMonsters(HexenDefs::game_dm - 1);
-	InitMapList(HexenDefs::game_dm - 1);
+	InitMonsters(GameTypes[0]);
+	InitMapList(GameTypes[0]);
 }
 
 //==========================================================================
@@ -158,23 +160,23 @@ void CreateChoices()
 
 void InitMonsters(int GameType)
 {
-	switch (GameType + 1)
+	switch (GameType)
 	{
-	case HexenDefs::game_sweepteam: //	Team Castle Sweep
 	case HexenDefs::game_sweep:	//	Castle Sweep
+	case HexenDefs::game_sweepteam: //	Team Castle Sweep
 		Monsters.Value = 1;
 		break;
-	case HexenDefs::game_kth:
 	case HexenDefs::game_dm:	//	Deathmatch
+	case HexenDefs::game_dmteam:	//	Team deathmatch.
+	case HexenDefs::game_kth:
+	case HexenDefs::game_domination:	
+	case HexenDefs::game_ctf: //	Capture the Flag
+	case HexenDefs::game_football: //	Football
 	case HexenDefs::game_xmas:
 		Monsters.Value = 0;
 		break;
-	case HexenDefs::game_dmteam:	//	Team deathmatch.
-	case HexenDefs::game_ctf: //	Capture the Flag
-	case HexenDefs::game_domination:
-	case HexenDefs::game_football: //	Football
-		Monsters.Value = 0;
-		break;
+	default:
+		Error("MenuChoice_Level::InitMonsters : unknown game type %i", GameType);
 	}
 }
 
@@ -186,9 +188,10 @@ void InitMonsters(int GameType)
 
 bool ChangeDeathmatch(Object Sender, int newValue)
 {
+	dprint("ChangeDeathmatch : newVal = %i, GameType = %i", newValue, GameTypes[newValue]);
 	if (Level)
-		InitMapList(newValue);
-	InitMonsters(newValue);
+		InitMapList(GameTypes[newValue]);
+	InitMonsters(GameTypes[newValue]);
 	return true;
 }
 
@@ -204,29 +207,29 @@ void InitMapList(int GameType)
 {
 	ScriptsParser sc = ScriptsParser(SpawnObject(ScriptsParser));
 
-	switch (GameType + 1)
+	switch (GameType)
 	{
-	case HexenDefs::game_sweep:	//	Castle Sweep
-		sc.OpenLumpName('gm_swp');
-		break;
-	case HexenDefs::game_sweepteam:	//	Team Castle Sweep
-		sc.OpenLumpName('gm_tswp');
-		break;
-	case HexenDefs::game_kth: //		Kill the Heresiarch
-		sc.OpenLumpName('gm_kth');
-		break;
 	case HexenDefs::game_dm:	//	Deathmatch
 		sc.OpenLumpName('gm_dm');
 		break;
 	case HexenDefs::game_dmteam:	//	Team deathmatch.
 		sc.OpenLumpName('gm_tdm');
 		break;
-	case HexenDefs::game_ctf: //	Capture the Flag
-		sc.OpenLumpName('gm_ctf');
+	case HexenDefs::game_kth: //		Kill the Heresiarch
+		sc.OpenLumpName('gm_kth');
 		break;
 	case HexenDefs::game_domination: //	Domination
 		sc.OpenLumpName('gm_dom');
 		break;
+	case HexenDefs::game_ctf: //	Capture the Flag
+		sc.OpenLumpName('gm_ctf');
+		break;
+	case HexenDefs::game_sweep:	//	Castle Sweep
+		sc.OpenLumpName('gm_swp');
+		break;
+	case HexenDefs::game_sweepteam:	//	Team Castle Sweep
+		sc.OpenLumpName('gm_tswp');
+		break;	
 	case HexenDefs::game_football: //	Football
 		sc.OpenLumpName('gm_ftb');
 		break;
@@ -234,13 +237,13 @@ void InitMapList(int GameType)
 		sc.OpenLumpName('gm_xmas');
 		break;
 	default:
-		Error("MenuChoice_Level::InitMapList : unknown game type %i", GameType + 1);
+		Error("MenuChoice_Level::InitMapList : unknown game type %i", GameType);
 		return;
 	}
 
 	if (sc.AtEnd())
 	{
-		Error("MenuChoice_Level::InitMapList : maps table missing for game type %i", GameType + 1);
+		Error("MenuChoice_Level::InitMapList : maps table missing for game type %i", GameType);
 		return;
 	}
 
@@ -317,7 +320,7 @@ void ActivateStartNewGame(Object Sender)
 	CmdBuf_AddText("MaxPlayers %d\n", Players.Value + 2);
 	CmdBuf_AddText("BotsAutoSpawn %d\n", Bots.Value);
 	CmdBuf_AddText("NoMonsters %d\n", !Monsters.Value);
-	CmdBuf_AddText("DeathMatch %d\n", DeathMatch.Value + 1);
+	CmdBuf_AddText("DeathMatch %d\n", GameTypes[DeathMatch.Value]);
 	CmdBuf_AddText("TimeLimit %d\n", TimeLimit.Value * 5);
 	CmdBuf_AddText("Skill %d\n", Skill.Value);
 	ClientGame(ClGame).LoadingScreenStart(MapLumpNames[Level.Value], Level.EnumNames[Level.Value]);
@@ -340,4 +343,14 @@ defaultproperties
 	ChoicesStartY = 40;
 	SelectorType = MenuSelector_SmallRight;
 	Title = "NEW GAME";
+
+	GameTypes[0] = HexenDefs::game_dm;
+	GameTypes[1] = HexenDefs::game_dmteam;
+	GameTypes[2] = HexenDefs::game_kth;
+	GameTypes[3] = HexenDefs::game_domination;
+	GameTypes[4] = HexenDefs::game_ctf;
+	GameTypes[5] = HexenDefs::game_sweep;
+	GameTypes[6] = HexenDefs::game_sweepteam;
+	GameTypes[7] = HexenDefs::game_football;
+	GameTypes[8] = HexenDefs::game_xmas;
 }
