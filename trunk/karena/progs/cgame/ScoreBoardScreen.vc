@@ -59,10 +59,10 @@ const int
 
 ClientGameBase ClGame;
 
-int colourmark[HexenDefs::MAXPLAYERTEAMS];
+//int colourmark[HexenDefs::MAXPLAYERTEAMS];
 
 //[CW] may be those should be put into some shared resources module
-string colournames[HexenDefs::MAXPLAYERTEAMS];
+//string colournames[HexenDefs::MAXPLAYERTEAMS];
 string gamemodenames[HexenDefs::NUMGAMES];
 string playerclassnames[HexenDefs::NUMCLASSES];
 
@@ -100,7 +100,7 @@ void OnDraw()
 {
 	int j, y;
 	int gamemode;
-	int current_team;
+	/*int*/string current_team;
 	int current_team_idx;
 	int current_player_inteam_idx;
 	bool team_player_skipped;
@@ -132,7 +132,7 @@ void OnDraw()
 
 	y = TABLE_TOP_Y;
 	
-	current_team = -1;
+	//current_team = -1;
 	current_team_idx = 0;
 	current_player_inteam_idx = 0;
 
@@ -154,15 +154,17 @@ void OnDraw()
 			}
 		
 			// Insert team string if a new team encountered
-			if (gamemode >= HexenDefs::NUMGAMESNOTEAM && RepInfo.team != current_team)
+			if (gamemode >= HexenDefs::NUMGAMESNOTEAM && strcmp(RepInfo./*team*/teamname, current_team))
 			{
-				if (current_team != -1)
+				if (current_team/* != -1*/)
 					y += TABLE_HEADER_MARGIN_TOP;
-				R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 13, colourmark[RepInfo.team]);
-				DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", colournames[RepInfo.team],
+				R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 13, RepInfo.teamcolour
+					/*colourmark[RepInfo.team]*/);
+				DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", RepInfo.teamname
+					/*colournames[RepInfo.team]*/,
 									Player(ClGame.cl).teamscores[current_team_idx]));
 				y += TABLE_HEADER_MARGIN_BOTTOM;
-				current_team = RepInfo.team;
+				current_team = RepInfo./*team*/teamname;
 			}
 
 			// Mark current client with special background colour
@@ -170,7 +172,8 @@ void OnDraw()
 			{
 				if (gamemode < HexenDefs::NUMGAMESNOTEAM)
 				{
-					R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, colourmark[RepInfo.team]);
+					R_FillRect(SHADE_LEFT + 8, y + 6, SHADE_WIDTH - 16, PORTRAIT_HEIGHT, RepInfo.teamcolour);
+						//colourmark[RepInfo.team]);
 				}
 			}
 
@@ -181,7 +184,7 @@ void OnDraw()
 			y += 6;
 
 			// Player's name
-			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName, ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : SetColourTeam(RepInfo.team));
+			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName, ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : RepInfo.teamfont/*GetTeamFontColour(RepInfo.teamcolour)*/);
 
 			// Level + class
 			switch (RepInfo.level)
@@ -192,12 +195,12 @@ void OnDraw()
 				default: tmp = "th";
 			}
 			DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : SetColourClass(RepInfo.plclass));
+				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : GetClassFontColour(RepInfo.plclass));
 
 			y += TABLE_STRING_DELTA >> 1;
 
 			// Player's score
-			DrawText(TABLE_COL2, y, va("%d", RepInfo.score), SetColourTeam(RepInfo.team), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
+			DrawText(TABLE_COL2, y, va("%d", RepInfo.score), GetClassFontColour(RepInfo.teamcolour), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
 
 			// Player is human/cpu
 			if (RepInfo.IsBot)
@@ -222,15 +225,15 @@ void OnDraw()
 	}
 }
 
-//==========================================================================
+/*//==========================================================================
 //
-//  SetColourTeam
+//  GetTeamFontColour
 //
 //==========================================================================
 
-int SetColourTeam(int team)
+int GetTeamFontColour(int teamcolour)
 {
-	switch(team)
+	switch(teamcolour)
 	{
 		case 0:
 			return CR_BLUE;
@@ -260,15 +263,15 @@ int SetColourTeam(int team)
 			return CR_UNTRANSLATED;
 			break;
 	}
-}
+}*/
 
 //==========================================================================
 //
-//  SetColourClass
+//  GetClassFontColour
 //
 //==========================================================================
 
-int SetColourClass(int cls)
+int GetClassFontColour(int cls)
 {
 	switch(cls)
 	{
@@ -308,7 +311,7 @@ defaultproperties
 	Width = 640;
 	Height = 480;
 
-	colourmark[0] = 0xff0000aa;
+	/*colourmark[0] = 0xff0000aa;
 	colourmark[1] = 0xffaa0000;
 	colourmark[2] = 0xffaaaa00;
 	colourmark[3] = 0xff55aa00;
@@ -324,7 +327,7 @@ defaultproperties
 	colournames[4] = "green";
 	colournames[5] = "gray";
 	colournames[6] = "brown";
-	colournames[7] = "magenta";
+	colournames[7] = "magenta";*/
 
 	gamemodenames[0] = "unused game mode";
 	gamemodenames[1] = "deathmatch";

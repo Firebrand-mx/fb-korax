@@ -127,12 +127,14 @@ int use_power;				// [CW] is needed for some advanced game modes (football);
 							//	stores time USE button was held pressed
 
 int		TeamSelection;	//[CW] team selection process state
-int		oldColour;		// used to skip respawn if Team Selection screen was cancelled
-						// while REselecting team
-PlayerTeam	Team;	//[CW]
+int		curTeamIndex;	//[CW] Team to join when spawn
+
+						//////// used to skip respawn if Team Selection screen was cancelled
+						///////// while REselecting team
+PlayerTeam	Team;
 
 bool			targetinfo_enabled;
-int				targetinfo_counter;	//[CW]
+int				targetinfo_counter;
 targetinfo_t	targetinfo;
 
 bool bNoHUD;
@@ -160,10 +162,11 @@ replication
 		ClientDynamicLightEx;
 
 	reliable if (!bIsClient)
-		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound;
+		SetFOV, ClientTeamSelect, ClientScoreboard, CallLocalSound,
+		CallLocalSoundNamed;
 
 	reliable if (bIsClient)
-		ServerDisconnectBot, ServerTeamSelect;
+		ServerDisconnectBot, ServerTeamSelect, ServerJoinTeam;
 }
 
 //==========================================================================
@@ -387,7 +390,8 @@ void DisconnectClient()
 
 	//[CW] set leaving player down the competition table
 	// NOTE: for future, should leaving player really loose his/her score?
-	Team.DiscardPlayer(self);
+	if (Team)
+		Team.DiscardPlayer(self);
 
 	// [CW] get rid of the MO corpse
 	MO.Destroy();
@@ -421,43 +425,6 @@ void UserinfoChanged()
 {
 	targetinfo_enabled = !bIsBot && GetCvar('TargetInfo');
 	bNoHUD = !bIsBot && GetCvar('NoHUD');
-
-	if (!bSpawned)
-	{
-		return;
-	}
-
-	// [CW] respawn player if team is selected or re-selected
-	if (TeamSelection == HexenDefs::teamselection_wait ||
-		TeamSelection == HexenDefs::teamselection_reselect ||
-		TeamSelection == HexenDefs::teamselection_autoselect)
-	{		
-		if (TeamSelection != HexenDefs::teamselection_autoselect &&
-			!(TeamSelection == HexenDefs::teamselection_reselect && oldColour == Colour))
-		{
-			TeamSelection = HexenDefs::teamselection_done;	
-			if (PlayerState != PST_DEAD)
-			{
-				MO.Destroy();
-				MO = none;
-				PlayerState = PST_REBORN;
-				SpawnClient();
-			}
-			else
-			{
-				// [CW] For player's convenience
-				Scoreboard(false);
-				centreprint("you will join selected team after respawn");
-			}
-		}
-		else
-			TeamSelection = HexenDefs::teamselection_done;
-
-		oldColour = Colour;
-	}
-
-	//[CW] update all server clients' scoreboards
-	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 }
 
 //==========================================================================
@@ -491,10 +458,11 @@ void SelectPlayerTeam()
 			SetControllable(false);
 		}
 		
-		ClientTeamSelect(maxTeams, i, Colour,
-			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Colour : -1,
+		ClientTeamSelect(maxTeams, MainGameInfo(Level.Game).TeamInfos.Num, i,
+			/*curTeamIndex*/Team ? Team.Index : -1,
+			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Index : -1,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].GetPlayerCount() : 0,
-			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Colour : -1,
+			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Index : -1,
 			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].GetPlayerCount() : 0);
 	}
 }
@@ -508,9 +476,12 @@ void SelectPlayerTeam()
 void AutoSelectTeam()
 {
 	int i;
-	int new_colour = -1;
+	int new_index = -1;
 	int free_team_slots = 0;
-	bool team_colours_free[HexenDefs::MAXPLAYERTEAMS];
+	//bool team_indices_free[HexenDefs::MAXPLAYERTEAMS];
+	array<bool> team_indices_free;
+
+	dprint("Player::AutoSelectTeam : AAA");
 
 	MainGameInfo Game = MainGameInfo(Level.Game);
 
@@ -519,13 +490,23 @@ void AutoSelectTeam()
 	if (bKeepEqual && Game.Teams[0] && Game.Teams[1])
 		count_limit = Game.Teams[0].GetPlayerCount();
 
-	for (i = 0; i < HexenDefs::MAXPLAYERTEAMS; i++)
-		team_colours_free[i] = true;
-	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
+	dprint("Player::AutoSelectTeam : BBB");
+
+	team_indices_free.Num = Game.TeamInfos.Num;
+
+	//for (i = 0; i < /*HexenDefs::MAXPLAYERTEAMS*/team_indices_free.Num; i++)
+	//	team_indices_free[i] = true;
+	for (i = 0; i < /*HexenDefs::MAXTEAMSINGAME*/team_indices_free.Num; i++)
 	{
-		if (Game.Teams[i])
-			team_colours_free[Game.Teams[i].Colour] = false;
+		if (Game.TeamInfos[i].bTeamInPlay)
+			team_indices_free[i] = false;
+		else
+			team_indices_free[i] = true;
+		//if (Game.Teams[i])
+		//	team_indices_free[Game.Teams[i].Index] = false;
 	}
+
+	dprint("Player::AutoSelectTeam : CCC");
 
 	for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
 	{
@@ -542,41 +523,66 @@ void AutoSelectTeam()
 		}
 	}
 
-	if (free_team_slots == Game.MaxTeamsInGame[Game.GameType] ||
-			free_team_slots > 0 && !(bKeepEqual && !team_colours_free[Colour]) && P_Random() > 127)
+	dprint("Player::AutoSelectTeam : DDD");
+
+	//curTeamIndex = Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Index;
+
+	////if (free_team_slots == Game.MaxTeamsInGame[Game.GameType] /*||
+	////		free_team_slots > 0 && !(bKeepEqual && !team_indices_free[curTeamIndex]) && P_Random() > 127*/)
+	////{
+	////	dprint("Player::AutoSelectTeam : EEE 1");
+	////	new_index = P_Random() % Game.TeamInfos.Num;
+	////		//curTeamIndex;
+	////}
+	////else
 	{
-		new_colour = Colour;
-	}
-	else
-	{
-		if (bKeepEqual)
+		dprint("Player::AutoSelectTeam : EEE 2");
+		if (free_team_slots != Game.MaxTeamsInGame[Game.GameType] && bKeepEqual)
 		{
+			dprint("Player::AutoSelectTeam : EEE 21");
 			for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
 			{
+				// [CW] Choose one of the existing teams that is available for joining
 				if (Game.Teams[i] == none)
 					break;
 				if (Game.Teams[i].GetPlayerCount() <= count_limit)
 				{
-					new_colour = Game.Teams[i].Colour;
+					new_index = Game.Teams[i].Index;
 					break;
 				}
 			}
 
-			if (new_colour < 0)
+			if (new_index < 0)
 			{
+				dprint("Player::AutoSelectTeam : EEE 211");
+				// [CW] Choose new team
 				do
-					new_colour = P_Random() % HexenDefs::MAXPLAYERTEAMS;
-				while (!team_colours_free[new_colour]);
+					new_index = P_Random() % /*HexenDefs::MAXPLAYERTEAMS*/team_indices_free.Num;
+				while (!team_indices_free[new_index]);
 			}
 		}
 		else
 		{
-			new_colour =
-				Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Colour;
+			dprint("Player::AutoSelectTeam : EEE 22");
+			if (!free_team_slots ||
+				((free_team_slots != Game.MaxTeamsInGame[Game.GameType]) && P_Random() > 127))
+				// [CW] Choose one of the existing teams
+				new_index = 
+					Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Index;
+			else
+			{
+				dprint("Player::AutoSelectTeam : EEE 221");
+				// [CW] Choose new team
+				do
+					new_index = P_Random() % team_indices_free.Num;
+				while (!team_indices_free[new_index]);
+			}
+				//Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Index;
 		}
 	}
-	Colour = new_colour;
-	TeamSelection = HexenDefs::teamselection_autoselect;
+	dprint("Player::AutoSelectTeam : FFF");
+	curTeamIndex = new_index;
+	TeamSelection = HexenDefs::teamselection_done;//teamselection_autoselect;
 }
 
 //==========================================================================
@@ -587,10 +593,10 @@ void AutoSelectTeam()
 //
 //==========================================================================
 
-void ClientTeamSelect(int maxTeams, int activeTeams, int curSelection,
+void ClientTeamSelect(int maxTeams, int registeredTeams, int activeTeams, int curSelection,
 	int Col1, int Count1, int Col2, int Count2)
 {
-	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, activeTeams, curSelection,
+	ClientGameBaseEx(ClGame).TeamSelect(maxTeams, registeredTeams, activeTeams, curSelection,
 		Col1, Count1, Col2, Count2);
 }
 
@@ -604,6 +610,56 @@ void ServerTeamSelect()
 {
 	TeamSelection = HexenDefs::teamselection_reselect;
 	SelectPlayerTeam();
+}
+
+//==========================================================================
+//
+//  ServerJoinTeam
+//
+//==========================================================================
+
+void ServerJoinTeam(int Index)
+{
+	dprint("Player::ServerJoinTeam : %i", Index);
+	if (!bSpawned)
+	{
+		dprint("Player::ServerJoinTeam : not spawned! out");
+		return;
+	}
+
+	dprint("Player::ServerJoinTeam : TeamSelection = %i", TeamSelection);
+
+	// [CW] respawn player if team is selected or re-selected
+	if (TeamSelection == HexenDefs::teamselection_wait ||
+		TeamSelection == HexenDefs::teamselection_reselect/* ||
+		TeamSelection == HexenDefs::teamselection_autoselect*/)
+	{
+		curTeamIndex = Index;
+
+		if (/*TeamSelection != HexenDefs::teamselection_autoselect &&*/
+			!(TeamSelection == HexenDefs::teamselection_reselect && (Team ? Team.Index : -1) == Index))
+		{
+			TeamSelection = HexenDefs::teamselection_done;	
+			if (PlayerState != PST_DEAD)
+			{
+				MO.Destroy();
+				MO = none;
+				PlayerState = PST_REBORN;
+				SpawnClient();
+			}
+			else
+			{
+				// [CW] For player's convenience
+				Scoreboard(false);
+				centreprint("you will join selected team after respawn");
+			}
+		}
+		else
+			TeamSelection = HexenDefs::teamselection_done;
+	}
+
+	//[CW] update all server clients' scoreboards
+	MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 }
 
 //==========================================================================
@@ -705,9 +761,12 @@ void SpawnPlayer(mthing_t * mthing)
 		PlayerReborn();
 		ResetInventory = true;
 		if (TeamSelection != HexenDefs::teamselection_none)
+			TeamSelection == HexenDefs::teamselection_done;
+		/*if (TeamSelection != HexenDefs::teamselection_none &&
+			TeamSelection != HexenDefs::teamselection_done)
 		{
 			TeamSelection = HexenDefs::teamselection_autoselect;
-		}
+		}*/
 	}
 	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
 	{
@@ -904,10 +963,11 @@ void SpawnPlayer(mthing_t * mthing)
 		MO.Deactivate();
 
 	//[CW] put player into corresponding team
+	dprint("Player::SpawnPlayer : TeamSelection = %i, curTeamIndex = %i", TeamSelection, curTeamIndex);
 	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
 		TeamSelection == HexenDefs::teamselection_done)
 	{
-		MainGameInfo(Level.Game).InsertPlayer(self);
+		MainGameInfo(Level.Game).InsertPlayer(self, curTeamIndex);
 	}
 
 	// [CW] if there is advanced game mode initiated, notify it of player spawn
@@ -1818,7 +1878,7 @@ void DeathPlayerTick(float deltaTime)
 
 void UpdateTargetInfo()
 {
-	if (PlayerState != PST_DEAD && targetinfo_enabled)
+	if (PlayerState != PST_DEAD && Team && targetinfo_enabled)
 	{
 		TAVec angles;
 		TVec Dir;
@@ -1842,7 +1902,7 @@ void UpdateTargetInfo()
 					else
 						targetinfo.type =
 							(MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
-							Colour == AimTarget.Player.Colour)
+							Team.Index == Player(AimTarget.Player).Team.Index)
 								? targetinfo_noshoot : targetinfo_shoot;
 				}
 				else
@@ -2826,6 +2886,19 @@ void CallLocalSound(int sound, bool put_in_queue, float delay)
 
 //==========================================================================
 //
+//  CallLocalSoundNamed
+//
+//	[CW] TODO: use only this for all local sounds?
+//
+//==========================================================================
+
+void CallLocalSoundNamed(name sound, bool put_in_queue, float delay)
+{
+	ClientGameBaseEx(ClGame).PlayAnouncerSoundNamed(sound, put_in_queue, delay);
+}
+
+//==========================================================================
+//
 //  UpdateScore
 //
 //  [CW] Updates current player's score.
@@ -2923,8 +2996,6 @@ void UpdateScore(int event)
 			MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 		}
 	}
-
-	dprint("Player::UpdateScore : OUT");
 }
 
 //==========================================================================

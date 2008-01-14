@@ -515,11 +515,14 @@ void DrawViewBorder(int x, int y, int w, int h)
 //
 //==========================================================================
 
-void TeamSelect(int maxTeams, int activeTeams, int curSelection,
-	int Col1, int Count1, int Col2, int Count2)
+void TeamSelect(int maxTeams, int registeredTeams, int activeTeams, int curSelection,
+	int Index1, int Count1, int Index2, int Count2)
 {
 	bool created;
 	created = false;
+
+	dprint("ClientGame::TeamSelect : maxTeams = %i, regTeams = %i, active = %i, current = %i, index1 = %i, players1 = %i, index2 = %i, players2 = %i",
+		maxTeams, registeredTeams, activeTeams, curSelection, Index1, Count1, Index2, Count2);
 
 	if (TeamSelectScreen == none)
 	{
@@ -527,10 +530,11 @@ void TeamSelect(int maxTeams, int activeTeams, int curSelection,
 		created = true;
 	}
 	TeamSelectScreen.maxTeams = maxTeams;
+	TeamSelectScreen.registeredTeams = registeredTeams;
 	TeamSelectScreen.activeTeams = activeTeams;
 
-	TeamSelectScreen.Teams[0] = Col1;
-	TeamSelectScreen.Teams[1] = Col2;
+	TeamSelectScreen.Teams[0] = Index1;
+	TeamSelectScreen.Teams[1] = Index2;
 	TeamSelectScreen.Counts[0] = Count1;
 	TeamSelectScreen.Counts[1] = Count2;
 
@@ -563,7 +567,7 @@ void PlayAnouncerSound(int sound, bool put_in_queue, float delay)
 	case HexenDefs::lsid_kth_an_isdown: sndName = 'KTH_HeresiarchIsDown'; break;
 	case HexenDefs::lsid_kth_mus_death: sndName = 'KTH_Mus_Death'; break;
 	case HexenDefs::lsid_kth_mus_birth: sndName = 'KTH_Mus_Birth'; break;
-	case HexenDefs::lsid_gen_an_Blue_Leads: sndName = 'Gen_An_Blue_Leads'; break;
+	/*case HexenDefs::lsid_gen_an_Blue_Leads: sndName = 'Gen_An_Blue_Leads'; break;
 	case HexenDefs::lsid_gen_an_Red_Leads: sndName = 'Gen_An_Red_Leads'; break;
 	case HexenDefs::lsid_gen_an_Gold_Leads: sndName = 'Gen_An_Gold_Leads'; break;
 	case HexenDefs::lsid_gen_an_Green_Leads: sndName = 'Gen_An_Green_Leads'; break;
@@ -578,7 +582,7 @@ void PlayAnouncerSound(int sound, bool put_in_queue, float delay)
 	case HexenDefs::lsid_gen_an_Lime_Lost_Lead: sndName = 'Gen_An_Lime_Lost_Lead'; break;
 	case HexenDefs::lsid_gen_an_Gray_Lost_Lead: sndName = 'Gen_An_Gray_Lost_Lead'; break;
 	case HexenDefs::lsid_gen_an_Brown_Lost_Lead: sndName = 'Gen_An_Brown_Lost_Lead'; break;
-	case HexenDefs::lsid_gen_an_Magenta_Lost_Lead: sndName = 'Gen_An_Magenta_Lost_Lead'; break;
+	case HexenDefs::lsid_gen_an_Magenta_Lost_Lead: sndName = 'Gen_An_Magenta_Lost_Lead'; break;*/
 	case HexenDefs::lsid_gen_an_teams_are_tied: sndName = 'Gen_An_TeamsTied'; break;
 	case HexenDefs::lsid_gen_an_y_lead: sndName = 'Gen_An_Lead'; break;
 	case HexenDefs::lsid_gen_an_y_lost_the_lead: sndName = 'Gen_An_ULostLead'; break;
@@ -610,6 +614,22 @@ void PlayAnouncerSound(int sound, bool put_in_queue, float delay)
 	else
 	{
 		LocalSound(sndName);
+	}
+}
+
+//==========================================================================
+//
+//  PlayAnouncerSoundNamed
+//
+//==========================================================================
+
+void PlayAnouncerSoundNamed(name sound, bool put_in_queue, float delay)
+{
+	if (put_in_queue && Announcer)
+		Announcer.QueueSound(sound, delay);
+	else
+	{
+		LocalSound(sound);
 	}
 }
 

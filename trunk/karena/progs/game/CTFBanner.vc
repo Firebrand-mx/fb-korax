@@ -150,7 +150,7 @@ void CaptureBy(Entity newCapturer)
 	{
 		MainGameInfo(Level.Game).bcentreprint(va("%s got the %s flag!",
 									newCapturer.Player.PlayerName,
-									MainGameInfo(Level.Game).ColourNames[Team.Colour]));
+									Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		Capturer = Player(newCapturer.Player);
 		//[FB] We need to let the bots know they must return to their own goal spot
 		if(Capturer.bIsBot)
@@ -183,14 +183,14 @@ void ReturnToBase(Entity Savior, bool silent)
 
 			if (Savior.Player)
 			{
-				Capturer.UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
+				Player(Savior.Player).UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
 				MainGameInfo(Level.Game).bcentreprint(va("%s returned %s flag!",
 							Savior.Player.PlayerName,
-							MainGameInfo(Level.Game).ColourNames[Team.Colour]));
+							Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 			}
 			else
 				MainGameInfo(Level.Game).bcentreprint(va("%s flag returned to the base",
-							MainGameInfo(Level.Game).ColourNames[Team.Colour]));
+							Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		}
 		
 		Status = BANNER_STATUS__BEING_RETURNED;
@@ -225,7 +225,7 @@ void WasLost()
 	{
 		MainGameInfo(Level.Game).bcentreprint(va("%s dropped the %s flag!",
 									Capturer.PlayerName,
-									MainGameInfo(Level.Game).ColourNames[Team.Colour]));
+									Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		//[FB] We need to let the bots know they must get on offense again
 		if(Capturer && Capturer.bIsBot)
 			Capturer.Bot.botstate.BState = 1;
@@ -295,8 +295,8 @@ void SetTranslation()
 
 void Tick(float deltaTime)
 {
-	if (!TransSet)
-		SetTranslation();
+	/*if (!TransSet)
+		SetTranslation();*/
 
 	// Lost flag counts a timer down until auto-respawn; it also should be returned in case it was dropped in dangerous area
 	if (Status == BANNER_STATUS__LOST)

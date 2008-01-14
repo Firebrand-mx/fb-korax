@@ -32,15 +32,25 @@
 
 class MenuChoice_Team : MenuSmallTextButton;
 
+bool	bAllowed;
 int 	Team;
+
+//==========================================================================
+//
+//	ActivateEvent
+//
+//==========================================================================
 
 void ActivateEvent()
 {
-	MenuScreenTeamSelect(Parent).bIsSelected = true;
-	dprint("set colour = %i", Team);
-	SetCvar('colour', Team);
-	GetClGame().ForceMenuOff();
-	LocalSound('menu/choose');
+	if (bAllowed)
+	{
+		MenuScreenTeamSelect(Parent).bIsSelected = true;
+		Player(MenuScreenTeamSelect(Parent).ClGame.cl).ServerJoinTeam(Team);
+		//SetCvar('colour', Team);
+		GetClGame().ForceMenuOff();
+		LocalSound('menu/choose');
+	}
 }
 
 defaultproperties
