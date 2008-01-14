@@ -453,6 +453,7 @@ bool CheckPath(float ang, float dist)
 					}
 					else if (diffheight > 56.0)
 					{
+						// CHECKME!!
 					/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
 						{
 							return true;
@@ -510,9 +511,6 @@ bool CheckPath(float ang, float dist)
 
 bool CheckTo(TVec pos, optional EntityEx TargetEntity)
 {
-	//
-	// [CW] FIXME -- TargetEntity does not work and spoils everything, do not use
-	//
 	if (!specified_TargetEntity)
 		TargetEntity = none;
 
@@ -540,7 +538,7 @@ void CheckStuff()
 	{
 		if ((ITarget.IsA('Inventory') && ITarget.bHidden) ||
 				(ITarget == node_current && Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE) ||
-				!CheckTo(ITarget.Origin/*, ITarget*/))
+				!CheckTo(ITarget.Origin, ITarget))
 			ITarget = none;
 	}
 }
@@ -2442,7 +2440,7 @@ EntityEx GetFirstPriorityTarget()
 
 		if (dist[priort] < 0.0 || Length(ee.Origin - botmo.Origin) < dist[priort])
 		{
-			if (botmo.CanSee(ee) && CheckTo(ee.Origin/*, ee*/))
+			if (botmo.CanSee(ee) && CheckTo(ee.Origin, ee))
 			{
 				candidates[priort] = ee;
 				dist[priort] = Length(ee.Origin - botmo.Origin);
@@ -2485,7 +2483,7 @@ void ProcessImmediate()
 			ITarget = GetNearestPathNode();
 		}
 
-		if (!ITarget && enemy && CheckTo(enemy.Origin))
+		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
 		{
 			ITarget = enemy;
 		}
@@ -2583,7 +2581,7 @@ EntityEx GetGameModeGoal(optional bool bReachable)
 				if (DominationSigil(ee).Team != player.Team &&
 					(dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
 				{
-					if (!bReachable || CheckTo(ee.Origin/*, ee*/))
+					if (!bReachable || CheckTo(ee.Origin, ee))
 					{
 						EE = ee;
 						dist = Length(botmo.Origin - ee.Origin);
