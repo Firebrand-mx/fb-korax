@@ -39,12 +39,25 @@ class HexenLevelInfo : LineSpecialLevelInfo;
 enum
 {
 	ACTSPEC_Thing_Thrust3d			= 256,
+
 	ACTSPEC_AdvancedGame_BeginState = 750,
 	ACTSPEC_AdvancedGame_EndState,
 	ACTSPEC_AdvancedGame_HandleEvent,
 	ACTSPEC_AdvancedGame_SetACSNotifier,
 	ACTSPEC_IsConditionTrue,
 	ACTSPEC_RunACSConditional,
+
+	//
+	// Enviroment
+	//
+	ACTSPEC_Env_WeatherSnow			= 1200,
+	ACTSPEC_Env_WeatherRain,
+	ACTSPEC_Env_WeatherTerminate,
+	ACTSPEC_Env_WeatherTerminateAll,
+	ACTSPEC_Env_WeatherSetParams,
+	ACTSPEC_Env_WeatherSetPattern,
+	ACTSPEC_Env_WeatherSetColour,
+
 	ACTSPEC_Last
 };
 
@@ -52,12 +65,6 @@ enum
 enum
 {
 	CNDT_AdvancedGame_StateIs		// Is current Game State equal to ...
-};
-
-enum
-{
-	pt_chunks = pt_explode2 + 1,
-	pt_chunks2
 };
 
 const int MAX_MINOTAUR_SPOTS = 8; // [FB] Limit the number of Minotaur Spots in a level
@@ -76,8 +83,84 @@ int corpseQueueSlot;
 
 enum
 {
-	pt_ice_chunk
+	pt_ice_chunk = pt_static,
+	pt_weather_snow = pt_spark + 1,
+	// General difference between snow and rain types is that rain spawns some splash when dies
+	pt_weather_rain
 };
+
+enum
+{
+	pt_pattern_none,
+	// rain patterns: create a vertical chunk of particles instead of single one
+	pt_pattern_rainlight,
+	pt_pattern_rainmoderate,
+	pt_pattern_rainheavy
+};
+
+array<Thinker>	WeatherThinkers;
+
+int skyflatnum;	// copied from Game, needed for client-side calculations when Game is not accessible
+
+replication
+{
+	reliable if (Role == ROLE_Authority)
+		skyflatnum;
+}
+
+
+//==========================================================================
+//
+//	IsBeneathSky
+//
+//==========================================================================
+
+bool IsBeneathSky(TVec v)
+{
+	sector_t * p_sector = XLevel.PointInSector(v);
+	return p_sector && p_sector->ceiling.pic == skyflatnum;
+}
+
+//==========================================================================
+//
+//	FindHighestFloorZAtPoint
+//
+//	[CW] Find the highest floor Z for given (x,y) coordinates.
+//	(Not completely sure, but it seems there's no common method for this)
+//
+//==========================================================================
+
+float FindHighestFloorZAtPoint(TVec v, optional sector_t * in_sector)
+{
+	sector_t * pt_sector;
+	sec_region_t * pt_region;
+	float pt_floorz;
+
+	if (in_sector)
+		pt_sector = in_sector;
+	else
+		pt_sector = XLevel.PointInSector(v);
+
+	if (pt_sector)
+	{
+		// [CW] Hope this will work
+		if (pt_sector->bHasExtrafloors)
+		{
+			pt_region = PointInRegion(pt_sector, v);
+			while(pt_region->next)
+				pt_region = pt_region->next;
+			pt_floorz = GetPlanePointZ(pt_region->floor, v);
+		}
+		else
+		{
+			pt_floorz = GetPlanePointZ(&pt_sector->floor, v);
+		}
+
+		return pt_floorz;
+	}
+	else
+		return EntityEx::ONFLOORZ;	// Failed
+}
 
 //============================================================================
 //
@@ -176,6 +259,32 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 			buttonSuccess = true;
 			MainGameInfo(Game).GameModel.SetACSNotifier(Arg1, Arg2);
 		}
+		break;
+
+
+	//
+	// Enviroment
+	//
+	case ACTSPEC_Env_WeatherSnow:
+		buttonSuccess = EV_WeatherSnow(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherRain:
+		buttonSuccess = EV_WeatherRain(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherTerminate:
+		buttonSuccess = EV_WeatherTerminate(Arg1);
+		break;
+	case ACTSPEC_Env_WeatherTerminateAll:
+		buttonSuccess = EV_WeatherTerminate(-1);
+		break;
+	case ACTSPEC_Env_WeatherSetParams:
+		buttonSuccess = EV_WeatherSetParams(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherSetPattern:
+		buttonSuccess = EV_WeatherSetPattern(Arg1, Arg2);
+		break;
+	case ACTSPEC_Env_WeatherSetColour:
+		buttonSuccess = EV_WeatherSetColour(Arg1, Arg2, Arg3, Arg4, Arg5);
 		break;
 
 	// Inert Line specials
@@ -321,6 +430,155 @@ bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int
 
 //==========================================================================
 //
+//  EV_WeatherSnow
+//
+//==========================================================================
+
+bool EV_WeatherSnow(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherSnow WS = WeatherSnow(Spawn(WeatherSnow));
+	if (WS)
+	{
+		WS.Amount = Density ? Density : WS.default.Amount;
+		WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+		float fang = itof(Angle);
+		WS.InitialVelocity = (HorSpeed || VertSpeed) ?
+			vector(itof(HorSpeed) * 8.0 * cos(fang), itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0) :
+			WS.default.InitialVelocity;
+		WS.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WS;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherRain
+//
+//==========================================================================
+
+bool EV_WeatherRain(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherRain WR = WeatherRain(Spawn(WeatherRain));
+	if (WR)
+	{
+		WR.Amount = Density ? Density : WR.default.Amount;
+		WR.Spread.z = WR.default.Spread.z * itof(WR.Amount) / itof(WR.default.Amount);
+		float fang = itof(Angle);
+		WR.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+			itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+		WR.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WR;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherTerminate
+//
+//==========================================================================
+
+bool EV_WeatherTerminate(int Num)
+{
+	if (Num < 0)
+	{
+		int i;
+		for (i = 0; i < WeatherThinkers.Num; i++)
+		{
+			WeatherThinkers[i].Destroy();
+			WeatherThinkers[i] = none;
+		}
+		WeatherThinkers.Num = 0;
+		return true;
+	}
+	else if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			WeatherThinkers[Num].Destroy();
+			WeatherThinkers[Num] = none;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetParams
+//
+//==========================================================================
+
+bool EV_WeatherSetParams(int Num, int Density, int Angle, int HorSpeed, int VertSpeed)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Amount = Density ? Density : WS.default.Amount;
+			WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+			float fang = itof(Angle);
+			WS.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+						itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetPattern
+//
+//==========================================================================
+
+bool EV_WeatherSetPattern(int Num, int Pattern)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Pattern = Pattern;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetColour
+//
+//==========================================================================
+
+bool EV_WeatherSetColour(int Num, int R, int G, int B, int A)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Colour = RGBA(R,G,B,A);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
 //  GetClassSpawnFlags
 //
 //==========================================================================
@@ -352,6 +610,161 @@ int GetPClassSpawnFlags()
 
 //==========================================================================
 //
+//  ParticleEffectEx
+//
+//==========================================================================
+
+void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
+	TVec velocity, TVec vrnd, TVec acceleration, float grav, int colour, float duration, float ramp,
+	int Pattern)
+{
+	int i, j;
+	particle_t *p, *p2;
+
+	float max_dist;
+	float real_duration;
+	sector_t * pt_sector;
+	float pt_floorz;
+	float time;
+
+	if (!XLevel)
+		Error("HexenLevelInfo::ParticleEffectEx : XLevel reference not set to an instance of an object");
+
+	for (i = 0; i < count; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+
+		max_dist = -1.0;
+		real_duration = 0.0;
+		pt_sector = NULL;
+
+		// [CW] Type and origin are very important in our implementation,
+		// so they should go first
+		//
+		if(type2)
+		{
+			// Choose between the two types
+			if (i & 1)
+			{
+				p->type = type1;
+			}
+			else
+			{
+				p->type = type2;
+			}
+		}
+		else
+		{
+			p->type = type1;
+		}
+
+		// No random origin
+		if(ornd == vector(0.0,0.0,0.0))
+		{
+			p->org = origin;
+		}
+		else
+		{
+			p->org.x = origin.x + ((Random() * ornd.x) - 16.0);
+			p->org.y = origin.y + ((Random() * ornd.y) - 16.0);
+			p->org.z = origin.z + ((Random() * ornd.z) - 16.0);
+		}
+
+		if (p->type == pt_weather_snow || p->type == pt_weather_rain)
+		{
+			max_dist = 0.0;
+			pt_sector = XLevel.PointInSector(p->org);
+			if (pt_sector && pt_sector->ceiling.pic == skyflatnum)
+			{
+				p->org.z += pt_sector->ceilingheight;
+				pt_floorz = FindHighestFloorZAtPoint(p->org, pt_sector);
+				if (pt_floorz != EntityEx::ONFLOORZ)
+				{
+					max_dist = p->org.z - pt_floorz;
+					if (max_dist < 0.0)
+						max_dist = 0.0;
+				}
+			}
+		}
+
+		p->colour = colour;
+		p->Size = 1.0;
+		if(ramp)
+			p->ramp = Random() * ramp;
+
+		// No random velocity
+		if(vrnd == vector(0.0,0.0,0.0))
+		{
+			p->vel = velocity;
+		}
+		else
+		{
+			p->vel.x = velocity.x * (Random() - vrnd.x);
+			p->vel.y = velocity.y * (Random() - vrnd.y);
+			p->vel.z = velocity.z * (Random() - vrnd.z);
+		}
+		p->accel.x = acceleration.x;
+		p->accel.y = acceleration.y;
+		p->accel.z = acceleration.z;
+		p->gravity = grav;
+
+		if (duration && max_dist)
+			real_duration = duration * Random();
+		// [CW] TODO: fix lifetime for weather particles according to accel & velocity
+		// currently does not care about accel since there's no sqrt func :(
+		// so using simplest formula this time
+		if (max_dist >= 0.0)
+		{
+			if (p->vel.z != 0.0)
+				time = -(max_dist / p->vel.z);
+			else
+				time = 0.0;
+			if (!real_duration || real_duration > time)
+				real_duration = time;
+		}
+		p->die = XLevel.Time + real_duration;
+
+		if (real_duration && Pattern)
+		{
+			switch (Pattern)
+			{
+			case pt_pattern_rainlight:
+			case pt_pattern_rainmoderate:
+			case pt_pattern_rainheavy:
+				{
+					int q;
+					switch (Pattern)
+					{
+					case pt_pattern_rainlight: q = P_Random() % 3 + 3; break;
+					case pt_pattern_rainmoderate: q = P_Random() % 7 + 4; break;
+					case pt_pattern_rainheavy: q = P_Random() % 10 + 10; break;
+					}
+					for (j = 0; j < q; j++)
+					{
+						p2 = NewParticle();
+						if (!p2)
+							break;
+						p2->org = vector(p->org.x, p->org.y, p->org.z + itof(j));
+						p2->colour = p->colour;
+						p2->Size = p->Size;
+						p2->vel = p->vel;
+						p2->accel = p->accel;
+						p2->die = p->die;
+						p2->type = p->type;
+						p2->ramp = p->ramp;
+						p2->gravity = p->gravity;
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
 //  UpdateParticle
 //
 //==========================================================================
@@ -359,8 +772,9 @@ int GetPClassSpawnFlags()
 void UpdateParticle(particle_t * p, float DeltaTime)
 {
 	float grav;
+	float pt_floorz;
 
-	grav = DeltaTime * p->gravity /*sv_gravity.value * 0.05*/;
+	grav = DeltaTime * p->gravity;
 	p->accel.z -= grav;
 	
 	switch (p->type)
@@ -370,8 +784,27 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 		p->vel.y -= p->vel.y * DeltaTime;
 		p->vel.z += p->accel.z * DeltaTime;
 		break;
+	case pt_weather_snow:
+	case pt_weather_rain:
+		p->vel += p->accel * DeltaTime;
+		{
+			// spawn a splash just before particle death
+			if (p->type == pt_weather_rain && (p->die <= XLevel.Time + DeltaTime))
+			{
+				// [CW] Hope this won't slow things down significantly
+				//
+				pt_floorz = FindHighestFloorZAtPoint(p->org);
+				if (pt_floorz != EntityEx::ONFLOORZ && (p->org.z - pt_floorz < 8.0))
+				{
+					ParticleEffect(P_Random() % 6 + 2, pt_static, 0, p->org, 0.0, vector(16.0, 16.0, 16.0),
+						0.5, 0.0, 40.0,
+						RGB(((p->colour >> 16) & 0xff) >> 1, (((p->colour >> 8) & 0xff) >> 1), (p->colour & 0xff) >> 1),
+						0.4, 0.0);
+				}
+			}
+		}
+		return;
 	}
-
 	::UpdateParticle(p, DeltaTime);
 }
 

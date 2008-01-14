@@ -1,0 +1,98 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: GameXmasHavoc.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class GameXmasHavoc : GameModel;
+
+int TotalBurnt;
+bool bSnowSpawned;
+
+//==========================================================================
+//
+//	IsInPlayableState
+//
+//==========================================================================
+
+bool IsInPlayableState()
+{
+	return true;
+}
+
+//==========================================================================
+//
+//	NotifySpawnPlayer
+//
+//==========================================================================
+
+void NotifyPlayerSpawn(Player pl)
+{
+	if (IsInPlayableState())
+		pl.centreprint("burn xmas trees down!");
+}
+
+//==========================================================================
+//
+//	NotifyPlayerDeath
+//
+//==========================================================================
+
+void NotifyPlayerDeath(Player pl, EntityEx source)
+{
+	if (IsInPlayableState())
+	{
+		if (source && source.Player && source.Player != pl)
+		{
+			Actor(source).Kill(none, none, true);
+			Player(source.Player).Scoreboard(false);
+			source.Player.centreprint("no fraggin' on xmas eve!");
+		}
+	}
+}
+
+//==========================================================================
+//
+//	NotifyXMasTreeBurnt
+//
+//==========================================================================
+
+void NotifyXMasTreeBurnt(ZXmasHavocTree xmtree)
+{
+	TotalBurnt++;
+	if (!bSnowSpawned && TotalBurnt > 1)
+	{
+		HexenLevelInfo(Level).EV_WeatherSnow(WeatherSnow.default.Amount >> 1,0,0,0,0);
+		bSnowSpawned = true;
+	}
+}
+
+defaultproperties
+{
+}
