@@ -115,6 +115,8 @@ void CreateChoices()
 					newChoice.bAllowed = false;
 				}
 			}
+			else
+				newChoice.bAllowed = true;
 			newChoice.Team = Teams[i];
 			teams_active[Teams[i]] = true;
 			y += 18;
@@ -139,6 +141,7 @@ void CreateChoices()
 			newChoice.SetOrigin(ChoicesStartX, y);
 			newChoice.Text = TeamNames[i];
 			newChoice.Team = i;
+			newChoice.bAllowed = true;
 			y += 18;
 		}
 	}
@@ -180,7 +183,21 @@ void OnDestroy()
 	if (!bIsSelected)
 	{
 		//SetCvar('Colour', curSelection);
-		Player(ClGame.cl).ServerJoinTeam(curSelection);
+		if (curSelection >= 0)
+			Player(ClGame.cl).ServerJoinTeam(curSelection);
+		else
+		{
+			int i;
+			for (i = 0; i < NumItems; i++)
+			{
+				if (Items[i] && Items[i].IsA('MenuChoice_Team')
+					&& MenuChoice_Team(Items[i]).bAllowed)
+				{
+					Player(ClGame.cl).ServerJoinTeam(MenuChoice_Team(Items[i]).Team);
+					break;
+				}
+			}
+		}
 	}
 }
 
