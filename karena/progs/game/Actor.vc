@@ -871,7 +871,7 @@ final TVec ClipVelocity(TVec in, TVec normal, float overbounce)
 //==========================================================================
 
 bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
-			  // [CW] use these two to override default passability calculations
+			  // [CW] use these three to override default passability calculations
 			  optional float MaxPassableStep,
 			  optional float MaxPassableDropOff,
 			  optional float MinPassableOpening,
@@ -893,16 +893,27 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData,
 		MaxPassableStep, MaxPassableDropOff, MinPassableOpening, bCanUseLines);
 	
-	//
-	// [CW] FIXME -- TargetEntity does not work and spoils everything, do not use
-	//
-	if (TargetEntity)
-	{
-		if (CRTRData.linetarget != TargetEntity)
-			return false;
-	}
 	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
 		return false;
+	
+	if (canreach && TargetEntity)
+	{
+	//
+	// [CW] CHECKME ---
+	//
+	//	if (CRTRData.linetarget != TargetEntity)
+	//		return false;
+
+		//
+		// [CW] TODO!! --- no 3d floors support here
+		//
+		// [CW] prev_sector is now the last sector met
+
+		if (TargetEntity.Origin.z > CRTRData.prev_sector->floorheight + MaxPassableStep)
+			return false;		// [CW] target thing is too high to reach
+		if (TargetEntity.Origin.z < CRTRData.prev_sector->floorheight)
+			return false;		// [CW] target thing is under the floor
+	}
 
 	return canreach;
 }
@@ -910,6 +921,8 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 //==========================================================================
 //
 //	PTR_CanReachTraverse
+//
+// [CW] TODO!! --- no 3d floors support here
 //
 //==========================================================================
 
