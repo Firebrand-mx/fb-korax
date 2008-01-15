@@ -1,0 +1,48 @@
+
+class ACSpellConfusion : ActorCondition;
+
+bool bAlt;
+float counter;
+float da;
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	if (ARecepient.Player)
+	{
+		float dt = deltaTime * (25.0 * itof(Level));
+		counter += bAlt ? dt : -dt;
+		da = bAlt ? dt : -dt;
+		if (bAlt && counter > 75.0 ||
+				!bAlt && counter < 0.0)
+			bAlt = !bAlt;
+		ARecepient.Angles.yaw += da;
+	}
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+void Deactivate()
+{
+	if (!ARecepient)
+		Error("ACConfusion::Deactivate : no reference to Recepient actor, bad algorythm?");
+
+	if (ARecepient.Player)
+		Player(ARecepient.Player).SetFOV(KRPGDefs::FOV_DEFAULT);
+}
+
+
+
+defaultproperties
+{
+	CastMessage = "confused";
+}
