@@ -35,6 +35,14 @@ struct InitInvInfo
 float					HexenArmor[5];
 array<InitInvInfo>		InitialInventory;
 
+//
+// KRPG
+//
+// [CW] Just a thought -- should monsters have these?
+float					StandHeight;
+float					DuckHeight;
+
+
 //==========================================================================
 //
 //	AddInventory
@@ -156,6 +164,56 @@ bool RoughCheckThing(Entity Other)
 	return false;
 }
 
+//**************************************************************************
+//
+// [KORAX RPG]
+//
+//**************************************************************************
+
+//===========================================================================
+//
+//  GetBaseViewHeight
+//
+//===========================================================================
+
+float GetBaseViewHeight()
+{
+	return Player(Player).ViewHeightFixed;
+}
+
+//===========================================================================
+//
+//  StandUp
+//
+//===========================================================================
+
+void StandUp(float deltaTime)
+{
+	if (Height < StandHeight)
+	{
+		Height += 128.0 * deltaTime;
+		if (Height > StandHeight)
+			Height = StandHeight;
+	}
+}
+
+//===========================================================================
+//
+//  BendDown
+//
+//===========================================================================
+
+void BendDown(float deltaTime)
+{
+	if (Height > DuckHeight)
+	{
+		Height -= 128.0 * deltaTime;
+		if (Height < DuckHeight)
+			Height = DuckHeight;
+	}
+}
+
+
 defaultproperties
 {
 	ReactionCount = 0;
@@ -169,6 +227,7 @@ defaultproperties
 	RDFactor = 0.25;
 
 	// KoraxRPG
+	bLiving = true;
 	bCanRide = true;
 	Team = 1;
 }

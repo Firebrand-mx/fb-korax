@@ -25,6 +25,11 @@
 
 class Player : PlayerEx;
 
+enum
+{
+	BT_DUCK	= 8
+};
+
 const int MAXHEALTH			= 100;
 const int MAXMORPHHEALTH	= 30;
 const float VIEWHEIGHT		= 48.0;
@@ -32,6 +37,9 @@ const float VIEWHEIGHT		= 48.0;
 float MorphTime;	// player is a pig if > 0
 
 BotPlayer Bot;
+
+// KRPG
+float ViewHeightFixed;
 
 replication
 {
@@ -1345,6 +1353,20 @@ void PlayerTick(float deltaTime)
 		MorphPlayerThink();
 	}
 
+	// KRPG
+	// Duck
+	float oldHeight = MO.Height;
+	if (Buttons & BT_DUCK)
+	{
+		PlayerPawn(MO).BendDown(deltaTime);
+	}
+	else
+	{
+		PlayerPawn(MO).StandUp(deltaTime);
+	}
+	//if (Camera == MO)	??? CHECKME
+	ViewHeightFixed += (MO.Height - oldHeight);
+
 	//  Move around.
 	//  ReactionTime is used to prevent movement for a bit after a teleport.
 	if (Actor(MO).ReactionTime)
@@ -1357,6 +1379,11 @@ void PlayerTick(float deltaTime)
 	}
 	else
 	{
+		if (MO.Height < PlayerPawn(MO).StandHeight)
+		{
+			ForwardMove /= 4.0;
+			SideMove /= 7.0;
+		}
 		// KRPG
 		if (KRPGActor(MO).RidePartner && KRPGActor(MO).bIsMountedOn && KRPGActor(MO).bRideControl)
 			PlayerRide(deltaTime);
@@ -2209,4 +2236,5 @@ name GetInvulnerabilityMode()
 
 defaultproperties
 {
+	ViewHeightFixed = VIEWHEIGHT;
 }
