@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: Player.vc 2709 2007-09-26 17:42:35Z dj_jl $
+//**    $Id: Player.vc 3021 2008-01-15 07:54:37Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -29,7 +29,6 @@ const int MAXHEALTH			= 100;
 const int MAXMORPHHEALTH	= 30;
 const float VIEWHEIGHT		= 48.0;
 
-int WeaponCShift;
 float MorphTime;	// player is a pig if > 0
 
 BotPlayer Bot;
@@ -64,7 +63,6 @@ void SpawnClient()
 	Inventory Item;
 
 	Attacker = none;
-	//Poisoner = none;// KRPG
 
 	if (Level.Game.netgame && !Level.Game.deathmatch)
 	{
@@ -252,40 +250,6 @@ void DisconnectClient()
 
 void UserinfoChanged()
 {
-	if (!bSpawned)
-	{
-		return;
-	}
-	SetPlayerColour();
-}
-
-//==========================================================================
-//
-//  SetPlayerColour
-//
-//==========================================================================
-
-void SetPlayerColour()
-{
-	MO.Translation = 0;
-	if (PClass == HexenDefs::PCLASS_FIGHTER)
-	{
-		// The first type should be blue, and the third should be the
-		// Fighter's original gold colour
-		if (Colour == 0)
-		{
-			MO.Translation = 2;
-		}
-		else if (Colour != 2)
-		{
-			MO.Translation = Colour;
-		}
-	}
-	else if (Colour)
-	{
-		// Set colour translation bits for player sprites
-		MO.Translation = PClass * (MAXPLAYERS - 1) + Colour;
-	}
 }
 
 //==========================================================================
@@ -410,13 +374,13 @@ void SpawnPlayer(mthing_t * mthing)
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_FIGHTER:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(FighterPlayer, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(FighterPlayer, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_CLERIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(ClericPlayer, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(ClericPlayer, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MAGE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(MagePlayer, vector(x, y, z)));
+		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(MagePlayer, vector(x, y, z),,, false));
 		break;
 	default:
 		Error("P_SpawnPlayer: Unknown class type");
@@ -430,11 +394,11 @@ void SpawnPlayer(mthing_t * mthing)
 	pp.bIsPlayer = true;
 	pp.Health = Health;
 	MO = pp;
+	Camera = pp;
 	PlayerState = PST_LIVE;
 	Refire = 0;
 	DamageFlash = 0.0;
 	BonusFlash = 0.0;
-	//PoisonCount = 0;// KRPG
 	MorphTime = 0.0;
 	ExtraLight = 0;
 	FixedColourmap = 0;
@@ -457,7 +421,7 @@ void SpawnPlayer(mthing_t * mthing)
 			pp.Inventory.Destroy();
 		}
 
-		HexenArmor HArmor = Level.Spawn(HexenArmor);
+		HexenArmor HArmor = Level.Spawn(HexenArmor,,,, false);
 		HArmor.AttachToOwner(pp);
 		HArmor.Slots[4] = pp.HexenArmor[0];
 		HArmor.SlotsIncrement[0] = pp.HexenArmor[1];
@@ -465,13 +429,13 @@ void SpawnPlayer(mthing_t * mthing)
 		HArmor.SlotsIncrement[2] = pp.HexenArmor[3];
 		HArmor.SlotsIncrement[3] = pp.HexenArmor[4];
 
-		BasicArmor BArmor = Level.Spawn(BasicArmor);
+		BasicArmor BArmor = Level.Spawn(BasicArmor,,,, false);
 		BArmor.Amount = 0;
 		BArmor.AttachToOwner(pp);
 
 		for (i = 0; i < pp.InitialInventory.Num; i++)
 		{
-			Item = Level.Spawn(pp.InitialInventory[i].Type);
+			Item = Level.Spawn(pp.InitialInventory[i].Type,,,, false);
 			Item.bIgnoreSkill = true;
 			Item.Amount = pp.InitialInventory[i].Amount;
 			if (Weapon(Item))
@@ -510,7 +474,18 @@ void SpawnPlayer(mthing_t * mthing)
 	}
 
 	// Set translation table data
-	SetPlayerColour();
+	if (PClass == HexenDefs::PCLASS_FIGHTER)
+	{
+		TranslStart = 246;
+		TranslEnd = 254;
+	}
+	else
+	{
+		TranslStart = 146;
+		TranslEnd = 163;
+	}
+	pp.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
+		GetPlayerNum();
 	if (bIsBot)
 	{
 		Bot.OnSpawn();
@@ -604,6 +579,7 @@ void PlayerExitMap(bool clusterChange)
 	DamageFlash = 0.0;	// No palette changes
 	BonusFlash = 0.0;
 	SavedInventory = EntityEx(MO).Inventory;
+	EntityEx(MO).Inventory = none;
 }
 
 //==========================================================================
@@ -626,7 +602,7 @@ bool GiveMana(class<Ammo> ammo, int count)
 	Ammo AmmoItem = Ammo(EntityEx(MO).FindInventory(ammo));
 	if (!AmmoItem)
 	{
-		AmmoItem = Level.Spawn(ammo);
+		AmmoItem = Level.Spawn(ammo,,,, false);
 		AmmoItem.AttachToOwner(EntityEx(MO));
 		AmmoItem.Amount = 0;
 	}
@@ -1141,7 +1117,8 @@ bool UndoPlayerMorph()
 	A.Health = MAXHEALTH;
 	Health = A.Health;
 	PClass = BaseClass;
-	SetPlayerColour();
+	A.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
+		GetPlayerNum();
 	PostMorphWeapon(Weapon(Actor(MO).Tracer));
 
 	fog = HexenLevelInfo(Level).Spawn(TeleportFog, MO.Origin + vector(20.0 * cos(MO.Angles.yaw),
@@ -1150,6 +1127,7 @@ bool UndoPlayerMorph()
 
 	MO.SetState(MO.FindState('FreeTargMobj'));
 	MO = A;
+	Camera = A;
 	return true;
 }
 
@@ -1242,11 +1220,6 @@ void DeathPlayerTick(float deltaTime)
 				if (DamageFlash <= 0.0)
 					DamageFlash = 0.0;
 			}
-			// KRPG
-			/*if (PoisonCount)
-			{
-				PoisonCount--;
-			}*/
 		}
 		delta = delta / 8.0;
 		if (delta > 5.0)
@@ -1263,24 +1236,15 @@ void DeathPlayerTick(float deltaTime)
 			MO.Angles.yaw -= delta;
 		}
 	}
-	else if (DamageFlash/* || PoisonCount*/)// KRPG
+	else if (DamageFlash)
 	{
-		if (DamageFlash)
-		{
-			DamageFlash -= deltaTime;
-			if (DamageFlash <= 0.0)
-				DamageFlash = 0.0;
-		}
-		// KRPG
-		/*else
-		{
-			PoisonCount--;
-		}*/
+		DamageFlash -= deltaTime;
+		if (DamageFlash <= 0.0)
+			DamageFlash = 0.0;
 	}
 
 	if (Buttons & BT_USE)
 	{
-		WeaponCShift = 0;
 		InvPtr = none;
 		InvFirst = none;
 		PlayerState = PST_REBORN;
@@ -1312,7 +1276,10 @@ void PlayerTick(float deltaTime)
 	}
 
 	// Copy view angles
-	MO.Angles = ViewAngles;
+	if (MO == Camera)
+	{
+		MO.Angles = ViewAngles;
+	}
 
 	// fixme: do this in the cheat code
 	if (Cheats & CF_NOCLIP)
@@ -1331,6 +1298,22 @@ void PlayerTick(float deltaTime)
 		ForwardMove = 100.0;
 		SideMove = 0.0;
 		Actor(MO).bJustAttacked = false;
+	}
+
+	if (bTotallyFrozen)
+	{
+		Buttons &= BT_USE;
+		Impulse = 0;
+		ViewAngles = MO.Angles;
+		ForwardMove = 0.0;
+		SideMove = 0.0;
+		FlyMove = 0.0;
+	}
+	else if (bFrozen)
+	{
+		ForwardMove = 0.0;
+		SideMove = 0.0;
+		FlyMove = 0.0;
 	}
 
 	WorldTimer += deltaTime;
@@ -1372,7 +1355,6 @@ void PlayerTick(float deltaTime)
 			WaterMove(deltaTime);
 		else
 			MovePlayer(deltaTime);
-
 		if (EntityEx(MO).FindInventory(PowerSpeed) &&
 			!(Level.XLevel.TicTime & 1) && Length(MO.Velocity) > 12.0 * 35.0)
 		{
@@ -1515,100 +1497,6 @@ void PlayerRide(float deltaTime)
 
 //==========================================================================
 //
-//  PaletteFlash
-//
-//  Sets the new palette based upon the current values of
-// Player.DamageFlash and Player.BonusFlash.
-//
-//==========================================================================
-
-void PaletteFlash()
-{
-	CShifts[CSHIFT_Contents] = 0;
-	if (MO.WaterLevel == 3)
-	{
-		switch (MO.WaterType)
-		{
-		case CONTENTS_WATER:
-			CShifts[CSHIFT_Contents] = RGBA(130, 80, 50, 128);
-			break;
-
-		case CONTENTS_LAVA:
-			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
-			break;
-
-		case CONTENTS_NUKAGE:
-			CShifts[CSHIFT_Contents] = RGBA(50, 255, 50, 150);
-			break;
-
-		case CONTENTS_SLIME:
-			CShifts[CSHIFT_Contents] = RGBA(0, 25, 5, 150);
-			break;
-
-		case CONTENTS_HELLSLIME:
-			CShifts[CSHIFT_Contents] = RGBA(255, 80, 0, 150);
-			break;
-
-		case CONTENTS_BLOOD:
-			CShifts[CSHIFT_Contents] = RGBA(160, 16, 16, 150);
-			break;
-
-		case CONTENTS_SLUDGE:
-			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 150);
-			break;
-
-		case CONTENTS_HAZARD:
-			CShifts[CSHIFT_Contents] = RGBA(128, 160, 128, 128);
-			break;
-		}
-	}
-
-	CShifts[CSHIFT_Damage] = 0;
-	if (DamageFlash)
-	{
-		int Amount = ftoi(114.0 * DamageFlash);
-		if (Amount >= 228)
-			Amount = 228;
-		CShifts[CSHIFT_Damage] = RGBA(255, 0, 0, Amount);
-	}
-
-	CShifts[CSHIFT_Bonus] = 0;
-	if (BonusFlash)
-	{
-		int Amount = ftoi(256.0 * BonusFlash);
-		if (Amount >= 128)
-			Amount = 128;
-		CShifts[CSHIFT_Bonus] = RGBA(215, 186, 68, Amount);
-	}
-
-	CShifts[CSHIFT_Weapon] = WeaponCShift;
-
-	CShifts[CSHIFT_Power] = 0;
-	if (Actor(MO).Conditions && Actor(MO).Conditions.refHead)
-	{
-		LinkedReferer acref = LinkedReferer(Actor(MO).Conditions.refHead);
-		while (acref)
-		{
-			ActorCondition ac = ActorCondition(acref.refObject);
-			if (ac.bIsNegative)
-				ac.MakeCShift(&CShifts[CSHIFT_Poison]);
-			else
-				ac.MakeCShift(&CShifts[CSHIFT_Power]);
-			acref = LinkedReferer(acref.refNext);
-		};
-	}
-
-	if (Actor(MO).DamageType == 'Ice')
-	{
-		// Frozen player
-		CShifts[CSHIFT_Damage] = RGBA(2, 2, 255, 113);
-		CShifts[CSHIFT_Bonus] = 0;
-		CShifts[CSHIFT_Poison] = 0;
-	}
-}
-
-//==========================================================================
-//
 //  SetViewPos
 //
 //==========================================================================
@@ -1617,19 +1505,33 @@ void SetViewPos()
 {
 	int		i;
 
-	ViewOrg.x = MO.Origin.x;
-	ViewOrg.y = MO.Origin.y;
-
-	if (LocalQuakeHappening)
+	//	Just in a case camera entity has been destroyed
+	if (!Camera)
 	{
-		float intensity;
-
-		intensity = itof(LocalQuakeHappening);
-		ViewOrg.x += (Random() - 0.5) * (intensity * 4.0);
-		ViewOrg.y += (Random() - 0.5) * (intensity * 4.0);
+		Camera = MO;
 	}
 
-	ViewAngles = MO.Angles;
+	if (MO != Camera)
+	{
+		ViewOrg = Camera.Origin;
+		ViewAngles = Camera.Angles;
+	}
+	else
+	{
+		ViewOrg.x = MO.Origin.x;
+		ViewOrg.y = MO.Origin.y;
+
+		if (LocalQuakeHappening)
+		{
+			float intensity;
+
+			intensity = itof(LocalQuakeHappening);
+			ViewOrg.x += (Random() - 0.5) * (intensity * 4.0);
+			ViewOrg.y += (Random() - 0.5) * (intensity * 4.0);
+		}
+
+		ViewAngles = MO.Angles;
+	}
 
 	PaletteFlash();
 
@@ -1733,126 +1635,6 @@ void PostMorphWeapon(Weapon weapon)
 	SetViewState(ps_weapon, ReadyWeapon.GetUpState());
 }
 
-//
-// [KRPG] [CW] moved to PlayerPawn
-//
-/*//==========================================================================
-//
-//  P_UseLines
-//
-//  Looks for special lines in front of the player to activate.
-//
-//==========================================================================
-
-void P_UseLines()
-{
-	float x1;
-	float y1;
-	float x2;
-	float y2;
-	TVec useDir;
-	intercept_t* in;
-	TVec hit_point;
-	opening_t *open;
-
-	AngleVector(&MO.Angles, &useDir);
-	x1 = MO.Origin.x;
-	y1 = MO.Origin.y;
-
-	x2 = x1 + USETHINGRANGE * useDir.x;
-	y2 = y1 + USETHINGRANGE * useDir.y;
-	foreach MO.PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
-	{
-		if (!in->bIsALine)
-		{
-			//	Check height.
-			if (MO.Origin.z >= in->Thing.Origin.z + in->Thing.Height ||
-				MO.Origin.z + MO.Height <= in->Thing.Origin.z)
-			{
-				continue;
-			}
-			if (LineSpecialLevelInfo(Level).StartConversation(Actor(MO), Actor(in->Thing)))
-			{
-				break;
-			}
-			continue;
-		}
-
-		if (!(in->line->flags & ML_TWOSIDED))
-			break;	// stop
-
-		hit_point = MO.Origin + (USETHINGRANGE * in->frac) * useDir;
-		open = LineOpenings(in->line, hit_point);
-		open = FindOpening(open, hit_point.z, hit_point.z + MO.Height);
-		if (!open || open->range < 1.0)
-		{
-			// can't use through a wall
-			break;
-		}
-		continue;
-	}
-
-	x2 = x1 + USERANGE * useDir.x;
-	y2 = y1 + USERANGE * useDir.y;
-	foreach MO.PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
-	{
-		line_t* line;
-		float pheight;
-
-		line = in->line;
-		if (!line->special || (Level.GET_SPAC(line->flags) != SPAC_USE &&
-			Level.GET_SPAC(line->flags) != SPAC_USETHROUGH))
-		{
-			hit_point = MO.Origin + (USERANGE * in->frac) * useDir;
-			open = LineOpenings(line, hit_point);
-			open = FindOpening(open, hit_point.z + MO.Height / 2.0,
-				hit_point.z + MO.Height);
-			if (!open)
-			{
-				if (MorphTime)
-				{
-					MO.PlaySound('PigActive1', CHAN_VOICE);
-				}
-				else
-				{
-					MO.PlaySound('*usefail', CHAN_VOICE);
-				}
-				break;	// can't use through a wall
-			}
-			pheight = MO.Origin.z + MO.Height / 2.0;
-			if ((open->top < pheight) || (open->bottom > pheight))
-			{
-				if (MorphTime)
-				{
-					MO.PlaySound('PigActive1', CHAN_VOICE);
-				}
-				else
-				{
-					MO.PlaySound('*usefail', CHAN_VOICE);
-				}
-			}
-			continue;	// not a special line, but keep checking
-		}
-
-		if (PointOnPlaneSide(MO.Origin, line) == 1)
-		{
-			//	Don't use back side unless it's a two-sided line.
-			if (line->backsector != NULL)
-				continue;
-			break;
-		}
-
-		HexenLevelInfo(Level).ActivateLine(line, Actor(MO), 0, SPAC_USE);
-
-		//WAS can't use more than one special line in a row
-		//jff 3/21/98 NOW multiple use allowed with enabling line flag
-		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
-		{
-			break;
-		}
-	}
-}*/
-
 //==========================================================================
 //
 //  Cheat_God
@@ -1921,7 +1703,7 @@ void Cheat_Gimme()
 				//	Abstract class.
 				continue;
 			}
-			Weapon Wpn = Level.Spawn(WpnCls);
+			Weapon Wpn = Level.Spawn(WpnCls,,,, false);
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
 			if (!Wpn.TryPickup(EntityEx(MO)))
@@ -1939,7 +1721,7 @@ void Cheat_Gimme()
 			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
 			if (!AmmoItem)
 			{
-				AmmoItem = Level.Spawn(Cls);
+				AmmoItem = Level.Spawn(Cls,,,, false);
 				if (!AmmoItem.TryPickup(EntityEx(MO)))
 				{
 					AmmoItem.Destroy();
@@ -1967,7 +1749,7 @@ void Cheat_Gimme()
 				EntityEx(MO).FindInventory(FourthWeaponHolder));
 			if (!Hold)
 			{
-				Hold = Level.Spawn(FourthWeaponHolder);
+				Hold = Level.Spawn(FourthWeaponHolder,,,, false);
 				Hold.AttachToOwner(EntityEx(MO));
 			}
 			Hold.PieceMask = 7;
@@ -2022,7 +1804,7 @@ void Cheat_Gimme()
 				//	Not puzzle items.
 				continue;
 			}
-			Inv = Level.Spawn(Cls);
+			Inv = Level.Spawn(Cls,,,, false);
 			Inv.Amount = Inv.MaxAmount;
 			if (!Inv.TryPickup(EntityEx(MO)))
 			{

@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: ClassBoss.vc 2273 2007-05-27 21:23:27Z dj_jl $
+//**    $Id: ClassBoss.vc 2911 2007-11-27 23:27:39Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -27,9 +27,6 @@ class ClassBoss : Pawn
 	abstract;
 
 bool bHealthInitialised;
-int StrafeCount;
-
-float StrafeRange;
 
 //============================================================================
 //
@@ -49,149 +46,7 @@ final void A_ClassBossHealth()
 	}
 }
 
-//============================================================================
-//
-//  A_MoveEx
-//
-//	Overloaded movement method for ClassBoss
-//	Contents copied from original A_FastChase method
-//
-//============================================================================
-
-bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
-{
-	float delta;
-	float dist;
-	float ang;
-
-	if (!specified_Evade)
-		Evade = false;
-
-	if (ReactionCount)
-		ReactionCount--;
-
-	// Modify target threshold
-	if (Threshold)
-		Threshold--;
-
-	if (!pTargetVec)
-	{
-		Error("ClassBoss::A_MoveEx: called with pTargetVec = NULL");
-		return false;
-	}
-
-	if (Level.Game.gameskill == sk_nightmare)
-	{
-		// Monsters move faster in nightmare mode
-		StateTime *= 0.5;
-		if (StateTime < 0.1)
-		{
-			StateTime = 0.1;
-		}
-	}
-
-	//
-	// turn towards movement direction if not there yet
-	//
-	/*if (MoveDir < 8)
-	{
-		Angles.yaw = itof(ftoi(Angles.yaw / 45.0)) * 45.0;
-		delta = AngleMod180(Angles.yaw - itof(MoveDir) * 45.0);
-		if (delta > 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw - 45.0);
-		}
-		else if (delta < 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw + 45.0);
-		}
-	}*/
-
-	if (!Evade && Target && !Target.bShootable)
-	{
-		if (autoSetIdle)
-		{
-			SetState(IdleState);
-			bInCombat = false;
-		}
-		else
-			Target = none;
-
-		return false;
-	}
-
-	//
-	// don't attack twice in a row
-	//
-	if (bJustAttacked)
-	{
-		bJustAttacked = false;
-		if (Level.Game.gameskill != sk_nightmare)
-			NewChaseDirEx(Evade);
-		return true;
-	}
-
-	// Strafe
-	if (StrafeCount > 0)
-	{
-		StrafeCount--;
-	}
-	else if (Target)
-	{
-		StrafeCount = 0;
-		Velocity.x = 0.0;
-		Velocity.y = 0.0;
-		dist = DistTo(Target);
-		if (dist < StrafeRange)
-		{
-			if (P_Random() < 100)
-			{
-				ang = atan2(Target.Origin.y - Origin.y,
-					Target.Origin.x - Origin.x);
-				if (P_Random() < 128)
-					ang = AngleMod360(ang + 90.0);
-				else
-					ang = AngleMod360(ang - 90.0);
-				Velocity.x = 13.0 * cos(ang) * 35.0;
-				Velocity.y = 13.0 * sin(ang) * 35.0;
-				StrafeCount = 3;	// strafe time
-			}
-		}
-	}
-
-	//
-	// check for missile attack
-	//
-	if (autoSetAttack && MissileState)
-	{
-		if ((Level.Game.gameskill == sk_nightmare) || !MoveCount)
-		{
-			if (CheckMissileRange())
-			{
-				SetState(MissileState);
-				bJustAttacked = true;
-				return true;
-			}
-		}
-	}
-
-	//
-	// chase towards player
-	//
-	if (!StrafeCount)
-	{
-		if (--MoveCount < 0 || !StepMoveEx())
-		{
-			NewChaseDirEx(Evade);
-		}
-	}
-
-	return true;
-}
-
-
 defaultproperties
 {
 	bNoMorph = true;
-	StrafeRange = 640.0;
 }

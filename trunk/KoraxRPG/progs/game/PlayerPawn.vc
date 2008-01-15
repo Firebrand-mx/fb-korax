@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: PlayerPawn.vc 2632 2007-08-12 08:02:24Z dj_jl $
+//**    $Id: PlayerPawn.vc 3021 2008-01-15 07:54:37Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class PlayerPawn : Pawn // KoraxRPG
+class PlayerPawn : Pawn
 	abstract;
 
 struct InitInvInfo
@@ -93,6 +93,11 @@ void RemoveInventory(Inventory Item)
 
 bool UseInventory(Inventory Item)
 {
+	//	Can't use anything while totally frozen
+	if (Player(Player).bTotallyFrozen)
+	{
+		return false;
+	}
 	// Found match - try to use
 	if (!::UseInventory(Item))
 	{
