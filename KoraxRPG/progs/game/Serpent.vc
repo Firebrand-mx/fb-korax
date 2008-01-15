@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: Serpent.vc 2665 2007-08-22 17:01:24Z dj_jl $
+//**    $Id: Serpent.vc 2974 2008-01-03 08:36:51Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -29,124 +29,28 @@ class Serpent : Pawn
 
 //==========================================================================
 //
-//	A_MoveEx
-//
-//	Overloaded movement method for Serpent
-//	Contents copied from original A_SerpentChase method
+//	A_SerpentChase
 //
 //==========================================================================
 
-bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
+bool A_SerpentChase(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
 {
-	float delta;
-	float oldX, oldY;
-	int oldFloor;
+	//DoChase(false, MeleeState, none, true, true);
+	return A_DoMove(Evade, false/*FastChase*/, AIdleState, AMeleeState, none,
+		true/*NightmareFast*/, PlayActive);
+}
 
-	if (!specified_Evade)
-		Evade = false;
+//==========================================================================
+//
+//	A_SerpentChaseAI
+//
+//==========================================================================
 
-	if (ReactionCount)
-		ReactionCount--;
-
-	// Modify target threshold
-	if (Threshold)
-		Threshold--;
-
-	if (!pTargetVec)
-	{
-		Error("Serpent::A_MoveEx: called with pTargetVec = NULL");
-		return false;
-	}
-
-	if (Level.Game.gameskill == sk_nightmare)
-	{
-		// Monsters move faster in nightmare mode
-		StateTime *= 0.5;
-		if (StateTime < 0.1)
-		{
-			StateTime = 0.1;
-		}
-	}
-
-	//
-	// turn towards movement direction if not there yet
-	//
-	/*if (MoveDir < 8)
-	{
-		Angles.yaw = itof(ftoi(Angles.yaw / 45.0)) * 45.0;
-		delta = AngleMod180(Angles.yaw - itof(MoveDir) * 45.0);
-		if (delta > 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw - 45.0);
-		}
-		else if (delta < 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw + 45.0);
-		}
-	}*/
-
-	if (!Evade && (!Target || !Target.bShootable))
-	{
-		if (autoSetIdle)
-		{
-			SetState(IdleState);
-			bInCombat = false;
-		}
-		else
-			Target = none;
-
-		return false;
-	}
-
-	//
-	// don't attack twice in a row
-	//
-	if (bJustAttacked)
-	{
-		bJustAttacked = false;
-		if (Level.Game.gameskill != sk_nightmare)
-			NewChaseDirEx(Evade);
-		return true;
-	}
-
-	//
-	// check for melee attack
-	//
-	if (autoSetAttack && !Evade && MeleeState && CheckMeleeRange())
-	{
-		if (AttackSound)
-		{
-			PlaySound(AttackSound, CHAN_WEAPON);
-		}
-		SetState(MeleeState);
-		return true;
-	}
-
-	//
-	// chase towards player
-	//
-	oldX = Origin.x;
-	oldY = Origin.y;
-	oldFloor = Sector->floor.pic;
-	if (--MoveCount < 0 || !StepMoveEx())
-	{
-		NewChaseDirEx(Evade);
-	}
-	if (Sector->floor.pic != oldFloor)
-	{
-		TryMove(vector(oldX, oldY, Origin.z));
-		NewChaseDirEx(Evade);
-	}
-
-	//
-	// make active sound
-	//
-	if (ActiveSound && P_Random() < 3)
-	{
-		PlaySound(ActiveSound, CHAN_VOICE);
-	}
-
-	return true;
+final void A_SerpentChaseAI()
+{
+	DoMove = A_SerpentChase;
+	A_ChaseAI();
 }
 
 //==========================================================================
@@ -334,103 +238,26 @@ final void A_SerpentDiveSound()
 //
 //  Similar to A_Chase, only has a hardcoded entering of meleestate.
 //
-// [CW] TODO: check this later (adv ai)
+//==========================================================================
+
+bool A_SerpentWalk(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
+{
+	//DoChase(false, FindState('Attack'), none, true, false);
+	return A_DoMove(Evade, false/*FastChase*/, AIdleState, FindState('Attack'), none,
+		true/*NightmareFast*/, false/*PlayActive*/);
+}
+
+//==========================================================================
+//
+//	A_SerpentWalkAI
 //
 //==========================================================================
 
-final void A_SerpentWalk()
+final void A_SerpentWalkAI()
 {
-	float delta;
-
-	if (ReactionCount)
-	{
-		ReactionCount--;
-	}
-
-	// Modify target threshold
-	if (Threshold)
-	{
-		Threshold--;
-	}
-
-	if (Level.Game.gameskill == sk_nightmare)
-	{
-		// Monsters move faster in nightmare mode
-		StateTime *= 0.5;
-		if (StateTime < 0.1)
-		{
-			StateTime = 0.1;
-		}
-	}
-
-	//
-	// turn towards movement direction if not there yet
-	//
-	if (MoveDir < 8)
-	{
-		Angles.yaw = itof(ftoi(Angles.yaw / 45.0)) * 45.0;
-		delta = AngleMod180(Angles.yaw - itof(MoveDir) * 45.0);
-		if (delta > 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw - 45.0);
-		}
-		else if (delta < 0.0)
-		{
-			Angles.yaw = AngleMod360(Angles.yaw + 45.0);
-		}
-	}
-
-	if (!Target || !Target.bShootable)
-	{
-		// look for a new target
-		if (LookForEnemy(true))
-		{
-			// got a new target
-			return;
-		}
-		SetState(IdleState);
-		return;
-	}
-
-	//
-	// don't attack twice in a row
-	//
-	if (bJustAttacked)
-	{
-		bJustAttacked = false;
-		if (Level.Game.gameskill != sk_nightmare)
-			NewChaseDir();
-		return;
-	}
-
-	//
-	// check for melee attack
-	//
-	if (MeleeState && CheckMeleeRange())
-	{
-		if (AttackSound)
-		{
-			PlaySound(AttackSound, CHAN_WEAPON);
-		}
-		SetState(FindState('Attack'));
-		return;
-	}
-	//
-	// possibly choose another target
-	//
-	if (Level.Game.netgame && !Threshold && !CanSee(Target))
-	{
-		if (LookForEnemy(true))
-			return;	// got a new target
-	}
-
-	//
-	// chase towards player
-	//
-	if (--MoveCount < 0 || !StepMove())
-	{
-		NewChaseDir();
-	}
+	DoMove = A_SerpentWalk;
+	A_ChaseAI();
 }
 
 //==========================================================================
@@ -534,7 +361,7 @@ Spawn:
 	SSPT H 10 A_LookAI
 	Loop
 See:
-	SSPT HH 1 A_ChaseAI
+	SSPT HH 1 A_SerpentChaseAI
 	SSPT H 2 A_SerpentHumpDecide
 	Loop
 Hump:
@@ -559,7 +386,7 @@ Melee:
 	SSDV J 3 A_SerpentHide
 	Goto See
 Walk:
-	SSPT IJI 5 A_SerpentWalk
+	SSPT IJI 5 A_SerpentWalkAI
 	SSPT J 5 A_SerpentCheckForAttack
 	Goto Melee+5
 Pain:

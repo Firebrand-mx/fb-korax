@@ -100,33 +100,18 @@ final void A_FiredRocks()
 	A_FiredSpawnRock();
 }
 
-//============================================================================
+//==========================================================================
 //
-//  A_MoveEx
+//	DoSpecialMove
 //
-//	Overloaded movement method for FireDemon
-//	Contents copied from original A_FiredChase method
+//	[KoraxRPG]
 //
-//============================================================================
+//==========================================================================
 
-bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
+bool DoSpecialMove(bool Evade)
 {
-	float ang;
 	float dist;
-
-	if (!specified_Evade)
-		Evade = false;
-
-	if (ReactionCount)
-		ReactionCount--;
-	if (Threshold)
-		Threshold--;
-
-	if (!pTargetVec)
-	{
-		Error("FireDemon::A_MoveEx: called with pTargetVec = NULL");
-		return false;
-	}
+	float ang;
 
 	// Float up and down
 	if(TestMobjZ())
@@ -151,19 +136,6 @@ bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
 		{
 			Velocity.z -= 2.5;
 		}
-	}
-
-	if (!Evade && Target && !Target.bShootable)
-	{
-		if (autoSetIdle)
-		{
-			SetState(IdleState);
-			bInCombat = false;
-		}
-		else
-			Target = none;
-
-		return false;
 	}
 
 	// Strafe
@@ -192,41 +164,11 @@ bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
 				StrafeCount = 3;	// strafe time
 			}
 		}
+
+		return true;
 	}
 
-	//FaceMovementDirection();
-
-	// Normal movement
-	if (!StrafeCount)
-	{
-		if (--MoveCount < 0 || !StepMoveEx())
-		{
-			NewChaseDirEx(Evade); // KoraxRPG
-		}
-	}
-
-	// Do missile attack
-	if (autoSetAttack && Target && !bJustAttacked)
-	{
-		if (CheckMissileRange() && (P_Random() < 20))
-		{
-			SetState(MissileState);
-			bJustAttacked = true;
-			return true;
-		}
-	}
-	else
-	{
-		bJustAttacked = false;
-	}
-
-	// make active sound
-	if (ActiveSound && P_Random() < 3)
-	{
-		PlaySound(ActiveSound, CHAN_VOICE);
-	}
-
-	return true;
+	return false;
 }
 
 //============================================================================
@@ -336,4 +278,7 @@ defaultproperties
 	DeathSound = 'FireDemonDeath';
 	DLightColour = RGB(255, 178, 6);
 	DLightRadius = 126.0;
+
+	Behavior.bEvadeMelee = true;
+	Behavior.bRunOnEvade = true;
 }

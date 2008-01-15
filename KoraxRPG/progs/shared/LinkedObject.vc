@@ -66,11 +66,51 @@ void LinkPrev(LinkedObject LO)
 
 //==========================================================================
 //
+//	MoveInFront
+//
+//==========================================================================
+
+void MoveInFront()
+{
+	if (List)
+	{
+		if (List.refHead != self)
+		{
+			UnlinkFromList(true);
+			refNext = List.refHead;
+			List.refHead.refPrev = self;
+			List.refHead = self;
+		}
+	}	
+}
+
+//==========================================================================
+//
+//	MoveToBack
+//
+//==========================================================================
+
+void MoveToBack()
+{
+	if (List)
+	{
+		if (List.refTail != self)
+		{
+			UnlinkFromList(true);
+			refPrev = List.refTail;
+			List.refTail.refNext = self;
+			List.refTail = self;
+		}
+	}	
+}
+
+//==========================================================================
+//
 //	UnlinkFromList
 //
 //==========================================================================
 
-void UnlinkFromList()
+void UnlinkFromList(optional bool bKeepListReference)
 {
 	if (List)
 		List.IsBeingRemoved(self);
@@ -80,7 +120,9 @@ void UnlinkFromList()
 	if (refNext)
 		refNext.refPrev = refPrev;
 
-	List = none;
+	if (!bKeepListReference)
+		List = none;
+	
 	refPrev = none;
 	refNext = none;
 }
