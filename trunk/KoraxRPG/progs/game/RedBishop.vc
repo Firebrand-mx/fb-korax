@@ -1,0 +1,142 @@
+
+class RedBishop : Bishop
+	__mobjinfo__(16008);
+
+/*
+	ABILITIES:
+		- Teleports instead of common blur;
+		- Shoot fiery heretic-style projectiles
+		- Ressurects after first death with full health after some time;
+		  decreasing chance to ressurect after each following death with lower health
+*/
+
+int NumDeaths;
+
+//==========================================================================
+//
+//	GetExplodeParms
+//
+//==========================================================================
+
+void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
+{
+	// Bishop radius death
+	damage = 35 + (P_Random() & 25);
+}
+
+//==========================================================================
+//
+//  A_RedBishopDoBlur
+//
+//==========================================================================
+
+final void A_RedBishopDoBlur()
+{
+	bSolid = false;
+	bShootable = false;
+	bHidden = true;
+
+	// Spawn blur just at the current position
+	Actor blur = Spawn(BishopBlur, Origin);
+	if (blur)
+		blur.Angles = Angles;
+
+	::A_BishopDoBlur();
+}
+
+//==========================================================================
+//
+//  A_RedBishopCheckDeath
+//
+//==========================================================================
+
+final void A_RedBishopCheckDeath()
+{
+	bSolid = true;
+	bShootable = true;
+	bHidden = false;
+
+	if (P_Random() < (256 / ++NumDeaths))
+	{
+		SetState(FindState('Ressurect'));
+	}
+	else
+	{
+		A_QueueCorpse();
+	}
+}
+
+//==========================================================================
+//
+//  A_RedBishopResurrect
+//
+//==========================================================================
+
+final void A_RedBishopResurrect()
+{
+	::A_AIResurrect();
+
+	Health = default.Health / NumDeaths;
+}
+
+
+states
+{
+Spawn:
+	BISR A 10 A_LookAI
+	Loop
+See:
+	BISR A 2 A_ChaseAI
+	BISR A 2 A_BishopChase
+	BISR A 2
+	BISR B 2 A_BishopChase
+	BISR B 2 A_ChaseAI
+	BISR B 2 A_BishopChase
+	BISR A 1 A_BishopDecide
+	Loop
+Blur:
+Evade:
+	BISR A 2 A_RedBishopDoBlur
+	BISR A 4 A_BishopSpawnBlur
+	Wait
+Missile:
+	BISR A 3 A_FaceTarget
+	BISR DE 3 Bright A_FaceTarget
+	BISR F 3 Bright A_BishopAttack
+	BISR F 5 Bright A_BishopAttack2
+	Wait
+Pain:
+	BISR C 6 A_Pain
+	BISR CCC 6 A_BishopPainBlur
+	BISR C 0
+	Goto See
+Death:
+	BISR G 6
+	BISR H 6 Bright A_Scream
+	BISR I 5 Bright A_NoBlocking
+	BISR J 5 Bright A_Explode
+	BISR K 5 Bright
+	BISR LM 4 Bright
+	BISR N 4 A_BishopPuff
+	BISR O 4 A_RedBishopCheckDeath
+	BISR P -1
+	Stop
+Ressurect:
+	BISR P 140	// 4 seconds
+	BISR O 4
+	BISR N 4
+	BISR LM 4 Bright
+	BISR K 5 Bright
+	BISR J 5 Bright
+	BISR I 5 Bright A_RedBishopResurrect
+	BISR H 6 Bright
+	BISR G 6
+	Goto Blur
+}
+
+defaultproperties
+{
+	AttackSound = 'CardinalAttack';
+
+	BishopFXType = BishopFXRed;
+}

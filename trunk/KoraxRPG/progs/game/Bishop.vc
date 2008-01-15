@@ -30,6 +30,8 @@ class Bishop : Pawn
 int NumToSpawn;		//	Number of blurs/missiles to spawn
 int WeaveIndex;		//	Index into floatbob
 
+class<Actor> BishopFXType;
+
 //==========================================================================
 //
 //	GetExplodeParms
@@ -68,7 +70,7 @@ final void A_BishopDecide()
 
 final void A_BishopDoBlur()
 {
-	NumToSpawn = (P_Random() & 3) + 3;	// P_Random number of blurs
+	NumToSpawn = bSolid ? ((P_Random() & 3) + 3) : ((P_Random() & 7) + 4);	// P_Random number of blurs
 	if (P_Random() < 120)
 	{
 		Thrust(AngleMod360(Angles.yaw + 90.0), 11.0);
@@ -99,6 +101,8 @@ final void A_BishopSpawnBlur()
 	{
 		Velocity.x = 0.0;
 		Velocity.y = 0.0;
+		if (!Target)
+			SetState(IdleState);
 		if (P_Random() > 96)
 		{
 			SetState(SeeState);
@@ -108,10 +112,14 @@ final void A_BishopSpawnBlur()
 			SetState(MissileState);
 		}
 	}
-	blur = Spawn(BishopBlur, Origin);
-	if (blur)
+
+	if (!bHidden)
 	{
-		blur.Angles = Angles;
+		blur = Spawn(BishopBlur, Origin);
+		if (blur)
+		{
+			blur.Angles = Angles;
+		}
 	}
 }
 
@@ -123,6 +131,10 @@ final void A_BishopSpawnBlur()
 
 final void A_BishopChase()
 {
+	bSolid = true;
+	bShootable = true;
+	bHidden = false;
+
 	Origin.z -= Level.Game.FloatBobOffsets[WeaveIndex] / 2.0;
 	WeaveIndex = (WeaveIndex + 4) & 63;
 	Origin.z += Level.Game.FloatBobOffsets[WeaveIndex] / 2.0;
@@ -136,7 +148,11 @@ final void A_BishopChase()
 
 final void A_BishopAttack()
 {
-	if (!Target)
+	bSolid = true;
+	bShootable = true;
+	bHidden = false;
+
+	if (!Target || !CanSee(Target))
 	{
 		return;
 	}
@@ -162,13 +178,13 @@ final void A_BishopAttack2()
 {
 	EntityEx mo;
 
-	if (!Target || !NumToSpawn)
+	if (!Target ||  !CanSee(Target) || !NumToSpawn)
 	{
 		NumToSpawn = 0;
 		SetState(SeeState);
 		return;
 	}
-	mo = SpawnMissile(Target, BishopFX);
+	mo = SpawnMissile(Target, BishopFXType);
 	if (mo)
 	{
 		mo.Tracer = Target;
@@ -185,6 +201,8 @@ final void A_BishopAttack2()
 final void A_BishopPainBlur()
 {
 	Actor blur;
+
+	bHidden = false;
 
 	if (P_Random() < 64)
 	{
@@ -210,6 +228,10 @@ final void A_BishopPuff()
 {
 	Actor puff;
 
+	bSolid = true;
+	bShootable = true;
+	bHidden = false;
+
 	puff = Spawn(BishopPuff, Origin + vector(0.0, 0.0, 40.0));
 	if (puff)
 	{
@@ -232,6 +254,7 @@ See:
 	BISH A 1 A_BishopDecide
 	Loop
 Blur:
+Evade:
 	BISH A 2 A_BishopDoBlur
 	BISH A 4 A_BishopSpawnBlur
 	Wait
@@ -285,4 +308,9 @@ defaultproperties
 	AttackSound = 'BishopAttack';
 	PainSound = 'BishopPain';
 	DeathSound = 'BishopDeath';
+
+	BishopFXType = BishopFX;
+
+	Behavior.bEvadeMelee = true;
+	Behavior.bRunOnEvade = true;
 }
