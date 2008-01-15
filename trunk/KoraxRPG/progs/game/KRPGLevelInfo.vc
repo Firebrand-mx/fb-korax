@@ -1,0 +1,1298 @@
+
+class KRPGLevelInfo : HexenLevelInfo;
+
+
+//
+// [KoraxRPG] Node Graph
+//
+const float	MAXNODELINKLENGTH		= 512.0;
+bool bNodeGraphBuild;
+
+//
+// New Action Specials
+
+// [CW] in order not to mix these with common line specials,
+//	their ids should be greater than 255;
+//  "Doom Builder" supports >255 linespecial IDs;
+//  if mapper is using different editor, he may still run these using scripts
+enum
+{
+	//
+	// Advanced thing manipulation
+
+	ACTSPEC_Thing_Thrust3d			= 256,	// calls combo of Thing_Thrust and Thing_ThrustZ
+	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
+	ACTSPEC_Thing_SetTeam,
+
+	//--------------------- NOT USED --------------------------------------------------------
+//	//
+//	// Miscellaneous, that could be useful
+//
+//	ACTSPEC_IsConditionTrue			= 755,	/* this id is taken equal to same actspec in Korax Arena*/
+//	ACTSPEC_RunACSConditional,
+//
+	//--------------------- NOT USED --------------------------------------------------------
+
+	//
+	// Intelligent Actors
+	//
+	// Generic behavior
+	ACTSPEC_IA_SetThreatReaction	= 800,
+
+	// Orders
+	ACTSPEC_IA_Order_CancelAll		= 900,
+	ACTSPEC_IA_Order_CancelCurrent,
+	ACTSPEC_IA_Order_StandStill,
+	ACTSPEC_IA_Order_StandLook180,
+	ACTSPEC_IA_Order_StandLook360,
+	ACTSPEC_IA_Order_WalkTo,
+	ACTSPEC_IA_Order_WalkPath,
+	ACTSPEC_IA_Order_Patrol2pt,
+	ACTSPEC_IA_Order_PatrolPath,
+	ACTSPEC_IA_Order_PatrolLoop,
+	ACTSPEC_IA_Order_Follow,		/* 910 */
+	ACTSPEC_IA_Order_EvadePos,			
+	ACTSPEC_IA_Order_EvadeThing,
+	ACTSPEC_IA_Order_AttackAll,		
+	ACTSPEC_IA_Order_AttackThing,
+
+	// Advanced interaction (for Pawns)
+	ACTSPEC_PW_TryUse				= 1000,
+	ACTSPEC_PW_Order_UseLine,
+	ACTSPEC_PW_Order_UseThing,
+
+	//
+	// Enviroment
+	//
+	ACTSPEC_Env_WeatherSnow			= 1200,
+	ACTSPEC_Env_WeatherRain,
+	ACTSPEC_Env_WeatherTerminate,
+	ACTSPEC_Env_WeatherTerminateAll,
+	ACTSPEC_Env_WeatherSetParams,
+	ACTSPEC_Env_WeatherSetPattern,
+	ACTSPEC_Env_WeatherSetColour,
+
+
+	ACTSPEC_Last
+};
+
+// [CW] Conditions for ACTSPEC_IsConditionTrue and ACTSPEC_RunACSConditional
+/*enum
+{
+	CNDT_Unused		// just to be...
+};*/
+
+
+//
+// Behavior packages stored for instant appliance to Intelligent Actor
+//
+array<LinkedList>	AIPackages;
+
+enum
+{
+	pt_weather_snow = pt_spark + 1,
+	// General difference between snow and rain types is that rain spawns some splash when dies
+	pt_weather_rain
+};
+
+// KRPG
+enum
+{
+	pt_pattern_none,
+	// rain patterns: create a vertical chunk of particles instead of single one
+	pt_pattern_rainlight,
+	pt_pattern_rainmoderate,
+	pt_pattern_rainheavy
+};
+
+array<Thinker>	WeatherThinkers;
+
+int skyflatnum;	// copied from Game, needed for client-side calculations when Game is not accessible
+
+replication
+{
+	reliable if (Role == ROLE_Authority)
+		skyflatnum;
+}
+
+
+//==========================================================================
+//
+//	IsBeneathSky
+//
+//==========================================================================
+
+bool IsBeneathSky(TVec v)
+{
+	sector_t * p_sector = XLevel.PointInSector(v);
+	return p_sector && p_sector->ceiling.pic == skyflatnum;
+}
+
+//==========================================================================
+//
+//	FindHighestFloorZAtPoint
+//
+//	[CW] Find the highest floor Z for given (x,y) coordinates.
+//	(Not completely sure, but it seems there's no common method for this)
+//
+//==========================================================================
+
+float FindHighestFloorZAtPoint(TVec v, optional sector_t * in_sector)
+{
+	sector_t * pt_sector;
+	sec_region_t * pt_region;
+	float pt_floorz;
+
+	if (in_sector)
+		pt_sector = in_sector;
+	else
+		pt_sector = XLevel.PointInSector(v);
+
+	if (pt_sector)
+	{
+		// [CW] Hope this will work
+		if (pt_sector->bHasExtrafloors)
+		{
+			pt_region = PointInRegion(pt_sector, v);
+			while(pt_region->next)
+				pt_region = pt_region->next;
+			pt_floorz = GetPlanePointZ(pt_region->floor, v);
+		}
+		else
+		{
+			pt_floorz = GetPlanePointZ(&pt_sector->floor, v);
+		}
+
+		return pt_floorz;
+	}
+	else
+		return EntityEx::ONFLOORZ;	// Failed
+}
+
+//==========================================================================
+//
+//  SpawnSpecials
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+void SpawnSpecials()
+{
+	::SpawnSpecials();
+
+	MainGameInfo(Game).InitLevel(self);
+	BuildNodeGraph();
+}
+
+//==========================================================================
+//
+//  ExecuteActionSpecialForTID
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* Line, int Side)
+{
+	Entity E;
+	bool result = false;
+	if (TID)
+	{
+		int searcher = -1;
+		for (E = Entity(FindMobjFromTID(TID, &searcher)); E;
+			E = Entity(FindMobjFromTID(TID, &searcher)))
+		{
+			if (E && ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
+				result = true;
+		}
+	}
+	else
+	{
+		foreach AllThinkers(Entity, E)
+		{
+			if (ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
+				result = true;
+		}
+	}
+	return result;
+}
+
+//==========================================================================
+//
+//  ExecuteActionSpecial
+//
+//	KRPG override for new action specials
+//
+//==========================================================================
+
+int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* Line, int Side, Entity E)
+{
+	bool buttonSuccess;
+
+	buttonSuccess = false;
+
+	if ( ( Special >= ACTSPEC_Thing_Thrust3d /*&& Special < ACTSPEC_IsConditionTrue */
+		&& Special < ACTSPEC_Env_WeatherSnow
+		&& Special != ACTSPEC_Thing_SetPlayerMOTag)
+		/*||
+		Special >= ACTSPEC_IA_SetThreatReaction &&*/
+		//Special < ACTSPEC_Env_WeatherSnow) 
+		&& (!E || ((Arg1 & 0x80000000) != 0)) )
+	{
+		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1 & 0x7fffffff, Arg2, Arg3, Arg4, Arg5, Line, Side);
+		return buttonSuccess;
+	}
+
+	switch (Special)
+	{
+	//
+	// Advanced thing manipulation
+	case ACTSPEC_Thing_Thrust3d:
+		if (E && E.IsA('KRPGActor'))
+		{
+			A_Thing3dThrust(KRPGActor(E), Arg2, Arg3, Arg4, Arg5);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_Thing_SetPlayerMOTag:
+		if (Game.Players[Arg1] && Game.Players[Arg1].MO)
+		{
+			Game.Players[Arg1].MO.RemoveFromTIDList();
+			Game.Players[Arg1].MO.InsertIntoTIDList(Arg2);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_Thing_SetTeam:
+		if (E && E.IsA('KRPGActor'))
+		{
+			KRPGActor(E).SetTeam(Arg2);
+			buttonSuccess = true;
+		}
+		break;
+
+
+	//
+	// Intelligent Actors
+	//
+	// Generic behavior
+	case ACTSPEC_IA_SetThreatReaction:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_SetThreatReaction(Arg2, itof(Arg3));
+			buttonSuccess = true;
+		}
+		break;
+
+	// Orders
+	case ACTSPEC_IA_Order_CancelAll:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderCancelAll();
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_CancelCurrent:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderCancelCurrent();
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandStill:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandLook180:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_StandLook360:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_WalkTo:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target = FindMobjFromTID(Arg4, &s);
+			IntelligentActor(E).A_OrderWalkTo(false, Arg2, itof(Arg3) / 1000.0,
+										target ? target.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_WalkPath:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & 0x7fffffff, (Arg5 & 0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_Patrol2pt:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target1 = FindMobjFromTID(Arg4, &s);
+			s = -1;
+			Entity target2 = FindMobjFromTID(Arg5, &s);
+			IntelligentActor(E).A_OrderPatrol2Pt(false, Arg2, itof(Arg3) / 1000.0,
+							target1 ? target1.Origin : E.Origin,
+							target2 ? target2.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_PatrolPath:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_PatrolLoop:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
+									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_Follow:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderFollowThing(false, Arg2, itof(Arg3) / 1000.0,
+										EntityEx(FindMobjFromTID(Arg4, &s)));
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_EvadePos:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			Entity target = FindMobjFromTID(Arg4, &s);
+			IntelligentActor(E).A_OrderEvadePos(false, Arg2, itof(Arg3) / 1000.0,
+										target ? target.Origin : E.Origin);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_EvadeThing:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderEvadeThing(false, Arg2, itof(Arg3) / 1000.0,
+										EntityEx(FindMobjFromTID(Arg4, &s)));
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_AttackAll:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).A_OrderAttackAll(false, Arg2, itof(Arg3) / 1000.0);
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_AttackThing:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			int s = -1;
+			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, EntityEx(FindMobjFromTID(Arg4, &s)));
+			buttonSuccess = true;
+		}
+		break;
+
+	//
+	// Pawns specific
+	//
+	case ACTSPEC_PW_TryUse:
+		if (E && E.IsA('Pawn'))
+		{
+			Pawn(E).TryUse();
+			buttonSuccess = true;
+		}
+		break;
+
+	case ACTSPEC_PW_Order_UseLine:
+		if (E && E.IsA('Pawn'))
+		{
+
+		}
+		break;
+
+	case ACTSPEC_PW_Order_UseThing:
+		if (E && E.IsA('Pawn'))
+		{
+
+		}
+		break;
+
+	//
+	// Enviroment
+	//
+	case ACTSPEC_Env_WeatherSnow:
+		buttonSuccess = EV_WeatherSnow(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherRain:
+		buttonSuccess = EV_WeatherRain(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherTerminate:
+		buttonSuccess = EV_WeatherTerminate(Arg1);
+		break;
+	case ACTSPEC_Env_WeatherTerminateAll:
+		buttonSuccess = EV_WeatherTerminate(-1);
+		break;
+	case ACTSPEC_Env_WeatherSetParams:
+		buttonSuccess = EV_WeatherSetParams(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherSetPattern:
+		buttonSuccess = EV_WeatherSetPattern(Arg1, Arg2);
+		break;
+	case ACTSPEC_Env_WeatherSetColour:
+		buttonSuccess = EV_WeatherSetColour(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+
+	default:
+		buttonSuccess = ::ExecuteActionSpecial(Special, Arg1, Arg2, Arg3,
+			Arg4, Arg5, Line, Side, E);
+		break;
+	}
+	return buttonSuccess;
+}
+
+//**************************************************************************
+//
+//	[KoraxRPG] New Action Specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  A_Thing3dThrust
+//
+//  [CW] A three-dimensional vector variant of ThingThrust action special
+//
+//==========================================================================
+
+void A_Thing3dThrust(KRPGActor A, int angle2d, int angle3, int move, int move2)
+{
+	if (A)
+	{
+	  float fang2d = itof(angle2d);
+	  float fang3 = itof(angle3);
+      if (angle3)
+         A.Thrust3d(fang2d, fang3, itof(move));
+      else
+         A.Thrust3d2(fang2d, itof(move), itof(move2));
+	}
+}
+
+//==========================================================================
+//
+//  EV_WeatherSnow
+//
+//==========================================================================
+
+bool EV_WeatherSnow(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherSnow WS = WeatherSnow(Spawn(WeatherSnow));
+	if (WS)
+	{
+		WS.Amount = Density ? Density : WS.default.Amount;
+		WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+		float fang = itof(Angle);
+		WS.InitialVelocity = (HorSpeed || VertSpeed) ?
+			vector(itof(HorSpeed) * 8.0 * cos(fang), itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0) :
+			WS.default.InitialVelocity;
+		WS.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WS;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherRain
+//
+//==========================================================================
+
+bool EV_WeatherRain(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherRain WR = WeatherRain(Spawn(WeatherRain));
+	if (WR)
+	{
+		WR.Amount = Density ? Density : WR.default.Amount;
+		WR.Spread.z = WR.default.Spread.z * itof(WR.Amount) / itof(WR.default.Amount);
+		float fang = itof(Angle);
+		WR.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+			itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+		WR.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WR;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherTerminate
+//
+//==========================================================================
+
+bool EV_WeatherTerminate(int Num)
+{
+	if (Num < 0)
+	{
+		int i;
+		for (i = 0; i < WeatherThinkers.Num; i++)
+		{
+			WeatherThinkers[i].Destroy();
+			WeatherThinkers[i] = none;
+		}
+		WeatherThinkers.Num = 0;
+		return true;
+	}
+	else if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			WeatherThinkers[Num].Destroy();
+			WeatherThinkers[Num] = none;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetParams
+//
+//==========================================================================
+
+bool EV_WeatherSetParams(int Num, int Density, int Angle, int HorSpeed, int VertSpeed)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Amount = Density ? Density : WS.default.Amount;
+			WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+			float fang = itof(Angle);
+			WS.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+						itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetPattern
+//
+//==========================================================================
+
+bool EV_WeatherSetPattern(int Num, int Pattern)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Pattern = Pattern;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetColour
+//
+//==========================================================================
+
+bool EV_WeatherSetColour(int Num, int R, int G, int B, int A)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Colour = RGBA(R,G,B,A);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  ParticleEffectEx
+//
+//==========================================================================
+
+void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
+	TVec velocity, TVec vrnd, TVec acceleration, float grav, int colour, float duration, float ramp,
+	int Pattern)
+{
+	int i, j;
+	particle_t *p, *p2;
+
+	float max_dist;
+	float real_duration;
+	sector_t * pt_sector;
+	float pt_floorz;
+	float time;
+
+	if (!XLevel)
+		Error("HexenLevelInfo::ParticleEffectEx : XLevel reference not set to an instance of an object");
+
+	for (i = 0; i < count; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+
+		max_dist = -1.0;
+		real_duration = 0.0;
+		pt_sector = NULL;
+
+		// [CW] Type and origin are very important in our implementation,
+		// so they should go first
+		//
+		if(type2)
+		{
+			// Choose between the two types
+			if (i & 1)
+			{
+				p->type = type1;
+			}
+			else
+			{
+				p->type = type2;
+			}
+		}
+		else
+		{
+			p->type = type1;
+		}
+
+		// No random origin
+		if(ornd == vector(0.0,0.0,0.0))
+		{
+			p->org = origin;
+		}
+		else
+		{
+			p->org.x = origin.x + ((Random() * ornd.x) - 16.0);
+			p->org.y = origin.y + ((Random() * ornd.y) - 16.0);
+			p->org.z = origin.z + ((Random() * ornd.z) - 16.0);
+		}
+
+		if (p->type == pt_weather_snow || p->type == pt_weather_rain)
+		{
+			max_dist = 0.0;
+			pt_sector = XLevel.PointInSector(p->org);
+			if (pt_sector && pt_sector->ceiling.pic == skyflatnum)
+			{
+				p->org.z += pt_sector->ceilingheight;
+				pt_floorz = FindHighestFloorZAtPoint(p->org, pt_sector);
+				if (pt_floorz != EntityEx::ONFLOORZ)
+				{
+					max_dist = p->org.z - pt_floorz;
+					if (max_dist < 0.0)
+						max_dist = 0.0;
+				}
+			}
+		}
+
+		p->colour = colour;
+		p->Size = 1.0;
+		if(ramp)
+			p->ramp = Random() * ramp;
+
+		// No random velocity
+		if(vrnd == vector(0.0,0.0,0.0))
+		{
+			p->vel = velocity;
+		}
+		else
+		{
+			p->vel.x = velocity.x * (Random() - vrnd.x);
+			p->vel.y = velocity.y * (Random() - vrnd.y);
+			p->vel.z = velocity.z * (Random() - vrnd.z);
+		}
+		p->accel.x = acceleration.x;
+		p->accel.y = acceleration.y;
+		p->accel.z = acceleration.z;
+		p->gravity = grav;
+
+		if (duration && max_dist)
+			real_duration = duration * Random();
+		// [CW] TODO: fix lifetime for weather particles according to accel & velocity
+		// currently does not care about accel since there's no sqrt func :(
+		// so using simplest formula this time
+		if (max_dist >= 0.0)
+		{
+			if (p->vel.z != 0.0)
+				time = -(max_dist / p->vel.z);
+			else
+				time = 0.0;
+			if (!real_duration || real_duration > time)
+				real_duration = time;
+		}
+		p->die = XLevel.Time + real_duration;
+
+		if (real_duration && Pattern)
+		{
+			switch (Pattern)
+			{
+			case pt_pattern_rainlight:
+			case pt_pattern_rainmoderate:
+			case pt_pattern_rainheavy:
+				{
+					int q;
+					switch (Pattern)
+					{
+					case pt_pattern_rainlight: q = P_Random() % 3 + 3; break;
+					case pt_pattern_rainmoderate: q = P_Random() % 7 + 4; break;
+					case pt_pattern_rainheavy: q = P_Random() % 10 + 10; break;
+					}
+					for (j = 0; j < q; j++)
+					{
+						p2 = NewParticle();
+						if (!p2)
+							break;
+						p2->org = vector(p->org.x, p->org.y, p->org.z + itof(j));
+						p2->colour = p->colour;
+						p2->Size = p->Size;
+						p2->vel = p->vel;
+						p2->accel = p->accel;
+						p2->die = p->die;
+						p2->type = p->type;
+						p2->ramp = p->ramp;
+						p2->gravity = p->gravity;
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  UpdateParticle
+//
+//==========================================================================
+
+void UpdateParticle(particle_t * p, float DeltaTime)
+{
+	float grav;
+	float pt_floorz;
+
+	grav = DeltaTime * p->gravity;
+	p->accel.z -= grav;
+	
+	switch (p->type)
+	{
+	case pt_ice_chunk:
+		p->vel.x -= p->vel.x * DeltaTime;
+		p->vel.y -= p->vel.y * DeltaTime;
+		p->vel.z += p->accel.z * DeltaTime;
+		break;
+	case pt_weather_snow:
+	case pt_weather_rain:
+		p->vel += p->accel * DeltaTime;
+		{
+			// spawn a splash just before particle death
+			if (p->type == pt_weather_rain && (p->die <= XLevel.Time + DeltaTime))
+			{
+				// [CW] Hope this won't slow things down significantly
+				//
+				pt_floorz = FindHighestFloorZAtPoint(p->org);
+				if (pt_floorz != EntityEx::ONFLOORZ && (p->org.z - pt_floorz < 8.0))
+				{
+					ParticleEffect(P_Random() % 6 + 2, pt_static, 0, p->org, 0.0, vector(16.0, 16.0, 16.0),
+						0.5, 0.0, 40.0,
+						RGB(((p->colour >> 16) & 0xff) >> 1, (((p->colour >> 8) & 0xff) >> 1), (p->colour & 0xff) >> 1),
+						0.4, 0.0);
+				}
+			}
+		}
+		return;
+	}
+	::UpdateParticle(p, DeltaTime);
+}
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Node Graph
+//
+//
+//**************************************************************************
+
+//===========================================================================
+//
+//  BuildNodeGraph
+//
+//===========================================================================
+
+void BuildNodeGraph()
+{
+	//dprint("CWAIEX : DLI::BuildNodeGraph : IN");
+	BuildLinks();
+	BuildPaths();
+	//BuildPathIntersections();	// ?? TODO
+	//dprint("CWAIEX : DLI::BuildNodeGraph : OUT");
+}
+
+//===========================================================================
+//
+//  BuildLinks
+//
+//	Builds common links between all nodes.
+//
+//===========================================================================
+
+void BuildLinks()
+{
+	int i;
+	Node		N_Base;
+	Node		N_LinkCandidate;
+	int			linked_count;
+	bool		candidate_is_linked_to_base;
+	int			candidate_linked_count;
+	float		dest;
+	float		dest_linked_max;
+
+	//
+	// Debug statistics
+	//------------------------
+	int			stats_TotalBaseNodes = 0;
+	int			stats_TotalLinkedNodes = 0;
+	int			stats_TotalUnlinkedNodes = 0;
+	int			stats_AverageLinksPerNode = 0;
+	int			stats_TotalLinks = 0;
+	float		stats_MaximalLinkLength = 0.0;
+	float		stats_MinimalLinkLength = -1.0;
+	// etc etc etc.....
+	//------------------------
+	//
+
+	//dprint("CWAIEX : DLI::BuildLinks : IN");
+
+	foreach AllThinkers(Node, N_Base)
+	{
+		stats_TotalBaseNodes++;
+
+		N_LinkCandidate = none;
+		linked_count = 0;
+		dest = -1.0;
+		dest_linked_max = -1.0;
+
+		//dprint(" -- take N_Base");
+
+		for (i = 0; i < Node::MAXNODELINKS; i++)
+		{
+			if (N_Base.Links[i]._Node)
+				linked_count++;
+		}
+
+		//dprint(" -- N_Base Tag = %i", N_Base.TID);
+		//dprint(" -- linked count = %i", linked_count);
+		
+		if (linked_count >= Node::MAXNODELINKS)
+		{
+			stats_TotalLinkedNodes++;
+			continue;
+		}
+		
+		foreach AllThinkers(Node, N_LinkCandidate)
+		{
+			//dprint(" -- take N_LinkCandidate");
+			//dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
+			candidate_is_linked_to_base = false;
+			candidate_linked_count = 0;
+			if (N_LinkCandidate == N_Base)
+			{
+				//dprint(" -- self as candidate, rejected");
+				continue;
+			}
+			for (i = 0; i < Node::MAXNODELINKS; i++)
+			{
+				if (N_LinkCandidate.Links[i]._Node)
+				{
+					if (N_LinkCandidate.Links[i]._Node == N_Base)
+					{
+						candidate_is_linked_to_base = true;
+						break;
+					}						
+					candidate_linked_count++;
+				}
+			}
+			if (candidate_is_linked_to_base)
+			{
+				//dprint(" -- candidate already linked to base, rejected");
+				continue;
+			}
+			if (candidate_linked_count == Node::MAXNODELINKS)
+			{
+				//dprint(" -- all candidate link slots used, rejected");
+				continue;
+			}
+
+			//dprint(" -- candidate linked count = %i", candidate_linked_count);
+
+			dest = Length(N_Base.Origin - N_LinkCandidate.Origin);
+			//dprint(" -- candidate dest = %f", dest);
+			if (dest <= MAXNODELINKLENGTH &&
+				(dest_linked_max < 0.0 || dest < dest_linked_max) )
+			{
+				Node::nodelink_t _link;
+
+				//dprint(" -- dest accepted");
+
+				if (BuildNodeLink(N_Base, N_LinkCandidate, &_link))
+				{
+					if (dest_linked_max < 0.0)
+					{
+						//dprint(" -- free link for the base");
+						N_Base.ApplyLink(&_link, linked_count, true);
+						//dprint(" -- candidate accepted as no %i", linked_count);
+					}
+					if (dest < dest_linked_max)
+					{
+						//dprint(" -- link replacement");
+						// Get linked node with maximal dest and replace it by a new one
+						for (i = 0; i < Node::MAXNODELINKS; i++)
+						{
+							if (N_Base.Links[i].length == dest_linked_max)
+							{
+								linked_count--;
+								stats_TotalLinks--;
+								N_Base.ApplyLink(&_link, i, true);
+								break;
+							}
+						}
+						//dprint(" -- candidate accepted as no %i", i);
+					}
+
+					linked_count++;
+					stats_TotalLinks++;
+					if (linked_count == Node::MAXNODELINKS)
+					{
+						// Store maximal link length
+						dest_linked_max = -1.0;
+						for (i = 0; i < Node::MAXNODELINKS; i++)
+						{
+							if (dest_linked_max < 0.0 || N_Base.Links[i].length > dest_linked_max)
+								dest_linked_max = N_Base.Links[i].length;
+						}
+						//dprint(" -- new max_dest = %f", dest_linked_max);
+					}
+				}
+				//else
+				//	dprint(" -- candidate rejected");
+			}
+			//else
+			//	dprint(" -- dest rejected");
+		}
+		//dprint(" -- no more candidates");
+
+
+		if (linked_count)
+			stats_TotalLinkedNodes++;
+		else
+			stats_TotalUnlinkedNodes++;
+		stats_AverageLinksPerNode += linked_count;
+		for (i = 0; i < linked_count; i++)
+		{
+			Node::nodelink_t * p_link = &N_Base.Links[i];
+			if (stats_MaximalLinkLength < p_link->length)
+				stats_MaximalLinkLength = p_link->length;
+			if (stats_MinimalLinkLength < 0.0 || stats_MinimalLinkLength > p_link->length)
+				stats_MinimalLinkLength = p_link->length;
+		}
+
+	}
+	//dprint(" -- no more bases");
+
+	if (stats_TotalBaseNodes)
+		stats_AverageLinksPerNode /= stats_TotalBaseNodes;
+
+	//
+	// Debug info output
+	//------------------------
+	print("");
+	print(" ============= Node Graph Info =============");
+	print("   Total Nodes found:               %i      ", stats_TotalBaseNodes);
+	print("   Total Bidirect Links build:      %i      ", stats_TotalLinks);
+	print("   Total Linked Nodes:              %i      ", stats_TotalLinkedNodes);
+	print("   Total Unlinked Nodes:            %i      ", stats_TotalUnlinkedNodes);
+	print("   Average Links per Node:          %i      ", stats_AverageLinksPerNode);
+	print("   Maximal Link Length:             %f      ", stats_MaximalLinkLength);
+	print("   Minimal Link Length:             %f      ", stats_MinimalLinkLength);
+	print(" ===========================================");
+	print("");
+	//------------------------
+	//
+
+	bNodeGraphBuild = (stats_TotalBaseNodes > 0);
+
+	//dprint("CWAIEX : DLI::BuildLinks : OUT");
+}
+
+//===========================================================================
+//
+//  BuildNodeLink
+//
+//	Tries to build a link between two nodes and sets link parameters.
+//
+//===========================================================================
+
+bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
+{
+	bool canreach;
+	ReachTraverse::linkreach_traverse_data LRTRData;
+	//dprint("CWAIEX : DLI::BuildNodeLink : IN");
+	//dprint(" --- N_From tag = %i", N_From.TID);
+	//dprint(" --- N_To tag = %i", N_To.TID);
+
+	canreach = BuildNodeLinkTraverse(N_From, N_To, &LRTRData);
+
+	if (!canreach)
+	{
+		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE");
+		return false;
+	}
+	if (!LRTRData.intercepted_once && N_From.Sector != N_To.Sector)
+	{
+		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE EX");
+		return false;
+	}
+	
+	_link->_Node = N_To;
+	_link->length = Length(N_From.Origin - N_To.Origin);
+	_link->minyspace = LRTRData.minyspace;
+	_link->maxstepheight = LRTRData.maxstepheight;
+	_link->maxdropoff = LRTRData.maxdropoff;
+	
+	//dprint(" --- Link length = %f", _link->length);
+	//dprint(" --- Link minyspace = %f", _link->minyspace);
+	//dprint(" --- Link maxstepheight = %f", _link->maxstepheight);
+	//dprint(" --- Link maxdropoff = %f", _link->maxdropoff);
+
+	//dprint("CWAIEX : DLI::BuildNodeLink : OUT TRUE");
+	return true;
+}
+
+//==========================================================================
+//
+//	BuildNodeLinkTraverse
+//
+//==========================================================================
+
+bool BuildNodeLinkTraverse(Node N_From, Node N_To,
+							ReachTraverse::linkreach_traverse_data * pLRTRData)
+{
+	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : IN");
+
+	intercept_t * in;
+	pLRTRData->intercepted_once = false;
+	pLRTRData->prev_sector = N_From.Sector;
+	pLRTRData->minyspace = N_From.Sector->ceilingheight - N_From.Sector->floorheight;	
+	pLRTRData->maxstepheight = 0.0;
+	pLRTRData->maxdropoff = 0.0;
+
+
+	foreach PathTraverse(in, N_From.Origin.x, N_From.Origin.y, N_To.Origin.x, N_To.Origin.y,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		pLRTRData->intercepted_once = true;
+
+		if (in->bIsALine)
+		{
+			sector_t * p_sector;
+			float ceiling;
+			float floor;
+			float yspace;
+			float fheightdelta;
+
+			// single-sided lines abort traverse
+			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					!in->line->backsector)
+			{
+				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE");
+				return false;
+			}
+
+
+			// in case of two-sided lines we update link info
+			if (in->line->frontsector == pLRTRData->prev_sector)
+				p_sector = in->line->backsector;
+			else if (in->line->backsector == pLRTRData->prev_sector)
+				p_sector = in->line->frontsector;
+			else
+			{
+				// something was really messed up
+				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE EX");
+				return false;
+			}
+
+			if (p_sector->ceilingheight < pLRTRData->prev_sector->ceilingheight)
+				ceiling = p_sector->ceilingheight;
+			else
+				ceiling = pLRTRData->prev_sector->ceilingheight;
+			if (p_sector->floorheight > pLRTRData->prev_sector->floorheight)
+				floor = p_sector->floorheight;
+			else
+				floor = pLRTRData->prev_sector->floorheight;
+			yspace = ceiling - floor;
+			fheightdelta = p_sector->floorheight - pLRTRData->prev_sector->floorheight;
+
+			if (yspace < pLRTRData->minyspace)
+				pLRTRData->minyspace = yspace;
+			if (fheightdelta > 0.0)
+			{
+				if (fheightdelta > pLRTRData->maxstepheight)
+					pLRTRData->maxstepheight = fheightdelta;
+			}
+			else if (fheightdelta < 0.0)
+			{
+				if (fheightdelta < -pLRTRData->maxdropoff)
+					pLRTRData->maxdropoff = -fheightdelta;
+			}
+
+			pLRTRData->prev_sector = p_sector;
+		}
+		else
+		{
+			// TODO: check this precisely...
+		}
+	}
+
+	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT TRUE");
+	return true;
+}
+
+
+//===========================================================================
+//
+//  BuildPaths
+//
+//	Make special connections between path nodes (if any of them exist)
+//
+//===========================================================================
+
+void BuildPaths()
+{
+	PathNode	PN_Base;
+	PathNode	PN_Candidate;
+	int			PathIndex;
+	int			PNIndex;
+	bool		bPNLinked;
+
+	//
+	// Debug statistics
+	//------------------------
+	int			stats_TotalPathNodes = 0;
+	int			stats_TotalLinkedPathNodes = 0;
+	int			stats_TotalUnlinkedPathNodes = 0;
+	int			stats_TotalPaths = 0;
+	int			stats_AverageNodesPerPath = 0;
+	float		stats_MaximalLinkLength = 0.0;
+	float		stats_MinimalLinkLength = -1.0;
+	float		stats_MaximalPathLength = 0.0;
+	float		stats_MinimalPathLength = -1.0;
+	// etc etc etc.....
+	//------------------------
+	//
+
+
+	foreach AllThinkers(PathNode, PN_Base)
+	{
+		bPNLinked = false;
+		stats_TotalPathNodes++;
+
+		PathIndex = PN_Base.Args[PathNode::ARG__PATHINDEX];
+		PNIndex = PN_Base.Args[PathNode::ARG__NODEINDEX];
+
+		// Find next path node
+		PN_Candidate = none;
+		foreach AllThinkers(PathNode, PN_Candidate)
+		{
+			if (PN_Candidate == PN_Base)
+				continue;
+
+			if (PN_Candidate.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
+					PN_Candidate.Args[PathNode::ARG__NODEINDEX] == PNIndex + 1)
+			{
+				PN_Base.FW = PN_Candidate;
+				bPNLinked = true;
+				break;
+			}
+		}
+
+		// Find prev path node
+		PN_Candidate = none;
+		foreach AllThinkers(PathNode, PN_Candidate)
+		{
+			if (PN_Candidate == PN_Base)
+				continue;
+
+			if (PN_Candidate.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
+					PN_Candidate.Args[PathNode::ARG__NODEINDEX] == PNIndex - 1)
+			{
+				PN_Base.BW = PN_Candidate;
+				bPNLinked = true;
+				break;
+			}
+		}
+
+		if (bPNLinked)
+			stats_TotalLinkedPathNodes++;
+		else
+			stats_TotalUnlinkedPathNodes++;
+	}
+
+	//
+	// Debug info output
+	//------------------------
+	print("");
+	print(" ================ Paths Info ===============");
+	print("   Total Path Nodes found:          %i      ", stats_TotalPathNodes);
+	print("   Total Linked Path Nodes:         %i      ", stats_TotalLinkedPathNodes);
+	print("   Total Unlinked Path Nodes:       %i      ", stats_TotalUnlinkedPathNodes);
+	print(" ===========================================");
+	print("");
+	//------------------------
+	//
+}
+
+defaultproperties
+{
+}

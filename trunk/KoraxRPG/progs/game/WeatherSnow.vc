@@ -1,0 +1,91 @@
+
+class WeatherSnow : Sequencer;
+
+float FarDistance;
+float OriginSpacing;
+int Amount;
+int ParticleType;
+int ParticleType2;
+TVec Spread;
+TVec InitialVelocity;
+TVec VelocityRange;
+TVec InitialAcceleration;
+float AppliedGravity;
+int Colour;
+float ParticleDuration;
+float ParticleRamp;
+int Pattern;
+
+
+//==========================================================================
+//
+//	Continue
+//
+//==========================================================================
+
+void Continue()
+{
+	int i;
+	float x,y,mx,my;
+	TVec Origin;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		Player pl = Player(Level.Game.Players[i]);
+		if (!pl)
+			continue;
+		if (pl.bIsBot)
+			continue;
+		if (!pl.bSpawned)
+			continue;
+		if (!pl.Camera)
+			continue;
+
+		x = pl.Camera.Origin.x - FarDistance;
+		y = pl.Camera.Origin.y - FarDistance;
+		mx = pl.Camera.Origin.x + FarDistance;
+		my = pl.Camera.Origin.y + FarDistance;
+
+		for (Origin.x = x; Origin.x < mx; Origin.x += OriginSpacing)
+		{
+			for (Origin.y = y; Origin.y < my; Origin.y += OriginSpacing)
+			{
+				pl.ParticleEffectEx(
+						Amount,
+						ParticleType,
+						ParticleType2,
+						vector(Origin.x, Origin.y, 0.0),
+						Spread,
+						InitialVelocity,
+						VelocityRange,
+						InitialAcceleration,
+						AppliedGravity,
+						Colour,
+						ParticleDuration,
+						ParticleRamp,
+						Pattern);
+			}
+		}
+	}
+}
+
+defaultproperties
+{
+	time_limit = 0.8;
+
+	FarDistance = 768.0;
+	OriginSpacing = 512.0;
+	Amount = 120;
+	ParticleType = KRPGLevelInfo::pt_weather_snow;
+	ParticleType2 = 0;
+	Spread = vector(512.0,512.0,512.0);
+	InitialVelocity = vector(0.0,0.0,32.0);
+	VelocityRange = vector(0.0,0.0,1.0);
+	InitialAcceleration = vector(0.0,0.0,0.0);
+	AppliedGravity = 2.0;
+	Colour = RGB(220, 220, 220);
+	// [CW] real duration is calculated for each particle in HexenLevelInfo::ParticleEffectEx
+	ParticleDuration = 0.0;
+	ParticleRamp = 0.0;
+	Pattern = KRPGLevelInfo::pt_pattern_none;
+}

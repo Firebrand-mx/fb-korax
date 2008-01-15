@@ -1,11 +1,12 @@
 
-class IntelligentActor : Actor;
+class IntelligentActor : KRPGActor;
 
 //
 // [KoraxRPG] Advanced AI
 //
 
 const float ACCEPTABLE_WAYPOINT_VICINITY	= 96.0;
+const float ACCEPTABLE_TASKLEADER_VICINITY	= 512.0;
 
 enum
 {
@@ -24,6 +25,9 @@ struct pawn_behavior_t
 	bool			bNoWanderDuringAttack;	// shoot enemy if possible without wandering around
 	bool			bEvadeMelee;
 	bool			bRunOnEvade;
+
+	bool			bCanGroup;				// can join task leader
+	bool			bCanBeTaskLeader;
 
 
 
@@ -68,7 +72,7 @@ pawn_behavior_t		Behavior;
 struct generic_target_t
 {
 	TVec		Pos;
-	Entity		Thing;
+	EntityEx	Thing;
 	Node		Node;
 };
 
@@ -79,8 +83,7 @@ TVec				LastKnownPosition;	// for moving targets
 EntityEx			LastAttacker;	// the one attacked this IA last time
 
 
-bool				bIsGroupLeader;
-int					Group;
+IntelligentActor	TaskLeader;
 
 
 
@@ -95,11 +98,11 @@ enum
 {
 	TASK_PRIORITY_ABSOLUTE		= 0,
 
-	TASK_PRIORITY_THREAT_BASE	= 5,
-	TASK_PRIORITY_THREAT_GRADE4	= 4,
-	TASK_PRIORITY_THREAT_GRADE3	= 3,
+	TASK_PRIORITY_THREAT_BASE	= 0,
+	TASK_PRIORITY_THREAT_GRADE1	= 1,
 	TASK_PRIORITY_THREAT_GRADE2	= 2,
-	TASK_PRIORITY_THREAT_GRADE1	= 1
+	TASK_PRIORITY_THREAT_GRADE3	= 3,
+	TASK_PRIORITY_THREAT_GRADE4	= 4
 };
 
 enum
@@ -117,6 +120,22 @@ float			AITime;
 int				StateAction;
 
 
+// [CW] Heh, my first delegate in VavoomC =)))
+delegate bool DoMove(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive);
+
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	::BeginPlay();
+	DoMove = A_NormalDoMove;	// [CW] Assign a delegate to default method
+}
 
 //==========================================================================
 //
@@ -168,11 +187,15 @@ bool OkayToSwitchTarget(EntityEx source)
 	// so we have to set F & I generic target datas
 	if (okaytoswitch)
 	{
-		generic_target_t gnTarget;
-		gnTarget.Thing = source;
-		if (!CurrentTask)
-			A_SetFinalTarget(&gnTarget);
-		A_SetImmediateTarget(&gnTarget);
+		//generic_target_t gnTarget;
+		//gnTarget.Thing = source;
+		//if (!CurrentTask)
+		//	A_SetFinalTarget(&gnTarget);
+		//  A_SetImmediateTarget(&gnTarget);
+		A_OrderAttackThing(true,
+			TASK_PRIORITY_THREAT_BASE +
+					((Health <= default.Health / 3) ? THREATREACTION__LOHEALTH : THREATREACTION__DAMAGE),
+			0.0, source);
 	}
 
 	return okaytoswitch;
@@ -197,7 +220,22 @@ void Died(EntityEx source, EntityEx inflictor)
 	CurrentRoute = none;
 	RouteList = none;
 
+	A_SetFinalTarget(NULL);
+	A_SetImmediateTarget(NULL);
+
 	::Died(source, inflictor);
+}
+
+//==========================================================================
+//
+//	A_AIResurrect
+//
+//==========================================================================
+
+final void A_AIResurrect()
+{
+	::A_Resurrect();
+	AITime = 0.0;
 }
 
 //==========================================================================
@@ -239,6 +277,32 @@ void Tick(float deltaTime)
 	}
 }
 
+//============================================================================
+//
+//  A_NormalDoMove
+//
+//============================================================================
+
+bool A_NormalDoMove(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
+{
+	return A_DoMove(Evade, false/*FastChase*/, AIdleState, AMeleeState, AMissileState,
+		LineSpecialGameInfo(Level.Game).bNightmareFastChase/*NightmareFast*/, PlayActive);
+}
+
+//============================================================================
+//
+//  A_FastDoMove
+//
+//============================================================================
+
+bool A_FastDoMove(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
+{
+	return A_DoMove(Evade, true/*FastChase*/, AIdleState, AMeleeState, AMissileState,
+		true/*NightmareFast*/, PlayActive);
+}
+
 
 //**************************************************************************
 //
@@ -261,7 +325,7 @@ void A_SetFinalTarget(generic_target_t * pGnTarget)
 		Behavior.bKnowFTargetPos = true;
 		FGnTarget.Thing = (pGnTarget->Thing && !pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none;
 		FGnTarget.Node = Node((pGnTarget->Thing && pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none);
-		FGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.Origin : pGnTarget->Pos;
+		FGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.GetCentre() : pGnTarget->Pos;
 		LastKnownPosition = FGnTarget.Pos;
 	}
 	else
@@ -284,7 +348,7 @@ void A_SetImmediateTarget(generic_target_t * pGnTarget)
 	{
 		IGnTarget.Thing = (pGnTarget->Thing && !pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none;
 		IGnTarget.Node = Node((pGnTarget->Thing && pGnTarget->Thing.IsA('Node')) ? pGnTarget->Thing : none);
-		IGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.Origin : pGnTarget->Pos;
+		IGnTarget.Pos = pGnTarget->Thing ? pGnTarget->Thing.GetCentre() : pGnTarget->Pos;
 	}
 	else
 	{
@@ -325,7 +389,7 @@ void A_CheckThreat()
 		// bEvadeMelee flag makes IA take evasive action if enemy is too close
 		if (Behavior.bEvadeMelee)
 		{
-			Entity EThreat = none;
+			EntityEx EThreat = none;
 			if (Target && Length(Target.Origin - Origin) <= Target.MeleeRange * 3.0)
 				EThreat = Target;
 			else if (LastAttacker && LastAttacker != Target)
@@ -339,7 +403,7 @@ void A_CheckThreat()
 			if (EThreat && P_Random() < 150)
 			{
 				bThreatened = true;
-				A_OrderEvadeThing(true, 0, 1.0 + Random() * 6.0, EThreat);
+				A_OrderEvadeThing(true, 0, 1.0 + Random() * 4.0, EThreat);
 				break;
 			}
 		}
@@ -349,7 +413,8 @@ void A_CheckThreat()
 			if (!Target || !Threshold)
 			{
 				Actor targ = Actor(Sector->SoundTarget);
-				if (targ && targ != Target && targ.bShootable && (bIgnoreTeams || Team != targ.Team))
+				if (targ && targ != Target && targ.bShootable &&
+					(!targ.IsA('KRPGActor') || bIgnoreTeams || Team != KRPGActor(targ).Team))
 				{
 					float dist;
 					if (Target)
@@ -363,11 +428,13 @@ void A_CheckThreat()
 					if (DistTo(targ) <= Behavior.ThreatVicinity)
 					{
 						Target = targ;
+						Threshold = BASETHRESHOLD;
 						// TODO: use Ambush flag?
 						Alertness = HIGH_ALERTNESS;
 
 						bThreatened = true;
-						A_OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE - Behavior.ThreatReaction, 0.0, Target);
+						A_OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE +
+							CanSee(Target) ? THREATREACTION__SEE : THREATREACTION__DETECT, 0.0, Target);
 						if (StateAction == STATE_ACTION__LOOK)
 							SetState(SeeState);
 						break;
@@ -394,7 +461,9 @@ void A_CheckThreat()
 					Alertness = HIGH_ALERTNESS;
 
 					bThreatened = true;
-					A_OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE - Behavior.ThreatReaction, 0.0, Target);
+					dprint("%i orders itself AttackThing %i with priority %i", self, Target,
+						TASK_PRIORITY_THREAT_BASE + Behavior.ThreatReaction);
+					A_OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE + THREATREACTION__SEE, 0.0, Target);
 					if (StateAction == STATE_ACTION__LOOK)
 						SetState(SeeState);
 					break;
@@ -439,6 +508,7 @@ final void A_LookAI()
 	StateAction = STATE_ACTION__LOOK;
 
 	Threshold = 0;	// any shot will wake up
+	Target = none;
 	pTargetVec = NULL;
 
 	A_CheckThreat();
@@ -458,10 +528,10 @@ final void A_ChaseAI()
 	if (FGnTarget.Thing)
 	{
 		// TODO: some monsters do not need to SEE target
-		if (CanSee(FGnTarget.Thing))
+		if (bSenseAlways || CanSee(FGnTarget.Thing))
 		{
 			Behavior.bKnowFTargetPos = true;
-			LastKnownPosition = FGnTarget.Thing.Origin;
+			LastKnownPosition = FGnTarget.Thing.GetCentre();
 		}
 		else
 		{
@@ -481,6 +551,8 @@ final void A_ChaseAI()
 	//{
 		if (Behavior.bUsingRoute && IGnTarget.Node)
 			pTargetVec = &IGnTarget.Node.Origin;
+		else if (TaskLeader)
+			pTargetVec = &TaskLeader.Origin;
 		else
 			pTargetVec = &IGnTarget.Pos;
 	//}
@@ -492,14 +564,16 @@ final void A_ChaseAI()
 		{
 			if (Behavior.bRunOnEvade)
 				StepSpeed *= 2.0;
-			A_MoveEx(false, true, true);
+			//A_MoveEx(false, true, true);
+			if (DoMove)
+				DoMove(true, none, MeleeState, MissileState, true);
 			if (Behavior.bRunOnEvade)
 				StepSpeed /= 2.0;
 			return;
 		}
 	}
 
-	if (A_MoveEx(false, true))
+	if (/*A_MoveEx(false, true)*/DoMove && DoMove(false, none, MeleeState, MissileState, true))
 	{
 		// [CW] Still has Target to attack
 	}
@@ -620,9 +694,9 @@ ActorTask A_IssueOrder(bool situative, int order, int priority, float duration)
 	}
 	else if (situative && CurrentTask)
 	{
-		if (CurrentTask.Priority > priority)
+		if (CurrentTask.Priority < priority)
 			return none;
-		if (CurrentTask.bSituative && CurrentTask.Priority <= priority)
+		if (CurrentTask.bSituative && CurrentTask.Priority >= priority)
 			CurrentTask.Destroy();
 	}
 
@@ -664,7 +738,7 @@ void A_OrderAttackAll(bool situative, int priority, float duration)
 //
 //==========================================================================
 
-void A_OrderAttackThing(bool situative, int priority, float duration, Entity Thing)
+void A_OrderAttackThing(bool situative, int priority, float duration, EntityEx Thing)
 {
 	if (!Thing)
 	{
@@ -700,7 +774,7 @@ void A_OrderStandStill(bool situative, int priority, float duration)
 //
 //==========================================================================
 
-void A_OrderFollowThing(bool situative, int priority, float duration, Entity Thing)
+void A_OrderFollowThing(bool situative, int priority, float duration, EntityEx Thing)
 {
 	if (!Thing)
 	{
@@ -725,7 +799,7 @@ void A_OrderFollowThing(bool situative, int priority, float duration, Entity Thi
 //
 //==========================================================================
 
-void A_OrderEvadeThing(bool situative, int priority, float duration, Entity Thing)
+void A_OrderEvadeThing(bool situative, int priority, float duration, EntityEx Thing)
 {
 	if (!Thing)
 	{
@@ -925,11 +999,15 @@ void DoTasks()
 			// TODO: Handle priorities
 			//
 			ActorTask AT = ActorTask(Tasks.refHead);
-			do
+			ActorTask at = ActorTask(Tasks.refHead);
+			while (at.refNext)
 			{
-				break;
-			}
-			while (AT);
+				at = ActorTask(at.refNext);
+				if (at.Priority < AT.Priority)
+					AT = at;
+			};
+
+			AT.MoveInFront();			
 
 			//
 			// Perform first-priority task
@@ -987,6 +1065,7 @@ void PerformTask(ActorTask AT)
 
 				if (Target)
 				{
+					Threshold = BASETHRESHOLD;
 					AT.GnTarget.Thing = Target;
 					A_SetFinalTarget(&AT.GnTarget);
 					A_SetImmediateTarget(&AT.GnTarget);
@@ -1114,7 +1193,7 @@ void A_CleanRoutes()
 
 void DoRoute()
 {
-	if (!HexenLevelInfo(Level).bNodeGraphBuild)
+	if (!KRPGLevelInfo(Level).bNodeGraphBuild)
 		return;
 
 	// update timers
@@ -1151,12 +1230,20 @@ void DoRoute()
 			//print("Target is reachable!");
 			Behavior.bLostFTarget = false;
 		}
+		TaskLeader = none;
 		A_CleanRoutes();
 		// Set immediate target
 		IGnTarget.Thing = FGnTarget.Thing;
 		IGnTarget.Node = Node((FGnTarget.Thing && FGnTarget.Thing.IsA('Node')) ? FGnTarget.Thing : none);
 		IGnTarget.Pos = FGnTarget.Thing ? FGnTarget.Thing.Origin : FGnTarget.Pos;
 		return;
+	}
+	else if (TaskLeader)
+	{
+		if (TaskLeader.FGnTarget.Thing == FGnTarget.Thing ||
+				!TaskLeader.FGnTarget.Thing && TaskLeader.FGnTarget.Pos == FGnTarget.Pos)
+			return;
+		TaskLeader = none;
 	}
 	else if (Behavior.bUsingRoute)
 	{
@@ -1202,6 +1289,13 @@ void DoRoute()
 		}
 	}
 
+	// Try get a task leader and follow him
+	if (Behavior.bCanGroup)
+	{
+		if (JoinTaskLeader())
+			return;
+	}
+
 	// Well, it looks like it is right time for pawn to build a route
 	if (FGnTarget.Thing)
 	{
@@ -1216,6 +1310,37 @@ void DoRoute()
 
 //==========================================================================
 //
+//	JoinTaskLeader
+//
+//==========================================================================
+
+bool JoinTaskLeader()
+{
+	IntelligentActor IA;
+	float dist;
+	float min_dist = -1.0;
+	foreach AllThinkers(IntelligentActor, IA)
+	{
+		if (IA.Behavior.bCanBeTaskLeader)
+		{
+			if (IA.FGnTarget.Thing == FGnTarget.Thing ||
+				!IA.FGnTarget.Thing && IA.FGnTarget.Pos == FGnTarget.Pos)
+			{
+				dist = DistTo(IA);
+				if (dist <= ACCEPTABLE_TASKLEADER_VICINITY && (min_dist < 0.0 || dist < min_dist))
+				{
+					min_dist = dist;
+					TaskLeader = IA;
+				}
+			}
+		}
+	}
+
+	return TaskLeader != none;
+}
+
+//==========================================================================
+//
 //	BuildRoute
 //
 //	Tries to build a route using nodes.
@@ -1223,7 +1348,7 @@ void DoRoute()
 //
 //==========================================================================
 
-void BuildRoute(TVec AimPos, Entity AimEntity)
+void BuildRoute(TVec AimPos, EntityEx AimEntity)
 {
 	int i;
 
@@ -1398,7 +1523,7 @@ Node FindNearestReachableNode()
 //
 //==========================================================================
 
-Node FindAcceptableTargetNode(TVec VTarget, Entity ETarget)
+Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget)
 {
 	float		distance;
 	float		compdist;
@@ -1919,16 +2044,16 @@ void AddExtendedRoutes(LinkedList extended_route_list, LinkedList route_list)
 
 
 defaultproperties
-{
-	bIsGroupLeader					= false;
-	Group							= 0;
-	
+{	
 	Behavior.ThreatReaction			= THREATREACTION__DETECT;
 	Behavior.ThreatVicinity			= DEFAULT_THREAT_VICINITY;
 
 	Behavior.bNoWanderDuringAttack	= false;
 	Behavior.bEvadeMelee			= false;
 	Behavior.bRunOnEvade			= false;
+
+	Behavior.bCanGroup				= true;
+	Behavior.bCanBeTaskLeader		= true;
 
 	Behavior.bNeverUseRoutes		= false;
 	Behavior.RouteRebuildRate		= 512;

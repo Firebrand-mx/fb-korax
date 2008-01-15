@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -32,6 +32,15 @@ const float VIEWHEIGHT		= 48.0;
 float MorphTime;	// player is a pig if > 0
 
 BotPlayer Bot;
+
+replication
+{
+	reliable if (!bIsClient)
+		SetFOV;
+
+	unreliable if (!bIsClient)
+		ParticleEffectEx;
+}
 
 //==========================================================================
 //
@@ -871,9 +880,9 @@ void PlayerImpulse()
 	---------------------------------------*/
 	switch (impulse)
 	{
-	case HexenDefs::IMPULSE__TEST_AC__CAST_ICE_DAMAGER:
+	case KRPGDefs::IMPULSE__TEST_AC__CAST_ICE_DAMAGER:
 		{
-			ACDamageDealer ac = ACDamageDealer(Actor(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
+			ACDamageDealer ac = ACDamageDealer(KRPGActor(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
 			if (ac)
 			{
 				ac.DamageValue = 10;
@@ -882,14 +891,14 @@ void PlayerImpulse()
 			}
 		}
 		break;
-	case HexenDefs::IMPULSE__TEST_AC__CAST_POISON_DAMAGER:
+	case KRPGDefs::IMPULSE__TEST_AC__CAST_POISON_DAMAGER:
 		{
-			Actor(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
+			KRPGActor(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
 		}
 		break;
-	case HexenDefs::IMPULSE__TEST_AC__CAST_SPELL_MANA_BURN:
+	case KRPGDefs::IMPULSE__TEST_AC__CAST_SPELL_MANA_BURN:
 		{
-			Actor(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
+			KRPGActor(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
 		}
 		break;
 	}
@@ -900,7 +909,7 @@ void PlayerImpulse()
 
 	switch (impulse)
 	{
-	case HexenDefs::IMPULSE__TEST_SPELL__CAST_SPELL_GRAVITATOR:
+	case KRPGDefs::IMPULSE__TEST_SPELL__CAST_SPELL_GRAVITATOR:
 		{
 			SpellGravitator SG = SpellGravitator(Level.Spawn(SpellGravitator));
 			SG.Level = 2;
@@ -916,7 +925,7 @@ void PlayerImpulse()
 	---------------------------------------*/
 	switch (impulse)
 	{
-	case HexenDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_CANCELCURRENT:
+	case KRPGDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_CANCELCURRENT:
 		{
 			IntelligentActor IA;
 			foreach Level.AllThinkers(IntelligentActor, IA)
@@ -927,7 +936,7 @@ void PlayerImpulse()
 				}
 			}
 		}
-	case HexenDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_STANDSTILL:
+	case KRPGDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_STANDSTILL:
 		{
 			IntelligentActor IA;
 			foreach Level.AllThinkers(IntelligentActor, IA)
@@ -939,7 +948,7 @@ void PlayerImpulse()
 			}
 		}
 		break;
-	case HexenDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_MOVETO_PLAYER:
+	case KRPGDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_MOVETO_PLAYER:
 		{
 			IntelligentActor IA;
 			foreach Level.AllThinkers(IntelligentActor, IA)
@@ -951,7 +960,7 @@ void PlayerImpulse()
 			}
 		}
 		break;
-	case HexenDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_ATTACKALL:
+	case KRPGDefs::IMPULSE__TEST_AT__ORDER_EVERYONE_ATTACKALL:
 		{
 			IntelligentActor IA;
 			foreach Level.AllThinkers(IntelligentActor, IA)
@@ -1349,7 +1358,7 @@ void PlayerTick(float deltaTime)
 	else
 	{
 		// KRPG
-		if (Actor(MO).RidePartner && Actor(MO).bIsMountedOn && Actor(MO).bRideControl)
+		if (KRPGActor(MO).RidePartner && KRPGActor(MO).bIsMountedOn && KRPGActor(MO).bRideControl)
 			PlayerRide(deltaTime);
 		else if (MO.WaterLevel >= 2)
 			WaterMove(deltaTime);
@@ -1492,7 +1501,166 @@ void PlayerRide(float deltaTime)
 	float side = SideMove;
 	float vertical = (Buttons & BT_JUMP) ? deltaTime : 0.0;
 
-	Actor(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
+	KRPGActor(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
+}
+
+//==========================================================================
+//
+//  PaletteFlash
+//
+//  Sets the new palette based upon the current values of
+// Player.DamageFlash and Player.BonusFlash.
+//
+//==========================================================================
+
+void PaletteFlash()
+{
+	float r = 0.0;
+	float g = 0.0;
+	float b = 0.0;
+	float a = 0.0;
+
+	int CShiftPowerPositive, CShiftPowerNegative;
+
+	if (MO.WaterLevel == 3)
+	{
+		switch (MO.WaterType)
+		{
+		case CONTENTS_WATER:
+			AddBlend(r, g, b, a, RGBA(130, 80, 50, 128));
+			break;
+
+		case CONTENTS_LAVA:
+			AddBlend(r, g, b, a, RGBA(255, 80, 0, 150));
+			break;
+
+		case CONTENTS_NUKAGE:
+			AddBlend(r, g, b, a, RGBA(50, 255, 50, 150));
+			break;
+
+		case CONTENTS_SLIME:
+			AddBlend(r, g, b, a, RGBA(0, 25, 5, 150));
+			break;
+
+		case CONTENTS_HELLSLIME:
+			AddBlend(r, g, b, a, RGBA(255, 80, 0, 150));
+			break;
+
+		case CONTENTS_BLOOD:
+			AddBlend(r, g, b, a, RGBA(160, 16, 16, 150));
+			break;
+
+		case CONTENTS_SLUDGE:
+			AddBlend(r, g, b, a, RGBA(128, 160, 128, 150));
+			break;
+
+		case CONTENTS_HAZARD:
+			AddBlend(r, g, b, a, RGBA(128, 160, 128, 128));
+			break;
+		}
+	}
+
+	if (EntityEx(MO).DamageType == 'Ice')
+	{
+		// Frozen player
+		AddBlend(r, g, b, a, RGBA(2, 2, 255, 113));
+	}
+	else
+	{
+		if (DamageFlash)
+		{
+			int Amount = ftoi(114.0 * DamageFlash);
+			if (Amount >= 228)
+			{
+				Amount = 228;
+			}
+			// KRPG
+			// [CW] TODO: need extra parameter in DoSpecialDamage to use this
+			if (Actor(MO).DamageType == 'Ice')
+				AddBlend(r, g, b, a, RGBA(2, 2, 255, Amount));
+			else
+				AddBlend(r, g, b, a, RGBA(255, 0, 0, Amount));
+		}
+
+		if (BonusFlash)
+		{
+			int Amount = ftoi(256.0 * BonusFlash);
+			if (Amount >= 128)
+			{
+				Amount = 128;
+			}
+			AddBlend(r, g, b, a, RGBA(215, 186, 68, Amount));
+		}
+
+		//
+		// KRPG
+		//
+		/*if (PoisonCount)
+		{
+			int Amount = PoisonCount * 160 / 32;
+			if (Amount >= 160)
+			{
+				Amount = 160;
+			}
+			AddBlend(r, g, b, a, RGBA(56, 118, 46, Amount));
+		}*/
+
+		//FIXME add hazard flash.
+		if (HazardTime > 16.0 || ftoi(4.0 * HazardTime) & 1)
+		{
+			AddBlend(r, g, b, a, RGBA(0, 255, 0, 32));
+		}
+	}
+
+	Inventory Item;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		int Blend = Item.GetBlend();
+		if (Blend)
+		{
+			AddBlend(r, g, b, a, Blend);
+		}
+	}
+
+	//
+	// KRPG
+	//
+	if (KRPGActor(MO).Conditions && KRPGActor(MO).Conditions.refHead)
+	{
+		LinkedReferer acref = LinkedReferer(KRPGActor(MO).Conditions.refHead);
+		while (acref)
+		{
+			ActorCondition ac = ActorCondition(acref.refObject);
+			if (ac.bIsNegative)
+			{
+				if (!MO.bCorpse)
+					ac.MakeCShift(&CShiftPowerNegative);
+			}
+			else
+				ac.MakeCShift(&CShiftPowerPositive);
+			acref = LinkedReferer(acref.refNext);
+		};
+	}
+
+	if (r > 1.0)
+	{
+		r = 1.0;
+	}
+	if (g > 1.0)
+	{
+		g = 1.0;
+	}
+	if (b > 1.0)
+	{
+		b = 1.0;
+	}
+	CShift = RGBA(ftoi(r * 255.0), ftoi(g * 255.0), ftoi(b * 255.0),
+		ftoi(a * 255.0));
+	//
+	// KRPG
+	CShift |= CShiftPowerPositive;
+	CShift |= CShiftPowerNegative;
+	// [CW] OMG, what a mess :)
 }
 
 //==========================================================================
@@ -1633,6 +1801,20 @@ void PostMorphWeapon(Weapon weapon)
 	SetWeapon(weapon);
 	ViewStates[ps_weapon].SY = Weapon::WEAPONBOTTOM;
 	SetViewState(ps_weapon, ReadyWeapon.GetUpState());
+}
+
+//==========================================================================
+//
+//  ParticleEffectEx
+//
+//==========================================================================
+
+void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
+	TVec velocity, TVec vrnd, TVec acceleration, float grav, int colour, float duration, float ramp,
+	int Pattern)
+{
+	KRPGLevelInfo(Level).ParticleEffectEx(count, type1, type2, origin, ornd, velocity, vrnd, acceleration,
+				grav, colour, duration, ramp, Pattern);
 }
 
 //==========================================================================
@@ -1964,6 +2146,17 @@ void Cheat_Class()
 	//PostMorphWeapon(HexenDefs::WP_FIRST);
 	SetCvar('class', pclass);
 	SB_Start();
+}
+
+//==========================================================================
+//
+//  SetFOV
+//
+//==========================================================================
+
+void SetFOV(int FOV)
+{
+	SetCvar('FOV', FOV);
 }
 
 //==========================================================================
