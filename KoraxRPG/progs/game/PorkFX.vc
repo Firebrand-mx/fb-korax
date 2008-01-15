@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: PorkFX.vc 2718 2007-10-17 20:32:39Z firebrand_kh $
+//**    $Id: PorkFX.vc 2989 2008-01-06 13:27:01Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -70,7 +70,7 @@ final bool MorphMonster(Actor victim)
 		TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
-	monster = Spawn(Pig, victim.Origin);
+	monster = Spawn(Pig, victim.Origin,,, false);
 	monster.SpecialCID = class<Actor>(victim.Class);
 	monster.Special1 = ftoi(MORPHTIME * 35.0) + P_Random();
 	monster.RenderStyle = victim.RenderStyle;
@@ -122,7 +122,7 @@ final bool MorphPlayer(Actor victim)
 		TELEFOGHEIGHT));
 	fog.PlaySound('Teleport', CHAN_VOICE);
 
-	beastMo = Spawn(PigPlayer, victim.Origin);
+	beastMo = Spawn(PigPlayer, victim.Origin,,, false);
 	beastMo.Tracer = Player(victim.Player).ReadyWeapon;
 	beastMo.Angles = victim.Angles;
 	beastMo.Player = victim.Player;
@@ -130,6 +130,7 @@ final bool MorphPlayer(Actor victim)
 	beastMo.Health = Player::MAXMORPHHEALTH;
 	victim.Player.Health = beastMo.Health;
 	victim.Player.MO = beastMo;
+	victim.Player.Camera = beastMo;
 	HexenArmor HArmor = HexenArmor(victim.FindInventory(HexenArmor));
 	for (i = 0; i < 4; i++)
 	{
