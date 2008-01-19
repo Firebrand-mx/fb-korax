@@ -278,12 +278,9 @@ void SetTranslation()
 	if (!Team)
 		return;
 
-	// [FB] Just select the Banner team
-	// FIXME:
-	// I'll make a small hack and consider the flag to be
-	// a Mage or Cleric, so blue translations are applied to 
-	// it, I'll find a better way to make this work later
-	Translation = Team.Colour + HexenDefs::PCLASS_CLERIC * (MAXPLAYERS - 1);
+	// [FB] Just select the current banner's team index,
+	//	  and set it's colour
+	Translation = Team.Colour;
 	TransSet = 1;
 }
 
@@ -295,8 +292,8 @@ void SetTranslation()
 
 void Tick(float deltaTime)
 {
-	/*if (!TransSet)
-		SetTranslation();*/
+	if (!TransSet)
+		SetTranslation();
 
 	// Lost flag counts a timer down until auto-respawn; it also should be returned in case it was dropped in dangerous area
 	if (Status == BANNER_STATUS__LOST)

@@ -32,7 +32,6 @@
 
 class WeaponWitchavenSSword : KArenaWeapon;
 
-//int NoMoreManaState;
 float SwordRange;
 
 //==========================================================================
@@ -55,19 +54,10 @@ final void A_WSSwordAttack()
 	damage = 25; //15 + (P_Random() & 15) + (P_Random() & 7);
 	ApplyDamageModifiers(damage);
 	power = 0.0;
-// [KORAX]
-/*	if (IsWeaponManaUsable())
-	{*/
-		damage <<= 1;
-		power = 6.0;
-		PuffType = AxePuff;
-		useMana = 1;
-/*	}
-	else
-	{
-		PuffType = AxePuff;
-		useMana = 0;
-	}*/
+	damage <<= 1;
+	power = 6.0;
+	PuffType = AxePuff;
+	useMana = 1;
 
 	AimTarget = pmo.AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
@@ -94,55 +84,14 @@ final void A_WSSwordAttack()
 		}
 	}
 
-//[KORAX]
 	if (useMana == 2)
 	{
 		UseWeaponMana();
-/*		if (!IsWeaponManaUsable())
-		{
-			SetState(NoMoreManaState);
-		}*/
 	}
 }
 
 states
 {
-//[KORAX]
-/*
-	S_WSSWORDREADY('WSSW', 0, 1.0 / 35.0, S_WSSWORDREADY) = A_WeaponReady
-	S_WSSWORDDOWN('WSSW', 0, 1.0 / 35.0, S_WSSWORDDOWN) = A_Lower
-	S_WSSWORDUP('WSSW', 0, 1.0 / 35.0, S_WSSWORDUP) = A_Raise
-	S_WSSWORDATK_1('WSSW', 1, 4.0 / 35.0, S_WSSWORDATK_2) = none
-	S_WSSWORDATK_2('WSSW', 2, 3.0 / 35.0, S_WSSWORDATK_3) = none
-	S_WSSWORDATK_3('WSSW', 3, 2.0 / 35.0, S_WSSWORDATK_4) = none
-	S_WSSWORDATK_4('WSSW', 4, 1.0 / 35.0, S_WSSWORDATK_5) = A_WSSwordAttack
-	S_WSSWORDATK_5('WSSW', 5, 2.0 / 35.0, S_WSSWORDATK_6) = none
-	S_WSSWORDATK_6('WSSW', 5, 1.0 / 35.0, S_WSSWORDATK_7) = none
-	S_WSSWORDATK_7('WSSW', 6, 2.0 / 35.0, S_WSSWORDATK_8) = none
-	S_WSSWORDATK_8('WSSW', 4, 7.0 / 35.0, S_WSSWORDATK_9) = none
-	S_WSSWORDATK_9('WSSW', 0, 1.0 / 35.0, S_WSSWORDATK_10) = none
-	S_WSSWORDATK_10('WSSW', 0, 1.0 / 35.0, S_WSSWORDATK_11, 0, 52) = none
-	S_WSSWORDATK_11('WSSW', 0, 1.0 / 35.0, S_WSSWORDATK_12, 0, 44) = none
-	S_WSSWORDATK_12('WSSW', 0, 1.0 / 35.0, S_WSSWORDATK_13, 0, 36) = none
-	S_WSSWORDATK_13('WSSW', 0, 1.0 / 35.0, S_WSSWORDREADY) = none
-	// SECOND STRIKE (NO MANA)
-	S_WSSWORDATK2_1('WSSW', 8, 4.0 / 35.0, S_WSSWORDATK2_2) = none
-	S_WSSWORDATK2_2('WSSW', 8, 4.0 / 35.0, S_WSSWORDATK2_3) = none
-	S_WSSWORDATK2_3('WSSW', 9, 3.0 / 35.0, S_WSSWORDATK2_4) = none
-	S_WSSWORDATK2_4('WSSW', 9, 3.0 / 35.0, S_WSSWORDATK2_5) = none
-	S_WSSWORDATK2_5('WSSW', 10, 2.0 / 35.0, S_WSSWORDATK2_6) = none
-	S_WSSWORDATK2_6('WSSW', 10, 2.0 / 35.0, S_WSSWORDATK2_7) = none
-	S_WSSWORDATK2_7('WSSW', 11, 1.0 / 35.0, S_WSSWORDATK2_8) = A_WSSwordAttack
-	S_WSSWORDATK2_8('WSSW', 11, 1.0 / 35.0, S_WSSWORDATK2_9) = none
-	S_WSSWORDATK2_9('WSSW', 12, 2.0 / 35.0, S_WSSWORDATK2_10) = none
-	S_WSSWORDATK2_10('WSSW', 12, 2.0 / 35.0, S_WSSWORDATK2_11) = none
-	S_WSSWORDATK2_11('WSSW', 13, 1.0 / 35.0, S_WSSWORDATK2_12) = none
-	S_WSSWORDATK2_12('WSSW', 13, 2.0 / 35.0, S_WSSWORDATK2_13) = none
-	S_WSSWORDATK2_13('WSSW', 14, 1.0 / 35.0, S_WSSWORDATK2_14) = none
-	S_WSSWORDATK2_14('WSSW', 14, 2.0 / 35.0, S_WSSWORDATK_1) = A_ReFire
-*/
-//[KORAX]
-	// MANA STATES
 Ready:
 	WSWF AABBCCDD 2 Bright A_WeaponReady
 	Loop
@@ -153,25 +102,25 @@ Select:
 	WSWF A 1 Bright A_Raise
 	Loop
 Hold:
-	WSWF E 3 Bright Offset(0, 31)
-	WSWF E 3 Bright
+	WSWF EE 3 Bright Offset(1, 31)
 	WSWF FF 2 Bright
 	WSWF GH 1 Bright
 	WSWF H 1 Bright A_WSSwordAttack
-	WSWF H 1 Bright Offset(-5, 0)
+	WSWF H 1 Bright
 	WSWF I 1 Bright
-	WSWF I 1 Bright Offset(-10, 0)
+	WSWF I 1 Bright
 	WSWF J 1 Bright
-	WSWF J 1 Bright Offset(-15, 0)
-	WSWF J 2 Bright Offset(-20, 0) A_ReFire
-	WSWF A 1 Bright Offset(0, 52)
-	WSWF B 1 Bright Offset(0, 44)
-	WSWF C 1 Bright Offset(0, 36)
-	WSWF D 1 Bright
+	WSWF J 1 Bright
+	WSWF J 2 Bright A_ReFire
+	WSWF A 1 Bright Offset(-10, 52)
+	WSWF B 1 Bright Offset(-10, 44)
+	WSWF C 1 Bright Offset(-10, 36)
+	WSWF D 1 Bright Offset(-10, 0)
 	Goto Ready
-	// SECOND STRIKE (MANA CHARGED)
+	// SECOND STRIKE
 Fire:
-	WSWF KK 3 Bright
+	WSWF K 3 Bright
+	WSWF K 3 Bright Offset(0, 0)
 	WSWF LL 2 Bright
 	WSWF MM 2 Bright Offset(0, -2)
 	WSWF N 1 Bright Offset(0, 10) A_WSSwordAttack
@@ -192,8 +141,6 @@ defaultproperties
 	SelectionOrder = 6600;
 	AmmoType1 = ItemManaBlue;
 	AmmoUse1 = 5;
-	//needsnomana = true;
-//	NoMoreManaState = S_WSSWORDATK_5;
 	SwordRange = 3.0 * MELEERANGE / 2.0;
 	BotCombatDist = 3.0 * MELEERANGE / 2.0;
 	wis_mod = true;
