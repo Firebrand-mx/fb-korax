@@ -275,13 +275,66 @@ bool Physics(float DeltaTime)
 
 void SetTranslation()
 {
+	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
+
 	if (!Team)
 		return;
 
-	// [FB] Just select the current banner's team index,
-	//	  and set it's colour
-	Translation = Team.Colour;
-	TransSet = 1;
+	if (CTF && CTF.IsInPlayableState())
+	{
+		int i;
+
+		for (i = 0; i < GameCTF::MAXBANNERS; i++)
+		{
+			if (CTF.Banners[i] && CTF.Banners[i] != self)
+			{
+				// [FB] Just select the current banner's team name,
+				//	  then set it's colour using ACS Scripts
+				//
+				// FIXME!! -- this works only for original team list
+				switch (Team.Index)
+				{
+					case 1:
+					{
+						XLevel.StartACS(1, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 2:
+					{
+						XLevel.StartACS(2, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 3:
+					{
+						XLevel.StartACS(3, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 4:
+					{
+						XLevel.StartACS(4, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 5:
+					{
+						XLevel.StartACS(5, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 6:
+					{
+						XLevel.StartACS(6, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					case 7:
+					{
+						XLevel.StartACS(7, 0, i, 0, 0, self, NULL, 0, false, false);
+						break;
+					}
+					default:
+						break;
+				}
+			}
+		}
+	}
 }
 
 //==========================================================================
