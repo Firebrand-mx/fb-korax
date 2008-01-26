@@ -536,7 +536,7 @@ void CheckStuff()
 	// [CW]
 	if (ITarget)
 	{
-		if ((ITarget.IsA('Inventory') && ITarget.bHidden) ||
+		if ((ITarget.IsA('Inventory') && (ITarget.Owner || ITarget.bInvisible)) ||
 				(ITarget == node_current && Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE) ||
 				!CheckTo(ITarget.Origin, ITarget))
 			ITarget = none;
@@ -2432,7 +2432,9 @@ EntityEx GetFirstPriorityTarget()
 		else
 			continue;
 
-		if (ee.bHidden)
+		if (ee.bInvisible)
+			continue;
+		if (ee.bNoSector)
 			continue;
 
 		if (!Priority[priort])
