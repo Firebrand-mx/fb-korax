@@ -3,3 +3,8 @@ all:
 	vlumpy basepak.ls
 
 install:
+
+clean:
+	rm basepak.pk3
+
+distdir:
