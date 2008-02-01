@@ -43,12 +43,13 @@ int		score;		// player score (game mode dependent)
 int		deaths;
 int		teampos;	// [CW] team position in global competition list
 int		playerpos;	// [CW] player position in team inner competition list
+int		translation;
 
 replication
 {
 	reliable if (Role == ROLE_Authority)
 		plclass, level, IsBot, /*team*/teamname, teamcolour, teamfont,
-		score, deaths, teampos, playerpos;
+		score, deaths, teampos, playerpos, translation;
 }
 
 //==========================================================================
@@ -76,6 +77,7 @@ void Tick(float DeltaTime)
 	deaths = P.Deaths;//0;
 	teampos = P.TeamPosition;
 	playerpos = P.PlayerPosition;
+	translation = P.MO ? P.MO.Translation : 0;
 
 	/*// [CW] counts times all other players killed this one
 	// (and times he was killed by self/monsters/enviroment)
