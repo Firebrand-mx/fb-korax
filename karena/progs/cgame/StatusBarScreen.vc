@@ -44,7 +44,7 @@ int HealthMarker;
 int sb_health;
 int m_h;
 
-bool hitCentreFrame;
+//bool hitCentreFrame;
 
 int pic_bar;
 int pic_chain;
@@ -69,9 +69,9 @@ int pic_manavial7;
 int pic_wpslot;
 int pic_wpfull;
 int pic_wppiece[3];
-int wppiecex[3];*/
+int wppiecex[3];
 int pic_keybar;
-int pic_armor[4];
+int pic_armor[4];*/
 
 /*int pic_invbar;
 int pic_selectbox;
@@ -361,7 +361,7 @@ void SB_DrawBackground()
 //
 //==========================================================================
 
-void SB_DrawNumber9(int x, int y, int num, int colour)
+void SB_DrawNumber9(int x, int y, int num, int colour, optional float alpha)
 {
 	int w = 9;
 	int neg = num < 0;
@@ -376,88 +376,21 @@ void SB_DrawNumber9(int x, int y, int num, int colour)
 	// in the special case of 0, you draw 0
 	if (!num)
 	{
-		DrawPic(x - w, y, pic_innum[colour * 10]);
+		DrawPic(x - w, y, pic_innum[colour * 10], alpha ? alpha : 1.0);
 	}
 
 	// draw the new number
 	while (num)
 	{
 		x -= w;
-		DrawPic(x, y, pic_innum[colour * 10 + num % 10]);
+		DrawPic(x, y, pic_innum[colour * 10 + num % 10], alpha ? alpha : 1.0);
 		num /= 10;
 	}
 
 	// draw a minus sign if necessary
 	if (neg)
 	{
-		DrawPic(x - 8, y, pic_minus);
-	}
-}
-
-//==========================================================================
-//
-//	SB_DrawNumber92
-//
-//	[FB] Draw the number shadowed
-//
-//==========================================================================
-
-void SB_DrawNumber92(int x, int y, int num, int colour)
-{
-	int w = 9;
-	int neg = num < 0;
-
-	if (neg)
-	{
-		num = -num;
-	}
-
-	x = x + 27;
-
-	// in the special case of 0, you draw 0
-	if (!num)
-	{
-		DrawShadowedPic(x - w, y, pic_innum[colour * 10]);
-	}
-
-	// draw the new number
-	while (num)
-	{
-		x -= w;
-		DrawShadowedPic(x, y, pic_innum[colour * 10 + num % 10]);
-		num /= 10;
-	}
-
-	// draw a minus sign if necessary
-	if (neg)
-	{
-		DrawShadowedPic(x - 8, y, pic_minus);
-	}
-}
-
-//==========================================================================
-//
-//	SB_DrawNumber12
-//
-//==========================================================================
-
-void SB_DrawNumber12(int x, int y, int num)
-{
-	x = x + 36;
-
-	// in the special case of 0, you draw 0
-	if (!num)
-	{
-		DrawShadowedPic(x - bignumwidth[0], y, pic_bignum[0]);
-	}
-
-	// draw the new number
-	while (num)
-	{
-		x -= bignumwidth[num % 10];
-		DrawShadowedPic(x, y, pic_bignum[num % 10]);
-		num /= 10;
-		x -= 3;
+		DrawPic(x - 8, y, pic_minus, alpha ? alpha : 1.0);
 	}
 }
 
@@ -534,33 +467,33 @@ void SB_DrawMainBar()
 	}
 
 //[Korax]
-/*	SB_DrawNumber92(320, 20, cl.exp_level, 1);
-	SB_DrawNumber92(460, 20, cl.experience, 1);
-	SB_DrawNumber92(580, 20, cl.next_level, 1);*/
+/*	SB_DrawNumber9(320, 20, cl.exp_level, 1);
+	SB_DrawNumber9(460, 20, cl.experience, 1);
+	SB_DrawNumber9(580, 20, cl.next_level, 1);*/
 
 	// Frags
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
 /*		DrawPic(38, 162, pic_kills);
-		SB_DrawNumber92(40, 176, cl.Frags, 0);
+		SB_DrawNumber9(40, 176, cl.Frags, 0);
 		*/
-		SB_DrawNumber92(32, 20, cl.Frags, 0);
+		SB_DrawNumber9(32, 20, cl.Frags, 0);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
-			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
+			SB_DrawNumber9(85, 20, cl.TeamFrags, 0);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
-		SB_DrawNumber92(32, 20, cl.KillCount, 0);
-		SB_DrawNumber92(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		SB_DrawNumber9(32, 20, cl.KillCount, 0);
+		SB_DrawNumber9(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
-			SB_DrawNumber92(85, 20, cl.TeamKills, 0);
+			SB_DrawNumber9(85, 20, cl.TeamKills, 0);
 		}
 	}
 
@@ -740,7 +673,7 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 //
 //==========================================================================
 
-void SB_DrawKeyBar()
+/*void SB_DrawKeyBar()
 {
 	int i;
 	int num;
@@ -762,7 +695,7 @@ void SB_DrawKeyBar()
 	}
 
 	//  Armor
-/*	for (i = 0; i < NUMARMOR; i++)
+	for (i = 0; i < NUMARMOR; i++)
 	{
 		if (!cl.armorpoints[i])
 		{
@@ -783,8 +716,8 @@ void SB_DrawKeyBar()
 			num = 0;
 		}
 		DrawPic(150 + 31 * i, 164, pic_armor[i], num);
-	}*/
-}
+	}
+}*/
 
 //==========================================================================
 //
@@ -846,41 +779,51 @@ void SB_DrawFullscreenStats()
 
 	//  [FB] Armorpoints
 	BasicArmor Armor = BasicArmor(EntityEx(cl.MO).FindInventory(BasicArmor));
-	SB_DrawNumber12(50, 430, Armor ? Armor.Amount : 0);
-	DrawShadowedPic(30, 470, pic_armor2);
+	if (Armor && Armor.Amount)
+	{
+		SB_DrawNumber9(50, 430, Armor.Amount, Armor.Amount > 25 ? 0 : 1, 0.6);
+		DrawPic(30, 470, pic_armor2, 0.6);
+	}
 
 	//  [FB] Health
-	SB_DrawNumber12(50, 450, cl.Health);
-	DrawShadowedPic(30, 494, pic_health);
+	if (cl.Health)
+	{
+		SB_DrawNumber9(50, 450, cl.Health, cl.Health > 25 ? 0 : 1, 0.6);
+		DrawPic(30, 494, pic_health, 0.6);
+	}
 
 //[Korax]
-/*	SB_DrawNumber92(320, 20, 0+cl.exp_level, 1);
-	SB_DrawNumber92(460, 20, 0+cl.experience, 1);
-	SB_DrawNumber92(580, 20, 0+cl.next_level, 1);*/
+/*	SB_DrawNumber9(320, 20, 0+cl.exp_level, 1);
+	SB_DrawNumber9(460, 20, 0+cl.experience, 1);
+	SB_DrawNumber9(580, 20, 0+cl.next_level, 1);*/
 
 	// Frags
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam)
 	{
 /*		DrawPic(38, 162, pic_kills);
-		SB_DrawNumber92(40, 176, cl.Frags, 0);
+		SB_DrawNumber9(40, 176, cl.Frags, 0);
 		*/
-		SB_DrawNumber92(32, 20, cl.Frags, 0);
+		if (cl.Frags)
+			SB_DrawNumber9(32, 20, cl.Frags, 0, 0.6);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
-			SB_DrawNumber92(85, 20, cl.TeamFrags, 0);
+			if (cl.TeamFrags)
+				SB_DrawNumber9(85, 20, cl.TeamFrags, 0, 0.6);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
-		SB_DrawNumber92(32, 20, cl.KillCount, 0);
-		SB_DrawNumber92(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		if (cl.KillCount)
+			SB_DrawNumber9(32, 20, cl.KillCount, 0, 0.6);
+		SB_DrawNumber9(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0, 0.6);
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
-			SB_DrawNumber92(85, 20, cl.TeamKills, 0);
+			if (cl.TeamKills)
+				SB_DrawNumber9(85, 20, cl.TeamKills, 0, 0.6);
 		}
 	}
 
@@ -942,8 +885,8 @@ void SB_DrawFullscreenStats()
 	DrawFullscreenMana(ItemManaRed, 355, 4, sb_mana3);
 	DrawFullscreenMana(ArtifactBlastRadius, 415, 6, sb_mana4);
 	DrawFullscreenMana(ArtifactFlechette, 475, 8 + Mana5DimBase, sb_mana5);
-	DrawShadowedPic(534, 439, pic_manavial6);
-	DrawShadowedPic(546, 439, pic_manavial7);
+	DrawPic(534, 439, pic_manavial6, 0.6);
+	DrawPic(546, 439, pic_manavial7, 0.6);
 	if (cl.next_level != cl.old_level)
 	{
 		ShadeRect(535, 440, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
@@ -1001,8 +944,11 @@ void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 		// Draw Dim Mana icon
 		UsesMana = 0;
 	}
-	DrawShadowedPic(X + 5, 440, pic_manadim[DimBase + UsesMana]);
-	SB_DrawNumber92(X, 454, ManaItem ? ManaItem.Amount : 0, 0);
+	if (ManaItem && ManaItem.Amount)
+	{
+		DrawPic(X + 5, 440, pic_manadim[DimBase + UsesMana], UsesMana > 0 ? 1.0 : 0.6);
+		SB_DrawNumber9(X, 454, ManaItem.Amount, ManaItem.Amount > 25 ? 0 : 1, UsesMana > 0 ? 1.0 : 0.6);
+	}
 }
 
 //==========================================================================
@@ -1054,7 +1000,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawShadowedPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
 	}
 
 	// Defensive power
@@ -1063,7 +1009,7 @@ void SB_DrawIcons()
 		(Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawShadowedPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
 	}
 
 	// Minotaur Active
@@ -1071,7 +1017,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawShadowedPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15]);
+		DrawPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
 	}
 
 	// [FB] PI Damage Active
@@ -1080,7 +1026,7 @@ void SB_DrawIcons()
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		// [FB] This one should appear where the wings of wrath are supposed to
-		DrawShadowedPic(20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7]);
+		DrawPic(20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7], 0.6);
 	}
 
 	// [FB] Invisibility power
@@ -1090,7 +1036,7 @@ void SB_DrawIcons()
 		if (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 			!(ftoi(Pw.EffectTime * 35.0) & 16))
 		{
-			DrawPic(220, 19, pic_shsp, 0.6);
+			DrawPic(220, 19, pic_shsp, 0.3);
 		}
 	}
 }
@@ -1117,8 +1063,6 @@ void SB_DrawPause()
 
 void SB_Drawer(int sb_view)
 {
-	int i;
-
 	if (GetCvar('NoHUD'))
 		return;
 
