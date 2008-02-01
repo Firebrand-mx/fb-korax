@@ -898,17 +898,19 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	
 	if (canreach && TargetEntity)
 	{
-	//
-	// [CW] CHECKME ---
-	//
-	//	if (CRTRData.linetarget != TargetEntity)
-	//		return false;
+		//
+		// [CW] CHECKME ---
+		//
+		//if (CRTRData.linetarget != TargetEntity)
+		//	return false;
 
-		//
-		// [CW] TODO!! --- no 3d floors support here
-		//
+		// [FB]  3d Floor checks...
+		if (TargetEntity.Origin.z > FloorZ + MaxPassableStep)
+			return false;
+		if (TargetEntity.Origin.z < FloorZ)
+			return false;
+
 		// [CW] prev_sector is now the last sector met
-
 		if (TargetEntity.Origin.z > CRTRData.prev_sector->floorheight + MaxPassableStep)
 			return false;		// [CW] target thing is too high to reach
 		if (TargetEntity.Origin.z < CRTRData.prev_sector->floorheight)
@@ -923,6 +925,7 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 //	PTR_CanReachTraverse
 //
 // [CW] TODO!! --- no 3d floors support here
+// [FB] Added partial 3d floor support, needs to be checked and corrected...
 //
 //==========================================================================
 
@@ -945,12 +948,13 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 		if (in->bIsALine)
 		{
 			sector_t * p_sector;
+			TVec tracedir;
+			TVec hit_point;
 
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
 					!in->line->backsector)
 				return false;
-
 
 			// in case of two-sided lines a passability check is made
 			if (in->line->frontsector == pCRTRData->prev_sector)
@@ -973,6 +977,24 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				return false;
 
 			pCRTRData->prev_sector = p_sector;
+
+			// [FB] partial 3d floor support...
+			tracedir.x = cos(Angles.yaw);
+			tracedir.y = sin(Angles.yaw);
+			tracedir.z = FloorZ;
+			hit_point = Origin + (Length(Origin - TargetPos) * in->frac) * tracedir;
+			pCRTRData->opening = LineOpenings(in->line, hit_point);
+			pCRTRData->opening = FindOpening(pCRTRData->opening, hit_point.z, hit_point.z + Height);
+
+			// only valid openings
+			if (pCRTRData->opening)
+			{
+				if ((pCRTRData->opening->range <= MinPassableOpening) ||
+					(pCRTRData->opening->lowfloor - pCRTRData->opening->bottom > MaxPassableStep) ||
+					(pCRTRData->opening->lowfloor - pCRTRData->opening->bottom > MaxPassableDropOff))
+					return false;
+			}
+			// [FB] This should partially cover it...
 		}
 		else
 		{
