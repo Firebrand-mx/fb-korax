@@ -67,8 +67,6 @@ enum
 	CNDT_AdvancedGame_StateIs		// Is current Game State equal to ...
 };
 
-const int MAX_MINOTAUR_SPOTS = 8; // [FB] Limit the number of Minotaur Spots in a level
-
 const int BODYQUESIZE 			= 64;
 const int CORPSEQUEUESIZE		= 128;
 int BodyQueSize;
@@ -107,7 +105,6 @@ replication
 	reliable if (Role == ROLE_Authority)
 		skyflatnum;
 }
-
 
 //==========================================================================
 //
@@ -730,9 +727,9 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 		{
 			switch (Pattern)
 			{
-			case pt_pattern_rainlight:
-			case pt_pattern_rainmoderate:
-			case pt_pattern_rainheavy:
+				case pt_pattern_rainlight:
+				case pt_pattern_rainmoderate:
+				case pt_pattern_rainheavy:
 				{
 					int q;
 					switch (Pattern)
@@ -779,14 +776,16 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 	
 	switch (p->type)
 	{
-	case pt_ice_chunk:
-		p->vel.x -= p->vel.x * DeltaTime;
-		p->vel.y -= p->vel.y * DeltaTime;
-		p->vel.z += p->accel.z * DeltaTime;
-		break;
-	case pt_weather_snow:
-	case pt_weather_rain:
-		p->vel += p->accel * DeltaTime;
+		case pt_ice_chunk:
+		{
+			p->vel.x -= p->vel.x * DeltaTime;
+			p->vel.y -= p->vel.y * DeltaTime;
+			p->vel.z += p->accel.z * DeltaTime;
+			break;
+		}
+		case pt_weather_snow:
+		case pt_weather_rain:
+			p->vel += p->accel * DeltaTime;
 		{
 			// spawn a splash just before particle death
 			if (p->type == pt_weather_rain && (p->die <= XLevel.Time + DeltaTime))
