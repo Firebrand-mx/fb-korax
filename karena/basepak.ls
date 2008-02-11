@@ -19,6 +19,7 @@ animdefs.txt			scripts/animdefs.txt
 lockdefs.txt			lockdefs.txt
 sndinfo.txt				scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
+sprite_rename.txt		sprite_rename.txt
 terrain.txt				scripts/terrain.txt
 teaminfo.txt			scripts/teaminfo.txt
 
