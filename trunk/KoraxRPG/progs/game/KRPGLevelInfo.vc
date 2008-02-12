@@ -23,6 +23,7 @@ enum
 	ACTSPEC_Thing_Thrust3d			= 256,	// calls combo of Thing_Thrust and Thing_ThrustZ
 	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
 	ACTSPEC_Thing_SetTeam,
+	ACTSPEC_Thing_SetPersonId,
 
 	//--------------------- NOT USED --------------------------------------------------------
 //	//
@@ -271,6 +272,12 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 			KRPGActor(E).SetTeam(Arg2);
 			buttonSuccess = true;
 		}
+	case ACTSPEC_Thing_SetPersonId:
+		if (E && E.IsA('KRPGActor'))
+		{
+			KRPGActor(E).ConversationID = Arg2;
+			buttonSuccess = true;
+		}
 		break;
 
 
@@ -469,6 +476,54 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		break;
 	}
 	return buttonSuccess;
+}
+
+//==========================================================================
+//
+//  StartConversation
+//
+//==========================================================================
+
+bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
+{
+	Quest::personinfo_t * p_infoSpeaker, * p_infoSpeakingTo;
+	if (!Speaker.bIsPlayer)
+	{
+		if (Speaker.ConversationID >= 0)
+		{
+			p_infoSpeaker = KRPGWorldInfo(World).GetPersonRegistry("", Speaker.ConversationID);
+			if (!p_infoSpeaker)
+				return false;
+		}
+		else
+			return false;
+	}
+	if (!SpeakingTo.bIsPlayer)
+	{
+		if (SpeakingTo.ConversationID >= 0)
+		{
+			p_infoSpeakingTo = KRPGWorldInfo(World).GetPersonRegistry("", SpeakingTo.ConversationID);
+			if (!p_infoSpeakingTo)
+				return false;
+		}
+		else
+			return false;
+	}
+
+	if (Speaker.bIsPlayer)
+	{
+		Player(Speaker.Player).ClientConversation("", p_infoSpeakingTo->scriptName);
+	}
+	else if (SpeakingTo.bIsPlayer)
+	{
+		Player(SpeakingTo.Player).ClientConversation(p_infoSpeakingTo->scriptName, "");
+	}
+
+	//MainGameInfo(Game).GameConParser.Begin(
+	//	Speaker.bIsPlayer ? Speaker.Player.PlayerName : p_infoSpeaker->scriptName,
+	//	SpeakingTo.bIsPlayer ? SpeakingTo.Player.PlayerName : p_infoSpeakingTo->scriptName);
+
+	return false;
 }
 
 //**************************************************************************

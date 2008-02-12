@@ -1,0 +1,203 @@
+
+class ConScreen : KRPGMenuScreen;
+
+
+struct cue_t
+{
+	string		SpeakerName;
+	string		SpeechText;
+};
+
+//	Background
+string				NPCName;
+int					hBackPic;	// registered pic handle
+name				Flat;
+
+//	Speech
+array<cue_t>		Cues;
+
+// Choices
+ConScrContinue		ChoiceContinue;
+array<ConScrChoice>	Choices;
+
+
+//==========================================================================
+//
+//	Init
+//
+//==========================================================================
+
+void Init()
+{
+	ChoiceContinue = ConScrContinue(NewChild(ConScrContinue));
+}
+
+//==========================================================================
+//
+//	OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	int i,y;
+	FillRectWithFlat(0,0,640,480,Flat);
+	if (hBackPic != -1)
+	{
+		R_DrawPic(0,0,hBackPic);
+	}
+	else
+	{
+		ShadeRect(60, 46, 515, 70, 0.3);
+	}
+
+	if (Choices.Num)
+		ShadeRect(60, 438 - Choices.Num * 22, 501, (Choices.Num + 1) * 22, 0.6);
+	else
+		ShadeRect(60, 438 - 22, 501, 44, 0.6);
+	
+
+	SetTextAlign(hleft, vtop);
+	SetFont('bigfont');
+	DrawText(120, 16, NPCName);
+	SetFont('smallfont');
+
+	y = 64;
+	for (i = 0; i < Cues.Num; i++)
+	{
+		if (Cues[i].SpeakerName)
+		{
+			DrawText(120, y, Cues[i].SpeakerName, CR_GREEN); y+=24;
+			DrawText(120, y, Cues[i].SpeechText); y += 32;
+		}
+		else
+		{
+			DrawText(120, y, Cues[i].SpeechText, CR_BRICK); y += 32;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  CleanScene
+//
+//==========================================================================
+
+void CleanScene()
+{
+	StopLocalSounds();
+	Cues.Num = 0;
+}
+
+//==========================================================================
+//
+//  CleanChoices
+//
+//==========================================================================
+
+void CleanChoices()
+{
+	int i;
+	for (i = 0; i < NumItems; i++)
+		Items[i] = none;
+	NumItems = 0;
+	for (i = 0; i < Choices.Num; i++)
+	{
+		Choices[i].Destroy();
+		Choices[i] = none;
+	}
+	Choices.Num = 0;
+
+	ChoiceContinue.Hide();
+	ChoiceContinue.Focusable = false;
+}
+
+//==========================================================================
+//
+//  AddContinue
+//
+//==========================================================================
+
+void AddContinue()
+{
+	Items[0] = ChoiceContinue;
+	NumItems = 1;
+	ChoiceContinue.Show();
+	ChoiceContinue.Focusable = true;
+}
+
+//==========================================================================
+//
+//  AddChoice
+//
+//==========================================================================
+
+void AddChoice(string Text, string Name, int Index)
+{
+	int i,y;
+	Choices.Num = Choices.Num + 1;
+	Choices[Choices.Num - 1] = ConScrChoice(NewChild(ConScrChoice));
+	Choices[Choices.Num - 1].Text = Text;
+	Choices[Choices.Num - 1].Name = Name;
+	Choices[Choices.Num - 1].Index = Index;
+	Choices[Choices.Num - 1].TextColour = CR_TAN;
+	Choices[Choices.Num - 1].TextColourFocus = CR_GOLD;
+	
+	for (i = Choices.Num - 1, y = 438; i >= 0; i--, y -= 22)
+	{
+		Choices[i].Y = y;
+	}
+}
+
+//==========================================================================
+//
+//  PlayCue
+//
+//==========================================================================
+
+void PlayCue(string Who, string ToWhom, string Cue, name Voice)
+{
+	Who = SplitTextWithNewlines(Who, Width - 120 - 40);
+	Cue = SplitTextWithNewlines(Cue, Width - 120 - 40);
+	Cues.Num = Cues.Num + 1;
+	Cues[Cues.Num - 1].SpeakerName = Who;
+	Cues[Cues.Num - 1].SpeechText = Cue;
+	if (Cues.Num > 5)
+		Cues.Remove(0);
+	if (Voice)
+		LocalSound(Voice);
+}
+
+//==========================================================================
+//
+//	OnKeyDown
+//
+//==========================================================================
+
+bool OnKeyDown(int key)
+{
+	switch (key)
+	{
+	case K_ESCAPE:
+	case K_MOUSE2:
+		if (!ChoiceContinue.IsVisible() && !Choices.Num)
+		{
+			StopLocalSounds();
+			ClGame.PopMenu();
+		}
+		return true;
+	}
+	return ::OnKeyDown(key);
+}
+
+defaultproperties
+{
+	X = 0;
+	Y = 0;
+	Width = 640;
+	Height = 480;
+	SelectorType = MenuSelector_SmallLeft;
+	NPCName = "Person";
+	hBackPic = -1;
+	Flat = 'f_013';
+}

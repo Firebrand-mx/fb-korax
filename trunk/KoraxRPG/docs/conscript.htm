@@ -1,0 +1,654 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>'Scattered Evil' Conversation Script</title>
+</head>
+<body>
+    <span style="font-size: 24pt">'Scattered Evil' Conversation Script<br />
+    <span style="font-size: 16pt"><strong>Developers Manual</strong><br />
+        <br />
+        <br />
+        Brief contents:<br />
+        <br />
+    <span style="font-size: 14pt">Root-level statements<br />
+        Person block root statements<br />
+        General conditions syntax<br />
+        Speech block statements and keywords<br />
+        Game object references<br />
+        <br />
+        Appendix A: Game object functions<br />
+        Appendix B: World object functions<br />
+        Appendix C: Level object functions<br />
+        Appendix D: Character object functions<br />
+        Appendix E: Player-specific object functions</span><br />
+            <br />
+            <br />
+            <br />
+            Root-level statements<br />
+            <br />
+    <span style="font-size: 12pt">
+        import<br />
+        person<br />
+        <br />
+        <br />
+        <br /></span>
+    <span style="font-size: 14pt"><strong>import</strong><br />
+                <br />
+    <span style="font-size: 12pt">
+        Imports one or more script lumps and registers their contents.
+        Basicaly that means that these script lumps would be merged with current one and
+        parsed altogether.<br />
+                    <br />
+                    Syntax:<br />
+                    <br />
+                    <em>import lump_name<br />
+                    </em>
+                    <br />
+                    <em>import<br />
+                        {<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; lump_name<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; lump_name2<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                        }</em><br />
+                    <br />
+                    <br />
+                 </span>
+    <strong>person</strong><br />
+    <br />
+    <span style="font-size: 12pt">Begins a person-specific block, which contains conversation
+                data.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>person script_name script_id<br />
+                    {<br />
+                    &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                    }<br />
+                    <br />
+                    Script_name</em></span> <span style="font-size: 12pt">is a name under which this person
+                        can be adressed in conversation scripts. <em>Script_id</em> is this person's numeric
+                        id to use in map scripts.</span></span><br />
+    <br />
+    <br />
+    Person block root statements<br />
+            <br />
+    <span style="font-size: 12pt">bye<br />
+                choice<br />
+        flat<br />
+                hello<br />
+        music<br />
+                name<br />
+                pic<br />
+                speech<br />
+                var<br />
+                <br />
+                <br />
+                <br /></span>
+    <span style="font-size: 14pt"><strong>bye</strong><br />
+                    <br />
+    <span style="font-size: 12pt">Begins a speech block that is run automatically
+                    when conversation ends.<br />
+                    <br />
+                    Syntax:<br />
+                    <br />
+                    <em>bye<br />
+                        [if (condition)]<br />
+                        {<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                        }<br />
+                    </em>
+                    <br />
+                    <em>Condition</em> part is optional; it makes the 'bye' block active or inactive
+                    depending on check result. First active 'bye' found is played during the conversation.<br />
+                </span>
+    <br />
+                    <br />
+                    <strong>choice</strong><br />
+                        <br />
+    <span style="font-size: 12pt">Begins a speech block that could be selected
+                        and "spoken" by player.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                        <em>choice &lt;choice_name | none&gt; choice_text [hidden]<br />
+                            [if (condition)]<br />
+                        </em><em>{<br />
+                            &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                            }</em><br />
+                            <br />
+                            <em>Choice_name</em> is an optional name under which this choice block can be adressed
+                            in conversation script. <em>Choice_text</em> is a common text that represent this
+                            choice block in game during the conversation. <strong><em>
+                    Hidden</em></strong> flag
+                            makes choice unaccessible all the time regardless of block condition, unless it
+                            is ordered to be shown explicitly by <strong><em>choices</em></strong> command (see
+                            speech block statements for more info).<br />
+                        <em>Condition</em> part is optional; it makes the 'choice' block active or inactive
+                        depending on check result. Only active choices are shown for player as speech options
+                            during the conversation.</span><br />
+    <br />
+        <br />
+        <strong>flat<span style="color: #ff0000"></span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Specifies flat texture drawn on conversation screen background.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>flat [if (condition)] flat_name;<br />
+                <br />
+                Flat_name </em>is a name of an flat patch lump in WAD or file in PK3 (without
+            extension).<br />
+            <em>Condition</em> part is optional; it makes the picture active or inactive depending
+            on check result. First active flat found is used during the conversation.</span><br />
+        <br />
+                        <br />
+                        <strong>hello</strong><br />
+                        <br />
+    <span style="font-size: 12pt">Begins a speech block that is run automatically
+                        when conversation commences.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                    <em>hello<br />
+                        [if (condition)]<br />
+                        {<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                        }<br />
+                    </em>
+                        <br />
+                        <em>Condition</em> part is optional; it makes the 'hello' block active or inactive
+                        depending on check result. First active 'hello' found is played during the conversation.</span><br />
+    <br />
+        <br />
+        <strong>music <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Specifies theme music to play during conversation.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>music [if (condition)] music_name;</em><br />
+            <br />
+            <em>Condition</em> part is optional; it makes the name active or inactive depending
+            on check result. First active music found is played during the conversation. <em>Music_name</em>
+            is is a name of a music entry in SNDINFO or file in PK3 (without extension) to be
+            played.</span><br />
+        <br />
+                    <br />
+                    <strong>name</strong><br />
+                        <br />
+    <span style="font-size: 12pt">Specifies current person's name, which would
+                        be shown in game during the conversation.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                        <em>name [if (condition)] text_string;<br />
+                        </em>
+                        <br />
+                        <em>Condition</em> part is optional; it makes the name active or inactive depending
+                        on check result. First active name found is shown during the conversation.<br />
+                    </span>
+                    <br />
+                        <br />
+    <strong>pic</strong><br />
+                        <br />
+                    <span style="font-size: 12pt">Specifies current person's picture, which would
+                        be shown in game during the conversation.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                    <em>pic [if (condition)] pic_name;<br />
+                    </em>
+                        <br />
+                        <em>Pic_name </em>is a name of an image lump in WAD or file in PK3 (without extension).<br />
+                        <em>Condition</em> part is optional; it makes the picture active or inactive depending
+                        on check result. First active picture found is used during the conversation.<br />
+                    </span>
+                    <br />
+                    <br />
+    <strong>speech</strong><br />
+                        <br />
+                    <span style="font-size: 12pt">Begins a custom speech block that could be run
+                        by script command from any other block.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                    <em>speech speech_name<br />
+                        [if (condition)]<br />
+                        {<br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+                        }<br />
+                    </em>
+                        <br />
+                        <em>Speech_name</em> is a name under which this speech block can be adressed in
+                        conversation script.<br />
+                        <em>Condition</em> part is optional; it makes the 'speech' block active or inactive
+                        depending on check result. First active 'speech' of defined name found is played
+                        when corresponding command is given (see speech block statements for more info).<br />
+                    </span>
+                    <br />
+                       <br />
+    <strong>var <span style="color: #ff0000">(not supported)</span></strong><br />
+                        <br />
+                    <span style="font-size: 12pt">Registers a local person's variable, that could
+                        store some value and be used in conditions all around the conversation script. They
+                        can be accessed in map scripts as well to get their value or set a new one; this
+                        makes them very useful in designing Quests.<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+                        <em>var var_name [var_id] &lt;boolean | integer&gt; initial_value;<br />
+                            <br />
+                            Var_name</em> is a name of variable it could be accessed by in conversation
+                        script. <em>Var_id</em> is an optional numeric id that could be used to access this
+                        variable in map script. <em><strong>Boolean</strong></em>
+                        and <em><strong>integer</strong></em> are two available types for variable; variable
+                        can have only one type. <em>Initial_value</em> initializes newly registered variable.</span><br />
+        </span>
+    <br />
+    <br />
+    General conditions syntax<br />
+    <br />
+    <span style="font-size: 12pt">if / else<br />
+    <br />
+    and<br />
+    is<br />
+    is not<br />
+    not<br />
+    or</span><br />
+    <br />
+    <br />
+    <br />
+    <span style="font-size: 14pt"><strong>if / else <span style="color: #ff0000">(not supported)</span><br />
+        <br /></strong>
+    <span style="font-size: 12pt"><em><strong>If</strong></em> statement orders
+        script to make a check of some condition. Depending on condition check result script
+        may execute differently afterwards. There are two general types of conditions: header
+        condition and normal condition. Header conditions are controlling availability of
+        a speech block, person name and pic properties. Normal conditions control speech
+        blocks execution by implementing 'forks' in them.<br />
+        Unlike <em><strong>if</strong></em>, <em><strong>else</strong></em> could be used only inside speech blocks;
+        and it should always be in pair with <em><strong>if</strong></em>. In speech blocks
+        <strong><em>if</em></strong> statement precedes commands that are executed in case
+        condition check resulted in TRUE,<strong><em> else</em></strong> precedes commands
+        that are executed in the opposite case.<br />
+        <br />
+        Syntax:<br />
+        <br />
+        <em>if (condition)<br />
+            <br />
+            if (condition) &lt;single command here&gt;;<br />
+            [else &lt;single command here&gt;;]<br />
+            <br />
+            if (condition)<br />
+            {<br />
+            &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+            }<br />
+            [else<br />
+            {<br />
+            &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
+            }]</em><br />
+        <br />
+        First syntax style is used for header conditions.<br />
+        Second and third syntax styles can be used only inside speech blocks.<br />
+        <em>Condition</em> should be enclosed in round brackets and may consist of logical
+        functions and expressions.</span><br />
+        <br />
+        <br />
+    <strong>and</strong><br />
+    <br />
+    <span style="font-size: 12pt"><em><strong>And</strong></em> logical function
+            results in TRUE only if <span style="text-decoration: underline">both</span> defined
+            conditions result in TRUE.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>(first condition) and (second condition)</em></span><br />
+    <br />
+    <br />
+    <strong>is<br /></strong>
+    <br />
+    <span style="font-size: 12pt"><strong><em>Is </em></strong>
+        logical function results in TRUE only if left part of the expression has same result
+        as the right part.<br />
+        <br />
+        Syntax:<br />
+        <br />
+        <em>&lt;left expression&gt; is &lt;right expression&gt;</em></span><br />
+            <br />
+            <br />
+    <strong>is not<br /></strong>
+        <br />
+    <span style="font-size: 12pt"><em><strong>Is not
+            </strong></em>logical function results in TRUE only if left part of the expression <span
+                style="text-decoration: underline">does not</span> have same result as the right
+                part.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>&lt;left expression&gt; is not &lt;right expression&gt;<br />
+                </em></span>
+                    <br />
+                    <br />
+                <strong>not</strong><br />                
+            <br />
+    <span style="font-size: 12pt"><strong><em>Not</em></strong> logical
+                function results in TRUE only if following condition results in FALSE.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>not (condition)</em></span><br />
+    <br />
+    <br />
+    <strong>or</strong><br />
+    <br />
+    <span style="font-size: 12pt"><strong><em>Or</em></strong>
+                    logical function results in TRUE if <span style="text-decoration: underline">at least
+                        one
+                        of the</span> defined conditions results in TRUE.<br />
+                    <br />
+                    Syntax:<br />
+                    <br />
+                    <em>(first condition) or (second condition)</em></span>
+        </span>
+    <br />
+    <br />
+    <br />
+    Speech block statements and keywords<br />
+    <br />
+    <span style="font-size: 12pt">choices<br />
+        cls<br />
+        comment<br />
+                    end<br />
+        everybody<br />
+        executems<br />
+        Game<br />
+                    jump<br />
+                    initiator<br />
+        Level<br />
+                    myself<br />
+                    none<br />
+                    Player<br />
+                    random<br />
+                    say<br />
+                    set<br />
+        skip<br />
+        sound<br />
+                    terminate<br />
+        wait<br />
+        World<br />
+                    yesno</span><br />
+                    <br />
+                    <br />
+                    <br />
+    <span style="font-size: 14pt"><strong>choices</strong><br />
+                        <br />
+    <span style="font-size: 12pt">Explicitly sets a number of speech options that
+                        should be given to player next time and terminates execution of current speech; those choice blocks that fail condtion check are
+                        ignored though. Meanwhile all other choice blocks available are considered unaccessible
+                        regardless of their conditions. These rules work until player makes a selection,
+                        after that conversation continues normally.&nbsp;<br />
+                        <br />
+                        Syntax:<br />
+                        <br />
+        <em>
+                        choices<br />
+                        {<br />
+                        &nbsp; &nbsp; &nbsp;&nbsp; choice_name<br />
+                        &nbsp; &nbsp; &nbsp;&nbsp; choice_name2<br />
+                        &nbsp; &nbsp; &nbsp;&nbsp; ...<br />
+                        }<br />
+            <br />
+        </em>
+        Only 'choice' blocks can be selected this way, other block types will be ignored.</span><br />
+        <br />
+        <br />
+        <strong>cls</strong><br />
+        <br />
+        <span style="font-size: 12pt">Orders to clean conversation screen from previous cues
+            (sayings). This action has only user-side effect.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>cls;</em></span><br />
+        <br />
+        <br />
+        <strong>comment<span style="color: #ff0000"></span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Displays a commentary text. If player participates in
+            conversation this command will also suspend futher script execution until user order
+            to continue.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>comment commentary_text;</em></span><br />
+        <br />
+        <br />
+        <strong>end</strong><br />
+            <br />
+    <span style="font-size: 12pt">Executes available 'bye' speech block and terminates
+            conversation afterwards.<br />
+        <br />
+        Syntax:<br />
+        <br />
+        <em>end;</em></span><br />
+        <br />
+        <br />
+        <strong>everybody <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">A keyword that allows to adress every person participating
+            in conversation at once. It can be used in the cases where some command should adress
+            a person and to execute their common member functions.</span><br />
+        <br />
+        <br />
+        <strong>executems <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Executes map script.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>executems map_index script_index[ (arg1[, arg2[, arg3[, arg4[, arg5]]]])];</em><br />
+            <br />
+            All parameters a similar to ACS_Execute map script function.</span><br />
+        <br />
+        <br />
+        <strong>Game <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Reference to Game object that allows to execute its member
+            functions. See object references and Appendix A.</span><br />
+            <br />
+            <br />
+    <strong>jump</strong><br />
+                <br />
+    <span style="font-size: 12pt">Breaks execution of current speech block and proceeds
+        to another one. If there are no
+        blocks of given name accessable at the moment, conversation terminates. If a <em><strong>
+            none</strong></em> keyword is given at a place of a speech name, jump does nothing.<br />
+        <br />
+        Syntax:<br />
+        <br />
+        <em>jump speech_name;<br />
+            <br />
+            jump (condition) speech_name1 speech_name2;</em><br />
+        <br />
+    Second syntax executes <em>speech_name1</em> speech if condition check results in
+        TRUE and <em>speech_name2</em> speech in opposite case.</span><br />
+    <br />
+    <br />
+    <strong>initiator</strong><br />
+        <br />
+    <span style="font-size: 12pt"><em><strong>Initiator</strong></em> keyword is
+        a reference to person who initiated the conversation (usually - player). It can
+        be used in the cases where some command should adress such person and to execute his/her member
+        functions.</span><br />
+        <br />
+        <br />
+        <strong>Level <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Reference to Level object that allows to execute its member
+            functions. See object references and Appendix C.</span><br />
+        <br />
+        <br />
+        <strong>myself</strong><br />
+            <br />
+        <span style="font-size: 12pt"><em><strong>Myself</strong></em> keyword is a
+    reference to person whose conversation script is currently executed. It can be used
+    in the cases where some command should adress such person and to execute his/her member
+            functions. <strong><em>Myself</em></strong>
+    is equal to <em><strong>initiator</strong></em> if this person him/her-self commenced
+    the conversation.</span><br />
+        <br />
+    <br />
+    <strong>none</strong><br />
+        <br />
+    <span style="font-size: 12pt">Null-reference keyword. It can be used in cases
+        when some command must adress a speech block or a person, to tell that no speech/person
+        should be adressed.</span><br />
+        <br />
+        <br />
+    <strong>Player</strong><br />
+            <br />
+    <span style="font-size: 12pt"><em><strong>Player</strong></em> keyword is a
+            reference to player (player-controlled character) and can be used in the cases where
+            some command should adress player character and to execute his/her member functions.
+        Player's actual participation in conversation
+            is not required to use this reference.&nbsp;</span><br />
+    <br />
+            <br />
+    <strong>random <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+    <span style="font-size: 12pt">Executes one of the commands in following block
+        at random. Futher script execution fully depends on what command was executed. A
+        sub-block of commands enclosed in braces counts as single "command".<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>random<br />
+                    {<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; &lt;command1&gt;;<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; &lt;command2&gt;;<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; {<br />
+                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &lt;multiple commands 1&gt;<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; }<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; {<br />
+                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &lt;multiple commands 2&gt;<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; }<br />
+                    &nbsp; &nbsp; &nbsp;&nbsp; ...<br />
+                    }</em></span><br />
+    <br />
+        <br />
+            <strong>say</strong><br />
+                <br />
+    <span style="font-size: 12pt">Plays a single person's cue (saying). If player
+                participates in conversation this command will also suspend futher script execution until
+                user order to continue.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>say [who [to_whom]] cue_text &lt;cue_voice | none&gt;;</em><br />
+                <br />
+                <em>Who</em> is a reference to person who is saying, <em>to_whom</em> is a reference
+                to person who is being adressed. <em>Cue_voice</em> is a name of a sound
+        entry in SNDINFO or file in PK3 (without extension) to be played.<br />
+                If <em>who</em> is not explicitly defined, <strong><em>myself</em></strong> reference
+                is used by default; if <em>to_whom</em> is not defined <strong><em>initiator</em></strong>
+                reference is used.&nbsp;</span><br />
+    <br />
+    <br />
+    <strong>set <span style="color: #ff0000">(not supported)</span></strong><br />
+    <br />
+    <span style="font-size: 12pt">Applies new value to variable. This person's local variables,
+                other person's local variables and and global variables could be changed this way.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>set [&lt;global | person_name&gt;::]var_name &lt;expression&gt;;</em><br />
+                <br />
+                <em><strong>Global</strong></em> keyword tells script to adress global variable;
+                <em>person_name</em> makes it adress other person's variable. <em>Var_name</em>
+                is a name variable was registered under. Expression's result will be applied as
+                a new variable value.</span><br />
+        <br />
+        <br />
+        <strong>skip<br />
+        </strong>
+        <br />
+        <span style="font-size: 12pt">Skips the rest of the speech block or sub-block (a number
+            of commands enclosed in braces).<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>skip;</em></span><br />
+        <br />
+        <br />
+        <strong>sound <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Plays a sound.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>sound sound_name[ wait];</em><br />
+            <br />
+            <em>Sound_name</em> is a name of a sound entry in SNDINFO or file in PK3 (without
+            extension) to be played. <strong><em>Wait</em></strong> keyword makes script execution
+            suspend until sound finish playing.</span><br />
+    <br />
+    <br />
+    <strong>terminate</strong><br />
+    <br />
+    <span style="font-size: 12pt">Terminates conversation without executing 'bye' speech.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>terminate;</em></span><br />
+        <br />
+        <br />
+        <strong>wait <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Suspends script execution for defined time.<br />
+            <br />
+            Syntax:<br />
+            <br />
+            <em>wait time_ms;<br />
+            </em>
+            <br />
+            <em>Time_ms</em> is a delay time in milliseconds;</span><br />
+        <br />
+        <br />
+        <strong>World <span style="color: #ff0000">(not supported)</span></strong><br />
+        <br />
+        <span style="font-size: 12pt">Reference to World object that allows to execute its member
+            functions. See object references and Appendix B.</span><br />
+    <br />
+    <br />
+    <strong>yesno</strong><br />
+    <br />
+    <span style="font-size: 12pt">Gives player an immediate selection between two common
+                options: "yes" and "no", - and executes single action depending on player's choice.
+                Action can be setting new variable value, jump or skip.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>yesno var_name (yes_expression) (no_expression);<br />
+                    <br />
+                    yesno jump yes_speech_name no_speech_name;<br />
+                    <br />
+                    yesno &lt;skip | continue&gt; &lt;skip | continue&gt;;</em><br />
+                <br />
+                First syntax style applies a value to variable with name <em>variable_name</em>
+                depending on player choice; if player selected "yes" <em>yes_expression</em> result
+                is applied, otherwise <em>no_expression</em> result is applied.<br />
+                Second syntax style executes <strong><em>jump</em></strong> command either with
+                <em>yes_speech_name</em> or <em>no_speech_name</em> as parameter correspondingly.<br />
+        Third syntax executes either <em><strong>skip</strong></em> or nothing correspondingly
+        (first command defined for "yes" selection, second for "no").&nbsp;</span><br />
+        </span>
+    <br />
+    <br />
+    Game object references<br />
+        <br />
+        <span style="font-size: 12pt">accesing an object reference<br />
+            executing object-adressed command<br />
+            <br />
+            <span style="color: #ff0000">not supported</span></span></span></span>
+</body>
+</html>
