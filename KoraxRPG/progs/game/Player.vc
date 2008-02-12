@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -1657,20 +1657,26 @@ void PaletteFlash()
 	//
 	// KRPG
 	//
-	if (KRPGActor(MO).Conditions && KRPGActor(MO).Conditions.refHead)
+	KRPGActor ka = KRPGActor(MO);
+	if (ka.Conditions.Num/*KRPGActor(MO).Conditions && KRPGActor(MO).Conditions.refHead*/)
 	{
-		LinkedReferer acref = LinkedReferer(KRPGActor(MO).Conditions.refHead);
-		while (acref)
+		//LinkedReferer acref = LinkedReferer(KRPGActor(MO).Conditions.refHead);
+		//while (acref)
+		int i;
+		for (i = 0; i < ka.Conditions.Num; i++)
 		{
-			ActorCondition ac = ActorCondition(acref.refObject);
-			if (ac.bIsNegative)
+			ActorCondition ac = ka.Conditions[i];//ActorCondition(acref.refObject);
+			if (ac)
 			{
-				if (!MO.bCorpse)
-					ac.MakeCShift(&CShiftPowerNegative);
+				if (ac.bIsNegative)
+				{
+					if (!MO.bCorpse)
+						ac.MakeCShift(&CShiftPowerNegative);
+				}
+				else
+					ac.MakeCShift(&CShiftPowerPositive);
 			}
-			else
-				ac.MakeCShift(&CShiftPowerPositive);
-			acref = LinkedReferer(acref.refNext);
+			//acref = LinkedReferer(acref.refNext);
 		};
 	}
 
