@@ -11,6 +11,9 @@ class KRPGActor : Actor
 //
 // [KoraxRPG] Advanced behavior
 //
+bool			bReflectMissileDamage;	// invulnerable to missile weapons except for
+										// blaster and ripping ones
+bool			bNonScalable;	// Deny scalin variations
 bool			bXYAnchored;	// Stuck in floor/ceiling (won't move freely along X & Y axes)
 bool			bZAnchored;		// Stuck in floor/ceiling (won't move freely along Z axis)
 
@@ -18,6 +21,8 @@ bool			bCombatant;		// fighting actor
 
 bool			bSenseAlways;	// detects target without seeing it
 
+bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
+KRPGActor		MirrorMaster;
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
 
@@ -47,6 +52,27 @@ int				Team;
 array<ActorCondition> Conditions;
 
 
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	::BeginPlay();
+	if (!bNonScalable)
+	{
+		float rand = (Random() - 0.5) * 0.15;
+		//float rand = -0.5;
+		ScaleX += ScaleX * rand;
+		ScaleY += ScaleY * rand;
+		Height += Height * rand;
+		Radius += Radius * rand;
+	}
+}
+
 //==========================================================================
 //
 //  Thrust3d
@@ -75,6 +101,18 @@ void Thrust3d2(float angle2d, float move2d, float move3)
 {
 	Thrust(angle2d, move2d);
 	Velocity.z += move3 * 35.0;
+}
+
+//==========================================================================
+//
+//	Kill
+//
+//==========================================================================
+
+void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DamageType)
+{
+	Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
+		specified_DamageType ? DamageType : 'InstantKill');
 }
 
 //==========================================================================
@@ -123,6 +161,8 @@ bool Physics(float DeltaTime)
 
 void Tick(float deltaTime)
 {
+	if (bMirrorImage && (!MirrorMaster || MirrorMaster.Health <= 0))
+		Kill();
 	if (Alertness > 0.0)
 		Alertness -= deltaTime;
 	::Tick(deltaTime);
@@ -148,7 +188,7 @@ void Died(EntityEx source, EntityEx inflictor)
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
 
-	if (bLiving && P_Random() < 33)
+	if (!bMirrorImage && bLiving && P_Random() < 33)
 	{
 		Spawn(DyingSpirit, Origin);
 	}
@@ -181,6 +221,30 @@ final void A_Resurrect()
 	Height = default.Height;
 
 	Alpha = default.Alpha;
+}
+
+//==========================================================================
+//
+//  TakeSpecialDamage
+//
+//	[CW] Handles some special flags
+//
+//==========================================================================
+
+int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage)
+{
+	if (bReflectMissileDamage &&
+			inflictor.bMissile && !inflictor.bBlaster && !inflictor.bRip)
+		return -1;
+	if (bMirrorImage)
+	{
+		Health = 0;
+		if (SetState(FindState('MirrorDeath')))
+			return -1;
+		else
+			return 0;	// [CW] process death normally
+	}
+	return damage;
 }
 
 //==========================================================================
@@ -1220,6 +1284,46 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 //**************************************************************************
 //
+//	[KoraxRPG] Extra effects
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	SpawnSphericalEffect
+//
+//	CHECKME --- rename? not only effects could be spawned
+//	CHECKME --- not actually bound to Actor, move to levelinfo?
+//	TODO -- add radial velocity
+//
+//==========================================================================
+
+void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, TVec spread,
+							optional float RadialVelocity, optional TVec DirectVelocity)
+{
+	int i,c;
+	TVec v;
+	EntityEx ee;
+
+	c = P_Random() % amount;
+	for (i = 0; i < c; i++)
+	{
+		v = origin + vector((Random() - 0.5) * spread.x,
+									(Random() - 0.5) * spread.y,
+									(Random() - 0.5) * spread.z);
+		ee = EntityEx(Spawn(EffectType, v));
+		if (specified_RadialVelocity)
+		{
+		}
+		if (specified_DirectVelocity)
+		{
+			ee.Velocity += DirectVelocity;
+		}
+	}
+}
+
+//**************************************************************************
+//
 //
 //	[KoraxRPG] Actor Conditions
 //
@@ -1382,4 +1486,7 @@ void NotifyConditions(int notification, EntityEx E, int param)
 
 defaultproperties
 {
+	bNeverTarget = true;
+	
+	bNonScalable = true;
 }
