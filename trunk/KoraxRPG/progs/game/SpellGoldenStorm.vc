@@ -1,0 +1,77 @@
+
+class SpellGoldenStorm : SpellPointBased;
+
+// TODO: some customization parameters
+
+const float DELAY_BASE = 0.03;
+const int AMOUNT_BASE = 1;
+const int AMOUNT_PER_LEVEL = 1;
+
+float timer;
+int Special1;
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	int i;
+	float x;
+	float y;
+	float range;
+	int amount;
+	Actor A;
+
+	::Do(deltaTime);
+
+	timer -= deltaTime;
+	if (timer > 0.0)
+		return;
+
+	timer = DELAY_BASE;
+
+	if (Random() < 0.1)
+	{
+		// Fudge rain frequency
+		return;
+	}
+
+	range = BaseRange + RangePerLevel * itof(Level);
+	amount = AMOUNT_BASE + (Level >> 2) * AMOUNT_PER_LEVEL;
+
+	for (i = 0; i < amount; i++)
+	{
+		x = Origin.x + (Random() - 0.5) * range;
+		y = Origin.y + (Random() - 0.5) * range;
+
+		A = Spawn(RainPillarGold, vector(x, y, EntityEx::ONCEILINGZ));
+		if (A)
+		{
+			if(A.Sector->bHasExtrafloors && A.Origin.z <= A.CeilingZ)
+				A.Origin.z = A.CeilingZ - A.Height;
+			A.Target = EInstigator;
+			A.Velocity.x = 0.00001;	// Force collision detection
+			A.Velocity.z = -A.Speed;
+			A.CheckMissileSpawn();
+			if (!(Special1 & 31))
+			{
+				A.PlaySound('SpellCombatRain', CHAN_VOICE);
+			}
+			Special1++;
+		}
+	}
+}
+
+
+
+
+defaultproperties
+{
+	BaseRange = 128.0;
+	RangePerLevel = 64.0;
+	OriginSpeedBase = 32.0;
+	OriginSpeedPerLevel = 32.0;
+}

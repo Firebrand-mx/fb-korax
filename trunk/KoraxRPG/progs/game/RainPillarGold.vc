@@ -1,0 +1,66 @@
+
+//
+// [KRPG] copied from Heretic RainPillar with some modifications
+//
+
+class RainPillarGold : Projectile;
+
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (Actor(victim).bBoss)
+	{
+		// Decrease damage for bosses
+		damage >>= 1;
+	}
+	return ::DoSpecialDamage(victim, source, damage);
+}
+
+//===========================================================================
+//
+//  A_RainImpact
+//
+//===========================================================================
+
+final void A_RainImpact()
+{
+	if (Origin.z > FloorZ)
+	{
+		SetState(FindState('AirDeath'));
+	}
+	else if (P_Random() < 40)
+	{
+		HitFloorType();
+	}
+}
+
+states
+{
+Spawn:
+	FX21 A -1 Bright
+	Stop
+Death:
+	FX21 B 4 Bright A_RainImpact
+	FX21 CDEF 4 Bright
+	Stop
+AirDeath:
+	FX21 GHI 4 Bright
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 5.0;
+	Height = 12.0;
+	Speed = 420.0;
+	MissileDamage = 3;
+	RenderStyle = STYLE_Add;
+	bDynamicLight = true;
+	DLightColour = RGB(236, 164, 3);
+	DLightRadius = 100.0;
+}

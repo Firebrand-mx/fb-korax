@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -30,7 +30,10 @@ class Bishop : Pawn
 int NumToSpawn;		//	Number of blurs/missiles to spawn
 int WeaveIndex;		//	Index into floatbob
 
+bool bAttackSoundContinious;
 class<Actor> BishopFXType;
+class<Actor> BishopBlurType;
+class<Actor> BishopPainBlurType;
 
 //==========================================================================
 //
@@ -70,7 +73,7 @@ final void A_BishopDecide()
 
 final void A_BishopDoBlur()
 {
-	NumToSpawn = bSolid ? ((P_Random() & 3) + 3) : ((P_Random() & 7) + 4);	// P_Random number of blurs
+	NumToSpawn = bHidden ? ((P_Random() & 3) + 3) : ((P_Random() & 7) + 4);	// P_Random number of blurs
 	if (P_Random() < 120)
 	{
 		Thrust(AngleMod360(Angles.yaw + 90.0), 11.0);
@@ -115,7 +118,7 @@ final void A_BishopSpawnBlur()
 
 	if (!bHidden)
 	{
-		blur = Spawn(BishopBlur, Origin);
+		blur = Spawn(BishopBlurType, Origin);
 		if (blur)
 		{
 			blur.Angles = Angles;
@@ -131,7 +134,6 @@ final void A_BishopSpawnBlur()
 
 final void A_BishopChase()
 {
-	bSolid = true;
 	bShootable = true;
 	bHidden = false;
 
@@ -148,7 +150,6 @@ final void A_BishopChase()
 
 final void A_BishopAttack()
 {
-	bSolid = true;
 	bShootable = true;
 	bHidden = false;
 
@@ -187,6 +188,8 @@ final void A_BishopAttack2()
 	mo = SpawnMissile(Target, BishopFXType);
 	if (mo)
 	{
+		if (bAttackSoundContinious)
+			PlaySound(AttackSound, CHAN_WEAPON);
 		mo.Tracer = Target;
 	}
 	NumToSpawn--;
@@ -209,7 +212,7 @@ final void A_BishopPainBlur()
 		SetState(FindState('Blur'));
 		return;
 	}
-	blur = Spawn(BishopPainBlur,
+	blur = Spawn(BishopPainBlurType,
 		Origin + vector((Random() - Random()) * 16.0,
 		(Random() - Random()) * 16.0, (Random() - Random()) * 8.0));
 	if (blur)
@@ -290,7 +293,7 @@ defaultproperties
 	Radius = 22.0;
 	Height = 65.0;
 	Mass = 100.0;
-	StepSpeed = 10.0;
+	StepSpeed = 20.0;
 	PainChance = 0.4296875;
 	bNoGravity = true;
 	bFloat = true;
@@ -307,7 +310,10 @@ defaultproperties
 	PainSound = 'BishopPain';
 	DeathSound = 'BishopDeath';
 
+	bAttackSoundContinious = false;
 	BishopFXType = BishopFX;
+	BishopBlurType = BishopBlur;
+	BishopPainBlurType = BishopPainBlur;
 
 	Behavior.bEvadeMelee = true;
 	Behavior.bRunOnEvade = true;

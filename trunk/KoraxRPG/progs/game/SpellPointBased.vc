@@ -3,13 +3,38 @@ class SpellPointBased : SpellInstance
 	abstract;
 
 
+TVec		Origin;
+float		BaseRange;
+float		RangePerLevel;
 
-TVec	Origin;
-float	BaseRange;
-float	RangePerLevel;
+EntityEx	Target;
+float		AcceptableTargetVicinity;
+float		OriginSpeedBase;
+float		OriginSpeedPerLevel;
 
 
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
 
+void Do(float deltaTime)
+{
+	if (Target)
+	{
+		TVec dir = Target.Origin - Origin;
+		float dist = Length(dir);
+		float maxspeed = OriginSpeedBase + OriginSpeedPerLevel * itof(Level);
+		if (dist > AcceptableTargetVicinity)
+		{
+			dir = Normalise(dir);
+			if (dist > maxspeed)
+				dist = maxspeed; 
+			Origin += dir * dist;
+		}
+	}
+}
 
 defaultproperties
 {
