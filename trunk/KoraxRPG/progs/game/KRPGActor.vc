@@ -43,7 +43,8 @@ int				Team;
 //
 // [KoraxRPG] Actor Conditions
 //
-LinkedList Conditions;
+//LinkedList Conditions;
+array<ActorCondition> Conditions;
 
 
 //==========================================================================
@@ -780,116 +781,6 @@ final void A_EvadeAuto()
 		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
 }
 
-//-----------------------------------------------------------------------------
-/*bool A_MoveEx(bool autoSetIdle, bool autoSetAttack, optional bool Evade)
-{
-	float delta;
-
-	if (!specified_Evade)
-		Evade = false;
-
-	if (ReactionCount)
-		ReactionCount--;
-
-	//  Remove muzzle flash
-	if (bMuzzleFlash)
-		bMuzzleFlash = false;
-
-	if (!pTargetVec)
-	{
-		Error("Actor::A_MoveEx: called with pTargetVec = NULL");
-		return false;
-	}
-
-	bInCombat = true;
-	// modify target threshold
-	if (Threshold)
-	{
-		if (Target && Target.Health <= 0)
-		{
-			Threshold = 0;
-		}
-		else
-		{
-			Threshold--;
-		}
-	}
-
-	if (!Evade && Target && !Target.bShootable)
-	{
-		if (autoSetIdle)
-		{
-			SetState(IdleState);
-			bInCombat = false;
-		}
-		else
-			Target = none;
-
-		return false;
-	}
-
-	if (LineSpecialGameInfo(Level.Game).bNightmareFastChase &&
-		Level.Game.fastparm)
-	{
-		// Monsters move faster in nightmare mode
-		StateTime *= 0.5;
-		if (StateTime < 0.1)
-		{
-			StateTime = 0.1;
-		}
-	}
-
-	// do not attack twice in a row
-	if (bJustAttacked)
-	{
-		bJustAttacked = false;
-		if (!Level.Game.fastparm)
-		{
-			NewChaseDirEx(Evade);
-		}
-		return true;
-	}
-
-	// check for melee attack
-	if (autoSetAttack && !Evade && MeleeState && CheckMeleeRange())
-	{
-		if (AttackSound)
-		{
-			PlaySound(AttackSound, CHAN_WEAPON);
-		}
-		SetState(MeleeState);
-		return true;
-	}
-
-	// check for missile attack
-	if (autoSetAttack && MissileState)
-	{
-		if (Level.Game.fastparm || !MoveCount)
-		{
-			if (CheckMissileRange())
-			{
-				SetState(MissileState);
-				bJustAttacked = true;
-				return true;
-			}
-		}
-	}
-
-	// chase towards enemy
-	if (--MoveCount < 0 || !StepMoveEx())
-	{
-		NewChaseDirEx(Evade);
-	}
-
-	// make active sound
-	if (P_Random() < 3)
-	{
-		PlayActiveSound();
-	}
-
-	return true;
-}*/
-
 //==========================================================================
 //
 //  StepMoveEx
@@ -1330,10 +1221,32 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 //**************************************************************************
 //
 //
-//	[KoraxRPG] Actor Condtions
+//	[KoraxRPG] Actor Conditions
 //
 //
 //**************************************************************************
+
+//==========================================================================
+//
+//	PurgeConditions
+//
+//	[CW] Condenses Conditions array by removing null-references
+//
+//==========================================================================
+
+final void PurgeConditions()
+{
+	int i;
+	for (i = 0; i < Conditions.Num;)
+	{
+		if (!Conditions[i])
+		{
+			Conditions.Remove(i);
+		}
+		else
+			i++;
+	}
+}
 
 //==========================================================================
 //
@@ -1344,13 +1257,14 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
 											Actor Instigator, int level, float life_duration)
 {
-	if (!Conditions)
+	/*if (!Conditions)
 	{
 		Conditions = LinkedList(SpawnObject(LinkedList));
 		if (!Conditions) return none;
-	}
-
+	}*/
 	ActorCondition AC;
+
+	PurgeConditions();
 
 	if (accumulative)
 		AC = GetCondition(ConditionClass, Instigator, level);
@@ -1386,11 +1300,12 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 
 		if (AC)
 		{
-			LinkedReferer ref = LinkedReferer(SpawnObject(LinkedReferer));
-			ref.refObject = AC;
-			AC.Referer = ref;
-			Conditions.Add(ref);
-
+			//LinkedReferer ref = LinkedReferer(SpawnObject(LinkedReferer));
+			//ref.refObject = AC;
+			//AC.Referer = ref;
+			//Conditions.Add(ref);
+			Conditions.Num = Conditions.Num + 1;
+			Conditions[Conditions.Num - 1] = AC;
 			AC.ARecepient = self;
 			AC.EInstigator = Instigator;
 			AC.Level = level;
@@ -1414,23 +1329,28 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 //
 //	GetCondition
 //
+//	TODO: optional instigator and level
+//
 //==========================================================================
 
 ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
 {
-	if (Conditions && Conditions.refHead)
+	if (/*Conditions && Conditions.refHead*/Conditions.Num)
 	{
-		LinkedReferer acref = LinkedReferer(Conditions.refHead);
-		while (acref)
+		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		//while (acref)
+		//{
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
 		{
-			ActorCondition ac = ActorCondition(acref.refObject);
-			if (ac.Class == ConditionClass &&
+			ActorCondition ac = Conditions[i];/*ActorCondition(acref.refObject);*/
+			if (ac && ac.Class == ConditionClass &&
 					ac.EInstigator == Instigator &&
 					ac.Level == level)
 			{
 				return ac;
 			}
-			acref = LinkedReferer(acref.refNext);
+			//acref = LinkedReferer(acref.refNext);
 		};
 	}
 
@@ -1445,13 +1365,16 @@ ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigat
 
 void NotifyConditions(int notification, EntityEx E, int param)
 {
-	if (Conditions && Conditions.refHead)
+	if (/*Conditions && Conditions.refHead*/Conditions.Num)
 	{
-		LinkedReferer acref = LinkedReferer(Conditions.refHead);
-		while (acref)
+		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		//while (acref)
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
 		{
-			ActorCondition(acref.refObject).Notify(notification, E, param);
-			acref = LinkedReferer(acref.refNext);
+			if (Conditions[i])
+			/*ActorCondition(acref.refObject)*/Conditions[i].Notify(notification, E, param);
+			//acref = LinkedReferer(acref.refNext);
 		};
 	}
 }
