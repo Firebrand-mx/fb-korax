@@ -1,0 +1,50 @@
+
+class KRPGWorldInfo : HexenWorldInfo;
+
+array<Quest::questvar_t>		GlobalVars;
+array<Quest::personinfo_t>		PersonInfos;
+
+
+//==========================================================================
+//
+//	GetPersonRegistry
+//
+//==========================================================================
+
+Quest::personinfo_t * AddPersonRegistry()
+{
+	PersonInfos.Num = PersonInfos.Num + 1;
+	return &PersonInfos[PersonInfos.Num - 1];
+}
+
+//==========================================================================
+//
+//	GetPersonRegistry
+//
+//==========================================================================
+
+Quest::personinfo_t * GetPersonRegistry(string scriptName, int scriptId)
+{
+	int i;
+
+	if (!scriptName && scriptId < 0)
+		Error("KRPGWorldInfo::GetPersonRegistry : no scriptName nor scriptId specified");
+
+
+	for (i = 0; i < PersonInfos.Num; i++)
+	{
+		if (scriptName && strcmp(PersonInfos[i].scriptName, scriptName))
+			continue;
+		if (scriptId >= 0 && PersonInfos[i].scriptId != scriptId)
+			continue;
+			
+		return &PersonInfos[i];
+	}
+	return NULL;
+}
+
+
+
+defaultproperties
+{
+}

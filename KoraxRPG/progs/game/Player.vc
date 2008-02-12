@@ -48,6 +48,13 @@ replication
 
 	unreliable if (!bIsClient)
 		ParticleEffectEx;
+
+	reliable if (!bIsClient)
+		ClientConversation, ConCleanScene, ConSetPersonInfo, ConPlayCue,
+		ConCleanChoices, ConAddChoice, ConSuspend, ConWait, ConCloseScene;
+
+	reliable if (bIsClient)
+		ConChoice, ConContinue;
 }
 
 //==========================================================================
@@ -2254,6 +2261,140 @@ name GetInvulnerabilityMode()
 	}
 	return '';
 }
+
+//==========================================================================
+//
+//  ClientConversation
+//
+//==========================================================================
+
+void ClientConversation(string Speaker, string SpeakingTo)
+{
+	MainGameInfo(Level.Game).GameConParser.CleanScene = ConCleanScene;
+	MainGameInfo(Level.Game).GameConParser.SetPersonInfo = ConSetPersonInfo;
+	MainGameInfo(Level.Game).GameConParser.PlayCue = ConPlayCue;
+	MainGameInfo(Level.Game).GameConParser.CleanChoices = ConCleanChoices;
+	MainGameInfo(Level.Game).GameConParser.AddChoice = ConAddChoice;
+	MainGameInfo(Level.Game).GameConParser.Suspend = ConSuspend;
+	MainGameInfo(Level.Game).GameConParser.Wait = ConWait;
+	MainGameInfo(Level.Game).GameConParser.CloseScene = ConCloseScene;
+
+	MainGameInfo(Level.Game).GameConParser.PlayerName = PlayerName;
+
+	KRPGClientGameBase(ClGame).ConversationStart();
+
+	MainGameInfo(Level.Game).GameConParser.Begin(Speaker, SpeakingTo);
+}
+
+//==========================================================================
+//
+//  ConCleanScene
+//
+//==========================================================================
+
+void ConCleanScene()
+{
+	KRPGClientGameBase(ClGame).ConCleanScene();
+}
+
+//==========================================================================
+//
+//  ConSetPersonInfo
+//
+//==========================================================================
+
+void ConSetPersonInfo(string Name, name Pic, name Flat)
+{
+	KRPGClientGameBase(ClGame).ConSetPersonInfo(Name, Pic, Flat);
+}
+
+//==========================================================================
+//
+//  ConPlayCue
+//
+//==========================================================================
+
+void ConPlayCue(string Who, string ToWhom, string Cue, name Voice)
+{
+	KRPGClientGameBase(ClGame).ConPlayCue(Who, ToWhom, Cue, Voice);
+}
+
+//==========================================================================
+//
+//  ConCleanChoices
+//
+//==========================================================================
+
+void ConCleanChoices()
+{
+	KRPGClientGameBase(ClGame).ConCleanChoices();
+}
+
+//==========================================================================
+//
+//  ConAddChoice
+//
+//==========================================================================
+
+void ConAddChoice(string Text, string Name, int Index)
+{
+	KRPGClientGameBase(ClGame).ConAddChoice(Text, Name, Index);
+}
+
+//==========================================================================
+//
+//  ConSuspend
+//
+//==========================================================================
+
+void ConSuspend()
+{
+	KRPGClientGameBase(ClGame).ConSuspend();
+}
+
+//==========================================================================
+//
+//  ConWait
+//
+//==========================================================================
+
+void ConWait()
+{
+}
+
+//==========================================================================
+//
+//  ConCloseScene
+//
+//==========================================================================
+
+void ConCloseScene()
+{
+	KRPGClientGameBase(ClGame).ConversationEnd();
+}
+
+//==========================================================================
+//
+//  ConChoice
+//
+//==========================================================================
+
+void ConChoice(string Name, int Index)
+{
+	MainGameInfo(Level.Game).GameConParser.ExecuteChoice(Name, Index);
+}
+
+//==========================================================================
+//
+//  ConContinue
+//
+//==========================================================================
+
+void ConContinue()
+{
+	MainGameInfo(Level.Game).GameConParser.Continue();
+}
+
 
 defaultproperties
 {

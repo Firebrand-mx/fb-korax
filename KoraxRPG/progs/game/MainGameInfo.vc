@@ -35,6 +35,11 @@ int classFlags[3];
 
 bool randomclass;
 
+
+
+ConParser				GameConParser;
+// TODO: quest parser ref here when ready
+
 //==========================================================================
 //
 //	Init
@@ -94,7 +99,23 @@ void InitNewGame(int skill)
 
 WorldInfo CreateWorldInfo()
 {
-	return WorldInfo(SpawnObject(HexenWorldInfo));
+	KRPGWorldInfo worldinfo = KRPGWorldInfo(SpawnObject(KRPGWorldInfo/*HexenWorldInfo*/));
+	//
+	//	Initialise ConParser
+	//
+	GameConParser = ConParser(SpawnObject(ConParser));
+	GameConParser.AddPersonRegistry = worldinfo.AddPersonRegistry;
+	GameConParser.GetPersonRegistry = worldinfo.GetPersonRegistry;
+	GameConParser.Initialise();
+
+	// --- FIXME ----- DEBUG
+	//cp.OpenLumpName('con_test');
+	//cp.RegisterContents();
+	//GameConParser.Begin("Player", "testParias");
+	//GameConParser.Hello();
+	//cp.Destroy();
+	// --- FIXME ----- DEBUG
+	return worldinfo;
 }
 
 //==========================================================================
