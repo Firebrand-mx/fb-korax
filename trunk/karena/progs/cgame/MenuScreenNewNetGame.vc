@@ -41,6 +41,7 @@ MenuChoiceEnum		Bots;
 MenuChoiceEnum		Monsters;
 MenuChoiceEnum		DeathMatch;
 MenuChoiceEnum		Skill;
+MenuChoiceEnum		FragLimit;
 MenuChoiceEnum		TimeLimit;
 MenuChoiceEnum		Level;
 MenuTextButton		ServSettings;
@@ -124,6 +125,24 @@ void CreateChoices()
 	Skill.AddItem("Nightmare");
 	Skill.SetInitialValue(2);
 	ChoicesStartY += Skill.Height;
+
+	FragLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	FragLimit.SetOrigin(ChoicesStartX, ChoicesStartY);
+	FragLimit.Text = "Frag limit";
+	FragLimit.AddItem("0");
+	FragLimit.AddItem("5");
+	FragLimit.AddItem("10");
+	FragLimit.AddItem("15");
+	FragLimit.AddItem("20");
+	FragLimit.AddItem("25");
+	FragLimit.AddItem("30");
+	FragLimit.AddItem("35");
+	FragLimit.AddItem("40");
+	FragLimit.AddItem("45");
+	FragLimit.AddItem("50");
+	FragLimit.AddItem("55");
+	FragLimit.AddItem("60");
+	ChoicesStartY += FragLimit.Height;
 
 	TimeLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	TimeLimit.SetOrigin(ChoicesStartX, ChoicesStartY);
@@ -321,6 +340,7 @@ void ActivateStartNewGame(Object Sender)
 	CmdBuf_AddText("BotsAutoSpawn %d\n", Bots.Value);
 	CmdBuf_AddText("NoMonsters %d\n", !Monsters.Value);
 	CmdBuf_AddText("DeathMatch %d\n", GameTypes[DeathMatch.Value]);
+	CmdBuf_AddText("FragLimit %d\n", FragLimit.Value * 5);
 	CmdBuf_AddText("TimeLimit %d\n", TimeLimit.Value * 5);
 	CmdBuf_AddText("Skill %d\n", Skill.Value);
 	ClientGame(ClGame).LoadingScreenStart(MapLumpNames[Level.Value], Level.EnumNames[Level.Value]);

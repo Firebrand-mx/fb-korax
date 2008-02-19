@@ -362,6 +362,34 @@ void KilledByPlayer(EntityEx source)
 				Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
 				Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
 			}
+			
+			// [FB] Implement fraglimit
+			if (GetCvar('FragLimit') && source.Player.Frags == GetCvar('FragLimit') - 4)
+			{
+//				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("4 frags left!");
+			}
+			if (GetCvar('FragLimit') && source.Player.Frags == GetCvar('FragLimit') - 3)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("3 frags left!");
+			}
+			if (GetCvar('FragLimit') && source.Player.Frags == GetCvar('FragLimit') - 2)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("2 frags left!");
+			}
+			if (GetCvar('FragLimit') && source.Player.Frags == GetCvar('FragLimit') - 1)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("1 frag left!");
+			}
+			if (GetCvar('FragLimit') && GetCvar('FragLimit') <= source.Player.Frags)
+			{
+				// [FB] Exit map when reached fraglimit
+				Level.ExitLevel(0);
+			}
 		}
 	}
 }
