@@ -315,6 +315,39 @@ void KilledByPlayer(EntityEx source)
 		//[CW] update kill trophies
 		Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_killsatonce, 1);
 		Player(source.Player).UpdateQueuedTrophy(HexenDefs::trophycl_killsrow, 1);
+		
+		// [FB] Check how many monsters there are in castle sweep mode
+		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
+		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
+		{
+			if (Level.TotalKills - Level.CurrentKills == 4)
+			{
+//				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("4 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 3)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("3 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 2)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("2 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 1)
+			{
+				source.Player.MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("1 monster left!");
+			}
+			// [FB] No more monsters, so finish the map!
+			if (Level.TotalKills - Level.CurrentKills == 0)
+			{
+				// [FB] Exit map when reached fraglimit
+				Level.ExitLevel(0);
+			}
+		}
 	}
 
 	// Check for frag changes
