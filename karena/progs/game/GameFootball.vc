@@ -263,7 +263,12 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
 				Game.bcentreprint(va("Team %d scores a goal!", arg1 ? 0 : 1));
 				notifyACSArgs[1] = arg1 ? 0 : 1;
-				
+
+				if (GetCvar('ScoreLimit') <= Ball.Owner.Team.Goals)
+				{
+					// [FB] Exit map
+					Level.ExitLevel(0);
+				}
 			}
 			else
 				notifyACSArgs[1] = -1;
