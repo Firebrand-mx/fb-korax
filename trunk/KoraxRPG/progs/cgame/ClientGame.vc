@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**    ##   ##    ##    ##   ##   ####     ####   ###     ###
 //**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
@@ -41,7 +41,6 @@ enum
 TitleScreen			GTitle;
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
-TravelMapScreen		GTravelMap;	// KoraxRPG
 ConScreen			GConScreen;
 
 int MenuPClass;
@@ -71,7 +70,6 @@ void RootWindowCreated()
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
-	GTravelMap = TravelMapScreen(GRoot.NewChild(TravelMapScreen));
 	GTitle.ClGame = self;
 	GSBar.ClGame = self;
 	GSBar.Hide();
@@ -79,8 +77,6 @@ void RootWindowCreated()
 	GImission.Hide();
 	GFinale.ClGame = self;
 	GFinale.Hide();
-	GTravelMap.ClGame = self;
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -96,7 +92,6 @@ void Connected()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -111,7 +106,6 @@ void Disconnected()
 	GSBar.Hide();
 	GImission.Hide();
 	GFinale.Hide();
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -126,7 +120,6 @@ void DemoPlaybackStarted()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -141,7 +134,6 @@ void DemoPlaybackStopped()
 	GSBar.Hide();
 	GImission.Hide();
 	GFinale.Hide();
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -179,7 +171,6 @@ void StatusBarStartMap()
 	GSBar.StartMap();
 	GImission.Hide();
 	GFinale.Hide();
-	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -213,10 +204,8 @@ void StatusBarUpdateWidgets(float DeltaTime)
 void IintermissionStart()
 {
 	GSBar.Hide();
-	//GImission.Show();
-	//GImission.Start();
-	GTravelMap.Show();
-	GTravelMap.TM_Init();
+	GImission.Show();
+	GImission.Start();
 	GFinale.Hide();
 }
 
@@ -230,7 +219,6 @@ void StartFinale(name FinaleType)
 {
 	GSBar.Hide();
 	GImission.Hide();
-	GTravelMap.Hide();
 	GFinale.Show();
 	GFinale.StartFinale(FinaleType);
 }
@@ -273,14 +261,6 @@ bool MenuResponder(event_t * event)
 			PushMenuScreen(SpawnMenu(MenuScreenMain));
 			return true;
 		}
-
-		//
-		// KoraxRPG
-		//
-		// Travel Map
-		//if (GTravelMap.bIsSensitive)
-		//	GTravelMap.HandleUserCommand(event);
-		return false;
 	}
 	return false;
 }
