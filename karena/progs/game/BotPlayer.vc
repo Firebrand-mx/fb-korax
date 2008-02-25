@@ -58,9 +58,10 @@ const float
 	MAXMOVEHEIGHT			= 32.0,			// MAXSTEPMOVE but with jumping counted in.
 	GETINCOMBAT				= 512.0,		// Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
-	MAXROAM					= (5.0 * 35.0);		// When this time is elapsed the bot will roam after something else.
-const int WHATS_DARK		= 0;//64;			// light value thats classed as dark.
-const int WHATS_VERYDARK	= 0;//32;
+	MAXROAM					= (5.0 * 35.0);	// When this time is elapsed the bot will roam after something else.
+const int
+	WHATS_DARK		= 64,					// light value thats classed as dark.
+	WHATS_VERYDARK	= 24;
 
 /*
 
@@ -145,7 +146,7 @@ enum
 	priort_Support,		// tells how much Bot needs to support his buddy in combat
 	priort_GameMode,	// tells how much Bot needs to peform some task specific to advanced gamemode
 	NUM_PRIORITIES
-				// those evening bells, those evening bells, something bla-bla-bla their music tells...
+						// those evening bells, those evening bells, something bla-bla-bla their music tells...
 };
 
 int Priority[NUM_PRIORITIES];		// current priority values
@@ -188,7 +189,7 @@ enum
 //
 // [CW] So, idea is, that bot summarize its current situation each N ticks and decides what he should do next
 //
-const float AI_TIME_DELAY	= 5.0;
+const float AI_TIME_DELAY	= 35.0;
 float AITime;
 
 //
@@ -205,28 +206,30 @@ struct botstate_t
 	int BState;
 };
 
-Player player;		// Points to reference player
+Player player;			// Points to reference player
 Actor botmo;
 MainGameInfo gameInfo;
 
 // [CW] try this...
-EntityEx FTarget;	// final target (goal) ----- currently UNUSED
-EntityEx ITarget;	// immediate target (where to go)
+Actor FTarget;			// final target (goal) ----- currently UNUSED
+Actor ITarget;			// immediate target (where to go)
 PathNode node_current;
-array<PathNode> nodes; // list of visited nodes (to make bot move freely along the map)
+array<PathNode> nodes;  // list of visited nodes (to make bot move freely along the map)
 
-EntityEx enemy;			// The dead meat.
+Actor enemy;			// The dead meat.
 Actor nemesis;			// Prefered enemy to chase when pissed off
 
-Actor ally;			// Ally to tag along with
+Actor ally;				// Ally to tag along with
 Actor last_mate;		// If bots mate dissapeared (not if died) that mate is
-				// pointed to by this. Allows bot to roam to it if
-				// necessary.
+						// pointed to by this. Allows bot to roam to it if
+						// necessary.
+Actor missile;			// A threathing missile that got to be avoided.
 
-botstate_t botstate;		// What we're doing in teamgame mode
+botstate_t botstate;	// What we're doing in teamgame mode
 
 // Tickers
 float t_respawn;
+float t_strafe;
 float t_react;
 /*float t_fight;
 float t_rocket;*/
@@ -235,23 +238,23 @@ float t_pissed;
 float t_frust;
 float t_fire;			// Tics left until our gun will actually fire again
 float t_anticip;
-//float t_chat;			// Tics left until bots completes "typing" in what he's saying.
+//float t_chat;				// Tics left until bots completes "typing" in what he's saying.
 						// Bot also doesn't do anything during this time.
 
-float forwardmove;	// For building ucmd
+float forwardmove;		// For building ucmd
 float sidemove;
 
 // Flags, controlling movement
-bool bSoftContact;	// Target is something that could be passed through without slowing down
-bool bMeleeUrge;	// Must come closer to enemy as quickly as possible
-bool bKeepDistant;	// Enemy should be attacked from distance
+bool bSoftContact;		// Target is something that could be passed through without slowing down
+bool bMeleeUrge;		// Must come closer to enemy as quickly as possible
+bool bKeepDistant;		// Enemy should be attacked from distance
 
 // Misc booleans
 bool bAllRound;
 
-/*chatline_t	*chatline;	// For when t_chat expires
+/*chatline_t	*chatline;			// For when t_chat expires
 
-bottype_t	bottype;	// Bot type*/
+bottype_t	bottype;			// Bot type*/
 botinfo_t info;			// Aiming, name, perfection, yadda yadda
 
 int angerlevel;
@@ -531,6 +534,12 @@ void CheckStuff()
 	{
 		if (!botmo.CanSee(enemy) || enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
 			enemy = none;
+	}
+
+	if (missile)
+	{
+		if (!missile.bMissile || missile.IsDestroyed())
+			missile = none;
 	}
 
 	// [CW]
@@ -840,9 +849,6 @@ void Aim()
 		// [CW] Target can be other object, simply face its direction
 		if (ITarget)
 			SetAngle(AngleTo(ITarget.Origin));
-		// Elsewise turn around continiously
-		else
-			SetAngle(GetAngle() + 15.0);
 		return;
 	}
 
@@ -870,7 +876,7 @@ void Aim()
 
 	// [FB] Set fire time
 	t_fire = KArenaWeapon(player.ReadyWeapon).fire_tics;
-	// [FB] Not sure if this is the right way to do it, anyway....
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		// [FB] Set t_anticip for our enemies
@@ -1040,8 +1046,8 @@ Actor FindEnemy()
 			// [CW] ok... let's see what is here...
 			dist = botmo.DistTo(player.Level.Game.Players[i].MO);
 			if (dist <= EntityEx::MELEERANGE ||
-				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO
-														&& botmo.CanSee(botmo.Sector->SoundTarget)) ||
+				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO &&
+				botmo.CanSee(botmo.Sector->SoundTarget)) ||
 				Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
 			{
 				// [CW] I disable this one...
@@ -1071,6 +1077,33 @@ Actor FindEnemy()
 	}
 
 	return target;
+}
+
+//==========================================================================
+//
+//	FindMissile
+//
+//	[FB] Check for Missiles to avoid
+//
+//==========================================================================
+
+Actor FindMissile()
+{
+	Actor actor;
+
+	foreach botmo.AllThinkers(Actor, actor)
+	{
+		if (Check_LOS(actor, 90.0))
+		{
+			if (!missile && actor.bMissile &&
+				(botmo.DistTo(actor) <= AVOID_DIST))
+			{
+				return actor;
+			}
+		}
+	}
+
+	return none;
 }
 
 //==========================================================================
@@ -1392,40 +1425,31 @@ Actor SetAlly()
 
 void Roam(TVec dest)
 {
-	//if(CheckTo(dest))
-	//{
-		// [CW] let it be only for 2d first
-		float yaw_delta = botmo.Angles.yaw - AngleTo(dest);
-		float distance = fabs(Length(dest - botmo.Origin));
+	// [CW] let it be only for 2d first
+	float yaw_delta = botmo.Angles.yaw - AngleTo(dest);
+	float distance = fabs(Length(dest - botmo.Origin));
 
-		if (bSoftContact || bMeleeUrge)
-		{
-			distance *= 100.0;	// to ensure bot will reach as quickly as possible
-		}
+	if (bSoftContact || bMeleeUrge)
+	{
+		distance *= 100.0;	// to ensure bot will reach as quickly as possible
+	}
 
-		float fw_delta = distance * cos(yaw_delta);
-		float side_delta = distance * sin(yaw_delta);
+	float fw_delta = distance * cos(yaw_delta);
+	float side_delta = distance * sin(yaw_delta);
 		
-		if (fw_delta > 0.0)
-			forwardmove = FORWARDRUN > fw_delta ? fw_delta : FORWARDRUN;
-		else
-			forwardmove = -FORWARDRUN < fw_delta ? fw_delta : -FORWARDRUN;
-		if (side_delta > 0.0)
-			sidemove = SIDERUN > side_delta ? side_delta : SIDERUN;
-		else
-			sidemove = -SIDERUN < side_delta ? side_delta : -SIDERUN;
+	if (fw_delta > 0.0)
+		forwardmove = FORWARDRUN > fw_delta ? fw_delta : FORWARDRUN;
+	else
+		forwardmove = -FORWARDRUN < fw_delta ? fw_delta : -FORWARDRUN;
+	if (side_delta > 0.0)
+		sidemove = SIDERUN > side_delta ? side_delta : SIDERUN;
+	else
+		sidemove = -SIDERUN < side_delta ? side_delta : -SIDERUN;
 
-		TVec short_dest = botmo.Origin;
-		short_dest.x += forwardmove * cos(botmo.Angles.yaw) + sidemove * cos(botmo.Angles.yaw - 90.0);
-		short_dest.y += forwardmove * sin(botmo.Angles.yaw) + sidemove * sin(botmo.Angles.yaw - 90.0);
-		CheckPath(Length(short_dest - botmo.Origin), AngleTo(short_dest));
-	//}
-	//else
-	//{
-	//	// do nothing?
-	//	SetAngle(GetAngle() + 15.0);
-	//	forwardmove = -FORWARDWALK;
-	//}
+	TVec short_dest = botmo.Origin;
+	short_dest.x += forwardmove * cos(botmo.Angles.yaw) + sidemove * cos(botmo.Angles.yaw - 90.0);
+	short_dest.y += forwardmove * sin(botmo.Angles.yaw) + sidemove * sin(botmo.Angles.yaw - 90.0);
+	CheckPath(Length(short_dest - botmo.Origin), AngleTo(short_dest));
 }
 
 //==========================================================================
@@ -1441,6 +1465,160 @@ void Move(float deltaTime)
 {
 	TVec dest;
 
+	// Worry about missiles above all else
+	if (missile)
+	{
+		if (t_strafe)
+		{
+			t_strafe -= deltaTime;
+			if (t_strafe <= 0.0)
+			{
+				// Don't change direction while dodging missiles (that could be bad)
+				//bot->sidemove = -bot->sidemove;
+				t_strafe = 2.0;
+			}
+		}
+
+		// Look at the missile and sidestep it
+		SetAngle(AngleTo(missile.Origin));
+		forwardmove = -FORWARDRUN;
+		return;
+	}
+
+	// Anticipate a shot: time to dodge!
+	if (enemy && t_anticip <= 0.25)
+	{
+		if (!sidemove)
+			sidemove = SIDERUN;
+
+		switch (info.anticip)
+		{
+		case bsk_verypoor:
+			// Deer caught in the headlights
+			sidemove = 0.0;
+			return;
+
+		case bsk_poor:
+			// Always walk right
+			sidemove = SIDEWALK;
+			break;
+
+		case bsk_low:
+			// Always run right
+			sidemove = SIDERUN;
+			break;
+
+		case bsk_medium:
+			// Just switch directions every couple seconds
+			if (t_strafe)
+			{
+				t_strafe -= deltaTime;
+				if (t_strafe <= 0.0)
+				{
+					sidemove = -sidemove;
+					t_strafe = 2.0;
+				}
+			}
+			break;
+
+		case bsk_high:
+			// Switch directions when we think our opponent will fire
+			if (!t_anticip)
+				sidemove = -sidemove;
+			break;
+
+		case bsk_excellent:
+			// Move in a somewhat random direction when we think our opponent will fire
+			if (!t_anticip)
+			{
+				sidemove = Random() < 0.5 ? SIDERUN : -SIDERUN;
+
+				if (Random() < 0.5)
+				{
+					forwardmove = -FORWARDWALK;
+				}
+			}
+			break;
+
+		case bsk_supreme:
+			// What a squirmy little fucker!
+			if (!t_anticip)
+			{
+				switch (P_Random() & 3)
+				{
+				case 0:
+					sidemove = SIDERUN;
+					break;
+				case 1:
+					sidemove = SIDEWALK;
+					break;
+				case 2:
+					sidemove = -SIDERUN;
+					break;
+				case 3:
+					sidemove = -SIDEWALK;
+					break;
+				}
+
+				switch (P_Random() & 3)
+				{
+				case 0:
+					forwardmove = FORWARDRUN;
+					break;
+				case 1:
+					forwardmove = FORWARDWALK;
+					break;
+				case 2:
+					forwardmove = -FORWARDRUN;
+					break;
+				case 3:
+					forwardmove = -FORWARDWALK;
+					break;
+				}
+			}
+			break;
+
+		default:
+			Error("BotPlayer::Move::Unknown bot anticipation skill level: %d", info.anticip);
+			return;
+		}
+	}
+
+	// Now handle attack movement
+	if (enemy)
+	{
+		float an;
+
+		if (!sidemove)
+			sidemove = SIDERUN;
+
+		if (t_strafe)
+		{
+			t_strafe -= deltaTime;
+			if (t_strafe <= 0.0)
+			{
+				sidemove = -sidemove;
+				t_strafe = 2.0;
+			}
+		}
+
+		an = GetAngle();//botmo.Angles.yaw;
+		if (sidemove < 0.0)
+			an -= 90.0;
+		else
+			an += 90.0;
+
+		if (!CheckPath(an, 48.0)) // We're blocked, so go the other way!
+		{
+			an += (an > 180.0 ? -180.0 : 180.0);
+			if (CheckPath(an, 48.0))
+				sidemove = -sidemove;
+			else
+				sidemove = 0.0;
+		}
+//		return;
+	}
+
 	// [CW] Set a real destination for movement
 	if (ITarget)
 	{
@@ -1448,12 +1626,17 @@ void Move(float deltaTime)
 	}
 	else
 	{
-		dest = botmo.Origin;	// just hang on place where standing
+//		dest = botmo.Origin;	// just hang on place where standing
+		// do nothing?
+		SetAngle(GetAngle() + 15.0);
+		forwardmove = -FORWARDWALK;
+		return;
 	}
 
 	// [CW] LOL, only this line left after I disabled many things,
 	//		sorry, FB, we will return that stuff back later, ok? :)
-	Roam(dest);
+	if(CheckTo(dest))
+		Roam(dest);
 }
 
 //==========================================================================
@@ -1885,7 +2068,7 @@ void OnBeginPlay()
 	}
 
 	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
-
+	t_strafe = 1.0;
 	MainGameInfo(player.Level.Game).botskill = BotSkill();
 
 	if (MainGameInfo(player.Level.Game).botskill > 4)
@@ -2294,18 +2477,17 @@ void ProcessPriorities()
 	
 	//----------------------------------------
 	// Health & Armor
-	//
-	// TODO: check armor as well!
 	//----------------------------------------
 
-	if (player.Health <= 15)
+	if (EntityEx(player.MO).CheckInventory('Health') <= 15)
 		Priority[priort_Health] += priorv_Health_Dying;
-	if (player.Health <= (player.max_health >> 1))
+	if (EntityEx(player.MO).CheckInventory('Health') <= (player.max_health >> 1))
 		Priority[priort_Health] += priorv_Health_Low;
-	if (player.Health < player.max_health)
+	if (EntityEx(player.MO).CheckInventory('Health') < player.max_health)
 		Priority[priort_Health] += priorv_Health_NotMaximum;
-	//priorv_Health_ArmorNotMaximum
-	
+	else if (EntityEx(player.MO).CheckInventory('Armor') <= 200)
+		Priority[priort_Health] += priorv_Health_ArmorNotMaximum;
+
 	//----------------------------------------
 	// Game Mode
 	//----------------------------------------
@@ -2386,8 +2568,8 @@ int GetHeaviestEnemyWeapon()
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (gameInfo.Players[i] /*TODO: check if enemy here*/
-			&& gameInfo.Players[i] != player)
+		if (gameInfo.Players[i]	&& gameInfo.Players[i] != player &&
+			Actor(gameInfo.Players[i].MO) == enemy)
 		{
 			wpn = Player(gameInfo.Players[i]).BestWeapon();
 			pl_weapon = wpn ? wpn.Slot : 0;
@@ -2407,10 +2589,10 @@ int GetHeaviestEnemyWeapon()
 //
 //==========================================================================
 
-EntityEx GetFirstPriorityTarget()
+Actor GetFirstPriorityTarget()
 {
-	EntityEx ee;
-	EntityEx candidates[NUM_PRIORITIES];
+	Actor ee;
+	Actor candidates[NUM_PRIORITIES];
 	float dist[NUM_PRIORITIES];
 
 	int i, priort;
@@ -2419,7 +2601,7 @@ EntityEx GetFirstPriorityTarget()
 
 	candidates[priort_GameMode] = GetGameModeGoal(true);
 
-	foreach botmo.AllThinkers(EntityEx, ee)
+	foreach botmo.AllThinkers(Actor, ee)
 	{
 		if (ee.IsA('Weapon'))
 			priort = priort_Weapons;
@@ -2473,6 +2655,10 @@ void ProcessImmediate()
 {
 	// Whatever bot is doing, he should be ready to attack an enemy
 	// TODO: if bot has high Evade priority he should not draw attention to himself...
+	
+	if (!missile)
+		missile = FindMissile();
+
 	if (!enemy)
 		enemy = FindEnemy();
 
@@ -2517,9 +2703,9 @@ void ProcessImmediate()
 //
 //==========================================================================
 
-EntityEx GetNearestEnemy(optional bool bReachable)
+Actor GetNearestEnemy(optional bool bReachable)
 {
-	EntityEx oldEnemy = enemy;
+	Actor oldEnemy = enemy;
 	FindEnemy();
 	if (!enemy)
 		enemy = GetSpecialEnemy();
@@ -2534,12 +2720,12 @@ EntityEx GetNearestEnemy(optional bool bReachable)
 //
 //==========================================================================
 
-EntityEx GetSpecialEnemy()
+Actor GetSpecialEnemy()
 {
 	switch (gameInfo.GameType)
 	{
 	case HexenDefs::game_xmas:
-		return botmo.A_GetNearestEntity(ZXmasHavocTree);
+		return Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
 	}
 	return none;
 }
@@ -2550,10 +2736,10 @@ EntityEx GetSpecialEnemy()
 //
 //==========================================================================
 
-EntityEx GetGameModeGoal(optional bool bReachable)
+Actor GetGameModeGoal(optional bool bReachable)
 {
-	EntityEx EE;
-	EntityEx ee;
+	Actor EE;
+	Actor ee;
 	float dist = -1.0;
 
 	switch (gameInfo.GameType)
@@ -2563,7 +2749,7 @@ EntityEx GetGameModeGoal(optional bool bReachable)
 			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch)
 			{
 				if (GameKTH(gameInfo.GameModel).plHeresiarch != player)
-					EE = EntityEx(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
+					EE = Actor(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
 				else
 					EE = GetNearestEnemy(true);
 			}
@@ -2595,7 +2781,7 @@ EntityEx GetGameModeGoal(optional bool bReachable)
 	case HexenDefs::game_football:
 		{
 			// [CW] not ideal, at least they will kick it sometimes
-			EE = botmo.A_GetNearestEntity(SoccerBall);
+			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
 		}
 		break;
 	default:
@@ -2611,7 +2797,7 @@ EntityEx GetGameModeGoal(optional bool bReachable)
 //
 //==========================================================================
 
-EntityEx GetNearestPathNode()
+Actor GetNearestPathNode()
 {
 	PathNode PN;
 	PathNode pn;
