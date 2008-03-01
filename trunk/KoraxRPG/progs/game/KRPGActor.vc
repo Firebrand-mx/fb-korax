@@ -1050,12 +1050,13 @@ final void NewChaseDirEx(optional bool bEvade)
 	if (FloorZ - tmtrace.DropOffZ > MaxDropoffHeight &&
 		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat)
 	{
-		avoiddropoff_t a;
+		float AvoidDeltaX;
+		float AvoidDeltaY;
 		// We call CheckDropoff here to determine if the
 		// bounding box actually needs to be used below
-		CheckDropOff(&a);
+		CheckDropOff(AvoidDeltaX, AvoidDeltaY);
 
-		if (a.deltax || a.deltay)
+		if (AvoidDeltaX || AvoidDeltaY)
 		{
 			// [Graf Zahl] I have changed TryMove to only apply this logic when
 			// being called from here. bAavoidingDropoff activates the code that
@@ -1065,7 +1066,7 @@ final void NewChaseDirEx(optional bool bEvade)
 
 			// use different dropoff movement logic in TryMove
 			bAvoidingDropoff = true;
-			DO_NewChaseDirEx(a.deltax, a.deltay);
+			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY);
 			bAvoidingDropoff = false;
 		
 			// If moving away from dropoff, set movecount to 1 so that
