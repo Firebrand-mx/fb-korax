@@ -30,8 +30,20 @@
 //**
 //**************************************************************************
 
-class ZXmasHavocTree:ZXmasTree
+class ZXmasHavocTree : Actor
 	__mobjinfo__(16003);
+
+//==========================================================================
+//
+//	GetExplodeParms
+//
+//==========================================================================
+
+void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
+{
+	damage = 30;
+	distance = 64.0;
+}
 
 //==========================================================================
 //
@@ -103,10 +115,12 @@ final void Revive()
 	PlaySound('Teleport', CHAN_VOICE);
 }
 
-
 states
 {
-Melee:
+Spawn:
+	XMAS A -1
+	Stop
+Death.Fire:
 	XMAS B 6 Bright
 	XMAS C 6 Bright A_Scream
 	XMAS D 5 Bright
@@ -118,9 +132,17 @@ Melee:
 	XMAS J 4
 	XMAS K 2100	// [CW] that's ~ 1 minute
 	XMAS K 2 Revive
-	Goto ZXmasTree::Spawn
+	Goto Spawn
 }
 
 defaultproperties
 {
+	Health = 20;
+	Radius = 11.0;
+	Height = 130.0;
+	Mass = 99999.0;
+	bSolid = true;
+	bShootable = true;
+	bNoBlood = true;
+	DeathSound = 'TreeExplode';
 }
