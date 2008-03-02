@@ -36,6 +36,7 @@ gm_xmas.txt				scripts/gm_xmas.txt
 
 decorate.txt			decorate.txt
 decorate/armor.txt		decorate/armor.txt
+decorate/health.txt		decorate/health.txt
 
 //	Language strings
 language.en				language.en
