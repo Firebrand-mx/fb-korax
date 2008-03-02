@@ -34,6 +34,9 @@ gm_tdm.txt				scripts/gm_tdm.txt
 gm_tswp.txt				scripts/gm_tswp.txt
 gm_xmas.txt				scripts/gm_xmas.txt
 
+decorate.txt			decorate.txt
+decorate/armor.txt		decorate/armor.txt
+
 //	Language strings
 language.en				language.en
 
