@@ -380,11 +380,6 @@ void DisconnectClient()
 		MO.bIsPlayer = false;
 		Actor(MO).Damage(none, none, 10000);
 	}
-	if (ViewEnt)
-	{
-		ViewEnt.Destroy();
-		ViewEnt = none;
-	}
 	Level.bprint("%s left the game\n", PlayerName);
 	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
 
@@ -1634,7 +1629,7 @@ void MorphPlayerThink()
 	if (!(MO.Velocity.x + MO.Velocity.y) && P_Random() < 64)
 	{
 		// Snout sniff
-		KArenaWeapon(ViewEnt).SnoutSniff();
+		KArenaWeapon(ReadyWeapon).SnoutSniff();
 		MO.PlaySound('PigActive1', CHAN_VOICE);	// snort
 		return;
 	}
@@ -2440,7 +2435,7 @@ void AdjustPlayerAngle(EntityEx AimTarget)
 void MovePsprites(float deltaTime)
 {
 //[Korax]
-	if (KArenaWeapon(ViewEnt).dex_mod)
+	if (KArenaWeapon(ReadyWeapon).dex_mod)
 	{
 		if (dexterity < 6)
 			deltaTime *= 0.8;
@@ -3294,7 +3289,7 @@ void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 		{
 			if (source.bIsPlayer)
 			{
-				KArenaWeapon kaw = KArenaWeapon(inflictor.Player.ViewEnt);
+				KArenaWeapon kaw = KArenaWeapon(Player(inflictor.Player).ReadyWeapon);
 				if (kaw.MeleeObituary)
 					Msg = kaw.MeleeObituary;
 				else
