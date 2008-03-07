@@ -44,14 +44,14 @@ int GetBlend()
 //
 //==========================================================================
 
-void MStaffSpawn(float angle)
+final void MStaffSpawn(float angle)
 {
 	EntityEx	mo;
 
-	mo = Actor(Owner).SpawnPlayerMissileAngle(MageStaffFX2, angle);
+	mo = SpawnPlayerMissileAngle(MageStaffFX2, angle);
 	if (mo)
 	{
-		mo.Target = Actor(Owner);
+		mo.Target = self;
 		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
 	}
 }
@@ -66,15 +66,21 @@ final void A_MStaffAttack()
 {
 	float angle;
 
-	angle = Owner.Angles.yaw;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	angle = Angles.yaw;
 
 	MStaffSpawn(angle);
 	MStaffSpawn(angle - 5.0);
 	MStaffSpawn(angle + 5.0);
-	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
-	CShift = RGBA(255, 187, 4, 76);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
+	MWeapBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 76);
 	
-	DepleteAmmoEx();
+	MWeapBloodscourge(Wpn).DepleteAmmoEx();
 }
 
 //==========================================================================
@@ -85,7 +91,13 @@ final void A_MStaffAttack()
 
 final void A_MStaffPalette1()
 {
-	CShift = RGBA(255, 187, 4, 63);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	MWeapBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 63);
 }
 
 //==========================================================================
@@ -96,7 +108,13 @@ final void A_MStaffPalette1()
 
 final void A_MStaffPalette2()
 {
-	CShift = RGBA(255, 187, 4, 51);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	MWeapBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 51);
 }
 
 //==========================================================================
@@ -107,8 +125,14 @@ final void A_MStaffPalette2()
 
 final void A_MStaffPalette3()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
 	// reset back to original playpal
-	CShift = 0;
+	MWeapBloodscourge(Wpn).CShift = 0;
 }
 
 states
