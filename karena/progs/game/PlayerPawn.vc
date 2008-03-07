@@ -67,15 +67,15 @@ void IsDeathInflictor(EntityEx victim)
 		Error("PlayerPawn::IsDeathInflictor : victim reference not set to an instance of an object");
 	if (!Player)
 		Error("PlayerPawn::IsDeathInflictor : Player reference not set to an instance of an object");
-	if (!Player.ViewEnt)
-		Error("PlayerPawn::IsDeathInflictor : Player.ViewEnt reference not set to an instance of an object");
+	if (!Player(Player).ReadyWeapon)
+		Error("PlayerPawn::IsDeathInflictor : Player.ReadyWeapon reference not set to an instance of an object");
 	//[CW] DEBUGGING *****************
 
 	// Currently only Pawn's death has a meaning here
 	if (ClassIsChildOf(victim.Class, Pawn))
 	{
-		if (KArenaWeapon(Player.ViewEnt).bInstantRanged &&
-			Length(KArenaWeapon(Player.ViewEnt).ShotPosition - victim.GetCentre()) >= HexenDefs::ACCURATE_SHOT_DISTANCE)
+		if (KArenaWeapon(Player(Player).ReadyWeapon).bInstantRanged &&
+			Length(KArenaWeapon(Player(Player).ReadyWeapon).ShotPosition - victim.GetCentre()) >= HexenDefs::ACCURATE_SHOT_DISTANCE)
 				Player(Player).ConfirmTrophy(HexenDefs::trophycl_accuracy);
 	}
 }
