@@ -38,24 +38,28 @@ final void A_FireConePL1()
 	TAVec			ang;
 	int				damage;
 	int				i;
-	Actor			pmo;
 	FrostMissile	mo;
 	int				conedone = false;
 	TVec			Dir;
 	EntityEx		AimTarget;
 
-	pmo = Actor(Owner);
-	pmo.PlaySound('MageShardsFire', CHAN_WEAPON);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	PlaySound('MageShardsFire', CHAN_WEAPON);
 
 	damage = 90 + (P_Random() & 15);
 	for (i = 0; i < 16; i++)
 	{
-		ang = pmo.Angles;
+		ang = Angles;
 		ang.yaw = AngleMod360(ang.yaw + itof(i) * (45.0 / 16.0));
-		AimTarget = pmo.AimLineAttack(Dir, ang, Actor::MELEERANGE);
+		AimTarget = AimLineAttack(Dir, ang, MELEERANGE);
 		if (AimTarget)
 		{
-			AimTarget.Damage(pmo, pmo, damage, 'Ice');
+			AimTarget.Damage(self, self, damage, 'Ice');
 			conedone = true;
 			break;
 		}
@@ -64,7 +68,7 @@ final void A_FireConePL1()
 	// didn't find any creatures, so fire projectiles
 	if (!conedone)
 	{
-		mo = FrostMissile(Actor(Owner).SpawnPlayerMissile(FrostMissile));
+		mo = FrostMissile(SpawnPlayerMissile(FrostMissile));
 		if (mo)
 		{
 			mo.bShardSpawnLeft = true;
@@ -72,12 +76,12 @@ final void A_FireConePL1()
 			mo.bShardSpawnUp = true;
 			mo.bShardSpawnDown = true;
 			mo.Special2 = 3;	// Set sperm count (levels of reproductivity)
-			mo.Target = pmo;
+			mo.Target = self;
 			mo.Args[0] = 3;	// Mark Initial shard as super damage
 		}
 	}
 
-	DepleteAmmoEx();
+	MWeapFrost(Wpn).DepleteAmmoEx();
 }
 
 states
