@@ -43,7 +43,7 @@ final void A_HStormReady()
 	A_WeaponReady();
 	if (P_Random() < 160)
 	{
-		Owner.PlaySound('MageLightningReady', CHAN_WEAPON);
+		PlaySound('MageLightningReady', CHAN_WEAPON);
 	}
 }
 
@@ -64,6 +64,12 @@ final void A_HStormAttack(int attack)
 	int ang;
 	float fang;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	if (attack == 0)
 	{
 		LightningFloor fmo;
@@ -73,9 +79,9 @@ final void A_HStormAttack(int attack)
 
 		for (ang = -30; ang < 60; ang += 30)
 		{
-			fang = AngleMod360(Owner.Angles.yaw + itof(ang));
-			fmo = LightningFloor(Actor(Owner).SpawnPlayerMissileAngle_2(self, LightningFloor, fang));
-			cmo = LightningCeiling(Actor(Owner).SpawnPlayerMissileAngle_2(self, LightningCeiling, fang));
+			fang = AngleMod360(Angles.yaw + itof(ang));
+			fmo = LightningFloor(Actor(self).SpawnPlayerMissileAngle_2(Wpn, LightningFloor, fang));
+			cmo = LightningCeiling(Actor(self).SpawnPlayerMissileAngle_2(Wpn, LightningCeiling, fang));
 			if (fmo)
 			{
 				//fmo.Obituary = "$ob_heresiarchlightning";
@@ -109,18 +115,18 @@ final void A_HStormAttack(int attack)
 
 		for (; ang < ((attack == 1) ? 90 : 60) ; ang += (attack == 1) ? 10 : 15)
 		{
-			fang = AngleMod360(Owner.Angles.yaw + itof(ang));
-			ls = LightningSpark(Actor(Owner).SpawnPlayerMissileAngle_2(self, LightningSpark, fang));
+			fang = AngleMod360(Angles.yaw + itof(ang));
+			ls = LightningSpark(Actor(self).SpawnPlayerMissileAngle_2(Wpn, LightningSpark, fang));
 			if (ls)
 			{
 				ls.Health = 4 + P_Random() % 8;
-				ApplyDamageModifiers(ls.MissileDamage);
+				Wpn.ApplyDamageModifiers(ls.MissileDamage);
 			}
 		}
 	}
 
-	Owner.PlaySound('MageLightningFire', CHAN_WEAPON);
-	UseWeaponMana();
+	PlaySound('MageLightningFire', CHAN_WEAPON);
+	Wpn.UseWeaponMana();
 }
 
 states

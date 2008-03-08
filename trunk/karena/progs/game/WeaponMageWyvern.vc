@@ -43,28 +43,32 @@ final void A_FireWyvernBreath(bool use_mana)
 	TAVec			ang;
 	int				damage;
 	int				i;
-	Actor			pmo;
 	DragonMissile	mo;
 	int				flamedone = false;
 	TVec			Dir;
 	EntityEx		AimTarget;
 
-	if (use_mana)
-		UseWeaponMana();
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	pmo = Actor(Owner);
-	pmo.PlaySound('DragonAttack', CHAN_WEAPON);
+	if (use_mana)
+		Wpn.UseWeaponMana();
+
+	PlaySound('DragonAttack', CHAN_WEAPON);
 
 	damage = 97; //90 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	for (i = 0; i < 16; i++)
 	{
-		ang = pmo.Angles;
+		ang = Angles;
 		ang.yaw = AngleMod360(ang.yaw + itof(i) * (45.0 / 16.0));
-		AimTarget = pmo.AimLineAttack(Dir, ang, MELEERANGE);
+		AimTarget = AimLineAttack(Dir, ang, MELEERANGE);
 		if (AimTarget)
 		{
-			AimTarget.Damage(pmo, pmo, damage, 'Fire');
+			AimTarget.Damage(self, self, damage, 'Fire');
 			flamedone = true;
 			break;
 		}
@@ -74,12 +78,12 @@ final void A_FireWyvernBreath(bool use_mana)
 	if (!flamedone)
 	{
 		//[CW] put damage modifiers here
-		mo = DragonMissile(Actor(Owner).SpawnPlayerMissile_2(self, DragonMissile));
+		mo = DragonMissile(Actor(self).SpawnPlayerMissile_2(Wpn, DragonMissile));
 		if (mo)
 		{
 			//mo.Obituary = "$ob_mwyvern";
 			mo.MissileDamage = 18;
-			ApplyDamageModifiers(mo.MissileDamage);
+			Wpn.ApplyDamageModifiers(mo.MissileDamage);
 		}
 	}
 }

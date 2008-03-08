@@ -42,11 +42,18 @@ int FOV;
 
 final void A_WBowAttack1()
 {
-	// Check for the player pushing the attack button to make a zoom
-	if (Owner.Player.Buttons & BT_ATTACK && Owner.Player.PlayerState != PST_DEAD && FOV > 45)
+	if (!bIsPlayer)
 	{
-		FOV--;
-		Player(Owner.Player).SetFOV(FOV);
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	// Check for the player pushing the attack button to make a zoom
+	if (Player.Buttons & BT_ATTACK && Player.PlayerState != PST_DEAD &&
+		WeaponWitchavenLongBow(Wpn).FOV > 45)
+	{
+		WeaponWitchavenLongBow(Wpn).FOV--;
+		Player(Player).SetFOV(WeaponWitchavenLongBow(Wpn).FOV);
 	}
 }
 
@@ -60,13 +67,19 @@ final void A_WBowAttack2()
 {
 	EntityEx mo;
 
-	UseWeaponMana();
-	FOV = 90;
-	Player(Owner.Player).SetFOV(FOV);
-	mo = Actor(Owner).SpawnPlayerMissile_2(self, WitchavenArrow);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	WeaponWitchavenLongBow(Wpn).FOV = 90;
+	Player(Player).SetFOV(WeaponWitchavenLongBow(Wpn).FOV);
+	mo = Actor(self).SpawnPlayerMissile_2(Wpn, WitchavenArrow);
 
 	if (mo)
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 }
 
 

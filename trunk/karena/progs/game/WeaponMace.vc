@@ -43,19 +43,25 @@ final void A_FireMacePL1B()
 	Actor ball;
 	float angle;
 
-	UseWeaponMana();
-	ball = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, MaceFX2, Owner.Origin +
-		vector(0.0, 0.0, 28.0 - Owner.FloorClip));
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	ball = /*HexenLevelInfo(Level)*/Actor(self).Spawn_2(Wpn, MaceFX2, Owner.Origin +
+		vector(0.0, 0.0, 28.0 - FloorClip));
 	ball.Velocity.z =
-		(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
-	angle = Owner.Angles.yaw;
-	ApplyDamageModifiers(ball.MissileDamage);
+		(2.0 + 173.0 * -tan(Angles.pitch) / 32.0) * 35.0;
+	angle = Angles.yaw;
+	Wpn.ApplyDamageModifiers(ball.MissileDamage);
 	//ball.Target = Actor(Owner);
 	//ball.PInstigator = Player(Owner.Player);
 	ball.Angles.yaw = angle;
-	ball.Origin.z += 173.0 * -tan(Owner.Angles.pitch) / 16.0;
-	ball.Velocity.x = Owner.Velocity.x / 2.0 + ball.Speed * cos(angle);
-	ball.Velocity.y = Owner.Velocity.y / 2.0 + ball.Speed * sin(angle);
+	ball.Origin.z += 173.0 * -tan(Angles.pitch) / 16.0;
+	ball.Velocity.x = Velocity.x / 2.0 + ball.Speed * cos(angle);
+	ball.Velocity.y = Velocity.y / 2.0 + ball.Speed * sin(angle);
 	ball.PlaySound('MaceFire', CHAN_WEAPON);
 	ball.CheckMissileSpawn();
 }
@@ -70,20 +76,26 @@ final void A_FireMacePL1()
 {
 	EntityEx ball;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	if (P_Random() < 28)
 	{
 		A_FireMacePL1B();
 		return;
 	}
-	UseWeaponMana();
-	Owner.Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
-	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
-	ball = Actor(Owner).SpawnPlayerMissileAngle_2(self, MaceFX1,
-		AngleMod360(Owner.Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
+	Wpn.UseWeaponMana();
+	Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
+	Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
+	ball = Actor(self).SpawnPlayerMissileAngle_2(Wpn, MaceFX1,
+		AngleMod360(Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
 	if (ball)
 	{
-		ApplyDamageModifiers(ball.MissileDamage);
-		ball.Target = Actor(Owner);
+		Wpn.ApplyDamageModifiers(ball.MissileDamage);
+		ball.Target = self;
 		Actor(ball).Special1 = 16;	// tics till dropoff
 	}
 }
@@ -99,22 +111,28 @@ final void A_FireMacePL2()
 	EntityEx	A;
 	EntityEx	AimTarget;
 
-	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissileEx_2(self, MaceFX4, false, AimTarget);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	A = Actor(self).SpawnPlayerMissileEx_2(Wpn, MaceFX4, false, AimTarget);
 	if (A)
 	{
-		A.Target = Actor(Owner);
-		ApplyDamageModifiers(A.MissileDamage);
-		A.Velocity.x += Owner.Velocity.x;
-		A.Velocity.y += Owner.Velocity.y;
+		A.Target = self;
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
+		A.Velocity.x += Velocity.x;
+		A.Velocity.y += Velocity.y;
 		A.Velocity.z =
-			(2.0 + 173.0 * -tan(Owner.Angles.pitch) / 32.0) * 35.0;
+			(2.0 + 173.0 * -tan(Angles.pitch) / 32.0) * 35.0;
 		if (AimTarget)
 		{
 			A.Tracer = AimTarget;
 		}
 	}
-	Owner.PlaySound('MaceFire', CHAN_WEAPON);
+	PlaySound('MaceFire', CHAN_WEAPON);
 }
 
 states

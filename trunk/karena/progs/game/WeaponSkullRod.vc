@@ -42,15 +42,21 @@ final void A_FireSkullRodPL1()
 {
 	EntityEx A;
 
-	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissile_2(self, HornRodMissile1);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	A = Actor(self).SpawnPlayerMissile_2(Wpn, HornRodMissile1);
 	// Randomize the first frame
 	if (A && P_Random() > 128)
 	{
 		A.SetState(GetStatePlus(A.IdleState, 1));
 	}
 	if (A)
-		ApplyDamageModifiers(A.MissileDamage);
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
 }
 
 //===========================================================================
@@ -68,8 +74,14 @@ final void A_FireSkullRodPL2()
 	EntityEx	MissileMobj;
 	EntityEx	AimTarget;
 
-	UseWeaponMana();
-	MissileMobj = Actor(Owner).SpawnPlayerMissileEx_2(self, HornRodMissile2, true, AimTarget);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	MissileMobj = Actor(self).SpawnPlayerMissileEx_2(Wpn, HornRodMissile2, true, AimTarget);
 	// Use MissileMobj instead of the return value from
 	// SpawnPlayerMissile because we need to give info to the mobj
 	// even if it exploded immediately.
@@ -84,7 +96,7 @@ final void A_FireSkullRodPL2()
 	{
 		// Always use red missiles in single player games
 		HornRodMissile2(MissileMobj).RainColour = 2;
-		ApplyDamageModifiers(MissileMobj.MissileDamage);
+		Wpn.ApplyDamageModifiers(MissileMobj.MissileDamage);
 		if (AimTarget)
 		{
 			MissileMobj.Tracer = AimTarget;

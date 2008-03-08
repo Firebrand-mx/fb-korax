@@ -33,7 +33,7 @@
 class WeaponWitchavenLSword : KArenaWeapon;
 
 bool			bShieldActive;
-float			LongSwordRange;
+const float		LongSwordRange = 4.0 * MELEERANGE;
 
 //==========================================================================
 //
@@ -69,7 +69,13 @@ void AbsorbDamage(int damage, name DmgType, out int NewDamage)
 
 final void A_WLShieldProtect()
 {
-	bShieldActive = true;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponWitchavenLSword(Wpn).bShieldActive = true;
 }
 
 //==========================================================================
@@ -80,7 +86,13 @@ final void A_WLShieldProtect()
 
 final void A_WLDeactivateShield()
 {
-	bShieldActive = false;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponWitchavenLSword(Wpn).bShieldActive = false;
 }
 
 //==========================================================================
@@ -93,7 +105,6 @@ final void A_WLDeactivateShield()
 
 final void A_WLSwordAttack() 
 {
-	Actor		pmo = Actor(Owner);
 	float		power;
 	int			damage;
 	int			useMana;
@@ -101,34 +112,40 @@ final void A_WLSwordAttack()
 	TVec		vforward;
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 50; //40 + (P_Random() & 15) + (P_Random() & 7);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
 	damage <<= 1;
 	power = 6.0;
 	useMana = 1;
 
-	AimTarget = pmo.AimEx(vforward, LongSwordRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, LongSwordRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, LongSwordRange, damage, AxePuff))
+		if (LineAttack(vforward, LongSwordRange, damage, AxePuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		useMana++;
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, HammerPuff))
+		if (LineAttack(vforward, MELEERANGE, damage, HammerPuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
@@ -136,7 +153,7 @@ final void A_WLSwordAttack()
 	{
 		// [FB] Since we are tweaking the mana use here, make sure it's the default!
 		AmmoUse1 = 15;
-		UseWeaponMana();
+		Wpn.UseWeaponMana();
 	}
 }
 
@@ -269,7 +286,6 @@ defaultproperties
 	SelectionOrder = 3600;
 	AmmoType1 = ItemManaBlue;
 	AmmoUse1 = 15;
-	LongSwordRange = 4.0 * MELEERANGE;
 	BotCombatDist = 4.0 * MELEERANGE;
 	wis_mod = true;
 	int_mod = false;

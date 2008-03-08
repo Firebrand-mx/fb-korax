@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class WeaponHereisarchHoly : KArenaWeapon;
+class WeaponHeresiarchHoly : KArenaWeapon;
 
 int				CShift;
 
@@ -58,24 +58,28 @@ final void A_HHolyAttack()
 	float dist;
 	TVec dir;
 	TAVec angles;
-	Actor mo;
 	UnholyFX spirit;
 	Pawn pawn;
 	TVec hit_pt;
 
-	UseWeaponMana();
-	mo = Actor(Owner);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
 
 	damage = 80;
 	range = 512.0;
-	ApplyDamageModifiers(damage);
-	range += 128.0 * itof(Player(Owner.Player).intelligence / 10);	
+	Wpn.ApplyDamageModifiers(damage);
+	range += 128.0 * itof(Player(Player).intelligence / 10);	
 
-	angles = mo.Angles;
+	angles = Angles;
 	AngleVector(&angles, &dir);
-	if (mo.LineAttack(dir, range, 0, DoomPuff,, &hit_pt))
+	if (LineAttack(dir, range, 0, DoomPuff,, &hit_pt))
 	{
-		range = Length(hit_pt - mo.Origin);
+		range = Length(hit_pt - Origin);
 	}
 
 	// Everything is prepared, do attack
@@ -84,15 +88,15 @@ final void A_HHolyAttack()
 	{
 		TVec flashpoint;
 
-		flashpoint = mo.Origin + dir * dist;
+		flashpoint = Origin + dir * dist;
 		flashpoint.x += (Random() - 0.5) * 64.0;
 		flashpoint.y += (Random() - 0.5) * 64.0;
 		flashpoint.z += (Random() - 0.5) * 16.0;
-		spirit = UnholyFX(/*HexenLevelInfo(Player(Owner.Player).Level)*/Actor(Owner).Spawn_2(self, UnholyFX, flashpoint));
+		spirit = UnholyFX(/*HexenLevelInfo(Player(Owner.Player).Level)*/Actor(self).Spawn_2(Wpn, UnholyFX, flashpoint));
 		if (spirit)
 		{
-			spirit.Target = mo;
-			spirit.PInstigator = Player(mo.Player);
+			spirit.Target = self;
+			spirit.PInstigator = Player(Player);
 			spirit.AttackDamage = damage;
 			spirit.Delay = dist * 0.000625;
 		}
@@ -100,8 +104,8 @@ final void A_HHolyAttack()
 		dist += 64.0;
 	}
 
-	CShift = RGBA(255, 0, 0, 66);
-	Player(Owner.Player).MO.PlaySound('SpiritActive', CHAN_WEAPON);
+	WeaponHeresiarchHoly(Wpn).CShift = RGBA(255, 0, 0, 66);
+	PlaySound('SpiritActive', CHAN_WEAPON);
 }
 
 //============================================================================
@@ -112,8 +116,14 @@ final void A_HHolyAttack()
 
 final void A_HHolyPalette()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	// reset back to original playpal
-	CShift = 0;
+	WeaponHeresiarchHoly(Wpn).CShift = 0;
 }
 
 states

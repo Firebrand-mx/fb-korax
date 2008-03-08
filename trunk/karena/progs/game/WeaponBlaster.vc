@@ -45,19 +45,25 @@ final void A_FireBlasterPL1()
 	TVec dir;
 	TAVec angles;
 
-	UseWeaponMana();
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
 //	dir = Aim(Player.MO, Player.MO.Angles.yaw, 16.0 * 64.0);
-	angles = Owner.Angles;
-	Actor(Owner).AimLineAttack(dir, angles, 3.0 * MELEERANGE / 2.0);
+	angles = Angles;
+	AimLineAttack(dir, angles, 3.0 * MELEERANGE / 2.0);
 	damage = 42; //30 + (P_Random() & 25);
-	ApplyDamageModifiers(damage);
-	if (Player(Owner.Player).Refire)
+	Wpn.ApplyDamageModifiers(damage);
+	if (Player(Player).Refire)
 	{
 		VectorRotateAroundZ(&dir, (Random() - Random()) * 45.0 / 8.0);
 	}
-	Actor(Owner).LineAttack(dir, MISSILERANGE, damage, BlasterPuff1);
-	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
-	Owner.PlaySound('BlasterFire', CHAN_WEAPON);
+	LineAttack(dir, MISSILERANGE, damage, BlasterPuff1);
+	ShotPosition = Player(Player).MO.Origin;	// [CW]
+	PlaySound('BlasterFire', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -70,14 +76,20 @@ final void A_FireBlasterPL2()
 {
 	EntityEx A;
 
-	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissile_2(self, BlasterFX1);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	A = Actor(self).SpawnPlayerMissile_2(Wpn, BlasterFX1);
 	if (A)
 	{
 		A.bBlaster = true;
-		ApplyDamageModifiers(A.MissileDamage);
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
 	}
-	Owner.PlaySound('BlasterFire', CHAN_WEAPON);
+	PlaySound('BlasterFire', CHAN_WEAPON);
 }
 
 states

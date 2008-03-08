@@ -32,7 +32,7 @@
 
 class WeaponClericMorningStar : KArenaWeapon;
 
-float MStarRange;
+const float MStarRange = MELEERANGE * 3.0;
 
 //==========================================================================
 //
@@ -42,7 +42,6 @@ float MStarRange;
 
 final void A_CMSAttack()
 {
-	Actor			pmo = Actor(Owner);
 	float			power;
 	int				damage;
 	int				useMana;
@@ -51,10 +50,16 @@ final void A_CMSAttack()
 	class<Actor>	PuffType;
 	EntityEx		AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 56; //40 + (P_Random() & 15) + (P_Random() & 7);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
-	if (CheckAmmo(false, true))
+	if (Wpn.CheckAmmo(false, true))
 	{
 		damage <<= 1;
 		power = 6.0;
@@ -66,37 +71,37 @@ final void A_CMSAttack()
 		PuffType = AxePuff;
 		useMana = 0;
 	}
-	AimTarget = pmo.AimEx(vforward, MStarRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, MStarRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, MStarRange, damage, PuffType))
+		if (LineAttack(vforward, MStarRange, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		useMana++;
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
 	if (useMana == 2)
 	{
-		UseWeaponMana();
-		if (!CheckAmmo(false, true))
+		Wpn.UseWeaponMana();
+		if (!Wpn.CheckAmmo(false, true))
 		{
-			Owner.Player.SetViewState(ps_weapon,
-				GetStatePlus(GetAttackState(false), 4));
+			Player.SetViewState(ps_weapon,
+				GetStatePlus(Wpn.GetAttackState(false), 4));
 		}
 	}
 }
@@ -136,7 +141,6 @@ defaultproperties
 	AmmoUse1 = 8;
 	//needsnomana = true;
 	PSpriteSY = 0.0;
-	MStarRange = MELEERANGE * 3.0;
 	BotCombatDist = MELEERANGE * 3.0;
 	wis_mod = true;
 	int_mod = false;

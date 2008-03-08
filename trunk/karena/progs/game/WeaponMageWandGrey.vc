@@ -40,12 +40,18 @@ class WeaponMageWandGrey : KArenaWeapon;
 
 final void A_MWandAttack()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	EntityEx mo;
-	mo = Actor(Owner).SpawnPlayerMissile_2(self, MageWandGreyMissile);
+	mo = Actor(self).SpawnPlayerMissile_2(Wpn, MageWandGreyMissile);
 	if (mo)
-		ApplyDamageModifiers(mo.MissileDamage);
-	Owner.PlaySound('MageWandFire', CHAN_WEAPON);
-	UseWeaponMana();
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
+	PlaySound('MageWandFire', CHAN_WEAPON);
+	Wpn.UseWeaponMana();
 }
 
 states

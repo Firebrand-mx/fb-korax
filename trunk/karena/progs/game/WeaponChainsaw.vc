@@ -46,44 +46,50 @@ final void A_Saw()
 	TVec		dir;
 	EntityEx	AimTarget;
 
-	damage = 8; //2 * (P_Random() % 10 + 1);
-	ApplyDamageModifiers(damage);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	aimAng = Owner.Angles;
+	damage = 8; //2 * (P_Random() % 10 + 1);
+	Wpn.ApplyDamageModifiers(damage);
+
+	aimAng = Angles;
 	aimAng.yaw = AngleMod360(aimAng.yaw + (Random() -
 		Random()) * 45.0 / 8.0);
 
 	// use meleerange + 1 se the puff doesn't skip the flash
 	//dir = AimLineAttack(Player.MO, aimAng, MELEERANGE + 0.00001);
-	AimTarget = Actor(Owner).AimLineAttack(dir, aimAng, MELEERANGE * 2.0);
-	Actor(Owner).LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
+	AimTarget = AimLineAttack(dir, aimAng, MELEERANGE * 2.0);
+	LineAttack(dir, MELEERANGE * 2.0, damage, DoomPuff);
 	if (!AimTarget)
 	{
-		Owner.PlaySound('ChainsawTriggered', CHAN_WEAPON);
+		PlaySound('ChainsawTriggered', CHAN_WEAPON);
 		return;
 	}
-	Owner.PlaySound('ChainsawHit', CHAN_WEAPON);
+	PlaySound('ChainsawHit', CHAN_WEAPON);
 
 	// turn to face target
-	angle = atan2(AimTarget.Origin.y - Owner.Origin.y,
-		AimTarget.Origin.x - Owner.Origin.x);
-	if (AngleMod360(angle - Owner.Angles.yaw) > 180.0)
+	angle = atan2(AimTarget.Origin.y - Origin.y,
+		AimTarget.Origin.x - Origin.x);
+	if (AngleMod360(angle - Angles.yaw) > 180.0)
 	{
-		if (AngleMod360(angle - Owner.Angles.yaw) < -90.0 / 20.0)
-			Owner.Angles.yaw = angle + 90.0 / 21.0;
+		if (AngleMod360(angle - Angles.yaw) < -90.0 / 20.0)
+			Angles.yaw = angle + 90.0 / 21.0;
 		else
-			Owner.Angles.yaw = Owner.Angles.yaw - 90.0 / 20.0;
+			Angles.yaw = Angles.yaw - 90.0 / 20.0;
 	}
 	else
 	{
-		if (AngleMod360(angle - Owner.Angles.yaw) > 90.0 / 20.0)
-			Owner.Angles.yaw = angle - 90.0 / 21.0;
+		if (AngleMod360(angle - Angles.yaw) > 90.0 / 20.0)
+			Angles.yaw = angle - 90.0 / 21.0;
 		else
-			Owner.Angles.yaw += 90.0 / 20.0;
+			Angles.yaw += 90.0 / 20.0;
 	}
-	Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw);
-	Actor(Owner).bJustAttacked = true;
-	Owner.Player.bFixAngle = true;
+	Angles.yaw = AngleMod360(Angles.yaw);
+	bJustAttacked = true;
+	Player.bFixAngle = true;
 }
 
 states

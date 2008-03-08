@@ -42,23 +42,29 @@ final void A_FireCGun()
 {
 	TVec	dir;
 
-	Owner.PlaySound('PistolFire', CHAN_WEAPON);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	PlaySound('PistolFire', CHAN_WEAPON);
 
 /*	if (!Player.Ammo[Ammo])
 		return;
 */
-	Owner.SetState(Actor(Owner).MissileState);
-	UseWeaponMana();
+	SetState(MissileState);
+	Wpn.UseWeaponMana();
 
-	if (Owner.Player.ViewStates[ps_weapon].State == GetAttackState(false))
-		Owner.Player.SetViewState(ps_flash, FindState('Flash'));
+	if (Player.ViewStates[ps_weapon].State == Wpn.GetAttackState(false))
+		Player.SetViewState(ps_flash, Wpn.FindState('Flash'));
 	else
-		Owner.Player.SetViewState(ps_flash, FindState('Flash2'));
+		Player.SetViewState(ps_flash, Wpn.FindState('Flash2'));
 
-	Actor(Owner).Aim(dir, MISSILERANGE);
-	GunShot2(Actor(Owner), !Player(Owner.Player).Refire, dir);
-	EntityEx(Owner).bMuzzleFlash = true;
-	EntityEx(Owner).DLightColour = RGB(195, 79, 0);
+	Aim(dir, MISSILERANGE);
+	Wpn.GunShot2(self, !Player(Player).Refire, dir);
+	bMuzzleFlash = true;
+	DLightColour = RGB(195, 79, 0);
 }
 
 states

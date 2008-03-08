@@ -49,30 +49,36 @@ final void A_FSwordMeleeAttack()
 	TVec		vforward;
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 125; //100 + (P_Random() & 30) + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
-	AimTarget = pmo.AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, SwordRange, damage, AxePuff))
+		if (LineAttack(vforward, SwordRange, damage, AxePuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
-		UseWeaponMana();
+		Player(Player).AdjustPlayerAngle(AimTarget);
+		Wpn.UseWeaponMana();
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, AxePuff))
+		if (LineAttack(vforward, MELEERANGE, damage, AxePuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 }

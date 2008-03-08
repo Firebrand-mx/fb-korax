@@ -46,14 +46,20 @@ final void A_FireShotgun2()
 	TVec aimDir;
 	TVec dir;
 
-	Owner.PlaySound('SuperShotgunFire', CHAN_WEAPON);
-	Owner.SetState(Actor(Owner).MissileState);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	UseWeaponMana();
+	PlaySound('SuperShotgunFire', CHAN_WEAPON);
+	SetState(MissileState);
 
-	Owner.Player.SetViewState(ps_flash, FindState('Flash'));
+	Wpn.UseWeaponMana();
 
-	Actor(Owner).Aim(aimDir, MISSILERANGE);
+	Player.SetViewState(ps_flash, Wpn.FindState('Flash'));
+
+	Aim(aimDir, MISSILERANGE);
 	for (i = 0; i < 20; i++)
 	{
 		rot.pitch = (Random() - Random()) * 45.0 / 8.0;
@@ -61,12 +67,12 @@ final void A_FireShotgun2()
 		rot.roll = 0.0;
 		dir = RotateDirectionVector(aimDir, rot);
 		damage = 7; //5 * (P_Random() % 3 + 1);
-		ApplyDamageModifiers(damage);
-		ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
-		Actor(Owner).LineAttack(dir, MISSILERANGE, damage, DoomPuff);
+		Wpn.ApplyDamageModifiers(damage);
+		ShotPosition = Origin;	// [CW]
+		LineAttack(dir, MISSILERANGE, damage, DoomPuff);
 	}
-	EntityEx(Owner).bMuzzleFlash = true;
-	EntityEx(Owner).DLightColour = RGB(195, 79, 0);
+	bMuzzleFlash = true;
+	DLightColour = RGB(195, 79, 0);
 }
 
 //===========================================================================
@@ -77,9 +83,15 @@ final void A_FireShotgun2()
 
 final void A_SSCheckAmmo()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	/*A_CheckReload();*/
-	if (!CheckAmmo(false, true))
-		Owner.Player.SetViewState(ps_weapon, GetReadyState());
+	if (!Wpn.CheckAmmo(false, true))
+		Player.SetViewState(ps_weapon, Wpn.GetReadyState());
 }
 
 //===========================================================================
@@ -90,7 +102,7 @@ final void A_SSCheckAmmo()
 
 final void A_OpenShotgun2()
 {
-	Owner.PlaySound('SuperShotgunOpen', CHAN_WEAPON);
+	PlaySound('SuperShotgunOpen', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -101,7 +113,7 @@ final void A_OpenShotgun2()
 
 final void A_LoadShotgun2()
 {
-	Owner.PlaySound('SuperShotgunLoad', CHAN_WEAPON);
+	PlaySound('SuperShotgunLoad', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -112,7 +124,7 @@ final void A_LoadShotgun2()
 
 final void A_CloseShotgun2()
 {
-	Owner.PlaySound('SuperShotgunClose', CHAN_WEAPON);
+	PlaySound('SuperShotgunClose', CHAN_WEAPON);
 	A_ReFire();
 }
 
