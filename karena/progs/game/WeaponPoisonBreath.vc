@@ -38,20 +38,23 @@ class WeaponPoisonBreath : KArenaWeapon;
 //
 //============================================================================
 
-void A_PoisonBreathFire(bool use_mana, int Children)
+final void A_PoisonBreathFire(bool use_mana, int Children)
 {
 	TAVec angles;
 	TVec vforward;
 	TVec org;
-	PlayerPawn pmo;
 
-	pmo = PlayerPawn(Owner);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	pmo.Aim(vforward, 16.0 * 64.0);
+	Aim(vforward, 16.0 * 64.0);
 	VectorAngles(&vforward, &angles);
-	org = pmo.Origin;
-	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
-	org.z -= pmo.FloorClip;
+	org = Origin;
+	org.z = Origin.z + 4.0 * 8.0 - tan(Angles.pitch);
+	org.z -= FloorClip;
 	
 	Actor mo = Spawn(PoisonCloud, org);
 
@@ -75,8 +78,8 @@ void A_PoisonBreathFire(bool use_mana, int Children)
 		else
 		{
 			PoisonCloud pc = PoisonCloud(mo);
-			pc.InitCloud(pmo);
-			pc.Obituary = RangedObituary;
+			pc.InitCloud(self);
+			pc.Obituary = Wpn.RangedObituary;
 			pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
 			pc.A_SpawnChildren();
 			pc.LifeCount = 1;
@@ -84,7 +87,7 @@ void A_PoisonBreathFire(bool use_mana, int Children)
 	}
 
 	if (use_mana)	
-		UseWeaponMana();
+		Wpn.UseWeaponMana();
 }
 
 states

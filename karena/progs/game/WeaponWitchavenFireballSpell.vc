@@ -38,17 +38,23 @@ class WeaponWitchavenFireballSpell : KArenaWeapon;
 //
 //==========================================================================
 
-void WFireballSpawn(float angle)
+final void WFireballSpawn(float angle)
 {
 	EntityEx mo;
 
-	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, FireBallMissile, angle);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	mo = Actor(self).SpawnPlayerMissileAngle_2(Wpn, FireBallMissile, angle);
 
 	if (mo)
 	{
 		//mo.Target = Actor(Owner);
 		mo.Tracer = Actor(mo.RoughMonsterSearch(2));
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 	}
 }
 
@@ -62,25 +68,31 @@ final void A_WFireballAttack()
 {
 	float angle;
 
-	UseWeaponMana();
-	angle = Owner.Angles.yaw;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	if (Player(Owner.Player).exp_level >= 1 && Player(Owner.Player).exp_level < 3)
+	Wpn.UseWeaponMana();
+	angle = Angles.yaw;
+
+	if (Player(Player).exp_level >= 1 && Player(Player).exp_level < 3)
 	{
 		WFireballSpawn(angle);
 	}
-	if (Player(Owner.Player).exp_level >= 3 && Player(Owner.Player).exp_level < 4)
+	if (Player(Player).exp_level >= 3 && Player(Player).exp_level < 4)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 	}
-	if (Player(Owner.Player).exp_level >= 4 && Player(Owner.Player).exp_level < 5)
+	if (Player(Player).exp_level >= 4 && Player(Player).exp_level < 5)
 	{
 		WFireballSpawn(angle - 2.5);
 		WFireballSpawn(angle);
 		WFireballSpawn(angle + 2.5);
 	}
-	if (Player(Owner.Player).exp_level >= 5)
+	if (Player(Player).exp_level >= 5)
 	{
 		WFireballSpawn(angle - 5.0);
 		WFireballSpawn(angle - 2.5);
@@ -88,7 +100,7 @@ final void A_WFireballAttack()
 		WFireballSpawn(angle + 2.5);
 	}	
 
-	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
 }
 
 states

@@ -56,14 +56,20 @@ final void A_CHolyAttack()
 	EntityEx	A;
 	EntityEx	AimTarget;
 
-	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissileEx_2(self, HolyMissile, false, AimTarget);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	A = Actor(self).SpawnPlayerMissileEx_2(Wpn, HolyMissile, false, AimTarget);
 	if (A)
 	{
 		A.Tracer = AimTarget;
 	}
-	CShift = RGBA(255, 255, 255, 66);
-	Owner.PlaySound('HolySymbolFire', CHAN_WEAPON);
+	WeaponClericHoly(Wpn).CShift = RGBA(255, 255, 255, 66);
+	PlaySound('HolySymbolFire', CHAN_WEAPON);
 }
 
 //============================================================================
@@ -74,7 +80,13 @@ final void A_CHolyAttack()
 
 final void A_CHolyPalette1()
 {
-	CShift = RGBA(255, 255, 255, 51);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponClericHoly(Wpn).CShift = RGBA(255, 255, 255, 51);
 }
 
 //============================================================================
@@ -85,7 +97,13 @@ final void A_CHolyPalette1()
 
 final void A_CHolyPalette2()
 {
-	CShift = RGBA(255, 255, 255, 36);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponClericHoly(Wpn).CShift = RGBA(255, 255, 255, 36);
 }
 
 //============================================================================
@@ -96,8 +114,14 @@ final void A_CHolyPalette2()
 
 final void A_CHolyPalette3()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	// reset back to original playpal
-	CShift = 0;
+	WeaponClericHoly(Wpn).CShift = 0;
 }
 
 states

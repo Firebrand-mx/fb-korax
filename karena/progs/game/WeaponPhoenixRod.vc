@@ -61,12 +61,18 @@ final void A_FirePhoenixPL1()
 	EntityEx	A;
 	TVec		vforward;
 
-	UseWeaponMana();
-	A = Actor(Owner).SpawnPlayerMissile_2(self, PhoenixFX1);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	A = Actor(self).SpawnPlayerMissile_2(Wpn, PhoenixFX1);
 	if (A)
-		ApplyDamageModifiers(A.MissileDamage);
-	AngleVector(&Owner.Angles, &vforward);
-	Owner.Velocity -= vforward * 140.0;
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
+	AngleVector(&Angles, &vforward);
+	Velocity -= vforward * 140.0;
 }
 
 //===========================================================================
@@ -77,7 +83,13 @@ final void A_FirePhoenixPL1()
 
 final void A_InitPhoenixPL2()
 {
-	FlameCount = 2 * 35;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponPhoenixRod(Wpn).FlameCount = 2 * 35;
 }
 
 //===========================================================================
@@ -90,32 +102,38 @@ final void A_InitPhoenixPL2()
 
 final void A_FirePhoenixPL2()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	Actor A;
 	TVec dir;
 	TVec org;
-	if (--FlameCount == 0)
+	if (--WeaponPhoenixRod(Wpn).FlameCount == 0)
 	{
 		// Out of flame
-		Owner.Player.SetViewState(ps_weapon,
-			GetStatePlus(GetAttackState(false), 3));
-		Player(Owner.Player).Refire = 0;
+		Player.SetViewState(ps_weapon,
+			GetStatePlus(Wpn.GetAttackState(false), 3));
+		Player(Player).Refire = 0;
 		return;
 	}
-	org.x = Owner.Origin.x + (Random() - Random()) * 2.0;
-	org.y = Owner.Origin.y + (Random() - Random()) * 2.0;
-	org.z = Owner.Origin.z + 26.0 - sin(Owner.Angles.pitch);
-	org.z -= Owner.FloorClip;
-	A = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, PhoenixFX2, org);
+	org.x = Origin.x + (Random() - Random()) * 2.0;
+	org.y = Origin.y + (Random() - Random()) * 2.0;
+	org.z = Origin.z + 26.0 - sin(Angles.pitch);
+	org.z -= FloorClip;
+	A = Actor(self).Spawn_2(Wpn, PhoenixFX2, org);
 	if (A)
 	{
-		ApplyDamageModifiers(A.MissileDamage);
-		A.Angles.yaw = Owner.Angles.yaw;
-		A.Angles.pitch = Owner.Angles.pitch;
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
+		A.Angles.yaw = Angles.yaw;
+		A.Angles.pitch = Angles.pitch;
 		AngleVector(&A.Angles, &dir);
-		A.Velocity = Owner.Velocity + A.Speed * dir;
-		if (!Player(Owner.Player).Refire || !(XLevel.TicTime % 38))
+		A.Velocity = Velocity + A.Speed * dir;
+		if (!Player(Player).Refire || !(XLevel.TicTime % 38))
 		{
-			Owner.PlaySound('PhoenixHit2', CHAN_WEAPON);
+			PlaySound('PhoenixHit2', CHAN_WEAPON);
 		}
 		A.CheckMissileSpawn();
 	}
@@ -129,7 +147,13 @@ final void A_FirePhoenixPL2()
 
 final void A_ShutdownPhoenixPL2()
 {
-	UseWeaponMana();
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
 }
 
 states

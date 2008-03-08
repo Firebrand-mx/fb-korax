@@ -40,25 +40,30 @@ class WeaponDarkness : WeaponFighterHammer;
 
 final void A_DarknessAttack()
 {
-	Actor		pmo = Actor(Owner);
 	int			damage;
 	float		power;
 	TAVec		angles;
 	TVec		vforward;
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 74; //60 + (P_Random() & 63);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 10.0;
-	AimTarget = pmo.AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
+	AimTarget = AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
@@ -67,9 +72,9 @@ final void A_DarknessAttack()
 	else
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
-		if (pmo.LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
@@ -84,6 +89,12 @@ final void A_DarknessAttack()
 
 final void A_DarknessThrow()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 /*	Actor pmo;
 	TVec org;
 
@@ -102,21 +113,18 @@ final void A_DarknessThrow()
 	TAVec angles;
 	TVec vforward;
 	TVec org;
-	PlayerPawn pmo;
 
-	pmo = PlayerPawn(Owner);
-
-	pmo.Aim(vforward, 16.0 * 64.0);
+	Aim(vforward, 16.0 * 64.0);
 	VectorAngles(&vforward, &angles);
-	org = pmo.Origin;
-	org.z = pmo.Origin.z + 4.0 * 8.0 - tan(pmo.Angles.pitch);
-	org.z -= pmo.FloorClip;
+	org = Origin;
+	org.z = Origin.z + 4.0 * 8.0 - tan(Angles.pitch);
+	org.z -= FloorClip;
 	
-	Actor mo = /*HexenLevelInfo(Level)*/Actor(Owner).Spawn_2(self, DarknessMissile, org);
+	Actor mo = Actor(self).Spawn_2(Wpn, DarknessMissile, org);
 	if (mo)
 	{
-		mo.Target = pmo;
-		mo.PInstigator = Player(Owner.Player);
+		mo.Target = self;
+		mo.PInstigator = Player(Player);
 		mo.Angles = angles;
 
 		mo.Speed = 128.0;//10.0;
@@ -127,10 +135,10 @@ final void A_DarknessThrow()
 		mo.TryMove(mo.Origin + mo.Velocity);
 
 		DarknessMissile dm = DarknessMissile(mo);
-		dm.InitMe(pmo);
+		dm.InitMe(self);
 	}
 	
-	UseWeaponMana();
+	Wpn.UseWeaponMana();
 }
 
 states

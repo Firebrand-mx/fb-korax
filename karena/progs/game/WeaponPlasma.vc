@@ -42,17 +42,23 @@ final void A_FirePlasma()
 {
 	EntityEx mo;
 
-	UseWeaponMana();
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
 
 	if (!(P_Random() & 1))
-		Owner.Player.SetViewState(ps_flash, FindState('Flash'));
+		Player.SetViewState(ps_flash, Wpn.FindState('Flash'));
 	else
-		Owner.Player.SetViewState(ps_flash, GetStatePlus(FindState('Flash'),
+		Player.SetViewState(ps_flash, GetStatePlus(Wpn.FindState('Flash'),
 			2, true));
 
-	mo = Actor(Owner).SpawnPlayerMissile_2(self, PlasmaShot);
+	mo = Actor(self).SpawnPlayerMissile_2(Wpn, PlasmaShot);
 	if (mo)
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 }
 
 states

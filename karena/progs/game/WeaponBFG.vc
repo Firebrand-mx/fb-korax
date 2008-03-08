@@ -40,7 +40,7 @@ class WeaponBFG : KArenaWeapon;
 
 final void A_BFGsound()
 {
-	Owner.PlaySound('BFGFire', CHAN_WEAPON);
+	PlaySound('BFGFire', CHAN_WEAPON);
 }
 
 //===========================================================================
@@ -51,11 +51,17 @@ final void A_BFGsound()
 
 final void A_FireBFG()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	EntityEx mo;
-	UseWeaponMana();
-	mo = Actor(Owner).SpawnPlayerMissile_2(self, BFGShot);
+	Wpn.UseWeaponMana();
+	mo = Actor(self).SpawnPlayerMissile_2(Wpn, BFGShot);
 	if (mo)
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 }
 
 states

@@ -40,19 +40,25 @@ class WeaponCrossbow : KArenaWeapon;
 
 final void A_FireCrossbowPL1()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	EntityEx A;
-	A = Actor(Owner).SpawnPlayerMissile_2(self, CrossbowFX1);
+	A = Actor(self).SpawnPlayerMissile_2(Wpn, CrossbowFX1);
+	if (A)
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
+	A = Actor(self).SpawnPlayerMissileAngle_2(Wpn, CrossbowFX3,
+		AngleMod360(Angles.yaw - (45.0 / 10.0)));
+	if (A)
+		Wpn.ApplyDamageModifiers(A.MissileDamage);
+	A = Actor(self).SpawnPlayerMissileAngle_2(Wpn, CrossbowFX3,
+		AngleMod360(Angles.yaw + (45.0 / 10.0)));
 	if (A)
 		ApplyDamageModifiers(A.MissileDamage);
-	A = Actor(Owner).SpawnPlayerMissileAngle_2(self, CrossbowFX3,
-		AngleMod360(Owner.Angles.yaw - (45.0 / 10.0)));
-	if (A)
-		ApplyDamageModifiers(A.MissileDamage);
-	A = Actor(Owner).SpawnPlayerMissileAngle_2(self, CrossbowFX3,
-		AngleMod360(Owner.Angles.yaw + (45.0 / 10.0)));
-	if (A)
-		ApplyDamageModifiers(A.MissileDamage);
-	UseWeaponMana();
+	Wpn.UseWeaponMana();
 }
 
 

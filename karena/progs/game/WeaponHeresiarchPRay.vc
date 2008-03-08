@@ -46,13 +46,19 @@ final void A_PRayAttack()
 	SorcererFX4 mo;
 	float delta;
 
-	if (PRayDeltaIndex == 0.0)
-		Owner.PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	delta = sin(PRayDeltaIndex * 360.0 / 256.0) * 10.0;
-	PRayDeltaIndex += 15.0;
-	ang1 = AngleMod360(Owner.Angles.yaw + delta);
-	mo = SorcererFX4(Actor(Owner).SpawnPlayerMissileAngle_2(self, SorcererFX4, ang1));
+	if (WeaponHeresiarchPRay(Wpn).PRayDeltaIndex == 0.0)
+		PlaySound('SorcererSpellCast', CHAN_VOICE, 1.0, ATTN_NONE);
+
+	delta = sin(WeaponHeresiarchPRay(Wpn).PRayDeltaIndex * 360.0 / 256.0) * 10.0;
+	WeaponHeresiarchPRay(Wpn).PRayDeltaIndex += 15.0;
+	ang1 = AngleMod360(Angles.yaw + delta);
+	mo = SorcererFX4(Actor(self).SpawnPlayerMissileAngle_2(Wpn, SorcererFX4, ang1));
 	if (mo)
 	{
 		//mo.Obituary = "$ob_heresiarchpurple";
@@ -62,11 +68,11 @@ final void A_PRayAttack()
 		mo.Velocity.z *= 2.0;
 		//mo.Target = Actor(Owner);
 
-		ApplyDamageModifiers(mo.ExplodeDamage);
-	}	
+		Wpn.ApplyDamageModifiers(mo.ExplodeDamage);
+	}
 
-	Owner.PlaySound('SorcererBallWoosh', CHAN_VOICE, 1.0, ATTN_NONE);
-	UseWeaponMana();
+	PlaySound('SorcererBallWoosh', CHAN_VOICE, 1.0, ATTN_NONE);
+	Wpn.UseWeaponMana();
 }
 
 states

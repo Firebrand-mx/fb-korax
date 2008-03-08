@@ -44,25 +44,31 @@ final void A_CMaceAttack()
 	TVec		vforward;
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 32; //25 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
-	AimTarget = Actor(Owner).AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0,
+	Wpn.ApplyDamageModifiers(damage);
+	AimTarget = AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0,
 		16, MELEERANGE);
 	if (AimTarget)
 	{
-		if (Actor(Owner).LineAttack(vforward, 2.0 * MELEERANGE, damage,
+		if (LineAttack(vforward, 2.0 * MELEERANGE, damage,
 			HammerPuff))
 		{
-			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, HammerPuff))
+		if (LineAttack(vforward, MELEERANGE, damage, HammerPuff))
 		{
-			Owner.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 }

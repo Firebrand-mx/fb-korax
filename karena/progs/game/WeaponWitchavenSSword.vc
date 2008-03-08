@@ -32,7 +32,7 @@
 
 class WeaponWitchavenSSword : KArenaWeapon;
 
-float SwordRange;
+const float SwordRange = 3.0 * MELEERANGE / 2.0;
 
 //==========================================================================
 //
@@ -42,7 +42,6 @@ float SwordRange;
 
 final void A_WSSwordAttack()
 {
-	Actor			pmo = Actor(Owner);
 	float			power;
 	int				damage;
 	int				useMana;
@@ -51,42 +50,48 @@ final void A_WSSwordAttack()
 	class<Actor>	PuffType;
 	EntityEx		AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 25; //15 + (P_Random() & 15) + (P_Random() & 7);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
 	damage <<= 1;
 	power = 6.0;
 	PuffType = AxePuff;
 	useMana = 1;
 
-	AimTarget = pmo.AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, SwordRange, damage, PuffType))
+		if (LineAttack(vforward, SwordRange, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		useMana++;
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
 		PuffType = HammerPuff;
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
 	if (useMana == 2)
 	{
-		UseWeaponMana();
+		Wpn.UseWeaponMana();
 	}
 }
 
@@ -141,7 +146,6 @@ defaultproperties
 	SelectionOrder = 6600;
 	AmmoType1 = ItemManaBlue;
 	AmmoUse1 = 5;
-	SwordRange = 3.0 * MELEERANGE / 2.0;
 	BotCombatDist = 3.0 * MELEERANGE / 2.0;
 	wis_mod = true;
 	int_mod = false;

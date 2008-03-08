@@ -43,32 +43,37 @@ final void A_StaffAttackPL1()
 	TAVec		angles;
 	int			damage;
 	TVec		vforward;
-	Actor		pmo = Actor(Owner);
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 12; //5 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
-	angles = pmo.Angles;
+	Wpn.ApplyDamageModifiers(damage);
+	angles = Angles;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	AimTarget = pmo.AimLineAttack(vforward, angles, 1.5 * MELEERANGE);
+	AimTarget = AimLineAttack(vforward, angles, 1.5 * MELEERANGE);
 	if (AimTarget)
 	{
-		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
+		LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, 2.0);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		angles = Owner.Angles;
-		Actor(Owner).AimLineAttack(vforward, angles, MELEERANGE);
-		if (Actor(Owner).LineAttack(vforward, MELEERANGE, damage, StaffPuff))
+		angles = Angles;
+		AimLineAttack(vforward, angles, MELEERANGE);
+		if (LineAttack(vforward, MELEERANGE, damage, StaffPuff))
 		{
-			Owner.PlaySound('StaffHit', CHAN_WEAPON);
+			PlaySound('StaffHit', CHAN_WEAPON);
 		}
 	}
 }

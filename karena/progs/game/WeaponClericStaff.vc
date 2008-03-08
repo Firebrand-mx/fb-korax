@@ -42,7 +42,13 @@ int BlinkCount;
 
 final void A_CStaffInitBlink()
 {
-	BlinkCount = (P_Random() >> 1) + 20;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponClericStaff(Wpn).BlinkCount = (P_Random() >> 1) + 20;
 }
 
 //==========================================================================
@@ -53,10 +59,16 @@ final void A_CStaffInitBlink()
 
 final void A_CStaffCheckBlink()
 {
-	if (!--BlinkCount)
+	if (!bIsPlayer)
 	{
-		Owner.Player.SetViewState(ps_weapon, FindState('Blink'));
-		BlinkCount = (P_Random() + 50) >> 2;
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	if (!--WeaponClericStaff(Wpn).BlinkCount)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('Blink'));
+		WeaponClericStaff(Wpn).BlinkCount = (P_Random() + 50) >> 2;
 	}
 }
 
@@ -68,33 +80,37 @@ final void A_CStaffCheckBlink()
 
 final void A_CStaffCheck()
 {
-	Actor		pmo;
 	int			damage;
 	int			newLife;
 	TVec		vforward;
 	EntityEx	AimTarget;
 
-	pmo = Actor(Owner);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 27; //20 + (P_Random() & 15);
 
-	ApplyDamageModifiers(damage);
-	AimTarget = pmo.AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
+	Wpn.ApplyDamageModifiers(damage);
+	AimTarget = AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
 	if (AimTarget)
 	{
-		pmo.LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
-		pmo.Angles.yaw = atan2(AimTarget.Origin.y - pmo.Origin.y,
-			AimTarget.Origin.x - pmo.Origin.x);
+		LineAttack(vforward, 1.5 * MELEERANGE, damage, ClericStaffPuff);
+		Angles.yaw = atan2(AimTarget.Origin.y - Origin.y,
+			AimTarget.Origin.x - Origin.x);
 		if ((AimTarget.bIsPlayer || AimTarget.bMonster) &&
 			!AimTarget.bDormant && !AimTarget.bInvulnerable)
 		{
-			newLife = Owner.Player.Health + (damage >> 3);
+			newLife = Player.Health + (damage >> 3);
 			newLife = newLife > 100 ? 100 : newLife;
-			pmo.Health = newLife;
-			Owner.Player.Health = newLife;
-			Owner.Player.SetViewState(ps_weapon,
-				GetStatePlus(GetAttackState(false), 6, true));
+			Health = newLife;
+			Player.Health = newLife;
+			Player.SetViewState(ps_weapon,
+				GetStatePlus(Wpn.GetAttackState(false), 6, true));
 		}
-		UseWeaponMana();
+		Wpn.UseWeaponMana();
 	}
 }
 
@@ -107,26 +123,29 @@ final void A_CStaffCheck()
 final void A_CStaffAttack()
 {
 	EntityEx mo;
-	PlayerPawn playPawn;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	UseWeaponMana();
-	playPawn = PlayerPawn(Owner);
-	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, ClericStaffMissile,
-		playPawn.Angles.yaw - (45.0 / 15.0));
+	Wpn.UseWeaponMana();
+	mo = Actor(self).SpawnPlayerMissileAngle_2(Wpn, ClericStaffMissile,
+		Angles.yaw - (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 32;
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 	}
-	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, ClericStaffMissile,
-		playPawn.Angles.yaw + (45.0 / 15.0));
+	mo = Actor(self).SpawnPlayerMissileAngle_2(Wpn, ClericStaffMissile,
+		Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
 		ClericStaffMissile(mo).WeaveXY = 0;
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 	}
-	playPawn.PlaySound('ClericCStaffFire', CHAN_WEAPON);
+	PlaySound('ClericCStaffFire', CHAN_WEAPON);
 }
 
 states

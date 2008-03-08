@@ -40,11 +40,17 @@ class WeaponMissile : KArenaWeapon;
 
 final void A_FireMissile()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	EntityEx mo;
-	UseWeaponMana();
-	mo = Actor(Owner).SpawnPlayerMissile_2(self, Rocket);
+	Wpn.UseWeaponMana();
+	mo = Actor(self).SpawnPlayerMissile_2(Wpn, Rocket);
 	if (mo)
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 }
 
 states

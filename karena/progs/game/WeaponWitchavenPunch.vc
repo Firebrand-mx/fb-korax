@@ -42,7 +42,6 @@ int PunchCount;
 
 final void A_WPunchAttack()
 {
-	Actor			pmo = Actor(Owner);
 	int				damage;
 	float			power;
 	TAVec			angles;
@@ -50,55 +49,61 @@ final void A_WPunchAttack()
 	class<Actor>	PuffType;
 	EntityEx		AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 9; //5 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 2.0;
 	PuffType = PunchPuff;
-	AimTarget = pmo.AimEx(vforward, MELEERANGE, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, MELEERANGE, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		PunchCount++;
-		if (PunchCount == 3)
+		WeaponWitchavenPunch(Wpn).PunchCount++;
+		if (WeaponWitchavenPunch(Wpn).PunchCount == 3)
 		{
 			damage <<= 1;
 			power = 6.0;
 			PuffType = HammerPuff;
 		}
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			if (PuffType == HammerPuff)
 			{
-				pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+				PlaySound('FighterHammerMiss', CHAN_WEAPON);
 			}
 			else
 			{
-				pmo.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+				PlaySound('FighterPunchMiss', CHAN_WEAPON);
 			}
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		PunchCount = 0;
+		WeaponWitchavenPunch(Wpn).PunchCount = 0;
 
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			pmo.PlaySound('FighterPunchMiss', CHAN_WEAPON);
+			PlaySound('FighterPunchMiss', CHAN_WEAPON);
 		}
 	}
 
-	if (PunchCount == 3)
+	if (WeaponWitchavenPunch(Wpn).PunchCount == 3)
 	{
-		PunchCount = 0;
-		Owner.Player.SetViewState(ps_weapon,
-			GetStatePlus(GetAttackState(false), 7, true));
-		//pmo.PlaySound('FighterGrunt', CHAN_VOICE);
+		WeaponWitchavenPunch(Wpn).PunchCount = 0;
+		Player.SetViewState(ps_weapon,
+			GetStatePlus(Wpn.GetAttackState(false), 7, true));
+		//PlaySound('FighterGrunt', CHAN_VOICE);
 	}
 }
 

@@ -43,26 +43,30 @@ final void A_FireConePL1()
 	TAVec			ang;
 	int				damage;
 	int				i;
-	Actor			pmo;
 	ShardMissile	mo;
 	int				conedone = false;
 	TVec			Dir;
 	EntityEx		AimTarget;
 
-	UseWeaponMana();
-	pmo = Actor(Owner);
-	pmo.PlaySound('MageShardsFire', CHAN_WEAPON);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	PlaySound('MageShardsFire', CHAN_WEAPON);
 
 	damage = 97; //90 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	for (i = 0; i < 16; i++)
 	{
-		ang = pmo.Angles;
+		ang = Angles;
 		ang.yaw = AngleMod360(ang.yaw + itof(i) * (45.0 / 16.0));
-		AimTarget = pmo.AimLineAttack(Dir, ang, MELEERANGE);
+		AimTarget = AimLineAttack(Dir, ang, MELEERANGE);
 		if (AimTarget)
 		{
-			AimTarget.Damage(pmo, pmo, damage, 'Ice');
+			AimTarget.Damage(self, self, damage, 'Ice');
 			conedone = true;
 			break;
 		}
@@ -71,16 +75,16 @@ final void A_FireConePL1()
 	// didn't find any creatures, so fire projectiles
 	if (!conedone)
 	{
-		mo = ShardMissile(Actor(Owner).SpawnPlayerMissile_2(self, ShardMissile));
+		mo = ShardMissile(Actor(self).SpawnPlayerMissile_2(Wpn, ShardMissile));
 		if (mo)
 		{
-			ApplyDamageModifiers(mo.MissileDamage);
+			Wpn.ApplyDamageModifiers(mo.MissileDamage);
 			mo.bShardSpawnLeft = true;
 			mo.bShardSpawnRight = true;
 			mo.bShardSpawnUp = true;
 			mo.bShardSpawnDown = true;
 			mo.Special2 = 3;	// Set sperm count (levels of reproductivity)
-			mo.Target = pmo;
+			mo.Target = self;
 			mo.Args[0] = 3;	// Mark Initial shard as super damage
 		}
 	}

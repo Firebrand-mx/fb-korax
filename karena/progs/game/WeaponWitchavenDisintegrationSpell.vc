@@ -46,11 +46,17 @@ final void A_Disintegrate()
 	TVec aimDir;
 	TVec dir;
 
-	Owner.PlaySound('FighterSwordFire', CHAN_WEAPON);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	UseWeaponMana();
+	PlaySound('FighterSwordFire', CHAN_WEAPON);
 
-	Actor(Owner).Aim(aimDir, MISSILERANGE);
+	Wpn.UseWeaponMana();
+
+	Aim(aimDir, MISSILERANGE);
 	for (i = 0; i < 20; i++)
 	{
 		rot.pitch = (Random() - Random()) * 45.0 / 8.0;
@@ -59,9 +65,9 @@ final void A_Disintegrate()
 		dir = RotateDirectionVector(aimDir, rot);
 		damage = 300; //90 * (P_Random() % 3 + 1);
 		//Player.MO.bDisruptDamage = true;
-		ApplyDamageModifiers(damage);
-		ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
-		Actor(Owner).LineAttack(dir, MISSILERANGE, damage, DisintegrationPuff);
+		Wpn.ApplyDamageModifiers(damage);
+		ShotPosition = Origin;	// [CW]
+		LineAttack(dir, MISSILERANGE, damage, DisintegrationPuff);
 		//Player.MO.bDisruptDamage = false;
 	}	
 }

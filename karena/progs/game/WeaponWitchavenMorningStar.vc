@@ -33,7 +33,7 @@
 class WeaponWitchavenMorningStar : KArenaWeapon;
 
 bool bThrowFireball;
-float MorningSRange;
+const float MorningSRange = MELEERANGE * 3.0;
 
 //============================================================================
 //
@@ -43,25 +43,30 @@ float MorningSRange;
 
 final void A_WMorningSAttack()
 {
-	Actor		pmo = Actor(Owner);
 	int			damage;
 	float		power;
 	TAVec		angles;
 	TVec		vforward;
 	EntityEx	AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 50; //25 + (P_Random() & 63);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 3.5;
-	AimTarget = pmo.AimEx(vforward, MorningSRange, 45.0 / 32.0, 16, MorningSRange);
+	AimTarget = AimEx(vforward, MorningSRange, 45.0 / 32.0, 16, MorningSRange);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, MorningSRange, damage, HammerPuff))
+		if (LineAttack(vforward, MorningSRange, damage, HammerPuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
@@ -70,12 +75,12 @@ final void A_WMorningSAttack()
 	else
 	{
 		// didn't find any targets in meleerange, so set to throw out a fireball
-		if (pmo.LineAttack(vforward, MorningSRange, damage, HammerPuff))
+		if (LineAttack(vforward, MorningSRange, damage, HammerPuff))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
-	bThrowFireball = true;
+	WeaponWitchavenMorningStar(Wpn).bThrowFireball = true;
 }
 
 //============================================================================
@@ -86,12 +91,18 @@ final void A_WMorningSAttack()
 
 final void A_WFireballThrow()
 {
-	if (!bThrowFireball)
+	if (!bIsPlayer)
 	{
 		return;
 	}
-	UseWeaponMana();
-	Actor(Owner).SpawnPlayerMissile_2(self, MorningStarMissile);
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	if (!WeaponWitchavenMorningStar(Wpn).bThrowFireball)
+	{
+		return;
+	}
+	Wpn.UseWeaponMana();
+	Actor(self).SpawnPlayerMissile_2(Wpn, MorningStarMissile);
 }
 
 states
@@ -127,7 +138,6 @@ defaultproperties
 	AmmoUse1 = 20;
 	//needsnomana = true;
 	PSpriteSY = 0.0;
-	MorningSRange = MELEERANGE * 3.0;
 	BotCombatDist = 256.0 + MISSILERANGE;
 	wis_mod = true;
 	int_mod = true;

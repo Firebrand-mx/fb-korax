@@ -51,16 +51,22 @@ int GetBlend()
 //
 //==========================================================================
 
-void MStaffSpawn(float angle)
+final void MStaffSpawn(float angle)
 {
 	EntityEx mo;
 
-	mo = Actor(Owner).SpawnPlayerMissileAngle_2(self, MageStaffFX2, angle);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	mo = Actor(self).SpawnPlayerMissileAngle_2(Wpn, MageStaffFX2, angle);
 	if (mo)
 	{
 		//mo.Target = Actor(Owner);
 		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
-		ApplyDamageModifiers(mo.MissileDamage);
+		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 	}
 }
 
@@ -74,14 +80,20 @@ final void A_MStaffAttack()
 {
 	float angle;
 
-	UseWeaponMana();
-	angle = Owner.Angles.yaw;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	angle = Angles.yaw;
 
 	MStaffSpawn(angle);
 	MStaffSpawn(angle - 5.0);
 	MStaffSpawn(angle + 5.0);
-	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
-	CShift = RGBA(255, 187, 4, 76);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
+	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 76);
 }
 
 //==========================================================================
@@ -92,7 +104,13 @@ final void A_MStaffAttack()
 
 final void A_MStaffPalette1()
 {
-	CShift = RGBA(255, 187, 4, 63);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 63);
 }
 
 //==========================================================================
@@ -103,7 +121,13 @@ final void A_MStaffPalette1()
 
 final void A_MStaffPalette2()
 {
-	CShift = RGBA(255, 187, 4, 51);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 51);
 }
 
 //==========================================================================
@@ -114,8 +138,14 @@ final void A_MStaffPalette2()
 
 final void A_MStaffPalette3()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	// reset back to original playpal
-	CShift = 0;
+	WeaponMageStaff(Wpn).CShift = 0;
 }
 
 states

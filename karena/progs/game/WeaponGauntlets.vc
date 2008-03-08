@@ -49,64 +49,70 @@ final void A_GauntletAttack()
 	TVec		dir;
 	EntityEx	AimTarget;
 
-	Owner.Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
-	Owner.Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
-	angles = Owner.Angles;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
+	Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
+	angles = Angles;
 	damage = 17; //10 + (P_Random() & 15);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	dist = MELEERANGE + 0.00001;
 	angles.yaw = AngleMod360(angles.yaw +
 		(Random() - Random()) * 45.0 / 8.0);
-	AimTarget = Actor(Owner).AimLineAttack(dir, angles, dist);
-	Actor(Owner).LineAttack(dir, dist, damage, GauntletPuff1);
+	AimTarget = AimLineAttack(dir, angles, dist);
+	LineAttack(dir, dist, damage, GauntletPuff1);
 	if (!AimTarget)
 	{
 		if (P_Random() > 64)
 		{
-			Owner.Player.ExtraLight = !Owner.Player.ExtraLight;
+			Player.ExtraLight = !Player.ExtraLight;
 		}
 		// didn't find any creatures, so try to strike any walls
-		angles = Owner.Angles;
-		Actor(Owner).AimLineAttack(dir, angles, MELEERANGE);
-		Actor(Owner).LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
-		Owner.PlaySound('GauntletFull', CHAN_WEAPON);
+		angles = Angles;
+		AimLineAttack(dir, angles, MELEERANGE);
+		LineAttack(dir, MELEERANGE, damage, GauntletPuff1);
+		PlaySound('GauntletFull', CHAN_WEAPON);
 		return;
 	}
 	randVal = P_Random();
 	if (randVal < 64)
 	{
-		Owner.Player.ExtraLight = 0;
+		Player.ExtraLight = 0;
 	}
 	else if (randVal < 160)
 	{
-		Owner.Player.ExtraLight = 1;
+		Player.ExtraLight = 1;
 	}
 	else
 	{
-		Owner.Player.ExtraLight = 2;
+		Player.ExtraLight = 2;
 	}
-	if (!Player(Owner.Player).Refire)
-		Owner.PlaySound('GauntletHit', CHAN_WEAPON);
+	if (!Player(Player).Refire)
+		PlaySound('GauntletHit', CHAN_WEAPON);
 	else
-		Owner.PlaySound('GauntletUse', CHAN_WEAPON);
+		PlaySound('GauntletUse', CHAN_WEAPON);
 	// turn to face target
-	angle = atan2(AimTarget.Origin.y - Owner.Origin.y,
-		AimTarget.Origin.x - Owner.Origin.x);
-	if (AngleMod360(angle - Owner.Angles.yaw) > 180.0)
+	angle = atan2(AimTarget.Origin.y - Origin.y,
+		AimTarget.Origin.x - Origin.x);
+	if (AngleMod360(angle - Angles.yaw) > 180.0)
 	{
-		if (AngleMod360(angle - Owner.Angles.yaw) < 360.0 - 90.0 / 20.0)
-			Owner.Angles.yaw = AngleMod360(angle + 90.0 / 21.0);
+		if (AngleMod360(angle - Angles.yaw) < 360.0 - 90.0 / 20.0)
+			Angles.yaw = AngleMod360(angle + 90.0 / 21.0);
 		else
-			Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw - 90.0 / 20.0);
+			Angles.yaw = AngleMod360(Angles.yaw - 90.0 / 20.0);
 	}
 	else
 	{
-		if (AngleMod360(angle - Owner.Angles.yaw) > 90.0 / 20.0)
-			Owner.Angles.yaw = AngleMod360(angle - 90.0 / 21.0);
+		if (AngleMod360(angle - Angles.yaw) > 90.0 / 20.0)
+			Angles.yaw = AngleMod360(angle - 90.0 / 21.0);
 		else
-			Owner.Angles.yaw = AngleMod360(Owner.Angles.yaw + 90.0 / 20.0);
+			Angles.yaw = AngleMod360(Angles.yaw + 90.0 / 20.0);
 	}
-	Actor(Owner).bJustAttacked = true;
+	bJustAttacked = true;
 }
 
 states

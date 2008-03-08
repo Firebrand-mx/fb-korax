@@ -54,19 +54,25 @@ int GetBlend()
 
 final void A_HHandAttack()
 {
-	InfernalHandFX mo;
-	UseWeaponMana();
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	mo = InfernalHandFX(Actor(Owner).SpawnPlayerMissile_2(self, InfernalHandFX));
+	InfernalHandFX mo;
+	Wpn.UseWeaponMana();
+
+	mo = InfernalHandFX(Actor(self).SpawnPlayerMissile_2(Wpn, InfernalHandFX));
 	if (mo)
 	{
 		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
-		ApplyDamageModifiers(mo.ExplodeDamage);
-		ApplyDamageModifiers(mo.BlastDamage);
-		mo.ExplodeDistance += mo.ExplodeDistance * 0.1 * itof( Player(Owner.Player).intelligence / 10 );
+		Wpn.ApplyDamageModifiers(mo.ExplodeDamage);
+		Wpn.ApplyDamageModifiers(mo.BlastDamage);
+		mo.ExplodeDistance += mo.ExplodeDistance * 0.1 * itof( Player(Player).intelligence / 10 );
 	}
-	Owner.PlaySound('MageStaffFire', CHAN_WEAPON);
-	CShift = RGBA(255, 187, 4, 76);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
+	WeaponHeresiarchHand(Wpn).CShift = RGBA(255, 187, 4, 76);
 }
 
 //==========================================================================
@@ -77,7 +83,13 @@ final void A_HHandAttack()
 
 final void A_HHandPalette1()
 {
-	CShift = RGBA(255, 187, 4, 63);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponHeresiarchHand(Wpn).CShift = RGBA(255, 187, 4, 63);
 }
 
 //==========================================================================
@@ -88,7 +100,13 @@ final void A_HHandPalette1()
 
 final void A_HHandPalette2()
 {
-	CShift = RGBA(255, 187, 4, 51);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponHeresiarchHand(Wpn).CShift = RGBA(255, 187, 4, 51);
 }
 
 //==========================================================================
@@ -99,8 +117,14 @@ final void A_HHandPalette2()
 
 final void A_HHandPalette3()
 {
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	// reset back to original playpal
-	CShift = 0;
+	WeaponHeresiarchHand(Wpn).CShift = 0;
 }
 
 states

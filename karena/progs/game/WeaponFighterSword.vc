@@ -40,18 +40,24 @@ class WeaponFighterSword : KArenaWeapon;
 
 final void A_FSwordAttack()
 {
-	UseWeaponMana();
-	Actor(Owner).SpawnPlayerMissileAngleXYZ_2(self, Owner.Origin + vector(0.0, 0.0, -10.0),
-		FighterSwordMissile, AngleMod360(Owner.Angles.yaw + 45.0 / 4.0));
-	Actor(Owner).SpawnPlayerMissileAngleXYZ_2(self, Owner.Origin + vector(0.0, 0.0, -5.0),
-		FighterSwordMissile, AngleMod360(Owner.Angles.yaw + 45.0 / 8.0));
-	Actor(Owner).SpawnPlayerMissileAngleXYZ_2(self, Owner.Origin, FighterSwordMissile,
-		Owner.Angles.yaw);
-	Actor(Owner).SpawnPlayerMissileAngleXYZ_2(self, Owner.Origin + vector(0.0, 0.0, 5.0),
-		FighterSwordMissile, AngleMod360(Owner.Angles.yaw - 45.0 / 8.0));
-	Actor(Owner).SpawnPlayerMissileAngleXYZ_2(self, Owner.Origin + vector(0.0, 0.0, 10.0),
-		FighterSwordMissile, AngleMod360(Owner.Angles.yaw - 45.0 / 4.0));
-	Owner.PlaySound('FighterSwordFire', CHAN_WEAPON);
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	Actor(self).SpawnPlayerMissileAngleXYZ_2(Wpn, Origin + vector(0.0, 0.0, -10.0),
+		FighterSwordMissile, AngleMod360(Angles.yaw + 45.0 / 4.0));
+	Actor(self).SpawnPlayerMissileAngleXYZ_2(Wpn, Origin + vector(0.0, 0.0, -5.0),
+		FighterSwordMissile, AngleMod360(Angles.yaw + 45.0 / 8.0));
+	Actor(self).SpawnPlayerMissileAngleXYZ_2(Wpn, Origin, FighterSwordMissile,
+		Angles.yaw);
+	Actor(self).SpawnPlayerMissileAngleXYZ_2(Wpn, Origin + vector(0.0, 0.0, 5.0),
+		FighterSwordMissile, AngleMod360(Angles.yaw - 45.0 / 8.0));
+	Actor(self).SpawnPlayerMissileAngleXYZ_2(Wpn, Origin + vector(0.0, 0.0, 10.0),
+		FighterSwordMissile, AngleMod360(Angles.yaw - 45.0 / 4.0));
+	PlaySound('FighterSwordFire', CHAN_WEAPON);
 }
 
 states

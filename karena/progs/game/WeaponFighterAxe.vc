@@ -53,8 +53,14 @@ final void A_FAxeAttack()
 	class<Actor>	PuffType;
 	EntityEx		AimTarget;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
 	damage = 50; //40 + (P_Random() & 15) + (P_Random() & 7);
-	ApplyDamageModifiers(damage);
+	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
 	//[KORAX]
 /*	if (IsWeaponManaUsable())
@@ -71,34 +77,34 @@ final void A_FAxeAttack()
 		useMana = 0;
 	}*/
 
-	AimTarget = pmo.AimEx(vforward, AxeRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, AxeRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (pmo.LineAttack(vforward, AxeRange, damage, PuffType))
+		if (LineAttack(vforward, AxeRange, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Owner.Player).AdjustPlayerAngle(AimTarget);
+		Player(Player).AdjustPlayerAngle(AimTarget);
 		useMana++;
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		if (pmo.LineAttack(vforward, MELEERANGE, damage, PuffType))
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			pmo.PlaySound('FighterHammerMiss', CHAN_WEAPON);
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
 	}
 
 	//[KORAX]
 	if (useMana == 2)
 	{
-		UseWeaponMana();
+		Wpn.UseWeaponMana();
 	//[KORAX]
 /*		if (!IsWeaponManaUsable())
 		{
