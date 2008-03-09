@@ -17,10 +17,12 @@ progs/svprogs.dat		progs/svprogs.dat
 //	Scripts
 animdefs.txt			scripts/animdefs.txt
 lockdefs.txt			scripts/lockdefs.txt
-mapinfo.txt			scripts/mapinfo.txt
-sndinfo.txt			scripts/sndinfo.txt
+mapinfo.txt				scripts/mapinfo.txt
+sndinfo.txt				scripts/sndinfo.txt
 skyboxes.txt			scripts/skyboxes.txt
-terrain.txt			scripts/terrain.txt
+terrain.txt				scripts/terrain.txt
+
+decorate.txt			decorate.txt
 
 $load palette.pcx
 translat.dat			raw 0 0 256 22
