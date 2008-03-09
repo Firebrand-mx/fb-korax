@@ -38,6 +38,7 @@ decorate.txt			decorate.txt
 decorate/armor.txt		decorate/armor.txt
 decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
+decorate/artifacts.txt	decorate/artifacts.txt
 
 //	Language strings
 language.en				language.en
