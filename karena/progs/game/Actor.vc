@@ -53,10 +53,6 @@ bool bOverrideCoop;	// [CW] Override IsTeammate method by always returning false
 // so that if that pawn die, player reference will be still accessible.
 Player		PInstigator;
 
-// [CW] Obituary; used by those who can damage directly
-//		(anything from enviroment to pawns with melee attacks)
-string		Obituary;
-
 //==========================================================================
 //
 //	MoveToFreePosition
@@ -238,12 +234,6 @@ void Died(EntityEx source, EntityEx inflictor)
 				itof(P_Random()) / 255.0 * 21.0) / 100.0) * (Level.Game.gameskill < 2 ? 
 				125.0 : (Level.Game.gameskill < 3 ? 100.0 : 80.0)) / 100.0));
 		}
-	}
-//[Korax]
-	// [FB] Remove muzzle flash
-	if (bMuzzleFlash)
-	{
-		bMuzzleFlash = false;
 	}
 }
 
@@ -468,8 +458,6 @@ void KilledByPlayer(EntityEx source)
 
 void PlayerKilled(EntityEx source, EntityEx inflictor)
 {
-	//[CW] process obituary
-	Player(Player).DisplayObituary(inflictor, source, DamageType);
 	Player(Player).Deaths++;
 
 	//[CW] Show scoreboard for died player
