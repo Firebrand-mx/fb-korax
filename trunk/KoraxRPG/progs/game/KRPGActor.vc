@@ -1485,6 +1485,24 @@ void NotifyConditions(int notification, EntityEx E, int param)
 	}
 }
 
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	// KRPG
+	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster &&
+		P_Random() < 128))
+	{
+		KRPGActor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
+			2.0);
+		damage >>= 1;
+	}
+	return damage;
+}
 
 defaultproperties
 {
