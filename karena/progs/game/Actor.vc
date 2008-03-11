@@ -450,19 +450,22 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 
 void SpawnCombatAttributes(Actor master, Thinker shooter)
 {
-	if (master.IsA('PlayerPawn'))
+	if (master)
 	{
-		Target = master;
-		PInstigator = Player(Target.Player);
-	}
-	else
-	{
-		Target = master.Target;
-		PInstigator = master.PInstigator;
-	}
+		if (master.IsA('PlayerPawn'))
+		{
+			Target = master;
+			PInstigator = Player(Target.Player);
+		}
+		else
+		{
+			Target = master.Target;
+			PInstigator = master.PInstigator;
+		}
 
-	if (!Target)
-		Error("Actor::SpawnCombatAttributes : Target reference is not set to an object; bad algorythm?");
+		if (!Target)
+			Error("Actor::SpawnCombatAttributes : Target reference is not set to an object; bad algorythm?");
+	}
 	
 	if (shooter)
 	{
