@@ -3719,7 +3719,190 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 	return true;
 }
 
+//==========================================================================
+//
+//	KilledByPlayer
+//
+//==========================================================================
 
+void KilledByPlayer(EntityEx Victim)
+{
+	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
+
+	// [FB] Increase the player's KillCount
+	if (Victim.bMonster)
+	{
+		//[CW] update player's score
+		UpdateScore(HexenDefs::scoreevent_Kill);
+
+		//[CW] update kill trophies
+		UpdateQueuedTrophy(HexenDefs::trophycl_killsatonce, 1);
+		UpdateQueuedTrophy(HexenDefs::trophycl_killsrow, 1);
+		
+		// [FB] Check how many monsters there are in castle sweep mode
+		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
+		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
+		{
+			if (Level.TotalKills - Level.CurrentKills == 4)
+			{
+//				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+				MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("4 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 3)
+			{
+				MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("3 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 2)
+			{
+				MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("2 monsters left!");
+			}
+			if (Level.TotalKills - Level.CurrentKills == 1)
+			{
+				MO.PlaySound('misc/chat', CHAN_AUTO);
+				Level.bprint("1 monster left!");
+			}
+			// [FB] No more monsters, so end the game!
+			if (Level.TotalKills - Level.CurrentKills == 0)
+			{
+				// [FB] Exit map
+				Level.ExitLevel(0);
+			}
+		}
+	}
+
+	// Check for frag changes
+	if (Victim.bIsPlayer)
+	{
+		if (bIsBot)
+		{
+			Bot.Killed(Victim);
+		}
+
+		if (Victim.Player.bIsBot)
+		{
+			Player(Victim.Player).Bot.Died(EntityEx(MO));
+		}
+
+		if (Victim == MO)
+		{
+			// Self-frag
+			Frags--;
+
+			UpdateScore(HexenDefs::scoreevent_SelfFrag);
+		}
+		else
+		{
+			int se = bKilledByAlly ? HexenDefs::scoreevent_TeamFrag : HexenDefs::scoreevent_Frag;
+
+			if (bKilledByAlly)
+			{
+				Frags--;
+			}
+			else
+			{
+				Frags++;
+				GiveExperience(500 * Player(Victim.Player).exp_level / exp_level);
+			}
+
+			if (MainGameInfo(Level.Game).GameModel)
+				se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(self, Player(Victim.Player));
+
+			UpdateScore(se);
+
+			//[CW] update frag trophies
+			if (!bKilledByAlly)
+			{
+				UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
+				UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
+			}
+			
+			// [FB] Implement ScoreLimit
+			if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
+			{
+				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 4)
+				{
+//					source.Player.CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("4 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 3)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("3 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 2)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("2 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 1)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("1 frag left!");
+				}
+				if (GetCvar('ScoreLimit') && GetCvar('ScoreLimit') <= Frags)
+				{
+					// [FB] Exit map when ScoreLimit is reached
+					Level.ExitLevel(0);
+				}
+			}
+			else
+			{
+				// [FB] Team frags
+				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 4)
+				{
+//					source.Player.CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("4 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 3)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("3 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 2)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("2 frags left!");
+				}
+				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 1)
+				{
+					MO.PlaySound('misc/chat', CHAN_AUTO);
+					Level.bprint("1 frag left!");
+				}
+				if (GetCvar('ScoreLimit') && GetCvar('ScoreLimit') <= Team.Frags)
+				{
+					// [FB] Exit map when ScoreLimit is reached
+					Level.ExitLevel(0);
+				}
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	PlayerKilled
+//
+//==========================================================================
+
+void PlayerKilled(EntityEx source, EntityEx inflictor)
+{
+	//[CW] Show scoreboard for died player
+	Scoreboard(true);
+
+	if (Morph.bMorphed)
+		bRecalculateLevelOnRespawn = true;
+
+	//[CW] notify advanced game mode
+	if (MainGameInfo(Level.Game).GameModel)
+		MainGameInfo(Level.Game).GameModel.NotifyPlayerDeath(self, source);
+
+	SetFOV(HexenDefs::DEFAULT_FOV);
+}
 
 defaultproperties
 {
