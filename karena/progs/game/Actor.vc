@@ -102,19 +102,6 @@ bool MoveToFreePosition()
 
 //==========================================================================
 //
-//  HITDICE
-//
-//  Most damage in HERETIC and HEXEN defined using HITDICE
-//
-//==========================================================================
-
-final int HITDICE(int a)
-{
-	return (1 + (P_Random() & 7)) * a;
-}
-
-//==========================================================================
-//
 //	OnMapSpawn
 //
 //==========================================================================
@@ -586,72 +573,6 @@ Actor SpawnPlayerMissileEx_2(Thinker shooter, class<EntityEx> type, bool RetExpl
 
 //==========================================================================
 //
-//  SpawnDirt
-//
-//  Dirt stuff
-//
-//==========================================================================
-
-final void SpawnDirt(float radius)
-{
-	float angle;
-	TVec org;
-	class<EntityEx> dtype;
-	EntityEx dirt;
-
-	angle = 360.0 * Random();
-	org.x = Origin.x + radius * cos(angle);
-	org.y = Origin.y + radius * sin(angle);
-	org.z = Origin.z + Random() * 2.0 + 1.0;
-	switch (P_Random() % 6)
-	{
-	case 0:
-		dtype = Dirt1;
-		break;
-	case 1:
-		dtype = Dirt2;
-		break;
-	case 2:
-		dtype = Dirt3;
-		break;
-	case 3:
-		dtype = Dirt4;
-		break;
-	case 4:
-		dtype = Dirt5;
-		break;
-	case 5:
-		dtype = Dirt6;
-		break;
-	}
-	dirt = Spawn(dtype, org);
-	if (dirt)
-	{
-		dirt.Velocity.z = Random() * 4.0 * 35.0;
-	}
-}
-
-//**************************************************************************
-//
-//  OBJECT MOVEMENT
-//
-//**************************************************************************
-
-//==========================================================================
-//
-//  ClipVelocity
-//
-//  Slide off of the impacting object
-//
-//==========================================================================
-
-final TVec ClipVelocity(TVec in, TVec normal, float overbounce)
-{
-	return in - normal * (DotProduct(in, normal) * overbounce);
-}
-
-//==========================================================================
-//
 //	CanReach
 //
 //  Checks whether this Actor can pass to target directly
@@ -793,17 +714,6 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	}
 
 	return true;
-}
-
-//===========================================================================
-//
-//	PlayerIsMorphed
-//
-//===========================================================================
-
-bool PlayerIsMorphed()
-{
-	return self.Class == PlayerPig;
 }
 
 //============================================================================
