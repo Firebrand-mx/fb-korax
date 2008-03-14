@@ -33,6 +33,13 @@
 class Actor : ScriptedEntity
 	abstract;
 
+defaultproperties
+{
+}
+
+class KArenaActor : Actor
+	abstract;
+
 const float
 	BLAST_RADIUS_DIST		= 255.0,
 	BLAST_FULLSTRENGTH		= 0.0038909912,
@@ -183,14 +190,14 @@ void Died(EntityEx source, EntityEx inflictor)
 	::Died(source, inflictor);
 
 	if (inflictor && ClassIsChildOf(inflictor.Class, Actor))
-		Actor(inflictor).IsDeathInflictor(self);
+		KArenaActor(inflictor).IsDeathInflictor(self);
 
 //[Korax]
 	if (source && !bIsPlayer)
 	{
 		if (!source.bIsPlayer)
 		{
-			Actor(source).experience += ftoi(itof(experience) * ((90.0 + 
+			KArenaActor(source).experience += ftoi(itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0));  //RPG
 		}
 		else
@@ -300,7 +307,7 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass, bool timed,
 	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
 	if (!Actor(Player.MO).TryMove(Origin))
 	{
-		Actor(Player.MO).MoveToFreePosition();
+		KArenaActor(Player.MO).MoveToFreePosition();
 	}
 	else
 	{
@@ -415,7 +422,7 @@ void BlindDamage(Actor source, int damage, bool playPainSound)
 //
 //==========================================================================
 
-void SpawnCombatAttributes(Actor master, Thinker shooter)
+void SpawnCombatAttributes(KArenaActor master, Thinker shooter)
 {
 	if (master)
 	{
@@ -454,15 +461,15 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 Actor Spawn_2(Thinker shooter, class<Thinker> Type, optional TVec AOrigin,
 	optional TAVec AAngles, optional mthing_t* mthing)
 {
-	Actor A;
+	KArenaActor A;
 	if (specified_mthing)
-		A = Actor(Spawn(Type, AOrigin, AAngles, mthing));
+		A = KArenaActor(Spawn(Type, AOrigin, AAngles, mthing));
 	else if (specified_AAngles)
-		A = Actor(Spawn(Type, AOrigin, AAngles));
+		A = KArenaActor(Spawn(Type, AOrigin, AAngles));
 	else if (specified_AOrigin)
-		A = Actor(Spawn(Type, AOrigin));
+		A = KArenaActor(Spawn(Type, AOrigin));
 	else
-		A = Actor(Spawn(Type));
+		A = KArenaActor(Spawn(Type));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -477,11 +484,11 @@ Actor Spawn_2(Thinker shooter, class<Thinker> Type, optional TVec AOrigin,
 Actor SpawnMissileAngles_2(Thinker shooter, class<EntityEx> type, float yaw, float pitch,
 	optional float SpawnHeight)
 {
-	Actor A;
+	KArenaActor A;
 	if (specified_SpawnHeight)
-		A = Actor(SpawnMissileAngles(type, yaw, pitch, SpawnHeight));
+		A = KArenaActor(SpawnMissileAngles(type, yaw, pitch, SpawnHeight));
 	else
-		A = Actor(SpawnMissileAngles(type, yaw, pitch));
+		A = KArenaActor(SpawnMissileAngles(type, yaw, pitch));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -495,7 +502,7 @@ Actor SpawnMissileAngles_2(Thinker shooter, class<EntityEx> type, float yaw, flo
 
 Actor SpawnPlayerMissile_2(Thinker shooter, class<EntityEx> type)
 {
-	Actor A = Actor(SpawnPlayerMissile(type));
+	KArenaActor A = KArenaActor(SpawnPlayerMissile(type));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -509,7 +516,7 @@ Actor SpawnPlayerMissile_2(Thinker shooter, class<EntityEx> type)
 
 Actor SpawnPlayerMissileAngle_2(Thinker shooter, class<EntityEx> type, float angle)
 {
-	Actor A = Actor(SpawnPlayerMissileAngle(type, angle));
+	KArenaActor A = KArenaActor(SpawnPlayerMissileAngle(type, angle));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -524,7 +531,7 @@ Actor SpawnPlayerMissileAngle_2(Thinker shooter, class<EntityEx> type, float ang
 Actor SpawnPlayerMissileAngleXYZ_2(Thinker shooter, TVec org, class<EntityEx> type,
 	float angle)
 {
-	Actor A = Actor(SpawnPlayerMissileAngleXYZ(org, type, angle));
+	KArenaActor A = KArenaActor(SpawnPlayerMissileAngleXYZ(org, type, angle));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;
@@ -539,13 +546,13 @@ Actor SpawnPlayerMissileAngleXYZ_2(Thinker shooter, TVec org, class<EntityEx> ty
 Actor SpawnPlayerMissileEx_2(Thinker shooter, class<EntityEx> type, bool RetExploded,
 	out EntityEx AimTarget, optional float angle, optional TVec SpawnOrg)
 {
-	Actor A;
+	KArenaActor A;
 	if (specified_SpawnOrg)
-		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle, SpawnOrg));
+		A = KArenaActor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle, SpawnOrg));
 	else if (specified_angle)
-		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle));
+		A = KArenaActor(SpawnPlayerMissileEx(type, RetExploded, AimTarget, angle));
 	else
-		A = Actor(SpawnPlayerMissileEx(type, RetExploded, AimTarget));
+		A = KArenaActor(SpawnPlayerMissileEx(type, RetExploded, AimTarget));
 	if (A)
 		A.SpawnCombatAttributes(self, shooter);
 	return A;

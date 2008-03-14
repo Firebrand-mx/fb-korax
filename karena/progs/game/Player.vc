@@ -939,7 +939,7 @@ void SpawnPlayer(mthing_t * mthing)
 			experience = 0; // [FB] We don't want to have negative experience, right?
 		}
 
-		Actor(MO).experience = experience;
+		KArenaActor(MO).experience = experience;
 
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
@@ -1230,7 +1230,7 @@ void GiveExperience(int exp)
 		experience = 9999;
 	}
 
-	Actor(MO).experience = experience;
+	KArenaActor(MO).experience = experience;
 
 	while (experience >= next_level && exp_level < 11)
 	{
@@ -1414,7 +1414,7 @@ void LooseExperience()
 			experience = 0; // [FB] We don't want to have negative experience
 		}
 
-		Actor(MO).experience = experience;
+		KArenaActor(MO).experience = experience;
 
 		if(pcount == 525)
 		{
@@ -1557,7 +1557,7 @@ void PlayerImpulse()
 	}*/
 	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
-		Actor(MO).MoveToFreePosition();
+		KArenaActor(MO).MoveToFreePosition();
 	}
 }
 
@@ -1879,9 +1879,9 @@ void UpdateTargetInfo()
 		TVec Dir;
 		
 		angles = MO.Angles;
-		Actor(MO).bOverrideCoop = true;
+		KArenaActor(MO).bOverrideCoop = true;
 		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
-		Actor(MO).bOverrideCoop = false;
+		KArenaActor(MO).bOverrideCoop = false;
 		if (AimTarget)
 		{
 			if (AimTarget.Player)
@@ -2197,7 +2197,7 @@ void PlayerTick(float deltaTime)
 		{
 			if (Blinder && !Blinder.MO)
 				Error("Player::PlayerTick : Blinder.MO reference not set to an instance of an object");
-			Actor(MO).BlindDamage(Blinder ? Actor(Blinder.MO) : none, 1, true);
+			KArenaActor(MO).BlindDamage(Blinder ? Actor(Blinder.MO) : none, 1, true);
 		}
 	}
 
@@ -2330,14 +2330,14 @@ void UseArtiBlastRadius()
 	switch(altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
 	{
 	case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
-		Actor(MO).BlastRadius();
+		KArenaActor(MO).BlastRadius();
 		break;
 	case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
-		Actor(MO).Spawn_2(none, BlastRadiusBomb, MO.Origin +
+		KArenaActor(MO).Spawn_2(none, BlastRadiusBomb, MO.Origin +
 			vector(16.0 * cos(MO.Angles.yaw), 24.0 * sin(MO.Angles.yaw), 8.0 - MO.FloorClip));
 		break;
 	case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
-		Actor mo = Actor(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
+		Actor mo = KArenaActor(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
 		break;
 	}
 }
@@ -2358,7 +2358,7 @@ void UseArtiPoisonBag()
 	switch(altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
 	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-		bomb = Actor(MO).Spawn_2(none, ThrowingBomb, MO.Origin +
+		bomb = KArenaActor(MO).Spawn_2(none, ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -2378,7 +2378,7 @@ void UseArtiPoisonBag()
 		break;
 		
 	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-		bomb = Actor(MO).Spawn_2(none, FireBomb, MO.Origin +
+		bomb = KArenaActor(MO).Spawn_2(none, FireBomb, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -2387,7 +2387,7 @@ void UseArtiPoisonBag()
 		break;
 
 	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:	
-		bomb = Actor(MO).Spawn_2(none, PoisonBag, MO.Origin +
+		bomb = KArenaActor(MO).Spawn_2(none, PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
