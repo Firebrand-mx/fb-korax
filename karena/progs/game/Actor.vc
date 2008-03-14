@@ -113,23 +113,6 @@ void OnMapSpawn(mthing_t* mthing)
 
 //==========================================================================
 //
-//	Destroyed
-//
-//==========================================================================
-
-void Destroyed()
-{
-	// Remove from creature queue
-	if (bMonster && bCorpse)
-	{
-		A_DeQueueCorpse();
-	}
-
-	::Destroyed();
-}
-
-//==========================================================================
-//
 //  FloorBounceActor
 //
 //  [FB] New variant for soccer ball
@@ -711,40 +694,6 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	}
 
 	return true;
-}
-
-//==========================================================================
-//
-//  A_AddPlayerCorpse
-//
-//==========================================================================
-
-final void A_AddPlayerCorpse()
-{
-	int n = HexenLevelInfo(Level).bodyqueslot % HexenLevelInfo(Level).BodyQueSize;
-	if (HexenLevelInfo(Level).bodyqueslot >= HexenLevelInfo(Level).BodyQueSize)
-	{
-		// Too many player corpses - remove an old one
-		if (HexenLevelInfo(Level).bodyque[n])
-			HexenLevelInfo(Level).bodyque[n].Destroy();
-	}
-	HexenLevelInfo(Level).bodyque[n] = self;
-	Translation = XLevel.SetBodyQueueTrans(n, Translation);
-	HexenLevelInfo(Level).bodyqueslot++;
-}
-
-//============================================================================
-//
-//  A_CheckBurnGone
-//
-//============================================================================
-
-final void A_CheckBurnGone()
-{
-	if (Special2 == 666)
-	{
-		SetState(FindState('BurnGone'));
-	}
 }
 
 //==========================================================================
