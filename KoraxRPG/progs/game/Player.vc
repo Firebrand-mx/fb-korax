@@ -32,14 +32,10 @@ enum
 
 const int MAXHEALTH			= 100;
 const int MAXMORPHHEALTH	= 30;
-const float VIEWHEIGHT		= 48.0;
 
 float MorphTime;	// player is a pig if > 0
 
 BotPlayer Bot;
-
-// KRPG
-float ViewHeightFixed;
 
 replication
 {
@@ -423,7 +419,7 @@ void SpawnPlayer(mthing_t * mthing)
 	FixedColourmap = 0;
 	LastSectorDamageTime = 0.0;
 	LastHazardTime = 0.0;
-	ViewHeight = VIEWHEIGHT;
+	ViewHeight = pp.ViewHeight;
 	ViewAngles = pp.Angles;
 	bFixAngle = true;
 
@@ -1370,7 +1366,7 @@ void PlayerTick(float deltaTime)
 		PlayerPawn(MO).StandUp(deltaTime);
 	}
 	//if (Camera == MO)	??? CHECKME
-	ViewHeightFixed += (MO.Height - oldHeight);
+	PlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
 
 	//  Move around.
 	//  ReactionTime is used to prevent movement for a bit after a teleport.
@@ -2400,5 +2396,4 @@ void KilledByPlayer(EntityEx Victim)
 
 defaultproperties
 {
-	ViewHeightFixed = VIEWHEIGHT;
 }
