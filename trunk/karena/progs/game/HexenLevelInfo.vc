@@ -345,20 +345,32 @@ bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, Ent
 		{
 			if (A)
 			{
-			      if (angle3)
-			         KArenaActor(A).Thrust3d(itof(angle2d), itof(angle3), itof(move));
-			      else
-			         KArenaActor(A).Thrust3d2(itof(angle2d), itof(move), itof(move2));
-			   return true;
+				if (angle3)
+				{
+					A.Thrust(itof(angle2d), itof(move) * cos(itof(angle3)));
+					A.Velocity.z += itof(move) * sin(itof(angle3)) * 35.0;
+				}
+				else
+				{
+					A.Thrust(itof(angle2d), itof(move));
+					A.Velocity.z += itof(move2) * 35.0;
+				}
+				return true;
 			}
 		}
 	}
 	else if (a)
 	{
 		if (angle3)
-			KArenaActor(a).Thrust3d(itof(angle2d), itof(angle3), itof(move));
+		{
+			a.Thrust(itof(angle2d), itof(move) * cos(itof(angle3)));
+			a.Velocity.z += itof(move) * sin(itof(angle3)) * 35.0;
+		}
 		else
-			KArenaActor(a).Thrust3d2(itof(angle2d), itof(move), itof(move2));
+		{
+			a.Thrust(itof(angle2d), itof(move));
+			a.Velocity.z += itof(move2) * 35.0;
+		}
 		return true;
 	}
 	return false;
