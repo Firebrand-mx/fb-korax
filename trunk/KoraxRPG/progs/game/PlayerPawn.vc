@@ -23,7 +23,7 @@
 //**
 //**************************************************************************
 
-class PlayerPawn : Actor
+class PlayerPawn : PlayerPawnBase
 	abstract;
 
 float			HexenArmor[5];
@@ -45,17 +45,6 @@ KRPGActor		RidePartner;	// 'horse'
 //
 //LinkedList Conditions;
 array<ActorCondition> Conditions;
-
-//==========================================================================
-//
-//	ShouldDropItems
-//
-//==========================================================================
-
-bool ShouldDropItems()
-{
-	return false;
-}
 
 //===========================================================================
 //
@@ -109,84 +98,6 @@ bool Physics(float DeltaTime)
 	}
 
 	return ::Physics(DeltaTime);
-}
-
-//==========================================================================
-//
-//	AddInventory
-//
-//==========================================================================
-
-void AddInventory(Inventory Item)
-{
-	::AddInventory(Item);
-	if (bIsPlayer && Item.bInvBar && !Player(Player).InvPtr)
-	{
-		Player(Player).InvPtr = Item;
-		Player(Player).InvFirst = Item;
-	}
-}
-
-//==========================================================================
-//
-//	RemoveInventory
-//
-//==========================================================================
-
-void RemoveInventory(Inventory Item)
-{
-	if (bIsPlayer)
-	{
-		if (Player(Player).InvPtr == Item)
-		{
-			Player(Player).InvPtr = Item.PrevInv();
-			if (!Player(Player).InvPtr)
-			{
-				Player(Player).InvPtr = Item.NextInv();
-			}
-		}
-		if (Player(Player).InvFirst == Item)
-		{
-			Player(Player).InvFirst = Item.PrevInv();
-			if (!Player(Player).InvFirst)
-			{
-				Player(Player).InvFirst = Item.NextInv();
-			}
-		}
-	}
-	::RemoveInventory(Item);
-	if (bIsPlayer && Item.bInvBar)
-	{
-		Player(Player).AdjustInvFirst();
-	}
-}
-
-//==========================================================================
-//
-//  PlayerUseArtifact
-//
-//==========================================================================
-
-bool UseInventory(Inventory Item)
-{
-	//	Can't use anything while totally frozen
-	if (Player(Player).bTotallyFrozen)
-	{
-		return false;
-	}
-	// Found match - try to use
-	if (!::UseInventory(Item))
-	{
-		if (!PuzzleItem(Item))
-		{
-			// Unable to use artifact, advance pointer
-			Player(Player).PlayerNextArtifact();
-		}
-		return false;
-	}
-	PlaySound(Item.UseSound, CHAN_ITEM);
-	Player(Player).ArtifactFlash = 4;
-	return true;
 }
 
 //===========================================================================
@@ -654,19 +565,6 @@ void NotifyConditions(int notification, EntityEx E, int param)
 
 defaultproperties
 {
-	bSolid = true;
-	bShootable = true;
-	bFloorClip = true;
-	bTelestomp = true;
-	bActivatePushWall = true;
-	bPassMobj = true;
-	bNeverTarget = false;
-
-	ReactionCount = 0;
-	bDropOff = true;
-	bWindThrust = true;
-	bSlide = true;
-	bNoBlockMonst = true;
 	RDFactor = 0.25;
 	SoundClass = 'fighter';
 	CrunchSound = '*splat';
