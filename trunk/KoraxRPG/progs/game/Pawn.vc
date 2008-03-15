@@ -26,10 +26,6 @@
 class Pawn : IntelligentActor
 	abstract;
 
-
-bool			bCanRide;		// pawn is allowed to ride saddlehorses
-
-
 //============================================================================
 //
 //  IsNotAttackingMaster
@@ -74,9 +70,9 @@ bool TryUse(optional float fUseRange, optional float fUseThingRange, optional na
 		return true;
 	else
 	{
-		if (RidePartner && (bIsMountedOn || bRideControl))
+		if (RidePartner && bRideControl)
 		{
-			Dismount();
+			RidePartner.Dismount();
 			return true;
 		}
 	}
@@ -213,11 +209,6 @@ bool UseThing(KRPGActor Thing)
 	if (Thing.ConversationID >= 0 && KRPGLevelInfo(Level).StartConversation(self, Actor(Thing)))
 		return true;
 	// Possible generic 'use' types
-	if (bCanRide && Thing.bSaddleHorse && !Thing.RidePartner)
-	{
-		MountOn(Thing, true);
-		return true;
-	}
 
 	return Thing.IsBeingUsed(self);
 }

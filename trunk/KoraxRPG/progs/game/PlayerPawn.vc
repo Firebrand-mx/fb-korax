@@ -23,18 +23,28 @@
 //**
 //**************************************************************************
 
-class PlayerPawn : Pawn
+class PlayerPawn : Actor
 	abstract;
 
-float					HexenArmor[5];
+float			HexenArmor[5];
 
 //
 // KRPG
 //
 // [CW] Just a thought -- should monsters have these?
-float					StandHeight;
-float					DuckHeight;
+float			StandHeight;
+float			DuckHeight;
 
+bool			bIsMountedOn;
+bool			bRideControl;
+
+KRPGActor		RidePartner;	// 'horse'
+
+//
+// [KoraxRPG] Actor Conditions
+//
+//LinkedList Conditions;
+array<ActorCondition> Conditions;
 
 //==========================================================================
 //
@@ -56,6 +66,49 @@ bool ShouldDropItems()
 bool PlayerIsMorphed()
 {
 	return !!Player(Player).MorphTime;
+}
+
+//==========================================================================
+//
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	if (RidePartner)
+	{
+		if (bIsMountedOn) Dismount();
+	}
+
+	Target = none;
+
+	::Died(source, inflictor);
+
+	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
+
+	if (P_Random() < 33)
+	{
+		Spawn(DyingSpirit, Origin);
+	}
+}
+
+//==========================================================================
+//
+//	Physics
+//
+//==========================================================================
+
+bool Physics(float DeltaTime)
+{
+	if (bIsMountedOn)
+	{
+		Velocity.x = 0.0;
+		Velocity.y = 0.0;
+		Velocity.z = 0.0;
+	}
+
+	return ::Physics(DeltaTime);
 }
 
 //==========================================================================
@@ -248,12 +301,368 @@ final void A_AddPlayerCorpse()
 	HexenLevelInfo(Level).bodyqueslot++;
 }
 
+//==========================================================================
+//
+//  TryUse
+//
+//	[CW] Override or modify to add more 'use' possibilities
+//
+//==========================================================================
+
+bool TryUse(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
+{
+	if (UseLines(fUseRange, fUseThingRange, FailSound))
+		return true;
+	else
+	{
+		if (RidePartner && bIsMountedOn)
+		{
+			Dismount();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//  UseLines
+//
+//  Looks for special lines in front of the pawn to activate.
+//
+//	[CW] copied from Player::P_UseLines
+//
+//==========================================================================
+
+bool UseLines(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
+{
+	bool action;
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+	TVec useDir;
+	intercept_t* in;
+	TVec hit_point;
+	opening_t *open;
+
+	action = false;
+	AngleVector(&Angles, &useDir);
+	x1 = Origin.x;
+	y1 = Origin.y;
+
+	x2 = x1 + fUseThingRange * useDir.x;
+	y2 = y1 + fUseThingRange * useDir.y;
+	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
+	{
+		if (!in->bIsALine)
+		{
+			//	Check height.
+			if (Origin.z >= in->Thing.Origin.z + in->Thing.Height ||
+				Origin.z + Height <= in->Thing.Origin.z)
+			{
+				continue;
+			}
+			if (in->Thing.IsA('KRPGActor') && UseThing(KRPGActor(in->Thing)))
+			{
+				action = true;
+				break;
+			}
+			continue;
+		}
+
+		if (!(in->line->flags & ML_TWOSIDED))
+			break;	// stop
+
+		hit_point = Origin + (fUseThingRange * in->frac) * useDir;
+		open = LineOpenings(in->line, hit_point);
+		open = FindOpening(open, hit_point.z, hit_point.z + Height);
+		if (!open || open->range < 1.0)
+		{
+			// can't use through a wall
+			break;
+		}
+		continue;
+	}
+
+	x2 = x1 + fUseRange * useDir.x;
+	y2 = y1 + fUseRange * useDir.y;
+	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
+	{
+		line_t* line;
+		float pheight;
+
+		line = in->line;
+		if (!line->special || (Level.GET_SPAC(line->flags) != SPAC_USE &&
+			Level.GET_SPAC(line->flags) != SPAC_USETHROUGH))
+		{
+			hit_point = Origin + (fUseRange * in->frac) * useDir;
+			open = LineOpenings(line, hit_point);
+			open = FindOpening(open, hit_point.z + Height / 2.0,
+				hit_point.z + Height);
+			if (!open)
+			{
+				PlaySound(FailSound, CHAN_VOICE);
+				break;	// can't use through a wall
+			}
+			pheight = Origin.z + Height / 2.0;
+			if ((open->top < pheight) || (open->bottom > pheight))
+			{
+				PlaySound(FailSound, CHAN_VOICE);
+			}
+			continue;	// not a special line, but keep checking
+		}
+
+		if (PointOnPlaneSide(Origin, line) == 1)
+		{
+			//	Don't use back side unless it's a two-sided line.
+			if (line->backsector != NULL)
+				continue;
+			break;
+		}
+
+		HexenLevelInfo(Level).ActivateLine(line, self, 0, SPAC_USE);
+		action = true;
+
+		//WAS can't use more than one special line in a row
+		//jff 3/21/98 NOW multiple use allowed with enabling line flag
+		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
+		{
+			break;
+		}
+	}
+
+	return action;
+}
+
+//==========================================================================
+//
+//	UseThing
+//
+//==========================================================================
+
+bool UseThing(KRPGActor Thing)
+{
+	if (!Thing)
+		Error("Pawn::UseThing : Thing reference not set to an instance of an object");
+
+	// [CW] TODO: thinkout what conversation style do we need;
+	//			  also, should other persons have ability to talk with each other?
+	//
+	// [CW] that's how it could look like if we used Strife-like dialogs
+	if (Thing.ConversationID >= 0 && KRPGLevelInfo(Level).StartConversation(self, Actor(Thing)))
+		return true;
+	// Possible generic 'use' types
+	if (Thing.bSaddleHorse && !Thing.RidePartner)
+	{
+		MountOn(Thing, true);
+		return true;
+	}
+
+	return Thing.IsBeingUsed(self);
+}
+
+//==========================================================================
+//
+//	MountOn
+//
+//==========================================================================
+
+void MountOn(KRPGActor Horse, bool bGainControl)
+{
+	RidePartner = Horse;
+	bIsMountedOn = true;
+	bRideControl = bGainControl;
+	Horse.IsBeingMountedOn(self, !bGainControl);
+}
+
+//==========================================================================
+//
+//	Dismount
+//
+//==========================================================================
+
+void Dismount()
+{
+	bIsMountedOn = false;
+	bRideControl = false;
+	RidePartner.IsBeingDismountedFrom();
+	RidePartner = none;
+}
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Actor Conditions
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	PurgeConditions
+//
+//	[CW] Condenses Conditions array by removing null-references
+//
+//==========================================================================
+
+final void PurgeConditions()
+{
+	int i;
+	for (i = 0; i < Conditions.Num;)
+	{
+		if (!Conditions[i])
+		{
+			Conditions.Remove(i);
+		}
+		else
+			i++;
+	}
+}
+
+//==========================================================================
+//
+//	CastCondition
+//
+//==========================================================================
+
+ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
+											Actor Instigator, int level, float life_duration)
+{
+	/*if (!Conditions)
+	{
+		Conditions = LinkedList(SpawnObject(LinkedList));
+		if (!Conditions) return none;
+	}*/
+	ActorCondition AC;
+
+	PurgeConditions();
+
+	if (accumulative)
+		AC = GetCondition(ConditionClass, Instigator, level);
+
+	if (AC)
+	{
+		float limit;
+
+		if (AC.MaxAccumulatedLifePerLevel < 0.0)
+			AC.LifeTime += life_duration;
+		else
+		{
+			limit = AC.MaxAccumulatedLifePerLevel * itof(AC.Level);
+			if (AC.LifeTime >= limit)
+				AC = none;	// [CW] to mark that no condition is added
+			else
+			{
+				AC.LifeTime += life_duration;
+				if (AC.LifeTime > limit)
+					AC.LifeTime = limit;
+			}
+		}
+	}
+	else
+	{
+		AC = ActorCondition(Spawn(ConditionClass));
+
+		if (!AC.CanBeCastUpon(self))
+		{
+			AC.Destroy();
+			AC = none;
+		}
+
+		if (AC)
+		{
+			//LinkedReferer ref = LinkedReferer(SpawnObject(LinkedReferer));
+			//ref.refObject = AC;
+			//AC.Referer = ref;
+			//Conditions.Add(ref);
+			Conditions.Num = Conditions.Num + 1;
+			Conditions[Conditions.Num - 1] = AC;
+			AC.ARecepient = self;
+			AC.EInstigator = Instigator;
+			AC.Level = level;
+			AC.LifeDuration = life_duration;
+			AC.Activate();
+		}
+	}
+
+	if (AC)
+	{
+		if (Player && AC.CastMessage)
+			Player.cprint(AC.CastMessage);
+		if (AC.CastSound)
+			PlaySound(AC.CastSound, CHAN_VOICE);
+	}
+
+	return AC;
+}
+
+//==========================================================================
+//
+//	GetCondition
+//
+//	TODO: optional instigator and level
+//
+//==========================================================================
+
+ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
+{
+	if (/*Conditions && Conditions.refHead*/Conditions.Num)
+	{
+		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		//while (acref)
+		//{
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			ActorCondition ac = Conditions[i];/*ActorCondition(acref.refObject);*/
+			if (ac && ac.Class == ConditionClass &&
+					ac.EInstigator == Instigator &&
+					ac.Level == level)
+			{
+				return ac;
+			}
+			//acref = LinkedReferer(acref.refNext);
+		};
+	}
+
+	return none;
+}
+
+//==========================================================================
+//
+//	NotifyConditions
+//
+//==========================================================================
+
+void NotifyConditions(int notification, EntityEx E, int param)
+{
+	if (/*Conditions && Conditions.refHead*/Conditions.Num)
+	{
+		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		//while (acref)
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			if (Conditions[i])
+			/*ActorCondition(acref.refObject)*/Conditions[i].Notify(notification, E, param);
+			//acref = LinkedReferer(acref.refNext);
+		};
+	}
+}
+
 defaultproperties
 {
+	bSolid = true;
+	bShootable = true;
+	bFloorClip = true;
+	bTelestomp = true;
+	bActivatePushWall = true;
+	bPassMobj = true;
+	bNeverTarget = false;
+
 	ReactionCount = 0;
-	bCountKill = false;
-	bMonster = false;
-	bActivateMCross = false;
 	bDropOff = true;
 	bWindThrust = true;
 	bSlide = true;
@@ -261,10 +670,4 @@ defaultproperties
 	RDFactor = 0.25;
 	SoundClass = 'fighter';
 	CrunchSound = '*splat';
-
-	// KoraxRPG
-	bNonScalable = true;
-	bLiving = true;
-	bCanRide = true;
-	Team = KRPGDefs::TEAM_PLAYER;
 }
