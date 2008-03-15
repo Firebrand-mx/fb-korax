@@ -146,6 +146,8 @@ bool bUnControllable; //[CW] Ignore user/AI commands (move/attack etc)
 float	respawn_counter; // [CW] Time player must wait after his death before he may respawn
 bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player respawn
 
+float	level_ender_counter; // [CW] Time to wait before exit level
+
 replication
 {
 	reliable if (!bIsClient)
@@ -1959,6 +1961,18 @@ void PlayerTick(float deltaTime)
 		SideMove = 0.0;
 	}
 
+	// [CW]
+	if (level_ender_counter > 0.0)
+	{
+		level_ender_counter -= deltaTime;
+		if (level_ender_counter <= 0.0)
+		{
+			level_ender_counter = 0.0;
+			// [FB] Exit map
+			Level.ExitLevel(0);
+		}
+	}
+
 	if (!MO)
 		Error("Player::PlayerTick : MO reference not set to an instance of an object");
 
@@ -2493,7 +2507,7 @@ void UseArtiBlastRadius()
 			vector(16.0 * cos(MO.Angles.yaw), 24.0 * sin(MO.Angles.yaw), 8.0 - MO.FloorClip));
 		break;
 	case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
-		Actor mo = PlayerPawn(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
+		PlayerPawn(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
 		break;
 	}
 }
@@ -3178,6 +3192,10 @@ void UpdateScore(int event)
 			MainGameInfo(Level.Game).ScoreboardsUpdate(none);
 		}
 	}
+
+	// [CW] Check score limit
+	if (Level && Level.Game && (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM))
+		MainGameInfo(Level.Game).UpdateHighscore(Score);
 }
 
 //==========================================================================
@@ -3899,32 +3917,25 @@ void KilledByPlayer(EntityEx Victim)
 		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
 		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
 		{
-			if (Level.TotalKills - Level.CurrentKills == 4)
-			{
-//				CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-				MO.PlaySound('misc/chat', CHAN_AUTO);
-				Level.bprint("4 monsters left!");
-			}
-			if (Level.TotalKills - Level.CurrentKills == 3)
+			if (Level.CurrentKills < Level.TotalKills && Level.TotalKills - Level.CurrentKills <= 10)
 			{
 				MO.PlaySound('misc/chat', CHAN_AUTO);
-				Level.bprint("3 monsters left!");
+				MainGameInfo(Level.Game).bcentreprint(va("%i monsters left!", Level.TotalKills - Level.CurrentKills));
 			}
-			if (Level.TotalKills - Level.CurrentKills == 2)
-			{
-				MO.PlaySound('misc/chat', CHAN_AUTO);
-				Level.bprint("2 monsters left!");
-			}
-			if (Level.TotalKills - Level.CurrentKills == 1)
-			{
-				MO.PlaySound('misc/chat', CHAN_AUTO);
-				Level.bprint("1 monster left!");
-			}
+			
 			// [FB] No more monsters, so end the game!
-			if (Level.TotalKills - Level.CurrentKills == 0)
+			if (Level.TotalKills == Level.CurrentKills)
 			{
 				// [FB] Exit map
-				Level.ExitLevel(0);
+				//Level.ExitLevel(0);
+				int i;
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (Level.Game.Players[i] && !Level.Game.Players[i].bIsBot)
+					{
+						Player(Level.Game.Players[i]).level_ender_counter = 0.5;
+					}
+				}
 			}
 		}
 	}
@@ -3973,67 +3984,6 @@ void KilledByPlayer(EntityEx Victim)
 			{
 				UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
 				UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
-			}
-			
-			// [FB] Implement ScoreLimit
-			if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM)
-			{
-				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 4)
-				{
-//					source.Player.CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("4 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 3)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("3 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 2)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("2 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Frags == GetCvar('ScoreLimit') - 1)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("1 frag left!");
-				}
-				if (GetCvar('ScoreLimit') && GetCvar('ScoreLimit') <= Frags)
-				{
-					// [FB] Exit map when ScoreLimit is reached
-					Level.ExitLevel(0);
-				}
-			}
-			else
-			{
-				// [FB] Team frags
-				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 4)
-				{
-//					source.Player.CallLocalSound(HexenDefs::lsid_gen_an_y_lead, true, HexenDefs::STANDART_LSQ_DELAY);
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("4 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 3)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("3 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 2)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("2 frags left!");
-				}
-				if (GetCvar('ScoreLimit') && Team.Frags == GetCvar('ScoreLimit') - 1)
-				{
-					MO.PlaySound('misc/chat', CHAN_AUTO);
-					Level.bprint("1 frag left!");
-				}
-				if (GetCvar('ScoreLimit') && GetCvar('ScoreLimit') <= Team.Frags)
-				{
-					// [FB] Exit map when ScoreLimit is reached
-					Level.ExitLevel(0);
-				}
 			}
 		}
 	}

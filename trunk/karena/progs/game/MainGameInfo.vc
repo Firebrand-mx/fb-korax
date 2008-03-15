@@ -67,6 +67,7 @@ HexenLevelInfo	Level;
 GameModel		GameModel;			// [CW] for advanced game modes
 
 bool		bCompetitionOpened;	// [CW] is set to true when first player gets first score
+int			Highscore;
 
 //==========================================================================
 //
@@ -271,6 +272,8 @@ void InitLevel(HexenLevelInfo levelinfo)
 		}
 	}
 
+	Highscore = 0;
+	bCompetitionOpened = false;
 	bFirstLevelInited = true;
 }
 
@@ -776,6 +779,100 @@ void ScoreboardsUpdate(Player thisPlayer)
 			   break;
 
 			pl.teamscores[i] = Teams[i].Score;
+		}
+	}
+}
+
+//==========================================================================
+//
+//  UpdateHighscore
+//
+//	[CW] 
+//
+//==========================================================================
+
+void UpdateHighscore(int score)
+{
+	int i;
+
+	if (score > Highscore)
+	{
+		int scorelimit = GetCvar('ScoreLimit');
+		Highscore = score;
+
+		if (!scorelimit)
+			return;
+
+		//
+		// [CW] We assume that UpdateHighscore is called from Player only in non-team games
+		//		and from PlayerTeam only in team games
+		//
+		switch (GameType)
+		{
+		case HexenDefs::game_dm:
+		case HexenDefs::game_kth:
+		case HexenDefs::game_dmteam:
+			// [CW] Announce 'X frags left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 5)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i frags left!", scorelimit - Highscore));
+			}
+			break;
+		case HexenDefs::game_sweep: 
+		case HexenDefs::game_sweepteam: 
+			// [CW] NOTE: In Sweep points could be earned both by killing and fragging, so we do not
+			// know exactly how these score points have been gained.
+			// [CW] Announce 'X points left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 10)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i points left!", scorelimit - Highscore));
+			}
+			break;
+		case HexenDefs::game_xmas:
+			// [CW] Announce 'X burned trees left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 25)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i burned trees left!", scorelimit - Highscore));
+			}
+			break;
+		case HexenDefs::game_domination:
+			// [CW] Announce 'X points left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 25)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i points left!", scorelimit - Highscore));
+			}
+			break;
+		case HexenDefs::game_ctf:
+			// [CW] Announce 'X flags left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 3)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i captures left!", scorelimit - Highscore));
+			}
+			break;
+		case HexenDefs::game_football:
+			// [CW] Announce 'X goals left'
+			if (Highscore < scorelimit && Highscore >= scorelimit - 5)
+			{
+				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				bcentreprint(va("%i goals left!", scorelimit - Highscore));
+			}
+			break;
+		}
+
+		if (scorelimit <= Highscore)
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (Players[i] && !Players[i].bIsBot)
+				{
+					Player(Players[i]).level_ender_counter = 0.5;
+				}
+			}
 		}
 	}
 }
