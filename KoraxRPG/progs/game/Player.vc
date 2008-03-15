@@ -881,7 +881,7 @@ void PlayerImpulse()
 	{
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_ICE_DAMAGER:
 		{
-			ACDamageDealer ac = ACDamageDealer(KRPGActor(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
+			ACDamageDealer ac = ACDamageDealer(PlayerPawn(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
 			if (ac)
 			{
 				ac.DamageValue = 10;
@@ -892,17 +892,17 @@ void PlayerImpulse()
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_POISON_DAMAGER:
 		{
-			KRPGActor(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
+			PlayerPawn(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
 		}
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_SPELL_MANA_BURN:
 		{
-			KRPGActor(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
+			PlayerPawn(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
 		}
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_SPELL_CONFUSION:
 		{
-			KRPGActor(MO).CastCondition(ACSpellConfusion, true, none, 1, 20.0);
+			PlayerPawn(MO).CastCondition(ACSpellConfusion, true, none, 1, 20.0);
 		}
 		break;
 	}
@@ -1390,7 +1390,7 @@ void PlayerTick(float deltaTime)
 			SideMove /= 7.0;
 		}
 		// KRPG
-		if (KRPGActor(MO).RidePartner && KRPGActor(MO).bIsMountedOn && KRPGActor(MO).bRideControl)
+		if (PlayerPawn(MO).RidePartner && PlayerPawn(MO).bIsMountedOn && PlayerPawn(MO).bRideControl)
 			PlayerRide(deltaTime);
 		else if (MO.WaterLevel >= 2)
 			WaterMove(deltaTime);
@@ -1533,7 +1533,7 @@ void PlayerRide(float deltaTime)
 	float side = SideMove;
 	float vertical = (Buttons & BT_JUMP) ? deltaTime : 0.0;
 
-	KRPGActor(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
+	PlayerPawn(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
 }
 
 //==========================================================================
@@ -1657,10 +1657,10 @@ void PaletteFlash()
 	//
 	// KRPG
 	//
-	KRPGActor ka = KRPGActor(MO);
-	if (ka.Conditions.Num/*KRPGActor(MO).Conditions && KRPGActor(MO).Conditions.refHead*/)
+	PlayerPawn ka = PlayerPawn(MO);
+	if (ka.Conditions.Num/*PlayerPawn(MO).Conditions && PlayerPawn(MO).Conditions.refHead*/)
 	{
-		//LinkedReferer acref = LinkedReferer(KRPGActor(MO).Conditions.refHead);
+		//LinkedReferer acref = LinkedReferer(PlayerPawn(MO).Conditions.refHead);
 		//while (acref)
 		int i;
 		for (i = 0; i < ka.Conditions.Num; i++)

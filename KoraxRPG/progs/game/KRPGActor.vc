@@ -27,9 +27,8 @@ bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
 
 bool			bSaddleHorse;	// actor can be ridden by pawns
-bool			bIsMountedOn;
 bool			bRideControl;
-KRPGActor		RidePartner;	// either 'rider' or 'horse', depending on flags
+PlayerPawn		RidePartner;	// 'rider' 
 
 
 //
@@ -44,14 +43,6 @@ const float HIGH_ALERTNESS				= 10.0;
 float			Alertness;		// while alert, creature will look for enemies all around
 bool			bIgnoreTeams;
 int				Team;
-
-//
-// [KoraxRPG] Actor Conditions
-//
-//LinkedList Conditions;
-array<ActorCondition> Conditions;
-
-
 
 //==========================================================================
 //
@@ -132,24 +123,6 @@ bool Physics(float DeltaTime)
 	if (bZAnchored)
 		Velocity.z = 0.0;
 
-	if (RidePartner)
-	{
-		if (bIsMountedOn)
-		{
-			TVec saddle = RidePartner.Origin;
-			saddle.z += RidePartner.Height;
-
-			Velocity = RidePartner.Velocity + ((saddle - Origin) * 5.0);
-
-			float lx = Origin.x - saddle.x;
-			float ly = Origin.y - saddle.y;
-			float limit = (RidePartner.Radius + Radius) * 2.0;
-
-			if (fabs(lx) > limit|| fabs(ly) > limit)
-				Dismount();
-		}
-	}
-
 	return ::Physics(DeltaTime);
 }
 
@@ -178,15 +151,12 @@ void Died(EntityEx source, EntityEx inflictor)
 {
 	if (RidePartner)
 	{
-		if (bIsMountedOn) Dismount();
-		else RidePartner.Dismount();
+		RidePartner.Dismount();
 	}
 
 	Target = none;
 
 	::Died(source, inflictor);
-
-	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
 
 	if (!bMirrorImage && bLiving && P_Random() < 33)
 	{
@@ -274,25 +244,9 @@ bool OkayToSwitchTarget(EntityEx source)
 //
 //==========================================================================
 
-bool IsBeingUsed(Pawn User)
+bool IsBeingUsed(Actor User)
 {
 	return false;
-}
-
-//==========================================================================
-//
-//	MountOn
-//
-//==========================================================================
-
-void MountOn(KRPGActor Horse, bool bGainControl)
-{
-	RidePartner = Horse;
-	bIsMountedOn = true;
-	bRideControl = bGainControl;
-	bXYAnchored = true;
-	bZAnchored = true;
-	Horse.IsBeingMountedOn(self, !bGainControl);
 }
 
 //==========================================================================
@@ -303,27 +257,10 @@ void MountOn(KRPGActor Horse, bool bGainControl)
 //
 //==========================================================================
 
-void IsBeingMountedOn(KRPGActor Rider, bool bGainControl)
+void IsBeingMountedOn(PlayerPawn Rider, bool bGainControl)
 {
 	RidePartner = Rider;
-	bIsMountedOn = false;
 	bRideControl = bGainControl;
-}
-
-//==========================================================================
-//
-//	Dismount
-//
-//==========================================================================
-
-void Dismount()
-{
-	bIsMountedOn = false;
-	bRideControl = false;
-	bXYAnchored = default.bXYAnchored;
-	bZAnchored = default.bZAnchored;
-	RidePartner.IsBeingDismountedFrom();
-	RidePartner = none;
 }
 
 //==========================================================================
@@ -1317,167 +1254,6 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 	}
 }
 
-//**************************************************************************
-//
-//
-//	[KoraxRPG] Actor Conditions
-//
-//
-//**************************************************************************
-
-//==========================================================================
-//
-//	PurgeConditions
-//
-//	[CW] Condenses Conditions array by removing null-references
-//
-//==========================================================================
-
-final void PurgeConditions()
-{
-	int i;
-	for (i = 0; i < Conditions.Num;)
-	{
-		if (!Conditions[i])
-		{
-			Conditions.Remove(i);
-		}
-		else
-			i++;
-	}
-}
-
-//==========================================================================
-//
-//	CastCondition
-//
-//==========================================================================
-
-ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
-											Actor Instigator, int level, float life_duration)
-{
-	/*if (!Conditions)
-	{
-		Conditions = LinkedList(SpawnObject(LinkedList));
-		if (!Conditions) return none;
-	}*/
-	ActorCondition AC;
-
-	PurgeConditions();
-
-	if (accumulative)
-		AC = GetCondition(ConditionClass, Instigator, level);
-
-	if (AC)
-	{
-		float limit;
-
-		if (AC.MaxAccumulatedLifePerLevel < 0.0)
-			AC.LifeTime += life_duration;
-		else
-		{
-			limit = AC.MaxAccumulatedLifePerLevel * itof(AC.Level);
-			if (AC.LifeTime >= limit)
-				AC = none;	// [CW] to mark that no condition is added
-			else
-			{
-				AC.LifeTime += life_duration;
-				if (AC.LifeTime > limit)
-					AC.LifeTime = limit;
-			}
-		}
-	}
-	else
-	{
-		AC = ActorCondition(Spawn(ConditionClass));
-
-		if (!AC.CanBeCastUpon(self))
-		{
-			AC.Destroy();
-			AC = none;
-		}
-
-		if (AC)
-		{
-			//LinkedReferer ref = LinkedReferer(SpawnObject(LinkedReferer));
-			//ref.refObject = AC;
-			//AC.Referer = ref;
-			//Conditions.Add(ref);
-			Conditions.Num = Conditions.Num + 1;
-			Conditions[Conditions.Num - 1] = AC;
-			AC.ARecepient = self;
-			AC.EInstigator = Instigator;
-			AC.Level = level;
-			AC.LifeDuration = life_duration;
-			AC.Activate();
-		}
-	}
-
-	if (AC)
-	{
-		if (Player && AC.CastMessage)
-			Player.cprint(AC.CastMessage);
-		if (AC.CastSound)
-			PlaySound(AC.CastSound, CHAN_VOICE);
-	}
-
-	return AC;
-}
-
-//==========================================================================
-//
-//	GetCondition
-//
-//	TODO: optional instigator and level
-//
-//==========================================================================
-
-ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
-{
-	if (/*Conditions && Conditions.refHead*/Conditions.Num)
-	{
-		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
-		//while (acref)
-		//{
-		int i;
-		for (i = 0; i < Conditions.Num; i++)
-		{
-			ActorCondition ac = Conditions[i];/*ActorCondition(acref.refObject);*/
-			if (ac && ac.Class == ConditionClass &&
-					ac.EInstigator == Instigator &&
-					ac.Level == level)
-			{
-				return ac;
-			}
-			//acref = LinkedReferer(acref.refNext);
-		};
-	}
-
-	return none;
-}
-
-//==========================================================================
-//
-//	NotifyConditions
-//
-//==========================================================================
-
-void NotifyConditions(int notification, EntityEx E, int param)
-{
-	if (/*Conditions && Conditions.refHead*/Conditions.Num)
-	{
-		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
-		//while (acref)
-		int i;
-		for (i = 0; i < Conditions.Num; i++)
-		{
-			if (Conditions[i])
-			/*ActorCondition(acref.refObject)*/Conditions[i].Notify(notification, E, param);
-			//acref = LinkedReferer(acref.refNext);
-		};
-	}
-}
-
 //==========================================================================
 //
 //  DoSpecialDamage
@@ -1487,10 +1263,9 @@ void NotifyConditions(int notification, EntityEx E, int param)
 int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
 	// KRPG
-	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster &&
-		P_Random() < 128))
+	if (MissilePoisonDamage && victim.bIsPlayer)
 	{
-		KRPGActor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
+		PlayerPawn(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
 			2.0);
 		damage >>= 1;
 	}
