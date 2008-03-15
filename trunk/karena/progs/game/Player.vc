@@ -859,7 +859,7 @@ void SpawnPlayer(mthing_t * mthing)
 			pp.Inventory.Destroy();
 		}
 		AddDefaultInventory();
-		UpdateArmorPercentage();
+		LevelChanged();
 	}
 	SetupPsprites();
 	if (Level.Game.deathmatch)
@@ -1293,7 +1293,7 @@ void ActivateLevel(int to_lvl, bool message)
 
 	}
 
-	UpdateArmorPercentage();
+	LevelChanged();
 
 	if (message)
 	{
@@ -1352,7 +1352,7 @@ void DeactivateLevel(int to_lvl, bool message)
 		//}
 	}
 
-	UpdateArmorPercentage();
+	LevelChanged();
 
 	if (message)
 	{
@@ -1385,7 +1385,7 @@ void InitiateLevel()
 	constitution = PlayerPawn(MO).InitialConstitution;
 	intelligence = PlayerPawn(MO).InitialIntelligence;
 
-	UpdateArmorPercentage();
+	LevelChanged();
 }
 
 //==========================================================================
@@ -1463,35 +1463,6 @@ void Scoreboard(bool show)
 void ClientScoreboard(bool show)
 {
 	ClientGameBaseEx(ClGame).ShowScoreBoard(show);
-}
-
-//==========================================================================
-//
-//  AdjustSpeed
-//
-//==========================================================================
-
-void AdjustSpeed(out float forward, out float side)
-{
-	switch (PClass)
-	{
-	// [FB] We make every class walk at the same speed now
-	case HexenDefs::PCLASS_FIGHTER:
-	case HexenDefs::PCLASS_CLERIC:
-	case HexenDefs::PCLASS_MAGE:
-	case HexenDefs::PCLASS_HERETIC:
-	case HexenDefs::PCLASS_MARINE:
-	case HexenDefs::PCLASS_WITCHAVEN:
-	case HexenDefs::PCLASS_HERESIARCH:
-		forward *= 0.9 + itof(dexterity) / 100.0;
-		side *= 0.9 + itof(dexterity) / 100.0;
-		break;
-
-	case HexenDefs::PCLASS_PIG:
-		forward *= 0.97 + itof(dexterity) / 100.0;
-		side *= 0.97 + itof(dexterity) / 100.0;
-		break;
-	}
 }
 
 //==========================================================================
@@ -3759,12 +3730,13 @@ bool IsWeaponAlwaysExtremeDeath()
 
 //==========================================================================
 //
-// UpdateArmorPercentage
+//	LevelChanged
 //
 //==========================================================================
 
-final void UpdateArmorPercentage()
+final void LevelChanged()
 {
+	//	Update armor save percentages.
 	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
 	if (Armor && Armor.Amount)
 	{
@@ -3774,6 +3746,22 @@ final void UpdateArmorPercentage()
 			Armor.SavePercent = 0.75;
 		}
 	}
+
+	//	Update player speed.
+	float Value;
+	if (PlayerPig(MO))
+	{
+		Value = 0.97 + itof(dexterity) / 100.0;
+	}
+	else
+	{
+		// [FB] We make every class walk at the same speed now
+		Value = 0.9 + itof(dexterity) / 100.0;
+	}
+	PlayerPawn(MO).ForwardMove1 = Value;
+	PlayerPawn(MO).ForwardMove2 = Value;
+	PlayerPawn(MO).SideMove1 = Value;
+	PlayerPawn(MO).SideMove2 = Value;
 }
 
 //==========================================================================
