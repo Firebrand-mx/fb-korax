@@ -358,7 +358,7 @@ bool CheckSpot(mthing_t * mthing)
 void SpawnPlayer(mthing_t * mthing)
 {
 	float x, y, z;
-	PlayerPawn pp;
+	KRPGPlayerPawn pp;
 	bool ResetInventory = false;
 	Inventory Item;
 	int i;
@@ -389,13 +389,13 @@ void SpawnPlayer(mthing_t * mthing)
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_FIGHTER:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(FighterPlayer, vector(x, y, z),,, false));
+		pp = KRPGPlayerPawn(HexenLevelInfo(Level).Spawn(FighterPlayer, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_CLERIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(ClericPlayer, vector(x, y, z),,, false));
+		pp = KRPGPlayerPawn(HexenLevelInfo(Level).Spawn(ClericPlayer, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MAGE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(MagePlayer, vector(x, y, z),,, false));
+		pp = KRPGPlayerPawn(HexenLevelInfo(Level).Spawn(MagePlayer, vector(x, y, z),,, false));
 		break;
 	default:
 		Error("P_SpawnPlayer: Unknown class type");
@@ -835,7 +835,7 @@ void PlayerImpulse()
 	{
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_ICE_DAMAGER:
 		{
-			ACDamageDealer ac = ACDamageDealer(PlayerPawn(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
+			ACDamageDealer ac = ACDamageDealer(KRPGPlayerPawn(MO).CastCondition(ACDamageDealer, false, none, 1, 5.0));
 			if (ac)
 			{
 				ac.DamageValue = 10;
@@ -846,17 +846,17 @@ void PlayerImpulse()
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_POISON_DAMAGER:
 		{
-			PlayerPawn(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
+			KRPGPlayerPawn(MO).CastCondition(ACPoisoned, true, none, 1, 8.0);
 		}
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_SPELL_MANA_BURN:
 		{
-			PlayerPawn(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
+			KRPGPlayerPawn(MO).CastCondition(ACSpellManaBurn, true, none, 1, 20.0);
 		}
 		break;
 	case KRPGDefs::IMPULSE__TEST_AC__CAST_SPELL_CONFUSION:
 		{
-			PlayerPawn(MO).CastCondition(ACSpellConfusion, true, none, 1, 20.0);
+			KRPGPlayerPawn(MO).CastCondition(ACSpellConfusion, true, none, 1, 20.0);
 		}
 		break;
 	}
@@ -1317,14 +1317,14 @@ void PlayerTick(float deltaTime)
 	float oldHeight = MO.Height;
 	if (Buttons & BT_DUCK)
 	{
-		PlayerPawn(MO).BendDown(deltaTime);
+		KRPGPlayerPawn(MO).BendDown(deltaTime);
 	}
 	else
 	{
-		PlayerPawn(MO).StandUp(deltaTime);
+		KRPGPlayerPawn(MO).StandUp(deltaTime);
 	}
 	//if (Camera == MO)	??? CHECKME
-	PlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
+	KRPGPlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
 
 	//  Move around.
 	//  ReactionTime is used to prevent movement for a bit after a teleport.
@@ -1338,13 +1338,13 @@ void PlayerTick(float deltaTime)
 	}
 	else
 	{
-		if (MO.Height < PlayerPawn(MO).StandHeight)
+		if (MO.Height < KRPGPlayerPawn(MO).StandHeight)
 		{
 			ForwardMove /= 4.0;
 			SideMove /= 7.0;
 		}
 		// KRPG
-		if (PlayerPawn(MO).RidePartner && PlayerPawn(MO).bIsMountedOn && PlayerPawn(MO).bRideControl)
+		if (KRPGPlayerPawn(MO).RidePartner && KRPGPlayerPawn(MO).bIsMountedOn && KRPGPlayerPawn(MO).bRideControl)
 			PlayerRide(deltaTime);
 		else if (MO.WaterLevel >= 2)
 			WaterMove(deltaTime);
@@ -1420,8 +1420,8 @@ void PlayerTick(float deltaTime)
 		{
 			//[KoraxRPG]
 			//P_UseLines();
-			if (MO.IsA('PlayerPawn'))
-				PlayerPawn(MO).TryUse(USERANGE, USETHINGRANGE, MorphTime > 0.0 ? 'PigActive1' : '*usefail');
+			if (MO.IsA('KRPGPlayerPawn'))
+				KRPGPlayerPawn(MO).TryUse(USERANGE, USETHINGRANGE, MorphTime > 0.0 ? 'PigActive1' : '*usefail');
 			bUseDown = true;
 		}
 	}
@@ -1487,7 +1487,7 @@ void PlayerRide(float deltaTime)
 	float side = SideMove;
 	float vertical = (Buttons & BT_JUMP) ? deltaTime : 0.0;
 
-	PlayerPawn(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
+	KRPGPlayerPawn(MO).RidePartner.RideCommand(forward * deltaTime, side * deltaTime, vertical);
 }
 
 //==========================================================================
@@ -1611,10 +1611,10 @@ void PaletteFlash()
 	//
 	// KRPG
 	//
-	PlayerPawn ka = PlayerPawn(MO);
-	if (ka.Conditions.Num/*PlayerPawn(MO).Conditions && PlayerPawn(MO).Conditions.refHead*/)
+	KRPGPlayerPawn ka = KRPGPlayerPawn(MO);
+	if (ka.Conditions.Num/*KRPGPlayerPawn(MO).Conditions && KRPGPlayerPawn(MO).Conditions.refHead*/)
 	{
-		//LinkedReferer acref = LinkedReferer(PlayerPawn(MO).Conditions.refHead);
+		//LinkedReferer acref = LinkedReferer(KRPGPlayerPawn(MO).Conditions.refHead);
 		//while (acref)
 		int i;
 		for (i = 0; i < ka.Conditions.Num; i++)
