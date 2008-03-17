@@ -42,19 +42,12 @@ final void WFireballSpawn(float angle)
 {
 	EntityEx mo;
 
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, FireBallMissile, angle);
+	mo = KArenaPlayerPawn(Owner).SpawnPlayerMissileAngle_2(self, FireBallMissile, angle);
 
 	if (mo)
 	{
-		//mo.Target = Actor(Owner);
 		mo.Tracer = Actor(mo.RoughMonsterSearch(2));
-		Wpn.ApplyDamageModifiers(mo.MissileDamage);
+		ApplyDamageModifiers(mo.MissileDamage);
 	}
 }
 
@@ -64,7 +57,7 @@ final void WFireballSpawn(float angle)
 //
 //==========================================================================
 
-final void A_WFireballAttack()
+final void A_WFireballAttack() self(KArenaPlayerPawn)
 {
 	float angle;
 
@@ -72,32 +65,32 @@ final void A_WFireballAttack()
 	{
 		return;
 	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+	WeaponWitchavenFireballSpell Wpn = WeaponWitchavenFireballSpell(PlayerEx(Player).ReadyWeapon);
 
 	Wpn.UseWeaponMana();
 	angle = Angles.yaw;
 
 	if (Player(Player).exp_level >= 1 && Player(Player).exp_level < 3)
 	{
-		WFireballSpawn(angle);
+		Wpn.WFireballSpawn(angle);
 	}
 	if (Player(Player).exp_level >= 3 && Player(Player).exp_level < 4)
 	{
-		WFireballSpawn(angle - 2.5);
-		WFireballSpawn(angle);
+		Wpn.WFireballSpawn(angle - 2.5);
+		Wpn.WFireballSpawn(angle);
 	}
 	if (Player(Player).exp_level >= 4 && Player(Player).exp_level < 5)
 	{
-		WFireballSpawn(angle - 2.5);
-		WFireballSpawn(angle);
-		WFireballSpawn(angle + 2.5);
+		Wpn.WFireballSpawn(angle - 2.5);
+		Wpn.WFireballSpawn(angle);
+		Wpn.WFireballSpawn(angle + 2.5);
 	}
 	if (Player(Player).exp_level >= 5)
 	{
-		WFireballSpawn(angle - 5.0);
-		WFireballSpawn(angle - 2.5);
-		WFireballSpawn(angle);
-		WFireballSpawn(angle + 2.5);
+		Wpn.WFireballSpawn(angle - 5.0);
+		Wpn.WFireballSpawn(angle - 2.5);
+		Wpn.WFireballSpawn(angle);
+		Wpn.WFireballSpawn(angle + 2.5);
 	}	
 
 	PlaySound('MageStaffFire', CHAN_WEAPON);

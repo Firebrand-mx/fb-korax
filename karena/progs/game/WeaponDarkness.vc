@@ -30,7 +30,9 @@
 //**
 //**************************************************************************
 
-class WeaponDarkness : WeaponFighterHammer;
+class WeaponDarkness : KArenaWeapon;
+
+const float DarknessRange = MELEERANGE * 3.0;
 
 //==========================================================================
 //
@@ -38,7 +40,7 @@ class WeaponDarkness : WeaponFighterHammer;
 //
 //==========================================================================
 
-final void A_DarknessAttack()
+final void A_DarknessAttack() self(KArenaPlayerPawn)
 {
 	int			damage;
 	float		power;
@@ -55,11 +57,11 @@ final void A_DarknessAttack()
 	damage = 74; //60 + (P_Random() & 63);
 	Wpn.ApplyDamageModifiers(damage);
 	power = 10.0;
-	AimTarget = AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
+	AimTarget = AimEx(vforward, WeaponDarkness::DarknessRange, 45.0 / 32.0, 16, WeaponDarkness::DarknessRange);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, WeaponDarkness::DarknessRange, damage, HammerPuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -72,7 +74,7 @@ final void A_DarknessAttack()
 	else
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
-		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, WeaponDarkness::DarknessRange, damage, HammerPuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -87,7 +89,7 @@ final void A_DarknessAttack()
 //
 //==========================================================================
 
-final void A_DarknessThrow()
+final void A_DarknessThrow() self(KArenaPlayerPawn)
 {
 	if (!bIsPlayer)
 	{
@@ -176,7 +178,6 @@ defaultproperties
 	AmmoType1 = ItemManaGreen;
 	AmmoUse1 = 5;
 	PSpriteSY = -10.0;
-	HammerRange = MELEERANGE * 3.0;
 	BotCombatDist = MELEERANGE * 3.0;
 	wis_mod = false;
 	int_mod = false;
@@ -185,6 +186,7 @@ defaultproperties
 	bBotChooseMelee = true;
 	bBotChooseMedium = false;
 	bBotChooseRanged = false;
+	bBotProjectile = true;
 	PickupMessage = "WEAPON OF DARKNESS";
 	refire_tics = 31.0;
 	fire_tics = 24.0;

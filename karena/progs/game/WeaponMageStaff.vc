@@ -55,18 +55,11 @@ final void MStaffSpawn(float angle)
 {
 	EntityEx mo;
 
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, MageStaffFX2, angle);
+	mo = KArenaPlayerPawn(Owner).SpawnPlayerMissileAngle_2(self, MageStaffFX2, angle);
 	if (mo)
 	{
-		//mo.Target = Actor(Owner);
 		mo.Tracer = Actor(mo.RoughMonsterSearch(10));
-		Wpn.ApplyDamageModifiers(mo.MissileDamage);
+		ApplyDamageModifiers(mo.MissileDamage);
 	}
 }
 
@@ -76,7 +69,7 @@ final void MStaffSpawn(float angle)
 //
 //==========================================================================
 
-final void A_MStaffAttack()
+final void A_MStaffAttack() self(KArenaPlayerPawn)
 {
 	float angle;
 
@@ -84,14 +77,14 @@ final void A_MStaffAttack()
 	{
 		return;
 	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+	WeaponMageStaff Wpn = WeaponMageStaff(PlayerEx(Player).ReadyWeapon);
 
 	Wpn.UseWeaponMana();
 	angle = Angles.yaw;
 
-	MStaffSpawn(angle);
-	MStaffSpawn(angle - 5.0);
-	MStaffSpawn(angle + 5.0);
+	Wpn.MStaffSpawn(angle);
+	Wpn.MStaffSpawn(angle - 5.0);
+	Wpn.MStaffSpawn(angle + 5.0);
 	PlaySound('MageStaffFire', CHAN_WEAPON);
 	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 76);
 }
@@ -102,7 +95,7 @@ final void A_MStaffAttack()
 //
 //==========================================================================
 
-final void A_MStaffPalette1()
+final void A_MStaffPalette1() self(KArenaPlayerPawn)
 {
 	if (!bIsPlayer)
 	{
@@ -119,7 +112,7 @@ final void A_MStaffPalette1()
 //
 //==========================================================================
 
-final void A_MStaffPalette2()
+final void A_MStaffPalette2() self(KArenaPlayerPawn)
 {
 	if (!bIsPlayer)
 	{
@@ -136,7 +129,7 @@ final void A_MStaffPalette2()
 //
 //==========================================================================
 
-final void A_MStaffPalette3()
+final void A_MStaffPalette3() self(KArenaPlayerPawn)
 {
 	if (!bIsPlayer)
 	{
