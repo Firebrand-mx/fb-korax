@@ -744,7 +744,7 @@ bool CheckSpot(mthing_t * mthing)
 void SpawnPlayer(mthing_t * mthing)
 {
 	float x, y, z;
-	PlayerPawn pp;
+	KArenaPlayerPawn pp;
 	bool ResetInventory = false;
 	Inventory Item;
 	int i;
@@ -789,22 +789,22 @@ void SpawnPlayer(mthing_t * mthing)
 	switch (PClass)
 	{
 	case HexenDefs::PCLASS_FIGHTER:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerFighter, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerFighter, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_CLERIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerCleric, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerCleric, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MAGE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMage, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMage, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_HERETIC:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerHeretic, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerHeretic, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_MARINE:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMarine, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerMarine, vector(x, y, z),,, false));
 		break;
 	case HexenDefs::PCLASS_WITCHAVEN:
-		pp = PlayerPawn(HexenLevelInfo(Level).Spawn(PlayerWitchaven, vector(x, y, z),,, false));
+		pp = KArenaPlayerPawn(HexenLevelInfo(Level).Spawn(PlayerWitchaven, vector(x, y, z),,, false));
 		break;
 	default:
 		Error("Player::SpawnPlayer : Unknown class type");
@@ -918,7 +918,7 @@ void SpawnPlayer(mthing_t * mthing)
 			experience = 0; // [FB] We don't want to have negative experience, right?
 		}
 
-		PlayerPawn(MO).experience = experience;
+		KArenaPlayerPawn(MO).experience = experience;
 
 		// [FB] But what if the experience we lost has made us lost a level??
 		//	Then we use the old_level value to compare our current experience,
@@ -963,11 +963,11 @@ final void AddDefaultInventory()
 	BArmor.Amount = 0;
 	BArmor.AttachToOwner(EntityEx(MO));
 
-	for (i = 0; i < PlayerPawn(MO).DropItemList.Num; i++)
+	for (i = 0; i < KArenaPlayerPawn(MO).DropItemList.Num; i++)
 	{
-		Inventory Item = Inventory(Level.Spawn(PlayerPawn(MO).DropItemList[i].Type,,,, false));
+		Inventory Item = Inventory(Level.Spawn(KArenaPlayerPawn(MO).DropItemList[i].Type,,,, false));
 		Item.bIgnoreSkill = true;
-		Item.Amount = PlayerPawn(MO).DropItemList[i].Amount;
+		Item.Amount = KArenaPlayerPawn(MO).DropItemList[i].Amount;
 		if (Weapon(Item))
 		{
 			//	For better control empty weapon's ammo.
@@ -1348,7 +1348,7 @@ void DeactivateLevel(int to_lvl, bool message)
 
 void InitiateLevel()
 {
-	max_health = PlayerPawn(MO).default.Health;	//100;
+	max_health = KArenaPlayerPawn(MO).default.Health;	//100;
 
 	exp_level = 1;
 	next_level =  1000 * exp_level;
@@ -1356,11 +1356,11 @@ void InitiateLevel()
 	Health = max_health;
 	MO.Health = Health;
 
-	strength = PlayerPawn(MO).InitialStrength;
-	wisdom = PlayerPawn(MO).InitialWisdom;
-	dexterity = PlayerPawn(MO).InitialDexterity;
-	constitution = PlayerPawn(MO).InitialConstitution;
-	intelligence = PlayerPawn(MO).InitialIntelligence;
+	strength = KArenaPlayerPawn(MO).InitialStrength;
+	wisdom = KArenaPlayerPawn(MO).InitialWisdom;
+	dexterity = KArenaPlayerPawn(MO).InitialDexterity;
+	constitution = KArenaPlayerPawn(MO).InitialConstitution;
+	intelligence = KArenaPlayerPawn(MO).InitialIntelligence;
 
 	LevelChanged();
 }
@@ -1507,7 +1507,7 @@ void PlayerImpulse()
 	}*/
 	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
-		PlayerPawn(MO).MoveToFreePosition();
+		KArenaPlayerPawn(MO).MoveToFreePosition();
 	}
 }
 
@@ -1829,9 +1829,9 @@ void UpdateTargetInfo()
 		TVec Dir;
 		
 		angles = MO.Angles;
-		PlayerPawn(MO).bOverrideCoop = true;
+		KArenaPlayerPawn(MO).bOverrideCoop = true;
 		EntityEx AimTarget = Actor(MO).AimLineAttack(Dir, angles, 64.0 * 64.0);
-		PlayerPawn(MO).bOverrideCoop = false;
+		KArenaPlayerPawn(MO).bOverrideCoop = false;
 		if (AimTarget)
 		{
 			if (AimTarget.Player)
@@ -2159,7 +2159,7 @@ void PlayerTick(float deltaTime)
 		{
 			if (Blinder && !Blinder.MO)
 				Error("Player::PlayerTick : Blinder.MO reference not set to an instance of an object");
-			PlayerPawn(MO).BlindDamage(Blinder ? Actor(Blinder.MO) : none, 1, true);
+			KArenaPlayerPawn(MO).BlindDamage(Blinder ? Actor(Blinder.MO) : none, 1, true);
 		}
 	}
 
@@ -2451,11 +2451,11 @@ void UseArtiBlastRadius()
 		BlastRadius();
 		break;
 	case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
-		PlayerPawn(MO).Spawn_2(none, BlastRadiusBomb, MO.Origin +
+		KArenaPlayerPawn(MO).Spawn_2(none, BlastRadiusBomb, MO.Origin +
 			vector(16.0 * cos(MO.Angles.yaw), 24.0 * sin(MO.Angles.yaw), 8.0 - MO.FloorClip));
 		break;
 	case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
-		PlayerPawn(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
+		KArenaPlayerPawn(MO).SpawnPlayerMissile_2(none, BlastRadiusMissile);
 		break;
 	}
 }
@@ -2476,7 +2476,7 @@ void UseArtiPoisonBag()
 	switch(altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
 	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
-		bomb = PlayerPawn(MO).Spawn_2(none, ThrowingBomb, MO.Origin +
+		bomb = KArenaPlayerPawn(MO).Spawn_2(none, ThrowingBomb, MO.Origin +
 			vector(0.0, 0.0, 35.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -2496,7 +2496,7 @@ void UseArtiPoisonBag()
 		break;
 		
 	case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-		bomb = PlayerPawn(MO).Spawn_2(none, FireBomb, MO.Origin +
+		bomb = KArenaPlayerPawn(MO).Spawn_2(none, FireBomb, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -2505,7 +2505,7 @@ void UseArtiPoisonBag()
 		break;
 
 	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:	
-		bomb = PlayerPawn(MO).Spawn_2(none, PoisonBag, MO.Origin +
+		bomb = KArenaPlayerPawn(MO).Spawn_2(none, PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
 		{
@@ -3735,10 +3735,10 @@ final void LevelChanged()
 		// [FB] We make every class walk at the same speed now
 		Value = 0.9 + itof(dexterity) / 100.0;
 	}
-	PlayerPawn(MO).ForwardMove1 = Value;
-	PlayerPawn(MO).ForwardMove2 = Value;
-	PlayerPawn(MO).SideMove1 = Value;
-	PlayerPawn(MO).SideMove2 = Value;
+	KArenaPlayerPawn(MO).ForwardMove1 = Value;
+	KArenaPlayerPawn(MO).ForwardMove2 = Value;
+	KArenaPlayerPawn(MO).SideMove1 = Value;
+	KArenaPlayerPawn(MO).SideMove2 = Value;
 }
 
 //==========================================================================
