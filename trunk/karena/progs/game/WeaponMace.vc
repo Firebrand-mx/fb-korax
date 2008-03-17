@@ -34,45 +34,11 @@ class WeaponMace : KArenaWeapon;
 
 //===========================================================================
 //
-//	A_FireMacePL1B
-//
-//===========================================================================
-
-final void A_FireMacePL1B()
-{
-	Actor ball;
-	float angle;
-
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	Wpn.UseWeaponMana();
-	ball = KArenaPlayerPawn(self).Spawn_2(Wpn, MaceFX2, Owner.Origin +
-		vector(0.0, 0.0, 28.0 - FloorClip));
-	ball.Velocity.z =
-		(2.0 + 173.0 * -tan(Angles.pitch) / 32.0) * 35.0;
-	angle = Angles.yaw;
-	Wpn.ApplyDamageModifiers(ball.MissileDamage);
-	//ball.Target = Actor(Owner);
-	//ball.PInstigator = Player(Owner.Player);
-	ball.Angles.yaw = angle;
-	ball.Origin.z += 173.0 * -tan(Angles.pitch) / 16.0;
-	ball.Velocity.x = Velocity.x / 2.0 + ball.Speed * cos(angle);
-	ball.Velocity.y = Velocity.y / 2.0 + ball.Speed * sin(angle);
-	ball.PlaySound('MaceFire', CHAN_WEAPON);
-	ball.CheckMissileSpawn();
-}
-
-//===========================================================================
-//
 //  A_FireMacePL1
 //
 //===========================================================================
 
-final void A_FireMacePL1()
+final void A_FireMacePL1() self(KArenaPlayerPawn)
 {
 	EntityEx ball;
 
@@ -82,14 +48,31 @@ final void A_FireMacePL1()
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
+	Wpn.UseWeaponMana();
+
 	if (P_Random() < 28)
 	{
-		A_FireMacePL1B();
+		float angle;
+
+		ball = KArenaPlayerPawn(self).Spawn_2(Wpn, MaceFX2, Owner.Origin +
+			vector(0.0, 0.0, 28.0 - FloorClip));
+		ball.Velocity.z =
+			(2.0 + 173.0 * -tan(Angles.pitch) / 32.0) * 35.0;
+		angle = Angles.yaw;
+		Wpn.ApplyDamageModifiers(ball.MissileDamage);
+		//ball.Target = Actor(Owner);
+		//ball.PInstigator = Player(Owner.Player);
+		ball.Angles.yaw = angle;
+		ball.Origin.z += 173.0 * -tan(Angles.pitch) / 16.0;
+		ball.Velocity.x = Velocity.x / 2.0 + ball.Speed * cos(angle);
+		ball.Velocity.y = Velocity.y / 2.0 + ball.Speed * sin(angle);
+		ball.PlaySound('MaceFire', CHAN_WEAPON);
+		ball.CheckMissileSpawn();
 		return;
 	}
-	Wpn.UseWeaponMana();
+
 	Player.ViewStates[ps_weapon].SX = Random() * 4.0 - 2.0;
-	Player.ViewStates[ps_weapon].SY = WEAPONTOP + Random() * 4.0;
+	Player.ViewStates[ps_weapon].SY = Weapon::WEAPONTOP + Random() * 4.0;
 	ball = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, MaceFX1,
 		AngleMod360(Angles.yaw + (Random() - 0.5) * 45.0 / 4.0));
 	if (ball)
@@ -106,7 +89,7 @@ final void A_FireMacePL1()
 //
 //===========================================================================
 
-final void A_FireMacePL2()
+final void A_FireMacePL2() self(KArenaPlayerPawn)
 {
 	EntityEx	A;
 	EntityEx	AimTarget;

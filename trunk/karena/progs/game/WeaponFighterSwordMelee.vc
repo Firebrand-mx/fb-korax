@@ -32,7 +32,7 @@
 
 class WeaponFighterSwordMelee : KArenaWeapon;
 
-float SwordRange;
+const float SwordRange = MELEERANGE + MELEERANGE;
 
 //==========================================================================
 //
@@ -40,7 +40,7 @@ float SwordRange;
 //
 //==========================================================================
 
-final void A_FSwordMeleeAttack()
+final void A_FSwordMeleeAttack() self(KArenaPlayerPawn)
 {
 	Actor		pmo = Actor(Owner);
 	float		power;
@@ -58,11 +58,11 @@ final void A_FSwordMeleeAttack()
 	damage = 125; //100 + (P_Random() & 30) + (P_Random() & 15);
 	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
-	AimTarget = AimEx(vforward, SwordRange, 45.0 / 16.0, 16, MELEERANGE);
+	AimTarget = AimEx(vforward, WeaponFighterSwordMelee::SwordRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (LineAttack(vforward, SwordRange, damage, AxePuff))
+		if (LineAttack(vforward, WeaponFighterSwordMelee::SwordRange, damage, AxePuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -119,7 +119,6 @@ defaultproperties
 	AmmoType1 = ItemManaRed;
 	AmmoUse1 = 50;
 	PSpriteSY = 12.0;
-	SwordRange = MELEERANGE + MELEERANGE;
 	BotCombatDist = MELEERANGE + MELEERANGE;
 	wis_mod = true;
 	int_mod = false;
