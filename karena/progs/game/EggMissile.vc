@@ -115,7 +115,11 @@ final bool MorphPlayer(Actor victim)
 		// Immune when invulnerable
 		return false;
 	}
-	if (Player(victim.Player).Morph.bMorphed)
+	if (victim.bNoMorph)
+	{
+		return false;
+	}
+	if (Player(victim.Player).MorphTime)
 	{
 		// Player is already a beast
 		return false;
@@ -139,10 +143,7 @@ final bool MorphPlayer(Actor victim)
 	beastMo.bShadow = victim.bShadow;
 	beastMo.bGhost = victim.bGhost;
 	beastMo.bFly = victim.bFly;
-	Player(victim.Player).Morph.bMorphed = true;
-	Player(victim.Player).Morph.bTimer = true;
-	Player(victim.Player).Morph.bUntilDeath = true;
-	Player(victim.Player).Morph.MorphTime = Player::MORPHTIME;
+	Player(victim.Player).MorphTime = Player::MORPHTIME;
 	beastMo.ObtainInventory(victim);
 	Player(victim.Player).ActivateMorphWeapon();
 

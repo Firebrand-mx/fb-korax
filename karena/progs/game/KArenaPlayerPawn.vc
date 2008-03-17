@@ -55,17 +55,6 @@ bool bOverrideCoop;	// [CW] Override IsTeammate method by always returning false
 
 int experience;
 
-//===========================================================================
-//
-//	PlayerIsMorphed
-//
-//===========================================================================
-
-bool PlayerIsMorphed()
-{
-	return self.Class == PlayerPig;
-}
-
 //==========================================================================
 //
 //  IsDeathInflictor
@@ -237,8 +226,7 @@ bool IsTeammate(EntityEx Other)
 //
 //==========================================================================
 
-bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass, bool timed,
-	bool until_death)
+bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass)
 {
 	Actor fog;
 	Actor beastMo;
@@ -250,7 +238,7 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass, bool timed,
 		// Immune when invulnerable
 		return false;
 	}
-	if (Player(Player).Morph.bMorphed)
+	if (Player(Player).MorphTime || Class == PlayerHeresiarch)
 	{
 		// Player is already a beast
 		return false;
@@ -272,12 +260,9 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass, bool timed,
 	BArmor.Amount = 0;
 	Player.PClass = pclass;
 	beastMo.bFly = bFly;
-	Player(Player).Morph.bMorphed = true;
-	Player(Player).Morph.bTimer = timed;
-	Player(Player).Morph.bUntilDeath = until_death;
-	if (timed)
-		Player(Player).Morph.MorphTime = Player::MORPHTIME;
 	Player(Player).ActivateMorphWeapon();
+	Player(Player).AddDefaultInventory();
+	Player(Player).SetWeapon(Weapon(FindInventory(WeaponHeresiarchClaw)));
 
 	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
 	if (!Actor(Player.MO).TryMove(Origin))

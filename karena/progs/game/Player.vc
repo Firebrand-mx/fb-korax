@@ -50,14 +50,6 @@ struct trophies_t
 	int		kills_row;
 };
 
-struct morph_t
-{
-	bool bMorphed;
-	bool bTimer;
-	bool bUntilDeath;
-	float MorphTime;
-};
-
 enum
 {
 	targetinfo_none,
@@ -81,8 +73,6 @@ int BlindCount;
 float LastBlindTime;
 /*Actor*/Player Blinder;		///// none for non-player mobjs
 int count;
-
-morph_t	Morph;
 
 BotPlayer Bot;
 
@@ -830,10 +820,7 @@ void SpawnPlayer(mthing_t * mthing)
 	BonusFlash = 0.0;
 	PoisonCount = 0;
 	BlindCount = 0; // [FB] Reset the blind count too!
-	Morph.bMorphed = false;
-	Morph.bTimer = false;
-	Morph.bUntilDeath = false;
-	Morph.MorphTime = 0.0;
+	MorphTime = 0.0;
 	ExtraLight = 0;
 	FixedColourmap = 0;
 	LastSectorDamageTime = 0.0;
@@ -1059,13 +1046,10 @@ void PlayerExitMap(bool clusterChange)
 		}
 	}
 
-	if (Morph.bMorphed)
+	if (MorphTime || MO.Class == PlayerHeresiarch)
 	{
 		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
-		Morph.bMorphed = false;
-		Morph.bTimer = false;
-		Morph.bUntilDeath = false;
-		Morph.MorphTime = 0.0;
+		MorphTime = 0.0;
 	}
 	MO.Angles.pitch = 0.0;
 	MO.RenderStyle = Entity::STYLE_Translucent;
@@ -1576,7 +1560,7 @@ void AlternateAttack()
 void MorphPlayerThink()
 {
 	//FIXME this sucks
-	if (ftoi(32.0 * Morph.MorphTime) & 15)
+	if (ftoi(32.0 * MorphTime) & 15)
 	{
 		return;
 	}
@@ -1641,7 +1625,7 @@ bool UndoPlayerMorph()
 		// Didn't fit
 		A.Destroy();
 		MO.LinkToWorld();
-		Morph.MorphTime = 2.0;
+		MorphTime = 2.0;
 		return false;
 	}
 	MO.LinkToWorld();
@@ -1657,7 +1641,7 @@ bool UndoPlayerMorph()
 	A.bShadow = EntityEx(MO).bShadow;
 	A.bGhost = EntityEx(MO).bGhost;
 	A.ObtainInventory(EntityEx(MO));
-	Morph.MorphTime = 0.0;
+	MorphTime = 0.0;
 	A.Health = max_health;
 	Health = A.Health;
 	PClass = BaseClass;
@@ -2000,7 +1984,7 @@ void PlayerTick(float deltaTime)
 		if (JumpTime <= 0.0)
 			JumpTime = 0.0;
 	}
-	if (Morph.bTimer && Morph.MorphTime)
+	if (MorphTime)
 	{
 		MorphPlayerThink();
 	}
@@ -2117,13 +2101,13 @@ void PlayerTick(float deltaTime)
 	}
 
 	// Morph counter
-	if (Morph.bTimer && Morph.MorphTime)
+	if (MorphTime)
 	{
-		Morph.MorphTime -= deltaTime;
-		if (Morph.MorphTime <= 0.0)
+		MorphTime -= deltaTime;
+		if (MorphTime <= 0.0)
 		{
 			// Attempt to undo the pig
-			Morph.MorphTime = 0.0;
+			MorphTime = 0.0;
 			UndoPlayerMorph();
 		}
 	}
@@ -2580,16 +2564,7 @@ void ActivateMorphWeapon()
 {
 	AddDefaultInventory();
 	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
-	switch (PClass)
-	{
-	case HexenDefs::PCLASS_HERESIARCH:
-		SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponHeresiarchClaw)));
-		break;
-	case HexenDefs::PCLASS_PIG:
-		SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
-		break;
-	}
-
+	SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 	SetViewState(ps_weapon, ReadyWeapon.GetReadyState());
 }
 
@@ -2916,7 +2891,7 @@ void Cheat_KillAll()
 
 void Cheat_Morph()
 {
-	if (Morph.bMorphed)
+	if (MorphTime)
 	{
 		UndoPlayerMorph();
 	}
@@ -2937,7 +2912,7 @@ void Cheat_Morph()
 
 void Cheat_NoWeapons()
 {
-	if (Morph.bMorphed/*MorphTime*/)
+	if (MorphTime)
 	{
 		return;
 	}
@@ -2978,7 +2953,7 @@ void Cheat_Class()
 	int i;
 	int pclass;
 
-	if (Morph.bMorphed/*MorphTime*/)
+	if (MorphTime || MO.Class == PlayerHeresiarch)
 	{
 		// don't change class if the player is morphed
 		return;
@@ -3970,7 +3945,7 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 	//[CW] Show scoreboard for died player
 	Scoreboard(true);
 
-	if (Morph.bMorphed)
+	if (MorphTime || MO.Class == PlayerHeresiarch)
 		bRecalculateLevelOnRespawn = true;
 
 	//[CW] notify advanced game mode
