@@ -34,51 +34,55 @@ class FireBallMissile : Projectile;
 
 //===========================================================================
 //
-//  RoughCheckThing
+//  FindEnemy
 //
 //===========================================================================
 
-bool RoughCheckThing(Entity Other)
+final void FindEnemy()
 {
-	float angle;
-	EntityEx link = EntityEx(Other);
-	
-	if (!(link.bMonster || link.bIsPlayer) || link == Target ||
-		link.bDormant)
+	Entity Other;
+
+	foreach RoughBlockSearch(Other, 2)
 	{
-		return false;
-	}
-	if (!link.bShootable)
-	{
-		return false;
-	}
-	if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
-	{
-		return false;
-	}
-	if (MainGameInfo(Level.Game).GameModel && 
-		MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
-	{
-		return false;
-	}
-	if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
-		link.bIsPlayer && Player(Target.Player).Colour == Player(link.Player).Colour)
-	{
-		return false;
-	}
-	if (CanSee(link))
-	{
-		angle = AngleMod360(atan2(
-			link.Origin.y - Target.Origin.y,
-			link.Origin.x - Target.Origin.x) -
-			Target.Angles.yaw);
-		if (angle > 226.0 * 360.0 / 256.0 ||
-			angle < 30.0 * 360.0 / 256.0)
+		EntityEx link = EntityEx(Other);
+
+		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
+			link.bDormant)
 		{
-			return true;
+			continue;
+		}
+		if (!link.bShootable)
+		{
+			continue;
+		}
+		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
+		{
+			continue;
+		}
+		if (MainGameInfo(Level.Game).GameModel && 
+			MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
+		{
+			continue;
+		}
+		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
+			link.bIsPlayer && Player(Target.Player).Colour == Player(link.Player).Colour)
+		{
+			continue;
+		}
+		if (CanSee(link))
+		{
+			float angle = AngleMod360(atan2(
+				link.Origin.y - Target.Origin.y,
+				link.Origin.x - Target.Origin.x) -
+				Target.Angles.yaw);
+			if (angle > 226.0 * 360.0 / 256.0 ||
+				angle < 30.0 * 360.0 / 256.0)
+			{
+				Tracer = link;
+				return;
+			}
 		}
 	}
-	return false;
 }
 
 //==========================================================================
@@ -91,7 +95,7 @@ final void A_FBallTrack()
 {
 	if (!Tracer && (P_Random() < 50))
 	{
-		Tracer = Actor(RoughMonsterSearch(2));
+		FindEnemy();
 	}
 	SeekerMissile(2.0, 10.0);
 }
