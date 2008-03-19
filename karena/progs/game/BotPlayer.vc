@@ -2415,15 +2415,15 @@ void ProcessPriorities()
 	// Weaponry
 	//----------------------------------------
 	Weapon wpn = Player(self.player).BestWeapon();
-	int my_weapon = wpn ? wpn.Slot : 0;
+	int my_weapon = wpn ? KArenaWeapon(wpn).Slot : 0;
 	int heaviest_weapon = GetHeaviestEnemyWeapon();
 	int opponent_weapon = 0;
 	int opponent_weapon_current = 0;
 	if (enemy && enemy.Player)
 	{
 		wpn = Player(enemy.Player).BestWeapon();
-		opponent_weapon = wpn ? wpn.Slot : 0;
-		opponent_weapon_current = Player(enemy.Player).ReadyWeapon.Slot;
+		opponent_weapon = wpn ? KArenaWeapon(wpn).Slot : 0;
+		opponent_weapon_current = KArenaWeapon(Player(enemy.Player).ReadyWeapon).Slot;
 	}
 
 	// Has only 2nd level weapon
@@ -2572,7 +2572,7 @@ int GetHeaviestEnemyWeapon()
 			Actor(gameInfo.Players[i].MO) == enemy)
 		{
 			wpn = Player(gameInfo.Players[i]).BestWeapon();
-			pl_weapon = wpn ? wpn.Slot : 0;
+			pl_weapon = wpn ? KArenaWeapon(wpn).Slot : 0;
 			if (pl_weapon > weapon)
 				weapon = pl_weapon;
 		}
