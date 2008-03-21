@@ -1,21 +1,27 @@
-vcc -P../common/progs/ ../common/engine/classes.vc ../common/progs/engine.dat
-vcc -P../common/progs/ ../common/linespec/classes.vc ../common/progs/linespec.dat
-vcc -P../common/progs/ ../common/uibase/classes.vc ../common/progs/uibase.dat
+vcc -P../../common/ ../../common/engine/classes.vc ../../common/engine.dat
+vcc -P../../common/ ../../common/linespec/classes.vc ../../common/linespec.dat
+vcc -P../../common/ ../../common/uibase/classes.vc ../../common/uibase.dat
 @ECHO OFF
 cd..
+cd..
+cd..
+cd basev
 cd common
 vlumpy basepak.ls
-copy basepak.pk3 "Z:\KA_DIRECTORY\basev\common\"
+copy basepak.pk3 "D:\Korax\KArena\basev\common\"
 cd..
+cd..
+cd progs
+cd ka_source
 cd progs
 @ECHO ON
 
-vcc -I../common/progs/ -P../common/progs/ shared.vc shared.dat
-vcc -I../common/progs/ -P../common/progs/ svprogs.vc svprogs.dat
-vcc -I../common/progs/ -P../common/progs/ clprogs.vc clprogs.dat
+vcc -I../../common/progs/ -P../../common/ shared.vc shared.dat
+vcc -I../../common/progs/ -P../../common/ svprogs.vc svprogs.dat
+vcc -I../../common/progs/ -P../../common/ clprogs.vc clprogs.dat
 @ECHO OFF
 pause
 cd..
 vlumpy basepak.ls
-copy basepak.pk3 "Z:\KA_DIRECTORY\karena\"
+copy basepak.pk3 "D:\Korax\KArena\karena\"
 cd progs
