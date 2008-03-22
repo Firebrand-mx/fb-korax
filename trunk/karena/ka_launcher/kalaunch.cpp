@@ -1,22 +1,29 @@
 //**************************************************************************
 //**
-//**	##   ##    ##    ##   ##   ####     ####   ###     ###
-//**	##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**	 ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**	 ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**	  ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**	   #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**	$Id: vlaunch.cpp 3045 2008-01-22 20:32:58Z dj_jl $
+//**			##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**	Copyright (C) 2007 Jānis Legzdiņš
+//**    $Id: kalaunch.cpp 1199 2007-12-22 01:19:08Z firebrand_kh $
 //**
-//**	This program is free software; you can redistribute it and/or
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
 //**  as published by the Free Software Foundation; either version 2
 //**  of the License, or (at your option) any later version.
 //**
-//**	This program is distributed in the hope that it will be useful,
+//**    This program is distributed in the hope that it will be useful,
 //**  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //**  GNU General Public License for more details.
@@ -108,8 +115,8 @@ END_EVENT_TABLE()
 
 IMPLEMENT_APP(VLaunchApp)
 
-#include "vavoom.xpm"
-#include "vlaunch.xpm"
+#include "karena.xpm"
+#include "kalaunch.xpm"
 
 // CODE --------------------------------------------------------------------
 
@@ -128,7 +135,7 @@ VMain::VMain()
 	wxPanel* panel = new wxPanel(this);
 	wxBoxSizer* mainsizer = new wxBoxSizer(wxVERTICAL);
 
-	mainsizer->Add(new wxStaticBitmap(panel, -1, wxBitmap(vavoom_xpm)));
+	mainsizer->Add(new wxStaticBitmap(panel, -1, wxBitmap(karena_xpm)));
 
 	wxNotebook* nbook = new wxNotebook(panel, -1, wxPoint(0, 105), wxSize(447, 270));
 	mainsizer->Add(nbook);
