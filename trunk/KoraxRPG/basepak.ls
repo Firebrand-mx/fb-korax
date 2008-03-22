@@ -25,4 +25,4 @@ terrain.txt				scripts/terrain.txt
 decorate.txt			decorate.txt
 
 $load palette.pcx
-translat.dat			raw 0 0 256 22
+translat.dat			raw 0 1 256 7
