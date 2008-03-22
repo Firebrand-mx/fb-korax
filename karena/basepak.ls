@@ -44,4 +44,4 @@ decorate/artifacts.txt	decorate/artifacts.txt
 language.en				language.en
 
 $load 				palette.pcx
-translat.dat			raw 0 0 256 43
+translat.dat			raw 0 1 256 7
