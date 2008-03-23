@@ -133,9 +133,9 @@ void BendDown(float deltaTime)
 //
 //==========================================================================
 
-bool TryUse(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
+bool TryUse(optional float fUseRange, optional float fUseThingRange)
 {
-	if (UseLines(fUseRange, fUseThingRange, FailSound))
+	if (UseLines(fUseRange, fUseThingRange))
 		return true;
 	else
 	{
@@ -159,7 +159,7 @@ bool TryUse(optional float fUseRange, optional float fUseThingRange, optional na
 //
 //==========================================================================
 
-bool UseLines(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
+bool UseLines(optional float fUseRange, optional float fUseThingRange)
 {
 	bool action;
 	float x1;
@@ -212,6 +212,8 @@ bool UseLines(optional float fUseRange, optional float fUseThingRange, optional 
 
 	x2 = x1 + fUseRange * useDir.x;
 	y2 = y1 + fUseRange * useDir.y;
+	bool DoSecAct = true;
+	bool FoundLine = false;
 	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
 	{
 		line_t* line;
@@ -227,14 +229,34 @@ bool UseLines(optional float fUseRange, optional float fUseThingRange, optional 
 				hit_point.z + Height);
 			if (!open)
 			{
-				PlaySound(FailSound, CHAN_VOICE);
+				DoSecAct = false;
+
+				//	Let sector intercept the use.
+				if (Sector->ActionList &&
+					SectorAction(Sector->ActionList).TriggerAction(
+					self, SectorAction::SECSPAC_Use))
+				{
+					break;
+				}
+
+				sector_t* Sec = PointOnPlaneSide(Origin, line) == 0 ?
+					line->frontsector : line->backsector;
+				if (Sec->ActionList &&
+					SectorAction(Sec->ActionList).TriggerAction(
+					self, SectorAction::SECSPAC_UseWall))
+				{
+					break;
+				}
+
+				PlaySound('*usefail', CHAN_VOICE);
 				break;	// can't use through a wall
 			}
 			pheight = Origin.z + Height / 2.0;
 			if ((open->top < pheight) || (open->bottom > pheight))
 			{
-				PlaySound(FailSound, CHAN_VOICE);
+				PlaySound('*usefail', CHAN_VOICE);
 			}
+			FoundLine = true;
 			continue;	// not a special line, but keep checking
 		}
 
@@ -253,8 +275,20 @@ bool UseLines(optional float fUseRange, optional float fUseThingRange, optional 
 		//jff 3/21/98 NOW multiple use allowed with enabling line flag
 		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
 		{
+			DoSecAct = false;
 			break;
 		}
+	}
+
+	if (DoSecAct && Sector->ActionList)
+	{
+		//	Let sector intercept the use.
+		int Spac = SectorAction::SECSPAC_Use;
+		if (FoundLine)
+		{
+			Spac |= SectorAction::SECSPAC_UseWall;
+		}
+		SectorAction(Sector->ActionList).TriggerAction(self, Spac);
 	}
 
 	return action;
