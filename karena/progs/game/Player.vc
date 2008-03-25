@@ -2205,6 +2205,7 @@ void SetViewPos()
 	if (MO != Camera)
 	{
 		ViewOrg = Camera.Origin;
+		ViewOrg.z += EntityEx(Camera).CameraHeight;
 		ViewAngles = Camera.Angles;
 	}
 	else
@@ -2343,14 +2344,7 @@ final void BlastRadius(optional int Limit)
 			// Not a valid monster
 			continue;
 		}
-		if (mo.Class == BlastRadiusBomb ||
-			mo.Class == BlastRadiusMissile)
-		{
-			continue;
-		}
-		if ((mo.Class == PoisonCloud) ||	// poison cloud
-			(mo.Class == HolyFX) ||		// holy fx
-			mo.bIceCorpse)			// frozen corpse
+		if (mo.bCanBlast || mo.bIceCorpse)	// frozen corpse
 		{
 			// Let these special cases go
 		}
