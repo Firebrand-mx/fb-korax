@@ -10,9 +10,8 @@ cd..
 cd progs
 @ECHO ON
 
-vcc -I../common -P../common/progs shared.vc shared.dat
-vcc -I../common -P../common/progs svprogs.vc svprogs.dat
-vcc -I../common -P../common/progs clprogs.vc clprogs.dat
+vcc -I../common -P../common/progs game/classes.vc svprogs.dat
+vcc -I../common -P../common/progs cgame/classes.vc clprogs.dat
 @ECHO OFF
 pause
 cd..
