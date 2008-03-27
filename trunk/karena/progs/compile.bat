@@ -16,9 +16,8 @@ cd ka_source
 cd progs
 @ECHO ON
 
-vcc -I../../common/progs/ -P../../common/ shared.vc shared.dat
-vcc -I../../common/progs/ -P../../common/ svprogs.vc svprogs.dat
-vcc -I../../common/progs/ -P../../common/ clprogs.vc clprogs.dat
+vcc -I../../common/progs/ -P../../common/ game/classes.vc svprogs.dat
+vcc -I../../common/progs/ -P../../common/ cgame/classes.vc clprogs.dat
 @ECHO OFF
 pause
 cd..
