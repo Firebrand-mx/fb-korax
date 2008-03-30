@@ -1186,7 +1186,7 @@ void GiveExperience(int exp)
 		experience = 9999;
 	}
 
-	KArenaActor(MO).experience = experience;
+	KArenaPlayerPawn(MO).experience = experience;
 
 	while (experience >= next_level && exp_level < 11)
 	{
@@ -1370,7 +1370,7 @@ void LooseExperience()
 			experience = 0; // [FB] We don't want to have negative experience
 		}
 
-		KArenaActor(MO).experience = experience;
+		KArenaPlayerPawn(MO).experience = experience;
 
 		if(pcount == 525)
 		{
@@ -3829,6 +3829,10 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 void KilledByPlayer(EntityEx Victim)
 {
 	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
+
+	// [CW] Process KArenaActor specific on-death behavior
+	if (Victim.IsA('KArenaActor'))
+		Victim.KilledByPlayer(KArenaPlayerPawn(MO));
 
 	// [FB] Increase the player's KillCount
 	if (Victim.bMonster)
