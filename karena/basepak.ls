@@ -39,6 +39,10 @@ decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
 decorate/artifacts.txt	decorate/artifacts.txt
 
+actors/hexen/centaur.txt	actors/hexen/centaur.txt
+actors/hexen/demons.txt		actors/hexen/demons.txt
+actors/hexen/ettin.txt		actors/hexen/ettin.txt
+
 //	Language strings
 language.en				language.en
 
