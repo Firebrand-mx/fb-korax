@@ -187,9 +187,9 @@ enum
 };
 
 //
-// [CW] So, idea is, that bot summarize its current situation each N ticks and decides what he should do next
+// [CW] So, idea is, that bot summarize its current situation periodically and decides what he should do next
 //
-const float AI_TIME_DELAY	= 35.0;
+const float AI_TIME_DELAY	= 5.0;	// in seconds
 float AITime;
 
 //
@@ -213,6 +213,8 @@ MainGameInfo gameInfo;
 // [CW] try this...
 Actor FTarget;			// final target (goal) ----- currently UNUSED
 Actor ITarget;			// immediate target (where to go)
+//TVec ITargetPos;		// immediate target position (valid in specific situations)
+TVec AttackOffset;		// basically, a point to get to just before heading to target
 PathNode node_current;
 array<PathNode> nodes;  // list of visited nodes (to make bot move freely along the map)
 
@@ -248,6 +250,9 @@ float sidemove;
 bool bSoftContact;		// Target is something that could be passed through without slowing down
 bool bMeleeUrge;		// Must come closer to enemy as quickly as possible
 bool bKeepDistant;		// Enemy should be attacked from distance
+//bool bUseTargetPosition;	// ITargetPos is valid
+bool bAttackOffsetValid;// Use AttackOffset
+
 
 // Misc booleans
 bool bAllRound;
@@ -399,7 +404,7 @@ bool CheckPath(float ang, float dist)
 			hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
 
 			// Line is impassible
-			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING))
+			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING) || (ld->flags & ML_BLOCKEVERYTHING))
 			{
 				return false;
 			}
@@ -1421,6 +1426,8 @@ Actor SetAlly()
 //
 //	Handle non-attack/dodging movement
 //
+//	[CW] TODO: must implement bKeepDistant!
+//
 //==========================================================================
 
 void Roam(TVec dest)
@@ -1622,7 +1629,26 @@ void Move(float deltaTime)
 	// [CW] Set a real destination for movement
 	if (ITarget)
 	{
-		dest = ITarget.Origin;
+		if (bAttackOffsetValid)
+		{
+			TAVec anglesFromOffset, anglesFromMO;
+			TVec vOff = ITarget.Origin - AttackOffset;
+			TVec vMO = ITarget.Origin - botmo.Origin;
+
+			VectorAngles(&vOff, &anglesFromOffset);
+			VectorAngles(&vMO, &anglesFromMO);
+			
+			// TODO: count accuracy level here maybe
+			if (anglesFromMO.yaw >= anglesFromOffset.yaw - 15.0 &&
+				anglesFromMO.yaw <= anglesFromOffset.yaw + 15.0)
+			{
+				dest = ITarget.Origin;
+			}
+			else
+				dest = AttackOffset;
+		}
+		else
+			dest = ITarget.Origin;
 	}
 	else
 	{
@@ -1633,8 +1659,6 @@ void Move(float deltaTime)
 		return;
 	}
 
-	// [CW] LOL, only this line left after I disabled many things,
-	//		sorry, FB, we will return that stuff back later, ok? :)
 	if(CheckTo(dest))
 		Roam(dest);
 }
@@ -2686,7 +2710,9 @@ void ProcessImmediate()
 
 	if (ITarget)
 	{
-		bSoftContact = (!ITarget.IsA('Pawn') && !ITarget.bSolid);
+		bSoftContact =	bAttackOffsetValid ||
+						(!ITarget.IsA('Pawn') && !ITarget.bSolid) ||
+						ITarget.IsA('SoccerBall');
 	}
 
 	if (enemy)
@@ -2779,9 +2805,45 @@ Actor GetGameModeGoal(optional bool bReachable)
 		}
 		break;
 	case HexenDefs::game_football:
-		{
-			// [CW] not ideal, at least they will kick it sometimes
+		{			
+			// Get ball
 			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
+
+			bAttackOffsetValid = false;
+
+			// [CW] set a target offset
+			if (EE)
+			{
+				int i, team;
+				SoccerTargetSpot sts;
+				GameFootball fb = GameFootball(gameInfo.GameModel);
+				if (gameInfo.Teams[0] == player.Team)
+					team = 1;
+				else
+					team = 0;
+
+				// Get nearest goal target
+				for (i = 0; i < fb.spot_targets.Num; i++)
+				{
+					if (fb.spot_targets[i].Args[0] != team)
+						continue;
+					ee = fb.spot_targets[i];
+					if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
+					{
+						if (!bReachable || CheckTo(ee.Origin, ee))
+						{
+							sts = SoccerTargetSpot(ee);
+							dist = Length(botmo.Origin - ee.Origin);
+						}
+					}
+				}
+
+				if (sts)
+				{
+					AttackOffset = (Normalise(EE.Origin - sts.Origin) * (botmo.Radius * 2.0)) + EE.Origin;
+					bAttackOffsetValid = true;
+				}
+			}
 		}
 		break;
 	default:
