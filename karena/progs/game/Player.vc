@@ -1472,14 +1472,6 @@ void PlayerImpulse()
 	{
 		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
 	}
-	/*else if (impulse == HexenDefs::IMPULSE__SELECTTEAM)
-	{
-		if (Level.Game.deathmatch >= HexenDefs::NUMGAMESNOTEAM)
-		{
-			TeamSelection = HexenDefs::teamselection_reselect;
-			SelectPlayerTeam();
-		}
-	}*/
 	else if (impulse == HexenDefs::IMPULSE__FIXME)
 	{
 		KArenaPlayerPawn(MO).MoveToFreePosition();
@@ -1849,14 +1841,6 @@ void PlayerTick(float deltaTime)
 	if (bNoHUD)
 		ViewStates[ps_weapon].SY += 1000.0;
 
-	/*if (bNoHUD)
-	{
-		MO.RenderStyle = Entity::STYLE_None;
-		MO.Alpha = 0.0;
-		//ViewEnt.RenderStyle = Entity::STYLE_None;
-		//ViewEnt.Alpha = 0.0;
-	}*/
-
 	if (bUnControllable)
 	{
 		Buttons = 0;
@@ -2145,7 +2129,7 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if(!bUnControllable)// && MO.Velocity.x == 0.0 && MO.Velocity.y == 0.0) // [FB] Check for the player camping
+	if(!bUnControllable)
 	{
 		// [CW] No need for this processing when player has lost all experience
 		if (experience > 0)
@@ -3829,7 +3813,7 @@ void KilledByPlayer(EntityEx Victim)
 {
 	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
 
-	// [CW] Process KArenaActor specific on-death behavior
+	// [CW] Process actor-specific event
 	if (Victim.IsA('KArenaActor'))
 		KArenaActor(Victim).KilledByPlayer(KArenaPlayerPawn(MO));
 
