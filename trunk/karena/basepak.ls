@@ -38,6 +38,7 @@ decorate/armor.txt		decorate/armor.txt
 decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
 decorate/artifacts.txt	decorate/artifacts.txt
+decorate/misc.txt		decorate/misc.txt
 
 actors/hexen/centaur.txt	actors/hexen/centaur.txt
 actors/hexen/demons.txt		actors/hexen/demons.txt
