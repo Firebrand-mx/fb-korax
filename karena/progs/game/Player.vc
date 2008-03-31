@@ -34,7 +34,6 @@ class Player : PlayerEx;
 
 const float
 	INVULNTIME2				= 5.0,
-	MORPHTIME 				= 40.0,
 	MAULATORTIME			= 25.0;
 
 const float HEAL_RADIUS_DIST		= 255.0;
@@ -3939,6 +3938,21 @@ void PlayerKilled(EntityEx source, EntityEx inflictor)
 		MainGameInfo(Level.Game).GameModel.NotifyPlayerDeath(self, source);
 
 	SetFOV(HexenDefs::DEFAULT_FOV);
+}
+
+//==========================================================================
+//
+//	PlayerMorphed
+//
+//==========================================================================
+
+void PlayerMorphed(Actor OldMO)
+{
+	PClass = HexenDefs::PCLASS_PIG;
+	// [CW] Recalc attributes based on the new player's body
+	int bak_level = exp_level;
+	InitiateLevel();
+	ActivateLevel(bak_level, false);
 }
 
 defaultproperties
