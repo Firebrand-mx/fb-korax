@@ -47,7 +47,8 @@ enum
 	event_goal			= GameModel::event_custom,
 	event_offside,
 	event_dokickoff,
-	num_footballevents	= event_dokickoff - GameModel::event_custom + 1
+	event_returnball,
+	num_footballevents	= event_returnball - GameModel::event_custom + 1
 };
 
 
@@ -55,15 +56,16 @@ acsnotifier_t	AcsNotifiersFootball[num_footballevents];
 
 
 SoccerBall			Ball;
-Actor				spot_ball;
+SoccerBallSpot		spot_ball;
 bool				bBallCreated;
 bool				bSpotBallCreated;
 
 struct spot_players_t
 {
-	Actor			ms[MAXPLAYERS];
+	KickOffSpot		ms[MAXPLAYERS];
 };
 spot_players_t spot_players[2];
+array<SoccerTargetSpot>	spot_targets;
 
 GameSequencer	fbTimer;
 
@@ -92,6 +94,9 @@ void BeginState(int newstate)
 	int i;
 
 	dprint("GameFootball::BeginState : %i", newstate);
+
+	if (fbTimer)
+		fbTimer.Destroy();
 
 	switch(newstate)
 	{
@@ -150,6 +155,7 @@ void BeginState(int newstate)
 		}
 		
 		Game.bcentreprint("kick off!");
+		Game.BroadcastLocalSoundNamed('Football_KickOff', false, 0.0);
 		
 		EndCurrentState(state_freeplay);
 		return;
@@ -254,6 +260,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 				else if (!arg1 && Game.Teams[1])
 				   Game.Teams[1].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
 				Game.bcentreprint(va("OOOPS! Team %d kicked a ball into their own gates!", arg1));
+				Game.BroadcastLocalSoundNamed('Football_FoolsGoal', false, 0.0);
 				
 				notifyACSArgs[1] = arg1;
 			}
@@ -262,6 +269,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 				// normal goal
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
 				Game.bcentreprint(va("Team %d scores a goal!", arg1 ? 0 : 1));
+				Game.BroadcastLocalSoundNamed('Football_Goal', false, 0.0);
 				notifyACSArgs[1] = arg1 ? 0 : 1;
 			}
 			else
@@ -272,18 +280,35 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		
 		EndCurrentState(state_waitkickoff);
 		break;
+
 	case event_offside:
+		if (State != state_freeplay)
+			return;
 
-		//[CW] continue from kickoff maybe??
-		// need timer here though, since there should be delay
-		// before players are repositioned
+		if (!A || A != Ball)
+			return;
 
+		Game.bcentreprint("Offside!");
+		Game.BroadcastLocalSoundNamed('Football_Offside', false, 0.0);
+		
+		fbTimer = Level.Spawn(GameSequencer);
+		if (fbTimer)
+		{
+			fbTimer.event_id = event_returnball;
+			fbTimer.time_limit = 4.0;
+		}
 		break;
 		
 	case event_dokickoff:
 		if (fbTimer)
 			fbTimer.Destroy();
 		EndCurrentState(state_kickoff);
+		break;
+
+	case event_returnball:
+		if (fbTimer)
+			fbTimer.Destroy();
+		Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
 		break;
 		
 	default:
@@ -383,7 +408,8 @@ void Cleanup()
 bool PrepareMatch()
 {
 	int i;
-	Actor kos;
+	KickOffSpot kos;
+	SoccerTargetSpot sts;
 
 	if (!Game.Teams[0] || !Game.Teams[1])
 	{
@@ -412,6 +438,18 @@ bool PrepareMatch()
 		else
 			dprint("GameFootball::PrepareMatch : bad argument(s) for kick off spot at %f,%f,%f",
 				kos.Origin.x, kos.Origin.y, kos.Origin.z);
+	}
+
+	foreach Level.AllThinkers(SoccerTargetSpot, sts)
+	{
+		if (sts.Args[0] >= 0 && sts.Args[0] < AllowedTeams())
+		{
+			spot_targets.Num = spot_targets.Num + 1;
+			spot_targets[spot_targets.Num - 1] = sts;
+		}
+		else
+			dprint("GameFootball::PrepareMatch : bad argument(s) for target spot at %f,%f,%f",
+				sts.Origin.x, sts.Origin.y, sts.Origin.z);
 	}
 
 	if (!Ball)
