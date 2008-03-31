@@ -54,6 +54,7 @@ MenuTextButton		ServSettings;
 
 void CreateChoices()
 {
+	int i;
 	MenuTextButton		Btn;
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
@@ -129,37 +130,17 @@ void CreateChoices()
 	ScoreLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	ScoreLimit.SetOrigin(ChoicesStartX, ChoicesStartY);
 	ScoreLimit.Text = "Score limit";
-	ScoreLimit.AddItem("0");
-	ScoreLimit.AddItem("5");
-	ScoreLimit.AddItem("10");
-	ScoreLimit.AddItem("15");
-	ScoreLimit.AddItem("20");
-	ScoreLimit.AddItem("25");
-	ScoreLimit.AddItem("30");
-	ScoreLimit.AddItem("35");
-	ScoreLimit.AddItem("40");
-	ScoreLimit.AddItem("45");
-	ScoreLimit.AddItem("50");
-	ScoreLimit.AddItem("55");
-	ScoreLimit.AddItem("60");
+	InitScoreLimit(GameTypes[0]);
 	ChoicesStartY += ScoreLimit.Height;
 
 	TimeLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	TimeLimit.SetOrigin(ChoicesStartX, ChoicesStartY);
 	TimeLimit.Text = "Time limit";
-	TimeLimit.AddItem("0");
-	TimeLimit.AddItem("5");
-	TimeLimit.AddItem("10");
-	TimeLimit.AddItem("15");
-	TimeLimit.AddItem("20");
-	TimeLimit.AddItem("25");
-	TimeLimit.AddItem("30");
-	TimeLimit.AddItem("35");
-	TimeLimit.AddItem("40");
-	TimeLimit.AddItem("45");
-	TimeLimit.AddItem("50");
-	TimeLimit.AddItem("55");
-	TimeLimit.AddItem("60");
+	TimeLimit.AddItem("no limit");
+	for (i = 1; i <= 12; i++)
+	{
+		TimeLimit.AddItem(va("%i", i * 5));
+	}
 	ChoicesStartY += TimeLimit.Height;
 
 	Level = MenuChoiceEnum(NewChild(MenuChoiceEnum));
@@ -201,6 +182,54 @@ void InitMonsters(int GameType)
 
 //==========================================================================
 //
+//	InitScoreLimit
+//
+//==========================================================================
+
+void InitScoreLimit(int GameType)
+{
+	int i, factor, count;
+	ScoreLimit.EnumNames.Num = 0;
+
+	switch (GameType)
+	{
+	case HexenDefs::game_sweep:	//	Castle Sweep
+	case HexenDefs::game_sweepteam: //	Team Castle Sweep
+	case HexenDefs::game_dm:	//	Deathmatch
+	case HexenDefs::game_dmteam:	//	Team deathmatch.
+	case HexenDefs::game_kth:
+		factor = 5;
+		count = 20;
+		break;
+	case HexenDefs::game_domination:
+		factor = 25;
+		count = 20;
+		break;
+	case HexenDefs::game_ctf: //	Capture the Flag
+		factor = 1;
+		count = 20;
+		break;
+	case HexenDefs::game_football: //	Football
+		factor = 1;
+		count = 20;
+		break;
+	case HexenDefs::game_xmas:
+		factor = 25;
+		count = 20;
+		break;
+	default:
+		Error("MenuChoice_Level::InitScoreLimit : unknown game type %i", GameType);
+	}
+
+	ScoreLimit.AddItem("no limit");
+	for (i = 1; i <= count; i++)
+	{
+		ScoreLimit.AddItem(va("%i", i * factor));
+	}
+}
+
+//==========================================================================
+//
 //	ChangeDeathmatch
 //
 //==========================================================================
@@ -210,6 +239,7 @@ bool ChangeDeathmatch(Object Sender, int newValue)
 	dprint("ChangeDeathmatch : newVal = %i, GameType = %i", newValue, GameTypes[newValue]);
 	if (Level)
 		InitMapList(GameTypes[newValue]);
+	InitScoreLimit(GameTypes[newValue]);
 	InitMonsters(GameTypes[newValue]);
 	return true;
 }
