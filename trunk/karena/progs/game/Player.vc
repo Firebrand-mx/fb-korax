@@ -948,20 +948,20 @@ final void AddDefaultInventory()
 		Inventory Item = Inventory(Level.Spawn(KArenaPlayerPawn(MO).DropItemList[i].Type,,,, false));
 		Item.bIgnoreSkill = true;
 		Item.Amount = KArenaPlayerPawn(MO).DropItemList[i].Amount;
-		if (Weapon(Item))
+		if (KArenaWeapon(Item))
 		{
 			//	For better control empty weapon's ammo.
-			Weapon(Item).AmmoGive1 = 0;
-			Weapon(Item).AmmoGive2 = 0;
+			KArenaWeapon(Item).AmmoGive1 = 0;
+			KArenaWeapon(Item).AmmoGive2 = 0;
 			KArenaWeapon(Item).AmmoGive3 = 0;
 		}
 		if (!Item.TryPickup(EntityEx(MO)))
 		{
 			Item.Destroy();
 		}
-		else if (Weapon(Item) && Weapon(Item).CheckAmmo(false))
+		else if (KArenaWeapon(Item) && KArenaWeapon(Item).CheckAmmo(false))
 		{
-			SetWeapon(Weapon(Item));
+			SetWeapon(KArenaWeapon(Item));
 		}
 	}
 }
@@ -2506,6 +2506,20 @@ void MovePsprites(float deltaTime)
 
 //==========================================================================
 //
+//  ActivateHeresiarchWeapon
+//
+//==========================================================================
+
+void ActivateHeresiarchWeapon()
+{
+	AddDefaultInventory();
+	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
+	SetWeapon(KArenaWeapon(EntityEx(MO).FindInventory(WeaponHeresiarchClaw)));
+	SetViewState(ps_weapon, ReadyWeapon.GetReadyState());
+}
+
+//==========================================================================
+//
 //  ActivateMorphWeapon
 //
 //==========================================================================
@@ -2514,7 +2528,7 @@ void ActivateMorphWeapon()
 {
 	AddDefaultInventory();
 	ViewStates[ps_weapon].SY = Weapon::WEAPONTOP;
-	SetWeapon(Weapon(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
+	SetWeapon(KArenaWeapon(EntityEx(MO).FindInventory(WeaponPigSnout)));	// Snout is the first weapon
 	SetViewState(ps_weapon, ReadyWeapon.GetReadyState());
 }
 
