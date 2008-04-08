@@ -33,7 +33,7 @@
 class KArenaPlayerPawn : PlayerPawn
 	abstract;
 
-class<Weapon>			WeaponClasses[HexenDefs::NUMWEAPONSLOTS];
+class<KArenaWeapon>			WeaponClasses[HexenDefs::NUMWEAPONSLOTS];
 
 int InitialStrength;
 int InitialWisdom;
@@ -65,8 +65,8 @@ void IsDeathInflictor(EntityEx victim)
 		Error("KArenaPlayerPawn::IsDeathInflictor : Player.ReadyWeapon reference not set to an instance of an object");
 	//[CW] DEBUGGING *****************
 
-	// Currently only Pawn's death has a meaning here
-	if (ClassIsChildOf(victim.Class, Pawn))
+	// Currently only Actor's death has a meaning here
+	if (ClassIsChildOf(victim.Class, Actor))
 	{
 		if (KArenaWeapon(Player(Player).ReadyWeapon).bInstantRanged &&
 			Length(KArenaWeapon(Player(Player).ReadyWeapon).ShotPosition - victim.GetCentre()) >= HexenDefs::ACCURATE_SHOT_DISTANCE)
@@ -101,7 +101,9 @@ bool MoveToFreePosition()
 			Origin = bak_org + test_dir * test_dist;
 			LinkToWorld();
 			// [FB] We must check if the move is being done inside the map
-			if (!CheckSides(Origin + vector((4.0 + 3.0 * (Radius) / 2.0) * cos(test_ang), (4.0 + 3.0 * (Radius) / 2.0) * sin(test_ang), ONFLOORZ)))
+			if (!CheckSides(Origin +
+				vector((4.0 + 3.0 * (Radius) / 2.0) * cos(test_ang),
+				(4.0 + 3.0 * (Radius) / 2.0) * sin(test_ang), ONFLOORZ)))
 			{
 				// [FB] OK, we are inside the map
 				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
@@ -208,9 +210,7 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass)
 	BArmor.Amount = 0;
 	Player.PClass = pclass;
 	beastMo.bFly = bFly;
-	Player(Player).ActivateMorphWeapon();
-	Player(Player).AddDefaultInventory();
-	Player(Player).SetWeapon(Weapon(FindInventory(WeaponHeresiarchClaw)));
+	Player(Player).ActivateHeresiarchWeapon();
 
 	// [CW] If morphed player cannot move from current position try to find more appropriate position or him
 	if (!Actor(Player.MO).TryMove(Origin))
