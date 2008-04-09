@@ -1,0 +1,46 @@
+
+class CommonHexenBloodySkull : CommonPlayerChunk;
+
+//
+//	[CW]
+//	CommonHexenBloodySkull is a full copy of common HexenBloodySkull
+//	class created to allow KRPGPlayerPawn inherit KRPGActor.
+//	Uses CommonPlayerChunk as ancestor instead of PlayerChunk.
+//
+
+//==========================================================================
+//
+//  A_CheckSkullFloor
+//
+//==========================================================================
+
+final void A_CheckSkullFloor()
+{
+	if (Origin.z <= FloorZ)
+	{
+		SetState(GetStatePlus(IdleState, 7, true));
+		PlaySound('Drip', CHAN_VOICE);
+	}
+}
+
+states
+{
+Spawn:
+	BSKL ABCDFGH 5 A_CheckSkullFloor
+	Loop
+	BSKL I 16 A_CheckPlayerDone
+	Wait
+	BSKL I 1050
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 4.0;
+	Height = 4.0;
+	Gravity = 0.125;
+	bNoBlockmap = true;
+	bPassMobj = false;
+	bCannotPush = true;
+	bBounceSky = true;
+}

@@ -1,11 +1,5 @@
-//------------------------------------------------------------
-//
-// KRPGActor extends basic Hexen Actor class and is made
-// as a separate type only for convenience
-//
-//------------------------------------------------------------
 
-class KRPGActor : Actor
+class KRPGActor : CommonActor
 	abstract;
 
 //
@@ -23,12 +17,15 @@ bool			bSenseAlways;	// detects target without seeing it
 
 bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
 KRPGActor		MirrorMaster;
+
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
 
 bool			bSaddleHorse;	// actor can be ridden by pawns
-bool			bRideControl;
-KRPGPlayerPawn	RidePartner;	// 'rider' 
+bool			bIsMountedOn;	// actor is currently a 'rider'
+bool			bCanRide;		// actor is allowed to ride saddlehorses
+bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
+KRPGActor		RidePartner;	// either 'rider' or 'horse', depending on flags
 
 
 //
@@ -43,6 +40,20 @@ const float HIGH_ALERTNESS				= 10.0;
 float			Alertness;		// while alert, creature will look for enemies all around
 bool			bIgnoreTeams;
 int				Team;
+
+//
+// [KoraxRPG] Actor Conditions
+//
+array<ActorCondition> Conditions;
+
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Extended common stuff
+//
+//
+//**************************************************************************
 
 //==========================================================================
 //
@@ -62,6 +73,134 @@ void BeginPlay()
 		Height += Height * rand;
 		Radius += Radius * rand;
 	}
+}
+
+//==========================================================================
+//
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	if (RidePartner)
+	{
+		if (bIsMountedOn) Dismount();
+		else RidePartner.Dismount();
+		// NEWVER:
+		//RidePartner.Dismount();
+	}
+
+	Target = none;
+
+	::Died(source, inflictor);
+
+	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
+
+	if (!bMirrorImage && bLiving && P_Random() < 33)
+	{
+		Spawn(DyingSpirit, Origin);
+	}
+}
+
+//==========================================================================
+//
+//	Physics
+//
+//==========================================================================
+
+bool Physics(float DeltaTime)
+{
+	if (bXYAnchored)
+	{
+		Velocity.x = 0.0;
+		Velocity.y = 0.0;
+	}
+
+	if (bZAnchored)
+		Velocity.z = 0.0;
+
+	if (RidePartner)
+	{
+		if (bIsMountedOn)
+		{
+			TVec saddle = RidePartner.Origin;
+			saddle.z += RidePartner.Height;
+
+			Velocity = RidePartner.Velocity + ((saddle - Origin) * 5.0);
+
+			float lx = Origin.x - saddle.x;
+			float ly = Origin.y - saddle.y;
+			float limit = (RidePartner.Radius + Radius) * 2.0;
+
+			if (fabs(lx) > limit|| fabs(ly) > limit)
+				Dismount();
+		}
+	}
+
+	return ::Physics(DeltaTime);
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (bMirrorImage && (!MirrorMaster || MirrorMaster.Health <= 0))
+		Kill();
+	if (Alertness > 0.0)
+		Alertness -= deltaTime;
+	::Tick(deltaTime);
+}
+
+//==========================================================================
+//
+//  TakeSpecialDamage
+//
+//	[CW] Handles some special flags
+//
+//==========================================================================
+
+int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage,
+	name DmgType)
+{
+	if (bReflectMissileDamage &&
+			inflictor.bMissile && !inflictor.bBlaster && !inflictor.bRip)
+		return -1;
+	if (bMirrorImage)
+	{
+		Health = 0;
+		if (SetState(FindState('MirrorDeath')))
+			return -1;
+		else
+			return 0;	// [CW] process death normally
+	}
+	return damage;
+}
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Advanced actor manipulations
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	Kill
+//
+//	[CW] Useful method to kill actor instantly
+//
+//==========================================================================
+
+void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DamageType)
+{
+	Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
+		specified_DamageType ? DamageType : 'InstantKill');
 }
 
 //==========================================================================
@@ -94,75 +233,13 @@ void Thrust3d2(float angle2d, float move2d, float move3)
 	Velocity.z += move3 * 35.0;
 }
 
-//==========================================================================
+//**************************************************************************
 //
-//	Kill
 //
-//==========================================================================
-
-void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DamageType)
-{
-	Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
-		specified_DamageType ? DamageType : 'InstantKill');
-}
-
-//==========================================================================
+//	[KoraxRPG] Advanced interaction
 //
-//	Physics
 //
-//==========================================================================
-
-bool Physics(float DeltaTime)
-{
-	if (bXYAnchored)
-	{
-		Velocity.x = 0.0;
-		Velocity.y = 0.0;
-	}
-
-	if (bZAnchored)
-		Velocity.z = 0.0;
-
-	return ::Physics(DeltaTime);
-}
-
-//==========================================================================
-//
-//	Tick
-//
-//==========================================================================
-
-void Tick(float deltaTime)
-{
-	if (bMirrorImage && (!MirrorMaster || MirrorMaster.Health <= 0))
-		Kill();
-	if (Alertness > 0.0)
-		Alertness -= deltaTime;
-	::Tick(deltaTime);
-}
-
-//==========================================================================
-//
-//	Died
-//
-//==========================================================================
-
-void Died(EntityEx source, EntityEx inflictor)
-{
-	if (RidePartner)
-	{
-		RidePartner.Dismount();
-	}
-
-	Target = none;
-
-	::Died(source, inflictor);
-
-	if (!bMirrorImage && bLiving && P_Random() < 33)
-	{
-		Spawn(DyingSpirit, Origin);
-	}
-}
+//**************************************************************************
 
 //==========================================================================
 //
@@ -194,46 +271,165 @@ final void A_Resurrect()
 
 //==========================================================================
 //
-//  TakeSpecialDamage
+//  TryUse
 //
-//	[CW] Handles some special flags
+//	[CW] Override or modify to add more 'use' possibilities
 //
 //==========================================================================
 
-int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage,
-	name DmgType)
+bool TryUse(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
 {
-	if (bReflectMissileDamage &&
-			inflictor.bMissile && !inflictor.bBlaster && !inflictor.bRip)
-		return -1;
-	if (bMirrorImage)
+	if (UseLines(fUseRange, fUseThingRange, FailSound))
+		return true;
+	else
 	{
-		Health = 0;
-		if (SetState(FindState('MirrorDeath')))
-			return -1;
-		else
-			return 0;	// [CW] process death normally
+		if (RidePartner && (bIsMountedOn || bRideControl))
+		{
+			Dismount();
+			return true;
+		}
 	}
-	return damage;
+
+	return false;
 }
 
 //==========================================================================
 //
-//  OkayToSwitchTarget
+//  UseLines
+//
+//  Looks for special lines in front of the pawn to activate.
+//
+//	[CW] copied from Player::P_UseLines
 //
 //==========================================================================
 
-bool OkayToSwitchTarget(EntityEx source)
+bool UseLines(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
 {
-	Alertness = HIGH_ALERTNESS;
+	bool action;
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+	TVec useDir;
+	intercept_t* in;
+	TVec hit_point;
+	opening_t *open;
 
-	// [CW] TODO: add extra conditions here?
-	if (!bIgnoreTeams && source.IsA('KRPGActor') && Team == KRPGActor(source).Team)
+	action = false;
+	AngleVector(&Angles, &useDir);
+	x1 = Origin.x;
+	y1 = Origin.y;
+
+	x2 = x1 + fUseThingRange * useDir.x;
+	y2 = y1 + fUseThingRange * useDir.y;
+	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
 	{
-		return false;
+		if (!in->bIsALine)
+		{
+			//	Check height.
+			if (Origin.z >= in->Thing.Origin.z + in->Thing.Height ||
+				Origin.z + Height <= in->Thing.Origin.z)
+			{
+				continue;
+			}
+			if (in->Thing.IsA('KRPGActor') && UseThing(KRPGActor(in->Thing)))
+			{
+				action = true;
+				break;
+			}
+			continue;
+		}
+
+		if (!(in->line->flags & ML_TWOSIDED))
+			break;	// stop
+
+		hit_point = Origin + (fUseThingRange * in->frac) * useDir;
+		open = LineOpenings(in->line, hit_point);
+		open = FindOpening(open, hit_point.z, hit_point.z + Height);
+		if (!open || open->range < 1.0)
+		{
+			// can't use through a wall
+			break;
+		}
+		continue;
 	}
 
-	return ::OkayToSwitchTarget(source);
+	x2 = x1 + fUseRange * useDir.x;
+	y2 = y1 + fUseRange * useDir.y;
+	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
+	{
+		line_t* line;
+		float pheight;
+
+		line = in->line;
+		if (!line->special || (Level.GET_SPAC(line->flags) != SPAC_USE &&
+			Level.GET_SPAC(line->flags) != SPAC_USETHROUGH))
+		{
+			hit_point = Origin + (fUseRange * in->frac) * useDir;
+			open = LineOpenings(line, hit_point);
+			open = FindOpening(open, hit_point.z + Height / 2.0,
+				hit_point.z + Height);
+			if (!open)
+			{
+				PlaySound(FailSound, CHAN_VOICE);
+				break;	// can't use through a wall
+			}
+			pheight = Origin.z + Height / 2.0;
+			if ((open->top < pheight) || (open->bottom > pheight))
+			{
+				PlaySound(FailSound, CHAN_VOICE);
+			}
+			continue;	// not a special line, but keep checking
+		}
+
+		if (PointOnPlaneSide(Origin, line) == 1)
+		{
+			//	Don't use back side unless it's a two-sided line.
+			if (line->backsector != NULL)
+				continue;
+			break;
+		}
+
+		HexenLevelInfo(Level).ActivateLine(line, self, 0, SPAC_USE);
+		action = true;
+
+		//WAS can't use more than one special line in a row
+		//jff 3/21/98 NOW multiple use allowed with enabling line flag
+		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
+		{
+			break;
+		}
+	}
+
+	return action;
+}
+
+//==========================================================================
+//
+//	UseThing
+//
+//==========================================================================
+
+bool UseThing(KRPGActor Thing)
+{
+	if (!Thing)
+		Error("KRPGActor::UseThing : Thing reference not set to an instance of an object");
+
+	// [CW] TODO: thinkout what conversation style do we need;
+	//			  also, should other persons have ability to talk with each other?
+	//
+	// [CW] that's how it could look like if we used Strife-like dialogs
+	dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
+	if (Thing.ConversationID >= 0 && KRPGLevelInfo(Level).StartConversation(self, Thing))
+		return true;
+	// Possible generic 'use' types
+	if (bCanRide && Thing.bSaddleHorse && !Thing.RidePartner)
+	{
+		MountOn(Thing, true);
+		return true;
+	}
+
+	return Thing.IsBeingUsed(self);
 }
 
 //==========================================================================
@@ -251,16 +447,52 @@ bool IsBeingUsed(Actor User)
 
 //==========================================================================
 //
+//	MountOn
+//
+//==========================================================================
+
+void MountOn(KRPGActor Horse, bool bGainControl)
+{
+	if (Health <= 0 || Horse.Health <= 0)
+		return;
+
+	RidePartner = Horse;
+	bIsMountedOn = true;
+	bRideControl = bGainControl;
+	bXYAnchored = true;
+	bZAnchored = true;
+	Horse.IsBeingMountedOn(self, !bGainControl);
+}
+
+//==========================================================================
+//
 //	IsBeingMountedOn
 //
 //	[CW] Override for extra effects
 //
 //==========================================================================
 
-void IsBeingMountedOn(KRPGPlayerPawn Rider, bool bGainControl)
+void IsBeingMountedOn(KRPGActor Rider, bool bGainControl)
 {
 	RidePartner = Rider;
+	bIsMountedOn = false;
 	bRideControl = bGainControl;
+}
+
+//==========================================================================
+//
+//	Dismount
+//
+//==========================================================================
+
+void Dismount()
+{
+	bIsMountedOn = false;
+	bRideControl = false;
+	bXYAnchored = default.bXYAnchored;
+	bZAnchored = default.bZAnchored;
+	RidePartner.IsBeingDismountedFrom();
+	RidePartner = none;
 }
 
 //==========================================================================
@@ -341,6 +573,27 @@ void SetTeam(int team)
 
 //==========================================================================
 //
+//  OkayToSwitchTarget
+//
+//==========================================================================
+
+bool OkayToSwitchTarget(EntityEx source)
+{
+	Alertness = HIGH_ALERTNESS;
+
+	// [CW] Do not allow to target other actors than either monsters or KRPGActors
+	if (!source.IsA('KRPGActor') && !source.bMonster)
+		return false;
+	if (!bIgnoreTeams && source.IsA('KRPGActor') && Team == KRPGActor(source).Team)
+	{
+		return false;
+	}
+
+	return ::OkayToSwitchTarget(source);
+}
+
+//==========================================================================
+//
 //	LookForEnemy
 //
 //	[KoraxRPG] Advanced AI
@@ -383,6 +636,10 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 
 		if (mo.Health <= 0)
 			continue;	// dead
+
+		// [CW] Do not allow to target other actors than either monsters or KRPGActors
+		if (!mo.IsA('KRPGActor') && !mo.bMonster)
+			continue;
 
 		if (!bIgnoreTeams && mo.IsA('KRPGActor') && (Team == KRPGActor(mo).Team))
 			continue;	// friendly
@@ -486,6 +743,10 @@ bool A_LookEx(bool autoSetChase)
 		VisDir = -1;
 	}
 
+	// [CW] Do not allow to target other actors than either monsters or KRPGActors
+	if (targ && !targ.IsA('KRPGActor') && !targ.bMonster)
+		targ = none;
+
 	if (targ && targ.bShootable &&
 		(!targ.IsA('KRPGActor') || bIgnoreTeams || Team != KRPGActor(targ).Team))
 	{
@@ -569,7 +830,7 @@ bool DoSpecialMove(bool Evade)
 //
 //	[KoraxRPG] Advanced AI
 //
-//	[CW] Currently an extended variant of ScriptedEntity::DoChase
+//	[CW] Currently an extended variant of Actor::DoChase
 //
 //==========================================================================
 
@@ -756,7 +1017,6 @@ bool A_DoMove(bool Evade, bool FastChase, state AIdleState, state AMeleeState, s
 
 final void A_DoMoveAuto()
 {
-	//A_MoveEx(true, true, false);
 	A_DoMove(false, false, IdleState, MeleeState, MissileState,
 		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
 }
@@ -771,7 +1031,6 @@ final void A_DoMoveAuto()
 
 final void A_EvadeAuto()
 {
-	//A_MoveEx(true, true, true);
 	A_DoMove(true, false, IdleState, MeleeState, MissileState,
 		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
 }
@@ -782,8 +1041,9 @@ final void A_EvadeAuto()
 //
 //  Move in the current direction, returns false if the move is blocked.
 //
-//	[CW] Contents use mostly from original StepMove;
-//	     Difference is in making MoveDir unused, use free movement angle instead
+//  [CW] Contents used mostly from original StepMove;
+//       Difference is in making MoveDir unused, use free movement angle
+//       instead.
 //
 //==========================================================================
 
@@ -1216,7 +1476,164 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 //**************************************************************************
 //
+//
+//	[KoraxRPG] Actor Conditions
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	PurgeConditions
+//
+//	[CW] Condenses Conditions array by removing null-references
+//
+//==========================================================================
+
+final void PurgeConditions()
+{
+	int i;
+	for (i = 0; i < Conditions.Num;)
+	{
+		if (!Conditions[i])
+		{
+			Conditions.Remove(i);
+		}
+		else
+			i++;
+	}
+}
+
+//==========================================================================
+//
+//	CastCondition
+//
+//==========================================================================
+
+ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
+											Actor Instigator, int level, float life_duration)
+{
+	ActorCondition AC;
+	dprint("KRPGActor::CastCondition : in");
+
+	PurgeConditions();
+
+	if (accumulative)
+		AC = GetCondition(ConditionClass, Instigator, level);
+
+	if (AC)
+	{
+		float limit;
+
+		if (AC.MaxAccumulatedLifePerLevel < 0.0)
+			AC.LifeTime += life_duration;
+		else
+		{
+			limit = AC.MaxAccumulatedLifePerLevel * itof(AC.Level);
+			if (AC.LifeTime >= limit)
+				AC = none;	// [CW] to mark that no condition is added
+			else
+			{
+				AC.LifeTime += life_duration;
+				if (AC.LifeTime > limit)
+					AC.LifeTime = limit;
+			}
+		}
+	}
+	else
+	{
+		AC = ActorCondition(Spawn(ConditionClass));
+
+		dprint("KRPGActor::CastCondition : spawned new %i", AC);
+
+		if (!AC.CanBeCastUpon(self))
+		{
+			dprint("KRPGActor::CastCondition : cannot be cast upon, failure");
+			AC.Destroy();
+			AC = none;
+		}
+
+		if (AC)
+		{
+			dprint("KRPGActor::CastCondition : spawned successfully");
+			Conditions.Num = Conditions.Num + 1;
+			Conditions[Conditions.Num - 1] = AC;
+			AC.ARecepient = self;
+			AC.EInstigator = Instigator;
+			AC.Level = level;
+			AC.LifeDuration = life_duration;
+			AC.Activate();
+		}
+	}
+
+	if (AC)
+	{
+		if (Player && AC.CastMessage)
+			Player.cprint(AC.CastMessage);
+		if (AC.CastSound)
+			PlaySound(AC.CastSound, CHAN_VOICE);
+	}
+
+	dprint("KRPGActor::CastCondition : out %i", AC);
+
+	return AC;
+}
+
+//==========================================================================
+//
+//	GetCondition
+//
+//	TODO: optional instigator and level
+//
+//==========================================================================
+
+ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
+{
+	if (Conditions.Num)
+	{
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			ActorCondition ac = Conditions[i];
+			if (ac && ac.Class == ConditionClass &&
+					ac.EInstigator == Instigator &&
+					ac.Level == level)
+			{
+				return ac;
+			}
+		}
+	}
+
+	return none;
+}
+
+//==========================================================================
+//
+//	NotifyConditions
+//
+//==========================================================================
+
+void NotifyConditions(int notification, EntityEx E, int param)
+{
+	if (/*Conditions && Conditions.refHead*/Conditions.Num)
+	{
+		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
+		//while (acref)
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			if (Conditions[i])
+			/*ActorCondition(acref.refObject)*/Conditions[i].Notify(notification, E, param);
+			//acref = LinkedReferer(acref.refNext);
+		};
+	}
+}
+
+//**************************************************************************
+//
+//
 //	[KoraxRPG] Extra effects
+//
 //
 //**************************************************************************
 
@@ -1254,23 +1671,6 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 	}
 }
 
-//==========================================================================
-//
-//  DoSpecialDamage
-//
-//==========================================================================
-
-int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
-{
-	// KRPG
-	if (MissilePoisonDamage && victim.bIsPlayer)
-	{
-		KRPGPlayerPawn(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
-			2.0);
-		damage >>= 1;
-	}
-	return damage;
-}
 
 defaultproperties
 {

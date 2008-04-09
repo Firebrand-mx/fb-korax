@@ -58,6 +58,7 @@ enum
 	ACTSPEC_IA_Order_AttackThing,
 
 	// Advanced interaction (for Pawns)
+	// [CW] CHECKME!
 	ACTSPEC_PW_TryUse				= 1000,
 	ACTSPEC_PW_Order_UseLine,
 	ACTSPEC_PW_Order_UseThing,
@@ -487,6 +488,15 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 {
 	Quest::personinfo_t * p_infoSpeaker, * p_infoSpeakingTo;
+
+	if (!Speaker)
+		Error("KRPGLevelInfo::StartConversation : Speaker reference not set to an instance of an object");
+	if (!SpeakingTo)
+		Error("KRPGLevelInfo::StartConversation : SpeakingTo reference not set to an instance of an object");
+
+	if (Speaker.Health <= 0 || SpeakingTo.Health <= 0)
+		return false;
+
 	if (!Speaker.bIsPlayer)
 	{
 		if (Speaker.ConversationID >= 0)
