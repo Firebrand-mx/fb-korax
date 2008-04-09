@@ -413,7 +413,11 @@ void A_CheckThreat()
 			if (!Target || !Threshold)
 			{
 				Actor targ = Actor(Sector->SoundTarget);
-				if (targ && targ != Target && targ.bShootable &&
+				// [CW] Do not allow to target other actors than either monsters or KRPGActors
+				if (targ && !targ.IsA('KRPGActor') && !targ.bMonster)
+					targ = none;
+				if (targ && targ != Target &&
+					targ.bShootable && !targ.bNeverTarget &&
 					(!targ.IsA('KRPGActor') || bIgnoreTeams || Team != KRPGActor(targ).Team))
 				{
 					float dist;
@@ -547,15 +551,12 @@ final void A_ChaseAI()
 	if (FGnTarget.Thing && !Behavior.bUsingRoute)
 		IGnTarget.Pos = LastKnownPosition;
 
-	//if (!bIsPlayer)
-	//{
-		if (Behavior.bUsingRoute && IGnTarget.Node)
-			pTargetVec = &IGnTarget.Node.Origin;
-		else if (TaskLeader)
-			pTargetVec = &TaskLeader.Origin;
-		else
-			pTargetVec = &IGnTarget.Pos;
-	//}
+	if (Behavior.bUsingRoute && IGnTarget.Node)
+		pTargetVec = &IGnTarget.Node.Origin;
+	else if (TaskLeader)
+		pTargetVec = &TaskLeader.Origin;
+	else
+		pTargetVec = &IGnTarget.Pos;
 
 	if (CurrentTask)
 	{

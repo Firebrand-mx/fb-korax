@@ -333,7 +333,7 @@ bool CheckSpot(mthing_t * mthing)
 	}
 	MO.bPassMobj = true;
 
-	if (!PlayerChunk(MO))
+	if (!CommonPlayerChunk(MO))	// KRPG
 	{
 		LineSpecialLevelInfo(Level).AddPlayerCorpse(EntityEx(MO));
 	}
@@ -1130,7 +1130,7 @@ void DeathPlayerTick(float deltaTime)
 
 	onground = (MO.Origin.z <= MO.FloorZ);
 
-	if (PlayerChunk(MO))
+	if (CommonPlayerChunk(MO))	// KRPG
 	{
 		// Flying bloody skull or flying ice chunk
 		ViewHeight = 6.0;
@@ -1321,7 +1321,6 @@ void PlayerTick(float deltaTime)
 	{
 		KRPGPlayerPawn(MO).StandUp(deltaTime);
 	}
-	//if (Camera == MO)	??? CHECKME
 	KRPGPlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
 
 	//  Move around.
@@ -1609,15 +1608,13 @@ void PaletteFlash()
 	//
 	// KRPG
 	//
-	KRPGPlayerPawn ka = KRPGPlayerPawn(MO);
-	if (ka.Conditions.Num/*KRPGPlayerPawn(MO).Conditions && KRPGPlayerPawn(MO).Conditions.refHead*/)
+	KRPGPlayerPawn kpp = KRPGPlayerPawn(MO);
+	if (kpp.Conditions.Num)
 	{
-		//LinkedReferer acref = LinkedReferer(KRPGPlayerPawn(MO).Conditions.refHead);
-		//while (acref)
 		int i;
-		for (i = 0; i < ka.Conditions.Num; i++)
+		for (i = 0; i < kpp.Conditions.Num; i++)
 		{
-			ActorCondition ac = ka.Conditions[i];//ActorCondition(acref.refObject);
+			ActorCondition ac = kpp.Conditions[i];
 			if (ac)
 			{
 				if (ac.bIsNegative)
@@ -1628,7 +1625,6 @@ void PaletteFlash()
 				else
 					ac.MakeCShift(&CShiftPowerPositive);
 			}
-			//acref = LinkedReferer(acref.refNext);
 		};
 	}
 
@@ -2054,7 +2050,7 @@ void Cheat_Morph()
 	}
 	else
 	{
-		MorphProjectile Tmp = Level.Spawn(PorkFX);
+		CommonMorphProjectile Tmp = Level.Spawn(CommonPorkFX);
 		Tmp.MorphPlayer(Actor(MO));
 		Tmp.Destroy();
 	}
@@ -2338,6 +2334,86 @@ void PlayerMorphed(Actor OldMO)
 {
 	PClass = HexenDefs::PCLASS_PIG;
 }
+
+// [CW] ------------- experimental >
+//==========================================================================
+//
+//	GetMOViewHeight
+//
+//==========================================================================
+
+float GetMOViewHeight()
+{
+	return CommonPlayerPawn(MO).ViewHeight;
+}
+
+//==========================================================================
+//
+//	GetMOJumpVelZ
+//
+//==========================================================================
+
+float GetMOJumpVelZ()
+{
+	return CommonPlayerPawn(MO).JumpVelZ;
+}
+
+//==========================================================================
+//
+//	SetMOJumpVelZ
+//
+//==========================================================================
+
+void SetMOJumpVelZ(float value)
+{
+	CommonPlayerPawn(MO).JumpVelZ = value;
+}
+
+//==========================================================================
+//
+//	GetMOAttackZOffset
+//
+//==========================================================================
+
+float GetMOAttackZOffset()
+{
+	return CommonPlayerPawn(MO).AttackZOffset;
+}
+
+//==========================================================================
+//
+//	GetMODamageScreenColour
+//
+//==========================================================================
+
+int GetMODamageScreenColour()
+{
+	return CommonPlayerPawn(MO).DamageScreenColour;
+}
+
+//==========================================================================
+//
+//  AdjustMOSpeed
+//
+//==========================================================================
+
+void AdjustMOSpeed(out float forward, out float side)
+{
+	CommonPlayerPawn(MO).AdjustSpeed(forward, side);
+}
+
+//==========================================================================
+//
+//  GetMOInvulnerabilityMode
+//
+//==========================================================================
+
+name GetMOInvulnerabilityMode()
+{
+	return CommonPlayerPawn(MO).InvulnerabilityMode;
+}
+
+// [CW] ------------- experimental <
 
 defaultproperties
 {

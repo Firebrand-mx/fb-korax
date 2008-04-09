@@ -25,6 +25,25 @@
 
 class CStaffMissile : Projectile;
 
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//	KRPG
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster && P_Random() < 33))
+	{
+		KRPGActor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
+			2.0);
+		damage >>= 1;
+	}
+	return damage;
+}
+
 states
 {
 Spawn:
