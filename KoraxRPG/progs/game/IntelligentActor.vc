@@ -59,8 +59,8 @@ struct pawn_behavior_t
 											// to build a route; it should be at least a bit
 											// lower than RouteRebuildRate (use higher value)
 	int				RouteRebuildTime;		// how much strokes left until route rebuild
-	int				CheckFTargetPosRate;	// how often pawn checks its target's position
-	int				CheckFTargetPosTime;	// how much strokes left until target's position check
+	//int				CheckFTargetPosRate;	// how often pawn checks its target's position
+	//int				CheckFTargetPosTime;	// how much strokes left until target's position check
 	float			FTargetPosChangeLimit;	// when target is beyond this range relative
 											// to its previous known position, pawn should
 											// rebuild the route;
@@ -224,6 +224,30 @@ void Died(EntityEx source, EntityEx inflictor)
 	A_SetImmediateTarget(NULL);
 
 	::Died(source, inflictor);
+}
+
+//==========================================================================
+//
+//	A_AISetReflectiveInvulnerable
+//
+//==========================================================================
+
+final void A_AISetReflectiveInvulnerable()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	::A_SetReflectiveInvulnerable();
+}
+
+//==========================================================================
+//
+//	A_AIUnSetReflectiveInvulnerable
+//
+//==========================================================================
+
+final void A_AIUnSetReflectiveInvulnerable()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	::A_UnSetReflectiveInvulnerable();
 }
 
 //==========================================================================
@@ -531,8 +555,7 @@ final void A_ChaseAI()
 	// Update known info about target position, if this is a moving target
 	if (FGnTarget.Thing)
 	{
-		// TODO: some monsters do not need to SEE target
-		if (bSenseAlways || CanSee(FGnTarget.Thing))
+		if (CanSense(FGnTarget.Thing) || Sector->SoundTarget == FGnTarget.Thing)
 		{
 			Behavior.bKnowFTargetPos = true;
 			LastKnownPosition = FGnTarget.Thing.GetCentre();
@@ -1200,8 +1223,8 @@ void DoRoute()
 	// update timers
 	if (Behavior.RouteRebuildTime > 0)
 		Behavior.RouteRebuildTime--;
-	if (Behavior.bUsingRoute && Behavior.CheckFTargetPosTime > 0)
-		Behavior.CheckFTargetPosTime--;
+	//if (Behavior.bUsingRoute && Behavior.CheckFTargetPosTime > 0)
+	//	Behavior.CheckFTargetPosTime--;
 	if (Behavior.bLostFTarget && Behavior.LostFTargetTime > 0)
 		Behavior.LostFTargetTime--;
 
@@ -1241,16 +1264,31 @@ void DoRoute()
 	}
 	else if (TaskLeader)
 	{
-		if (TaskLeader.FGnTarget.Thing == FGnTarget.Thing ||
-				!TaskLeader.FGnTarget.Thing && TaskLeader.FGnTarget.Pos == FGnTarget.Pos)
-			return;
+		if (TaskLeader.Health > 0 &&
+			(TaskLeader.FGnTarget.Thing == FGnTarget.Thing ||
+				!TaskLeader.FGnTarget.Thing && TaskLeader.FGnTarget.Pos == FGnTarget.Pos))
+		{
+			if (CanReach(TaskLeader.Origin, none))
+			{
+				IGnTarget.Node = none;
+				return;
+			}
+
+			Node N = FindAcceptableTargetNode(TaskLeader.Origin, none, true);
+			if (N)
+			{
+				Behavior.bUsingRoute = true;
+				IGnTarget.Node = N;
+				return;
+			}
+		}
 		TaskLeader = none;
 	}
 	else if (Behavior.bUsingRoute)
 	{
 		//print("use route, checkpostime = %i", Behavior.CheckFTargetPosTime);
-		// If check target pos timer run out, pawn should reconsider its target position
-		if (FGnTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
+		///////// If check target pos timer run out, pawn should reconsider its target position
+		//////////if (FGnTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
 		{
 			//print("checking enemy movement delta...");
 			// If enemy moved away too far from his previous stored position,
@@ -1259,11 +1297,12 @@ void DoRoute()
 			{
 				//print("Target moved too far away, must remake route");
 				Behavior.RouteRebuildTime = 0;
+				FGnTarget.Pos = LastKnownPosition;
 			}
-			else
-				Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+			//else
+			//	Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
 
-			FGnTarget.Pos = LastKnownPosition;
+			//FGnTarget.Pos = LastKnownPosition;
 		}
 
 		if (Behavior.RouteRebuildTime > 0)
@@ -1293,7 +1332,7 @@ void DoRoute()
 	// Try get a task leader and follow him
 	if (Behavior.bCanGroup)
 	{
-		if (JoinTaskLeader())
+		if (TaskLeader || JoinTaskLeader())
 			return;
 	}
 
@@ -1320,9 +1359,13 @@ bool JoinTaskLeader()
 	IntelligentActor IA;
 	float dist;
 	float min_dist = -1.0;
+
+	TaskLeader = none;
 	foreach AllThinkers(IntelligentActor, IA)
 	{
-		if (IA.Behavior.bCanBeTaskLeader)
+		if (IA != self && IA != FGnTarget.Thing &&
+			IA.Behavior.bCanBeTaskLeader && !IA.TaskLeader &&
+			IA.Health > 0)
 		{
 			if (IA.FGnTarget.Thing == FGnTarget.Thing ||
 				!IA.FGnTarget.Thing && IA.FGnTarget.Pos == FGnTarget.Pos)
@@ -1330,8 +1373,11 @@ bool JoinTaskLeader()
 				dist = DistTo(IA);
 				if (dist <= ACCEPTABLE_TASKLEADER_VICINITY && (min_dist < 0.0 || dist < min_dist))
 				{
-					min_dist = dist;
-					TaskLeader = IA;
+					if (CanSee(IA) && CanReach(IA.Origin))
+					{
+						min_dist = dist;
+						TaskLeader = IA;
+					}
 				}
 			}
 		}
@@ -1371,7 +1417,7 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 
 		//print("CurrentNode = %i", CurrentNode.TID);
 
-		FGnTarget.Node = FindAcceptableTargetNode(AimPos, AimEntity);
+		FGnTarget.Node = FindAcceptableTargetNode(AimPos, AimEntity, false);
 
 		if (FGnTarget.Node == none)
 		{
@@ -1389,7 +1435,7 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 		if (CurrentRoute)
 		{
 			Behavior.bUsingRoute = true;
-			Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+			//Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
 
 			/*//// DEBUG -------------------------- DEBUG
 			print("succeeded build route, TID = %i", TID);
@@ -1488,6 +1534,9 @@ void AcceptTargetNode()
 //
 //	FindNearestReachableNode
 //
+//	Method seeks for a nearest node which is reachable directly from
+//	this actor's current position.
+//
 //==========================================================================
 
 Node FindNearestReachableNode()
@@ -1522,9 +1571,21 @@ Node FindNearestReachableNode()
 //
 //	FindAcceptableTargetNode
 //
+//	Method seeks for a node, FROM WHICH this actor can reach its designated
+//	target directly, or, at least, shoot it using missile attack.
+//
+//	VTarget - exact target location;
+//	ETarget - a target actor (optional);
+//	bReachableFromHere - when set this flag makes the method try only nodes
+//          that are reachable directly from this actor's current position.
+//
+//	If no ETarget is given, method tries only nodes that have direct route
+//	to VTarget, otherwise it also checks which nodes could be possible
+//	positions for missile attack.
+//
 //==========================================================================
 
-Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget)
+Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFromHere)
 {
 	float		distance;
 	float		compdist;
@@ -1541,6 +1602,12 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget)
 	
 	foreach AllThinkers(Node, _Node)
 	{
+		if (bReachableFromHere)
+		{
+			if (!CanReach(_Node.Origin, none))
+				continue;
+		}
+
 		compdist = Length(_Node.Origin - VTarget);
 		if (distance < 0.0 || compdist < distance)
 		{
@@ -1560,13 +1627,24 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget)
 				distance = compdist;
 				NodeSelectedCanSee = _Node;
 			}
+
+			if (bReachableFromHere)
+			{
+				UnlinkFromWorld();
+				Origin = OriginalOrigin;
+				LinkToWorld();
+			}
 		}
 	}
 	
-	UnlinkFromWorld();
-	Origin = OriginalOrigin;
+	if (!bReachableFromHere)
+	{
+		UnlinkFromWorld();
+		Origin = OriginalOrigin;
+		LinkToWorld();
+	}
 	Angles = OriginalAngles;
-	LinkToWorld();
+
 	return (MissileState && (!NodeSelectedCanReach || NodeSelectedCanSee && Length(NodeSelectedCanSee.Origin - VTarget) < 
 								Length(NodeSelectedCanReach.Origin - VTarget)))
 				? NodeSelectedCanSee : NodeSelectedCanReach;
@@ -1763,7 +1841,7 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 	//dprint("ExtendRoute : NExtendable.TID = %i", NExtendable.TID);
 	
 	// Do extension
-	for (i = 0; i < Node::MAXNODELINKS; i++)
+	for (i = 0; i < /*Node::MAXNODELINKS*/NExtendable.Links.Num; i++)
 	{
 		if (NExtendable.Links[i]._Node)
 		{
@@ -2060,6 +2138,6 @@ defaultproperties
 	Behavior.RouteRebuildRate		= 512;
 	Behavior.RouteRebuildRateLow	= 1024;
 	Behavior.LostFTargetTolerance	= 32;
-	Behavior.CheckFTargetPosRate	= 128;
-	Behavior.FTargetPosChangeLimit	= 256.0;
+	//Behavior.CheckFTargetPosRate	= 128;
+	Behavior.FTargetPosChangeLimit	= 512.0;
 }

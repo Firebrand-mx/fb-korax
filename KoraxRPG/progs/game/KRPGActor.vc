@@ -7,7 +7,7 @@ class KRPGActor : CommonActor
 //
 bool			bReflectMissileDamage;	// invulnerable to missile weapons except for
 										// blaster and ripping ones
-bool			bNonScalable;	// Deny scalin variations
+bool			bNonScalable;	// Deny scaling variations
 bool			bXYAnchored;	// Stuck in floor/ceiling (won't move freely along X & Y axes)
 bool			bZAnchored;		// Stuck in floor/ceiling (won't move freely along Z axis)
 
@@ -16,7 +16,7 @@ bool			bCombatant;		// fighting actor
 bool			bSenseAlways;	// detects target without seeing it
 
 bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
-KRPGActor		MirrorMaster;
+KRPGActor		MirrorMaster;	// mirror image's "original copy"
 
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
@@ -33,13 +33,13 @@ KRPGActor		RidePartner;	// either 'rider' or 'horse', depending on flags
 //
 const float	DEFAULT_THREAT_VICINITY		= MISSILERANGE;
 
-TVec *			pTargetVec;
+TVec *			pTargetVec;		// next move designation (is updated almost every tick)
 
 const float HIGH_ALERTNESS				= 10.0;
 
 float			Alertness;		// while alert, creature will look for enemies all around
-bool			bIgnoreTeams;
-int				Team;
+bool			bIgnoreTeams;	// ignore Team factor (attack everyone)
+int				Team;			// this actor's Team ID
 
 //
 // [KoraxRPG] Actor Conditions
@@ -64,6 +64,7 @@ array<ActorCondition> Conditions;
 void BeginPlay()
 {
 	::BeginPlay();
+	// Set random scaling for more game variety
 	if (!bNonScalable)
 	{
 		float rand = (Random() - 0.5) * 0.15;
@@ -236,7 +237,7 @@ void Thrust3d2(float angle2d, float move2d, float move3)
 //**************************************************************************
 //
 //
-//	[KoraxRPG] Advanced interaction
+//	[KoraxRPG] Advanced actions
 //
 //
 //**************************************************************************
@@ -268,6 +269,14 @@ final void A_Resurrect()
 
 	Alpha = default.Alpha;
 }
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Advanced interaction
+//
+//
+//**************************************************************************
 
 //==========================================================================
 //
@@ -414,6 +423,9 @@ bool UseThing(KRPGActor Thing)
 {
 	if (!Thing)
 		Error("KRPGActor::UseThing : Thing reference not set to an instance of an object");
+
+	if (Thing == self)
+		return false;
 
 	// [CW] TODO: thinkout what conversation style do we need;
 	//			  also, should other persons have ability to talk with each other?
@@ -594,6 +606,19 @@ bool OkayToSwitchTarget(EntityEx source)
 
 //==========================================================================
 //
+//	CanSense
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool CanSense(Entity Other)
+{
+	return bSenseAlways || CanSee(Other);
+}
+
+//==========================================================================
+//
 //	LookForEnemy
 //
 //	[KoraxRPG] Advanced AI
@@ -645,8 +670,8 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 			continue;	// friendly
 
 		// TODO: extra parameter to ignore this
-		if (!CanSee(mo))
-			continue;	// out of sight
+		if (!CanSense(mo))
+			continue;	// out of senses
 
 		if (Length(mo.GetCentre() - At) > maxdist)
 			continue;
@@ -654,7 +679,7 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (P_Random() > 200)
 			continue;	// sometimes skip
 
-		if (!allaround && At == Origin)
+		if (!bSenseAlways && !allaround && At == Origin)
 		{
 			dist = DistTo(mo);
 			an = AngleMod360(atan2(mo.Origin.y - Origin.y,
@@ -754,7 +779,7 @@ bool A_LookEx(bool autoSetChase)
 
 		if (bAmbush)
 		{
-			if (!CanSee(Target))
+			if (!CanSense(Target))
 			{
 				if (!LookForEnemy(false || (Alertness > 0.0)))
 					return false;
@@ -920,7 +945,7 @@ bool A_DoMove(bool Evade, bool FastChase, state AIdleState, state AMeleeState, s
 		return true;
 	}
 
-	if (FastChase)
+	if (FastChase && Target)
 	{
 		//	Strafe
 		if (FastChaseStrafeCount > 0)
