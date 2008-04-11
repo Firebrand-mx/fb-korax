@@ -273,6 +273,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 			KRPGActor(E).SetTeam(Arg2);
 			buttonSuccess = true;
 		}
+		break;
 	case ACTSPEC_Thing_SetPersonId:
 		if (E && E.IsA('KRPGActor'))
 		{
@@ -520,6 +521,9 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 			return false;
 	}
 
+	if (!p_infoSpeakingTo)
+		return false;
+
 	if (Speaker.bIsPlayer)
 	{
 		Player(Speaker.Player).ClientConversation("", p_infoSpeakingTo->scriptName);
@@ -533,7 +537,7 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 	//	Speaker.bIsPlayer ? Speaker.Player.PlayerName : p_infoSpeaker->scriptName,
 	//	SpeakingTo.bIsPlayer ? SpeakingTo.Player.PlayerName : p_infoSpeakingTo->scriptName);
 
-	return false;
+	return true;
 }
 
 //**************************************************************************
@@ -965,9 +969,9 @@ void BuildLinks()
 	Node		N_LinkCandidate;
 	int			linked_count;
 	bool		candidate_is_linked_to_base;
-	int			candidate_linked_count;
+	//int		candidate_linked_count;
 	float		dest;
-	float		dest_linked_max;
+	//float		dest_linked_max;
 
 	//
 	// Debug statistics
@@ -992,11 +996,11 @@ void BuildLinks()
 		N_LinkCandidate = none;
 		linked_count = 0;
 		dest = -1.0;
-		dest_linked_max = -1.0;
+		//dest_linked_max = -1.0;
 
 		//dprint(" -- take N_Base");
 
-		for (i = 0; i < Node::MAXNODELINKS; i++)
+		for (i = 0; i < /*Node::MAXNODELINKS*/N_Base.Links.Num; i++)
 		{
 			if (N_Base.Links[i]._Node)
 				linked_count++;
@@ -1005,24 +1009,25 @@ void BuildLinks()
 		//dprint(" -- N_Base Tag = %i", N_Base.TID);
 		//dprint(" -- linked count = %i", linked_count);
 		
-		if (linked_count >= Node::MAXNODELINKS)
+		//-------------
+		/*if (linked_count >= Node::MAXNODELINKS)
 		{
 			stats_TotalLinkedNodes++;
 			continue;
-		}
+		}*/
 		
 		foreach AllThinkers(Node, N_LinkCandidate)
 		{
 			//dprint(" -- take N_LinkCandidate");
 			//dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
 			candidate_is_linked_to_base = false;
-			candidate_linked_count = 0;
+			//candidate_linked_count = 0;
 			if (N_LinkCandidate == N_Base)
 			{
 				//dprint(" -- self as candidate, rejected");
 				continue;
 			}
-			for (i = 0; i < Node::MAXNODELINKS; i++)
+			for (i = 0; i < /*Node::MAXNODELINKS*/N_LinkCandidate.Links.Num; i++)
 			{
 				if (N_LinkCandidate.Links[i]._Node)
 				{
@@ -1031,7 +1036,7 @@ void BuildLinks()
 						candidate_is_linked_to_base = true;
 						break;
 					}						
-					candidate_linked_count++;
+					//candidate_linked_count++;
 				}
 			}
 			if (candidate_is_linked_to_base)
@@ -1039,18 +1044,19 @@ void BuildLinks()
 				//dprint(" -- candidate already linked to base, rejected");
 				continue;
 			}
-			if (candidate_linked_count == Node::MAXNODELINKS)
+			//-----------------------------
+			/*if (candidate_linked_count == Node::MAXNODELINKS)
 			{
 				//dprint(" -- all candidate link slots used, rejected");
 				continue;
-			}
+			}*/
 
 			//dprint(" -- candidate linked count = %i", candidate_linked_count);
 
 			dest = Length(N_Base.Origin - N_LinkCandidate.Origin);
 			//dprint(" -- candidate dest = %f", dest);
-			if (dest <= MAXNODELINKLENGTH &&
-				(dest_linked_max < 0.0 || dest < dest_linked_max) )
+			if (dest <= MAXNODELINKLENGTH /*&&
+				(dest_linked_max < 0.0 || dest < dest_linked_max)*/ )
 			{
 				Node::nodelink_t _link;
 
@@ -1058,13 +1064,15 @@ void BuildLinks()
 
 				if (BuildNodeLink(N_Base, N_LinkCandidate, &_link))
 				{
-					if (dest_linked_max < 0.0)
-					{
+					//--------------------------------
+					//if (dest_linked_max < 0.0)
+					//{
 						//dprint(" -- free link for the base");
-						N_Base.ApplyLink(&_link, linked_count, true);
+						N_Base.ApplyLink(&_link, /*linked_count*/-1, true);
 						//dprint(" -- candidate accepted as no %i", linked_count);
-					}
-					if (dest < dest_linked_max)
+					//}
+					//-----------------------------
+					/*if (dest < dest_linked_max)
 					{
 						//dprint(" -- link replacement");
 						// Get linked node with maximal dest and replace it by a new one
@@ -1079,11 +1087,11 @@ void BuildLinks()
 							}
 						}
 						//dprint(" -- candidate accepted as no %i", i);
-					}
+					}*/
 
 					linked_count++;
 					stats_TotalLinks++;
-					if (linked_count == Node::MAXNODELINKS)
+					/*if (linked_count == Node::MAXNODELINKS)
 					{
 						// Store maximal link length
 						dest_linked_max = -1.0;
@@ -1093,7 +1101,7 @@ void BuildLinks()
 								dest_linked_max = N_Base.Links[i].length;
 						}
 						//dprint(" -- new max_dest = %f", dest_linked_max);
-					}
+					}*/
 				}
 				//else
 				//	dprint(" -- candidate rejected");
