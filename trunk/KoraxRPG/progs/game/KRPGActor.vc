@@ -1,4 +1,4 @@
-
+﻿
 class KRPGActor : CommonActor
 	abstract;
 
@@ -1413,16 +1413,18 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	if (canreach && TargetEntity)
 	{
 	//
-	// [CW] CHECKME ---
-	//
-	//	if (CRTRData.linetarget != TargetEntity)
-	//		return false;
+		// [CW] CHECKME ---
+		//
+		//if (CRTRData.linetarget != TargetEntity)
+		//	return false;
 
-		//
-		// [CW] TODO!! --- no 3d floors support here
-		//
+		// [FB]  3d Floor checks...
+		if (TargetEntity.Origin.z > FloorZ + MaxPassableStep)
+			return false;
+		if (TargetEntity.Origin.z < FloorZ)
+			return false;
+
 		// [CW] prev_sector is now the last sector met
-
 		if (TargetEntity.Origin.z > CRTRData.prev_sector->floorheight + MaxPassableStep)
 			return false;		// [CW] target thing is too high to reach
 		if (TargetEntity.Origin.z < CRTRData.prev_sector->floorheight)
@@ -1436,9 +1438,7 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 //
 //	PTR_CanReachTraverse
 //
-// [CW] TODO!! --- do hr openings check (see BotPlayer)
-//
-// [CW] TODO!! --- no 3d floors support here
+// [FB] Added partial 3d floor support, needs to be checked and corrected...
 //
 //==========================================================================
 
@@ -1461,9 +1461,13 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 		if (in->bIsALine)
 		{
 			sector_t * p_sector;
+			TVec tracedir;
+			TVec hit_point;
+			opening_t* opening;	// [FB] For 3d floors
 
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					(in->line->flags & ML_BLOCKEVERYTHING) ||
 					!in->line->backsector)
 				return false;
 
@@ -1488,6 +1492,24 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				return false;
 
 			pCRTRData->prev_sector = p_sector;
+
+			// [FB] partial 3d floor support...
+			tracedir.x = cos(Angles.yaw);
+			tracedir.y = sin(Angles.yaw);
+			tracedir.z = FloorZ;
+			hit_point = Origin + (Length(Origin - TargetPos) * in->frac) * tracedir;
+			opening = LineOpenings(in->line, hit_point);
+			opening = FindOpening(opening, hit_point.z, hit_point.z + Height);
+
+			// only valid openings
+			if (opening)
+			{
+				if ((opening->range <= MinPassableOpening) ||
+					(opening->lowfloor - opening->bottom > MaxPassableStep) ||
+					(opening->lowfloor - opening->bottom > MaxPassableDropOff))
+					return false;
+			}
+			// [FB] This should partially cover it...
 		}
 		else
 		{
@@ -1497,6 +1519,32 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	}
 
 	return true;
+}
+
+//==========================================================================
+//
+//	GetNearestEntity
+//
+//==========================================================================
+
+final EntityEx GetNearestEntity(class<EntityEx> EClass, optional bool bReachable)
+{
+	EntityEx EE;
+	EntityEx ee;
+	float dist = -1.0;
+
+	foreach AllThinkers(EClass, ee)
+	{
+		if (dist < 0.0 || Length(ee.Origin - Origin) < dist)
+		{
+			if (bReachable && !CanReach(ee.Origin))
+				continue;
+			EE = ee;
+			dist = Length(ee.Origin - Origin);
+		}
+	}
+
+	return EE;
 }
 
 //**************************************************************************
