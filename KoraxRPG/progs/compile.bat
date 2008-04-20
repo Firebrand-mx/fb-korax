@@ -1,6 +1,6 @@
-vcc -I../common/progs -P../common/progs ../common/engine/classes.vc ../common/progs/engine.dat
-vcc -I../common/progs -P../common/progs ../common/linespec/classes.vc ../common/progs/linespec.dat
-vcc -I../common/progs -P../common/progs ../common/uibase/classes.vc ../common/progs/uibase.dat
+vcc -P../common/progs ../common/engine/classes.vc ../common/progs/engine.dat
+vcc -P../common/progs ../common/linespec/classes.vc ../common/progs/linespec.dat
+vcc -P../common/progs ../common/uibase/classes.vc ../common/progs/uibase.dat
 @ECHO OFF
 cd..
 cd common
@@ -10,8 +10,9 @@ cd..
 cd progs
 @ECHO ON
 
-vcc -I../common -P../common/progs game/classes.vc svprogs.dat
-vcc -I../common -P../common/progs cgame/classes.vc clprogs.dat
+vcc -I../common/linespec -P../common/progs linespec/classes.vc linespec.dat
+vcc -P../common/progs game/classes.vc svprogs.dat
+vcc -P../common/progs cgame/classes.vc clprogs.dat
 @ECHO OFF
 pause
 cd..
