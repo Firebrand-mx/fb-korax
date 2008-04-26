@@ -1,4 +1,4 @@
-﻿
+
 class KRPGActor : CommonActor
 	abstract;
 
@@ -304,128 +304,26 @@ bool TryUse(optional float fUseRange, optional float fUseThingRange, optional na
 
 //==========================================================================
 //
-//  UseLines
-//
-//  Looks for special lines in front of the pawn to activate.
-//
-//	[CW] copied from Player::P_UseLines
-//
-//==========================================================================
-
-bool UseLines(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
-{
-	bool action;
-	float x1;
-	float y1;
-	float x2;
-	float y2;
-	TVec useDir;
-	intercept_t* in;
-	TVec hit_point;
-	opening_t *open;
-
-	action = false;
-	AngleVector(&Angles, &useDir);
-	x1 = Origin.x;
-	y1 = Origin.y;
-
-	x2 = x1 + fUseThingRange * useDir.x;
-	y2 = y1 + fUseThingRange * useDir.y;
-	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES | PT_ADDTHINGS)
-	{
-		if (!in->bIsALine)
-		{
-			//	Check height.
-			if (Origin.z >= in->Thing.Origin.z + in->Thing.Height ||
-				Origin.z + Height <= in->Thing.Origin.z)
-			{
-				continue;
-			}
-			if (in->Thing.IsA('KRPGActor') && UseThing(KRPGActor(in->Thing)))
-			{
-				action = true;
-				break;
-			}
-			continue;
-		}
-
-		if (!(in->line->flags & ML_TWOSIDED))
-			break;	// stop
-
-		hit_point = Origin + (fUseThingRange * in->frac) * useDir;
-		open = LineOpenings(in->line, hit_point);
-		open = FindOpening(open, hit_point.z, hit_point.z + Height);
-		if (!open || open->range < 1.0)
-		{
-			// can't use through a wall
-			break;
-		}
-		continue;
-	}
-
-	x2 = x1 + fUseRange * useDir.x;
-	y2 = y1 + fUseRange * useDir.y;
-	foreach PathTraverse(in, x1, y1, x2, y2, PT_ADDLINES)
-	{
-		line_t* line;
-		float pheight;
-
-		line = in->line;
-		if (!line->special || (Level.GET_SPAC(line->flags) != SPAC_USE &&
-			Level.GET_SPAC(line->flags) != SPAC_USETHROUGH))
-		{
-			hit_point = Origin + (fUseRange * in->frac) * useDir;
-			open = LineOpenings(line, hit_point);
-			open = FindOpening(open, hit_point.z + Height / 2.0,
-				hit_point.z + Height);
-			if (!open)
-			{
-				PlaySound(FailSound, CHAN_VOICE);
-				break;	// can't use through a wall
-			}
-			pheight = Origin.z + Height / 2.0;
-			if ((open->top < pheight) || (open->bottom > pheight))
-			{
-				PlaySound(FailSound, CHAN_VOICE);
-			}
-			continue;	// not a special line, but keep checking
-		}
-
-		if (PointOnPlaneSide(Origin, line) == 1)
-		{
-			//	Don't use back side unless it's a two-sided line.
-			if (line->backsector != NULL)
-				continue;
-			break;
-		}
-
-		HexenLevelInfo(Level).ActivateLine(line, self, 0, SPAC_USE);
-		action = true;
-
-		//WAS can't use more than one special line in a row
-		//jff 3/21/98 NOW multiple use allowed with enabling line flag
-		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
-		{
-			break;
-		}
-	}
-
-	return action;
-}
-
-//==========================================================================
-//
 //	UseThing
 //
 //==========================================================================
 
-bool UseThing(KRPGActor Thing)
+bool UseThing(EntityEx Thing)
 {
 	if (!Thing)
 		Error("KRPGActor::UseThing : Thing reference not set to an instance of an object");
+	if (!KRPGActor(Thing))
+		return false;
 
 	if (Thing == self)
 		return false;
+
+	if (Thing.bUseSpecial && Thing.Special && Level.ExecuteActionSpecial(
+		Thing.Special, Thing.Args[0], Thing.Args[1], Thing.Args[2],
+		Thing.Args[3], Thing.Args[4], NULL, 0, self))
+	{
+		return true;
+	}
 
 	// [CW] TODO: thinkout what conversation style do we need;
 	//			  also, should other persons have ability to talk with each other?
@@ -435,13 +333,13 @@ bool UseThing(KRPGActor Thing)
 	if (Thing.ConversationID >= 0 && KRPGLevelInfo(Level).StartConversation(self, Thing))
 		return true;
 	// Possible generic 'use' types
-	if (bCanRide && Thing.bSaddleHorse && !Thing.RidePartner)
+	if (bCanRide && KRPGActor(Thing).bSaddleHorse && !KRPGActor(Thing).RidePartner)
 	{
-		MountOn(Thing, true);
+		MountOn(KRPGActor(Thing), true);
 		return true;
 	}
 
-	return Thing.IsBeingUsed(self);
+	return KRPGActor(Thing).IsBeingUsed(self);
 }
 
 //==========================================================================
