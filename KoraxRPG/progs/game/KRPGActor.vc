@@ -916,7 +916,7 @@ bool A_DoMove(bool Evade, bool FastChase, state AIdleState, state AMeleeState, s
 		}
 		if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
 		{
-			TryMove(vector(oldX, oldY, Origin.z));
+			TryMove(vector(oldX, oldY, Origin.z), false);
 			NewChaseDirEx(Evade);
 		}
 	}
@@ -1038,14 +1038,18 @@ final bool StepMoveEx()
 	for (i = 1; i < steps; i++)
 	{
 		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
-					(deltay / itof(steps * i)), Origin.z));
+					(deltay / itof(steps * i)), Origin.z), false);
 		if (!try_ok)
+		{
 			break;
+		}
 	}
 
 	// killough 3/15/98: don't jump over dropoffs:
 	if (try_ok)
-		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z));
+	{
+		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), false);
+	}
 
 	if (!try_ok)
 	{
