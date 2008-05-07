@@ -806,7 +806,7 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 			pt_sector = XLevel.PointInSector(p->org);
 			if (pt_sector && pt_sector->ceiling.pic == skyflatnum)
 			{
-				p->org.z += pt_sector->ceilingheight;
+				p->org.z += GetPlanePointZ(&pt_sector->ceiling, p->org);
 				pt_floorz = FindHighestFloorZAtPoint(p->org, pt_sector);
 				if (pt_floorz != EntityEx::ONFLOORZ)
 				{
@@ -1212,7 +1212,7 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 	intercept_t * in;
 	pLRTRData->intercepted_once = false;
 	pLRTRData->prev_sector = N_From.Sector;
-	pLRTRData->minyspace = N_From.Sector->ceilingheight - N_From.Sector->floorheight;	
+	pLRTRData->minyspace = N_From.Sector->ceiling.TexZ - N_From.Sector->floor.TexZ;
 	pLRTRData->maxstepheight = 0.0;
 	pLRTRData->maxdropoff = 0.0;
 
@@ -1251,16 +1251,16 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 				return false;
 			}
 
-			if (p_sector->ceilingheight < pLRTRData->prev_sector->ceilingheight)
-				ceiling = p_sector->ceilingheight;
+			if (p_sector->ceiling.TexZ < pLRTRData->prev_sector->ceiling.TexZ)
+				ceiling = p_sector->ceiling.TexZ;
 			else
-				ceiling = pLRTRData->prev_sector->ceilingheight;
-			if (p_sector->floorheight > pLRTRData->prev_sector->floorheight)
-				floor = p_sector->floorheight;
+				ceiling = pLRTRData->prev_sector->ceiling.TexZ;
+			if (p_sector->floor.TexZ > pLRTRData->prev_sector->floor.TexZ)
+				floor = p_sector->floor.TexZ;
 			else
-				floor = pLRTRData->prev_sector->floorheight;
+				floor = pLRTRData->prev_sector->floor.TexZ;
 			yspace = ceiling - floor;
-			fheightdelta = p_sector->floorheight - pLRTRData->prev_sector->floorheight;
+			fheightdelta = p_sector->floor.TexZ - pLRTRData->prev_sector->floor.TexZ;
 
 			if (yspace < pLRTRData->minyspace)
 				pLRTRData->minyspace = yspace;
