@@ -1325,12 +1325,6 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 			return false;
 		if (TargetEntity.Origin.z < FloorZ)
 			return false;
-
-		// [CW] prev_sector is now the last sector met
-		if (TargetEntity.Origin.z > CRTRData.prev_sector->floorheight + MaxPassableStep)
-			return false;		// [CW] target thing is too high to reach
-		if (TargetEntity.Origin.z < CRTRData.prev_sector->floorheight)
-			return false;		// [CW] target thing is under the floor
 	}
 
 	return canreach;
@@ -1382,17 +1376,6 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				// something was really messed up		
 				return false;
 
-			if (p_sector->floorheight > pCRTRData->prev_sector->floorheight + MaxPassableStep)
-				// will stuck in high floor
-				return false;
-			if (p_sector->floorheight < pCRTRData->prev_sector->floorheight - MaxPassableDropOff)
-				// must avoid dropoffs
-				return false;
-			if (p_sector->ceilingheight < pCRTRData->prev_sector->floorheight + MinPassableOpening ||
-				p_sector->floorheight + MinPassableOpening > pCRTRData->prev_sector->ceilingheight)
-				// will stuck in low ceiling...
-				return false;
-
 			pCRTRData->prev_sector = p_sector;
 
 			// [FB] partial 3d floor support...
@@ -1404,13 +1387,14 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			opening = FindOpening(opening, hit_point.z, hit_point.z + Height);
 
 			// only valid openings
-			if (opening)
+			if (!opening)
 			{
-				if ((opening->range <= MinPassableOpening) ||
-					(opening->lowfloor - opening->bottom > MaxPassableStep) ||
-					(opening->lowfloor - opening->bottom > MaxPassableDropOff))
-					return false;
+				return false;
 			}
+			if ((opening->range <= MinPassableOpening) ||
+				(opening->lowfloor - opening->bottom > MaxPassableStep) ||
+				(opening->lowfloor - opening->bottom > MaxPassableDropOff))
+				return false;
 			// [FB] This should partially cover it...
 		}
 		else
