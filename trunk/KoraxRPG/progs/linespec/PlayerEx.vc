@@ -432,7 +432,8 @@ final void PlayerInSpecialSector(float deltaTime)
 	float speed;
 	float finean;
 
-	if (MO.Origin.z != GetPlanePointZ(&MO.Sector->floor, MO.Origin))
+	if (MO.Origin.z != GetPlanePointZ(&MO.Sector->floor, MO.Origin) &&
+		!MO.WaterLevel)
 	{
 		// Player is not touching the floor
 		return;
@@ -869,7 +870,10 @@ final void BringUpWeapon()
 
 final void DropWeapon()
 {
-	SetViewState(ps_weapon, ReadyWeapon.GetDownState());
+	if (ReadyWeapon)
+	{
+		SetViewState(ps_weapon, ReadyWeapon.GetDownState());
+	}
 }
 
 //===========================================================================
@@ -924,6 +928,7 @@ void FireWeapon()
 
 	MO.SetState(EntityEx(MO).MissileState);
 	SetViewState(ps_weapon, ReadyWeapon.GetAttackState(Refire));
+	ReadyWeapon.FireMode = Weapon::FIRE_Primary;
 	if (!ReadyWeapon.bNoAlert)
 		LineSpecialLevelInfo(Level).NoiseAlert(EntityEx(MO), EntityEx(MO));
 }
@@ -1085,12 +1090,14 @@ final Weapon ChoosePowered(Weapon Wpn)
 
 final Weapon GetSlotChangeWeapon(int Slot)
 {
+print("Change slot %d", Slot);
 	int			i;
 	int			j;
 	LineSpecialGameInfo GI = LineSpecialGameInfo(Level.Game);
 
 	if (ReadyWeapon)
 	{
+print("Had ready");
 		for (i = 0; i < LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; i++)
 		{
 			if (GI.WeaponSlots[Slot].Weapons[i] == ReadyWeapon.Class ||
@@ -1106,6 +1113,7 @@ final Weapon GetSlotChangeWeapon(int Slot)
 						GI.WeaponSlots[Slot].Weapons[j]));
 					if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
 					{
+print("Selected");
 						return ChoosePowered(Wpn);
 					}
 				}
@@ -1119,10 +1127,12 @@ final Weapon GetSlotChangeWeapon(int Slot)
 			GI.WeaponSlots[Slot].Weapons[i]));
 		if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
 		{
+print("Found");
 			return ChoosePowered(Wpn);
 		}
 	}
 
+print("Use current");
 	return ReadyWeapon;
 }
 
