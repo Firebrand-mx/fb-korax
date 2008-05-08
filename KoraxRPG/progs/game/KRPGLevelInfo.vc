@@ -202,9 +202,8 @@ bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
 	bool result = false;
 	if (TID)
 	{
-		int searcher = -1;
-		for (E = Entity(FindMobjFromTID(TID, &searcher)); E;
-			E = Entity(FindMobjFromTID(TID, &searcher)))
+		for (E = Entity(FindMobjFromTID(TID, none)); E;
+			E = Entity(FindMobjFromTID(TID, E)))
 		{
 			if (E && ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
 				result = true;
@@ -262,8 +261,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_Thing_SetPlayerMOTag:
 		if (Game.Players[Arg1] && Game.Players[Arg1].MO)
 		{
-			Game.Players[Arg1].MO.RemoveFromTIDList();
-			Game.Players[Arg1].MO.InsertIntoTIDList(Arg2);
+			Game.Players[Arg1].MO.SetTID(Arg2);
 			buttonSuccess = true;
 		}
 		break;
@@ -334,8 +332,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_WalkTo:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
-			Entity target = FindMobjFromTID(Arg4, &s);
+			Entity target = FindMobjFromTID(Arg4, none);
 			IntelligentActor(E).A_OrderWalkTo(false, Arg2, itof(Arg3) / 1000.0,
 										target ? target.Origin : E.Origin);
 			buttonSuccess = true;
@@ -352,10 +349,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_Patrol2pt:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
-			Entity target1 = FindMobjFromTID(Arg4, &s);
-			s = -1;
-			Entity target2 = FindMobjFromTID(Arg5, &s);
+			Entity target1 = FindMobjFromTID(Arg4, none);
+			Entity target2 = FindMobjFromTID(Arg5, none);
 			IntelligentActor(E).A_OrderPatrol2Pt(false, Arg2, itof(Arg3) / 1000.0,
 							target1 ? target1.Origin : E.Origin,
 							target2 ? target2.Origin : E.Origin);
@@ -381,17 +376,15 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_Follow:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
 			IntelligentActor(E).A_OrderFollowThing(false, Arg2, itof(Arg3) / 1000.0,
-										EntityEx(FindMobjFromTID(Arg4, &s)));
+										EntityEx(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_EvadePos:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
-			Entity target = FindMobjFromTID(Arg4, &s);
+			Entity target = FindMobjFromTID(Arg4, none);
 			IntelligentActor(E).A_OrderEvadePos(false, Arg2, itof(Arg3) / 1000.0,
 										target ? target.Origin : E.Origin);
 			buttonSuccess = true;
@@ -400,9 +393,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_EvadeThing:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
 			IntelligentActor(E).A_OrderEvadeThing(false, Arg2, itof(Arg3) / 1000.0,
-										EntityEx(FindMobjFromTID(Arg4, &s)));
+										EntityEx(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;
@@ -416,8 +408,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_AttackThing:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			int s = -1;
-			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, EntityEx(FindMobjFromTID(Arg4, &s)));
+			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, EntityEx(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;

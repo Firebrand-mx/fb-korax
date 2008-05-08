@@ -286,39 +286,58 @@ final bool Teleport(TVec Dst, float angle, bool DstFog, bool SrcFog,
 	float		aboveFloor;
 	float		fogDelta;
 	EntityEx	fog;
+	bool		ResetPitch = false;
 
 	oldOrg = Origin;
 	aboveFloor = Origin.z - FloorZ;
+	if (Dst.z == ONFLOORZ)
+	{
+		sector_t* DstSec = XLevel.PointInSector(Dst);
+		float DstFloorZ = GetPlanePointZ(&DstSec->floor, Dst);
+		float DstCeilZ = GetPlanePointZ(&DstSec->floor, Dst);
+		if (bIsPlayer)
+		{
+			if (FindInventory(PowerFlight) && aboveFloor)
+			{
+				Dst.z = DstFloorZ + aboveFloor;
+				if (Dst.z + Height > DstCeilZ)
+				{
+					Dst.z = DstCeilZ - Height;
+				}
+			}
+			else
+			{
+				Dst.z = DstFloorZ;
+				if (!KeepDir)
+				{
+					ResetPitch = true;
+				}
+			}
+		}
+		else if (bMissile)
+		{
+			Dst.z = Dst.z + aboveFloor;
+			if (Dst.z + Height > DstCeilZ)
+			{
+				Dst.z = DstCeilZ - Height;
+			}
+		}
+		else
+		{
+			Dst.z = DstFloorZ;
+		}
+	}
 	if (!TeleportMove(Dst))
 	{
 		return false;
 	}
 	if (bIsPlayer)
 	{
-		if (FindInventory(PowerFlight) && aboveFloor)
+		Player.ViewOrg = Origin + vector(0.0, 0.0,
+			PlayerEx(Player).ViewHeight);
+		if (ResetPitch)
 		{
-			Origin.z = Origin.z + aboveFloor;
-			if (Origin.z + Height > CeilingZ)
-			{
-				Origin.z = CeilingZ - Height;
-			}
-			Player.ViewOrg.z = Origin.z + PlayerEx(Player).ViewHeight;
-		}
-		else
-		{
-			Player.ViewOrg.z = Origin.z + PlayerEx(Player).ViewHeight;
-			if (!KeepDir)
-			{
-				Angles.pitch = 0.0;
-			}
-		}
-	}
-	else if (bMissile)
-	{
-		Origin.z = Origin.z + aboveFloor;
-		if (Origin.z + Height > CeilingZ)
-		{
-			Origin.z = CeilingZ - Height;
+			Angles.pitch = 0.0;
 		}
 	}
 	// spawn teleport fog at source and destination
@@ -635,10 +654,14 @@ bool Touch(Entity InOther)
 
 	//	For Korax Arena
 	if (Other.IsTouched(self))
+	{
 		return !Other.bSolid && !Other.bSpecial && !Other.bShootable;
-		
+	}
+	
 	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
+	{
 		return true;
+	}
 
 	// check for skulls slamming into things
 	if (bSkullFly && Health > 0)
@@ -1145,7 +1168,7 @@ void OnMapSpawn(mthing_t* mthing)
 		}
 		LinkToWorld();
 
-		TID = mthing->tid;
+		SetTID(mthing->tid);
 		Special = mthing->special;
 		if (!bArgsDefined)
 		{
@@ -3068,7 +3091,7 @@ final bool UseLines(float UseRange, float UseThingRange, name FailSound)
 			open = LineOpenings(line, hit_point);
 			open = FindOpening(open, hit_point.z,
 				hit_point.z + Height);
-			if (!open)
+			if (!open || open->range <= 0.0)
 			{
 				DoSecAct = false;
 
@@ -3305,6 +3328,42 @@ void RespawnResetFlags()
 	bAlwaysFast = default.bAlwaysFast;
 	bNeverFast = default.bNeverFast;
 	bCanUseWalls = default.bCanUseWalls;
+}
+
+//==========================================================================
+//
+//	CalcFakeZMovement
+//
+//==========================================================================
+
+void CalcFakeZMovement(out TVec Ret, float DeltaTime)
+{
+	//
+	//  adjust height
+	//
+	Ret = Origin;
+	Ret.z += Velocity.z * DeltaTime;
+	if (bFloat && Target)
+	{
+		// float down towards enemy if too close
+		if (!bSkullFly && !bInFloat)
+		{
+			float dist = DistTo2(Target);
+			float delta = Target.Origin.z + Height / 2.0 - Ret.z;
+			if (delta < 0.0 && dist < -(delta * 3.0))
+			{
+				Ret.z -= FloatSpeed * DeltaTime;
+			}
+			else if (delta > 0.0 && dist < (delta * 3.0))
+			{
+				Ret.z += FloatSpeed * DeltaTime;
+			}
+		}
+	}
+	if (bIsPlayer && bFly && !(Ret.z <= FloorZ) && XLevel.TicTime & 2)
+	{
+		Ret.z += sin(90.0 * 35.0 / 20.0 * XLevel.Time);
+	}
 }
 
 bool IsTeammate(EntityEx Other)
