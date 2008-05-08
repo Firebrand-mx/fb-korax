@@ -10,6 +10,7 @@ graphics/fonta30.lmp	graphics/fonta30.lmp
 graphics/fonta63.lmp	graphics/fonta63.lmp
 
 //	Progs
+progs/linespec.dat		progs/linespec.dat
 progs/clprogs.dat		progs/clprogs.dat
 progs/svprogs.dat		progs/svprogs.dat
 
