@@ -631,10 +631,9 @@ bool A_LookEx(bool autoSetChase)
 	//	Set goal now if appropriate.
 	if (Special == LNSPEC_ThingSetGoal && Args[0] == 0)
 	{
-		int Searcher = -1;
 		Goal = none;
-		for (Ent = Level.FindMobjFromTID(Args[1], &Searcher); Ent;
-			Ent = Level.FindMobjFromTID(Args[1], &Searcher))
+		for (Ent = Level.FindMobjFromTID(Args[1], none); Ent;
+			Ent = Level.FindMobjFromTID(Args[1], Ent))
 		{
 			if (!Ent.IsA('PatrolPoint'))
 			{
@@ -643,7 +642,6 @@ bool A_LookEx(bool autoSetChase)
 			Goal = EntityEx(Ent);
 			break;
 		}
-		Special = 0;
 		ReactionTime = itof(Args[2]) + XLevel.Time;
 		bChaseGoal = !!Args[3];
 	}
