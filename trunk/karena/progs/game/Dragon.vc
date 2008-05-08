@@ -35,36 +35,34 @@ class Dragon : Pawn
 
 Actor FlightTarget;
 
-//============================================================================
+//==========================================================================
 //
 //	A_DragonInitFlight
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonInitFlight()
 {
-	int search;
-
-	search = -1;
+	FlightTarget = none;
 	do
 	{
 		// find the first tid identical to the dragon's tid
-		FlightTarget = Actor(Level.FindMobjFromTID(TID, &search));
-		if (search == -1)
+		FlightTarget = Actor(Level.FindMobjFromTID(TID, FlightTarget));
+		if (!FlightTarget)
 		{
 			SetState(IdleState);
 			return;
 		}
 	}
 	while (FlightTarget == self);
-	RemoveFromTIDList();
+	SetTID(0);
 }
 
-//============================================================================
+//==========================================================================
 //
 //	DragonSeek
 //
-//============================================================================
+//==========================================================================
 
 final void DragonSeek(float thresh, float turnMax)
 {
@@ -72,7 +70,6 @@ final void DragonSeek(float thresh, float turnMax)
 	float dist;
 	float delta;
 	EntityEx tempTarget;
-	int search;
 	int i;
 	int bestArg;
 	float bestAngle;
@@ -159,8 +156,7 @@ final void DragonSeek(float thresh, float turnMax)
 				{
 					continue;
 				}
-				search = -1;
-				A = Actor(Level.FindMobjFromTID(tempTarget.Args[i], &search));
+				A = Actor(Level.FindMobjFromTID(tempTarget.Args[i], none));
 				angleToSpot = atan2(A.Origin.y - Origin.y,
 					A.Origin.x - Origin.x);
 				delta = fabs(AngleMod180(angleToSpot - angleToTarget));
@@ -172,9 +168,8 @@ final void DragonSeek(float thresh, float turnMax)
 			}
 			if (bestArg != -1)
 			{
-				search = -1;
 				FlightTarget = Actor(Level.FindMobjFromTID(tempTarget.Args[bestArg],
-					&search));
+					none));
 			}
 		}
 		else
@@ -184,17 +179,16 @@ final void DragonSeek(float thresh, float turnMax)
 				i = (P_Random() >> 2) % 5;
 			}
 			while (!tempTarget.Args[i]);
-			search = -1;
-			FlightTarget = Actor(Level.FindMobjFromTID(tempTarget.Args[i], &search));
+			FlightTarget = Actor(Level.FindMobjFromTID(tempTarget.Args[i], none));
 		}
 	}
 }
 
-//============================================================================
+//==========================================================================
 //
 //	A_DragonFlight
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonFlight()
 {
@@ -205,7 +199,7 @@ final void A_DragonFlight()
 	{
 		if (!Target.bShootable)
 		{
-			// Target died
+			// enemy died
 			Target = none;
 			return;
 		}
@@ -228,11 +222,11 @@ final void A_DragonFlight()
 	}
 }
 
-//============================================================================
+//==========================================================================
 //
 //	A_DragonFlap
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonFlap()
 {
@@ -247,22 +241,22 @@ final void A_DragonFlap()
 	}
 }
 
-//============================================================================
+//==========================================================================
 //
 //	A_DragonAttack
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonAttack()
 {
 	SpawnMissile(Target, DragonMissile);
 }
 
-//============================================================================
+//==========================================================================
 //
 //  A_DragonPain
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonPain()
 {
@@ -274,11 +268,11 @@ final void A_DragonPain()
 	}
 }
 
-//============================================================================
+//==========================================================================
 //
 //	A_DragonCheckCrash
 //
-//============================================================================
+//==========================================================================
 
 final void A_DragonCheckCrash()
 {
