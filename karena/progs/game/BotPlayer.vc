@@ -196,13 +196,17 @@ float AITime;
 // Bot states
 //
 // [CW] This is currently not used...
+// [FB] We'll be using it now ;)
+enum
+{
+	bst_deciding,	// 	Bot is deciding what to do
+	bst_offense,	// 	Bot is "fetching" something (offense)
+	bst_defense,	// 	Bot is defending something
+	bst_scoring		// 	Bot is heading to scoring place
+};
+
 struct botstate_t
 {
-	// [FB] OK, this is how this is supposed to work:
-	// 	if botstate == 0 -> Bot is deciding what to do
-	// 	if botstate == 1 -> Bot is "fetching" something (offense)
-	// 	if botstate == 2 -> Bot is defending something
-	// 	if botstate == 3 -> Bot is heading to scoring place
 	int BState;
 };
 
@@ -332,6 +336,54 @@ float AngleTo2(TVec dest)
 	dir = dest - botmo.Origin;
 	VectorAngles(&dir, &ang);
 	return ang.pitch;
+}
+
+//==========================================================================
+//
+//	SetAction
+//
+//	Decide what to do in teamgame (defend, whatever)
+//
+//==========================================================================
+
+void SetAction()
+{
+	int i;
+	int defenders = 0;
+	int attackers = 0;
+
+	if (!player.Team)
+		return;
+
+	// [FB] We are deciding what to do
+	if (botstate.BState == bst_deciding)
+	{
+		// Let's see what the other bots on our
+		// team are doing, and decide our action based
+		// off on that
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO && 
+			    Player(player.Level.Game.Players[i]).bIsBot && 
+			    Player(player.Level.Game.Players[i]).Team == player.Team)
+			{
+				// [FB] Is this bot in Offense?
+				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_offense)
+					attackers++;
+				// [FB] Is this bot in Defense?
+				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_defense)
+					defenders++;
+			}
+		}
+
+		// Defense wins championships...
+		if (defenders <= attackers)
+			// [FB] Then get on defense
+			botstate.BState = bst_defense;
+		else
+			// [FB] Then get on offense
+			botstate.BState = bst_offense;
+	}
 }
 
 //==========================================================================
@@ -2003,7 +2055,7 @@ void Killed(EntityEx victim)
 
 void Died(EntityEx killer)
 {
-	// [FB Accumulate anger
+	// [FB] Accumulate anger
 	angerlevel += 10;
 
 	if(angerlevel > info.threshold)
@@ -2188,13 +2240,13 @@ void AffectStat()
 
 //==========================================================================
 //
-//	SetPissStats
+//	SetPissedStats
 //
 //  [FB] We are pissed off, so certain stats are boosted
 //
 //==========================================================================
 
-void SetPissStats()
+void SetPissedStats()
 {
 	if (!p_init)
 	{
@@ -2273,6 +2325,14 @@ void BotTick(float deltaTime)
 	if (AITime <= 0.0)
 	{
 		AITime = AI_TIME_DELAY + (Random() - 0.5) * 2.5;
+
+		// [FB] Decide what action we'll take and set a goal
+		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
+			(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf
+			|| MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football))
+		{
+			SetAction();
+		}
 
 		// [FB] Set an ally if we're in a mode that has one
 		if (!ally && (gameInfo.bIsCoopGame[gameInfo.GameType] ||
@@ -2415,7 +2475,7 @@ void UpdateTimedEffects(float deltaTime)
 	// [FB] Apply pissed off stats
 	if (t_pissed && !p_init)
 	{
-		SetPissStats();
+		SetPissedStats();
 	}
 }
 
@@ -2785,7 +2845,82 @@ Actor GetGameModeGoal(optional bool bReachable)
 		break;
 	case HexenDefs::game_ctf:
 		{
-			// TODO: some variants here
+			if (GameCTF(gameInfo.GameModel).IsInPlayableState())
+			{
+				// [FB] The flag is the goal of the game mode, but it has many different states
+				//	    so here we go...
+				foreach botmo.AllThinkers(CTFBanner, ee)
+				{
+					// [FB] Get our state and set our actions based on this
+					switch (botstate.BState)
+					{
+						case bst_offense:
+						{
+							// [FB] Check status of enemy flag
+							if (CTFBanner(ee).Team != player.Team)
+							{
+								switch(CTFBanner(ee).Status)
+								{
+									case CTFBanner::BANNER_STATUS__BASE:
+									case CTFBanner::BANNER_STATUS__LOST:
+									{
+										if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
+										{
+											if (!bReachable || CheckTo(ee.Origin, ee))
+											{
+												EE = ee;
+												dist = Length(botmo.Origin - ee.Origin);
+											}
+										}
+									}
+									break;
+									case CTFBanner::BANNER_STATUS__CARRIED:
+									{
+										// [FB] Flag is carried, check if we are carrying it
+										if (CTFBanner(ee).Capturer == player)
+											// [FB] We are carrying, set our state to scoring to change our goal
+											botstate.BState = bst_scoring;
+										else
+											// [FB] Just support our team....
+											EE = GetNearestEnemy(true);
+									}
+									break;
+								}
+							}
+						}
+						break;
+						case bst_defense:
+						{
+							// [FB] Check status of our flag
+							if (CTFBanner(ee).Team == player.Team)
+							{
+								switch(CTFBanner(ee).Status)
+								{
+									case CTFBanner::BANNER_STATUS__BASE:
+									case CTFBanner::BANNER_STATUS__CARRIED:
+									{
+										EE = GetNearestEnemy(true);
+									}
+									break;
+									case CTFBanner::BANNER_STATUS__LOST:
+									{
+										if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
+										{
+											if (!bReachable || CheckTo(ee.Origin, ee))
+											{
+												EE = ee;
+												dist = Length(botmo.Origin - ee.Origin);
+											}
+										}
+									}
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
 		}
 		break;
 	case HexenDefs::game_domination:
@@ -2870,36 +3005,242 @@ Actor GetNearestPathNode()
 
 	PathNode previous;
 
-	// TODO: make DEQUEUE instead of his bullshit
+	// TODO: make DEQUEUE instead of this bullshit
 	if (nodes.Num > 32)
 		nodes.Num = 0;
 	if (nodes.Num)
 		previous = nodes[nodes.Num - 1];
 
-	foreach botmo.AllThinkers(PathNode, pn)
+	// [FB] Determine our state (offense, defense) to make us search for specific path nodes
+	if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
+		(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf
+		|| MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football))
 	{
-		if (pn == node_current)
-			continue;
-
-		visited = false;
-		for (i = 0; i < nodes.Num; i++)
+		switch(botstate.BState)
 		{
-			if (nodes[i] == pn)
+			// [FB] NOTE: For offense the teams need to be backwards
+			//	    I.E. Red team uses blue nodes (it's THAT messy, heh!)
+			case bst_offense:
 			{
-				visited = true;
-				break;
+				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+				{
+					foreach botmo.AllThinkers(RedNode, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
+				else
+				{
+					foreach botmo.AllThinkers(BlueNode, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
 			}
-		}
-
-		if (visited)
-			continue;
-
-		if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-		{
-			if (CheckTo(pn.Origin))
+			break;
+			case bst_defense:
 			{
-				PN = pn;
-				dist = Length(pn.Origin - botmo.Origin);
+				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+				{
+					foreach botmo.AllThinkers(BlueGuardSpot, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
+				else
+				{
+					foreach botmo.AllThinkers(RedGuardSpot, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
+			}
+			break;
+			case bst_scoring:
+			{
+				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+				{
+					foreach botmo.AllThinkers(BlueGoalSpot, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
+				else
+				{
+					foreach botmo.AllThinkers(RedGoalSpot, pn)
+					{
+						if (pn == node_current)
+							continue;
+
+						visited = false;
+						for (i = 0; i < nodes.Num; i++)
+						{
+							if (nodes[i] == pn)
+							{
+								visited = true;
+								break;
+							}
+						}
+
+						if (visited)
+							continue;
+
+						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+						{
+							if (CheckTo(pn.Origin))
+							{
+								PN = pn;
+								dist = Length(pn.Origin - botmo.Origin);
+							}
+						}
+					}
+				}
+			}
+			break;
+		}
+	}
+	else
+	{
+		foreach botmo.AllThinkers(PathNode, pn)
+		{
+			if (pn == node_current)
+				continue;
+
+			visited = false;
+			for (i = 0; i < nodes.Num; i++)
+			{
+				if (nodes[i] == pn)
+				{
+					visited = true;
+					break;
+				}
+			}
+
+			if (visited)
+				continue;
+
+			if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
+			{
+				if (CheckTo(pn.Origin))
+				{
+					PN = pn;
+					dist = Length(pn.Origin - botmo.Origin);
+				}
 			}
 		}
 	}
