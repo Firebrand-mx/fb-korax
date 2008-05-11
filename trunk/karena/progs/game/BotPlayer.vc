@@ -589,7 +589,7 @@ void CheckStuff()
 {
 	if (enemy)
 	{
-		if (!botmo.CanSee(enemy) || enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant)
+		if (enemy.Health <= 0 || !enemy.bShootable || enemy.bDormant || !botmo.CanSee(enemy))
 			enemy = none;
 	}
 
@@ -1112,6 +1112,11 @@ Actor FindEnemy()
 				//{
 					// [FB] Detect the light level
 					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
+					if (actor.Sector->floor.LightSourceSector)
+					{
+						//[FB] Add static or dynamic lights?
+						light += actor.Sector->floor.LightSourceSector;
+					}
 					// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
 					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
 					{
@@ -2169,6 +2174,7 @@ void OnBeginPlay()
 
 void OnSpawn()
 {
+	botstate.BState = bst_deciding;
 	enemy = none;
 	accuracy_r = false;
 	intelect_r = false;
@@ -2326,13 +2332,8 @@ void BotTick(float deltaTime)
 	{
 		AITime = AI_TIME_DELAY + (Random() - 0.5) * 2.5;
 
-		// [FB] Decide what action we'll take and set a goal
-		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
-			(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf
-			|| MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football))
-		{
-			SetAction();
-		}
+		// [FB] Decide what action we'll take
+		SetAction();
 
 		// [FB] Set an ally if we're in a mode that has one
 		if (!ally && (gameInfo.bIsCoopGame[gameInfo.GameType] ||
@@ -2687,6 +2688,11 @@ Actor GetFirstPriorityTarget()
 
 	foreach botmo.AllThinkers(Actor, ee)
 	{
+		if (ee.bInvisible)
+			continue;
+		if (ee.bNoSector)
+			continue;
+
 		if (ee.IsA('Weapon'))
 			priort = priort_Weapons;
 		else if (ee.IsA('Ammo'))
@@ -2696,11 +2702,6 @@ Actor GetFirstPriorityTarget()
 		else if (ee.IsA('Arifact'))
 			priort = priort_Artifacts;
 		else
-			continue;
-
-		if (ee.bInvisible)
-			continue;
-		if (ee.bNoSector)
 			continue;
 
 		if (!Priority[priort])
@@ -2752,7 +2753,43 @@ void ProcessImmediate()
 
 		if (!ITarget)
 		{
-			ITarget = GetNearestPathNode();
+			class<Thinker> Node;
+			// [FB] Determine our state (offense, defense) to make us search for specific path nodes
+			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf ||
+				MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
+			{
+				switch(botstate.BState)
+				{
+					case bst_offense:
+					{
+						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+							Node = class<Thinker>(BlueNode);
+						else
+							Node = class<Thinker>(RedNode);
+					}
+					break;
+					case bst_defense:
+					{
+						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+							Node = class<Thinker>(BlueGuardSpot);
+						else
+							Node = class<Thinker>(RedGuardSpot);
+					}
+					break;
+					case bst_scoring:
+					{
+						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+							Node = class<Thinker>(BlueGoalSpot);
+						else
+							Node = class<Thinker>(RedGoalSpot);
+					}
+					break;
+				}
+			}
+			else
+				Node = class<Thinker>(PathNode);
+
+			ITarget = GetNearestPathNode(Node);
 		}
 
 		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
@@ -2845,84 +2882,96 @@ Actor GetGameModeGoal(optional bool bReachable)
 		break;
 	case HexenDefs::game_ctf:
 		{
-			if (GameCTF(gameInfo.GameModel).IsInPlayableState())
+			// [FB] Get our state and set our actions based on this...
+			switch (botstate.BState)
 			{
-				// [FB] The flag is the goal of the game mode, but it has many different states
-				//	    so here we go...
-				foreach botmo.AllThinkers(CTFBanner, ee)
+				case bst_offense:
 				{
-					// [FB] Get our state and set our actions based on this
-					switch (botstate.BState)
+					foreach botmo.AllThinkers(CTFBanner, ee)
 					{
-						case bst_offense:
+						// [FB] Check status of enemy flag
+						if (CTFBanner(ee).Team != player.Team)
 						{
-							// [FB] Check status of enemy flag
-							if (CTFBanner(ee).Team != player.Team)
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE ||
+								CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
 							{
-								switch(CTFBanner(ee).Status)
+								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
 								{
-									case CTFBanner::BANNER_STATUS__BASE:
-									case CTFBanner::BANNER_STATUS__LOST:
+									if (!bReachable || CheckTo(ee.Origin, ee))
 									{
-										if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
-										{
-											if (!bReachable || CheckTo(ee.Origin, ee))
-											{
-												EE = ee;
-												dist = Length(botmo.Origin - ee.Origin);
-											}
-										}
+										EE = ee;
+										dist = Length(botmo.Origin - ee.Origin);
 									}
-									break;
-									case CTFBanner::BANNER_STATUS__CARRIED:
-									{
-										// [FB] Flag is carried, check if we are carrying it
-										if (CTFBanner(ee).Capturer == player)
-											// [FB] We are carrying, set our state to scoring to change our goal
-											botstate.BState = bst_scoring;
-										else
-											// [FB] Just support our team....
-											EE = GetNearestEnemy(true);
-									}
-									break;
 								}
 							}
-						}
-						break;
-						case bst_defense:
-						{
-							// [FB] Check status of our flag
-							if (CTFBanner(ee).Team == player.Team)
+							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
 							{
-								switch(CTFBanner(ee).Status)
-								{
-									case CTFBanner::BANNER_STATUS__BASE:
-									case CTFBanner::BANNER_STATUS__CARRIED:
-									{
+									// [FB] Flag is carried, check if we are carrying it
+									if (CTFBanner(ee).Capturer == player)
+										// [FB] We are carrying, set our state to scoring to change our goal
+										botstate.BState = bst_scoring;
+									else
+										// [FB] Just support our team....
 										EE = GetNearestEnemy(true);
-									}
-									break;
-									case CTFBanner::BANNER_STATUS__LOST:
-									{
-										if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
-										{
-											if (!bReachable || CheckTo(ee.Origin, ee))
-											{
-												EE = ee;
-												dist = Length(botmo.Origin - ee.Origin);
-											}
-										}
-									}
-									break;
-								}
 							}
 						}
-						break;
 					}
 				}
+				break;
+				case bst_defense:
+				{
+					foreach botmo.AllThinkers(CTFBanner, ee)
+					{
+						// [FB] Check status of our flag
+						if (CTFBanner(ee).Team == player.Team)
+						{
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE)
+								EE = GetNearestEnemy(true);
+							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+								EE = Actor(CTFBanner(ee).Capturer);
+							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
+							{
+								if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
+								{
+									if (!bReachable || CheckTo(ee.Origin, ee))
+									{
+										EE = ee;
+										dist = Length(botmo.Origin - ee.Origin);
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
+				case bst_scoring:
+				{
+					foreach botmo.AllThinkers(CTFBanner, ee)
+					{
+						// [FB] Check status of our flag
+						if (CTFBanner(ee).Team == player.Team)
+						{
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE ||
+								CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
+							{
+								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
+								{
+									if (!bReachable || CheckTo(ee.Origin, ee))
+									{
+										EE = ee;
+										dist = Length(botmo.Origin - ee.Origin);
+									}
+								}
+							}
+							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+								EE = Actor(CTFBanner(ee).Capturer);
+						}
+					}
+				}
+				break;
 			}
 		}
-		break;
+	break;
 	case HexenDefs::game_domination:
 		{
 			foreach botmo.AllThinkers(DominationSigil, ee)
@@ -2940,7 +2989,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 		}
 		break;
 	case HexenDefs::game_football:
-		{			
+		{
 			// Get ball
 			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
 
@@ -2994,7 +3043,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 //
 //==========================================================================
 
-Actor GetNearestPathNode()
+Actor GetNearestPathNode(class<Thinker> NodeType)
 {
 	PathNode PN;
 	PathNode pn;
@@ -3011,236 +3060,30 @@ Actor GetNearestPathNode()
 	if (nodes.Num)
 		previous = nodes[nodes.Num - 1];
 
-	// [FB] Determine our state (offense, defense) to make us search for specific path nodes
-	if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
-		(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf
-		|| MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football))
+	foreach botmo.AllThinkers(NodeType, pn)
 	{
-		switch(botstate.BState)
+		if (pn == node_current)
+			continue;
+
+		visited = false;
+		for (i = 0; i < nodes.Num; i++)
 		{
-			// [FB] NOTE: For offense the teams need to be backwards
-			//	    I.E. Red team uses blue nodes (it's THAT messy, heh!)
-			case bst_offense:
+			if (nodes[i] == pn)
 			{
-				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-				{
-					foreach botmo.AllThinkers(RedNode, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
-				else
-				{
-					foreach botmo.AllThinkers(BlueNode, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
+				visited = true;
+				break;
 			}
-			break;
-			case bst_defense:
-			{
-				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-				{
-					foreach botmo.AllThinkers(BlueGuardSpot, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
-				else
-				{
-					foreach botmo.AllThinkers(RedGuardSpot, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
-			}
-			break;
-			case bst_scoring:
-			{
-				if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-				{
-					foreach botmo.AllThinkers(BlueGoalSpot, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
-				else
-				{
-					foreach botmo.AllThinkers(RedGoalSpot, pn)
-					{
-						if (pn == node_current)
-							continue;
-
-						visited = false;
-						for (i = 0; i < nodes.Num; i++)
-						{
-							if (nodes[i] == pn)
-							{
-								visited = true;
-								break;
-							}
-						}
-
-						if (visited)
-							continue;
-
-						if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-						{
-							if (CheckTo(pn.Origin))
-							{
-								PN = pn;
-								dist = Length(pn.Origin - botmo.Origin);
-							}
-						}
-					}
-				}
-			}
-			break;
 		}
-	}
-	else
-	{
-		foreach botmo.AllThinkers(PathNode, pn)
+
+		if (visited)
+			continue;
+
+		if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
 		{
-			if (pn == node_current)
-				continue;
-
-			visited = false;
-			for (i = 0; i < nodes.Num; i++)
+			if (CheckTo(pn.Origin))
 			{
-				if (nodes[i] == pn)
-				{
-					visited = true;
-					break;
-				}
-			}
-
-			if (visited)
-				continue;
-
-			if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
-			{
-				if (CheckTo(pn.Origin))
-				{
-					PN = pn;
-					dist = Length(pn.Origin - botmo.Origin);
-				}
+				PN = pn;
+				dist = Length(pn.Origin - botmo.Origin);
 			}
 		}
 	}
