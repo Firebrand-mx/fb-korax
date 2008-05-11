@@ -238,7 +238,7 @@ final bool TeleportMove(TVec org, optional bool ForceTelestomp)
 		}
 
 		//	Z-Check
-		if ((bPassMobj || Other.bActLikeBridge) &&
+		if ((bPassMobj || Other.bActLikeBridge) && !Level.CompatNoPassOver &&
 			(!bDontOverlap || !Other.bDontOverlap))
 		{
 			if (Other.Origin.z > org.z + Height)
@@ -715,7 +715,7 @@ bool Touch(Entity InOther)
 			return true;
 		}
 
-		if (Target && Target.GetSpecies() == Other.GetSpecies())
+		if (Target)
 		{
 			// Don't hit same species as originator.
 			if (Other == Target)
@@ -723,11 +723,57 @@ bool Touch(Entity InOther)
 				// Don't missile self
 				return true;
 			}
-			if (!Other.bIsPlayer)
+			//	Let players missile other players.
+			if (!Target.bIsPlayer && !Other.bIsPlayer)
 			{
-				// Explode, but do no damage.
-				// Let players missile other players.
-				return false;
+				int Inf = GetInfighting();
+				if (Inf < 0)
+				{
+					//	Monsters can't hurt each other, but make exception
+					// depending on friendliness and hate status.
+					if (Target.bShootable)
+					{
+						if (!Other.bMonster)
+						{
+							return false;
+						}
+						//	Hostile monsters can always hurt each other.
+						if (!Other.IsHostile(Target))
+						{
+							//	The same if the shooter hates the target.
+							if (!Other.TID || Target.TIDToHate != Other.TID)
+							{
+								return false;
+							}
+						}
+					}
+				}
+				else if (Inf == 0)
+				{
+					if (Other.IsFriend(Target))
+					{
+						//	Don't hurt friends.
+						return false;
+					}
+					if (Other.TIDToHate && Other.TIDToHate == Target.TIDToHate)
+					{
+						//	Don't hurt monsters that hate the same thing as you do.
+						return false;
+					}
+					if (Target.GetSpecies() == Other.GetSpecies())
+					{
+						//	Don't hurt same species, but only if the target
+						// isn't one's hostile.
+						if (!Other.IsHostile(Target))
+						{
+							//	Allow hurting monsters the shooter hates.
+							if (Other.TID == 0 || Target.TIDToHate != Other.TID)
+							{
+								return false;
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -792,8 +838,8 @@ bool Touch(Entity InOther)
 			bSolid;
 
 	// check for special pickup
-	if (Other.bSpecial &&
-		Other.Origin.z < Origin.z + Height - MaxStepHeight)
+	if (Other.bSpecial/* &&
+		Other.Origin.z < Origin.z + Height - MaxStepHeight*/)
 	{
 		if (Other.bDehackedSpecial)
 		{
@@ -909,7 +955,8 @@ final void CheckForPushSpecial(line_t* line, int side)
 	{
 		if (bActivatePushWall)
 		{
-			LineSpecialLevelInfo(Level).ActivateLine(line, self, side, SPAC_PUSH);
+			LineSpecialLevelInfo(Level).ActivateLine(line, self, side,
+				SPAC_PUSH);
 		}
 		else if (bActivateImpact)
 		{
@@ -1347,7 +1394,12 @@ final void DropItem(class<EntityEx> type, int amount, float chance)
 	{
 		return;
 	}
-	A = Spawn(type, Origin + vector(0.0, 0.0, Height / 2.0));
+	float DropZ = 0.0;
+	if (!Level.CompatNoTossDrops)
+	{
+		DropZ = Height / 2.0;
+	}
+	A = Spawn(type, Origin + vector(0.0, 0.0, DropZ));
 	A.bDropped = true;	// special versions of items
 	if (Inventory(A))
 	{
@@ -1391,9 +1443,12 @@ final void DropItem(class<EntityEx> type, int amount, float chance)
 			return;
 		}
 	}
-	A.Velocity.x = (Random() - Random()) * 35.0;
-	A.Velocity.y = (Random() - Random()) * 35.0;
-	A.Velocity.z = (5.0 + Random() * 4.0) * 35.0;
+	if (!Level.CompatNoTossDrops)
+	{
+		A.Velocity.x = (Random() - Random()) * 35.0;
+		A.Velocity.y = (Random() - Random()) * 35.0;
+		A.Velocity.z = (5.0 + Random() * 4.0) * 35.0;
+	}
 }
 
 //==========================================================================
@@ -2537,19 +2592,26 @@ final void PainShootSkull(class<Actor> SpawnType, float angle)
 	{
 		SpawnType = LostSoul;
 	}
-
-	// count total number of skull currently on the level
-	count = 0;
-	foreach AllThinkers(SpawnType, mo)
-	{
-		count++;
-	}
-
-	// if there are allready 20 skulls on the level,
-	// don't spit another one
-	if (count > 20)
+	if (DamageType == 'Massacre')
 	{
 		return;
+	}
+
+	if (Level.CompatLimitPain)
+	{
+		// count total number of skull currently on the level
+		count = 0;
+		foreach AllThinkers(SpawnType, mo)
+		{
+			count++;
+		}
+
+		// if there are allready 20 skulls on the level,
+		// don't spit another one
+		if (count > 20)
+		{
+			return;
+		}
 	}
 
 	// okay, there's place for another one
@@ -3092,7 +3154,8 @@ final bool UseLines(float UseRange, float UseThingRange, name FailSound)
 			open = LineOpenings(line, hit_point);
 			open = FindOpening(open, hit_point.z,
 				hit_point.z + Height);
-			if (!open || open->range <= 0.0)
+			if (!open || open->range <= 0.0 ||
+				(line->special && Level.CompatUseBlocking))
 			{
 				DoSecAct = false;
 
@@ -3143,10 +3206,21 @@ final bool UseLines(float UseRange, float UseThingRange, name FailSound)
 
 		//WAS can't use more than one special line in a row
 		//jff 3/21/98 NOW multiple use allowed with enabling line flag
-		if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
+		if (Level.CompatUseBlocking)
 		{
-			DoSecAct = false;
-			break;
+			if (Level.GET_SPAC(line->flags) != SPAC_USETHROUGH)
+			{
+				DoSecAct = false;
+				break;
+			}
+		}
+		else
+		{
+			if (Level.GET_SPAC(line->flags) == SPAC_USE)
+			{
+				DoSecAct = false;
+				break;
+			}
 		}
 	}
 
@@ -3365,6 +3439,47 @@ void CalcFakeZMovement(out TVec Ret, float DeltaTime)
 	{
 		Ret.z += sin(90.0 * 35.0 / 20.0 * XLevel.Time);
 	}
+}
+
+//==========================================================================
+//
+//	GetInfighting
+//
+//==========================================================================
+
+final int GetInfighting()
+{
+	if (bNoInfighting)
+	{
+		return -1;
+	}
+	if (Level.Infighting)
+	{
+		return Level.Infighting;
+	}
+	return GetCvar('infighting');
+}
+
+//==========================================================================
+//
+//	IsHostile
+//
+//==========================================================================
+
+final bool IsHostile(EntityEx Other)
+{
+	return !IsFriend(Other);
+}
+
+//==========================================================================
+//
+//	IsFriend
+//
+//==========================================================================
+
+final bool IsFriend(EntityEx Other)
+{
+	return bFriendly == Other.bFriendly;
 }
 
 bool IsTeammate(EntityEx Other)
