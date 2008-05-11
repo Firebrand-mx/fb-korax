@@ -663,7 +663,22 @@ void DeathMatchSpawnPlayer()
 		i = P_Random() % Level.DeathmatchStarts.Num;
 		if (CheckSpot(&Level.DeathmatchStarts[i]))
 		{
-			SpawnPlayer(&Level.DeathmatchStarts[i]);
+			if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && 
+				(MainGameInfo(Level.Game).GameType == HexenDefs::game_ctf
+				|| MainGameInfo(Level.Game).GameType == HexenDefs::game_football))
+			{
+				// [FB] Use the second argument of deathmatch starts to determine team grouping
+				if (MainGameInfo(Level.Game).Teams[0] == Team &&
+					(Level.DeathmatchStarts[i].arg1 == 0))
+					SpawnPlayer(&Level.DeathmatchStarts[i]);
+				else if (MainGameInfo(Level.Game).Teams[1] == Team &&
+					(Level.DeathmatchStarts[i].arg1 == 1))
+					SpawnPlayer(&Level.DeathmatchStarts[i]);
+				else if ((Level.DeathmatchStarts[i].arg1 == 0))
+					SpawnPlayer(&Level.DeathmatchStarts[i]);
+			}
+			else
+				SpawnPlayer(&Level.DeathmatchStarts[i]);
 			return;
 		}
 	}
