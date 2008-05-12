@@ -27,13 +27,13 @@ class ClientGame : KRPGClientGameBase;
 
 enum
 {
-	MB_YesNo = MB_Quit + 1	// KoraxRPG
+	MB_YesNo = MB_Control	// KoraxRPG
 };
 
 // KoraxRPG
 enum
 {
-	MBR_Unset	= -1,
+	MBR_Unset,
 	MBR_Yes,
 	MBR_No
 };
@@ -41,6 +41,7 @@ enum
 TitleScreen			GTitle;
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
+TravelMapScreen		GTravelMap;	// KoraxRPG
 ConScreen			GConScreen;
 
 int MenuPClass;
@@ -70,6 +71,7 @@ void RootWindowCreated()
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
+	GTravelMap = TravelMapScreen(GRoot.NewChild(TravelMapScreen));
 	GTitle.ClGame = self;
 	GSBar.ClGame = self;
 	GSBar.Hide();
@@ -77,6 +79,8 @@ void RootWindowCreated()
 	GImission.Hide();
 	GFinale.ClGame = self;
 	GFinale.Hide();
+	GTravelMap.ClGame = self;
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -92,6 +96,7 @@ void Connected()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -106,6 +111,7 @@ void Disconnected()
 	GSBar.Hide();
 	GImission.Hide();
 	GFinale.Hide();
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -120,6 +126,7 @@ void DemoPlaybackStarted()
 	GSBar.Show();
 	GImission.Hide();
 	GFinale.Hide();
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -134,6 +141,7 @@ void DemoPlaybackStopped()
 	GSBar.Hide();
 	GImission.Hide();
 	GFinale.Hide();
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -171,6 +179,7 @@ void StatusBarStartMap()
 	GSBar.StartMap();
 	GImission.Hide();
 	GFinale.Hide();
+	GTravelMap.Hide();
 }
 
 //==========================================================================
@@ -204,8 +213,16 @@ void StatusBarUpdateWidgets(float DeltaTime)
 void IintermissionStart()
 {
 	GSBar.Hide();
-	GImission.Show();
-	GImission.Start();
+	if (im->EnterMap == 'map-1')
+	{
+		GTravelMap.Show();
+		//GTravelMap.TM_Init();	
+	}
+	else
+	{
+		GImission.Show();
+		GImission.Start();
+	}
 	GFinale.Hide();
 }
 
@@ -219,6 +236,7 @@ void StartFinale(name FinaleType)
 {
 	GSBar.Hide();
 	GImission.Hide();
+	GTravelMap.Hide();
 	GFinale.Show();
 	GFinale.StartFinale(FinaleType);
 }
@@ -261,6 +279,14 @@ bool MenuResponder(event_t * event)
 			PushMenuScreen(SpawnMenu(MenuScreenMain));
 			return true;
 		}
+
+		//
+		// KoraxRPG
+		//
+		// Travel Map
+		if (GTravelMap.Enabled)
+			GTravelMap.HandleUserCommand(event);
+		return false;
 	}
 	return false;
 }
@@ -376,6 +402,25 @@ void QuitResponse(int ch)
 		return;
 
 	CmdBuf_AddText("Quit\n");
+}
+
+//==========================================================================
+//
+//  ControlResponse
+//
+//==========================================================================
+
+void ControlResponse(int key)
+{
+	if (GTravelMap.Visible)
+	{
+		if (key == K_n || key == K_MOUSE2)
+			messageResult = MBR_No;
+		else if (key == K_y || key == K_ENTER || key == K_SPACE || key == K_MOUSE1)
+			messageResult = MBR_Yes;
+	}
+	else
+		::ControlResponse(key);
 }
 
 //==========================================================================
@@ -512,12 +557,12 @@ void ConCleanScene()
 
 void ConSetPersonInfo(string Name, name Pic, name Flat)
 {
-	if (Name)
-		GConScreen.NPCName = Name;
+	GConScreen.NPCName = Name;
 	if (Pic)
 		GConScreen.hBackPic = R_RegisterPic(Pic);
-	if (Flat)
-		GConScreen.Flat = Flat;
+	else
+		GConScreen.hBackPic = -1;
+	GConScreen.Flat = Flat;
 }
 
 //==========================================================================
