@@ -939,6 +939,28 @@ void A_OrderWalkPath(bool situative, bool Patrol, bool Looped,
 
 //==========================================================================
 //
+//  A_OrderWander
+//
+//==========================================================================
+
+void A_OrderWander(bool situative, int priority, float duration, optional TVec position, optional float radius)
+{
+	ActorTask AT = A_IssueOrder(situative, ActorTask::ORDER__WANDER, priority, duration);
+
+	if (AT)
+	{
+		if (!specified_position)
+			position = Origin;
+		if (!specified_radius)
+			radius = 0.0;
+
+		AT.GnTarget.Pos = position;
+		AT.Radius = radius;
+	}
+}
+
+//==========================================================================
+//
 //	DoTasks
 //
 //==========================================================================
@@ -1152,6 +1174,49 @@ void PerformTask(ActorTask AT)
 			{
 				A_SetFinalTarget(&AT.GnTarget);
 				A_SetImmediateTarget(&AT.GnTarget);
+				if (StateAction != STATE_ACTION__CHASE)
+					SetState(SeeState);
+			}
+		}
+		break;
+	case ActorTask::ORDER__WANDER:
+		{
+			if (AT != OldTask)
+			{
+				generic_target_t gt;
+				// Set next random point
+				if ((!CurrentTask.Radius ||
+					Length(Origin - CurrentTask.GnTarget.Pos) < CurrentTask.Radius) &&
+					P_Random() < 64)
+				{
+					A_OrderStandStill(false, CurrentTask.Priority, 1.5 + Random() * 8.0);
+					if (StateAction != STATE_ACTION__LOOK)
+						SetState(IdleState);
+					break;
+				}
+				else
+				{
+					if (CurrentTask.Radius)
+					{
+						gt.Pos.x = CurrentTask.GnTarget.Pos.x + (Random() - 0.5) * CurrentTask.Radius;
+						gt.Pos.y = CurrentTask.GnTarget.Pos.y + (Random() - 0.5) * CurrentTask.Radius;
+						gt.Pos.z = CurrentTask.GnTarget.Pos.z;
+					}
+					else
+					{
+						do
+						{
+							gt.Pos.x = Origin.x + (Random() - 0.5) * 256.0;
+							gt.Pos.y = Origin.y + (Random() - 0.5) * 256.0;
+							gt.Pos.z = Origin.z;
+						}
+						while (!CanReach(gt.Pos, none));
+					}
+				}
+				
+				CurrentTask.NextPos = gt.Pos;
+				A_SetFinalTarget(&gt);
+				A_SetImmediateTarget(&gt);
 				if (StateAction != STATE_ACTION__CHASE)
 					SetState(SeeState);
 			}

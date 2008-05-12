@@ -18,7 +18,8 @@ enum
 	ORDER__ATTACKALL,			// havoc! attack everyone on map
 	ORDER__ATTACKTHING,			// attack single target until its death
 	ORDER__EVADETHING,
-	ORDER__EVADEPOS
+	ORDER__EVADEPOS,
+	ORDER__WANDER
 };
 
 bool						bSituative;
@@ -35,6 +36,7 @@ bool									bTargetMustBeAlive;
 
 TVec									NextPos;
 bool									Direction;	// 0 = fw; 1 = bw
+float									Radius;
 
 IntelligentActor			Owner;
 
@@ -64,6 +66,8 @@ bool CheckCompleted()
 	case ORDER__PATROLPATH:
 	case ORDER__PATROLLOOP:
 		return (Length(Owner.Origin - GnTarget.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
+	case ORDER__WANDER:
+		return (Length(Owner.Origin - NextPos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
 	}
 	return false;
 }

@@ -56,6 +56,7 @@ enum
 	ACTSPEC_IA_Order_EvadeThing,
 	ACTSPEC_IA_Order_AttackAll,		
 	ACTSPEC_IA_Order_AttackThing,
+	ACTSPEC_IA_Order_Wander,
 
 	// Advanced interaction (for Pawns)
 	// [CW] CHECKME!
@@ -200,7 +201,16 @@ bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
 {
 	Entity E;
 	bool result = false;
-	if (TID)
+
+	if (TID == KRPGDefs::TAG_EVERYBODY)
+	{
+		foreach AllThinkers(Entity, E)
+		{
+			if (ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
+				result = true;
+		}
+	}
+	else
 	{
 		for (E = Entity(FindMobjFromTID(TID, none)); E;
 			E = Entity(FindMobjFromTID(TID, E)))
@@ -209,14 +219,7 @@ bool ExecuteActionSpecialForTID(int Special, int TID, int Arg2, int Arg3,
 				result = true;
 		}
 	}
-	else
-	{
-		foreach AllThinkers(Entity, E)
-		{
-			if (ExecuteActionSpecial(Special, 0, Arg2, Arg3, Arg4, Arg5, Line, Side, E))
-				result = true;
-		}
-	}
+	
 	return result;
 }
 
@@ -241,9 +244,10 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		/*||
 		Special >= ACTSPEC_IA_SetThreatReaction &&*/
 		//Special < ACTSPEC_Env_WeatherSnow) 
-		&& (!E || ((Arg1 & 0x80000000) != 0)) )
+		//&& (!E || ((Arg1 & 0x80000000) != 0)) )
+		&& (Arg1 > 0 || Arg1 == KRPGDefs::TAG_EVERYBODY))
 	{
-		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1 & 0x7fffffff, Arg2, Arg3, Arg4, Arg5, Line, Side);
+		buttonSuccess = ExecuteActionSpecialForTID(Special, Arg1/* & 0x7fffffff*/, Arg2, Arg3, Arg4, Arg5, Line, Side);
 		return buttonSuccess;
 	}
 
@@ -342,7 +346,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).A_OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & 0x7fffffff, (Arg5 & 0x80000000) != 0);
+				Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
+				(Arg5 & KRPGDefs::PATH_DIRECTION_BACK) != 0);
 			buttonSuccess = true;
 		}
 		break;
@@ -361,7 +366,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).A_OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
+									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
 			buttonSuccess = true;
 		}
 		break;
@@ -369,7 +375,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).A_OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & (0x7fffffff), Arg5 & (0x80000000) != 0);
+									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
+									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
 			buttonSuccess = true;
 		}
 		break;
@@ -409,6 +416,15 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, EntityEx(FindMobjFromTID(Arg4, none)));
+			buttonSuccess = true;
+		}
+		break;
+	case ACTSPEC_IA_Order_Wander:
+		if (E && E.IsA('IntelligentActor'))
+		{
+			Entity target = FindMobjFromTID(Arg4, none);
+			IntelligentActor(E).A_OrderWander(false, Arg2, itof(Arg3) / 1000.0,
+										target ? target.Origin : E.Origin, itof(Arg5));
 			buttonSuccess = true;
 		}
 		break;
