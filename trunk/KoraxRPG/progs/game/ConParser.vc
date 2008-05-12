@@ -306,7 +306,18 @@ void Bye()
 		{
 			ParseStatement(Token_Bye);
 			if (flag_LastStatementConditionResult)
+			{
+				if (!bSuspended)
+				{
+					// Suspend before termination
+					// (player must be able to read the very last cue)
+					if (!Suspend)
+						FatalError("ConParser::Bye : Suspend delegate is not valid");
+					dprint("ConParser::Bye : suspended");
+					Suspend();
+				}
 				return;
+			}
 		};
 		Terminate();	// no bye found, just terminate
 	}
@@ -422,6 +433,10 @@ void Continue()
 			End(true);
 		if (!bTermination && bSpeechCompleted)
 			CreateChoices();
+	}
+	else if (bTermination)
+	{
+		Terminate();
 	}
 	else
 	{
@@ -716,6 +731,7 @@ void UpdatePersonProperties(string Person)
 	{
 		ConInfo.PersonName = "";
 		ConInfo.picName = '';
+		ConInfo.flatName = '';
 
 		if (!SetPersonInfo)
 			FatalError("ConParser::UpdatePersonProperties : SetPersonInfo delegate is not valid");
