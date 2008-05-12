@@ -834,6 +834,13 @@ void PlayerImpulse()
 	Impulse = 0;
 	Inventory Arti = none;
 
+	switch (impulse)
+	{
+	case KRPGDefs::IMPULSE__TEST__TRAVEL_MAP:
+		Level.Completed(-1,0,0);
+		break;
+	}
+
 	/*---------------------------------------
 	-	[CW] Actor Conditions Test      -
 	---------------------------------------*/
@@ -890,6 +897,18 @@ void PlayerImpulse()
 			SGS.Origin = MO.Origin;
 			SGS.Target = EntityEx(MO);
 			SGS.Activate();
+		}
+		break;
+	case KRPGDefs::IMPULSE__TEST_SPELL__CAST_SPELL_GLOBAL_SHRINKER:
+		{
+			KRPGActor KA;
+			foreach Level.AllThinkers(KRPGActor, KA)
+			{
+				if (KA.bMonster)
+				{
+					KA.CastCondition(ACSpellShrink, true, Actor(MO), 4, 20.0);
+				}
+			}
 		}
 		break;
 	}
