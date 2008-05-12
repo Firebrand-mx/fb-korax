@@ -1,0 +1,49 @@
+
+class ACSpellShrink : ActorCondition;
+
+//
+//	TODO!! --- IMPORTANT!!
+//	How to make it know if ScaleX/Y were changed in some other way meanwhile?
+//
+
+//==========================================================================
+//
+//	Activate
+//
+//==========================================================================
+
+void Activate()
+{
+	::Activate();
+
+	if (!ARecepient)
+		Error("ACSpellShrink::Activate : no reference to Recepient actor, bad algorythm?");
+
+	ARecepient.ScaleX *= 1.0 / itof(Level);
+	ARecepient.ScaleY *= 1.0 / itof(Level);
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+void Deactivate()
+{
+	::Deactivate();
+
+	if (!ARecepient)
+		Error("ACSpellShrink::Deactivate : no reference to Recepient actor, bad algorythm?");
+
+	ARecepient.ScaleX *= 1.0 * itof(Level);
+	ARecepient.ScaleY *= 1.0 * itof(Level);
+}
+
+
+
+defaultproperties
+{
+	bIsNegative = true;
+	CastMessage = "shrinked!!";
+}
