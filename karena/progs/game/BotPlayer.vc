@@ -166,7 +166,7 @@ enum
 	priorv_Ammo_ThisWeaponLow		= 8,	// ammo for selected weapon is low
 	priorv_Ammo_NotMaximum			= 4,	// you can never be sure you have enouph
 
-	priorv_Health_Dying				= 40,	// need health ...NOW!!... no, faster than now!!
+	priorv_Health_Dying				= 40,	// need health ...now!!... NO, FASTER THAN NOW!!
 	priorv_Health_Low				= 12,	// health is low
 	priorv_Health_NotMaximum		= 8,	// this won't last for long
 	priorv_Health_ArmorNotMaximum	= 4,	// health is at max limit, but armor still not
@@ -715,18 +715,18 @@ float GetAngle()
 
 void AimProjectile(float dist, bool right, float an)
 {
+	// [BC] Cajun prediction
+	// Here goes the prediction.
+	float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
+	float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
+	float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+
 	switch (info.intelect)
 	{
 		case bsk_verypoor:
 		case bsk_poor:
 			if (MainGameInfo(player.Level.Game).botskill > 3 && Random() < 0.01)
 			{
-				// [BC] Cajun prediction
-				// Here goes the prediction.
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 /*				SetAngle(R_PointToAngle2(MO->x,
 							      MO->y,
@@ -742,11 +742,6 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_low:
 			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.03)
 			{
-				// Here goes the prediction.
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 			}
 			else
@@ -758,10 +753,6 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_medium:
 			if (MainGameInfo(player.Level.Game).botskill > 2 && Random() < 0.09)
 			{
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 			}
 			else
@@ -775,10 +766,6 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_high:
 			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.9)
 			{
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 			}
 			else
@@ -792,10 +779,6 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_excellent:
 			if (MainGameInfo(player.Level.Game).botskill > 1 && Random() < 0.3)
 			{
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 			}
 			else
@@ -809,10 +792,6 @@ void AimProjectile(float dist, bool right, float an)
 		case bsk_supreme:
 			if (MainGameInfo(player.Level.Game).botskill > 0 && Random() < 0.1)
 			{
-				float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-				float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-				float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
-
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 			}
 			else
@@ -1006,13 +985,7 @@ Actor FindEnemy()
 					continue;
 				else if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 				{
-					// [FB] Check if the minotaur's instigator is in the same team we are on
-					for(i = 0; i < MAXPLAYERS; i++)
-					{
-						if (actor.Tracer == player.Level.Game.Players[i] && 
-							Player(player.Level.Game.Players[i]).Team == player.Team)
-							continue;
-					}
+					bool SameTeam = false;
 					// [FB] Check if an advanced game mode is active
 					if (MainGameInfo(player.Level.Game).GameModel)
 					{
@@ -1025,6 +998,18 @@ Actor FindEnemy()
 							teamfactor != GameModel::teamfactor_enemy)
 							continue;
 					}
+					// [FB] Check if the minotaur's instigator is in the same team we are on
+					for(i = 0; i < MAXPLAYERS; i++)
+					{						
+						if (actor.Tracer == player.Level.Game.Players[i] && 
+							Player(player.Level.Game.Players[i]).Team == player.Team)
+						{
+							SameTeam = true;
+							break;
+						}
+					}
+					if (SameTeam)
+						continue;
 				}
 			}
 			if (dist > MAX_MONSTER_TARGET_DIST)
@@ -1038,8 +1023,8 @@ Actor FindEnemy()
 			 // must be fuckin wierd screded up.
 			if (Check_LOS(actor, vangle))
 			{
-				if (botmo.CanSee(actor))
-				{
+				//if (botmo.CanSee(actor))
+				//{
 					dist = botmo.DistTo(actor);
 					light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 					if (actor.Sector->floor.LightSourceSector)
@@ -1047,15 +1032,23 @@ Actor FindEnemy()
 						//[FB] Add static or dynamic lights?
 						light += actor.Sector->floor.LightSourceSector;
 					}
-					// [FB] Too dark?
-					if (light < WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
-						continue;
+					// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
+					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
+					{
+						if (light <= WHATS_VERYDARK)
+						{
+							if (P_Random() < 196)
+								continue;
+						}
+						else if (P_Random() < 128)
+							continue;
+					}
 					if (dist < closest_dist)
 					{
 						closest_dist = dist;
 						target = actor;
 					}
-				}
+				//}
 			}
 			return target;
 		}
@@ -1078,18 +1071,14 @@ Actor FindEnemy()
 			if (MainGameInfo(player.Level.Game).GameModel) // [CW] Check if an advanced game mode is active
 			{
 				int teamfactor;
-				if (player.Level.Game.Players[i])
-				{
-					teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
-						     Actor(player.Level.Game.Players[i].MO));
-					// [CW] We've got a team factor, check if it can be an enemy
-					if (teamfactor != GameModel::teamfactor_any &&
-					    teamfactor != GameModel::teamfactor_enemy)
-						continue;
-				}
-			}
 
-			
+				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
+					     Actor(player.Level.Game.Players[i].MO));
+				// [CW] We've got a team factor, check if it can be an enemy
+				if (teamfactor != GameModel::teamfactor_any &&
+				    teamfactor != GameModel::teamfactor_enemy)
+					continue;
+			}
 			// [FB] Are we on a Team gameplay mode?
 			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
@@ -1102,6 +1091,7 @@ Actor FindEnemy()
 			// works) something must be fuckin wierd screded up.
 			// [CW] ok... let's see what is here...
 			dist = botmo.DistTo(player.Level.Game.Players[i].MO);
+
 			if (dist <= EntityEx::MELEERANGE ||
 				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO &&
 				botmo.CanSee(botmo.Sector->SoundTarget)) ||
@@ -1112,10 +1102,10 @@ Actor FindEnemy()
 				//{
 					// [FB] Detect the light level
 					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
-					if (actor.Sector->floor.LightSourceSector)
+					if (player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector)
 					{
 						//[FB] Add static or dynamic lights?
-						light += actor.Sector->floor.LightSourceSector;
+						light += player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector;
 					}
 					// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
 					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
@@ -1361,12 +1351,10 @@ Actor SetAlly()
 		if (ally.Health <= 0)
 		{
 			ally = none;
-			return ally;
 		}
 		else
 		{
 			last_mate = ally;
-			return ally;
 		}
 	}
 
@@ -1377,22 +1365,21 @@ Actor SetAlly()
 		{
 			last_mate = none;
 			ally = last_mate;
-			return ally;
 		}
 		else
 		{
 			ally = last_mate;
-			return ally;
 		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (MainGameInfo(player.Level.Game).GameModel) // [FB] Check if an advanced game mode is active
+		if ((player.Level.Game.Players[i]) && (botmo != player.Level.Game.Players[i].MO))
 		{
-			int teamfactor;
-			if (player.Level.Game.Players[i])
+			if (MainGameInfo(player.Level.Game).GameModel) // [FB] Check if an advanced game mode is active
 			{
+				int teamfactor;
+
 				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
 						Actor(player.Level.Game.Players[i].MO));
 				// [FB] We've got a team factor, just check if it's an ally or not
@@ -1400,26 +1387,20 @@ Actor SetAlly()
 					teamfactor != GameModel::teamfactor_enemy)
 				{
 					ally = Actor(player.Level.Game.Players[i].MO);
-					return ally;
 				}
 			}
-		}
 
-		// [FB] Set an ally for team game modes
-		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
-		{
-			if (player.Level.Game.Players[i] && Player(player.Level.Game.Players[i]).Team == player.Team)
+			// [FB] Set an ally for team game modes
+			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
-				ally = Actor(player.Level.Game.Players[i].MO);
-				return ally;
+				if (Player(player.Level.Game.Players[i]).Team == player.Team)
+				{
+					ally = Actor(player.Level.Game.Players[i].MO);
+				}
 			}
-		}
-		else if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
-		{
-			if (player.Level.Game.Players[i])
+			else if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
 			{
 				ally = Actor(player.Level.Game.Players[i].MO);
-				return ally;
 			}
 		}
 	}
@@ -1429,52 +1410,49 @@ Actor SetAlly()
 	//Check for player friends
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
-		// [FB] Team game modes
-		if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
+		if ((player.Level.Game.Players[j]) && (botmo != player.Level.Game.Players[j].MO))
 		{
-			if ((player.Level.Game.Players[j])
-			    && (botmo != player.Level.Game.Players[j].MO)
-			    && (Player(player.Level.Game.Players[j]).Team == player.Team)
-			    && (player.Level.Game.Players[j].MO.Health <=
-				Player(player.Level.Game.Players[j]).Bot.info.dangerlevel))
+			// [FB] Team game modes
+			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
-				if (botmo.CanSee(player.Level.Game.Players[j].MO))
+				if ((Player(player.Level.Game.Players[j]).Team == player.Team) &&
+				    (player.Level.Game.Players[j].MO.Health <=
+					Player(player.Level.Game.Players[j]).Bot.info.dangerlevel))
 				{
-					test = botmo.DistTo(player.Level.Game.Players[j].MO);
-
-					if (test < closest_dist)
+					if (botmo.CanSee(player.Level.Game.Players[j].MO))
 					{
-						closest_dist = test;
-						target = Actor(player.Level.Game.Players[j].MO);
-						ally = target;
-						return ally;
+						test = botmo.DistTo(player.Level.Game.Players[j].MO);
+
+						if (test < closest_dist)
+						{
+							closest_dist = test;
+							target = Actor(player.Level.Game.Players[j].MO);
+							ally = target;
+						}
 					}
 				}
 			}
-		}
-		else if(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
-		{
-			if ((player.Level.Game.Players[j])
-			    && (botmo != player.Level.Game.Players[j].MO)
-			    && (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2))
+			else if(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
 			{
-				if (botmo.CanSee(player.Level.Game.Players[j].MO))
+				if (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2)
 				{
-					test = botmo.DistTo(player.Level.Game.Players[j].MO);
-
-					if (test < closest_dist)
+					if (botmo.CanSee(player.Level.Game.Players[j].MO))
 					{
-						closest_dist = test;
-						target = Actor(player.Level.Game.Players[j].MO);
-						ally = target;
-						return ally;
+						test = botmo.DistTo(player.Level.Game.Players[j].MO);
+
+						if (test < closest_dist)
+						{
+							closest_dist = test;
+							target = Actor(player.Level.Game.Players[j].MO);
+							ally = target;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	return none;
+	return ally;
 }
 
 //==========================================================================
@@ -2753,43 +2731,39 @@ void ProcessImmediate()
 
 		if (!ITarget)
 		{
-			class<Thinker> Node;
 			// [FB] Determine our state (offense, defense) to make us search for specific path nodes
-			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf ||
-				MainGameInfo(player.Level.Game).GameType == HexenDefs::game_football)
+			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf)
 			{
 				switch(botstate.BState)
 				{
 					case bst_offense:
 					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-							Node = class<Thinker>(BlueNode);
+							ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
 						else
-							Node = class<Thinker>(RedNode);
+							ITarget = GetNearestPathNode(class<Thinker>(RedNode));
 					}
 					break;
 					case bst_defense:
 					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-							Node = class<Thinker>(BlueGuardSpot);
+							ITarget = GetNearestPathNode(class<Thinker>(BlueGuardSpot));
 						else
-							Node = class<Thinker>(RedGuardSpot);
+							ITarget = GetNearestPathNode(class<Thinker>(RedGuardSpot));
 					}
 					break;
 					case bst_scoring:
 					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-							Node = class<Thinker>(BlueGoalSpot);
+							ITarget = GetNearestPathNode(class<Thinker>(BlueGoalSpot));
 						else
-							Node = class<Thinker>(RedGoalSpot);
+							ITarget = GetNearestPathNode(class<Thinker>(RedGoalSpot));
 					}
 					break;
 				}
 			}
 			else
-				Node = class<Thinker>(PathNode);
-
-			ITarget = GetNearestPathNode(Node);
+				ITarget = GetNearestPathNode(class<Thinker>(PathNode));
 		}
 
 		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
