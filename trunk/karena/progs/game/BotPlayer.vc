@@ -2064,38 +2064,6 @@ void Died(EntityEx killer)
 
 //==========================================================================
 //
-//	BotSkill
-//
-//	[FB] Determine the bot skills depending the game skill
-//
-//==========================================================================
-
-int BotSkill()
-{
-	if(player.Level.World.GameSkill == sk_nightmare)
-	{
-		return 4;
-	}
-	else if(player.Level.World.GameSkill == sk_hard)
-	{
-		return 3;
-	}
-	else if(player.Level.World.GameSkill == sk_medium)
-	{
-		return 2;
-	}
-	else if(player.Level.World.GameSkill == sk_easy)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-//==========================================================================
-//
 //	OnBeginPlay
 //
 //==========================================================================
@@ -2127,14 +2095,14 @@ void OnBeginPlay()
 	}
 
 	binfo = &MainGameInfo(player.Level.Game).botinfo[bottype];
-	t_strafe = 1.0;
-	MainGameInfo(player.Level.Game).botskill = BotSkill();
+	MainGameInfo(player.Level.Game).botskill = player.Level.World.GameSkill;
 
 	if (MainGameInfo(player.Level.Game).botskill > 4)
 		MainGameInfo(player.Level.Game).botskill = 4;
 	if (MainGameInfo(player.Level.Game).botskill < 0)
 		MainGameInfo(player.Level.Game).botskill = 0;
 
+	t_strafe = 1.0;
 	// Implement skill settings
 	info.accuracy = SkillLower(binfo->accuracy, 4 - MainGameInfo(player.Level.Game).botskill);
 	info.intelect = SkillLower(binfo->intelect, 4 - MainGameInfo(player.Level.Game).botskill);
@@ -2340,7 +2308,7 @@ void BotTick(float deltaTime)
 	Move(deltaTime);
 
 	// Only walk if we're on skill 0
-	if (!gameInfo.botskill || player.Level.World.GameSkill == sk_baby)
+	if (!gameInfo.botskill || !player.Level.World.GameSkill)
 	{
 		if (forwardmove > FORWARDWALK)
 			forwardmove = FORWARDWALK;
