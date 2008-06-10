@@ -28,7 +28,7 @@ actors/hexen/centaur.txt		actors/hexen/centaur.txt
 actors/hexen/demons.txt			actors/hexen/demons.txt
 actors/hexen/ettin.txt			actors/hexen/ettin.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
-actors/krpg/kpgdecorations.txt	actors/krpg/krpgdecorations.txt
+actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
 
 $load palette.pcx
 translat.dat					raw 0 1 256 7
