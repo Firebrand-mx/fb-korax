@@ -9,6 +9,9 @@ graphics/croshai3.lmp			graphics/croshai3.lmp
 graphics/fonta30.lmp			graphics/fonta30.lmp
 graphics/fonta63.lmp			graphics/fonta63.lmp
 
+//  KRPG Arrow Graphic
+graphics/mc_arrow.png			graphics/mc_arrow.png
+
 //	Progs
 progs/linespec.dat				progs/linespec.dat
 progs/clprogs.dat				progs/clprogs.dat
