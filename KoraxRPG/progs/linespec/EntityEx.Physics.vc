@@ -451,7 +451,7 @@ final void HitLine(tmtrace_t* tmtrace, float StepVelScale)
 			//	If number of bounces is limited.
 			if (BounceCount > 0 && --BounceCount <= 0)
 			{
-				ExplodeMissile();
+				ExplodeMissile(none);
 				return;
 			}
 
@@ -484,7 +484,7 @@ final void HitLine(tmtrace_t* tmtrace, float StepVelScale)
 			}
 			else if (bExplodeOnSky)
 			{
-				ExplodeMissile();
+				ExplodeMissile(none);
 			}
 			else
 			{
@@ -505,7 +505,7 @@ final void HitLine(tmtrace_t* tmtrace, float StepVelScale)
 			}
 			return;
 		}
-		ExplodeMissile();
+		ExplodeMissile(none);
 	}
 	else if (bSlide)
 	{
@@ -554,7 +554,7 @@ final void HitMobj(Entity Other, float ptryx, float ptryy)
 			else
 			{
 				// Struck a player/creature
-				ExplodeMissile();
+				ExplodeMissile(EntityEx(Other));
 			}
 			return;
 		}
@@ -577,7 +577,7 @@ final void HitMobj(Entity Other, float ptryx, float ptryy)
 			}
 		}
 		// Explode a missile
-		ExplodeMissile();
+		ExplodeMissile(EntityEx(Other));
 	}
 	else if (bSlide)
 	{
@@ -643,7 +643,7 @@ final bool HitFloor(float DeltaTime)
 			return false;
 		}
 		HitFloorType();
-		ExplodeMissile();
+		ExplodeMissile(none);
 		return false;
 	}
 
@@ -736,7 +736,7 @@ final bool HitCeiling()
 			}
 			else if (bExplodeOnSky)
 			{
-				ExplodeMissile();
+				ExplodeMissile(none);
 			}
 			else
 			{
@@ -744,7 +744,7 @@ final bool HitCeiling()
 			}
 			return false;
 		}
-		ExplodeMissile();
+		ExplodeMissile(none);
 		return false;
 	}
 	if (bSkullFly)
@@ -770,7 +770,7 @@ void FloorBounceMissile()
 		//	Landed on some kind of liquid.
 		if (bExplodeOnWater)
 		{
-			ExplodeMissile();
+			ExplodeMissile(none);
 			return;
 		}
 		if (!bCanBounceWater)
@@ -783,7 +783,7 @@ void FloorBounceMissile()
 	//	If number of bounces is limited.
 	if (BounceCount > 0 && --BounceCount <= 0)
 	{
-		ExplodeMissile();
+		ExplodeMissile(none);
 		return;
 	}
 
@@ -827,7 +827,7 @@ final void CeilingBounceMissile()
 	//	If number of bounces is limited.
 	if (BounceCount > 0 && --BounceCount <= 0)
 	{
-		ExplodeMissile();
+		ExplodeMissile(none);
 		return;
 	}
 
@@ -1098,7 +1098,7 @@ final bool BlasterPhysics(float DeltaTime)
 					}
 					else
 					{
-						ExplodeMissile();
+						ExplodeMissile(none);
 					}
 					return !IsDestroyed();
 				}
@@ -1109,14 +1109,14 @@ final bool BlasterPhysics(float DeltaTime)
 				// Hit the floor
 				Origin.z = FloorZ;
 				HitFloorType();
-				ExplodeMissile();
+				ExplodeMissile(none);
 				return !IsDestroyed();
 			}
 			if (Origin.z + Height > CeilingZ)
 			{
 				// Hit the ceiling
 				Origin.z = CeilingZ - Height;
-				ExplodeMissile();
+				ExplodeMissile(none);
 				return !IsDestroyed();
 			}
 			if (changexy)
@@ -1161,7 +1161,7 @@ void OnHitFloor()
 
 bool BlasterHitMobj(Entity Other)
 {
-	return ExplodeMissile();
+	return ExplodeMissile(EntityEx(Other));
 }
 
 //==========================================================================
