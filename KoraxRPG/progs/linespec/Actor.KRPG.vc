@@ -1,7 +1,3 @@
-
-class KRPGActor : Actor
-	abstract;
-
 //
 // [KoraxRPG] Advanced behavior
 //
@@ -16,7 +12,7 @@ bool			bCombatant;		// fighting actor
 bool			bSenseAlways;	// detects target without seeing it
 
 bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
-KRPGActor		MirrorMaster;	// mirror image's "original copy"
+Actor			MirrorMaster;	// mirror image's "original copy"
 
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
@@ -25,7 +21,7 @@ bool			bSaddleHorse;	// actor can be ridden by pawns
 bool			bIsMountedOn;	// actor is currently a 'rider'
 bool			bCanRide;		// actor is allowed to ride saddlehorses
 bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
-KRPGActor		RidePartner;	// either 'rider' or 'horse', depending on flags
+Actor			RidePartner;	// either 'rider' or 'horse', depending on flags
 
 
 //
@@ -316,8 +312,6 @@ bool UseThing(EntityEx Thing)
 {
 	if (!Thing)
 		Error("KRPGActor::UseThing : Thing reference not set to an instance of an object");
-	if (!KRPGActor(Thing))
-		return false;
 
 	if (Thing == self)
 		return false;
@@ -334,16 +328,16 @@ bool UseThing(EntityEx Thing)
 	//
 	// [CW] that's how it could look like if we used Strife-like dialogs
 	dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
-	if (Thing.ConversationID >= 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
+	if (Thing.ConversationID > 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
 		return true;
 	// Possible generic 'use' types
-	if (bCanRide && KRPGActor(Thing).bSaddleHorse && !KRPGActor(Thing).RidePartner)
+	if (bCanRide && Actor(Thing).bSaddleHorse && !Actor(Thing).RidePartner)
 	{
-		MountOn(KRPGActor(Thing), true);
+		MountOn(Actor(Thing), true);
 		return true;
 	}
 
-	return KRPGActor(Thing).IsBeingUsed(self);
+	return Actor(Thing).IsBeingUsed(self);
 }
 
 //==========================================================================
@@ -365,7 +359,7 @@ bool IsBeingUsed(Actor User)
 //
 //==========================================================================
 
-void MountOn(KRPGActor Horse, bool bGainControl)
+void MountOn(Actor Horse, bool bGainControl)
 {
 	if (Health <= 0 || Horse.Health <= 0)
 		return;
@@ -386,7 +380,7 @@ void MountOn(KRPGActor Horse, bool bGainControl)
 //
 //==========================================================================
 
-void IsBeingMountedOn(KRPGActor Rider, bool bGainControl)
+void IsBeingMountedOn(Actor Rider, bool bGainControl)
 {
 	RidePartner = Rider;
 	bIsMountedOn = false;
@@ -468,14 +462,14 @@ void SetTeam(int team)
 	// TODO: special code needed for Intelligent Actors
 	//
 
-	if (bCombatant && Target && Target.IsA('KRPGActor') && KRPGActor(Target).Team == Team)
+	if (bCombatant && Target && Target.IsA('KRPGActor') && Actor(Target).Team == Team)
 	{
 		Target = none;
 		SetState(IdleState);
 	}
 
-	KRPGActor A;
-	foreach AllThinkers(KRPGActor, A)
+	Actor A;
+	foreach AllThinkers(Actor, A)
 	{
 		if (A.bCombatant && A.Target == self && A.Team == Team)
 		{
@@ -496,9 +490,7 @@ bool OkayToSwitchTarget(EntityEx source)
 	Alertness = HIGH_ALERTNESS;
 
 	// [CW] Do not allow to target other actors than either monsters or KRPGActors
-	if (!source.IsA('KRPGActor') && !source.bMonster)
-		return false;
-	if (!bIgnoreTeams && source.IsA('KRPGActor') && Team == KRPGActor(source).Team)
+	if (!bIgnoreTeams && Team == Actor(source).Team)
 	{
 		return false;
 	}
@@ -564,11 +556,11 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (mo.Health <= 0)
 			continue;	// dead
 
-		// [CW] Do not allow to target other actors than either monsters or KRPGActors
-		if (!mo.IsA('KRPGActor') && !mo.bMonster)
+		// [CW] Do not allow to target other actors than either monsters or Actors
+		if (!mo.IsA('Actor') && !mo.bMonster)
 			continue;
 
-		if (!bIgnoreTeams && mo.IsA('KRPGActor') && (Team == KRPGActor(mo).Team))
+		if (!bIgnoreTeams && (Team == Actor(mo).Team))
 			continue;	// friendly
 
 		// TODO: extra parameter to ignore this
@@ -672,8 +664,7 @@ bool A_LookEx(bool autoSetChase)
 	if (targ && !targ.IsA('KRPGActor') && !targ.bMonster)
 		targ = none;
 
-	if (targ && targ.bShootable &&
-		(!targ.IsA('KRPGActor') || bIgnoreTeams || Team != KRPGActor(targ).Team))
+	if (targ && targ.bShootable && (bIgnoreTeams || Team != Actor(targ).Team))
 	{
 		Target = targ;
 
@@ -1630,14 +1621,4 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 			ee.Velocity += DirectVelocity;
 		}
 	}
-}
-
-
-defaultproperties
-{
-	bNeverTarget = true;
-
-	ConversationID = -1;
-
-	bNonScalable = true;
 }
