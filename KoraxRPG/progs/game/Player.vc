@@ -53,170 +53,51 @@ replication
 
 //==========================================================================
 //
-//	PutClientIntoServer
+//  CreateBot
 //
 //==========================================================================
 
-void PutClientIntoServer()
+void CreateBot()
 {
-	if (bIsBot)
-	{
-		Bot = BotPlayer(SpawnObject(BotPlayer));
-		Bot.player = self;
-		Bot.OnBeginPlay();
-	}
+	Bot = BotPlayer(SpawnObject(BotPlayer));
+	Bot.player = self;
+	Bot.OnBeginPlay();
 }
 
 //==========================================================================
 //
-//  SpawnClient
+//  OnNetReborn
 //
 //==========================================================================
 
-void SpawnClient()
+void OnNetReborn(EntityEx OldMO)
 {
-	bool playerWasReborn;
 	Weapon bestWeapon;
-	EntityEx OldMO = EntityEx(MO);
 	Inventory Item;
 
-	Attacker = none;
-
-	if (Level.Game.netgame && !Level.Game.deathmatch)
-	{
-		// Cooperative net-play, retain keys and weapons
-		playerWasReborn = (PlayerState == PST_REBORN);
-	}
-
-	//  Spawn player
-	if (Level.Game.deathmatch)
-	{
-		DeathMatchSpawnPlayer();
-	}
-	else
-	{
-		SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(),
-			Level.Game.RebornPosition));
-	}
-
-	if (Level.Game.netgame && !Level.Game.deathmatch && playerWasReborn)
-	{
-		// Restore keys and weapons when reborn in co-op
-		bestWeapon = none;
-		if (OldMO)
-		{
-			for (Item = OldMO.Inventory; Item; )
-			{
-				Inventory Next = Item.Inventory;
-				if (Weapon(Item))
-				{
-					if (!bestWeapon || bestWeapon.SelectionOrder >
-						Weapon(Item).SelectionOrder)
-					{
-						bestWeapon = Weapon(Item);
-					}
-					Item.AttachToOwner(EntityEx(MO));
-				}
-				else if (FourthWeaponHolder(Item) || Key(Item))
-				{
-					Item.AttachToOwner(EntityEx(MO));
-				}
-				Item = Next;
-			}
-		}
-		GiveAmmo(Mana1, 0);
-		GiveAmmo(Mana2, 0);
-		EntityEx(MO).FindInventory(Mana1).Amount = 25;
-		EntityEx(MO).FindInventory(Mana2).Amount = 25;
-		if (bestWeapon)
-		{
-			// Bring up the best weapon
-			PendingWeapon = bestWeapon;
-		}
-	}
-
-	// Destroy all things touching players
-	Actor(MO).TeleportMove(MO.Origin);
-}
-
-//==========================================================================
-//
-//  NetGameReborn
-//
-//==========================================================================
-
-void NetGameReborn()
-{
-	int i;
-	bool foundSpot;
-	Weapon bestWeapon;
-	EntityEx OldMO = EntityEx(MO);
-	Inventory Item;
-
-	// remove pitch and roll angles from corpse
-	MO.Angles.pitch = 0.0;
-	MO.Angles.roll = 0.0;
-
-	// first dissasociate the corpse
-	MO.Player = none;
-	MO.bIsPlayer = false;
-
-	// spawn at random spot if in death match
-	if (Level.Game.deathmatch)
-	{
-		OldMO.DestroyAllInventory();
-		DeathMatchSpawnPlayer();
-		return;
-	}
-
-	foundSpot = false;
-	if (CheckSpot(Level.GetPlayerStart(GetPlayerNum(),
-		Level.Game.RebornPosition)))
-	{
-		// Appropriate player start spot is open
-		SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(),
-			Level.Game.RebornPosition));
-		foundSpot = true;
-	}
-	else
-	{
-		// Try to spawn at one of the other player start spots
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (CheckSpot(Level.GetPlayerStart(i, Level.Game.RebornPosition)))
-			{
-				// Found an open start spot
-				SpawnPlayer(Level.GetPlayerStart(i, Level.Game.RebornPosition));
-				foundSpot = true;
-				break;
-			}
-		}
-	}
-
-	if (!foundSpot)
-	{
-		// Player's going to be inside something
-		SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(),
-			Level.Game.RebornPosition));
-	}
-
-	// Restore keys and weapons
+	// Restore keys and weapons when reborn in co-op
 	bestWeapon = none;
-	for (Item = OldMO.Inventory; Item; Item = Item.Inventory)
+	if (OldMO)
 	{
-		if (Weapon(Item))
+		for (Item = OldMO.Inventory; Item; )
 		{
-			if (!bestWeapon || bestWeapon.SelectionOrder >
-				Weapon(Item).SelectionOrder)
+			Inventory Next = Item.Inventory;
+			if (Weapon(Item))
 			{
-				bestWeapon = Weapon(Item);
+				if (!bestWeapon || bestWeapon.SelectionOrder >
+					Weapon(Item).SelectionOrder)
+				{
+					bestWeapon = Weapon(Item);
+				}
+				Item.AttachToOwner(EntityEx(MO));
 			}
-			Item.AttachToOwner(EntityEx(MO));
+			else if (FourthWeaponHolder(Item) || Key(Item))
+			{
+				Item.AttachToOwner(EntityEx(MO));
+			}
+			Item = Next;
 		}
-		else if (FourthWeaponHolder(Item) || Key(Item))
-		{
-			Item.AttachToOwner(EntityEx(MO));
-		}
+		OldMO.DestroyAllInventory();
 	}
 	GiveAmmo(Mana1, 0);
 	GiveAmmo(Mana2, 0);
@@ -227,70 +108,21 @@ void NetGameReborn()
 		// Bring up the best weapon
 		PendingWeapon = bestWeapon;
 	}
-	OldMO.DestroyAllInventory();
 }
 
 //==========================================================================
 //
-//  DisconnectClient
+//  DestroyBot
 //
 //==========================================================================
 
-void DisconnectClient()
+void DestroyBot()
 {
-	int i;
-
 	if (Bot != none)
 	{
 		Bot.Destroy();
 		Bot = none;
 	}
-	if (MO)
-	{
-		MO.Player = none;
-		MO.bIsPlayer = false;
-		Actor(MO).Damage(none, none, 10000);
-	}
-	Level.bprint("%s left the game\n", PlayerName);
-	MO.PlaySound('misc/chat', CHAN_AUTO, 1.0, ATTN_NONE);
-}
-
-//==========================================================================
-//
-//  UserinfoChanged
-//
-//==========================================================================
-
-void UserinfoChanged()
-{
-}
-
-//==========================================================================
-//
-//  DeathMatchSpawnPlayer
-//
-//  Spawns a player at one of the random death match spots called at level
-// load and each death
-//
-//==========================================================================
-
-void DeathMatchSpawnPlayer()
-{
-	int i;
-	int j;
-
-	for (j = 0; j < 20; j++)
-	{
-		i = P_Random() % Level.DeathmatchStarts.Num;
-		if (CheckSpot(&Level.DeathmatchStarts[i]))
-		{
-			SpawnPlayer(&Level.DeathmatchStarts[i]);
-			return;
-		}
-	}
-
-	// no good spot, so the player will probably get stuck 
-	SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0));
 }
 
 //==========================================================================
@@ -308,7 +140,7 @@ bool CheckSpot(mthing_t * mthing)
 	float y;
 	sector_t *sec;
 	float an;
-	Actor A;
+	EntityEx A;
 	int i;
 
 	if (!MO)
@@ -342,9 +174,10 @@ bool CheckSpot(mthing_t * mthing)
 	sec = Level.XLevel.PointInSector(vector(x, y, 0.0));
 	an = itof(45 * (mthing->angle / 45));
 
-	A = HexenLevelInfo(Level).Spawn(TeleportFog, vector(x + 20.0 * cos(an), y + 20.0 * sin(an),
-		sec->floor.TexZ + MainGameInfo::TELEFOGHEIGHT));
-	A.PlaySound('Teleport', CHAN_VOICE);
+	A = Level.Spawn(LineSpecialGameInfo(Level.Game).TeleportFogClass,
+		vector(x + 20.0 * cos(an), y + 20.0 * sin(an),
+		sec->floor.TexZ + LineSpecialGameInfo(Level.Game).TeleFogHeight));
+	A.PlaySound('misc/teleport', CHAN_VOICE);
 
 	return true;
 }
@@ -353,39 +186,30 @@ bool CheckSpot(mthing_t * mthing)
 //
 //  SpawnPlayer
 //
-//  Called when a player is spawned on the level.  Most of the player
+//  Called when a player is spawned on the level. Most of the player
 // structure stays unchanged between levels.
 //
 //==========================================================================
 
 void SpawnPlayer(mthing_t * mthing)
 {
-	float x, y, z;
-	KRPGPlayerPawn pp;
-	bool ResetInventory = false;
-	Inventory Item;
-	int i;
-	class<Inventory> Cls;
+	int					i;
+	float				x;
+	float				y;
+	float				z;
+	KRPGPlayerPawn		PP;
+	bool				ResetInventory = false;
+	Inventory			Item;
+	class<Inventory>	Cls;
 
 	if (PlayerState == PST_REBORN)
 	{
 		PlayerReborn();
 		ResetInventory = true;
 	}
-	if (MainGameInfo(Level.Game).randomclass && Level.Game.deathmatch)
-	{
-		PClass = P_Random() % 3;
-		if (PClass == BaseClass)
-		{
-			PClass = (PClass + 1) % 3;
-		}
-		BaseClass = PClass;
-		SB_Start();
-	}
-	else
-	{
-		PClass = BaseClass;
-	}
+
+	SetUpPlayerClass();
+
 	x = mthing->x;
 	y = mthing->y;
 	z = Actor::ONFLOORZ;
@@ -393,102 +217,65 @@ void SpawnPlayer(mthing_t * mthing)
 	{
 		Error("Player::SpawnPlayer : Unknown class type");
 	}
-	pp = Level.Spawn(class<KRPGPlayerPawn>(
-		Level.Game.PlayerClasses[PClass]), vector(x, y, z),,, false);
-	pp.Origin.z += mthing->height;
-	pp.LinkToWorld();
+	PP = Level.Spawn(class<KRPGPlayerPawn>(Level.Game.PlayerClasses[PClass]),
+		vector(x, y, z),,, false);
+	PP.Origin.z += mthing->height;
+	PP.LinkToWorld();
 
-	pp.Angles.yaw = itof(45 * (mthing->angle / 45));
-	pp.Player = self;
-	pp.bIsPlayer = true;
-	pp.Health = Health;
-	MO = pp;
-	Camera = pp;
-	PlayerState = PST_LIVE;
-	Refire = 0;
-	DamageFlash = 0.0;
-	BonusFlash = 0.0;
-	MorphTime = 0.0;
-	ExtraLight = 0;
-	FixedColourmap = 0;
-	LastSectorDamageTime = 0.0;
-	LastHazardTime = 0.0;
-	ViewHeight = pp.ViewHeight;
+	//	Set colour translations for player sprites.
+	TranslStart = PP.TranslStart;
+	TranslEnd = PP.TranslEnd;
+	PP.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
+		GetPlayerNum();
+
+	PP.Angles.yaw = itof(45 * (mthing->angle / 45));
+	PP.Player = self;
+	PP.bIsPlayer = true;
+	PP.Health = Health;
+	MO = PP;
+	Camera = PP;
+	ViewHeight = PP.ViewHeight;
 	ViewOrg = MO.Origin;
 	ViewOrg.z += ViewHeight;
-	ViewAngles = pp.Angles;
+	ViewAngles = PP.Angles;
 	bFixAngle = true;
 
-	pp.Inventory = SavedInventory;
-	for (Item = pp.Inventory; Item; Item = Item.Inventory)
+	ResetPlayerOnSpawn();
+
+	PP.Inventory = SavedInventory;
+	for (Item = PP.Inventory; Item; Item = Item.Inventory)
 	{
 		Item.Owner = MO;
 	}
 
 	if (ResetInventory)
 	{
-		while (pp.Inventory)
+		while (PP.Inventory)
 		{
-			pp.Inventory.Destroy();
+			PP.Inventory.Destroy();
 		}
-
-		HexenArmor HArmor = Level.Spawn(HexenArmor,,,, false);
-		HArmor.AttachToOwner(pp);
-		HArmor.Slots[4] = pp.HexenArmor[0];
-		HArmor.SlotsIncrement[0] = pp.HexenArmor[1];
-		HArmor.SlotsIncrement[1] = pp.HexenArmor[2];
-		HArmor.SlotsIncrement[2] = pp.HexenArmor[3];
-		HArmor.SlotsIncrement[3] = pp.HexenArmor[4];
-
-		BasicArmor BArmor = Level.Spawn(BasicArmor,,,, false);
-		BArmor.Amount = 0;
-		BArmor.AttachToOwner(pp);
-
-		for (i = 0; i < pp.DropItemList.Num; i++)
-		{
-			Item = Inventory(Level.Spawn(pp.DropItemList[i].Type,,,, false));
-			Item.bIgnoreSkill = true;
-			Item.Amount = pp.DropItemList[i].Amount;
-			if (Weapon(Item))
-			{
-				//	For better control empty weapon's ammo.
-				Weapon(Item).AmmoGive1 = 0;
-				Weapon(Item).AmmoGive2 = 0;
-			}
-			if (!Item.TryPickup(pp))
-			{
-				Item.Destroy();
-			}
-			else if (Weapon(Item) && Weapon(Item).CheckAmmo(Weapon::FIRE_Either, false))
-			{
-				SetWeapon(Weapon(Item));
-			}
-		}
+		AddDefaultInventory();
 	}
+
+	//	Set up gun psprite.
 	SetupPsprites();
+
 	if (Level.Game.deathmatch)
 	{
-		// Give all keys in death match mode
-		foreach AllClasses(Key, Cls)
-		{
-			if (!FindClassState(Cls, 'Spawn'))
-			{
-				//	Abstract class.
-				continue;
-			}
-			pp.GiveInventoryType(Cls);
-		}
+		GiveDefaultDeathMatchInventory();
 	}
 
-	// Set translation table data
-	TranslStart = pp.TranslStart;
-	TranslEnd = pp.TranslEnd;
-	pp.Translation = (Entity::TRANSL_Player << Entity::TRANSL_TYPE_SHIFT) +
-		GetPlayerNum();
+	// wake up the status bar
+	SB_Start();
+
 	if (bIsBot)
 	{
-		Bot.OnSpawn();
+		BotOnSpawn();
 	}
+
+	SetClientModel();
+
+	UpdateRevealedMap();
 
 	if (ResetInventory)
 	{
@@ -499,99 +286,96 @@ void SpawnPlayer(mthing_t * mthing)
 
 //==========================================================================
 //
-//  PlayerReborn
-//
-//  Called after a player dies almost everything is cleared and initialised
+//  ResetPlayerOnSpawn
 //
 //==========================================================================
 
-void PlayerReborn()
+void ResetPlayerOnSpawn()
 {
-	BotPlayer B;
-
-	B = Bot;
-	ClearPlayer();
-	Bot = B;
-
-	PClass = BaseClass;
-
-	bUseDown = true;	// don't do anything immediately
-	bAttackDown = true;
-	PlayerState = PST_LIVE;
-	Health = MAXHEALTH;
-	LocalQuakeHappening = 0;
+	::ResetPlayerOnSpawn();
 }
 
-//==========================================================================
+//===========================================================================
 //
-//  PlayerExitMap
+//	AddDefaultInventory
 //
-//  Called when the player leaves a map.
-//
-//==========================================================================
+//===========================================================================
 
-void PlayerExitMap(bool clusterChange)
+void AddDefaultInventory()
 {
-	int i;
-	Inventory Item;
+	HexenArmor HArmor = Level.Spawn(HexenArmor,,,, false);
+	HArmor.AttachToOwner(EntityEx(MO));
+	HArmor.Slots[4] = KRPGPlayerPawn(MO).HexenArmor[0];
+	HArmor.SlotsIncrement[0] = KRPGPlayerPawn(MO).HexenArmor[1];
+	HArmor.SlotsIncrement[1] = KRPGPlayerPawn(MO).HexenArmor[2];
+	HArmor.SlotsIncrement[2] = KRPGPlayerPawn(MO).HexenArmor[3];
+	HArmor.SlotsIncrement[3] = KRPGPlayerPawn(MO).HexenArmor[4];
 
-	// Strip all current powers
-	for (Item = EntityEx(MO).Inventory; Item;)
+	BasicArmor BArmor = Level.Spawn(BasicArmor,,,, false);
+	BArmor.Amount = 0;
+	BArmor.AttachToOwner(EntityEx(MO));
+
+	int i;
+	for (i = 0; i < EntityEx(MO).DropItemList.Num; i++)
 	{
-		Inventory Next = Item.Inventory;
-		if (Powerup(Item) && (Level.Game.deathmatch || clusterChange ||
-			!Item.bHubPower))
+		Inventory Item = Inventory(Level.Spawn(EntityEx(MO).DropItemList[i].Type,,,, false));
+		Item.bIgnoreSkill = true;
+		if (EntityEx(MO).DropItemList[i].Amount > 0)
+		{
+			Item.Amount = EntityEx(MO).DropItemList[i].Amount;
+		}
+		if (Weapon(Item))
+		{
+			//	For better control empty weapon's ammo.
+			Weapon(Item).AmmoGive1 = 0;
+			Weapon(Item).AmmoGive2 = 0;
+		}
+		if (!Item.TryPickup(EntityEx(MO)))
 		{
 			Item.Destroy();
 		}
-		Item = Next;
-	}
-
-	if (!Level.Game.deathmatch)
-	{
-		if (clusterChange)
+		else if (Weapon(Item) && Weapon(Item).CheckAmmo(Weapon::FIRE_Either, false))
 		{
-			// Entering new cluster
-			// Strip some items
-			for (Item = EntityEx(MO).Inventory; Item;)
-			{
-				Inventory Next = Item.Inventory;
-				if (Item.bInterHubStrip)
-				{
-					Item.Destroy();
-				}
-				Item = Next;
-			}
+			SetWeapon(Weapon(Item));
 		}
 	}
-
-	if (MorphTime)
-	{
-		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
-		MorphTime = 0.0;
-	}
-	MO.Angles.pitch = 0.0;
-	MO.RenderStyle = Entity::STYLE_Normal;
-	MO.Alpha = 1.0;
-	EntityEx(MO).bShadow = false;	// Remove invisibility
-	ExtraLight = 0;	// Remove weapon flashes
-	FixedColourmap = 0;	// Remove torch
-	DamageFlash = 0.0;	// No palette changes
-	BonusFlash = 0.0;
-	BlendR = 0.0;
-	BlendG = 0.0;
-	BlendB = 0.0;
-	BlendA = 0.0;
 }
 
 //==========================================================================
 //
-//	GotAmmo
+//  BotOnSpawn
 //
 //==========================================================================
 
-void GotAmmo(Ammo NewAmmo)
+void BotOnSpawn()
 {
+	Bot.OnSpawn();
+}
+
+//==========================================================================
+//
+//  DoClearPlayer
+//
+//==========================================================================
+
+void DoClearPlayer()
+{
+	BotPlayer b;
+
+	b = Bot;
+	ClearPlayer();
+	Bot = b;
+}
+
+//==========================================================================
+//
+//  GetRebornHealth
+//
+//==========================================================================
+
+int GetRebornHealth()
+{
+	return MAXHEALTH;
 }
 
 //==========================================================================
