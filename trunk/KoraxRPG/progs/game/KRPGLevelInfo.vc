@@ -258,7 +258,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_Thing_Thrust3d:
 		if (E && E.IsA('KRPGActor'))
 		{
-			A_Thing3dThrust(KRPGActor(E), Arg2, Arg3, Arg4, Arg5);
+			A_Thing3dThrust(Actor(E), Arg2, Arg3, Arg4, Arg5);
 			buttonSuccess = true;
 		}
 		break;
@@ -272,14 +272,14 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_Thing_SetTeam:
 		if (E && E.IsA('KRPGActor'))
 		{
-			KRPGActor(E).SetTeam(Arg2);
+			Actor(E).SetTeam(Arg2);
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_Thing_SetPersonId:
 		if (E && E.IsA('KRPGActor'))
 		{
-			KRPGActor(E).ConversationID = Arg2;
+			Actor(E).ConversationID = Arg2;
 			buttonSuccess = true;
 		}
 		break;
@@ -507,7 +507,7 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 
 	if (!Speaker.bIsPlayer)
 	{
-		if (Speaker.ConversationID >= 0)
+		if (Speaker.ConversationID > 0)
 		{
 			p_infoSpeaker = KRPGWorldInfo(World).GetPersonRegistry("", Speaker.ConversationID);
 			if (!p_infoSpeaker)
@@ -518,7 +518,7 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 	}
 	if (!SpeakingTo.bIsPlayer)
 	{
-		if (SpeakingTo.ConversationID >= 0)
+		if (SpeakingTo.ConversationID > 0)
 		{
 			p_infoSpeakingTo = KRPGWorldInfo(World).GetPersonRegistry("", SpeakingTo.ConversationID);
 			if (!p_infoSpeakingTo)
@@ -561,7 +561,7 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 //
 //==========================================================================
 
-void A_Thing3dThrust(KRPGActor A, int angle2d, int angle3, int move, int move2)
+void A_Thing3dThrust(Actor A, int angle2d, int angle3, int move, int move2)
 {
 	if (A)
 	{
