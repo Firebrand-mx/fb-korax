@@ -184,16 +184,14 @@ final void CalcHeight(float deltaTime)
 	if (PlayerState == PST_LIVE)
 	{
 		ViewHeight += DeltaViewHeight * deltaTime;
-							// [CW] ------------- experimental
-		if (ViewHeight > /*PlayerPawn(MO).ViewHeight*/GetMOViewHeight())
-		{					// [CW] ------------- experimental
-			ViewHeight = /*PlayerPawn(MO).ViewHeight*/GetMOViewHeight();
+		if (ViewHeight > PlayerPawn(MO).ViewHeight)
+		{
+			ViewHeight = PlayerPawn(MO).ViewHeight;
 			DeltaViewHeight = 0.0;
 		}
-							// [CW] ------------- experimental
-		if (ViewHeight < /*PlayerPawn(MO).ViewHeight*/GetMOViewHeight() / 2.0)
-		{					// [CW] ------------- experimental
-			ViewHeight = /*PlayerPawn(MO).ViewHeight*/GetMOViewHeight() / 2.0;
+		if (ViewHeight < PlayerPawn(MO).ViewHeight / 2.0)
+		{
+			ViewHeight = PlayerPawn(MO).ViewHeight / 2.0;
 			if (DeltaViewHeight <= 0.0)
 				DeltaViewHeight = 0.00001;
 		}
@@ -237,9 +235,7 @@ final void MovePlayer(float deltaTime)
 	forward = ForwardMove * 5.0;
 	side = SideMove * 5.0;
 
-	// [CW] ------------- experimental
-	//PlayerPawn(MO).AdjustSpeed(forward, side);
-	AdjustMOSpeed(forward, side);
+	PlayerPawn(MO).AdjustSpeed(forward, side);
 
 	if (!(onground || MO.bFly))
 	{
@@ -305,8 +301,8 @@ final void MovePlayer(float deltaTime)
 	}
 
 	if ((Buttons & BT_JUMP) && onground && !JumpTime)
-	{					// [CW] ------------- experimental
-		MO.Velocity.z = /*PlayerPawn(MO).JumpVelZ*/GetMOJumpVelZ();
+	{
+		MO.Velocity.z = PlayerPawn(MO).JumpVelZ;
 		EntityEx(MO).bOnMobj = false;
 		JumpTime = 0.5;
 	}
@@ -372,9 +368,7 @@ final void WaterMove(float deltaTime)
 
 	forward = ForwardMove;
 	side = SideMove;
-// [CW] ------------- experimental
-	//PlayerPawn(MO).AdjustSpeed(forward, side);
-	AdjustMOSpeed(forward, side);
+	PlayerPawn(MO).AdjustSpeed(forward, side);
 
 	wishvel = vforward * forward + vright * side;
 	if (!forward && !side /* && !cmd.upmove */ )
@@ -1576,8 +1570,7 @@ void PaletteFlash()
 				Amount = 228;
 			}
 			AddBlend(r, g, b, a, (Amount << 24) |
-				// [CW] ------------- experimental
-				(/*PlayerPawn(MO).DamageScreenColour*/GetMODamageScreenColour() & 0x00ffffff));
+				(PlayerPawn(MO).DamageScreenColour & 0x00ffffff));
 		}
 
 		if (BonusFlash)
@@ -2668,87 +2661,6 @@ int GetRebornHealth()
 {
 	return 0;
 }
-
-// [CW] ------------- experimental >
-//==========================================================================
-//
-//	GetMOViewHeight
-//
-//==========================================================================
-
-float GetMOViewHeight()
-{
-	return PlayerPawn(MO).ViewHeight;
-}
-
-//==========================================================================
-//
-//	GetMOJumpVelZ
-//
-//==========================================================================
-
-float GetMOJumpVelZ()
-{
-	return PlayerPawn(MO).JumpVelZ;
-}
-
-//==========================================================================
-//
-//	SetMOJumpVelZ
-//
-//==========================================================================
-
-void SetMOJumpVelZ(float value)
-{
-	PlayerPawn(MO).JumpVelZ = value;
-}
-
-//==========================================================================
-//
-//	GetMOAttackZOffset
-//
-//==========================================================================
-
-float GetMOAttackZOffset()
-{
-	return PlayerPawn(MO).AttackZOffset;
-}
-
-//==========================================================================
-//
-//	GetMODamageScreenColour
-//
-//==========================================================================
-
-int GetMODamageScreenColour()
-{
-	return PlayerPawn(MO).DamageScreenColour;
-}
-
-//==========================================================================
-//
-//  AdjustMOSpeed
-//
-//==========================================================================
-
-void AdjustMOSpeed(out float forward, out float side)
-{
-	PlayerPawn(MO).AdjustSpeed(forward, side);
-}
-
-//==========================================================================
-//
-//  GetMOInvulnerabilityMode
-//
-//==========================================================================
-
-name GetMOInvulnerabilityMode()
-{
-	return PlayerPawn(MO).InvulnerabilityMode;
-}
-
-
-// [CW] ------------- experimental <
 
 defaultproperties
 {
