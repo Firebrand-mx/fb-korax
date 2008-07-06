@@ -25,6 +25,33 @@
 
 class PlayerPig : KArenaPlayerPawn;
 
+//==========================================================================
+//
+//  MorphPlayerThink
+//
+//==========================================================================
+
+void MorphPlayerThink()
+{
+	//FIXME this sucks
+	if (ftoi(32.0 * PlayerEx(Player).MorphTime) & 15)
+	{
+		return;
+	}
+	if (!(Velocity.x + Velocity.y) && P_Random() < 64)
+	{
+		// Snout sniff
+		Player.SetViewState(ps_weapon,
+			PlayerEx(Player).ReadyWeapon.FindState('Flash'));
+		PlaySound('PigActive1', CHAN_VOICE);	// snort
+		return;
+	}
+	if (P_Random() < 48)
+	{
+		PlaySound('PigActive', CHAN_VOICE);
+	}
+}
+
 states
 {
 Spawn:
@@ -67,7 +94,4 @@ defaultproperties
 	SoundClass = 'pig';
 	MorphWeapon = WeaponPigSnout;
 	bPickUp = false;
-
-	DropItemList.Num = 1;
-	DropItemList[0].Type = WeaponPigSnout; DropItemList[0].Amount = 1;
 }
