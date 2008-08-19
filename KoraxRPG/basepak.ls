@@ -25,13 +25,16 @@ sndinfo.txt						scripts/sndinfo.txt
 skyboxes.txt					scripts/skyboxes.txt
 terrain.txt						scripts/terrain.txt
 
+//	Decorate definition file
+vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
+
 decorate.txt					decorate.txt
 
 actors/hexen/centaur.txt		actors/hexen/centaur.txt
 actors/hexen/demons.txt			actors/hexen/demons.txt
-actors/hexen/ettin.txt			actors/hexen/ettin.txt
-actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
+actors/krpg/ettin.txt			actors/krpg/ettin.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
+actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
 
 $load palette.pcx
 translat.dat					raw 0 1 256 7
