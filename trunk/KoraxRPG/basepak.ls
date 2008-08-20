@@ -30,8 +30,8 @@ vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
 
 decorate.txt					decorate.txt
 
-actors/hexen/demons.txt			actors/hexen/demons.txt
 actors/krpg/centaur.txt			actors/krpg/centaur.txt
+actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
