@@ -35,14 +35,13 @@ gm_xmas.txt				scripts/gm_xmas.txt
 
 decorate.txt			decorate.txt
 decorate/armor.txt		decorate/armor.txt
+decorate/artifacts.txt	decorate/artifacts.txt
+decorate/centaur.txt	decorate/centaur.txt
+decorate/demons.txt		decorate/demons.txt
+decorate/ettin.txt		decorate/ettin.txt
 decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
-decorate/artifacts.txt	decorate/artifacts.txt
 decorate/misc.txt		decorate/misc.txt
-
-actors/hexen/centaur.txt	actors/hexen/centaur.txt
-actors/hexen/demons.txt		actors/hexen/demons.txt
-actors/hexen/ettin.txt		actors/hexen/ettin.txt
 
 //	Language strings
 language.en				language.en
