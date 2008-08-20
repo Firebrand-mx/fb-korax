@@ -1,7 +1,17 @@
 
-class SaddleDemon : Demon1
+class SaddleDemon : Pawn
 	__mobjinfo__(17001);
 
+//==========================================================================
+//
+//	GetSpecies
+//
+//==========================================================================
+
+class<EntityEx> GetSpecies()
+{
+	return KRPGDemon1;
+}
 
 //==========================================================================
 //
@@ -56,9 +66,97 @@ void RideCommand(float forward, float side, optional float vertical)
 	}
 }
 
+states
+{
+Spawn:
+	DEMN AA 10 A_LookAI
+	Loop
+See:
+	DEMN ABCD 4 A_ChaseAI
+	Loop
+Melee:
+	DEMN E 6 A_FaceTarget
+	DEMN F 8 A_FaceTarget
+	DEMN G 6
+	{
+		A_CustomMeleeAttack(decorate_random(1, 8) * 2);
+	}
+	Goto See
+Missile:
+	DEMN E 5 A_FaceTarget
+	DEMN F 6 A_FaceTarget
+	DEMN G 5
+	{
+		A_CustomMissile(Demon1FX1, 62.0, 0);
+	}
+	Goto See
+Pain:
+	DEMN E 4
+	DEMN E 4 A_Pain
+	Goto See
+Death:
+	DEMN HI 6
+	DEMN J 6 A_Scream
+	DEMN K 6 A_NoBlocking
+	DEMN L 6 A_QueueCorpse
+	DEMN MNO 6
+	DEMN P -1
+	Stop
+XDeath:
+	DEMN H 6
+	DEMN I 6
+	{
+		A_SpawnItemEx(Demon1Chunk1, 0.0, 0.0, 45.0, Random() * 255.0 * 0.015625 + 1.0,
+			Random() * 255.0 * 0.015625 + 1.0, 8.0, 90.0, 1);//SXF_TRANSFERTRANSLATION);
+		A_SpawnItemEx(Demon1Chunk2, 0.0, 0.0, 45.0, Random() * 255.0 * 0.015625 + 1.0,
+			Random() * 255.0 * 0.015625 + 1.0, 8.0, 270.0, 1);//SXF_TRANSFERTRANSLATION);
+		A_SpawnItemEx(Demon1Chunk3, 0.0, 0.0, 45.0, Random() * 255.0 * 0.015625 + 1.0,
+			Random() * 255.0 * 0.015625 + 1.0, 8.0, 270.0, 1);//SXF_TRANSFERTRANSLATION);
+		A_SpawnItemEx(Demon1Chunk4, 0.0, 0.0, 45.0, Random() * 255.0 * 0.015625 + 1.0,
+			Random() * 255.0 * 0.015625 + 1.0, 8.0, 270.0, 1);//SXF_TRANSFERTRANSLATION);
+		A_SpawnItemEx(Demon1Chunk5, 0.0, 0.0, 45.0, Random() * 255.0 * 0.015625 + 1.0,
+			Random() * 255.0 * 0.015625 + 1.0, 8.0, 270.0, 1);//SXF_TRANSFERTRANSLATION);
+	}
+	DEMN J 6 A_Scream
+	DEMN K 6 A_NoBlocking
+	DEMN L 6 A_QueueCorpse
+	DEMN MNO 6
+	DEMN P -1
+	Stop
+Ice:
+	DEMN Q 5 A_FreezeDeath
+	DEMN Q 1 A_FreezeDeathChunks
+	Wait
+}
+
 defaultproperties
 {
+	bSolid = true;
+	bShootable = true;
+	bCountKill = true;
+	bMonster = true;
+	bActivatePushWall = true;
+	bActivateMCross = true;
+	bPassMobj = true;
+	bCanUseWalls = true;
+
+	bFloorClip = true;
+	bTelestomp = true;
+
+	Health = 250;
+	GibsHealth = -125;
+	Radius = 32.0;
+	Height = 64.0;
+	Mass = 220.0;
 	Speed = 18.0 * 35.0;
+	PainChance = 0.1953125;
+	bActivatePushWall = false;
+	SightSound = 'DemonSight';
+	ActiveSound = 'DemonActive';
+	AttackSound = 'DemonAttack';
+	PainSound = 'DemonPain';
+	DeathSound = 'DemonDeath';
+	Obituary = "$ob_demon1";
 
 	bLiving = true;
 	bSaddleHorse = true;
