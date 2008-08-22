@@ -30,6 +30,7 @@ vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
 
 decorate.txt					decorate.txt
 
+actors/krpg/bishop.txt			actors/krpg/bishop.txt
 actors/krpg/centaur.txt			actors/krpg/centaur.txt
 actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt
