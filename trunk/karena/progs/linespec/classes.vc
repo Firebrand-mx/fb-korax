@@ -1,0 +1,329 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+import engine;
+
+enum
+{
+	CHAN_AUTO,
+	CHAN_VOICE,
+	CHAN_WEAPON,
+	CHAN_ITEM,
+	CHAN_BODY
+};
+
+enum
+{
+	CONTENTS_EMPTY,
+	CONTENTS_WATER,
+	CONTENTS_LAVA,
+	CONTENTS_NUKAGE,
+	CONTENTS_SLIME,
+	CONTENTS_HELLSLIME,
+	CONTENTS_BLOOD,
+	CONTENTS_SLUDGE,
+	CONTENTS_HAZARD,
+	CONTENTS_BOOMWATER,
+
+	CONTENTS_SOLID = -1
+};
+
+#include "EntityEx.Head.vc"
+#include "EntityEx.Physics.vc"
+#include "EntityEx.LineAttack.vc"
+#include "EntityEx.AiUtils.vc"
+#include "EntityEx.SpawnMissile.vc"
+#include "EntityEx.Damage.vc"
+#include "EntityEx.Inventory.vc"
+#include "EntityEx.Misc.vc"
+#include "EntityEx.Defaults.vc"
+#include "Actor.Misc.vc"
+#include "Actor.MonsterAi.vc"
+#include "Actor.GenericAttacks.vc"
+#include "Actor.FreezeDeath.vc"
+#include "Actor.Sound.vc"
+#include "Actor.Special.vc"
+#include "Actor.Spawn.vc"
+#include "Actor.StateJump.vc"
+#include "Actor.FlagsAndAppearance.vc"
+#include "Actor.MissileMovement.vc"
+#include "Actor.Inventory.vc"
+#include "Actor.DoomAttack.vc"
+#include "Actor.DoomSpecific.vc"
+#include "Actor.Heretic.vc"
+#include "Actor.Hexen.vc"
+#include "Actor.States.vc"
+#include "PlayerPawn.vc"
+#include "PlayerChunk.vc"
+#include "PlayerEx.vc"
+
+#include "Inventory.vc"
+#include "PickupFlash.vc"
+#include "Ammo.vc"
+#include "BackpackItem.vc"
+#include "Weapon.vc"
+#include "PuzzleItem.vc"
+#include "Key.vc"
+#include "Powerup.vc"
+#include "PowerupGiver.vc"
+#include "PowerInvulnerable.vc"
+#include "PowerStrength.vc"
+#include "PowerInvisibility.vc"
+#include "PowerGhost.vc"
+#include "PowerShadow.vc"
+#include "PowerIronFeet.vc"
+#include "PowerMask.vc"
+#include "PowerLightAmp.vc"
+#include "PowerTorch.vc"
+#include "PowerFlight.vc"
+#include "PowerWeaponLevel2.vc"
+#include "PowerSpeed.vc"
+#include "PowerMinotaur.vc"
+#include "PowerScanner.vc"
+#include "PowerTargeter.vc"
+#include "Health.vc"
+#include "HealthPickup.vc"
+#include "Armor.vc"
+#include "BasicArmor.vc"
+#include "BasicArmorPickup.vc"
+#include "BasicArmorBonus.vc"
+#include "HexenArmor.vc"
+#include "MapRevealer.vc"
+#include "FakeInventory.vc"
+#include "CustomInventory.vc"
+#include "WeaponPiece.vc"
+#include "WeaponHolder.vc"
+#include "FourthWeaponHolder.vc"
+
+#include "TeleportDest.vc"
+#include "TeleportDest2.vc"
+#include "TeleportDest3.vc"
+#include "PointPusher.vc"
+#include "PointPuller.vc"
+#include "WaterZone.vc"
+
+#include "SwitchableDecoration.vc"
+#include "SwitchingDecoration.vc"
+#include "MorphProjectile.vc"
+
+#include "AmbientSound.vc"
+#include "SoundSequence.vc"
+#include "SoundSequenceSlot.vc"
+
+#include "SoundEnvironment.vc"
+
+#include "SecurityCamera.vc"
+#include "AimingCamera.vc"
+#include "InterpolationPoint.vc"
+#include "InterpolationSpecial.vc"
+#include "PathFollower.vc"
+#include "ActorMover.vc"
+#include "LookAtCamera.vc"
+
+#include "LineSpecialLevelInfo.vc"
+#include "LineSpecialGameInfo.vc"
+#include "WorldInfoEx.vc"
+#include "SectorThinker.vc"
+#include "SectorMover.vc"
+#include "VerticalDoor.vc"
+#include "TextureChangeDoor.vc"
+#include "CeilingMover.vc"
+#include "CeilingWaggle.vc"
+#include "FloorMover.vc"
+#include "FloorWaggle.vc"
+#include "StairStepMover.vc"
+#include "Platform.vc"
+#include "Pillar.vc"
+#include "Elevator.vc"
+#include "PolyobjThinker.vc"
+#include "PolyobjRotator.vc"
+#include "PolyobjMover.vc"
+#include "PolyobjDoor.vc"
+#include "Lighting.vc"
+#include "FireFlicker.vc"
+#include "GlowingLight.vc"
+#include "LightFlash.vc"
+#include "Strobe.vc"
+#include "PhasedLight.vc"
+#include "LightEffect.vc"
+#include "Scroller.vc"
+#include "PlaneWatcher.vc"
+#include "Pusher.vc"
+#include "QuakeFocus.vc"
+#include "WallLightTransfer.vc"
+#include "LightningThinker.vc"
+
+#include "SectorAction.vc"
+#include "SecActEnter.vc"
+#include "SecActExit.vc"
+#include "SecActHitFloor.vc"
+#include "SecActHitCeiling.vc"
+#include "SecActUse.vc"
+#include "SecActUseWall.vc"
+#include "SecActEyesDive.vc"
+#include "SecActEyesSurface.vc"
+#include "SecActEyesBelowC.vc"
+#include "SecActEyesAboveC.vc"
+#include "SecActHitFakeFloor.vc"
+
+#include "FlashFader.vc"
+
+#include "DoomBuilderCamera.vc"
+
+#include "ParticleFountain.vc"
+#include "Spark.vc"
+
+#include "StaticLightSource.vc"
+#include "StaticRGBLightSource.vc"
+#include "DynamicLight.vc"
+#include "PointLight.vc"
+#include "PointLightPulse.vc"
+#include "PointLightFlicker.vc"
+#include "PointLightFlickerRandom.vc"
+#include "SectorPointLight.vc"
+
+#include "GlassShard.vc"
+
+#include "InvisibleBridge.vc"
+#include "InvisibleBridge32.vc"
+#include "InvisibleBridge16.vc"
+#include "InvisibleBridge8.vc"
+
+#include "SkyViewpoint.vc"
+#include "SkyPicker.vc"
+#include "StackPoint.vc"
+#include "UpperStackLookOnly.vc"
+#include "LowerStackLookOnly.vc"
+#include "SectorSilencer.vc"
+
+#include "SecretTrigger.vc"
+#include "HateTarget.vc"
+
+#include "LineSpecialClientGame.vc"
+
+//	We need Doom classes because of the DECORATE.
+#include "BossTarget.vc"
+#include "SpawnFire.vc"
+#include "SpawnShot.vc"
+#include "BossBrain.vc"
+#include "BossEye.vc"
+#include "BrainState.vc"
+
+#include "Feather.vc"
+
+#include "IceChunk.vc"
+#include "IceChunkHead.vc"
+
+#include "Coin.vc"
+#include "Gold10.vc"
+#include "Gold25.vc"
+#include "Gold50.vc"
+#include "Meat.vc"
+#include "Junk.vc"
+#include "StrifePuff.vc"
+#include "MiniMissilePuff.vc"
+#include "RocketTrail.vc"
+#include "Bang4Cloud.vc"
+#include "FireDroplet.vc"
+#include "StrifeHumanoid.vc"
+
+// --------- Korax Arena ----------------
+#include "KArenaActor.vc"
+#include "KAPlayerBase.vc"
+#include "Pawn.vc"
+#include "Effect.vc"
+#include "BlastEffect.vc"
+
+class Blood : Actor decorate;
+class BloodSplatter : Actor decorate;
+class AxeBlood : Actor decorate;
+class GlassJunk : Actor decorate;
+class Unknown : Actor decorate;
+class PatrolPoint : Actor decorate;
+class PatrolSpecial : Actor decorate;
+class MapSpot : Actor decorate;
+class ItemFog : Actor decorate;
+class BloodySkull : PlayerChunk decorate;
+
+//	Doom classes
+class BulletPuff : Actor decorate;
+class Clip : Ammo decorate;
+class Shell : Ammo decorate;
+class Cell : Ammo decorate;
+class DoomImpBall : Actor decorate;
+class LostSoul : Actor decorate;
+class CacodemonBall : Actor decorate;
+class BaronBall : Actor decorate;
+class RevenantTracer : Actor decorate;
+class RevenantTracerSmoke : Actor decorate;
+class ArachnotronPlasma : Actor decorate;
+class FatShot : Actor decorate;
+class DoomImp : Actor decorate;
+class Demon : Actor decorate;
+class Spectre : Actor decorate;
+class Cacodemon : Actor decorate;
+class BaronOfHell : Actor decorate;
+class HellKnight : Actor decorate;
+class Revenant : Actor decorate;
+class Arachnotron : Actor decorate;
+class Fatso : Actor decorate;
+class PainElemental : Actor decorate;
+class Archvile : Actor decorate;
+class ArchvileFire : Actor decorate;
+class Rocket : Actor decorate;
+class PlasmaBall : Actor decorate;
+class BFG9000 : Weapon decorate;
+class BFGBall : Actor decorate;
+class BFGExtra : Actor decorate;
+class RealGibs : Actor decorate;
+
+class ArtiHealth : HealthPickup decorate;
+class ArtiSuperHealth : HealthPickup decorate;
+class ArtiFly : PowerupGiver decorate;
+class Dirt1 : Actor decorate;
+class Dirt2 : Actor decorate;
+class Dirt3 : Actor decorate;
+class Dirt4 : Actor decorate;
+class Dirt5 : Actor decorate;
+class Dirt6 : Actor decorate;
+
+class MinotaurFX3 : Actor decorate;
+
+class IceGuyFX2 : Actor decorate;
+class WraithFX2 : Actor decorate;
+class DragonExplosion : Actor decorate;
+class SorcFX2 : Actor decorate;
+class SorcFX2T1 : Actor decorate;
+class KoraxBolt : Actor decorate;
+
+class MedicalKit : HealthPickup decorate;
+class MedPatch : HealthPickup decorate;
+class MetalArmor : BasicArmorPickup decorate;
+class LeatherArmor : BasicArmorPickup decorate;
+class QuestItem29 : Inventory decorate;
+class Communicator : Inventory decorate;
+
+// --------- Korax Arena ----------------
+class DragonFX2 : KArenaActor decorate;

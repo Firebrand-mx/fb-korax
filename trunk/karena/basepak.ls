@@ -11,6 +11,7 @@ graphics/fonta63.lmp		graphics/fonta63.lmp
 
 //	Progs
 progs/clprogs.dat		progs/clprogs.dat
+progs/linespec.dat		progs/linespec.dat
 progs/svprogs.dat		progs/svprogs.dat
 
 //	Scripts
