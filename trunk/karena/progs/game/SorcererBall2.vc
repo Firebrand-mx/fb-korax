@@ -35,7 +35,7 @@ class SorcererBall2 : SorcererBall;
 
 void A_CastSorcererSpell()
 {
-	KArenaActor mo;
+	Actor mo;
 	float z;
 
 	// Put sorcerer into throw spell animation
@@ -43,13 +43,13 @@ void A_CastSorcererSpell()
 		Target.SetState(Target.FindState('Attack2'));
 
 	z = Target.Origin.z - Target.FloorClip + Sorcerer::SORC_DEFENSE_HEIGHT;
-	mo = Spawn(SorcererFX2, vector(Origin.x, Origin.y, z));
+	mo = Spawn(SorcFX2, vector(Origin.x, Origin.y, z));
 	Actor(Target).bInvulnerable = true;
 	Actor(Target).bReflective = true;
 	Target.Args[0] = Sorcerer::SORC_DEFENSE_TIME;
 	if (mo)
 	{
-		mo.SpawnCombatAttributes(KArenaActor(Target), self);
+		mo.Target = Target;
 	}
 
 	Target.Args[3] = Sorcerer::SORC_STOPPED;
