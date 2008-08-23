@@ -305,6 +305,35 @@ final void BlastRadius(optional int Limit)
 	}
 }
 
+//============================================================================
+//
+//	A_KArenaDragonFX2
+//
+//============================================================================
+
+final void A_KArenaDragonFX2()
+{
+	KArenaActor A;
+	int i;
+	float delay;
+
+	// [CW] If shot by player (using 'Whyvern Breath spell') there should be less delay
+	if (Target.IsA('PlayerPawn'))
+		delay = Random();
+	else
+		delay = 0.5 + Random();
+	for (i = 1 + (P_Random() & 3); i; i--)
+	{
+		A = Spawn(DragonFX2, Origin + vector((Random() - 0.5) * 64.0,
+			(Random() - 0.5) * 64.0, (Random() - 0.5) * 16.0));
+		if (A)
+		{
+			A.SpawnCombatAttributes(KArenaActor(Target), self);
+			A.StateTime = delay + Random() * 0.2 * itof(i);
+		}
+	}
+}
+
 defaultproperties
 {
 }

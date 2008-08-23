@@ -316,7 +316,7 @@ final void A_KoraxMissile()
 	switch (P_Random() % 6)
 	{
 	case 0:
-		mtype = WraithMissile;
+		mtype = WraithFX1;
 		sound = 'WraithMissileFire';
 		break;
 	case 1:
@@ -336,7 +336,7 @@ final void A_KoraxMissile()
 		sound = 'CentaurLeaderAttack';
 		break;
 	case 5:
-		mtype = SerpentMissile;
+		mtype = SerpentFX;
 		sound = 'CentaurLeaderAttack';
 		break;
 	}
@@ -410,26 +410,66 @@ final void A_KoraxBonePop()
 	EntityEx mo;
 
 	// Spawn 6 spirits equalangularly
-	mo = SpawnMissileAngle(KoraxSpirit1, 60.0 * 0.0, 5.0 * 35.0);
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 0.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit1(mo).KSpiritInit(self);
-	mo = SpawnMissileAngle(KoraxSpirit2, 60.0 * 1.0, 5.0 * 35.0);
+	{
+		KSpiritInit(mo);
+	}
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 1.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit2(mo).KSpiritInit(self);
-	mo = SpawnMissileAngle(KoraxSpirit3, 60.0 * 2.0, 5.0 * 35.0);
+	{
+		KSpiritInit(mo);
+	}
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 2.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit3(mo).KSpiritInit(self);
-	mo = SpawnMissileAngle(KoraxSpirit4, 60.0 * 3.0, 5.0 * 35.0);
+	{
+		KSpiritInit(mo);
+	}
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 3.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit4(mo).KSpiritInit(self);
-	mo = SpawnMissileAngle(KoraxSpirit5, 60.0 * 4.0, 5.0 * 35.0);
+	{
+		KSpiritInit(mo);
+	}
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 4.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit5(mo).KSpiritInit(self);
-	mo = SpawnMissileAngle(KoraxSpirit6, 60.0 * 5.0, 5.0 * 35.0);
+	{
+		KSpiritInit(mo);
+	}
+	mo = SpawnMissileAngle(KoraxSpirit, 60.0 * 5.0, 5.0 * 35.0);
 	if (mo)
-		KoraxSpirit6(mo).KSpiritInit(self);
+	{
+		KSpiritInit(mo);
+	}
 
 	XLevel.StartACS(255, 0, 0, 0, 0, self, NULL, 0, false, false);	// Death script
+}
+
+//==========================================================================
+//
+//  KSpiritInit
+//
+//==========================================================================
+
+final void KSpiritInit(EntityEx Spirit)
+{
+	int i;
+	HolyTail tail;
+	HolyTail next;
+
+	Spirit.Tracer = self;	// Swarm around korax
+	Spirit.Special1 = 5 * 35 / 5;	// 5 seconds
+	Spirit.Special2 = 32 + (P_Random() & 7);	// Float bob index
+
+	// Spawn a tail for spirit
+	tail = Spawn(HolyTail, Spirit.Origin);
+	tail.ParentSpirit = Actor(Spirit);	// parent
+	for (i = 1; i < 3; i++)
+	{
+		next = Spawn(HolyTail, Spirit.Origin);
+		next.SetState(GetStatePlus(next.IdleState, 1, true));
+		tail.NextTail = next;
+		tail = next;
+	}
 }
 
 states
