@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class Player : PlayerEx;
+class Player : KAPlayerBase;
 
 const float
 	INVULNTIME2				= 5.0,
@@ -2584,10 +2584,10 @@ void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 			if (source.bIsPlayer)
 			{
 				KArenaWeapon kaw = KArenaWeapon(Player(inflictor.Player).ReadyWeapon);
-				if (kaw.MeleeObituary)
-					Msg = kaw.MeleeObituary;
+				if (kaw.HitObituary)
+					Msg = kaw.HitObituary;
 				else
-					Msg = kaw.RangedObituary;
+					Msg = kaw.Obituary;
 			}
 			else if (source.IsA('Pawn'))
 			{
@@ -2595,7 +2595,7 @@ void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 				if (p.Obituary)
 					Msg = p.Obituary;
 				else
-					Msg = p.RangedObituary;
+					Msg = p.Obituary;
 			}
 		}
 		//[CW] p.3: missile attack
@@ -3044,7 +3044,7 @@ void KilledActor(EntityEx Victim)
 
 	// [CW] Process actor-specific event
 	if (Victim.IsA('KArenaActor'))
-		KArenaActor(Victim).KilledByPlayer(KArenaPlayerPawn(MO));
+		KArenaActor(Victim).KilledByPlayer(PlayerPawn(MO));
 
 	// [FB] Increase the player's KillCount
 	if (Victim.bMonster)

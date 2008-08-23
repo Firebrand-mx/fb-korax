@@ -43,7 +43,7 @@ int experience;
 // [CW] Since there are sometimes references to pawn stored for future use,
 // it is important to store reference to player as well (in case it is player pawn)
 // so that if that pawn die, player reference will be still accessible.
-Player		PInstigator;
+KAPlayerBase		PInstigator;
 
 //==========================================================================
 //
@@ -54,7 +54,7 @@ Player		PInstigator;
 void OnMapSpawn(mthing_t* mthing)
 {
 	//[Korax]
-	if (!bMissile && !bPickUp && Class != PlayerPig)
+	if (!bMissile && !bPickUp && !IsA('PlayerPig'))
 	{
 		experience = default.Health;
 	}
@@ -84,7 +84,7 @@ void Died(EntityEx source, EntityEx inflictor)
 		}
 		else
 		{
-			Player(source.Player).GiveExperience(ftoi(itof(experience) * ((90.0 + 
+			KAPlayerBase(source.Player).GiveExperience(ftoi(itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0) * (Level.World.GameSkill < 2 ? 
 				125.0 : (Level.World.GameSkill < 3 ? 100.0 : 80.0)) / 100.0));
 		}
@@ -109,7 +109,7 @@ void IsDeathInflictor(EntityEx victim)
 //
 //==========================================================================
 
-void KilledByPlayer(KArenaPlayerPawn source)
+void KilledByPlayer(PlayerPawn source)
 {
 }
 
@@ -123,10 +123,10 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 {
 	if (master)
 	{
-		if (KArenaPlayerPawn(master))
+		if (PlayerPawn(master))
 		{
 			Target = master;
-			PInstigator = Player(Target.Player);
+			PInstigator = KAPlayerBase(Target.Player);
 		}
 		else
 		{
@@ -141,7 +141,7 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 	if (shooter)
 	{
 		if (shooter.IsA('KArenaWeapon'))
-			Obituary = KArenaWeapon(shooter).RangedObituary;
+			Obituary = Weapon(shooter).Obituary;
 		else if (shooter.IsA('Pawn'))
 			Obituary = Pawn(shooter).RangedObituary;
 		else if (shooter.IsA('Actor'))
@@ -184,19 +184,19 @@ final void Blast(Actor victim, Actor source, float strength)
 	{
 		if (victim.bMissile)
 		{
-			if (SorcererBall(victim))
+			if (victim.IsA('SorcererBall'))
 			{
 				// don't blast sorcerer balls
 				return;
 			}
-			else if (MageStaffFX2(victim) || InfernalHandFX(victim))
+			else if (victim.IsA('MageStaffFX2') || victim.IsA('InfernalHandFX'))
 			{
 				// Reflect to originator
 				victim.Tracer = victim.Target;
 				victim.Target = source;
 			}
 		}
-		if (victim.Class == HolyFX)
+		if (victim.IsA('HolyFX'))
 		{
 			if (victim.Tracer == source)
 			{
@@ -254,7 +254,7 @@ final void BlastRadius(optional int Limit)
 	int blasts = 0;
 
 	PlaySound('BlastRadius', CHAN_ITEM);
-	HexenLevelInfo(Level).NoiseAlert(self, self);
+	LineSpecialLevelInfo(Level).NoiseAlert(self, self);
 
 	foreach AllThinkers(Actor, mo)
 	{
@@ -263,14 +263,7 @@ final void BlastRadius(optional int Limit)
 			// Not a valid monster
 			continue;
 		}
-		if (mo.Class == BlastRadiusBomb ||
-			mo.Class == BlastRadiusMissile)
-		{
-			continue;
-		}
-		if ((mo.Class == PoisonCloud) ||	// poison cloud
-			(mo.Class == HolyFX) ||		// holy fx
-			mo.bIceCorpse)			// frozen corpse
+		if (mo.bCanBlast || mo.bIceCorpse)			// frozen corpse
 		{
 			// Let these special cases go
 		}
