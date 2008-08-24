@@ -30,9 +30,6 @@
 //**
 //**************************************************************************
 
-class KArenaActor : Actor
-	abstract;
-
 const float
 	BLAST_RADIUS_DIST		= 255.0,
 	BLAST_FULLSTRENGTH		= 0.0038909912,
@@ -72,14 +69,14 @@ void Died(EntityEx source, EntityEx inflictor)
 	::Died(source, inflictor);
 
 	if (inflictor && ClassIsChildOf(inflictor.Class, Actor) && !bMonster)
-		KArenaActor(inflictor).IsDeathInflictor(self);
+		Actor(inflictor).IsDeathInflictor(self);
 
 //[Korax]
 	if (source && !bIsPlayer)
 	{
 		if (!source.bIsPlayer)
 		{
-			KArenaActor(source).experience += ftoi(itof(experience) * ((90.0 + 
+			Actor(source).experience += ftoi(itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0));  //RPG
 		}
 		else
@@ -131,7 +128,7 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 		else
 		{
 			Target = master.Target;
-			PInstigator = KArenaActor(master) ? KArenaActor(master).PInstigator : none;
+			PInstigator = master ? master.PInstigator : none;
 		}
 
 		if (!Target)
@@ -306,7 +303,7 @@ final void BlastRadius(optional int Limit)
 
 final void A_KArenaDragonFX2()
 {
-	KArenaActor A;
+	Actor A;
 	int i;
 	float delay;
 
@@ -317,16 +314,12 @@ final void A_KArenaDragonFX2()
 		delay = 0.5 + Random();
 	for (i = 1 + (P_Random() & 3); i; i--)
 	{
-		A = Spawn(DragonFX2, Origin + vector((Random() - 0.5) * 64.0,
+		A = Spawn(DragonExplosion, Origin + vector((Random() - 0.5) * 64.0,
 			(Random() - 0.5) * 64.0, (Random() - 0.5) * 16.0));
 		if (A)
 		{
-			A.SpawnCombatAttributes(KArenaActor(Target), self);
+			A.SpawnCombatAttributes(Actor(Target), self);
 			A.StateTime = delay + Random() * 0.2 * itof(i);
 		}
 	}
-}
-
-defaultproperties
-{
 }
