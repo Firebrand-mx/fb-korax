@@ -1757,7 +1757,7 @@ final void Blast(Actor victim, Actor source, float strength)
 
 	angle = atan2(victim.Origin.y - source.Origin.y,
 		victim.Origin.x - source.Origin.x);
-	if (strength < KArenaActor::BLAST_FULLSTRENGTH)
+	if (strength < Actor::BLAST_FULLSTRENGTH)
 	{
 		victim.Velocity.x = strength * cos(angle) * 35.0;
 		victim.Velocity.y = strength * sin(angle) * 35.0;
@@ -1795,8 +1795,8 @@ final void Blast(Actor victim, Actor source, float strength)
 				victim.Target = source;
 			}
 		}
-		victim.Velocity.x = KArenaActor::BLAST_SPEED * cos(angle) * 35.0;
-		victim.Velocity.y = KArenaActor::BLAST_SPEED * sin(angle) * 35.0;
+		victim.Velocity.x = Actor::BLAST_SPEED * cos(angle) * 35.0;
+		victim.Velocity.y = Actor::BLAST_SPEED * sin(angle) * 35.0;
 
 		// Spawn blast puff
 		ang = atan2(source.Origin.y - victim.Origin.y,
@@ -1876,12 +1876,12 @@ final void BlastRadius(optional int Limit)
 			continue;
 		}
 		dist = MO.DistTo(mo);
-		if (dist > KArenaActor::BLAST_RADIUS_DIST)
+		if (dist > Actor::BLAST_RADIUS_DIST)
 		{
 			// Out of range
 			continue;
 		}
-		Blast(mo, Actor(MO), KArenaActor::BLAST_FULLSTRENGTH);
+		Blast(mo, Actor(MO), Actor::BLAST_FULLSTRENGTH);
 
 		blasts++;
 		if (specified_Limit && blasts >= Limit)
@@ -3043,8 +3043,7 @@ void KilledActor(EntityEx Victim)
 	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
 
 	// [CW] Process actor-specific event
-	if (Victim.IsA('KArenaActor'))
-		KArenaActor(Victim).KilledByPlayer(PlayerPawn(MO));
+	Actor(Victim).KilledByPlayer(PlayerPawn(MO));
 
 	// [FB] Increase the player's KillCount
 	if (Victim.bMonster)
