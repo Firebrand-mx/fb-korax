@@ -42,6 +42,13 @@ int experience;
 // so that if that pawn die, player reference will be still accessible.
 KAPlayerBase		PInstigator;
 
+/* KORAX */
+bool		bNoAccuracy;		// [CW] forbid to give accuracy trophy for this
+								//		projectile killing a target
+TVec		SpawnOrigin;		// [CW] coordinates of projectile's spawn point;
+								//		currently is used to determine player's
+								//		accuracy trophy
+
 //==========================================================================
 //
 //	OnMapSpawn
@@ -56,6 +63,21 @@ void OnMapSpawn(mthing_t* mthing)
 		experience = default.Health;
 	}
 	::OnMapSpawn(mthing);
+}
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	::BeginPlay();
+	if (bMissile)
+	{
+		SpawnOrigin = Origin;
+	}
 }
 
 //==========================================================================
@@ -98,6 +120,15 @@ void Died(EntityEx source, EntityEx inflictor)
 
 void IsDeathInflictor(EntityEx victim)
 {
+	// Currently only Pawn's death has a meaning here
+	if (bMissile && !bNoAccuracy && victim.bMonster)
+	{
+		if (Target && Target.bIsPlayer)
+		{
+			if (Length(SpawnOrigin - victim.GetCentre()) >= HexenDefs::ACCURATE_SHOT_DISTANCE)
+				KAPlayerBase(Target.Player).ConfirmTrophy(HexenDefs::trophycl_accuracy);
+		}
+	}
 }
 
 //==========================================================================
@@ -135,14 +166,9 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 			Error("Actor::SpawnCombatAttributes : Target reference is not set to an object; bad algorythm?");
 	}
 	
-	if (shooter)
+	if (EntityEx(shooter))
 	{
-		if (shooter.IsA('KArenaWeapon'))
-			Obituary = Weapon(shooter).Obituary;
-		else if (shooter.IsA('Pawn'))
-			Obituary = Pawn(shooter).RangedObituary;
-		else if (shooter.IsA('Actor'))
-			Obituary = Actor(shooter).Obituary;
+		Obituary = EntityEx(shooter).Obituary;
 	}
 }
 

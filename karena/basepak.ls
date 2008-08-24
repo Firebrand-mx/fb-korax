@@ -40,7 +40,6 @@ decorate/artifacts.txt	decorate/artifacts.txt
 decorate/centaur.txt	decorate/centaur.txt
 decorate/demons.txt		decorate/demons.txt
 decorate/dragon.txt		decorate/dragon.txt
-decorate/ettin.txt		decorate/ettin.txt
 decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
 decorate/misc.txt		decorate/misc.txt
