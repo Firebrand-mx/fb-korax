@@ -30,9 +30,7 @@
 //**
 //**************************************************************************
 
-class CircleFlame : Actor;
-
-float FlameRotSpeed;
+class KArenaHammerMissile : Actor;
 
 //==========================================================================
 //
@@ -42,8 +40,8 @@ float FlameRotSpeed;
 
 void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
 {
-	// Cleric Flame secondary flames
-	damage = 20;
+	// Fighter Hammer
+	damage = 128;
 	damageSelf = false;
 	if (Target && Target.bIsPlayer)
 	{
@@ -53,49 +51,37 @@ void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
 
 //==========================================================================
 //
-//	A_CFlameRotate
+//  A_ContMobjSound
 //
 //==========================================================================
 
-final void A_CFlameRotate()
+final void A_ContMobjSound()
 {
-	float an;
-
-	an = AngleMod360(Angles.yaw + 90.0);
-	Velocity.x = Special1f + FlameRotSpeed * cos(an);
-	Velocity.y = Special2f + FlameRotSpeed * sin(an);
-	Angles.yaw = AngleMod360(Angles.yaw + 90.0 / 15.0);
+	PlaySound('FighterHammerContinuous', CHAN_VOICE);
 }
 
 states
 {
 Spawn:
-	CFCF A 4 Bright
-	CFCF B 2 Bright A_CFlameRotate
-	CFCF C 2 Bright
-	CFCF D 1 Bright
-	CFCF E 2 Bright
-	CFCF F 2 Bright A_CFlameRotate
-	CFCF G 1 Bright
-	CFCF HI 2 Bright
-	CFCF J 1 Bright A_CFlameRotate
-	CFCF K 2 Bright
-	CFCF LM 3 Bright
-	CFCF N 2 Bright A_CFlameRotate
-	CFCF O 3 Bright
-	CFCF P 2 Bright
-	Stop
+	FHFX A 2 Bright
+	FHFX B 2 Bright A_ContMobjSound
+	FHFX CDEFGH 2 Bright
+	Loop
 Death:
-	CFCF QR 3 Bright
-	CFCF S 3 Bright A_Explode
-	CFCF TUVWXYZ 3 Bright
+	FHFX IJ 3 Bright
+	FHFX K 3 Bright A_Explode
+	FHFX LM 3 Bright
+	FHFX N 3
+	FHFX OPQR 3 Bright
 	Stop
 }
 
 defaultproperties
 {
-	Radius = 6.0;
-	MissileDamage = 2;
+	Radius = 14.0;
+	Height = 20.0;
+	Speed = 875.0;
+	MissileDamage = 50;
 	DamageType = 'Fire';
 	bMissile = true;
 	bNoBlockmap = true;
@@ -105,9 +91,7 @@ defaultproperties
 	bActivateImpact = true;
 	bActivatePCross = true;
 	bBloodSplatter = true;
-	bActivateImpact = false;
-	bActivatePCross = false;
-	DeathSound = 'ClericFlameCircle';
-	FlameRotSpeed = 2.0 * 35.0;
-	//Obituary = "$ob_cflame";
+	bThruGhost = true;
+	DeathSound = 'FighterHammerExplode';
+	//Obituary = "$ob_hammer";
 }
