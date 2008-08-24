@@ -2589,13 +2589,12 @@ void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 				else
 					Msg = kaw.Obituary;
 			}
-			else if (source.IsA('Pawn'))
+			else
 			{
-				Pawn p = Pawn(source);
-				if (p.Obituary)
-					Msg = p.Obituary;
+				if (source.HitObituary)
+					Msg = source.HitObituary;
 				else
-					Msg = p.Obituary;
+					Msg = source.Obituary;
 			}
 		}
 		//[CW] p.3: missile attack
@@ -2657,8 +2656,8 @@ void DisplayObituary(EntityEx inflictor, EntityEx source, name DmgType)
 	{
 		if (source.Player)
 			Msg = StrReplace(Msg, "%k", source.Player.PlayerName);
-		else if (source.IsA('Pawn'))
-			Msg = StrReplace(Msg, "%k", Pawn(source).Name);
+		else if (source.bMonster)
+			Msg = StrReplace(Msg, "%k", GetLangString('pw_monster'));
 	}
 
 	Level.bprint("%s", Msg);
@@ -2843,7 +2842,7 @@ bool CheckFriendlyFire(EntityEx source, int damage)
 		// [CW] ... and allies as well...
 		if (source != MO && source && 
 				(source.bIsPlayer ||
-				!source.IsA('Pawn') && source.Target && source.Target.bIsPlayer) &&
+				!source.bMonster && source.Target && source.Target.bIsPlayer) &&
 				damage < 1000)
 		{
 			if (MainGameInfo(Level.Game).GameModel)
