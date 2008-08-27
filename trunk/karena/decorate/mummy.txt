@@ -1,0 +1,60 @@
+//------------------------------------------------------------------------------
+actor HereticMummy : Mummy 15011
+{
+	+Telestomp
+	Obituary "$ob_golemhit"
+	DropItem "None"
+	states
+	{
+	Death:
+		MUMM I 5
+		MUMM J 5 A_Scream
+		MUMM K 5 A_SpawnItemEx("MummySoul", 0, 0, 10, 0, 0, 1)
+		MUMM L 5 A_NoBlocking
+		MUMM M 5 A_QueueCorpse
+		MUMM NO 5
+		MUMM P -1
+		Stop
+	Ice:
+		MUMM Z 5 A_FreezeDeath
+		MUMM Z 1 A_FreezeDeathChunks
+		Wait
+	}
+}
+
+//------------------------------------------------------------------------------
+actor HereticMummyLeader : HereticMummy 15013
+{
+	Health 100
+	PainChance 64
+	Obituary "$ob_golemleader"
+	HitObituary "$ob_golemleaderhit"
+	states
+	{
+	Missile:
+		MUMM X 5 A_FaceTarget
+		MUMM Y 5 Bright A_FaceTarget
+		MUMM X 5 A_FaceTarget
+		MUMM Y 5 Bright A_FaceTarget
+		MUMM X 5 A_FaceTarget
+		MUMM Y 15 Bright A_CustomComboAttack("MummyFX1", 32, random(1, 8) * 2, "mummy/attack2")
+		Goto Super::See
+	}
+}
+
+//------------------------------------------------------------------------------
+actor HereticMummyGhost : HereticMummy 15012
+{
+	RenderStyle Translucent
+	Alpha 0.666
+	Obituary "$ob_golemghosthit"
+}
+
+//------------------------------------------------------------------------------
+actor HereticMummyLeaderGhost : HereticMummyLeader 15014
+{
+	RenderStyle Translucent
+	Alpha 0.666
+	Obituary "$ob_golemleaderghost"
+	HitObituary "$ob_golemleaderghosthit"
+}
