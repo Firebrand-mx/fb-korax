@@ -43,6 +43,8 @@ decorate/dragon.txt		decorate/dragon.txt
 decorate/health.txt		decorate/health.txt
 decorate/mana.txt		decorate/mana.txt
 decorate/misc.txt		decorate/misc.txt
+decorate/mummy.txt		decorate/mummy.txt
+decorate/weapons_heretic.txt	decorate/weapons_heretic.txt
 
 //	Language strings
 language.en				language.en

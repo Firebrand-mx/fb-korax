@@ -349,3 +349,65 @@ final void A_KArenaDragonFX2()
 		}
 	}
 }
+
+//===========================================================================
+//
+//  A_KArenaMaceBallImpact2
+//
+//===========================================================================
+
+final void A_KArenaMaceBallImpact2()
+{
+	Actor tiny;
+	float angle;
+
+	if (Origin.z <= FloorZ && HitFloorType())
+	{
+		// Landed in some sort of liquid
+		Destroy();
+		return;
+	}
+	if ((Origin.z != FloorZ) || (Velocity.z < 2.0 * 35.0))
+	{
+		// Explode
+		Velocity = vector(0.0, 0.0, 0.0);
+		bNoGravity = true;
+		BounceType = BOUNCE_None;
+		Gravity = 1.0;
+		SendExplosion(RGB(255, 128, 0), 86.0, Origin);
+	}
+	else
+	{
+		// Bounce
+		Velocity.z = Velocity.z * 192.0 / 256.0;
+		SetState(IdleState);
+
+		tiny = Spawn(MaceFX3, Origin);
+		tiny.SpawnCombatAttributes(Actor(Target), self);
+		angle = AngleMod360(Angles.yaw + 90.0);
+		//tiny.Target = Target;
+		//if (Target)
+		//	tiny.PInstigator = Player(Target.Player);
+		tiny.Angles.yaw = angle;
+		tiny.Velocity.x =
+			Velocity.x / 2.0 + (Velocity.z - 35.0) * cos(angle);
+		tiny.Velocity.y =
+			Velocity.y / 2.0 + (Velocity.z - 35.0) * sin(angle);
+		tiny.Velocity.z = Velocity.z;
+		tiny.CheckMissileSpawn();
+
+		tiny = Spawn(MaceFX3, Origin);
+		tiny.SpawnCombatAttributes(Actor(Target), self);
+		angle = AngleMod360(Angles.yaw - 90.0);
+		//tiny.Target = Target;
+		//if (Target)
+		//	tiny.PInstigator = Player(Target.Player);
+		tiny.Angles.yaw = angle;
+		tiny.Velocity.x =
+			Velocity.x / 2.0 + (Velocity.z - 35.0) * cos(angle);
+		tiny.Velocity.y =
+			Velocity.y / 2.0 + (Velocity.z - 35.0) * sin(angle);
+		tiny.Velocity.z = Velocity.z;
+		tiny.CheckMissileSpawn();
+	}
+}
