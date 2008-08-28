@@ -35,6 +35,7 @@ int sb_colour;
 
 int HealthMarker;
 int sb_health;
+int m_h;
 
 bool hitCentreFrame;
 
@@ -263,22 +264,27 @@ void StartMap()
 
 void SB_DrawBackground()
 {
+	// [FB] Calculate the max_health value according the player level
+	m_h = cl.max_health;
 	sb_health = HealthMarker;
 	if (sb_health < 0)
 	{
 		sb_health = 0;
 	}
-	else if (sb_health > 100)
+	else if (sb_health > m_h)
 	{
-		sb_health = 100;
+		sb_health = m_h;
 	}
 
 	// draw something in the blank spaces
 	FillRectWithFlat(0, 441, 640, 39, 'f_022');
 
 	DrawPic(BAR_X + 0, BAR_Y - 27, pic_bar);
-	DrawPic(BAR_X + 28 + (((sb_health * 196) / 100) % 9), BAR_Y + 32, pic_chain);
-	DrawPic(BAR_X + 7 + ((sb_health * 11) / 5), BAR_Y + 32, pic_lifegem);
+	if (m_h)
+	{
+		DrawPic(BAR_X + 28 + (((sb_health * 196) / m_h) % 9), BAR_Y + 32, pic_chain);
+		DrawPic(BAR_X + 7 + ((sb_health * 222) / m_h), BAR_Y + 32, pic_lifegem, , cl.MO.Translation);
+	}
 	DrawPic(BAR_X + 0, BAR_Y + 32, pic_lfedge);
 	DrawPic(BAR_X + 277, BAR_Y + 32, pic_rtedge);
 }
@@ -387,6 +393,12 @@ void SB_DrawMainBar()
 	{
 		return;
 	}
+
+//[Korax]
+	SB_DrawNumber9(320, 20, cl.exp_level, 1);
+	SB_DrawNumber9(460, 20, cl.experience, 1);
+	SB_DrawNumber9(580, 20, cl.next_level, 1);
+
 
 	// Frags / health
 	if (ClGame.deathmatch)
@@ -602,6 +614,11 @@ void SB_DrawFullscreenStats()
 	int sb_mana1;
 	int sb_mana2;
 	int readyweapon;
+
+//[Korax]
+	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 1);
+	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
+	SB_DrawNumber9(580, 20, 0 + cl.next_level, 1);
 
 	//  Health
 	if (cl.Health >= 25)

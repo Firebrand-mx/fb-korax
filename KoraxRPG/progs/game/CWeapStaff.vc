@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -88,7 +95,7 @@ final void A_CStaffCheck() self(Actor)
 	}
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
-	damage = 20 + (P_Random() & 15);
+	damage = 20 + (P_Random() & 15) * (Player(Player).wisdom / 10);
 	AimTarget = AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
 	if (AimTarget)
 	{
@@ -129,11 +136,13 @@ final void A_CStaffAttack() self(Actor)
 	if (mo)
 	{
 		mo.Special2 = 32;
+		mo.MissileDamage *= (Player(Player).strength / 10);
 	}
 	mo = SpawnPlayerMissileAngle(CStaffMissile, Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
 		mo.Special2 = 0;
+		mo.MissileDamage *= (Player(Player).strength / 10);
 	}
 	PlaySound('ClericCStaffFire', CHAN_WEAPON);
 	CWeapStaff(Wpn).DepleteAmmoEx(Wpn.FireMode);

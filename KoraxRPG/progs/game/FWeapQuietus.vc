@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -33,22 +40,44 @@ class FWeapQuietus : FighterWeapon;
 
 final void A_FSwordAttack() self(Actor)
 {
+	EntityEx mo;
+
 	if (!bIsPlayer)
 	{
 		return;
 	}
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
-	SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -10.0),
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -10.0),
 		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 4.0));
-	SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -5.0),
+	if (mo)
+	{
+		MissileDamage *= (Player(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -5.0),
 		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 8.0));
-	SpawnPlayerMissileAngleXYZ(Origin, FSwordMissile,
+	if (mo)
+	{
+		MissileDamage *= (Player(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin, FSwordMissile,
 		Angles.yaw);
-	SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 5.0),
+	if (mo)
+	{
+		MissileDamage *= (Player(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 5.0),
 		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 8.0));
-	SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 10.0),
+	if (mo)
+	{
+		MissileDamage *= (Player(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 10.0),
 		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 4.0));
+	if (mo)
+	{
+		MissileDamage *= (Player(Player).wisdom / 10);
+	}
 	PlaySound('FighterSwordFire', CHAN_WEAPON);
 	FWeapQuietus(Wpn).DepleteAmmoEx(Wpn.FireMode);
 }

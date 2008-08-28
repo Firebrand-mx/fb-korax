@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -39,6 +46,8 @@ const float HammerRange = Actor::MELEERANGE + Actor::MELEERANGE / 2.0;
 final void A_FHammerAttack() self(Actor)
 {
 	int			damage;
+	int			r_damage;
+	int			m_damage;
 	float		power;
 	TAVec		angles;
 	TVec		vforward;
@@ -51,6 +60,9 @@ final void A_FHammerAttack() self(Actor)
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
 	damage = 60 + (P_Random() & 63);
+	// [FB] IMO It's even more cool to separate the ranged and melee damage rates respectively
+	r_damage = damage  * (Player(Player).intelligence / 10);
+	m_damage = damage  * (Player(Player).strength / 10);
 	power = 10.0;
 	AimTarget = AimEx(vforward, FWeapHammer::HammerRange, 45.0 / 32.0, 16, FWeapHammer::HammerRange);
 	if (AimTarget)

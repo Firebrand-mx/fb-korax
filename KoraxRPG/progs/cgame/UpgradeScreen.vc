@@ -1,0 +1,295 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1305 2008-03-01 09:20:29Z dj_jl $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class UpgradeScreen : MenuScreen;
+
+const int
+	TABLE_LEFT_X		= 48,
+	TABLE_HEAD_Y		= 48,
+	TABLE_STRING_DELTA	= 14,
+	TABLE_COL2		= 302,
+	TABLE_COL3		= 386,
+	TABLE_COL4		= 446;
+
+KRPGPlayerReplicationInfo RepInfo;
+bool upgraded;
+int n_strength;
+int n_agility;
+int n_speed;
+int n_intelligence;
+int n_wisdom;
+int r_points;
+int ir_points;
+string playerclassnames[HexenDefs::NUMCLASSES];
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	MenuChoiceStat		Stat;
+	MenuTextButton		Btn;
+	int					currentY;
+
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		currentY = ChoicesStartY;
+
+		r_points = RepInfo.points;
+		ir_points = RepInfo.points;
+
+		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+		Stat.SetOrigin(ChoicesStartX, currentY);
+		Stat.Text = "Strength";
+		// FIXME Fix max values for each class...
+		Stat.SetInitialValue(RepInfo.strg, r_points, 5/* RepInfo.strg_m*/);
+		Stat.ValueChanging = ChangeStrength;
+		currentY += Stat.Height;
+
+		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+		Stat.SetOrigin(ChoicesStartX, currentY);
+		Stat.Text = "Agility";
+		// FIXME Fix max values for each class...
+		Stat.SetInitialValue(RepInfo.aglt, r_points, 5/* RepInfo.aglt_m*/);
+		Stat.ValueChanging = ChangeAgility;
+		currentY += Stat.Height;
+
+		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+		Stat.SetOrigin(ChoicesStartX, currentY);
+		Stat.Text = "Speed";
+		// FIXME Fix max values for each class...
+		Stat.SetInitialValue(RepInfo.spd, r_points, 5/* RepInfo.spd_m*/);
+		Stat.ValueChanging = ChangeSpeed;
+		currentY += Stat.Height;
+
+		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+		Stat.SetOrigin(ChoicesStartX, currentY);
+		Stat.Text = "Intelligence";
+		// FIXME Fix max values for each class...
+		Stat.SetInitialValue(RepInfo.intln, r_points, 5/* RepInfo.intln_m*/);
+		Stat.ValueChanging = ChangeIntelligence;
+		currentY += Stat.Height;
+
+		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+		Stat.SetOrigin(ChoicesStartX, currentY);
+		Stat.Text = "Wisdom";
+		// FIXME Fix max values for each class...
+		Stat.SetInitialValue(RepInfo.wsdm, r_points, 5/* RepInfo.wsdm_m*/);
+		Stat.ValueChanging = ChangeWisdom;
+		currentY += Stat.Height;
+
+		Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+		Btn.SetOrigin(ChoicesStartX, currentY);
+		Btn.Text = "OK";
+		Btn.Activated = UpdateStats;
+	}
+
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+ void OnDraw()
+{
+	::OnDraw();
+
+	SetFont('smallfont');
+	SetTextAlign(hleft, vtop);
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		DrawText(20, TABLE_HEAD_Y, va("You're a %s of level: %i", playerclassnames[RepInfo.plclass], RepInfo.level), CR_BRICK);
+		DrawText(20, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("Experience Points: %i", RepInfo.exp), CR_BLUE);
+		DrawText(20, TABLE_HEAD_Y + (TABLE_STRING_DELTA * 2), va("You need %i for level %i", RepInfo.next_lvl, RepInfo.level + 1), CR_ORANGE);
+		DrawText(20, TABLE_HEAD_Y + (TABLE_STRING_DELTA * 3), va("Gold: %i", RepInfo.gold), CR_GOLD);
+		DrawText(20, TABLE_HEAD_Y + (TABLE_STRING_DELTA * 5), va("Remainig Ability Points: %i", r_points));
+	}
+}
+
+//==========================================================================
+//
+//  OnDestroy
+//
+//==========================================================================
+
+void OnDestroy()
+{
+	::OnDestroy();
+	if (!upgraded)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(ir_points);
+	}
+	else
+	{
+		ir_points = 0;
+	}
+	ClientGame(ClGame).HideUpgradeScreen();
+}
+
+//==========================================================================
+//
+//	ChangeStrength
+//
+//==========================================================================
+
+bool ChangeStrength(Object Sender, int newValue, int oldValue)
+{
+	if (oldValue < newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points--);
+	}
+	else if (oldValue > newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
+	}
+	n_strength = newValue;
+	MenuChoiceStat(Sender).SetMaxIncrease(
+		Player(ClientGame(ClGame).cl).GetPoints());
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeAgility
+//
+//==========================================================================
+
+bool ChangeAgility(Object Sender, int newValue, int oldValue)
+{
+	if (oldValue < newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points--);
+	}
+	else if (oldValue > newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
+	}
+	n_agility = newValue;
+	MenuChoiceStat(Sender).SetMaxIncrease(
+		Player(ClientGame(ClGame).cl).GetPoints());
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeSpeed
+//
+//==========================================================================
+
+bool ChangeSpeed(Object Sender, int newValue, int oldValue)
+{
+	if (oldValue < newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points--);
+	}
+	else if (oldValue > newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
+	}
+	n_speed = newValue;
+	MenuChoiceStat(Sender).SetMaxIncrease(
+		Player(ClientGame(ClGame).cl).GetPoints());
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeIntelligence
+//
+//==========================================================================
+
+bool ChangeIntelligence(Object Sender, int newValue, int oldValue)
+{
+	if (oldValue < newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points--);
+	}
+	else if (oldValue > newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
+	}
+	n_intelligence = newValue;
+	MenuChoiceStat(Sender).SetMaxIncrease(
+		Player(ClientGame(ClGame).cl).GetPoints());
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeWisdom
+//
+//==========================================================================
+
+bool ChangeWisdom(Object Sender, int newValue, int oldValue)
+{
+	if (oldValue < newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points--);
+	}
+	else if (oldValue > newValue)
+	{
+		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
+	}
+	n_wisdom = newValue;
+	MenuChoiceStat(Sender).SetMaxIncrease(
+		Player(ClientGame(ClGame).cl).GetPoints());
+	return true;
+}
+
+//==========================================================================
+//
+//	UpdateStats
+//
+//==========================================================================
+
+void UpdateStats(Object Sender)
+{
+	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_agility, n_speed,
+			n_intelligence, n_wisdom);
+	upgraded = true;
+	ClGame.PopMenu();
+}
+
+defaultproperties
+{
+	ChoicesStartX = 136;
+	ChoicesStartY = 136;
+	playerclassnames[0] = "fighter";
+	playerclassnames[1] = "cleric";
+	playerclassnames[2] = "mage";
+	Title = "UPDATE STATS SCREEN";
+}
