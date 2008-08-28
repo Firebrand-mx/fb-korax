@@ -36,6 +36,7 @@ actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
+actors/krpg/mana.txt			actors/krpg/mana.txt
 
 $load palette.pcx
 translat.dat					raw 0 1 256 7

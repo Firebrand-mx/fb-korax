@@ -30,32 +30,58 @@
 //**
 //**************************************************************************
 
-class TownFellow : IntelligentActor
-		abstract;
+class KRPGPlayerReplicationInfo : PlayerReplicationInfo;
+
+int		plclass;
+int		exp;
+int		level;
+int 	next_lvl;
+int		gold;
+int		hngr;		// [FB] This one was declared in KMod 3 source code, but it's really going to used??
+int		stmn;
+int		strg;
+int		aglt;
+int		intln;
+int		wsdm;
+int		spd;
+int		points;
+
+replication
+{
+	reliable if (Role == ROLE_Authority)
+		plclass, exp, level, next_lvl, gold, hngr,
+		stmn, strg, aglt, intln, wsdm, spd, points;
+}
+
+//==========================================================================
+//
+//  Tick
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	Player		P;
+	int			j;
+
+	::Tick(DeltaTime);
+
+	P = Player(Player);
+	plclass = P.PClass;
+	exp = P.experience;
+	level = P.exp_level;
+	next_lvl = P.next_level;
+	gold = P.money;
+	hngr = P.hunger;
+	stmn = P.stamina;
+	strg = P.strength;
+	aglt = P.agility;
+	intln = P.intelligence;
+	wsdm = P.wisdom;
+	spd = P.speed;
+	points = P.GetPoints();
+}
 
 defaultproperties
 {
-	bSolid = true;
-	bShootable = true;
-	bFloorClip = true;
-	bTelestomp = true;
-	bActivatePushWall = true;
-	bActivateMCross = true;
-	bPassMobj = false;
-
-	bFriendly = true;
-	bNeverTarget = false;
-	bCanUseWalls = true;
-
-	bNonScalable = false;
-
-	Health = 50;
-	GibsHealth = -25;
-	Radius = 20.0;
-	Height = 68.0;
-	Mass = 100.0;
-	Speed = 8.0 * 35.0;
-	PainChance = 0.8;
-	
-	bLiving = true;
 }

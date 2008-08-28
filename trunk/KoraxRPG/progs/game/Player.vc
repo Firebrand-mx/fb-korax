@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -23,7 +30,7 @@
 //**
 //**************************************************************************
 
-class Player : PlayerEx;
+class Player : KRPGPlayerBase;
 
 enum
 {
@@ -35,17 +42,61 @@ const int MAXMORPHHEALTH	= 30;
 
 BotPlayer Bot;
 
+int			berserkTics;			// [FB] Berserker duration for the Fighter
+	
+//Remi: Preberserk stats
+int preberserk_health;
+int preberserk_speed;
+int preberserk_strength;
+
+// [FB] Player atributes for leveling system
+int experience;
+int exp_level;
+int next_level;
+int prev_level;
+int possTics;               // FOV effect for possession
+int money;
+int hunger;					// [FB] This one was declared in KMod 3 source code, but it's really going to used??
+int stamina;
+int strength;
+int agility;
+int intelligence;
+int wisdom;
+int speed;
+
+// -JL- Added to player struct
+int boringmessage; //Remi: "YOU NEED TO BE LEVEL whatever TO USE MANA" boring message timer
+
+bool inited;
+
+//
+//  Other stats (for status bar)
+//
+int max_health;
+int maxhealth_old;
+int av_points;
+int maxsp_power;
+int sp_power;
+int sp_power_old;
+int currentspell; // Used for HUD
+
+bool bShowUpgradeScreen; // [FB] True if upgrade screen is visible
+
 replication
 {
 	reliable if (!bIsClient)
-		SetFOV;
+		experience, exp_level, next_level, prev_level, money,
+		hunger, stamina, strength, agility, intelligence, wisdom,
+		speed, max_health, maxhealth_old, sp_power, sp_power_old,
+		currentspell, SetFOV;
 
 	unreliable if (!bIsClient)
 		ParticleEffectEx;
 
 	reliable if (!bIsClient)
-		ClientConversation, ConCleanScene, ConSetPersonInfo, ConPlayCue,
-		ConCleanChoices, ConAddChoice, ConSuspend, ConWait, ConCloseScene;
+		ClientUpgradeScreen, ClientConversation, ConCleanScene, ConSetPersonInfo,
+		ConPlayCue, ConCleanChoices, ConAddChoice, ConSuspend, ConWait,
+		ConCloseScene;
 
 	reliable if (bIsClient)
 		ConChoice, ConContinue;
@@ -66,6 +117,309 @@ void CreateBot()
 
 //==========================================================================
 //
+//  ResetPlayerOnSpawn
+//
+//==========================================================================
+
+void ResetPlayerOnSpawn()
+{
+	::ResetPlayerOnSpawn();
+
+//[Korax]
+	if (!inited)
+	{
+		InitiateLevel();
+		inited = true;
+	}
+}
+
+//==========================================================================
+//
+//  GiveExperience
+//
+//==========================================================================
+
+void GiveExperience(int exp)
+{
+	// TODO: Multiply exp by gameexp modifier!!
+	experience += exp;
+	if(experience > 2100000666)
+	{
+		experience = 2100000666;
+		next_level = 2100000999;
+	}
+	KRPGPlayerPawn(MO).experience = experience;
+	while (experience >= next_level && PClass != HexenDefs::PCLASS_PIG)
+	{
+		ActivateLevel(exp_level + 1);
+	}
+}
+
+//============================================================================
+//
+//  ActivateLevel
+//
+//  [FB] Using the new leveling system the maximum level is 10
+//
+//============================================================================
+
+void ActivateLevel(int to_lvl)
+{
+	int addhealth;
+	int i;
+	int skillp_table[5];
+
+	for(i = 0; i < 6; i++)
+	{
+		if (i == 0)
+			skillp_table[i] = 6;
+		else if (i == 1)
+			skillp_table[i] = 6;
+		else if (i == 2)
+			skillp_table[i] = 5;
+		else if (i == 3)
+			skillp_table[i] = 4;
+		else if (i == 4)
+			skillp_table[i] = 4;
+	}
+
+	exp_level++;
+	experience -= next_level;
+	next_level = next_level * 2;
+//	prev_level = 1000 * exp_level;
+	addhealth = Health  / max_health;
+	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
+	max_health += agility;
+	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
+	maxsp_power += intelligence;
+	sp_power = maxsp_power;
+	Health = max_health + addhealth;
+	MO.Health = Health;
+
+/*	if (PClass == PCLASS_MAGE)
+	{
+		if (exp_level == 8)
+			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_BWAND)] = true;
+		if (exp_level == 6)
+			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND3)] = true;
+		if (exp_level == 4)
+			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND2)] = true;
+		if (exp_level == 2)
+			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND)] = true;	
+	}*/
+
+	switch (PClass) //Messages about new stuff
+	{
+	case HexenDefs::PCLASS_FIGHTER:
+		switch (exp_level)
+		{
+		case 5:
+			centreprint("YOU CAN NOW USE MANA!");
+			break;
+		}
+		break;
+	case HexenDefs::PCLASS_CLERIC:
+		switch (exp_level)
+		{
+		case 3:
+			centreprint("YOU CAN NOW USE MANA!");
+			break;
+		case 5:
+			centreprint("YOU CAN NOW CAST SPIRITS WITHIN!");
+			break;
+		case 7:
+			centreprint("YOU CAN NOW CAST BANISHMENT!");
+			break;
+		case 9:
+			centreprint("YOU CAN NOW CAST WRATH OF THE GODS");
+			break;
+		}
+		break;
+	case HexenDefs::PCLASS_MAGE:
+		switch (exp_level)
+		{
+		case 2:
+			centreprint("YOU NOW HAVE THE BLUE WAND!");
+			break;
+		case 3:
+			centreprint("YOU CAN NOW CAST MANA CREATION!");
+			break;
+		case 4:
+			centreprint("YOU CAN HAVE THE GREY WAND!");
+			break;
+		case 5:
+			centreprint("YOU CAN NOW CAST DEFENSE!");
+			break;
+		case 6:
+			centreprint("YOU NOW HAVE THE RED WAND!");
+			break;
+		case 7:
+			centreprint("YOU CAN NOW CAST SPEED!");
+			break;
+		case 8:
+			centreprint("YOU CAN NOW CAST SUMMON MONSTER!");
+			centreprint("YOU NOW HAVE THE ICE WAND!");
+			break;
+		case 9:
+			centreprint("YOU CAN NOW CAST POSSESSION!");
+			break;
+		case 10:
+			centreprint("YOU CAN NOW CAST HORRIBLE PAIN!");
+			break;
+		}
+		break;
+	}
+
+/*	if(!Level.Game.netgame)
+	{*/
+		av_points +=skillp_table[Level.World.GameSkill];
+/*	}
+	else 
+	{
+		switch (PClass)
+		{
+		case HexenDefs::PCLASS_FIGHTER:
+			strength += skillp_table[Level.World.GameSkill];
+			break;
+		case HexenDefs::PCLASS_CLERIC:
+			strength += skillp_table[Level.World.GameSkill] / 2;
+			wisdom += skillp_table[Level.World.GameSkill] -
+					  (skillp_table[Level.World.GameSkill] / 2);
+			break;
+		case HexenDefs::PCLASS_MAGE:
+			wisdom += skillp_table[Level.World.GameSkill];
+			break;
+		}
+	}*/
+
+	cprint("YOU REACHED LEVEL %d", exp_level);
+	MO.PlaySound('misc/chat', CHAN_AUTO);
+}
+
+//============================================================================
+//
+//  InitiateLevel
+//
+//============================================================================
+
+void InitiateLevel()
+{
+	max_health = KRPGPlayerPawn(MO).default.Health;	//100;
+
+	exp_level = 1;
+	next_level =  1000 * exp_level;
+	prev_level = 1000 * (exp_level - 1);
+	Health = max_health;
+	MO.Health = Health;
+	money = 0;
+//	hunger = KRPGPlayerPawn(MO).InitialHunger;
+//	stamina = KRPGPlayerPawn(MO).InitialStamina;
+	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialAgility,
+			KRPGPlayerPawn(MO).InitialIntelligence, KRPGPlayerPawn(MO).InitialWisdom,
+			KRPGPlayerPawn(MO).InitialSpeed);
+}
+
+//==========================================================================
+//
+//  UpgradeScreen
+//
+//==========================================================================
+
+void UpgradeScreen(bool show)
+{
+	// [CW] If show == true, update data first.
+/*	if (show)
+		MainGameInfo(Level.Game).UpgradeScreenUpdate(self);*/
+	
+	// [CW] Set bShow flag
+	bShowUpgradeScreen = show;
+	ClientUpgradeScreen(bShowUpgradeScreen);
+}
+
+//==========================================================================
+//
+//  ClientUpgradeScreen
+//
+//==========================================================================
+
+void ClientUpgradeScreen(bool show)
+{
+	KRPGClientGameBase(ClGame).ShowUpgradeScreen(show);
+}
+
+//==========================================================================
+//
+//  ClientUpgradeScreen
+//
+//==========================================================================
+
+void UpdateStats(int n_strength, int n_agility, int n_speed, int n_intelligence,
+		int n_wisdom)
+{
+	strength += n_strength;
+	agility += n_agility;
+	speed += n_speed;
+	intelligence += n_intelligence;
+	wisdom += n_wisdom;
+	
+	//	Update armor save percentages.
+	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
+	if (Armor && Armor.Amount)
+	{
+		Armor.SavePercent = 0.333 + itof(stamina) * 0.4;
+		if (Armor.SavePercent > 0.75)
+		{
+			Armor.SavePercent = 0.75;
+		}
+	}
+
+	//	Update player speed.
+	float Value;
+	if (PigPlayer(MO))
+	{
+		Value = (itof(speed) * 2.5) / 100.0;
+	}
+	else
+	{
+		Value = (itof(speed) * 5.0) / 100.0;
+	}
+	KRPGPlayerPawn(MO).ForwardMove1 += Value;
+	KRPGPlayerPawn(MO).ForwardMove2 += Value;
+	KRPGPlayerPawn(MO).SideMove1 += Value;
+	KRPGPlayerPawn(MO).SideMove2 += Value;
+}
+
+//==========================================================================
+//
+//  GetPoints
+//
+//==========================================================================
+
+int GetPoints()
+{
+	return av_points;
+}
+
+//==========================================================================
+//
+//  SetPoints
+//
+//==========================================================================
+
+void SetPoints(int value)
+{
+	if (av_points < 0)
+	{
+		av_points = 0;
+	}
+	else
+	{
+		av_points = value;
+	}
+}
+
+//==========================================================================
+//
 //  OnNetReborn
 //
 //==========================================================================
@@ -75,10 +429,10 @@ void OnNetReborn(EntityEx OldMO)
 	Weapon bestWeapon;
 	Inventory Item;
 
-	// Restore keys and weapons when reborn in co-op
 	bestWeapon = none;
 	if (OldMO)
 	{
+		// Restore keys and weapons when reborn in co-op
 		for (Item = OldMO.Inventory; Item; )
 		{
 			Inventory Next = Item.Inventory;
@@ -108,6 +462,88 @@ void OnNetReborn(EntityEx OldMO)
 		// Bring up the best weapon
 		PendingWeapon = bestWeapon;
 	}
+}
+
+//==========================================================================
+//
+//  NetGameReborn
+//
+//	Respawn at the start
+//
+//==========================================================================
+
+void NetGameReborn()
+{
+	int old_experience;
+	int old_strength;
+	int old_agility;
+	int old_speed;
+	int old_intelligence;
+	int old_wisdom;
+	int old_max_health;
+	int old_maxhealth_old;
+	int old_exp_level;
+	int old_prev_level;
+	int old_next_level;
+	int old_maxsp_power;
+	int old_sp_power_old;
+	int old_money;
+	EntityEx OldMo = EntityEx(MO);
+	
+	// [FB] Retrieve experience level and attributes we have made...
+	old_experience = Player(OldMo.Player).experience;
+	old_strength = Player(OldMo.Player).strength;
+	old_agility = Player(OldMo.Player).agility;
+	old_speed = Player(OldMo.Player).speed;
+	old_intelligence = Player(OldMo.Player).intelligence;
+	old_wisdom = Player(OldMo.Player).wisdom;
+	old_exp_level = Player(OldMo.Player).exp_level;
+	old_next_level = Player(OldMo.Player).next_level;
+	old_prev_level = Player(OldMo.Player).prev_level;
+	old_max_health = Player(OldMo.Player).max_health;
+	old_maxhealth_old = Player(OldMo.Player).maxhealth_old;
+	old_maxsp_power = Player(OldMo.Player).maxsp_power;
+	old_sp_power_old = Player(OldMo.Player).sp_power_old;
+	old_money = Player(OldMo.Player).money;
+	
+	// [FB] ...and update them accordingly
+	experience = old_experience;
+	strength = old_strength;
+	agility = old_agility;
+	speed = old_speed;
+	intelligence = old_intelligence;
+	wisdom = old_wisdom;
+	exp_level = old_exp_level;
+	next_level = old_next_level;
+	prev_level = old_prev_level;
+	max_health = old_max_health;
+	maxhealth_old = old_maxhealth_old;
+	maxsp_power = old_maxsp_power;
+	sp_power_old = old_sp_power_old;
+	money = old_money;
+	
+	::NetGameReborn();
+}	
+
+//==========================================================================
+//
+//  MovePsprites
+//
+//  Called every tic by player thinking routine
+//
+//==========================================================================
+
+void MovePsprites(float deltaTime)
+{
+	if (speed < 6)
+		deltaTime *= 0.8;
+	else if (speed > 34)
+		deltaTime *= 3.5;
+	else if (speed > 24)
+		deltaTime *= 2.5;
+	else if (speed > 14)
+		deltaTime *= 1.5;
+	::MovePsprites(deltaTime);
 }
 
 //==========================================================================
@@ -358,6 +794,12 @@ void PlayerImpulse()
 	{
 		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
 	}
+	// [FB] We want to make the upgrade screen accesible with a new impulse value
+	else if (impulse == KRPGDefs::IMPULSE__UPGRADESCREEN)
+	{
+		UpgradeScreen(!bShowUpgradeScreen);
+	}
+
 	// Hexen artifact hot keys
 	if (!Arti)
 	{
@@ -1030,6 +1472,11 @@ void Cheat_Gimme()
 			EntityEx(MO).GiveInventoryType(Cls);
 		}
 		cprint("ALL ARTIFACTS");
+	}
+	if (Cmd_CheckParm("exp"))
+	{
+		GiveExperience(10000);
+		cprint("LOTS OF EXP");
 	}
 }
 

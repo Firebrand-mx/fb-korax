@@ -1,0 +1,246 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: MenuChoiceEnum.vc 3702 2008-07-01 22:24:29Z firebrand_kh $
+//**
+//**    Copyright (C) 1999-2006 Janis Legzdinš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class MenuChoiceStat : MenuChoice;
+
+string			Text;
+bool			bLeftAlign;
+
+int				InitialValue;
+int				Value;
+int				MaxValue;
+int				MaxIncrease;
+
+delegate bool ValueChanging(Object Sender, int NewValue, int OldValue);
+
+//==========================================================================
+//
+//  SetOrigin
+//
+//==========================================================================
+
+void SetOrigin(int x, int y)
+{
+	if (bLeftAlign)
+	{
+		SetPos(x, y);
+	}
+	else
+	{
+		CursorXOffs = 200;
+		SetPos(x - CursorXOffs, y);
+	}
+}
+
+//==========================================================================
+//
+//  SetNewValue
+//
+//==========================================================================
+
+bool SetNewValue(int newValue, int oldValue)
+{
+	if (ValueChanging)
+	{
+		return ValueChanging(self, newValue, oldValue);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  SetInitialValue
+//
+//==========================================================================
+
+void SetInitialValue(int Value, int MaxInc, int MaxVal)
+{
+	InitialValue = Value;
+	MaxIncrease = MaxInc;
+	MaxValue = MaxVal;
+}
+
+//==========================================================================
+//
+//  SetMaxIncrease
+//
+//==========================================================================
+
+void SetMaxIncrease(int MaxInc)
+{
+	MaxIncrease = MaxInc;
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	int xx;
+
+	int Col = IsFocus() ? CR_YELLOW : CR_WHITE;
+	if (bLeftAlign)
+	{
+		SetTextAlign(hleft, vtop);
+		DrawText(0, 0, Text, Col);
+	}
+	else
+	{
+		SetTextAlign(hright, vtop);
+		DrawText(CursorXOffs, 0, Text, Col);
+	}
+
+	if (bLeftAlign)
+	{
+		xx = TextWidth(Text) + 28;
+	}
+	else
+	{
+		xx = CursorXOffs + 20;
+	}
+	SetTextAlign(hleft, vtop);
+	DrawText(xx, 0, va("%i", InitialValue), IsFocus() ? CR_YELLOW : CR_RED);
+
+	if (bLeftAlign)
+	{
+		xx = TextWidth(Text) + 68;
+	}
+	else
+	{
+		xx = CursorXOffs + 60;
+	}
+	SetTextAlign(hleft, vtop);
+	DrawText(xx, 0, va("-   %i   +", InitialValue + Value), IsFocus() ? CR_YELLOW : CR_GREEN);
+}
+
+//==========================================================================
+//
+//  OnKeyDown
+//
+//==========================================================================
+
+bool OnKeyDown(int key)
+{
+	int newValue;
+
+	switch (key)
+	{
+	case K_LEFTARROW:
+		if (MaxIncrease > 0)
+		{
+			if (Value > 0)
+			{
+				newValue = Value - 1;
+
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+			}
+			return true;
+		}
+	case K_RIGHTARROW:
+		if (MaxIncrease > 0)
+		{
+			if (Value < MaxValue)
+			{
+				newValue = Value + 1;
+
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+			}
+			return true;
+		}
+	case K_ENTER:
+	case K_PADENTER:
+	case K_MOUSE1:
+		if (MaxIncrease > 0)
+		{
+			if (Value < MaxValue)
+			{
+				newValue = Value + 1;
+
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+void OnMouseClick(int X, int Y)
+{
+	int newValue;
+
+	if (MaxIncrease > 0)
+	{
+		if (Value < MaxValue)
+		{
+			newValue = Value + 1;
+
+			if (SetNewValue(newValue, Value))
+			{
+				Value = newValue;
+				LocalSound('menu/change');
+			}
+		}
+	}
+}
+
+void OnRMouseClick(int X, int Y)
+{
+	int newValue;
+
+	if (MaxIncrease > 0)
+	{
+		if (Value > 0)
+		{
+			newValue = Value - 1;
+
+			if (SetNewValue(newValue, Value))
+			{
+				Value = newValue;
+				LocalSound('menu/change');
+			}
+		}
+	}
+}
+
+defaultproperties
+{
+	Width = 360;
+	Height = 10;
+}
