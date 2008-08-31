@@ -45,6 +45,15 @@ int classFlags[3];
 ConParser				GameConParser;
 // TODO: quest parser ref here when ready
 
+// [FB] Initial stats for passing to the built player from character creation screen
+int i_health;
+int i_spiritpower;
+int i_strength;
+int i_vitality;
+int i_intelligence;
+int i_wisdom;
+int i_speed;
+
 //==========================================================================
 //
 //	Init
@@ -378,6 +387,26 @@ void InitLevel(KRPGLevelInfo levelinfo)
 	levelinfo.skyflatnum = skyflatnum;
 }
 
+//==========================================================================
+//
+//  PassInitialStats
+//
+//==========================================================================
+
+void PassInitialStats(Entity PlayerMO)
+{
+	// [FB] Pass the initial build stats to the player pawn
+	if (PlayerMO && !Player(PlayerMO.Player).inited)
+	{
+		KRPGPlayerPawn(PlayerMO).InitialHealth = i_health;
+		KRPGPlayerPawn(PlayerMO).InitialSpiritPower = i_spiritpower;
+		KRPGPlayerPawn(PlayerMO).InitialStrength = i_strength;
+		KRPGPlayerPawn(PlayerMO).InitialVitality = i_vitality;
+		KRPGPlayerPawn(PlayerMO).InitialIntelligence = i_intelligence;
+		KRPGPlayerPawn(PlayerMO).InitialWisdom = i_wisdom;
+		KRPGPlayerPawn(PlayerMO).InitialSpeed = i_speed;
+	}
+}
 
 defaultproperties
 {

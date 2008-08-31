@@ -37,7 +37,6 @@ enum
 	BT_DUCK	= 8
 };
 
-const int MAXHEALTH			= 100;
 const int MAXMORPHHEALTH	= 30;
 
 BotPlayer Bot;
@@ -59,7 +58,7 @@ int money;
 int hunger;					// [FB] This one was declared in KMod 3 source code, but it's really going to used??
 int stamina;
 int strength;
-int agility;
+int vitality;
 int intelligence;
 int wisdom;
 int speed;
@@ -80,13 +79,11 @@ int sp_power;
 int sp_power_old;
 int currentspell; // Used for HUD
 
-bool bShowUpgradeScreen; // [FB] True if upgrade screen is visible
-
 replication
 {
 	reliable if (!bIsClient)
 		experience, exp_level, next_level, prev_level, money,
-		hunger, stamina, strength, agility, intelligence, wisdom,
+		hunger, stamina, strength, vitality, intelligence, wisdom,
 		speed, max_health, maxhealth_old, sp_power, sp_power_old,
 		currentspell, SetFOV;
 
@@ -189,7 +186,7 @@ void ActivateLevel(int to_lvl)
 //	prev_level = 1000 * exp_level;
 	addhealth = Health  / max_health;
 	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
-	max_health += agility;
+	max_health += vitality;
 	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
 	maxsp_power += intelligence;
 	sp_power = maxsp_power;
@@ -270,14 +267,11 @@ void ActivateLevel(int to_lvl)
 		break;
 	}
 
-/*	if(!Level.Game.netgame)
-	{*/
-		av_points +=skillp_table[Level.World.GameSkill];
-/*	}
-	else 
+	av_points += skillp_table[Level.World.GameSkill];
+
+	// [FB] For multiplayer??
+/*	switch (PClass)
 	{
-		switch (PClass)
-		{
 		case HexenDefs::PCLASS_FIGHTER:
 			strength += skillp_table[Level.World.GameSkill];
 			break;
@@ -304,7 +298,11 @@ void ActivateLevel(int to_lvl)
 
 void InitiateLevel()
 {
-	max_health = KRPGPlayerPawn(MO).default.Health;	//100;
+	// [FB]  First, we need to get the stats we choose at the character build screen
+	MainGameInfo(Level.Game).PassInitialStats(MO);
+	
+	max_health = KRPGPlayerPawn(MO).InitialHealth;
+	sp_power = KRPGPlayerPawn(MO).InitialSpiritPower;
 
 	exp_level = 1;
 	next_level =  1000 * exp_level;
@@ -314,7 +312,7 @@ void InitiateLevel()
 	money = 0;
 //	hunger = KRPGPlayerPawn(MO).InitialHunger;
 //	stamina = KRPGPlayerPawn(MO).InitialStamina;
-	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialAgility,
+	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialVitality,
 			KRPGPlayerPawn(MO).InitialIntelligence, KRPGPlayerPawn(MO).InitialWisdom,
 			KRPGPlayerPawn(MO).InitialSpeed);
 }
@@ -325,15 +323,9 @@ void InitiateLevel()
 //
 //==========================================================================
 
-void UpgradeScreen(bool show)
+void UpgradeScreen()
 {
-	// [CW] If show == true, update data first.
-/*	if (show)
-		MainGameInfo(Level.Game).UpgradeScreenUpdate(self);*/
-	
-	// [CW] Set bShow flag
-	bShowUpgradeScreen = show;
-	ClientUpgradeScreen(bShowUpgradeScreen);
+	ClientUpgradeScreen();
 }
 
 //==========================================================================
@@ -342,22 +334,22 @@ void UpgradeScreen(bool show)
 //
 //==========================================================================
 
-void ClientUpgradeScreen(bool show)
+void ClientUpgradeScreen()
 {
-	KRPGClientGameBase(ClGame).ShowUpgradeScreen(show);
+	KRPGClientGameBase(ClGame).ShowUpgradeScreen();
 }
 
 //==========================================================================
 //
-//  ClientUpgradeScreen
+//  UpdateStats
 //
 //==========================================================================
 
-void UpdateStats(int n_strength, int n_agility, int n_speed, int n_intelligence,
+void UpdateStats(int n_strength, int n_vitality, int n_speed, int n_intelligence,
 		int n_wisdom)
 {
 	strength += n_strength;
-	agility += n_agility;
+	vitality += n_vitality;
 	speed += n_speed;
 	intelligence += n_intelligence;
 	wisdom += n_wisdom;
@@ -366,7 +358,7 @@ void UpdateStats(int n_strength, int n_agility, int n_speed, int n_intelligence,
 	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
 	if (Armor && Armor.Amount)
 	{
-		Armor.SavePercent = 0.333 + itof(stamina) * 0.4;
+		Armor.SavePercent = 0.333 + itof(vitality) * 0.4;
 		if (Armor.SavePercent > 0.75)
 		{
 			Armor.SavePercent = 0.75;
@@ -476,7 +468,7 @@ void NetGameReborn()
 {
 	int old_experience;
 	int old_strength;
-	int old_agility;
+	int old_vitality;
 	int old_speed;
 	int old_intelligence;
 	int old_wisdom;
@@ -493,7 +485,7 @@ void NetGameReborn()
 	// [FB] Retrieve experience level and attributes we have made...
 	old_experience = Player(OldMo.Player).experience;
 	old_strength = Player(OldMo.Player).strength;
-	old_agility = Player(OldMo.Player).agility;
+	old_vitality = Player(OldMo.Player).vitality;
 	old_speed = Player(OldMo.Player).speed;
 	old_intelligence = Player(OldMo.Player).intelligence;
 	old_wisdom = Player(OldMo.Player).wisdom;
@@ -509,7 +501,7 @@ void NetGameReborn()
 	// [FB] ...and update them accordingly
 	experience = old_experience;
 	strength = old_strength;
-	agility = old_agility;
+	vitality = old_vitality;
 	speed = old_speed;
 	intelligence = old_intelligence;
 	wisdom = old_wisdom;
@@ -595,7 +587,7 @@ void DoClearPlayer()
 
 int GetRebornHealth()
 {
-	return MAXHEALTH;
+	return max_health;
 }
 
 //==========================================================================
@@ -610,7 +602,7 @@ int GetMaxHealth()
 	{
 		return MAXMORPHHEALTH;
 	}
-	return MAXHEALTH;
+	return max_health;
 }
 
 //==========================================================================
@@ -794,16 +786,15 @@ void PlayerImpulse()
 	{
 		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
 	}
-	// [FB] We want to make the upgrade screen accesible with a new impulse value
 	else if (impulse == KRPGDefs::IMPULSE__UPGRADESCREEN)
 	{
-		UpgradeScreen(!bShowUpgradeScreen);
+		UpgradeScreen();
 	}
 
 	// Hexen artifact hot keys
 	if (!Arti)
 	{
-		if (impulse == 12 && (Health < MAXHEALTH))
+		if (impulse == 12 && (Health < max_health))
 		{
 			Arti = EntityEx(MO).FindInventory(ArtiHealth);
 		}
@@ -888,6 +879,11 @@ void PlayerTick(float deltaTime)
 		ForwardMove = 0.0;
 		SideMove = 0.0;
 		FlyMove = 0.0;
+	}
+
+	if (ftoi(WorldTimer) % 175 == 0 && sp_power < maxsp_power)
+	{
+		sp_power += 1;
 	}
 
 	WorldTimer += deltaTime;
@@ -1408,7 +1404,7 @@ void Cheat_Gimme()
 		}
 		else
 		{
-			MO.Health = MAXHEALTH;
+			MO.Health = max_health;
 			Health = MO.Health;
 		}
 		cprint("FULL HEALTH");
