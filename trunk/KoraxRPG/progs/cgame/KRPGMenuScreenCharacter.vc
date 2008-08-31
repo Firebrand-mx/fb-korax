@@ -1,0 +1,288 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		    ######  #####   ######
+//**	            ##   ## ##  ## ##    ##
+//**	     	    ##   ## ##  ## ##   
+//**	            #####   #####  ##  ####
+//**	            ## ###  ##     ###   ##
+//**	     	    ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KRPGMenuScreenCharacter : MenuScreen;
+
+// [FB] Base stats for building a character
+int init_speed[HexenDefs::NUMCLASSES];
+int init_health[HexenDefs::NUMCLASSES];
+int init_spiritualpower[HexenDefs::NUMCLASSES];
+int player_strength[HexenDefs::NUMCLASSES];
+int player_vitality[HexenDefs::NUMCLASSES];
+int player_intelligence[HexenDefs::NUMCLASSES];
+int player_wisdom[HexenDefs::NUMCLASSES];
+
+int i_speed;
+int i_health;
+int i_spiritpower;
+int i_strength;
+int i_vitality;
+int i_intelligence;
+int i_wisdom;
+
+int Class;
+
+string sp_wording[HexenDefs::NUMCLASSES];
+
+//==========================================================================
+//
+//	OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	int i;
+	int currentY = ChoicesStartY;
+
+	::OnDraw();
+
+	SetFont('bigfont');
+	DrawText(ChoicesStartX, currentY, va("%s", sp_wording[Class]));
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_spiritpower));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "HEALTH:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_health));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "SPEED:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_speed));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "STRENGTH:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_strength));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "VITALITY:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_vitality));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "INTELLIGENCE:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_intelligence));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "WISDOM:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_wisdom));
+}
+
+//==========================================================================
+//
+//	SetClass
+//
+//==========================================================================
+
+void SetClass(int PClass)
+{
+	Class = PClass;
+}
+
+//==========================================================================
+//
+//	DefaultRollStates
+//
+//==========================================================================
+
+void DefaultRollStats(Object Sender)
+{
+	i_speed = init_speed[Class];
+	i_health = init_health[Class];
+	i_spiritpower = init_spiritualpower[Class];
+	i_strength = player_strength[Class];
+	i_vitality = player_vitality[Class];
+	i_intelligence = player_intelligence[Class];
+	i_wisdom = player_wisdom[Class];
+}
+
+//==========================================================================
+//
+//	RerollStats
+//
+//==========================================================================
+
+void RerollStats(Object Sender)
+{
+	switch(Class)
+	{
+		case HexenDefs::PCLASS_FIGHTER:
+			i_speed = 6 + (P_Random() & 6);
+			i_health = 100 - i_strength - i_vitality - i_speed;
+			i_spiritpower = 3 + (P_Random() & 2);
+			i_strength = 6 + (P_Random() & 3);
+			i_vitality = 1 + (P_Random() & 2);
+			i_intelligence = 1 + (P_Random() & 2);
+			i_wisdom = 1 + (P_Random() & 2);
+			break;
+		case HexenDefs::PCLASS_CLERIC:
+			i_speed = 2 + (P_Random() & 6);
+			i_health = 66 - i_strength - i_vitality - i_speed;
+			i_spiritpower = 80 - i_health;
+			i_strength = 2 + (P_Random() & 4);
+			i_vitality = 2 + (P_Random() & 4);
+			i_intelligence = 2 + (P_Random() & 4);
+			i_wisdom = 2 + (P_Random() & 4);
+			break;
+		case HexenDefs::PCLASS_MAGE:
+			i_speed = 1 + (P_Random() & 5);
+			i_health = 40 - i_strength - i_vitality - i_speed;
+			i_spiritpower = 80 - i_health;
+			i_strength = 1 + (P_Random() & 3);
+			i_vitality = 6 + (P_Random() & 6);
+			i_intelligence = 6 + (P_Random() & 6);
+			i_wisdom = 6 + (P_Random() & 6);
+			break;
+	}
+}
+
+//==========================================================================
+//
+//	BuildCharacter
+//
+//==========================================================================
+
+void BuildCharacter(Object Sender)
+{
+	KRPGPlayerReplicationInfo RepInfo;
+
+	// [FB] We need to store these somewhere, it's not the most suited place IMO, but here it goes....
+	if (ClGame.Game)
+	{
+		MainGameInfo(ClGame.Game).i_health = i_health;
+		MainGameInfo(ClGame.Game).i_spiritpower = i_spiritpower;
+		MainGameInfo(ClGame.Game).i_strength = i_strength;
+		MainGameInfo(ClGame.Game).i_vitality = i_vitality;
+		MainGameInfo(ClGame.Game).i_intelligence = i_intelligence;
+		MainGameInfo(ClGame.Game).i_wisdom = i_wisdom;
+		MainGameInfo(ClGame.Game).i_speed = i_speed;
+	}
+/*	if (ClGame.GLevel)
+	{
+		foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+		{
+			RepInfo.i_health = i_health;
+			RepInfo.i_spiritpower = i_spiritpower;
+			RepInfo.i_strength = i_strength;
+			RepInfo.i_vitality = i_vitality;
+			RepInfo.i_intelligence = i_intelligence;
+			RepInfo.i_wisdom = i_wisdom;
+			RepInfo.i_speed = i_speed;
+		}
+	}*/
+	PClassItemActivate(Sender);
+}
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	MenuTextButton		Btn;
+	int YPos = ChoicesStartY + (17 * 8);
+
+	RerollStats(self);
+
+	Btn = MenuTextButton(NewChild(MenuBigTextButton));
+	Btn.SetOrigin(ChoicesStartX, YPos);
+	Btn.Text = "Default Build";
+	Btn.Activated = DefaultRollStats;
+	YPos += Btn.Height;
+	
+	Btn = MenuTextButton(NewChild(MenuBigTextButton));
+	Btn.SetOrigin(ChoicesStartX, YPos);
+	Btn.Text = "Reroll";
+	Btn.Activated = RerollStats;
+	YPos += Btn.Height;
+	
+	Btn = MenuTextButton(NewChild(MenuBigTextButton));
+	Btn.SetOrigin(ChoicesStartX, YPos);
+	Btn.Text = "OK";
+	Btn.Activated = BuildCharacter;
+}
+
+//==========================================================================
+//
+//	PClassItemActivate
+//
+//==========================================================================
+
+void PClassItemActivate(Object Sender)
+{
+	ClientGameShared(ClGame).SetPClass(Class);
+}
+
+defaultproperties
+{
+	ChoicesStartX = 66;
+	ChoicesStartY = 30;
+	Height = 240;
+	SelectorType = MenuSelector_Big;
+	Title = "GENERATE YOUR CHARACTER:";
+
+	sp_wording[0] = "BATTLE RAGE";
+	sp_wording[1] = "FAITH";
+	sp_wording[2] = "MAGIC";
+	sp_wording[3] = "";
+
+	// Fighter
+	init_speed[HexenDefs::PCLASS_FIGHTER] = 10;
+	init_health[HexenDefs::PCLASS_FIGHTER] = 80;
+	init_spiritualpower[HexenDefs::PCLASS_FIGHTER] = 5;
+	player_strength[HexenDefs::PCLASS_FIGHTER] = 0x08;
+	player_vitality[HexenDefs::PCLASS_FIGHTER] = 0x08;
+	player_intelligence[HexenDefs::PCLASS_FIGHTER] = 0x02;
+	player_wisdom[HexenDefs::PCLASS_FIGHTER] = 0x02;
+
+	// Cleric
+	init_speed[HexenDefs::PCLASS_CLERIC] = 8;
+	init_health[HexenDefs::PCLASS_CLERIC] = 50;
+	init_spiritualpower[HexenDefs::PCLASS_CLERIC] = 70;
+	player_strength[HexenDefs::PCLASS_CLERIC] = 0x05;
+	player_vitality[HexenDefs::PCLASS_CLERIC] = 0x05;
+	player_intelligence[HexenDefs::PCLASS_CLERIC] = 0x05;
+	player_wisdom[HexenDefs::PCLASS_CLERIC] = 0x05;
+
+	// Mage
+	init_speed[HexenDefs::PCLASS_MAGE] = 6;
+	init_health[HexenDefs::PCLASS_MAGE] = 20;
+	init_spiritualpower[HexenDefs::PCLASS_MAGE] = 70;
+	player_strength[HexenDefs::PCLASS_MAGE] = 0x02;
+	player_vitality[HexenDefs::PCLASS_MAGE] = 0x02;
+	player_intelligence[HexenDefs::PCLASS_MAGE] = 0x08;
+	player_wisdom[HexenDefs::PCLASS_MAGE] = 0x08;
+
+	// Oink, oink!
+	// Easter egg, anyone??
+	init_speed[HexenDefs::PCLASS_PIG] = 7;
+	init_health[HexenDefs::PCLASS_PIG] = 30;
+	init_spiritualpower[HexenDefs::PCLASS_PIG] = 5;
+	player_strength[HexenDefs::PCLASS_PIG] = 0x06;
+	player_vitality[HexenDefs::PCLASS_PIG] = 0x06;
+	player_intelligence[HexenDefs::PCLASS_PIG] = 0x06;
+	player_wisdom[HexenDefs::PCLASS_PIG] = 0x06;
+}

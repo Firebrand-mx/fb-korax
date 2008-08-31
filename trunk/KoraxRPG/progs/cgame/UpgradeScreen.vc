@@ -43,7 +43,7 @@ const int
 KRPGPlayerReplicationInfo RepInfo;
 bool upgraded;
 int n_strength;
-int n_agility;
+int n_vitality;
 int n_speed;
 int n_intelligence;
 int n_wisdom;
@@ -61,7 +61,7 @@ void CreateChoices()
 {
 	MenuChoiceStat		Stat;
 	MenuTextButton		Btn;
-	int					currentY;
+	int			currentY;
 
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
 	{
@@ -80,10 +80,10 @@ void CreateChoices()
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Agility";
+		Stat.Text = "Vitality";
 		// FIXME Fix max values for each class...
-		Stat.SetInitialValue(RepInfo.aglt, r_points, 5/* RepInfo.aglt_m*/);
-		Stat.ValueChanging = ChangeAgility;
+		Stat.SetInitialValue(RepInfo.vtlt, r_points, 5/* RepInfo.aglt_m*/);
+		Stat.ValueChanging = ChangeVitality;
 		currentY += Stat.Height;
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
@@ -149,14 +149,8 @@ void CreateChoices()
 void OnDestroy()
 {
 	::OnDestroy();
-	if (!upgraded)
-	{
-		Player(ClientGame(ClGame).cl).SetPoints(ir_points);
-	}
-	else
-	{
-		ir_points = 0;
-	}
+
+	Player(ClientGame(ClGame).cl).SetPoints(ir_points);
 	ClientGame(ClGame).HideUpgradeScreen();
 }
 
@@ -184,11 +178,11 @@ bool ChangeStrength(Object Sender, int newValue, int oldValue)
 
 //==========================================================================
 //
-//	ChangeAgility
+//	ChangeVitality
 //
 //==========================================================================
 
-bool ChangeAgility(Object Sender, int newValue, int oldValue)
+bool ChangeVitality(Object Sender, int newValue, int oldValue)
 {
 	if (oldValue < newValue)
 	{
@@ -198,7 +192,7 @@ bool ChangeAgility(Object Sender, int newValue, int oldValue)
 	{
 		Player(ClientGame(ClGame).cl).SetPoints(r_points++);
 	}
-	n_agility = newValue;
+	n_vitality = newValue;
 	MenuChoiceStat(Sender).SetMaxIncrease(
 		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
@@ -278,7 +272,7 @@ bool ChangeWisdom(Object Sender, int newValue, int oldValue)
 
 void UpdateStats(Object Sender)
 {
-	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_agility, n_speed,
+	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_vitality, n_speed,
 			n_intelligence, n_wisdom);
 	upgraded = true;
 	ClGame.PopMenu();
