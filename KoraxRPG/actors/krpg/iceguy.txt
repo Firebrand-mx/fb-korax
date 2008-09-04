@@ -1,0 +1,49 @@
+//------------------------------------------------------------------------------
+actor KRPGIceGuy : IntelligentActor replaces IceGuy
+{
+	Health 120
+	Radius 22
+	Height 75
+	Mass 150
+	Speed 14
+	PainChance 144
+	DamageType "Ice"
+	Monster
+	+NoBlood
+	+Telestomp
+	+NoIceDeath
+	SeeSound "IceGuySight"
+	ActiveSound "IceGuyActive"
+	AttackSound "IceGuyAttack"
+	Obituary "$ob_iceguy"
+
+	action native A_KRPGIceGuyLook();
+	action native A_KRPGIceGuyChase();
+	action native A_IceGuyAttack();
+
+	states
+	{
+	Spawn:
+		ICEY A 10 A_KRPGIceGuyLook
+		Loop
+	Inactive:
+		ICEY A -1
+		Goto Spawn
+	See:
+		ICEY A 4 A_ChaseAI
+		ICEY B 4 A_KRPGIceGuyChase
+		ICEY CD 4 A_ChaseAI
+		Loop
+	Missile:
+		ICEY EF 3 A_FaceTarget
+		ICEY G 8 Bright A_IceGuyAttack
+		ICEY F 4 A_FaceTarget
+		Goto See
+	Pain:
+		ICEY A 1 A_Pain
+		Goto See
+	Death:
+		ICEY A 1 A_IceGuyDie
+		Stop
+	}
+}
