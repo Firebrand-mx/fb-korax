@@ -53,9 +53,9 @@ const int MAXSIBLINGS = 7;
 const int MAXRAINS = 3;
 
 // [CW] Clones can't be cast until all previous ones died
-Bishop Clones[MAXCLONES];
+BlackBishop Clones[MAXCLONES];
 // [CW] Siblings and rain spells can't be conjured unless there's a free slot
-Bishop Siblings[MAXSIBLINGS];
+Actor Siblings[MAXSIBLINGS];
 SpellGoldenStorm Rains[MAXRAINS];
 
 //==========================================================================
@@ -139,7 +139,7 @@ final void A_BlackBishopSelectAttack()
 	// Clones do second attack rarely
 	if (Target && (!bMirrorImage && DistTo(Target) < 512.0 && P_Random() < 220 || P_Random() < 64))
 	{
-		NumToSpawn << 1;
+		Special1 << 1;
 		SetState(FindState('Missile2'));
 	}
 }
@@ -159,18 +159,18 @@ final void A_BlackBishopAttack3()
 	TAVec angles;
 	EntityEx mo;
 
-	if (!Target || Health > 0 && (!CanSee(Target) || !NumToSpawn))
+	if (!Target || Health > 0 && (!CanSee(Target) || !Special1))
 	{
-		NumToSpawn = 0;
+		Special1 = 0;
 		SetState(SeeState);
 		return;
 	}
 
 	if (Health <= 0)
-		NumToSpawn = (P_Random() & 3) + 5;
+		Special1 = (P_Random() & 3) + 5;
 
-	ang = -15 * NumToSpawn + P_Random() % 15;
-	total = 15 * (NumToSpawn + 1);
+	ang = -15 * Special1 + P_Random() % 15;
+	total = 15 * (Special1 + 1);
 	dir = Target.GetCentre() - GetCentre();
 	VectorAngles(&dir, &angles);
 	for (; ang < total; ang += 15)
@@ -184,7 +184,7 @@ final void A_BlackBishopAttack3()
 		}
 	}
 	PlaySound('AdvisorAttack2', CHAN_WEAPON);
-	NumToSpawn--;
+	Special1--;
 }
 
 //==========================================================================
@@ -213,7 +213,8 @@ final void A_BlackBishopConjure()
 final void A_BlackBishopCastSpell()
 {
 	int i,j;
-	Bishop bishop;
+	BlackBishop bishop;
+	Actor bishop2;
 	TVec v;
 	int count;
 	int sibling_slots, rain_slots;
@@ -262,7 +263,7 @@ final void A_BlackBishopCastSpell()
 			v = Origin + vector((Random() - 0.5) * 1024.0,
 											(Random() - 0.5) * 1024.0,
 											(Random()) * 128.0);
-			bishop = Bishop(Spawn(BlackBishop, v,,,false));
+			bishop = Spawn(BlackBishop, v,,,false);
 			if (bishop)
 			{
 				if (bishop.TestLocation())
@@ -296,22 +297,22 @@ final void A_BlackBishopCastSpell()
 											(Random() - 0.5) * 1024.0,
 											(Random()) * 128.0);
 			if (P_Random() < 220)
-				bishop = Bishop(Spawn(Bishop, v,,,false));
+				bishop2 = Spawn(Bishop, v,,,false);
 			else
-				bishop = Bishop(Spawn(RedBishop, v,,,false));
-			if (bishop)
+				bishop2 = Spawn(RedBishop, v,,,false);
+			if (bishop2)
 			{
-				if (bishop.TestLocation())
+				if (bishop2.TestLocation())
 				{
 					for (j = 0; j < MAXSIBLINGS; j++)
-						if (!Siblings[j]) Siblings[j] = bishop;
-					bishop.SetState(FindState('Blur'));
-					SpawnSphericalEffect(DarkAdvisorFlicker, bishop.GetCentre(),
+						if (!Siblings[j]) Siblings[j] = bishop2;
+					bishop2.SetState(FindState('Blur'));
+					SpawnSphericalEffect(DarkAdvisorFlicker, bishop2.GetCentre(),
 														36, vector(128.0,128.0,64.0));
 				}
 				else
 				{
-					bishop.Destroy();
+					bishop2.Destroy();
 				}
 			}
 		}
@@ -352,6 +353,8 @@ Spawn:
 	BISB A 10 A_LookAI
 	Loop
 See:
+	BISB A 0 A_SetShootable
+	BISB A 0 A_UnHideThing
 	BISB A 1 A_ChaseAI
 	BISB A 1 A_BishopChase
 	BISB A 1
@@ -363,14 +366,14 @@ See:
 Blur:
 Evade:
 	BISB A 2 A_RedBishopDoBlur
-	BISB A 4 A_BishopSpawnBlur
+	BISB A 4 A_RedBishopSpawnBlur
 	Wait
 Missile:
 	BISB A 3 A_FaceTarget
 	BISB DE 3 Bright A_FaceTarget
 	BISB F 3 Bright A_BishopAttack
 	BISB F 1 Bright A_BlackBishopSelectAttack
-	BISB F 5 Bright A_BishopAttack2
+	BISB F 5 Bright A_RedBishopAttack2
 	Wait
 Missile2:
 	BISB F 1 A_FaceTarget
@@ -386,7 +389,7 @@ Conjure:
 	Goto See
 Pain:
 	BISB C 6 A_Pain
-	BISB C 6 A_BishopPainBlur
+	BISB C 6 A_RedBishopPainBlur
 	Goto Blur
 Death:
 Ice:

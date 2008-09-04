@@ -54,8 +54,6 @@ struct pawn_behavior_t
 	float			ThreatVicinity;			// maximal distance of threat source to react on
 
 	bool			bNoWanderDuringAttack;	// shoot enemy if possible without wandering around
-	bool			bEvadeMelee;
-	bool			bRunOnEvade;
 
 	bool			bCanGroup;				// can join task leader
 	bool			bCanBeTaskLeader;
@@ -97,6 +95,9 @@ struct pawn_behavior_t
 											// rebuild the route;
 											// (pawns with ranged attack may perhaps have higher values)
 };
+
+bool			bEvadeMelee;
+bool			bRunOnEvade;
 
 pawn_behavior_t		Behavior;
 
@@ -442,7 +443,7 @@ void A_CheckThreat()
 		break;
 	default:
 		// bEvadeMelee flag makes IA take evasive action if enemy is too close
-		if (Behavior.bEvadeMelee)
+		if (bEvadeMelee)
 		{
 			EntityEx EThreat = none;
 			if (Target && Length(Target.Origin - Origin) <= Target.MeleeRange * 3.0)
@@ -617,12 +618,12 @@ final void A_ChaseAI()
 		if (CurrentTask.Order == ActorTask::ORDER__EVADEPOS ||
 			CurrentTask.Order == ActorTask::ORDER__EVADETHING)
 		{
-			if (Behavior.bRunOnEvade)
+			if (bRunOnEvade)
 				Speed *= 2.0;
 			//A_MoveEx(false, true, true);
 			if (DoMove)
 				DoMove(true, none, MeleeState, MissileState, true);
-			if (Behavior.bRunOnEvade)
+			if (bRunOnEvade)
 				Speed /= 2.0;
 			return;
 		}
@@ -2237,14 +2238,202 @@ void P_Order_UseThing()
 {
 }
 
+//==========================================================================
+//
+//  A_KRPGIceGuyLook
+//
+//==========================================================================
+
+final void A_KRPGIceGuyLook()
+{
+	float dist;
+	float an;
+	class<Actor> tp;
+
+	A_LookAI();
+	if (Random() < 0.25)
+	{
+		dist = Radius * (Random() * 2.0 - 1.0);
+		an = AngleMod360(Angles.yaw + 90.0);
+
+		if (Random() < 0.5)
+			tp = IceGuyWisp2;
+		else
+			tp = IceGuyWisp1;
+		Spawn(tp, Origin + vector(dist * cos(an), dist * sin(an), 60.0));
+	}
+}
+
+//==========================================================================
+//
+//  A_KRPGIceGuyChase
+//
+//==========================================================================
+
+final void A_KRPGIceGuyChase()
+{
+	float dist;
+	float an;
+	Actor A;
+	class<Actor> tp;
+
+	A_ChaseAI();
+	if (Random() < 0.5)
+	{
+		dist = Radius * (Random() * 2.0 - 1.0);
+		an = AngleMod360(Angles.yaw + 90.0);
+
+		if (Random() < 0.5)
+			tp = IceGuyWisp2;
+		else
+			tp = IceGuyWisp1;
+		A = Spawn(tp, Origin + vector(dist * cos(an), dist * sin(an), 60.0));
+		if (A)
+		{
+			A.Velocity = Velocity;
+			A.Target = self;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	A_SerpentChase
+//
+//==========================================================================
+
+bool A_SerpentChase(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
+{
+	//DoChase(false, MeleeState, none, true, true);
+	return A_DoMove(Evade, false/*FastChase*/, AIdleState, AMeleeState, none,
+		true/*NightmareFast*/, PlayActive);
+}
+
+//==========================================================================
+//
+//	A_SerpentChaseAI
+//
+//==========================================================================
+
+final void A_SerpentChaseAI()
+{
+	DoMove = A_SerpentChase;
+	A_ChaseAI();
+}
+
+//==========================================================================
+//
+//  A_SerpentWalk
+//
+//  Similar to A_Chase, only has a hardcoded entering of meleestate.
+//
+//==========================================================================
+
+bool A_SerpentWalk(bool Evade, state AIdleState, state AMeleeState,
+				  state AMissileState, bool PlayActive)
+{
+	//DoChase(false, FindState('Attack'), none, true, false);
+	return A_DoMove(Evade, false/*FastChase*/, AIdleState, FindState('Attack'), none,
+		true/*NightmareFast*/, false/*PlayActive*/);
+}
+
+//==========================================================================
+//
+//	A_SerpentWalkAI
+//
+//==========================================================================
+
+final void A_SerpentWalkAI()
+{
+	DoMove = A_SerpentWalk;
+	A_ChaseAI();
+}
+
+//==========================================================================
+//
+//  A_WraithChaseAI
+//
+//==========================================================================
+
+final void A_WraithChaseAI()
+{
+	Origin.z += Level.Game.FloatBobOffsets[Special1];
+	Special1 = (Special1 + 2) & 63;
+//  if (actor->FloorClip > 0)
+//  {
+//      SetState(S_WRAITH_RAISE2);
+//      return;
+//  }
+	A_ChaseAI();
+	A_WraithFX4();
+}
+
+//==========================================================================
+//
+//	A_DragonFlightAI
+//
+//==========================================================================
+
+final void A_DragonFlightAI()
+{
+	float angle;
+
+	DragonSeek(4.0, 8.0);
+	if (Target)
+	{
+		if (!Target.bShootable)
+		{
+			// enemy died
+			Target = none;
+			return;
+		}
+		angle = atan2(Target.Origin.y - Origin.y, Target.Origin.x - Origin.x);
+		if (fabs(AngleMod180(Angles.yaw - angle)) < 45.0 / 2.0
+			&& CheckMeleeRange())
+		{
+			Target.Damage(self, self, HITDICE(8));
+			PlaySound('DragonAttack', CHAN_WEAPON);
+		}
+		else if (fabs(AngleMod180(Angles.yaw - angle)) <= 20.0)
+		{
+			SetState(MissileState);
+			PlaySound('DragonAttack', CHAN_WEAPON);
+		}
+	}
+	else
+	{
+		LookForEnemy(true);	// KoraxRPG
+	}
+}
+
+//==========================================================================
+//
+//	A_DragonFlapAI
+//
+//==========================================================================
+
+final void A_DragonFlapAI()
+{
+	A_DragonFlightAI();
+	if (P_Random() < 240)
+	{
+		PlaySound('DragonWingflap', CHAN_BODY);
+	}
+	else
+	{
+		PlaySound(ActiveSound, CHAN_VOICE);
+	}
+}
+
 defaultproperties
-{	
+{
 	Behavior.ThreatReaction			= THREATREACTION__DETECT;
 	Behavior.ThreatVicinity			= DEFAULT_THREAT_VICINITY;
 
 	Behavior.bNoWanderDuringAttack	= false;
-	Behavior.bEvadeMelee			= false;
-	Behavior.bRunOnEvade			= false;
+	bEvadeMelee			= false;
+	bRunOnEvade			= false;
 
 	Behavior.bCanGroup				= true;
 	Behavior.bCanBeTaskLeader		= true;
