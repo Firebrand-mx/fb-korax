@@ -14,8 +14,8 @@ graphics/mc_arrow.png			graphics/mc_arrow.png
 
 //	Progs
 progs/linespec.dat				progs/linespec.dat
-progs/clprogs.dat				progs/clprogs.dat
-progs/svprogs.dat				progs/svprogs.dat
+progs/cgame.dat					progs/cgame.dat
+progs/game.dat					progs/game.dat
 
 //	Scripts
 animdefs.txt					scripts/animdefs.txt
