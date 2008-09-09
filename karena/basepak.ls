@@ -10,9 +10,9 @@ graphics/fonta30.lmp		graphics/fonta30.lmp
 graphics/fonta63.lmp		graphics/fonta63.lmp
 
 //	Progs
-progs/clprogs.dat		progs/clprogs.dat
+progs/cgame.dat		progs/cgame.dat
 progs/linespec.dat		progs/linespec.dat
-progs/svprogs.dat		progs/svprogs.dat
+progs/game.dat		progs/game.dat
 
 //	Scripts
 animdefs.txt			scripts/animdefs.txt

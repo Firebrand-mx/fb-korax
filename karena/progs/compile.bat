@@ -17,8 +17,8 @@ cd progs
 @ECHO ON
 
 vcc -I../../common/linespec -P../../../basev/common/progs linespec/classes.vc linespec.dat
-vcc -P../../../basev/common/progs game/classes.vc svprogs.dat
-vcc -P../../../basev/common/progs cgame/classes.vc clprogs.dat
+vcc -P../../../basev/common/progs game/classes.vc game.dat
+vcc -P../../../basev/common/progs cgame/classes.vc cgame.dat
 @ECHO OFF
 pause
 cd..
