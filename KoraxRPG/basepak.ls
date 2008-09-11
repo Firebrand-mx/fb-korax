@@ -12,6 +12,17 @@ graphics/fonta63.lmp			graphics/fonta63.lmp
 //  KRPG Arrow Graphic
 graphics/mc_arrow.png			graphics/mc_arrow.png
 
+//	Modified linespec package
+progs/linespec/classes.vc					progs/linespec/classes.vc
+progs/linespec/Actor.KRPG.vc				progs/linespec/Actor.KRPG.vc
+progs/linespec/Actor.States.vc				progs/linespec/Actor.States.vc
+progs/linespec/KRPGPlayerBase.vc			progs/linespec/KRPGPlayerBase.vc
+progs/linespec/KRPGDefs.vc					progs/linespec/KRPGDefs.vc
+progs/linespec/ReachTraverse.vc				progs/linespec/ReachTraverse.vc
+progs/linespec/SpellInstance.vc				progs/linespec/SpellInstance.vc
+progs/linespec/ActorCondition.vc			progs/linespec/ActorCondition.vc
+progs/linespec/DyingSpirit.vc				progs/linespec/DyingSpirit.vc
+
 //	Client progs
 progs/cgame/classes.vc						progs/cgame/classes.vc
 progs/cgame/KRPGMenuScreen.vc				progs/cgame/KRPGMenuScreen.vc
@@ -173,9 +184,6 @@ progs/game/PowerDLTorch.vc		progs/game/PowerDLTorch.vc
 progs/game/Sequencer.vc		progs/game/Sequencer.vc
 progs/game/WeatherSnow.vc		progs/game/WeatherSnow.vc
 progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
-
-//	Progs
-progs/linespec.dat				progs/linespec.dat
 
 //	Scripts
 animdefs.txt					scripts/animdefs.txt
