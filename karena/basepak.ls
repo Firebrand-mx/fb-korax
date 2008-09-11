@@ -9,6 +9,12 @@ graphics/croshai3.lmp		graphics/croshai3.lmp
 graphics/fonta30.lmp		graphics/fonta30.lmp
 graphics/fonta63.lmp		graphics/fonta63.lmp
 
+//	Modified linespec package
+progs/linespec/classes.vc					progs/linespec/classes.vc
+progs/linespec/Actor.KArena.vc				progs/linespec/Actor.KArena.vc
+progs/linespec/HexenDefs.vc					progs/linespec/HexenDefs.vc
+progs/linespec/KAPlayerBase.vc				progs/linespec/KAPlayerBase.vc
+
 //	Client progs
 progs/cgame/classes.vc						progs/cgame/classes.vc
 progs/cgame/LocalSoundQueue.vc				progs/cgame/LocalSoundQueue.vc
@@ -235,9 +241,6 @@ progs/game/WeatherSnow.vc		progs/game/WeatherSnow.vc
 progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
 progs/game/ReachTraverse.vc		progs/game/ReachTraverse.vc
 progs/game/ClientGameBaseEx.vc		progs/game/ClientGameBaseEx.vc
-
-//	Progs
-progs/linespec.dat		progs/linespec.dat
 
 //	Scripts
 animdefs.txt			scripts/animdefs.txt
