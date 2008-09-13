@@ -1,14 +1,8 @@
 @ECHO OFF
 cd..
 cd..
-cd..
-cd basev
-cd common
-vlumpy basepak.ls
-copy basepak.pk3 "D:\Korax\KoraxRPG\basev\common\"
-cd..
-cd..
-cd progs
+vlumpy d:\korax\vavoom\source\basev\common\basepak.ls
+copy "d:\korax\vavoom\source\basev\common\basepak.pk3" "D:\Korax\Vavoom\basev\common\"
 cd koraxrpg
 vlumpy basepak.ls
 pause
