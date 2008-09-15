@@ -21,9 +21,26 @@ class IntelligentActor extends Actor
 #include "actors/krpg/townfolk.txt"
 #include "actors/krpg/krpgdecorations.txt"
 #include "actors/krpg/mana.txt"
+#include "actors/krpg/players.txt"
 
 //------------------------------------------------------------------------------
 actor KRPGArtiTorch : ArtiTorch replaces ArtiTorch
 {
 	Powerup.Type DLTorch
+}
+
+//------------------------------------------------------------------------------
+actor KRPGMWeapWand : MWeapWand replaces MWeapWand
+{
+	action native A_KRPGMWandAttack();
+
+	states
+	{
+	Fire:
+		MWND A 6
+		MWND B 6 Bright Offset(0, 48) A_KRPGMWandAttack
+		MWND A 3 Offset(0, 40)
+		MWND A 3 Offset(0, 36) A_ReFire
+		Goto Ready
+	}
 }

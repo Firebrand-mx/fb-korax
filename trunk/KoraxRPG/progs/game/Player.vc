@@ -57,10 +57,10 @@ int possTics;               // FOV effect for possession
 int money;
 int hunger;					// [FB] This one was declared in KMod 3 source code, but it's really going to used??
 int stamina;
-int strength;
+//int strength;
 int vitality;
-int intelligence;
-int wisdom;
+//int intelligence;
+//int wisdom;
 int speed;
 
 // -JL- Added to player struct
@@ -83,7 +83,7 @@ replication
 {
 	reliable if (!bIsClient)
 		experience, exp_level, next_level, prev_level, money,
-		hunger, stamina, strength, vitality, intelligence, wisdom,
+		hunger, stamina, /*strength, */vitality, /*intelligence, wisdom,*/
 		speed, max_health, maxhealth_old, sp_power, sp_power_old,
 		currentspell, SetFOV;
 
@@ -1372,27 +1372,16 @@ void Cheat_Gimme()
 				AmmoItem.Amount = AmmoItem.MaxAmount;
 			}
 		}
-		foreach AllClasses(FourthWeaponPiece, PieceCls)
+
+		FourthWeaponHolder Hold = FourthWeaponHolder(
+			EntityEx(MO).FindInventory(FourthWeaponHolder));
+		if (!Hold)
 		{
-			if (!FindClassState(PieceCls, 'Spawn'))
-			{
-				//	Abstract class.
-				continue;
-			}
-			if (PieceCls.default.PieceClass != PClass)
-			{
-				//	Wrong class.
-				continue;
-			}
-			FourthWeaponHolder Hold = FourthWeaponHolder(
-				EntityEx(MO).FindInventory(FourthWeaponHolder));
-			if (!Hold)
-			{
-				Hold = Level.Spawn(FourthWeaponHolder,,,, false);
-				Hold.AttachToOwner(EntityEx(MO));
-			}
-			Hold.PieceMask = 7;
+			Hold = Level.Spawn(FourthWeaponHolder,,,, false);
+			Hold.AttachToOwner(EntityEx(MO));
 		}
+		Hold.PieceMask = 7;
+
 		cprint("ALL WEAPONS");
 	}
 	if (Cmd_CheckParm("health"))

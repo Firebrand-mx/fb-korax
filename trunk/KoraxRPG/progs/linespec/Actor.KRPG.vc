@@ -1784,6 +1784,25 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 	}
 }
 
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//	KRPG
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster && P_Random() < 33))
+	{
+		Actor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
+			itof(MissilePoisonDamage) / 10.0);
+		damage >>= 1;
+	}
+	return damage;
+}
+
 int decorate_default_health
 {
 	get { return default.Health; }
