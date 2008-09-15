@@ -23,85 +23,82 @@
 //**
 //**************************************************************************
 
-class FSwordMissile : Actor;
+class HexenWeapon : Weapon
+	abstract;
+
+class<Actor> WeaponClass;
 
 //==========================================================================
 //
-//  DoSpecialDamage
+//  TryPickup
 //
 //==========================================================================
 
-int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+bool TryPickup(EntityEx Toucher)
 {
-	if (victim.bIsPlayer)
+	if (!ClassIsChildOf(Toucher.Class, GetClassReplacement(WeaponClass)))
 	{
-		damage -= damage >> 2;
+		// Wrong class, but try to pick up for mana
+		if (ShouldStay() && !bDropped)
+		{
+			return false;
+		}
+		bool gaveMana = false;
+		if (PlayerEx(Toucher.Player).GiveAmmo(AmmoType1, AmmoGive1))
+		{
+			gaveMana = true;
+		}
+		if (PlayerEx(Toucher.Player).GiveAmmo(AmmoType2, AmmoGive2))
+		{
+			gaveMana = true;
+		}
+		if (gaveMana)
+		{
+			GoAwayAndDie();
+			GiveQuest(Toucher);
+			return true;
+		}
+		return false;
 	}
-	return damage;
+
+	return ::TryPickup(Toucher);
 }
 
 //==========================================================================
 //
-//	GetExplodeParms
+//	DepleteAmmoEx
 //
 //==========================================================================
 
-void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
+bool DepleteAmmoEx(byte Mode, optional bool CheckEnough)
 {
-	// Fighter Runesword
-	damage = 64;
-	damageSelf = false;
-}
-
-//==========================================================================
-//
-//  A_FSwordFlames
-//
-//==========================================================================
-
-final void A_FSwordFlames()
-{
-	int i;
-
-	for (i = 1 + (P_Random() & 3); i; i--)
+	//	Default parameter values
+	if (!specified_CheckEnough)
 	{
-		Spawn(FSwordFlame, Origin + vector((Random() - 0.5) * 16.0,
-			(Random() - 0.5) * 16.0, (Random() - 0.5) * 8.0));
+		CheckEnough = true;
 	}
-}
+	
 
-states
-{
-Spawn:
-	FSFX ABC 3 Bright
-	Loop
-Death:
-	FSFX D 4 Bright
-	FSFX E 3 Bright A_FSwordFlames
-	FSFX F 4 Bright A_Explode
-	FSFX G 3 Bright
-	FSFX H 4 Bright
-	FSFX I 3 Bright
-	FSFX J 4 Bright
-	FSFX KLM 3 Bright
-	Stop
+	if (CheckEnough && !CheckAmmo(Weapon::FIRE_Either, false))
+	{
+		return false;
+	}
+
+	if (Ammo1)
+	{
+		Ammo1.Amount -= AmmoUse1 * 10 / KRPGPlayerBase(Owner.Player).wisdom;
+		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse1);
+	}
+	if (Ammo2)
+	{
+		Ammo2.Amount -= AmmoUse2 * 10 / KRPGPlayerBase(Owner.Player).wisdom;
+		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse2);
+	}
+
+	return true;
 }
 
 defaultproperties
 {
-	Radius = 16.0;
-	Height = 8.0;
-	Speed = 1050.0;
-	MissileDamage = 8;
-	RenderStyle = STYLE_Add;
-	bMissile = true;
-	bNoBlockmap = true;
-	bDropOff = true;
-	bNoGravity = true;
-	bNoTeleport = true;
-	bActivateImpact = true;
-	bActivatePCross = true;
-	bBloodSplatter = true;
-	bExtremeDeath = true;
-	DeathSound = 'FighterSwordExplode';
+	Kickback = 150.0;
 }
