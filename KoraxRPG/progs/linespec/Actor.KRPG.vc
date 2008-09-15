@@ -152,16 +152,39 @@ void Died(EntityEx source, EntityEx inflictor)
 //[Korax]
 	if (source && !bIsPlayer)
 	{
+		float mod;
+		// [FB] First let's calculate the experience modifier
+		switch(GetCvar('ExpModifier'))
+		{
+			case 0: // 50%
+				mod = 0.5;
+				break;
+			case 1: // 100%
+				mod = 1.0;
+				break;
+			case 2: // 125%
+				mod = 1.25;
+				break;
+			case 3: // 150%
+				mod = 1.50;
+				break;
+			case 4: // 200%
+				mod = 2.0;
+				break;
+			default: // Anything else makes modifier 100%
+				mod = 1.0;
+				break;
+		}
 		if (!source.bIsPlayer)
 		{
-			Actor(source).experience += ftoi(itof(experience) * ((90.0 + 
-				itof(P_Random()) / 255.0 * 21.0) / 100.0));  //RPG
+			Actor(source).experience += ftoi((itof(experience) * ((90.0 + 
+				itof(P_Random()) / 255.0 * 21.0) / 100.0)) * mod);  //RPG
 		}
 		else
 		{
-			KRPGPlayerBase(source.Player).GiveExperience(ftoi(itof(experience) * ((90.0 + 
+			KRPGPlayerBase(source.Player).GiveExperience(ftoi((itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0) * (Level.World.GameSkill < 2 ? 
-				125.0 : (Level.World.GameSkill < 3 ? 100.0 : 80.0)) / 100.0));
+				125.0 : (Level.World.GameSkill < 3 ? 100.0 : 80.0)) / 100.0) * mod));
 		}
 	}
 

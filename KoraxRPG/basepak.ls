@@ -29,6 +29,7 @@ progs/cgame/KRPGMenuScreen.vc				progs/cgame/KRPGMenuScreen.vc
 progs/cgame/KRPGMenuScreenSinglePlayer.vc	progs/cgame/KRPGMenuScreenSinglePlayer.vc
 progs/cgame/KRPGMenuScreenClass.vc			progs/cgame/KRPGMenuScreenClass.vc
 progs/cgame/KRPGMenuScreenCharacter.vc		progs/cgame/KRPGMenuScreenCharacter.vc
+progs/cgame/KRPGMenuScreenCharacterSetup.vc		progs/cgame/KRPGMenuScreenCharacterSetup.vc
 progs/cgame/MenuScreenMain.vc				progs/cgame/MenuScreenMain.vc
 progs/cgame/MenuScreenMultiplayer.vc		progs/cgame/MenuScreenMultiplayer.vc
 progs/cgame/MenuScreenNewNetGame.vc			progs/cgame/MenuScreenNewNetGame.vc
@@ -42,6 +43,7 @@ progs/cgame/StatusBarScreen.vc				progs/cgame/StatusBarScreen.vc
 progs/cgame/IntermissionScreen.vc			progs/cgame/IntermissionScreen.vc
 progs/cgame/ClientGame.vc					progs/cgame/ClientGame.vc
 progs/cgame/TravelMapScreen.vc				progs/cgame/TravelMapScreen.vc
+progs/cgame/MenuChoiceEnumBig.vc			progs/cgame/MenuChoiceEnumBig.vc
 progs/cgame/MenuChoiceStat.vc				progs/cgame/MenuChoiceStat.vc
 progs/cgame/UpgradeScreen.vc				progs/cgame/UpgradeScreen.vc
 progs/cgame/ConScreen.vc					progs/cgame/ConScreen.vc
