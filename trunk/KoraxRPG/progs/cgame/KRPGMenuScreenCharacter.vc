@@ -203,26 +203,56 @@ void BuildCharacter(Object Sender)
 void CreateChoices()
 {
 	MenuTextButton		Btn;
+	MenuChoiceEnum		Enum;
 	int YPos = ChoicesStartY + (17 * 8);
 
+	SetFont('BigFont');
 	RerollStats(self);
 
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "Default Build";
+	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = DefaultRollStats;
 	YPos += Btn.Height;
 	
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "Reroll";
+	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = RerollStats;
 	YPos += Btn.Height;
-	
+
+	Enum = MenuChoiceEnumBig(NewChild(MenuChoiceEnumBig));
+	Enum.SetOrigin(ChoicesStartX, YPos);
+	Enum.Text = "Experience Modifier";
+	Enum.bLeftAlign = false;
+	Enum.AddItem("50%");
+	Enum.AddItem("100%");
+	Enum.AddItem("125%");
+	Enum.AddItem("150%");
+	Enum.AddItem("200%");
+	Enum.SetInitialValue(GetCvar('ExpModifier'));
+	Enum.ValueChanging = UpdateModifier;
+	YPos += Enum.Height;
+
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "OK";
+	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = BuildCharacter;
+}
+
+//==========================================================================
+//
+//	UpdateModifier
+//
+//==========================================================================
+
+bool UpdateModifier(Object Sender, int newValue)
+{
+	SetCvar('ExpModifier', newValue);
+	return true;
 }
 
 //==========================================================================
@@ -240,7 +270,7 @@ defaultproperties
 {
 	ChoicesStartX = 66;
 	ChoicesStartY = 30;
-	Height = 240;
+	Height = 260;
 	SelectorType = MenuSelector_Big;
 	Title = "GENERATE YOUR CHARACTER:";
 

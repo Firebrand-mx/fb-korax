@@ -1,0 +1,180 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KRPGMenuScreenCharacterSetup : MenuScreen;
+
+MenuSpriteAnim		Anim;
+MenuInputLine		PName;
+MenuChoiceSlider	ColR;
+MenuChoiceSlider	ColG;
+MenuChoiceSlider	ColB;
+MenuTextButton		Btn;
+int					PClass;
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	int			currentY;
+
+	R_InstallSprite("PLAY", 500);
+	R_InstallSprite("CLER", 501);
+	R_InstallSprite("MAGE", 502);
+
+	currentY = ChoicesStartY;
+
+	PName = MenuInputLine(NewChild(MenuInputLine));
+	PName.SetOrigin(ChoicesStartX + 10, ChoicesStartY);
+	PName.CursorXOffs = -10;
+	PName.Text = "Name";
+	PName.Value = GetCvarS('Name');
+	PName.ValueChanged = ChangeName;
+	currentY += PName.Height;
+
+	int Col = ParseColour(GetCvarS('colour'));
+
+	ColR = NewChild(MenuChoiceSlider);
+	ColR.SetOrigin(ChoicesStartX, currentY);
+	ColR.Text = "Red";
+	ColR.ValueDelta = 0.1;
+	ColR.SetInitialValue(itof((Col >> 16) & 0xff) / 255.0);
+	ColR.ValueChanging = ChangeColour;
+	currentY += ColR.Height;
+
+	ColG = NewChild(MenuChoiceSlider);
+	ColG.SetOrigin(ChoicesStartX, currentY);
+	ColG.Text = "Green";
+	ColG.ValueDelta = 0.1;
+	ColG.SetInitialValue(itof((Col >> 8) & 0xff) / 255.0);
+	ColG.ValueChanging = ChangeColour;
+	currentY += ColG.Height;
+
+	ColB = NewChild(MenuChoiceSlider);
+	ColB.SetOrigin(ChoicesStartX, currentY);
+	ColB.Text = "Blue";
+	ColB.ValueDelta = 0.1;
+	ColB.SetInitialValue(itof(Col & 0xff) / 255.0);
+	ColB.ValueChanging = ChangeColour;
+	currentY += ColB.Height;
+
+	Anim = MenuSpriteAnim(NewChild(MenuSpriteAnim));
+	Anim.SetPos(260, 140);
+	Anim.SprDef = 500;
+	Anim.Speed = 8;
+	Anim.NumFrames = 4;
+	Anim.Colour = Col;
+
+	Btn = MenuTextButton(NewChild(MenuBigTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "OK";
+	Btn.TextColourFocus = CR_YELLOW;
+	Btn.Activated = PClassItemActivate;
+}
+
+//==========================================================================
+//
+//	ChangeName
+//
+//==========================================================================
+
+void ChangeName(Object Sender)
+{
+	SetCvarS('Name', PName.Value);
+}
+
+//==========================================================================
+//
+//	ChangeColour
+//
+//==========================================================================
+
+bool ChangeColour(Object Sender, float newValue)
+{
+	float r = Sender == ColR ? newValue : ColR.Value;
+	float g = Sender == ColG ? newValue : ColG.Value;
+	float b = Sender == ColB ? newValue : ColB.Value;
+	int Col = RGBA(ftoi(r * 255.0), ftoi(g * 255.0), ftoi(b * 255.0), 255);
+
+	SetCvarS('colour', va("%x %x %x", ftoi(r * 255.0), ftoi(g * 255.0),
+		ftoi(b * 255.0)));
+	Anim.Colour = Col;
+	return true;
+}
+
+//==========================================================================
+//
+//	SetPClass
+//
+//==========================================================================
+
+void SetPClass(int value)
+{
+	PClass = value;
+	Anim.SprDef = 500 + PClass;
+	if (PClass == HexenDefs::PCLASS_FIGHTER)
+	{
+		Anim.TranslStart = 246;
+		Anim.TranslEnd = 254;
+	}
+	else
+	{
+		Anim.TranslStart = 146;
+		Anim.TranslEnd = 163;
+	}
+}
+
+//==========================================================================
+//
+//	PClassItemActivate
+//
+//==========================================================================
+
+void PClassItemActivate(Object Sender)
+{
+	KRPGMenuScreenCharacter mn;
+
+	mn = KRPGMenuScreenCharacter(ClGame.SpawnMenu(KRPGMenuScreenCharacter));
+	mn.SetClass(PClass);
+	ClGame.PushMenuScreen(mn);
+}
+
+defaultproperties
+{
+	ChoicesStartX = 66;
+	ChoicesStartY = 40;
+	SelectorType = MenuSelector_Big;
+	Title = "INITIAL CHARACTER SETUP";
+}

@@ -2,7 +2,7 @@
 cd..
 cd..
 vlumpy d:\korax\vavoom\source\basev\common\basepak.ls
-copy "d:\korax\vavoom\source\basev\common\basepak.pk3" "D:\Korax\Vavoom\basev\common\"
+copy "d:\korax\vavoom\source\basev\common\basepak.pk3" "D:\Korax\KoraxRPG\basev\common\"
 cd koraxrpg
 vlumpy basepak.ls
 pause
