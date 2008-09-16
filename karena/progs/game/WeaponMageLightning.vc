@@ -34,29 +34,14 @@ class WeaponMageLightning : KArenaWeapon;
 
 //==========================================================================
 //
-//  A_LightningReady
+//  A_KArenaMLightningAttack
 //
 //==========================================================================
 
-final void A_LightningReady() //self(KArenaPlayerPawn)
+final void A_KArenaMLightningAttack() self(KArenaPlayerPawn)
 {
-	A_WeaponReady();
-	if (P_Random() < 160)
-	{
-		PlaySound('MageLightningReady', CHAN_WEAPON);
-	}
-}
-
-//==========================================================================
-//
-//  A_MLightningAttack
-//
-//==========================================================================
-
-final void A_MLightningAttack() self(KArenaPlayerPawn)
-{
-	LightningFloor fmo;
-	LightningCeiling cmo;
+	LightningMissile fmo;
+	LightningMissile cmo;
 
 	if (!bIsPlayer)
 	{
@@ -64,19 +49,19 @@ final void A_MLightningAttack() self(KArenaPlayerPawn)
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	fmo = LightningFloor(KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, LightningFloor));
-	cmo = LightningCeiling(KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, LightningCeiling));
+	fmo = LightningMissile(KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, LightningFloor));
+	cmo = LightningMissile(KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, LightningCeiling));
 	if (fmo)
 	{
 		fmo.ZigZagCount = 0;
 		fmo.LightningLink = cmo;
-		fmo.A_LightningZap();
+		fmo.A_KArenaLightningZap();
 	}
 	if (cmo)
 	{
 		cmo.Tracer = none;	// mobj that it will track
 		cmo.LightningLink = fmo;
-		cmo.A_LightningZap();
+		cmo.A_KArenaLightningZap();
 	}
 	PlaySound('MageLightningFire', CHAN_WEAPON);
 	Wpn.UseWeaponMana();
@@ -99,7 +84,7 @@ Select:
 	Loop
 Fire:
 	MLNG DE 3 Bright
-	MLNG F 4 Bright A_MLightningAttack
+	MLNG F 4 Bright A_KArenaMLightningAttack
 	MLNG G 4 Bright
 	MLNG H 3 Bright
 	MLNG I 3 Bright
