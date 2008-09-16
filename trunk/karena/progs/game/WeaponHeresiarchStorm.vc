@@ -72,24 +72,23 @@ final void A_HStormAttack(int attack) self(KArenaPlayerPawn)
 
 	if (attack == 0)
 	{
-		LightningFloor fmo;
-		LightningCeiling cmo;
+		LightningMissile fmo;
+		LightningMissile cmo;
 
 		Wpn.AmmoUse1 = 10;
 
 		for (ang = -30; ang < 60; ang += 30)
 		{
 			fang = AngleMod360(Angles.yaw + itof(ang));
-			fmo = LightningFloor(KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, LightningFloor, fang));
-			cmo = LightningCeiling(KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, LightningCeiling, fang));
+			fmo = LightningMissile(KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, LightningFloor, fang));
+			cmo = LightningMissile(KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, LightningCeiling, fang));
 			if (fmo)
 			{
 				//fmo.Obituary = "$ob_heresiarchlightning";
 				fmo.ZigZagCount = 0;
 				fmo.LightningLink = cmo;
 				fmo.Health = 12;
-				fmo.DamageBonus = 4;
-				fmo.A_LightningZap();
+				fmo.A_KArenaLightningZap();
 			}
 			if (cmo)
 			{
@@ -97,8 +96,7 @@ final void A_HStormAttack(int attack) self(KArenaPlayerPawn)
 				cmo.Tracer = none;	// mobj that it will track
 				cmo.LightningLink = fmo;
 				cmo.Health = 12;
-				cmo.DamageBonus = 4;
-				cmo.A_LightningZap();
+				cmo.A_KArenaLightningZap();
 			}
 		}
 	}

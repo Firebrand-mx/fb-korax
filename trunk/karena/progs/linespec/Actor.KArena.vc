@@ -411,3 +411,77 @@ final void A_KArenaMaceBallImpact2()
 		tiny.CheckMissileSpawn();
 	}
 }
+
+//============================================================================
+//
+//  A_KArenaCHolyAttack2
+//
+//  Spawns the spirits
+//
+//============================================================================
+
+final void A_KArenaCHolyAttack2()
+{
+	int j;
+	int i;
+	Actor A;
+	Actor tail;
+	Actor next;
+
+	for (j = 0; j < 4; j++)
+	{
+		A = Spawn(HolyFX, Origin);
+		if (!A)
+		{
+			continue;
+		}
+		switch (j)
+		{	// float bob index
+		case 0:
+			HolyFX(A).WeaveZ = P_Random() & 7;	// upper-left
+			break;
+		case 1:
+			HolyFX(A).WeaveZ = 32 + (P_Random() & 7);	// upper-right
+			break;
+		case 2:
+			HolyFX(A).WeaveXY = 32 + (P_Random() & 7);	// lower-left
+			break;
+		case 3:
+			HolyFX(A).WeaveXY = 32 + (P_Random() & 7);
+			HolyFX(A).WeaveZ = 32 + (P_Random() & 7);
+			break;
+		}
+		A.Origin.z = Origin.z;
+		A.Angles.yaw = AngleMod360(Angles.yaw +
+			(45.0 + 45.0 / 2.0) - 45.0 * itof(j));
+		A.Thrust(A.Angles.yaw, A.Speed * Level.Game.frametime);
+		A.SpawnCombatAttributes(Actor(Target), self);
+		//A.Target = Target;
+		//if (Target)
+		//	A.PInstigator = Player(Target.Player);
+		A.Args[0] = 10;	// initial turn value
+		A.Args[1] = 0;	// initial look angle
+		if (Level.Game.deathmatch)
+		{
+			// Ghosts last slightly less longer in DeathMatch
+			A.Health = 85;
+		}
+		if (Tracer)
+		{
+			A.Tracer = Tracer;
+			//	Don't colide with world but colide with things, i.e explode
+			A.bColideWithWorld = false;
+			A.bSkullFly = true;
+			A.bMissile = false;
+		}
+		tail = Spawn(HolyTail, A.Origin);
+		tail.Target = A;	// parent
+		for (i = 1; i < 3; i++)
+		{
+			next = Spawn(HolyTailTrail, A.Origin);
+			tail.Tracer = next;
+			tail = next;
+		}
+		//A.Obituary = Obituary;
+	}
+}

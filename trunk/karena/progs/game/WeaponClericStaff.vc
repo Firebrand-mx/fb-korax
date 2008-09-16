@@ -32,53 +32,13 @@
 
 class WeaponClericStaff : KArenaWeapon;
 
-int BlinkCount;
-
-//==========================================================================
-//
-//  A_CStaffInitBlink
-//
-//==========================================================================
-
-final void A_CStaffInitBlink() self(KArenaPlayerPawn)
-{
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	WeaponClericStaff(Wpn).BlinkCount = (P_Random() >> 1) + 20;
-}
-
-//==========================================================================
-//
-//  A_CStaffCheckBlink
-//
-//==========================================================================
-
-final void A_CStaffCheckBlink() self(KArenaPlayerPawn)
-{
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	if (!--WeaponClericStaff(Wpn).BlinkCount)
-	{
-		Player.SetViewState(ps_weapon, Wpn.FindState('Blink'));
-		WeaponClericStaff(Wpn).BlinkCount = (P_Random() + 50) >> 2;
-	}
-}
-
 //============================================================================
 //
-//  A_CStaffCheck
+//  A_KArenaCStaffCheck
 //
 //============================================================================
 
-final void A_CStaffCheck() self(KArenaPlayerPawn)
+final void A_KArenaCStaffCheck() self(KArenaPlayerPawn)
 {
 	int			damage;
 	int			newLife;
@@ -116,11 +76,11 @@ final void A_CStaffCheck() self(KArenaPlayerPawn)
 
 //============================================================================
 //
-//  A_CStaffAttack
+//  A_KArenaCStaffAttack
 //
 //============================================================================
 
-final void A_CStaffAttack() self(KArenaPlayerPawn)
+final void A_KArenaCStaffAttack() self(KArenaPlayerPawn)
 {
 	EntityEx mo;
 
@@ -131,14 +91,14 @@ final void A_CStaffAttack() self(KArenaPlayerPawn)
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
 	Wpn.UseWeaponMana();
-	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, ClericStaffMissile,
+	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, CStaffMissile,
 		Angles.yaw - (45.0 / 15.0));
 	if (mo)
 	{
 		mo.Special2 = 32;
 		Wpn.ApplyDamageModifiers(mo.MissileDamage);
 	}
-	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, ClericStaffMissile,
+	mo = KArenaPlayerPawn(self).SpawnPlayerMissileAngle_2(Wpn, CStaffMissile,
 		Angles.yaw + (45.0 / 15.0));
 	if (mo)
 	{
@@ -168,8 +128,8 @@ Select:
 	CSSF C 1 A_Raise
 	Loop
 Fire:
-	CSSF A 1 Offset(0, 45) A_CStaffCheck
-	CSSF J 1 Offset(0, 50) A_CStaffAttack
+	CSSF A 1 Offset(0, 45) A_KArenaCStaffCheck
+	CSSF J 1 Offset(0, 50) A_KArenaCStaffAttack
 	CSSF J 2 Offset(0, 50)
 	CSSF J 2 Offset(0, 45)
 	CSSF A 2 Offset(0, 40)

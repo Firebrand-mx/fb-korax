@@ -32,15 +32,13 @@
 
 class WeaponFighterPunch : KArenaWeapon;
 
-int PunchCount;
-
 //==========================================================================
 //
-//  A_FPunchAttack
+//  A_KArenaFPunchAttack
 //
 //==========================================================================
 
-final void A_FPunchAttack() self(KArenaPlayerPawn)
+final void A_KArenaFPunchAttack() self(Actor)
 {
 	int				damage;
 	float			power;
@@ -64,8 +62,8 @@ final void A_FPunchAttack() self(KArenaPlayerPawn)
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		WeaponFighterPunch(Wpn).PunchCount++;
-		if (WeaponFighterPunch(Wpn).PunchCount == 3)
+		Special1++;
+		if (Special1 == 3)
 		{
 			damage <<= 1;
 			power = 6.0;
@@ -73,37 +71,29 @@ final void A_FPunchAttack() self(KArenaPlayerPawn)
 		}
 		if (LineAttack(vforward, 2.0 * MELEERANGE, damage, PuffType))
 		{
-			if (PuffType == HammerPuff)
-			{
-				PlaySound('FighterHammerMiss', CHAN_WEAPON);
-			}
-			else
-			{
-				PlaySound('FighterPunchMiss', CHAN_WEAPON);
-			}
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
 		}
 		if (AimTarget.bMonster || AimTarget.bIsPlayer)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		Player(Player).AdjustPlayerAngle(AimTarget);
+		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		WeaponFighterPunch(Wpn).PunchCount = 0;
+		Special1 = 0;
 
 		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
-			PlaySound('FighterPunchMiss', CHAN_WEAPON);
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
 		}
 	}
 
-	if (WeaponFighterPunch(Wpn).PunchCount == 3)
+	if (Special1 == 3)
 	{
-		WeaponFighterPunch(Wpn).PunchCount = 0;
-		Player.SetViewState(ps_weapon,
-			GetStatePlus(Wpn.GetAttackState(false), 5, true));
+		Special1 = 0;
+		Player.SetViewState(ps_weapon, Wpn.FindState('Fire2'));
 		PlaySound('*fistgrunt', CHAN_VOICE);
 	}
 }
@@ -121,9 +111,10 @@ Select:
 	Loop
 Fire:
 	FPCH BC 5 Offset(5, 40)
-	FPCH D 4 Offset(5, 40) A_FPunchAttack
+	FPCH D 4 Offset(5, 40) A_KArenaFPunchAttack
 	FPCH C 4 Offset(5, 40)
 	FPCH B 5 Offset(5, 40) A_ReFire
+Fire2:
 	Goto Ready
 	FPCH DE 4 Offset(5, 40)
 	FPCH E 1 Offset(15, 50)

@@ -13,6 +13,7 @@ graphics/fonta63.lmp		graphics/fonta63.lmp
 progs/linespec/classes.vc					progs/linespec/classes.vc
 progs/linespec/Actor.KArena.vc				progs/linespec/Actor.KArena.vc
 progs/linespec/HexenDefs.vc					progs/linespec/HexenDefs.vc
+progs/linespec/HolyFX.vc					progs/linespec/HolyFX.vc
 progs/linespec/KAPlayerBase.vc				progs/linespec/KAPlayerBase.vc
 
 //	Client progs
@@ -64,12 +65,6 @@ progs/game/ArtifactSummonMaulator.vc		progs/game/ArtifactSummonMaulator.vc
 progs/game/BlastRadiusBomb.vc		progs/game/BlastRadiusBomb.vc
 progs/game/BlastRadiusMissile.vc		progs/game/BlastRadiusMissile.vc
 progs/game/WeaponPickup.vc		progs/game/WeaponPickup.vc
-progs/game/WeaponThirdLevel.vc		progs/game/WeaponThirdLevel.vc
-progs/game/WeaponFourthLevel.vc		progs/game/WeaponFourthLevel.vc
-progs/game/WeaponFifthLevel.vc		progs/game/WeaponFifthLevel.vc
-progs/game/WeaponSixthLevel.vc		progs/game/WeaponSixthLevel.vc
-progs/game/WeaponSeventhLevel.vc		progs/game/WeaponSeventhLevel.vc
-progs/game/WeaponEighthLevel.vc		progs/game/WeaponEighthLevel.vc
 progs/game/InitialInvulnerability.vc		progs/game/InitialInvulnerability.vc
 progs/game/PathNode.vc		progs/game/PathNode.vc
 progs/game/BlueNode.vc		progs/game/BlueNode.vc
@@ -107,15 +102,11 @@ progs/game/FighterSwordMissile.vc		progs/game/FighterSwordMissile.vc
 progs/game/WeaponFighterSword.vc		progs/game/WeaponFighterSword.vc
 progs/game/WeaponFighterSwordMelee.vc		progs/game/WeaponFighterSwordMelee.vc
 progs/game/WeaponClericMace.vc		progs/game/WeaponClericMace.vc
-progs/game/ClericStaffMissile.vc		progs/game/ClericStaffMissile.vc
 progs/game/WeaponClericStaff.vc		progs/game/WeaponClericStaff.vc
 progs/game/KArenaCircleFlame.vc		progs/game/KArenaCircleFlame.vc
 progs/game/ClericFlameMissile.vc		progs/game/ClericFlameMissile.vc
 progs/game/WeaponClericFire.vc		progs/game/WeaponClericFire.vc
-progs/game/HolyFX.vc		progs/game/HolyFX.vc
-progs/game/HolyMissile.vc		progs/game/HolyMissile.vc
 progs/game/WeaponClericHoly.vc		progs/game/WeaponClericHoly.vc
-progs/game/MageWandMissile.vc		progs/game/MageWandMissile.vc
 progs/game/WeaponMageWand.vc		progs/game/WeaponMageWand.vc
 progs/game/MageWandRedSmoke.vc		progs/game/MageWandRedSmoke.vc
 progs/game/MageWandRedMissile.vc		progs/game/MageWandRedMissile.vc
@@ -126,12 +117,8 @@ progs/game/WeaponMageWandGrey.vc		progs/game/WeaponMageWandGrey.vc
 progs/game/ShardMissile.vc		progs/game/ShardMissile.vc
 progs/game/WeaponMageCone.vc		progs/game/WeaponMageCone.vc
 progs/game/LightningMissile.vc		progs/game/LightningMissile.vc
-progs/game/LightningZap.vc		progs/game/LightningZap.vc
-progs/game/LightningFloor.vc		progs/game/LightningFloor.vc
-progs/game/LightningCeiling.vc		progs/game/LightningCeiling.vc
 progs/game/LightningSpark.vc		progs/game/LightningSpark.vc
 progs/game/WeaponMageLightning.vc		progs/game/WeaponMageLightning.vc
-progs/game/MageStaffFX2.vc		progs/game/MageStaffFX2.vc
 progs/game/InfernalHandFX.vc		progs/game/InfernalHandFX.vc
 progs/game/InfernalHandFX2.vc		progs/game/InfernalHandFX2.vc
 progs/game/WeaponMageStaff.vc		progs/game/WeaponMageStaff.vc
@@ -175,7 +162,6 @@ progs/game/WeaponHeresiarchPRay.vc		progs/game/WeaponHeresiarchPRay.vc
 progs/game/WeaponHeresiarchStorm.vc		progs/game/WeaponHeresiarchStorm.vc
 progs/game/WeaponHeresiarchHand.vc		progs/game/WeaponHeresiarchHand.vc
 progs/game/WeaponHeresiarchHoly.vc		progs/game/WeaponHeresiarchHoly.vc
-progs/game/IceShard.vc		progs/game/IceShard.vc
 progs/game/TeleportOtherFX1.vc		progs/game/TeleportOtherFX1.vc
 progs/game/TeleportOtherFX2.vc		progs/game/TeleportOtherFX2.vc
 progs/game/TeleportOtherFX3.vc		progs/game/TeleportOtherFX3.vc
@@ -262,16 +248,20 @@ gm_tdm.txt				scripts/gm_tdm.txt
 gm_tswp.txt				scripts/gm_tswp.txt
 gm_xmas.txt				scripts/gm_xmas.txt
 
-decorate.txt			decorate.txt
-decorate/armor.txt		decorate/armor.txt
-decorate/artifacts.txt	decorate/artifacts.txt
-decorate/centaur.txt	decorate/centaur.txt
-decorate/demons.txt		decorate/demons.txt
-decorate/dragon.txt		decorate/dragon.txt
-decorate/health.txt		decorate/health.txt
-decorate/mana.txt		decorate/mana.txt
-decorate/misc.txt		decorate/misc.txt
-decorate/mummy.txt		decorate/mummy.txt
+//	Decorate definition file
+vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
+
+decorate.txt					decorate.txt
+decorate/armor.txt				decorate/armor.txt
+decorate/artifacts.txt			decorate/artifacts.txt
+decorate/centaur.txt			decorate/centaur.txt
+decorate/demons.txt				decorate/demons.txt
+decorate/dragon.txt				decorate/dragon.txt
+decorate/health.txt				decorate/health.txt
+decorate/mana.txt				decorate/mana.txt
+decorate/misc.txt				decorate/misc.txt
+decorate/mummy.txt				decorate/mummy.txt
+decorate/weapons.txt			decorate/weapons.txt
 decorate/weapons_heretic.txt	decorate/weapons_heretic.txt
 
 //	Language strings

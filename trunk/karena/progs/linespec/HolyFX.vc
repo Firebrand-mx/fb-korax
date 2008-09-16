@@ -1,0 +1,157 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class HolyFX : HolySpirit;
+
+//==========================================================================
+//
+//	Touch
+//
+//==========================================================================
+
+bool Touch(Entity InOther)
+{
+	int damage;
+	EntityEx Other;
+
+	Other = EntityEx(InOther);
+	if (!Other.bSolid && !Other.bSpecial && !Other.bShootable)
+		return true;
+
+	// Check for skulls slamming into things
+	if (bSkullFly)
+	{
+		if (Other.bShootable && Other != Target)
+		{
+			if (Level.Game.netgame && !Level.Game.deathmatch && Other.bIsPlayer)
+			{
+				// don't attack other co-op players
+				return true;
+			}
+			if (Other.bReflective && (Other.bIsPlayer || Other.bBoss))
+			{
+				Tracer = Target;
+				Target = Other;
+				return true;
+			}
+			if (Other.bMonster || Other.bIsPlayer)
+			{
+				Tracer = Other;
+			}
+			if (P_Random() < 96)
+			{
+				damage = 12;
+				if (Other.bIsPlayer || Other.bBoss)
+				{
+					damage = 3;
+					// ghost burns out faster when attacking players/bosses
+					Health -= 6;
+				}
+				if (Target && Target.bIsPlayer)
+				{
+					damage = damage * KAPlayerBase(Target.Player).intelligence/10;
+				}
+				Other.Damage(self, Target, damage);
+				if (P_Random() < 128)
+				{
+					Spawn(HolyPuff, Origin);
+					PlaySound('SpiritAttack', CHAN_VOICE);
+					if (Other.HowlSound && Other.bMonster && P_Random() < 128 &&
+						!GetSoundPlayingInfo(Other, GetSoundID(Other.HowlSound)))
+					{
+						Other.PlaySound(Other.HowlSound, CHAN_VOICE);
+					}
+				}
+			}
+			if (Other.Health <= 0)
+			{
+				Tracer = none;
+			}
+		}
+		return true;
+	}
+	return ::Touch(InOther);
+}
+
+//============================================================================
+//
+//  CHolyFindTarget
+//
+//============================================================================
+
+void CHolyFindTarget()
+{
+	Entity		Other;
+
+	foreach RoughBlockSearch(Other, 6)
+	{
+		EntityEx link = EntityEx(Other);
+
+		if ((!link.bMonster && !link.bIsPlayer) || link.bDormant)
+		{
+			continue;
+		}
+		if (!link.bShootable)
+		{
+			continue;
+		}
+		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
+		{
+			continue;
+		}
+		if (link == Target)
+		{
+			continue;
+		}
+		if (link.IsTeammate(Target))
+		{
+			continue;
+		}
+		if (!CanSee(link))
+		{
+			continue;
+		}
+		Tracer = link;
+		bColideWithWorld = false;
+		bSkullFly = true;
+		bMissile = false;
+		break;
+	}
+}
+
+defaultproperties
+{
+	bThruGhost = true;
+	Obituary = "$ob_holy";
+
+	bNoAccuracy = true;
+}

@@ -30,70 +30,15 @@
 //**
 //**************************************************************************
 
-class ClericFlameMissile : Actor;
-
-float FlameSpeed;
-EntityEx bmo;
+class ClericFlameMissile : CFlameMissile;
 
 //==========================================================================
 //
-//	BlasterHitMobj
+//  A_KArenaCFlameMissile
 //
 //==========================================================================
 
-bool BlasterHitMobj(Entity Other)
-{
-	bmo = EntityEx(Other);
-	return ::BlasterHitMobj(Other);
-}
-
-//===========================================================================
-//
-//	SpawnBlasterEffects
-//
-//===========================================================================
-
-void SpawnBlasterEffects()
-{
-	float z;
-	Actor A;
-
-	if (!--Special1)
-	{
-		Special1 = 4;
-		z = Origin.z - 12.0;
-		if (z < FloorZ)
-		{
-			z = FloorZ;
-		}
-		A = Spawn(CFlameFloor, vector(Origin.x, Origin.y, z));
-		if (A)
-		{
-			A.Angles.yaw = Angles.yaw;
-		}
-	}
-}
-
-//==========================================================================
-//
-//	A_CFlamePuff
-//
-//==========================================================================
-
-final void A_CFlamePuff()
-{
-	bInvisible = false;
-	Velocity = vector(0.0, 0.0, 0.0);
-	PlaySound('ClericFlameExplode', CHAN_VOICE);
-}
-
-//==========================================================================
-//
-//  A_CFlameMissile
-//
-//==========================================================================
-
-final void A_CFlameMissile()
+final void A_KArenaCFlameMissile()
 {
 	int i;
 	float an;
@@ -144,63 +89,13 @@ final void A_CFlameMissile()
 
 states
 {
-Spawn:
-	CFFX A 4 Bright
-	CFFX A 1 A_CFlamePuff
-	Goto Death+1
 Death:
-	CFFX A 1 Bright A_CFlameMissile
-	CFFX ABC 3 Bright
-	CFFX D 4 Bright
-	CFFX E 3 Bright
-	CFFX F 4 Bright
-	CFFX G 3 Bright
-	CFFX H 4 Bright
-	CFFX I 3 Bright
-	CFFX J 4 Bright
-	CFFX K 3 Bright
-	CFFX L 4 Bright
-	CFFX M 3 Bright
-	Stop
-FlamePuff:
-	CFFX ABC 3 Bright
-	CFFX D 4 Bright
-	CFFX E 3 Bright
-	CFFX F 4 Bright
-	CFFX G 3 Bright
-	CFFX H 4 Bright
-	CFFX I 3 Bright
-	CFFX C 3 Bright
-	CFFX D 4 Bright
-	CFFX E 3 Bright
-	CFFX F 4 Bright
-	CFFX G 3 Bright
-	CFFX H 4 Bright
-	CFFX I 3 Bright
-	CFFX J 4 Bright
-	CFFX K 3 Bright
-	CFFX L 4 Bright
-	CFFX M 3 Bright
-	Stop
+	CFFX A 1 Bright A_KArenaCFlameMissile
+	Goto Super::Death+1
 }
 
 defaultproperties
 {
-	Radius = 14.0;
-	Height = 8.0;
-	Speed = 7000.0;
 	MissileDamage = 16;
-	bMissile = true;
-	bNoBlockmap = true;
-	bDropOff = true;
-	bNoGravity = true;
-	bNoTeleport = true;
-	bActivateImpact = true;
-	bActivatePCross = true;
-	bBloodSplatter = true;
-	bInvisible = true;
-	DamageType = 'Fire';
-	bBlaster = true;
-	FlameSpeed = 9.0 / 20.0 * 35.0;
 	//Obituary = "$ob_cflame";
 }
