@@ -33,7 +33,7 @@ progs/cgame/KRPGMenuScreen.vc				progs/cgame/KRPGMenuScreen.vc
 progs/cgame/KRPGMenuScreenSinglePlayer.vc	progs/cgame/KRPGMenuScreenSinglePlayer.vc
 progs/cgame/KRPGMenuScreenClass.vc			progs/cgame/KRPGMenuScreenClass.vc
 progs/cgame/KRPGMenuScreenCharacter.vc		progs/cgame/KRPGMenuScreenCharacter.vc
-progs/cgame/KRPGMenuScreenCharacterSetup.vc		progs/cgame/KRPGMenuScreenCharacterSetup.vc
+progs/cgame/KRPGMenuScreenCharacterSetup.vc	progs/cgame/KRPGMenuScreenCharacterSetup.vc
 progs/cgame/MenuScreenMain.vc				progs/cgame/MenuScreenMain.vc
 progs/cgame/MenuScreenMultiplayer.vc		progs/cgame/MenuScreenMultiplayer.vc
 progs/cgame/MenuScreenNewNetGame.vc			progs/cgame/MenuScreenNewNetGame.vc
@@ -76,7 +76,6 @@ progs/game/Player.vc		progs/game/Player.vc
 progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
 progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
 progs/game/ArtiTeleportOther.vc		progs/game/ArtiTeleportOther.vc
-progs/game/ArtiTeleport.vc		progs/game/ArtiTeleport.vc
 progs/game/ArtiPoisonBag.vc		progs/game/ArtiPoisonBag.vc
 progs/game/ArtiBoostArmor.vc		progs/game/ArtiBoostArmor.vc
 progs/game/ArtiBlastRadius.vc		progs/game/ArtiBlastRadius.vc
