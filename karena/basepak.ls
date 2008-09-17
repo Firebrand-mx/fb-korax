@@ -82,15 +82,11 @@ progs/game/HornRodMissile2.vc		progs/game/HornRodMissile2.vc
 progs/game/RainPlayer1.vc		progs/game/RainPlayer1.vc
 progs/game/WeaponSkullRod.vc		progs/game/WeaponSkullRod.vc
 progs/game/WeaponSkullRodUp.vc		progs/game/WeaponSkullRodUp.vc
-progs/game/MaceFX4.vc		progs/game/MaceFX4.vc
 progs/game/WeaponMace.vc		progs/game/WeaponMace.vc
 progs/game/WeaponMaceUp.vc		progs/game/WeaponMaceUp.vc
-progs/game/PhoenixFX1.vc		progs/game/PhoenixFX1.vc
-progs/game/PhoenixFX2.vc		progs/game/PhoenixFX2.vc
 progs/game/WeaponPhoenixRod.vc		progs/game/WeaponPhoenixRod.vc
 progs/game/WeaponPhoenixRodUp.vc		progs/game/WeaponPhoenixRodUp.vc
-progs/game/BlasterFX1.vc		progs/game/BlasterFX1.vc
-progs/game/Ripper.vc		progs/game/Ripper.vc
+progs/game/KArenaBlasterFX1.vc		progs/game/KArenaBlasterFX1.vc
 progs/game/WeaponBlaster.vc		progs/game/WeaponBlaster.vc
 progs/game/WeaponBlasterUp.vc		progs/game/WeaponBlasterUp.vc
 progs/game/WeaponFighterPunch.vc		progs/game/WeaponFighterPunch.vc

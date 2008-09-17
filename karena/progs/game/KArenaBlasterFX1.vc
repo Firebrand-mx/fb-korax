@@ -30,113 +30,84 @@
 //**
 //**************************************************************************
 
-class MaceFX4 : Actor;
+class KArenaBlasterFX1 : Actor;
 
 //===========================================================================
 //
-//  A_DeathBallImpact
+//	SpawnBlasterEffects
 //
 //===========================================================================
 
-final void A_DeathBallImpact()
+void SpawnBlasterEffects()
 {
-	int			i;
-	float		angle;
-	int			newAngle;
-	TAVec		angles;
-	TVec		Dir;
-	EntityEx	AimTarget;
+	TVec org;
 
-	if (Origin.z <= FloorZ && HitFloorType())
+	if (P_Random() < 64)
 	{
-		// Landed in some sort of liquid
-		Destroy();
-		return;
+		org = Origin;
+		org.z = Origin.z - 8.0;
+		if (org.z < FloorZ)
+		{
+			org.z = FloorZ;
+		}
+		Spawn(BlasterSmoke, org);
 	}
-	if ((Origin.z <= FloorZ) && Velocity.z)
+}
+
+//===========================================================================
+//
+//  A_SpawnRippers
+//
+//===========================================================================
+
+final void A_SpawnRippers()
+{
+	int i;
+	float angle;
+	Actor ripper;
+
+	for (i = 0; i < 8; i++)
 	{
-		// Bounce
-		newAngle = false;
-		if (Tracer)
-		{
-			if (!Tracer.bShootable)
-			{
-				// Target died
-				Tracer = none;
-			}
-			else
-			{
-				// Seek
-				angle = atan2(Tracer.Origin.y - Origin.y,
-					Tracer.Origin.x - Origin.x);
-				newAngle = true;
-			}
-		}
-		else
-		{
-			// Find new target
-			angles.pitch = 0.0;
-			angles.yaw = 0.0;
-			angles.roll = 0.0;
-			for (i = 0; i < 16; i++)
-			{
-				AimTarget = AimLineAttack(Dir, angles, 10.0 * 64.0);
-				if (AimTarget && Target != AimTarget)
-				{
-					Tracer = AimTarget;
-					angle = atan2(AimTarget.Origin.y - Origin.y,
-						AimTarget.Origin.x - Origin.x);
-					newAngle = true;
-					break;
-				}
-				angles.yaw = AngleMod360(angles.yaw + 45.0 / 2.0);
-			}
-		}
-		if (newAngle)
-		{
-			Angles.yaw = angle;
-			Velocity.x = Speed * cos(angle);
-			Velocity.y = Speed * sin(angle);
-		}
-		SetState(IdleState);
-		PlaySound('PlatformStop', CHAN_VOICE);
-	}
-	else
-	{
-		// Explode
-		bNoGravity = true;
-		Gravity = 1.0;
-		SendExplosion(RGB(255, 128, 0), 86.0, Origin);
-		PlaySound('PhoenixHit', CHAN_VOICE);
+		ripper = Spawn(Ripper, Origin);
+		angle = itof(i) * 45.0;
+		ripper.SpawnCombatAttributes(Actor(Target), self);
+		ripper.Target = Target;
+		//if (Target)
+		//	ripper.PInstigator = Player(Target.Player);
+		ripper.Angles.yaw = angle;
+		ripper.Velocity.x = ripper.Speed * cos(angle);
+		ripper.Velocity.y = ripper.Speed * sin(angle);
+		ripper.CheckMissileSpawn();
+		ripper.MissileDamage = MissileDamage;
 	}
 }
 
 states
 {
 Spawn:
-	FX02 E 99
+	ACLO E 200
 	Loop
 Death:
-	FX02 C 4 Bright A_DeathBallImpact
-	FX02 GHIJ 4 Bright
+	FX18 A 3 Bright A_SpawnRippers
+	FX18 B 3 Bright
+	FX18 CDEFG 4 Bright
 	Stop
 }
 
 defaultproperties
 {
-	Radius = 8.0;
-	Height = 6.0;
-	Speed = 7.0 * 35.0;
-	Gravity = 0.125;
-	MissileDamage = 200;
-	BounceType = BOUNCE_Heretic;
+	Radius = 12.0;
+	Height = 8.0;
+	Speed = 6440.0;
+	MissileDamage = 2;
 	bMissile = true;
-	bDropOff = true;
 	bNoBlockmap = true;
-	bActivatePCross = true;
+	bDropOff = true;
+	bNoGravity = true;
+	bNoTeleport = true;
 	bActivateImpact = true;
+	bActivatePCross = true;
 	bBloodSplatter = true;
-	bThruGhost = true;
-	bTelestomp = true;
-	Obituary = "$ob_mace";
+	DeathSound = 'BlasterHit';
+//	Obituary = "$ob_blaster";
 }
