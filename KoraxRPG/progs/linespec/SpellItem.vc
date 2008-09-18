@@ -1,0 +1,149 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: PuzzleItem.vc 3379 2008-03-25 21:27:42Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class SpellItem : Inventory
+	abstract;
+
+//	Can be displayed in the spell bar / spell book
+bool				bSpellBar;
+int					Level;
+
+replication
+{
+	reliable if (Role == ROLE_Authority && bNetOwner)
+		Level;
+}
+
+//==========================================================================
+//
+//	AttachToOwner
+//
+//==========================================================================
+
+void AttachToOwner(EntityEx NewOwner)
+{
+	::AttachToOwner(NewOwner);
+	if (NewOwner.bIsPlayer && bSpellBar &&
+		!KRPGPlayerBase(NewOwner.Player).SpellPtr)
+	{
+		KRPGPlayerBase(NewOwner.Player).SpellPtr = self;
+		KRPGPlayerBase(NewOwner.Player).SpellFirst = self;
+	}
+}
+
+//==========================================================================
+//
+//	DetachedFromOwner
+//
+//	Event called when item is being removed from Owner's inventory.
+//
+//==========================================================================
+
+void DetachedFromOwner()
+{
+	::DetachedFromOwner();
+	if (Owner.bIsPlayer)
+	{
+		if (KRPGPlayerBase(Owner.Player).SpellPtr == self)
+		{
+			KRPGPlayerBase(Owner.Player).SpellPtr = PrevInv();
+			if (!KRPGPlayerBase(Owner.Player).SpellPtr)
+			{
+				KRPGPlayerBase(Owner.Player).SpellPtr = NextInv();
+			}
+		}
+		if (KRPGPlayerBase(Owner.Player).SpellFirst == self)
+		{
+			KRPGPlayerBase(Owner.Player).SpellFirst = PrevInv();
+			if (!KRPGPlayerBase(Owner.Player).SpellFirst)
+			{
+				KRPGPlayerBase(Owner.Player).SpellFirst = NextInv();
+			}
+		}
+	}
+	if (Owner.bIsPlayer && bSpellBar)
+	{
+		KRPGPlayerBase(Owner.Player).AdjustSpellFirst();
+	}
+}
+
+//==========================================================================
+//
+//	PrevInv
+//
+//	Return previous item with bSpellBar flag set.
+//
+//==========================================================================
+
+Inventory PrevInv()
+{
+	Inventory Item = Inventory;
+	while (Item && SpellItem(Item) && !SpellItem(Item).bSpellBar)
+	{
+		Item = Item.Inventory;
+	}
+	return Item;
+}
+
+//==========================================================================
+//
+//	NextInv
+//
+//	Return next item with bSpellBar flag set.
+//
+//==========================================================================
+
+Inventory NextInv()
+{
+	Inventory Ret = none;
+	Inventory Item = EntityEx(Owner).Inventory;
+	while (Item && Item != self)
+	{
+		if (SpellItem(Item) && SpellItem(Item).bSpellBar)
+		{
+			Ret = Item;
+		}
+		Item = Item.Inventory;
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//	ActivateSpell
+//
+//==========================================================================
+
+bool ActivateSpell(bool Pickup, int level)
+{
+	return true;
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	bNoGravity = true;
+	bSpellBar = true;
+}
