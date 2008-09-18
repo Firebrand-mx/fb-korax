@@ -36,34 +36,209 @@ int strength;
 int intelligence;
 int wisdom;
 
+//
+// [FB] Spell bar stuff
+//
+Inventory		SpellFirst;
+Inventory		SpellPtr;
+float			SpellTime;
+int				SpellSize;
+
 replication
 {
 	reliable if (!bIsClient)
-		strength, intelligence, wisdom;
+		strength, intelligence, wisdom, SpellFirst,
+		SpellPtr, SpellTime;
 }
+
+//==========================================================================
+//
+//	GiveExperience
+//
+//==========================================================================
 
 void GiveExperience(int Exp)
 {
 }
+
+//==========================================================================
+//
+//	UpdateStats
+//
+//==========================================================================
 
 void UpdateStats(int n_strength, int n_vitality, int n_speed, int n_intelligence,
 		int n_wisdom)
 {
 }
 
+//==========================================================================
+//
+//	GetPoints
+//
+//==========================================================================
+
 int GetPoints()
 {
 }
 
+//==========================================================================
+//
+//	SetPoints
+//
+//==========================================================================
+
 void SetPoints(int value)
 {
 }
+
+//==========================================================================
+//
+//	BuildCharacter
+//
+//==========================================================================
 
 void BuildCharacter(int i_strength, int i_vitality, int i_speed, int i_intelligence,
 		int i_wisdom)
 {
 }
 
+//==========================================================================
+//
+//  NextSpell
+//
+//==========================================================================
+
+final void NextSpell()
+{
+	if (!SpellTime)
+	{
+		SpellTime = 5.0;
+		return;
+	}
+	SpellTime = 5.0;
+
+	if (SpellPtr)
+	{
+		Inventory Prev = SpellItem(SpellPtr).PrevInv();
+		if (Prev)
+		{
+			SpellPtr = Prev;
+			AdjustSpellFirst();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  PreviousSpell
+//
+//==========================================================================
+
+final void PreviousSpell()
+{
+	if (!SpellTime)
+	{
+		SpellTime = 5.0;
+		return;
+	}
+	SpellTime = 5.0;
+
+	if (SpellPtr)
+	{
+		Inventory Next = SpellItem(SpellPtr).NextInv();
+		if (Next)
+		{
+			SpellPtr = Next;
+			AdjustSpellFirst();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  SpellUse
+//
+//==========================================================================
+
+final void SpellUse()
+{
+	// flag to denote that it's okay to use an artifact
+	if (SpellTime)
+	{
+		SpellTime = 0.0;
+	}
+	else if (SpellPtr)
+	{
+		Actor(MO).UseSpell(SpellPtr);
+	}
+}
+
+//==========================================================================
+//
+//  SpellTick
+//
+//==========================================================================
+
+final void SpellTick(float deltaTime)
+{
+	// turn spell bar off after a certain amount of time
+	if (SpellTime)
+	{
+		SpellTime -= deltaTime;
+		if (SpellTime <= 0.0)
+		{
+			SpellTime = 0.0;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	AdjustSpellFirst
+//
+//==========================================================================
+
+final void AdjustSpellFirst()
+{
+	Inventory Item;
+
+	if (!SpellPtr)
+	{
+		SpellFirst = none;
+		return;
+	}
+
+	//	Count how many items are following the current one, also make sure
+	// that first is not after this one.
+	int NumFollowing = 0;
+	for (Item = SpellItem(SpellPtr).NextInv(); Item && SpellItem(Item);
+			Item = SpellItem(Item).NextInv())
+	{
+		NumFollowing++;
+		if (SpellFirst == Item)
+		{
+			SpellFirst = SpellPtr;
+		}
+	}
+	int FirstOffs = 0;
+	for (Item = SpellPtr; Item && SpellItem(Item) && Item != SpellFirst;
+			Item = SpellItem(Item).PrevInv())
+	{
+		FirstOffs++;
+	}
+	while (FirstOffs > SpellSize)
+	{
+		SpellFirst = SpellItem(SpellFirst).NextInv();
+		FirstOffs--;
+	}
+	while (NumFollowing + FirstOffs < SpellSize &&
+			SpellItem(SpellFirst).PrevInv())
+	{
+		SpellFirst = SpellItem(SpellFirst).PrevInv();
+		FirstOffs++;
+	}
+}
 
 defaultproperties
 {

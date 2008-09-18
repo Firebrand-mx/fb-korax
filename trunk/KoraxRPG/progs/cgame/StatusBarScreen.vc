@@ -27,6 +27,7 @@ class StatusBarScreen : StatusBarShared;
 
 const int BAR_X = 160;
 const int BAR_Y = 441;
+const int BAR_Y2 = 411;
 
 Player cl;
 
@@ -396,11 +397,11 @@ void SB_DrawMainBar()
 
 //[Korax]
 	SB_DrawNumber9(20, 20, 0 + cl.sp_power, 1);
+	SB_DrawNumber9(50, 20, 0 + cl.maxsp_power, 0);
 
-	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 1);
+	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 0);
 	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
 	SB_DrawNumber9(580, 20, 0 + cl.next_level, 0);
-
 
 	// Frags / health
 	if (ClGame.deathmatch)
@@ -480,6 +481,11 @@ void SB_DrawMainBar()
 		SB_DrawINumber(BAR_X + 166, BAR_Y + 23, cl.InvPtr.Amount);
 	}
 
+	if (cl.SpellPtr)
+	{
+		DrawPic(BAR_X + 143, BAR_Y2 + 2, R_RegisterPic(cl.SpellPtr.IconName));
+	}
+
 	// Weapon Pieces
 	FourthWeaponHolder Hold = FourthWeaponHolder(
 		EntityEx(cl.MO).FindInventory(FourthWeaponHolder));
@@ -528,6 +534,14 @@ void SB_DrawKeyBar()
 
 	SB_DrawBackground();
 	DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
+
+// [KORAX]
+	SB_DrawNumber9(20, 20, 0 + cl.sp_power, 1);
+	SB_DrawNumber9(50, 20, 0 + cl.maxsp_power, 0);
+
+	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 0);
+	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
+	SB_DrawNumber9(580, 20, 0 + cl.next_level, 0);
 
 	//  Keys
 	Item = EntityEx(cl.MO).Inventory;
@@ -606,6 +620,46 @@ void SB_DrawInventoryBar()
 
 //==========================================================================
 //
+//	SB_DrawSpellBar
+//
+//	[FB] Similar to SB_DrawInventoryBar but for spells (only temporary)
+//
+//==========================================================================
+
+void SB_DrawSpellBar()
+{
+	int i;
+
+	SB_DrawMainBar();
+
+	//  Inventory
+	Inventory Item = cl.SpellFirst;
+	for (i = 0; i < 7; i++)
+	{
+		DrawPic(210 + i * 31, 418, pic_artibox, 0.6);
+		if (Item)
+		{
+			DrawShadowedPic(209 + i * 31, 417,
+				R_RegisterPic(Item.IconName));
+			if (Item == cl.SpellPtr)
+			{
+				DrawPic(210 + i * 31, 417, pic_selectbox, 0.6);
+			}
+			Item = Item.NextInv();
+		}
+	}
+	if (cl.SpellFirst && cl.SpellFirst.PrevInv())
+	{
+		DrawPic(200, 417, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+	}
+	if (Item)
+	{
+		DrawPic(428, 417, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+	}
+}
+
+//==========================================================================
+//
 //	SB_DrawFullscreenStats
 //
 //==========================================================================
@@ -619,8 +673,9 @@ void SB_DrawFullscreenStats()
 
 //[Korax]
 	SB_DrawNumber9(20, 20, 0 + cl.sp_power, 1);
+	SB_DrawNumber9(50, 20, 0 + cl.maxsp_power, 0);
 
-	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 1);
+	SB_DrawNumber9(320, 20, 0 + cl.exp_level, 0);
 	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
 	SB_DrawNumber9(580, 20, 0 + cl.next_level, 0);
 
@@ -704,6 +759,40 @@ void SB_DrawFullscreenStats()
 		DrawPic(546, 440, pic_artibox, 0.6);
 		DrawShadowedPic(544, 440, R_RegisterPic(cl.InvPtr.IconName));
 		SB_DrawINumber(567, 462, cl.InvPtr.Amount);
+	}
+
+	if (cl.SpellTime)
+	{
+		//  Inventory
+		Inventory Item = cl.SpellFirst;
+		for (i = 0; i < 7; i++)
+		{
+			DrawPic(210 + i * 31, 418, pic_artibox, 0.6);
+			if (Item)
+			{
+				DrawShadowedPic(209 + i * 31, 417,
+					R_RegisterPic(Item.IconName));
+				if (Item == cl.SpellPtr)
+				{
+					DrawPic(210 + i * 31, 417, pic_selectbox, 0.6);
+				}
+				Item = Item.NextInv();
+			}
+		}
+		if (cl.SpellFirst && cl.SpellFirst.PrevInv())
+		{
+			DrawPic(200, 417, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+		if (Item)
+		{
+			DrawPic(428, 417, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+	}
+	else if (cl.SpellPtr)
+	{
+		//  Ready artifact
+		DrawPic(546, 410, pic_artibox, 0.6);
+		DrawShadowedPic(544, 410, R_RegisterPic(cl.SpellPtr.IconName));
 	}
 
 	//  Mana
@@ -847,6 +936,10 @@ void SB_Drawer(int sb_view)
 	else if (cl.InventoryTime)
 	{
 		SB_DrawInventoryBar();
+	}
+	else if (cl.SpellTime)
+	{
+		SB_DrawSpellBar();
 	}
 	else if (sb_view == SB_VIEW_AUTOMAP)
 	{

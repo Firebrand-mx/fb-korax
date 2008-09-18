@@ -34,7 +34,7 @@ class Player : KRPGPlayerBase;
 
 enum
 {
-	BT_DUCK	= 8
+	BT_DUCK	= 16
 };
 
 const int MAXMORPHHEALTH	= 30;
@@ -77,15 +77,16 @@ int av_points;
 int maxsp_power;
 int sp_power;
 int sp_power_old;
-int currentspell; // Used for HUD
+
+int sp_recharge_tics; // [FB] Determine when to charge SP
 
 replication
 {
 	reliable if (!bIsClient)
 		experience, exp_level, next_level, prev_level, money,
-		hunger, stamina, /*strength, */vitality, /*intelligence, wisdom,*/
-		speed, max_health, maxhealth_old, sp_power, sp_power_old,
-		currentspell, SetFOV;
+		hunger, stamina, /* strength, */vitality, /* intelligence, wisdom,*/
+		speed, max_health, maxhealth_old, sp_power, maxsp_power,
+		SetFOV;
 
 	unreliable if (!bIsClient)
 		ParticleEffectEx;
@@ -303,6 +304,7 @@ void InitiateLevel()
 	
 	max_health = KRPGPlayerPawn(MO).InitialHealth;
 	sp_power = KRPGPlayerPawn(MO).InitialSpiritPower;
+	maxsp_power = KRPGPlayerPawn(MO).InitialSpiritPower;
 
 	exp_level = 1;
 	next_level =  1000 * exp_level;
@@ -313,8 +315,8 @@ void InitiateLevel()
 //	hunger = KRPGPlayerPawn(MO).InitialHunger;
 //	stamina = KRPGPlayerPawn(MO).InitialStamina;
 	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialVitality,
-			KRPGPlayerPawn(MO).InitialIntelligence, KRPGPlayerPawn(MO).InitialWisdom,
-			KRPGPlayerPawn(MO).InitialSpeed);
+			KRPGPlayerPawn(MO).InitialSpeed, KRPGPlayerPawn(MO).InitialIntelligence,
+			KRPGPlayerPawn(MO).InitialWisdom);
 }
 
 //==========================================================================
@@ -770,6 +772,18 @@ void PlayerImpulse()
 	{
 		InventoryUse();
 	}
+	else if (impulse == KRPGDefs::IMPULSE__SETNEXTSPELL)
+	{
+		NextSpell();
+	}
+	else if (impulse == KRPGDefs::IMPULSE__SETPREVIOUSSPELL)
+	{
+		PreviousSpell();
+	}
+	else if (impulse == KRPGDefs::IMPULSE__USESPELL)
+	{
+		SpellUse();
+	}
 	else if (impulse == 16)
 	{
 		Actor(MO).Damage(none, none, 10000);
@@ -881,13 +895,21 @@ void PlayerTick(float deltaTime)
 		FlyMove = 0.0;
 	}
 
-	if (ftoi(WorldTimer) % 175 == 0 && sp_power < maxsp_power)
+	sp_recharge_tics++;
+	// [FB] Slowly increase spiritual power
+	if ((sp_recharge_tics >= 18) && (sp_recharge_tics % (5 * 35) == 0) &&
+		sp_power < maxsp_power && PlayerState == PST_LIVE)
 	{
 		sp_power += 1;
+	}
+	if (sp_recharge_tics > (10 * 35))
+	{
+		sp_recharge_tics = 0; // [FB] Restart counter
 	}
 
 	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
+	SpellTick(deltaTime);
 
 	if (PlayerState == PST_DEAD)
 	{
@@ -1728,4 +1750,5 @@ void PlayerMorphed(Actor OldMO)
 
 defaultproperties
 {
+	SpellSize = 6;
 }
