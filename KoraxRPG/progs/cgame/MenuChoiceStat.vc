@@ -151,49 +151,38 @@ bool OnKeyDown(int key)
 	switch (key)
 	{
 	case K_LEFTARROW:
-		if (MaxIncrease > 0)
+		if (MaxIncrease > 0 && Value > 0 &&
+			 Value - 1 >= 0)
 		{
-			if (Value > 0)
+			newValue = Value - 1;
+			if (SetNewValue(newValue, Value))
 			{
-				newValue = Value - 1;
-
-				if (SetNewValue(newValue, Value))
-				{
-					Value = newValue;
-					LocalSound('menu/change');
-				}
+				Value = newValue;
+				LocalSound('menu/change');
 			}
 			return true;
 		}
 	case K_RIGHTARROW:
-		if (MaxIncrease > 0)
+		if (MaxIncrease > 0 && Value < MaxValue)
 		{
-			if (Value < MaxValue)
+			newValue = Value + 1;
+			if (SetNewValue(newValue, Value))
 			{
-				newValue = Value + 1;
-
-				if (SetNewValue(newValue, Value))
-				{
-					Value = newValue;
-					LocalSound('menu/change');
-				}
+				Value = newValue;
+				LocalSound('menu/change');
 			}
 			return true;
 		}
 	case K_ENTER:
 	case K_PADENTER:
 	case K_MOUSE1:
-		if (MaxIncrease > 0)
+		if (MaxIncrease > 0 && Value < MaxValue)
 		{
-			if (Value < MaxValue)
+			newValue = Value + 1;
+			if (SetNewValue(newValue, Value))
 			{
-				newValue = Value + 1;
-
-				if (SetNewValue(newValue, Value))
-				{
-					Value = newValue;
-					LocalSound('menu/change');
-				}
+				Value = newValue;
+				LocalSound('menu/change');
 			}
 			return true;
 		}
@@ -205,17 +194,13 @@ void OnMouseClick(int X, int Y)
 {
 	int newValue;
 
-	if (MaxIncrease > 0)
+	if (MaxIncrease > 0 && Value < MaxValue)
 	{
-		if (Value < MaxValue)
+		newValue = Value + 1;
+		if (SetNewValue(newValue, Value))
 		{
-			newValue = Value + 1;
-
-			if (SetNewValue(newValue, Value))
-			{
-				Value = newValue;
-				LocalSound('menu/change');
-			}
+			Value = newValue;
+			LocalSound('menu/change');
 		}
 	}
 }
@@ -224,17 +209,14 @@ void OnRMouseClick(int X, int Y)
 {
 	int newValue;
 
-	if (MaxIncrease > 0)
+	if (MaxIncrease > 0 && Value > 0 &&
+		 Value - 1 >= 0)
 	{
-		if (Value > 0)
+		newValue = Value - 1;
+		if (SetNewValue(newValue, Value))
 		{
-			newValue = Value - 1;
-
-			if (SetNewValue(newValue, Value))
-			{
-				Value = newValue;
-				LocalSound('menu/change');
-			}
+			Value = newValue;
+			LocalSound('menu/change');
 		}
 	}
 }

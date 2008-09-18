@@ -26,6 +26,7 @@ progs/linespec/ReachTraverse.vc				progs/linespec/ReachTraverse.vc
 progs/linespec/SpellInstance.vc				progs/linespec/SpellInstance.vc
 progs/linespec/ActorCondition.vc			progs/linespec/ActorCondition.vc
 progs/linespec/DyingSpirit.vc				progs/linespec/DyingSpirit.vc
+progs/linespec/SpellItem.vc					progs/linespec/SpellItem.vc
 
 //	Client progs
 progs/cgame/classes.vc						progs/cgame/classes.vc
@@ -140,6 +141,8 @@ progs/game/PowerDLTorch.vc		progs/game/PowerDLTorch.vc
 progs/game/Sequencer.vc		progs/game/Sequencer.vc
 progs/game/WeatherSnow.vc		progs/game/WeatherSnow.vc
 progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
+progs/game/SpellDefensive.vc	progs/game/SpellDefensive.vc
+progs/game/SpellRepulsion.vc	progs/game/SpellRepulsion.vc
 
 //	Scripts
 animdefs.txt					scripts/animdefs.txt
@@ -168,6 +171,9 @@ actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
 actors/krpg/wraith.txt			actors/krpg/wraith.txt
+
+//	Language strings
+language.en				language.en
 
 $load palette.pcx
 translat.dat					raw 0 1 256 7
