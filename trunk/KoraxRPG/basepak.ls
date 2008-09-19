@@ -79,13 +79,6 @@ progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
 progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
 progs/game/TeleportFog.vc		progs/game/TeleportFog.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
-progs/game/ZCorpseLynchedNoHeart.vc		progs/game/ZCorpseLynchedNoHeart.vc
-progs/game/ThrustFloorDown.vc		progs/game/ThrustFloorDown.vc
-progs/game/ThrustFloorUp.vc		progs/game/ThrustFloorUp.vc
-progs/game/Pottery1.vc		progs/game/Pottery1.vc
-progs/game/Pottery2.vc		progs/game/Pottery2.vc
-progs/game/Pottery3.vc		progs/game/Pottery3.vc
-progs/game/ZBell.vc		progs/game/ZBell.vc
 progs/game/PigPlayer.vc		progs/game/PigPlayer.vc
 progs/game/Pig.vc		progs/game/Pig.vc
 progs/game/Heresiarch.vc		progs/game/Heresiarch.vc
