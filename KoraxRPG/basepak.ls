@@ -19,13 +19,14 @@ progs/linespec/ACPoisoned.vc				progs/linespec/ACPoisoned.vc
 progs/linespec/Actor.HexenWeapons.vc		progs/linespec/Actor.HexenWeapons.vc
 progs/linespec/Actor.KRPG.vc				progs/linespec/Actor.KRPG.vc
 progs/linespec/Actor.States.vc				progs/linespec/Actor.States.vc
+progs/linespec/ActorCondition.vc			progs/linespec/ActorCondition.vc
+progs/linespec/DyingSpirit.vc				progs/linespec/DyingSpirit.vc
 progs/linespec/HexenWeapon.vc				progs/linespec/HexenWeapon.vc
 progs/linespec/KRPGPlayerBase.vc			progs/linespec/KRPGPlayerBase.vc
 progs/linespec/KRPGDefs.vc					progs/linespec/KRPGDefs.vc
+progs/linespec/PoisonCloud.vc				progs/linespec/PoisonCloud.vc
 progs/linespec/ReachTraverse.vc				progs/linespec/ReachTraverse.vc
 progs/linespec/SpellInstance.vc				progs/linespec/SpellInstance.vc
-progs/linespec/ActorCondition.vc			progs/linespec/ActorCondition.vc
-progs/linespec/DyingSpirit.vc				progs/linespec/DyingSpirit.vc
 progs/linespec/SpellItem.vc					progs/linespec/SpellItem.vc
 
 //	Client progs
@@ -76,18 +77,8 @@ progs/game/KRPGPlayerReplicationInfo.vc		progs/game/KRPGPlayerReplicationInfo.vc
 progs/game/Player.vc		progs/game/Player.vc
 progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
 progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
-progs/game/ArtiTeleportOther.vc		progs/game/ArtiTeleportOther.vc
-progs/game/ArtiPoisonBag.vc		progs/game/ArtiPoisonBag.vc
-progs/game/ArtiBoostArmor.vc		progs/game/ArtiBoostArmor.vc
-progs/game/ArtiBlastRadius.vc		progs/game/ArtiBlastRadius.vc
-progs/game/ArtiHealingRadius.vc		progs/game/ArtiHealingRadius.vc
 progs/game/TeleportFog.vc		progs/game/TeleportFog.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
-progs/game/TelOtherFX1.vc		progs/game/TelOtherFX1.vc
-progs/game/TelOtherFX2.vc		progs/game/TelOtherFX2.vc
-progs/game/TelOtherFX3.vc		progs/game/TelOtherFX3.vc
-progs/game/TelOtherFX4.vc		progs/game/TelOtherFX4.vc
-progs/game/TelOtherFX5.vc		progs/game/TelOtherFX5.vc
 progs/game/ZCorpseLynchedNoHeart.vc		progs/game/ZCorpseLynchedNoHeart.vc
 progs/game/ThrustFloorDown.vc		progs/game/ThrustFloorDown.vc
 progs/game/ThrustFloorUp.vc		progs/game/ThrustFloorUp.vc
@@ -95,9 +86,6 @@ progs/game/Pottery1.vc		progs/game/Pottery1.vc
 progs/game/Pottery2.vc		progs/game/Pottery2.vc
 progs/game/Pottery3.vc		progs/game/Pottery3.vc
 progs/game/ZBell.vc		progs/game/ZBell.vc
-progs/game/PoisonCloud.vc		progs/game/PoisonCloud.vc
-progs/game/PoisonBag.vc		progs/game/PoisonBag.vc
-progs/game/ZPoisonShroom.vc		progs/game/ZPoisonShroom.vc
 progs/game/PigPlayer.vc		progs/game/PigPlayer.vc
 progs/game/Pig.vc		progs/game/Pig.vc
 progs/game/Heresiarch.vc		progs/game/Heresiarch.vc
