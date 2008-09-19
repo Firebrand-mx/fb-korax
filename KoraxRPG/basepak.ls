@@ -88,8 +88,6 @@ progs/game/TelOtherFX2.vc		progs/game/TelOtherFX2.vc
 progs/game/TelOtherFX3.vc		progs/game/TelOtherFX3.vc
 progs/game/TelOtherFX4.vc		progs/game/TelOtherFX4.vc
 progs/game/TelOtherFX5.vc		progs/game/TelOtherFX5.vc
-progs/game/BridgeBall.vc		progs/game/BridgeBall.vc
-progs/game/Bridge.vc		progs/game/Bridge.vc
 progs/game/ZCorpseLynchedNoHeart.vc		progs/game/ZCorpseLynchedNoHeart.vc
 progs/game/ThrustFloorDown.vc		progs/game/ThrustFloorDown.vc
 progs/game/ThrustFloorUp.vc		progs/game/ThrustFloorUp.vc
