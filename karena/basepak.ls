@@ -165,7 +165,6 @@ progs/game/TeleportOtherFX3.vc		progs/game/TeleportOtherFX3.vc
 progs/game/TeleportOtherFX4.vc		progs/game/TeleportOtherFX4.vc
 progs/game/TeleportOtherFX5.vc		progs/game/TeleportOtherFX5.vc
 progs/game/BotSpawner.vc		progs/game/BotSpawner.vc
-progs/game/ZCorpseLynchedNoHeart.vc		progs/game/ZCorpseLynchedNoHeart.vc
 progs/game/KArenaFlameSmall2.vc		progs/game/KArenaFlameSmall2.vc
 progs/game/KArenaFlameLarge2.vc		progs/game/KArenaFlameLarge2.vc
 progs/game/ZCandle2.vc		progs/game/ZCandle2.vc
@@ -173,12 +172,6 @@ progs/game/ZTWinedTorch2.vc		progs/game/ZTWinedTorch2.vc
 progs/game/ZWallTorch2.vc		progs/game/ZWallTorch2.vc
 progs/game/ZFireBull2.vc		progs/game/ZFireBull2.vc
 progs/game/BrassTorch2.vc		progs/game/BrassTorch2.vc
-progs/game/ThrustFloorDown.vc		progs/game/ThrustFloorDown.vc
-progs/game/ThrustFloorUp.vc		progs/game/ThrustFloorUp.vc
-progs/game/Pottery1.vc		progs/game/Pottery1.vc
-progs/game/Pottery2.vc		progs/game/Pottery2.vc
-progs/game/Pottery3.vc		progs/game/Pottery3.vc
-progs/game/ZBell.vc		progs/game/ZBell.vc
 progs/game/PlayerFighter.vc		progs/game/PlayerFighter.vc
 progs/game/PlayerCleric.vc		progs/game/PlayerCleric.vc
 progs/game/PlayerMage.vc		progs/game/PlayerMage.vc
