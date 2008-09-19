@@ -163,8 +163,6 @@ progs/game/TeleportOtherFX2.vc		progs/game/TeleportOtherFX2.vc
 progs/game/TeleportOtherFX3.vc		progs/game/TeleportOtherFX3.vc
 progs/game/TeleportOtherFX4.vc		progs/game/TeleportOtherFX4.vc
 progs/game/TeleportOtherFX5.vc		progs/game/TeleportOtherFX5.vc
-progs/game/BridgeBall.vc		progs/game/BridgeBall.vc
-progs/game/Bridge.vc		progs/game/Bridge.vc
 progs/game/BotSpawner.vc		progs/game/BotSpawner.vc
 progs/game/ZCorpseLynchedNoHeart.vc		progs/game/ZCorpseLynchedNoHeart.vc
 progs/game/KArenaFlameSmall2.vc		progs/game/KArenaFlameSmall2.vc
