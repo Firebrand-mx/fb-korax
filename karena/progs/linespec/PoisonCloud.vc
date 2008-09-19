@@ -46,7 +46,7 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
 	if (victim.bIsPlayer && !victim.bDormant)
 	{
-		if (Player(victim.Player).PoisonCount < 4)
+		if (PlayerEx(victim.Player).PoisonCount < 4)
 		{
 			Actor(victim).PoisonDamage(self, Actor(source), 15 + (P_Random() & 15), false);	// Don't play painsound
 			Actor(victim).PoisonPlayer(Actor(source), 50);
@@ -77,7 +77,7 @@ void InitCloud(EntityEx InstigatedBy)
 	BobIndex = 0;
 	Target = InstigatedBy;
 	if (Target)
-		PInstigator = Player(Target.Player);
+		PInstigator = KAPlayerBase(Target.Player);
 	Radius = 20.0;
 	Height = 30.0;
 	bColideWithThings = true;
@@ -139,7 +139,7 @@ final void A_SpawnChildren()
 		int i;
 		for (i = 0; i < SpawnChildren; i++)
 		{
-			PoisonCloud pc = PoisonCloud(HexenLevelInfo(Level).Spawn(PoisonCloud,
+			PoisonCloud pc = PoisonCloud(Spawn(PoisonCloud,
 							 Origin + vector((Random() - 0.5) * 256.0, (Random() - 0.5) * 256.0,
 							 (Random() - 0.5) * 64.0)));
 			if (pc)

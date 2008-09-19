@@ -15,6 +15,7 @@ progs/linespec/Actor.KArena.vc				progs/linespec/Actor.KArena.vc
 progs/linespec/HexenDefs.vc					progs/linespec/HexenDefs.vc
 progs/linespec/HolyFX.vc					progs/linespec/HolyFX.vc
 progs/linespec/KAPlayerBase.vc				progs/linespec/KAPlayerBase.vc
+progs/linespec/PoisonCloud.vc				progs/linespec/PoisonCloud.vc
 
 //	Client progs
 progs/cgame/classes.vc						progs/cgame/classes.vc
@@ -178,9 +179,6 @@ progs/game/Pottery1.vc		progs/game/Pottery1.vc
 progs/game/Pottery2.vc		progs/game/Pottery2.vc
 progs/game/Pottery3.vc		progs/game/Pottery3.vc
 progs/game/ZBell.vc		progs/game/ZBell.vc
-progs/game/PoisonCloud.vc		progs/game/PoisonCloud.vc
-progs/game/PoisonBag.vc		progs/game/PoisonBag.vc
-progs/game/ZPoisonShroom.vc		progs/game/ZPoisonShroom.vc
 progs/game/PlayerFighter.vc		progs/game/PlayerFighter.vc
 progs/game/PlayerCleric.vc		progs/game/PlayerCleric.vc
 progs/game/PlayerMage.vc		progs/game/PlayerMage.vc
