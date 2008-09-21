@@ -180,17 +180,7 @@ progs/game/PlayerMarine.vc		progs/game/PlayerMarine.vc
 progs/game/PlayerWitchaven.vc		progs/game/PlayerWitchaven.vc
 progs/game/PlayerPig.vc		progs/game/PlayerPig.vc
 progs/game/PlayerHeresiarch.vc		progs/game/PlayerHeresiarch.vc
-progs/game/Pig.vc		progs/game/Pig.vc
-progs/game/Sorcerer.vc		progs/game/Sorcerer.vc
-progs/game/SorcererFX3.vc		progs/game/SorcererFX3.vc
 progs/game/SorcererFX4.vc		progs/game/SorcererFX4.vc
-progs/game/SorcererBall.vc		progs/game/SorcererBall.vc
-progs/game/SorcererBall1.vc		progs/game/SorcererBall1.vc
-progs/game/SorcererBall2.vc		progs/game/SorcererBall2.vc
-progs/game/SorcererBall3.vc		progs/game/SorcererBall3.vc
-progs/game/FighterBoss.vc		progs/game/FighterBoss.vc
-progs/game/ClericBoss.vc		progs/game/ClericBoss.vc
-progs/game/MageBoss.vc		progs/game/MageBoss.vc
 progs/game/Minotaur.vc		progs/game/Minotaur.vc
 progs/game/SummonMissile.vc		progs/game/SummonMissile.vc
 progs/game/MinotaurSpot.vc		progs/game/MinotaurSpot.vc
