@@ -178,7 +178,6 @@ progs/game/PlayerMage.vc		progs/game/PlayerMage.vc
 progs/game/PlayerHeretic.vc		progs/game/PlayerHeretic.vc
 progs/game/PlayerMarine.vc		progs/game/PlayerMarine.vc
 progs/game/PlayerWitchaven.vc		progs/game/PlayerWitchaven.vc
-progs/game/PlayerPig.vc		progs/game/PlayerPig.vc
 progs/game/PlayerHeresiarch.vc		progs/game/PlayerHeresiarch.vc
 progs/game/SorcererFX4.vc		progs/game/SorcererFX4.vc
 progs/game/Minotaur.vc		progs/game/Minotaur.vc
