@@ -79,7 +79,7 @@ progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
 progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
 progs/game/TeleportFog.vc		progs/game/TeleportFog.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
-progs/game/PigPlayer.vc		progs/game/PigPlayer.vc
+progs/game/KRPGPigPlayer.vc		progs/game/KRPGPigPlayer.vc
 progs/game/KRPGHeresiarch.vc		progs/game/KRPGHeresiarch.vc
 progs/game/MinotaurFriend.vc		progs/game/MinotaurFriend.vc
 progs/game/SummoningDoll.vc		progs/game/SummoningDoll.vc
