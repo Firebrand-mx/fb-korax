@@ -80,16 +80,7 @@ progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
 progs/game/TeleportFog.vc		progs/game/TeleportFog.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
 progs/game/PigPlayer.vc		progs/game/PigPlayer.vc
-progs/game/Pig.vc		progs/game/Pig.vc
-progs/game/Heresiarch.vc		progs/game/Heresiarch.vc
-progs/game/SorcFX3.vc		progs/game/SorcFX3.vc
-progs/game/SorcBall.vc		progs/game/SorcBall.vc
-progs/game/SorcBall1.vc		progs/game/SorcBall1.vc
-progs/game/SorcBall2.vc		progs/game/SorcBall2.vc
-progs/game/SorcBall3.vc		progs/game/SorcBall3.vc
-progs/game/FighterBoss.vc		progs/game/FighterBoss.vc
-progs/game/ClericBoss.vc		progs/game/ClericBoss.vc
-progs/game/MageBoss.vc		progs/game/MageBoss.vc
+progs/game/KRPGHeresiarch.vc		progs/game/KRPGHeresiarch.vc
 progs/game/MinotaurFriend.vc		progs/game/MinotaurFriend.vc
 progs/game/SummoningDoll.vc		progs/game/SummoningDoll.vc
 progs/game/ActorTask.vc		progs/game/ActorTask.vc
@@ -138,6 +129,7 @@ decorate.txt					decorate.txt
 
 actors/krpg/bishop.txt			actors/krpg/bishop.txt
 actors/krpg/centaur.txt			actors/krpg/centaur.txt
+actors/krpg/classboss.txt		actors/krpg/classboss.txt
 actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/dragon.txt			actors/krpg/dragon.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt
