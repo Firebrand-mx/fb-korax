@@ -98,6 +98,7 @@ struct pawn_behavior_t
 
 bool			bEvadeMelee;
 bool			bRunOnEvade;
+bool			bFastMove;
 
 pawn_behavior_t		Behavior;
 
@@ -166,7 +167,15 @@ delegate bool DoMove(bool Evade, state AIdleState, state AMeleeState,
 void BeginPlay()
 {
 	::BeginPlay();
-	DoMove = A_NormalDoMove;	// [CW] Assign a delegate to default method
+	// [CW] Assign a delegate to default method
+	if (bFastMove)
+	{
+		DoMove = A_FastDoMove;
+	}
+	else
+	{
+		DoMove = A_NormalDoMove;
+	}
 }
 
 //==========================================================================
