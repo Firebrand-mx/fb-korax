@@ -74,7 +74,6 @@ progs/game/BlueGoalSpot.vc		progs/game/BlueGoalSpot.vc
 progs/game/RedNode.vc		progs/game/RedNode.vc
 progs/game/RedGuardSpot.vc		progs/game/RedGuardSpot.vc
 progs/game/RedGoalSpot.vc		progs/game/RedGoalSpot.vc
-progs/game/TeleportFog.vc		progs/game/TeleportFog.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
 progs/game/WeaponPoisonBreath.vc		progs/game/WeaponPoisonBreath.vc
 progs/game/WeaponHorriblePain.vc		progs/game/WeaponHorriblePain.vc
