@@ -76,12 +76,9 @@ progs/game/KRPGClientGameBase.vc		progs/game/KRPGClientGameBase.vc
 progs/game/KRPGPlayerReplicationInfo.vc		progs/game/KRPGPlayerReplicationInfo.vc
 progs/game/Player.vc		progs/game/Player.vc
 progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
-progs/game/ArtiDarkServant.vc		progs/game/ArtiDarkServant.vc
 progs/game/PlayerSpeed.vc		progs/game/PlayerSpeed.vc
 progs/game/KRPGPigPlayer.vc		progs/game/KRPGPigPlayer.vc
 progs/game/KRPGHeresiarch.vc		progs/game/KRPGHeresiarch.vc
-progs/game/MinotaurFriend.vc		progs/game/MinotaurFriend.vc
-progs/game/SummoningDoll.vc		progs/game/SummoningDoll.vc
 progs/game/ActorTask.vc		progs/game/ActorTask.vc
 progs/game/Node.vc		progs/game/Node.vc
 progs/game/PathNode.vc		progs/game/PathNode.vc
