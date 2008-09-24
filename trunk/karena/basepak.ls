@@ -179,7 +179,6 @@ progs/game/PlayerMarine.vc		progs/game/PlayerMarine.vc
 progs/game/PlayerWitchaven.vc		progs/game/PlayerWitchaven.vc
 progs/game/PlayerHeresiarch.vc		progs/game/PlayerHeresiarch.vc
 progs/game/SorcererFX4.vc		progs/game/SorcererFX4.vc
-progs/game/KArenaMinotaur.vc		progs/game/KArenaMinotaur.vc
 progs/game/SummonMissile.vc		progs/game/SummonMissile.vc
 progs/game/MinotaurSpot.vc		progs/game/MinotaurSpot.vc
 progs/game/CTFBanner.vc		progs/game/CTFBanner.vc

@@ -34,17 +34,17 @@ class SummonMissile : Actor;
 
 //==========================================================================
 //
-//  A_Summon
+//  A_KarenaSummon
 //
 //  Summon Minotaur
 //
 //==========================================================================
 
-final void A_Summon()
+final void A_KarenaSummon()
 {
 	Actor A;
 
-	A = Spawn(KArenaMinotaur, Origin);
+	A = Spawn(MinotaurFriend, Origin);
 	if (A)
 	{
 		if (!A.TestLocation() || !Target)
@@ -54,7 +54,7 @@ final void A_Summon()
 			return;
 		}
 
-		KArenaMinotaur(A).StartTime = XLevel.Time;
+		MinotaurFriend(A).StartTime = XLevel.Time;
 		if (!Target.bCorpse)
 		{
 			//	Master isn't dead
@@ -62,7 +62,7 @@ final void A_Summon()
 			if (Target)
 				A.PInstigator = Player(Target.Player);
 			Powerup Power = Spawn(PowerMinotaur,,,, false);
-			Power.EffectTime = Player::MAULATORTIME;
+			Power.EffectTime = PowerMinotaur.default.EffectTime;
 			Power.bAlwaysPickup = true;
 			if (!Power.TryPickup(Target))
 			{
@@ -83,7 +83,7 @@ Spawn:
 	Loop
 Death:
 	SUMN AA 4
-	SUMN A 4 A_Summon
+	SUMN A 4 A_KarenaSummon
 	Stop
 }
 
@@ -93,14 +93,7 @@ defaultproperties
 	bMissile = true;
 	bNoBlockmap = true;
 	bDropOff = true;
-	bNoGravity = true;
 	bNoTeleport = true;
-	bActivateImpact = true;
-	bActivatePCross = true;
-	bBloodSplatter = true;
-	bNoGravity = false;
-	bActivateImpact = false;
-	bActivatePCross = false;
 	RenderStyle = STYLE_Translucent;
 	Alpha = 0.0;
 
