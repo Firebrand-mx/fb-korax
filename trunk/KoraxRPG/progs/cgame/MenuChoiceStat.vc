@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**    $Id: MenuChoiceEnum.vc 3702 2008-07-01 22:24:29Z firebrand_kh $
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
-//**    Copyright (C) 1999-2006 Janis Legzdinš
+//**    $Id: template.vc 1305 2008-03-01 09:20:29Z dj_jl $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -31,7 +38,6 @@ bool			bLeftAlign;
 int				InitialValue;
 int				Value;
 int				MaxValue;
-int				MaxIncrease;
 
 delegate bool ValueChanging(Object Sender, int NewValue, int OldValue);
 
@@ -75,22 +81,10 @@ bool SetNewValue(int newValue, int oldValue)
 //
 //==========================================================================
 
-void SetInitialValue(int Value, int MaxInc, int MaxVal)
+void SetInitialValue(int Value, int MaxVal)
 {
 	InitialValue = Value;
-	MaxIncrease = MaxInc;
 	MaxValue = MaxVal;
-}
-
-//==========================================================================
-//
-//  SetMaxIncrease
-//
-//==========================================================================
-
-void SetMaxIncrease(int MaxInc)
-{
-	MaxIncrease = MaxInc;
 }
 
 //==========================================================================
@@ -151,8 +145,7 @@ bool OnKeyDown(int key)
 	switch (key)
 	{
 	case K_LEFTARROW:
-		if (MaxIncrease > 0 && Value > 0 &&
-			 Value - 1 >= 0)
+		if (Value > 0 && Value - 1 >= 0)
 		{
 			newValue = Value - 1;
 			if (SetNewValue(newValue, Value))
@@ -163,7 +156,7 @@ bool OnKeyDown(int key)
 			return true;
 		}
 	case K_RIGHTARROW:
-		if (MaxIncrease > 0 && Value < MaxValue)
+		if (Value + 1 < MaxValue || MaxValue == -1)
 		{
 			newValue = Value + 1;
 			if (SetNewValue(newValue, Value))
@@ -176,7 +169,7 @@ bool OnKeyDown(int key)
 	case K_ENTER:
 	case K_PADENTER:
 	case K_MOUSE1:
-		if (MaxIncrease > 0 && Value < MaxValue)
+		if (Value + 1 < MaxValue || MaxValue == -1)
 		{
 			newValue = Value + 1;
 			if (SetNewValue(newValue, Value))
@@ -194,7 +187,7 @@ void OnMouseClick(int X, int Y)
 {
 	int newValue;
 
-	if (MaxIncrease > 0 && Value < MaxValue)
+	if (Value + 1 < MaxValue || MaxValue == -1)
 	{
 		newValue = Value + 1;
 		if (SetNewValue(newValue, Value))
@@ -209,8 +202,7 @@ void OnRMouseClick(int X, int Y)
 {
 	int newValue;
 
-	if (MaxIncrease > 0 && Value > 0 &&
-		 Value - 1 >= 0)
+	if (Value > 0 && Value - 1 >= 0)
 	{
 		newValue = Value - 1;
 		if (SetNewValue(newValue, Value))

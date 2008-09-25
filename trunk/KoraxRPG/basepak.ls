@@ -109,6 +109,7 @@ progs/game/WeatherSnow.vc		progs/game/WeatherSnow.vc
 progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
 progs/game/SpellDefensive.vc	progs/game/SpellDefensive.vc
 progs/game/SpellRepulsion.vc	progs/game/SpellRepulsion.vc
+progs/game/SpellBerserk.vc	progs/game/SpellBerserk.vc
 
 //	Scripts
 animdefs.txt					scripts/animdefs.txt
@@ -125,7 +126,7 @@ decorate.txt					decorate.txt
 
 actors/krpg/bishop.txt			actors/krpg/bishop.txt
 actors/krpg/centaur.txt			actors/krpg/centaur.txt
-actors/krpg/classboss.txt		actors/krpg/classboss.txt
+//actors/krpg/classboss.txt		actors/krpg/classboss.txt
 actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/dragon.txt			actors/krpg/dragon.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt

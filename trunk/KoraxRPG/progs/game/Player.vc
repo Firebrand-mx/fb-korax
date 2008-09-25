@@ -41,13 +41,6 @@ const int MAXMORPHHEALTH	= 30;
 
 BotPlayer Bot;
 
-int			berserkTics;			// [FB] Berserker duration for the Fighter
-	
-//Remi: Preberserk stats
-int preberserk_health;
-int preberserk_speed;
-int preberserk_strength;
-
 // [FB] Player atributes for leveling system
 int experience;
 int exp_level;
@@ -62,9 +55,6 @@ int vitality;
 //int intelligence;
 //int wisdom;
 int speed;
-
-// -JL- Added to player struct
-int boringmessage; //Remi: "YOU NEED TO BE LEVEL whatever TO USE MANA" boring message timer
 
 bool inited;
 
@@ -189,7 +179,14 @@ void ActivateLevel(int to_lvl)
 	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
 	max_health += vitality;
 	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
-	maxsp_power += intelligence;
+	if (PClass != HexenDefs::PCLASS_FIGHTER)
+	{
+		maxsp_power += intelligence;
+	}
+	else
+	{
+		maxsp_power += strength;
+	}
 	sp_power = maxsp_power;
 	Health = max_health + addhealth;
 	MO.Health = Health;
@@ -327,7 +324,11 @@ void InitiateLevel()
 
 void UpgradeScreen()
 {
-	ClientUpgradeScreen();
+	// [FB] Only if we are not berserk
+	if (!Actor(MO).berserkTics)
+	{
+		ClientUpgradeScreen();
+	}
 }
 
 //==========================================================================
@@ -906,7 +907,16 @@ void PlayerTick(float deltaTime)
 	{
 		sp_recharge_tics = 0; // [FB] Restart counter
 	}
-
+	if (Actor(MO).berserkTics > 0.0)
+	{
+		BonusFlash = 0.3;
+		Actor(MO).berserkTics -= 1.0;
+	}
+	if (Actor(MO).berserkTics <= 0.0 && Actor(MO).bBerserk)
+	{
+		centreprint("BERSERKER DEACTIVATED");
+		UnsetBerserk();
+	}
 	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
 	SpellTick(deltaTime);
@@ -1046,7 +1056,6 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	//	Counters.
-
 	if (PoisonCount && Level.XLevel.Time - LastPoisonTime >= 0.5)
 	{
 		PoisonCount -= 5;
@@ -1746,6 +1755,54 @@ void KilledActor(EntityEx Victim)
 void PlayerMorphed(Actor OldMO)
 {
 	PClass = HexenDefs::PCLASS_PIG;
+}
+
+//==========================================================================
+//
+//	SetBerserk
+//
+//==========================================================================
+
+final void SetBerserk()
+{
+	// [FB] Berserker actors get the double of their actual health
+	//	    Doubling their speed and their strength (MissileDamage for non players)
+	// [FB] Player actor case
+	Actor(MO).berserkTics += 1.0 + itof(sp_power) * 80.0;
+	Actor(MO).preberserk_strength = strength;
+	Actor(MO).preberserk_speed = itof(speed);
+	Actor(MO).preberserk_health = Health;
+	
+	strength *= 2;
+	speed *= 2;
+	Health *= 2;
+	MO.Health = Health;
+//	sp_power = 0;
+	Actor(MO).bBerserk = true;
+}
+
+//==========================================================================
+//
+//	UnsetBerserk
+//
+//	[FB] Return actor to it's original stats
+//
+//==========================================================================
+
+final void UnsetBerserk()
+{
+	Actor(MO).berserkTics = 0.0;
+	strength = Actor(MO).preberserk_strength;
+	speed = ftoi(Actor(MO).preberserk_speed);
+	Health /= 2;
+	MO.Health = Health; // -JL- Decrease also mobj's health which is the actual health value
+	DamageFlash += itof(MO.Health) * 0.09;
+	if (DamageFlash > 2.0)
+	{
+		DamageFlash = 2.0;
+	}
+	Actor(MO).bBerserk = false;
+	MO.SetState(MO.FindState('Pain'));
 }
 
 defaultproperties

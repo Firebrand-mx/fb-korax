@@ -68,35 +68,35 @@ void CreateChoices()
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
 		Stat.Text = "Strength";
-		Stat.SetInitialValue(RepInfo.strg, r_points, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxStrength);
+		Stat.SetInitialValue(RepInfo.strg, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxStrength);
 		Stat.ValueChanging = ChangeStrength;
 		currentY += Stat.Height;
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
 		Stat.Text = "Vitality";
-		Stat.SetInitialValue(RepInfo.vtlt, r_points, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxVitality);
+		Stat.SetInitialValue(RepInfo.vtlt, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxVitality);
 		Stat.ValueChanging = ChangeVitality;
 		currentY += Stat.Height;
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
 		Stat.Text = "Speed";
-		Stat.SetInitialValue(RepInfo.spd, r_points, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxSpeed);
+		Stat.SetInitialValue(RepInfo.spd, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxSpeed);
 		Stat.ValueChanging = ChangeSpeed;
 		currentY += Stat.Height;
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
 		Stat.Text = "Intelligence";
-		Stat.SetInitialValue(RepInfo.intln, r_points, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxIntelligence);
+		Stat.SetInitialValue(RepInfo.intln, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxIntelligence);
 		Stat.ValueChanging = ChangeIntelligence;
 		currentY += Stat.Height;
 
 		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
 		Stat.SetOrigin(ChoicesStartX, currentY);
 		Stat.Text = "Wisdom";
-		Stat.SetInitialValue(RepInfo.wsdm, r_points, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxWisdom);
+		Stat.SetInitialValue(RepInfo.wsdm, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxWisdom);
 		Stat.ValueChanging = ChangeWisdom;
 		currentY += Stat.Height;
 
@@ -105,7 +105,6 @@ void CreateChoices()
 		Btn.Text = "OK";
 		Btn.Activated = UpdateStats;
 	}
-
 }
 
 //==========================================================================
@@ -153,19 +152,25 @@ void OnDestroy()
 
 bool ChangeStrength(Object Sender, int newValue, int oldValue)
 {
+	bool update;
+
 	if (oldValue < newValue && r_points > 0)
 	{
 		r_points--;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
 	}
 	else if (oldValue > newValue && r_points < ir_points)
 	{
 		r_points++;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
 	}
 	n_strength = newValue;
-	MenuChoiceStat(Sender).SetMaxIncrease(
-		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
 }
 
@@ -177,19 +182,25 @@ bool ChangeStrength(Object Sender, int newValue, int oldValue)
 
 bool ChangeVitality(Object Sender, int newValue, int oldValue)
 {
+	bool update;
+
 	if (oldValue < newValue && r_points > 0)
 	{
 		r_points--;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
 	}
 	else if (oldValue > newValue && r_points < ir_points)
 	{
 		r_points++;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
 	}
 	n_vitality = newValue;
-	MenuChoiceStat(Sender).SetMaxIncrease(
-		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
 }
 
@@ -201,19 +212,25 @@ bool ChangeVitality(Object Sender, int newValue, int oldValue)
 
 bool ChangeSpeed(Object Sender, int newValue, int oldValue)
 {
+	bool update;
+
 	if (oldValue < newValue && r_points > 0)
 	{
 		r_points--;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
 	}
 	else if (oldValue > newValue && r_points < ir_points)
 	{
 		r_points++;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
 	}
 	n_speed = newValue;
-	MenuChoiceStat(Sender).SetMaxIncrease(
-		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
 }
 
@@ -225,19 +242,25 @@ bool ChangeSpeed(Object Sender, int newValue, int oldValue)
 
 bool ChangeIntelligence(Object Sender, int newValue, int oldValue)
 {
+	bool update;
+
 	if (oldValue < newValue && r_points > 0)
 	{
 		r_points--;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
 	}
 	else if (oldValue > newValue && r_points < ir_points)
 	{
 		r_points++;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
 	}
 	n_intelligence = newValue;
-	MenuChoiceStat(Sender).SetMaxIncrease(
-		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
 }
 
@@ -249,19 +272,25 @@ bool ChangeIntelligence(Object Sender, int newValue, int oldValue)
 
 bool ChangeWisdom(Object Sender, int newValue, int oldValue)
 {
+	bool update;
+
 	if (oldValue < newValue && r_points > 0)
 	{
 		r_points--;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
 	}
 	else if (oldValue > newValue && r_points < ir_points)
 	{
 		r_points++;
 		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
 	}
 	n_wisdom = newValue;
-	MenuChoiceStat(Sender).SetMaxIncrease(
-		Player(ClientGame(ClGame).cl).GetPoints());
 	return true;
 }
 

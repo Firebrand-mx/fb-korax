@@ -59,6 +59,8 @@ bool			bCanRide;		// actor is allowed to ride saddlehorses
 bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
 Actor			RidePartner;	// either 'rider' or 'horse', depending on flags
 
+bool			bCanBerserk;	// actor is able to berserk when it's hit
+bool			bBerserk;		// actor is actually in berserk state
 
 //
 // [KoraxRPG] Advanced AI
@@ -78,6 +80,12 @@ int				Team;			// this actor's Team ID
 //
 array<ActorCondition> Conditions;
 
+//Remi: Preberserk stats
+// [FB] Now all actors can use these...
+int preberserk_health;
+float preberserk_speed; // [FB] Made this one a float
+int preberserk_strength;
+float berserkTics;			// [FB] Berserker duration for actors
 
 //**************************************************************************
 //
@@ -127,6 +135,17 @@ void OnMapSpawn(mthing_t* mthing)
 		experience = default.Health;
 	}
 	::OnMapSpawn(mthing);
+}
+
+//==========================================================================
+//
+//  A_KRPGPain
+//
+//==========================================================================
+
+void A_KRPGPain()
+{
+	A_Pain();
 }
 
 //==========================================================================
@@ -246,6 +265,9 @@ void Tick(float deltaTime)
 		Kill();
 	if (Alertness > 0.0)
 		Alertness -= deltaTime;
+	if (berserkTics > 0.0)
+		berserkTics -= 1.0;
+	
 	::Tick(deltaTime);
 }
 
@@ -360,6 +382,32 @@ final void A_Resurrect()
 	Height = default.Height;
 
 	Alpha = default.Alpha;
+}
+
+//==========================================================================
+//
+//	UseSpell
+//
+//==========================================================================
+
+final bool UseSpell(Inventory Item)
+{
+	//	Don't use items if you are dead.
+	if (Health <= 0)
+	{
+		return false;
+	}
+	//	Don't use item if don't actually have it.
+	if (Item.Amount <= 0)
+	{
+		return false;
+	}
+	if (!SpellItem(Item).ActivateSpell(false, SpellItem(Item).Level))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 //**************************************************************************
@@ -1782,32 +1830,6 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 			ee.Velocity += DirectVelocity;
 		}
 	}
-}
-
-//==========================================================================
-//
-//	UseSpell
-//
-//==========================================================================
-
-bool UseSpell(Inventory Item)
-{
-	//	Don't use items if you are dead.
-	if (Health <= 0)
-	{
-		return false;
-	}
-	//	Don't use item if don't actually have it.
-	if (Item.Amount <= 0)
-	{
-		return false;
-	}
-	if (!SpellItem(Item).ActivateSpell(false, SpellItem(Item).Level))
-	{
-		return false;
-	}
-
-	return true;
 }
 
 //==========================================================================
