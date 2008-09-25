@@ -244,6 +244,27 @@ bool OkayToSwitchTarget(EntityEx source)
 
 //==========================================================================
 //
+//  A_KRPGPain
+//
+// [FB] This one will become handy for things that change when monsters are
+//	     damaged (i.e. Set Damage skins)
+//
+//==========================================================================
+
+void A_KRPGPain()
+{
+	::A_KRPGPain();
+
+	// [FB] Take the chance to get berserk
+	if (bCanBerserk && Health < default.Health / 2 &&
+		(1 + (P_Random() & 7)) > 5)
+	{
+		A_SetBerserk();
+	}
+}
+
+//==========================================================================
+//
 //	Died
 //
 //==========================================================================
@@ -305,6 +326,52 @@ final void A_AIResurrect()
 
 //==========================================================================
 //
+//	A_SetBerserk
+//
+//	[FB] As the name suggests, sets the actor's stats to berserk stats, improving some
+//		of them, we can apply this to any actor now! :D
+//
+//==========================================================================
+
+final void A_SetBerserk()
+{
+	// [FB] Berserker actors get the double of their actual health
+	//	    Doubling their speed and their strength (MissileDamage for non players)
+	// TODO: Find a way to make this evident for the player too...
+	PlaySound('UseArtifact', CHAN_VOICE);	
+	berserkTics = 1.0 + itof(P_Random() & 7) * 80.0; // FIXME: Should we determine it somehow else??
+	preberserk_strength = MissileDamage;
+	preberserk_speed = Speed;
+	preberserk_health = Health;
+
+	MissileDamage *= 2;
+	Speed *= 2.0;
+	Health *= 2;
+	bBerserk = true;
+}
+
+//==========================================================================
+//
+//	A_UnsetBerserk
+//
+//	[FB] Return actor to it's original stats
+//
+//==========================================================================
+
+final void A_UnsetBerserk()
+{
+	berserkTics = 0.0;
+	MissileDamage = preberserk_strength;
+	Speed = preberserk_speed;
+	Health = preberserk_health;
+	bBerserk = false;
+
+	// Go to the pain state
+	SetState(FindState('Pain'));
+}
+
+//==========================================================================
+//
 //	Tick
 //
 //==========================================================================
@@ -322,7 +389,7 @@ void Tick(float deltaTime)
 		AITime -= deltaTime;
 		if (AITime < 0.0)
 		{
-			/*// [CW] evil coder easter-egg... :))))))))
+			/* // [CW] evil coder easter-egg... :))))))))
 			if (P_Random() < 200 && P_Random() < 100 && P_Random() < 10 && P_Random() < 5 && P_Random() <= 1)
 			{
 				FatalError("I am tired of this stupid game... should we play tetris instead?");
@@ -339,6 +406,12 @@ void Tick(float deltaTime)
 				AITime = AI_ROUTINE_DELAY;
 			}
 		}
+	}
+
+	// [FB] Unset berserk when no more berserkTics are found
+	if (!berserkTics && bBerserk)
+	{
+		A_UnsetBerserk();
 	}
 }
 
