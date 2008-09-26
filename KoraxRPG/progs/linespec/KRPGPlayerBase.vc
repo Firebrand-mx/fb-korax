@@ -39,8 +39,8 @@ int wisdom;
 //
 // [FB] Spell bar stuff
 //
-Inventory		SpellFirst;
-Inventory		SpellPtr;
+KRPGInventory	SpellFirst;
+KRPGInventory	SpellPtr;
 float			SpellTime;
 int				SpellSize;
 
@@ -49,6 +49,51 @@ replication
 	reliable if (!bIsClient)
 		strength, intelligence, wisdom, SpellFirst,
 		SpellPtr, SpellTime;
+}
+
+//==========================================================================
+//
+//	AddInventory
+//
+//==========================================================================
+
+void AddInventory(KRPGInventory Item)
+{
+	if (Item.bSpellBar && !SpellPtr)
+	{
+		SpellPtr = Item;
+		SpellFirst = Item;
+	}
+}
+
+//==========================================================================
+//
+//	RemoveInventory
+//
+//==========================================================================
+
+void RemoveInventory(KRPGInventory Item)
+{
+	if (SpellPtr == Item)
+	{
+		SpellPtr = Item.PrevSpl();
+		if (!SpellPtr)
+		{
+			InvPtr = Item.NextSpl();
+		}
+	}
+	if (SpellFirst == Item)
+	{
+		SpellFirst = Item.PrevSpl();
+		if (!SpellFirst)
+		{
+			SpellFirst = Item.NextSpl();
+		}
+	}
+	if (Item.bSpellBar)
+	{
+		AdjustSpellFirst();
+	}
 }
 
 //==========================================================================
@@ -111,22 +156,24 @@ void BuildCharacter(int i_strength, int i_vitality, int i_speed, int i_intellige
 
 final void NextSpell()
 {
-	if (!SpellTime)
+	if (!bInventoryAlwaysOpen)
 	{
+		if (!SpellTime)
+		{
+			SpellTime = 5.0;
+			return;
+		}
 		SpellTime = 5.0;
-		return;
 	}
-	SpellTime = 5.0;
-
 	if (SpellPtr)
 	{
-		Inventory Prev = SpellItem(SpellPtr).PrevInv();
+		KRPGInventory Prev = SpellPtr.PrevSpl();
 		if (Prev)
 		{
 			SpellPtr = Prev;
 			AdjustSpellFirst();
 		}
-	}
+	}		
 }
 
 //==========================================================================
@@ -137,16 +184,18 @@ final void NextSpell()
 
 final void PreviousSpell()
 {
-	if (!SpellTime)
+	if (!bInventoryAlwaysOpen)
 	{
+		if (!SpellTime)
+		{
+			SpellTime = 5.0;
+			return;
+		}
 		SpellTime = 5.0;
-		return;
 	}
-	SpellTime = 5.0;
-
 	if (SpellPtr)
 	{
-		Inventory Next = SpellItem(SpellPtr).NextInv();
+		KRPGInventory Next = SpellPtr.NextSpl();
 		if (Next)
 		{
 			SpellPtr = Next;
@@ -201,7 +250,7 @@ final void SpellTick(float deltaTime)
 
 final void AdjustSpellFirst()
 {
-	Inventory Item;
+	KRPGInventory Item;
 
 	if (!SpellPtr)
 	{
@@ -212,8 +261,7 @@ final void AdjustSpellFirst()
 	//	Count how many items are following the current one, also make sure
 	// that first is not after this one.
 	int NumFollowing = 0;
-	for (Item = SpellItem(SpellPtr).NextInv(); Item && SpellItem(Item);
-			Item = SpellItem(Item).NextInv())
+	for (Item = SpellPtr.NextSpl(); Item; Item = Item.NextSpl())
 	{
 		NumFollowing++;
 		if (SpellFirst == Item)
@@ -222,20 +270,18 @@ final void AdjustSpellFirst()
 		}
 	}
 	int FirstOffs = 0;
-	for (Item = SpellPtr; Item && SpellItem(Item) && Item != SpellFirst;
-			Item = SpellItem(Item).PrevInv())
+	for (Item = SpellPtr; Item && Item != SpellFirst; Item = Item.PrevSpl())
 	{
 		FirstOffs++;
 	}
 	while (FirstOffs > SpellSize)
 	{
-		SpellFirst = SpellItem(SpellFirst).NextInv();
+		SpellFirst = SpellFirst.NextSpl();
 		FirstOffs--;
 	}
-	while (NumFollowing + FirstOffs < SpellSize &&
-			SpellItem(SpellFirst).PrevInv())
+	while (NumFollowing + FirstOffs < SpellSize &&	SpellFirst.PrevSpl())
 	{
-		SpellFirst = SpellItem(SpellFirst).PrevInv();
+		SpellFirst = SpellFirst.PrevSpl();
 		FirstOffs++;
 	}
 }

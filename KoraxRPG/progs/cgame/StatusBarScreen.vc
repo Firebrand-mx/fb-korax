@@ -27,7 +27,7 @@ class StatusBarScreen : StatusBarShared;
 
 const int BAR_X = 160;
 const int BAR_Y = 441;
-const int BAR_Y2 = 411;
+const int BAR_Y2 = 409;
 
 Player cl;
 
@@ -480,8 +480,8 @@ void SB_DrawMainBar()
 		DrawPic(BAR_X + 143, BAR_Y + 2, R_RegisterPic(cl.InvPtr.IconName));
 		SB_DrawINumber(BAR_X + 166, BAR_Y + 23, cl.InvPtr.Amount);
 	}
-
-	if (cl.SpellPtr)
+	// [FB] Active Spell
+	if (cl.SpellPtr && !cl.SpellTime)
 	{
 		DrawPic(BAR_X + 143, BAR_Y2 + 2, R_RegisterPic(cl.SpellPtr.IconName));
 	}
@@ -518,6 +518,35 @@ void SB_DrawMainBar()
 		ftoi((HArmor.Slots[0] + HArmor.Slots[1] + HArmor.Slots[2] +
 		HArmor.Slots[3] + HArmor.Slots[4]) / 5.0);
 	SB_DrawNumber9(BAR_X + 250, BAR_Y + 15, TotalArmorPoints, 0);
+	
+	if (cl.SpellTime)
+	{
+		int i;
+
+		//  Inventory
+		KRPGInventory Item = cl.SpellFirst;
+		for (i = 0; i < 7; i++)
+		{
+			DrawPic(212 + i * 31, 414, pic_artibox, 0.6);
+			if (Item)
+			{
+				DrawPic(211 + i * 31, 413,	R_RegisterPic(Item.IconName));
+				if (Item == cl.SpellPtr)
+				{
+					DrawPic(212 + i * 31, 413, pic_selectbox, 0.6);
+				}
+				Item = Item.NextSpl();
+			}
+		}
+		if (cl.SpellFirst && cl.SpellFirst.PrevSpl())
+		{
+			DrawPic(202, 413, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+		if (Item)
+		{
+			DrawPic(430, 413, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+	}
 }
 
 //==========================================================================
@@ -579,6 +608,32 @@ void SB_DrawKeyBar()
 		}
 		DrawPic(BAR_X + 150 + 31 * i, BAR_Y + 3, pic_armor[i], ArmorPerc);
 	}
+	if (cl.SpellTime)
+	{
+		//  Inventory
+		KRPGInventory SplItem = cl.SpellFirst;
+		for (i = 0; i < 7; i++)
+		{
+			DrawPic(212 + i * 31, 414, pic_artibox, 0.6);
+			if (SplItem)
+			{
+				DrawPic(211 + i * 31, 413,	R_RegisterPic(SplItem.IconName));
+				if (SplItem == cl.SpellPtr)
+				{
+					DrawPic(212 + i * 31, 413, pic_selectbox, 0.6);
+				}
+				SplItem = SplItem.NextSpl();
+			}
+		}
+		if (cl.SpellFirst && cl.SpellFirst.PrevSpl())
+		{
+			DrawPic(202, 413, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+		if (SplItem)
+		{
+			DrawPic(430, 413, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+	}
 }
 
 //==========================================================================
@@ -616,45 +671,32 @@ void SB_DrawInventoryBar()
 	{
 		DrawPic(BAR_X + 269, BAR_Y + 2, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
 	}
-}
 
-//==========================================================================
-//
-//	SB_DrawSpellBar
-//
-//	[FB] Similar to SB_DrawInventoryBar but for spells (only temporary)
-//
-//==========================================================================
-
-void SB_DrawSpellBar()
-{
-	int i;
-
-	SB_DrawMainBar();
-
-	//  Inventory
-	Inventory Item = cl.SpellFirst;
-	for (i = 0; i < 7; i++)
+	if (cl.SpellTime)
 	{
-		DrawPic(210 + i * 31, 418, pic_artibox, 0.6);
-		if (Item)
+		//  Inventory
+		KRPGInventory SplItem = cl.SpellFirst;
+		for (i = 0; i < 7; i++)
 		{
-			DrawShadowedPic(209 + i * 31, 417,
-				R_RegisterPic(Item.IconName));
-			if (Item == cl.SpellPtr)
+			DrawPic(212 + i * 31, 414, pic_artibox, 0.6);
+			if (SplItem)
 			{
-				DrawPic(210 + i * 31, 417, pic_selectbox, 0.6);
+				DrawPic(211 + i * 31, 413,	R_RegisterPic(SplItem.IconName));
+				if (SplItem == cl.SpellPtr)
+				{
+					DrawPic(212 + i * 31, 413, pic_selectbox, 0.6);
+				}
+				SplItem = SplItem.NextSpl();
 			}
-			Item = Item.NextInv();
 		}
-	}
-	if (cl.SpellFirst && cl.SpellFirst.PrevInv())
-	{
-		DrawPic(200, 417, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
-	}
-	if (Item)
-	{
-		DrawPic(428, 417, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		if (cl.SpellFirst && cl.SpellFirst.PrevSpl())
+		{
+			DrawPic(202, 413, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
+		if (SplItem)
+		{
+			DrawPic(430, 413, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
+		}
 	}
 }
 
@@ -764,22 +806,22 @@ void SB_DrawFullscreenStats()
 	if (cl.SpellTime)
 	{
 		//  Inventory
-		Inventory Item = cl.SpellFirst;
+		KRPGInventory Item = cl.SpellFirst;
 		for (i = 0; i < 7; i++)
 		{
 			DrawPic(210 + i * 31, 418, pic_artibox, 0.6);
 			if (Item)
 			{
-				DrawShadowedPic(209 + i * 31, 417,
+				DrawPic(209 + i * 31, 417,
 					R_RegisterPic(Item.IconName));
 				if (Item == cl.SpellPtr)
 				{
 					DrawPic(210 + i * 31, 417, pic_selectbox, 0.6);
 				}
-				Item = Item.NextInv();
+				Item = Item.NextSpl();
 			}
 		}
-		if (cl.SpellFirst && cl.SpellFirst.PrevInv())
+		if (cl.SpellFirst && cl.SpellFirst.PrevSpl())
 		{
 			DrawPic(200, 417, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1], 0.6);
 		}
@@ -936,10 +978,6 @@ void SB_Drawer(int sb_view)
 	else if (cl.InventoryTime)
 	{
 		SB_DrawInventoryBar();
-	}
-	else if (cl.SpellTime)
-	{
-		SB_DrawSpellBar();
 	}
 	else if (sb_view == SB_VIEW_AUTOMAP)
 	{

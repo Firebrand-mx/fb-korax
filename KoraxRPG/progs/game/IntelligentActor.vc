@@ -372,6 +372,80 @@ final void A_UnsetBerserk()
 
 //==========================================================================
 //
+//	A_SpiritsWithin
+//
+//	[FB] Make fallen foes spirits help us out
+//
+//==========================================================================
+
+final bool A_SpiritsWithin()
+{
+	EntityEx mo;
+	EntityEx g;
+	float dist;
+	float limit;
+	bool sound;
+
+	sound = false;
+	foreach AllThinkers(EntityEx, mo)
+	{
+		 // Not a corpse
+		if (!mo.bCorpse)
+		{
+			continue;
+		}
+		 //Don't transform non-monster corpses
+		if (!mo.bMonster)
+		{
+			continue;
+		}
+		dist = DistTo(mo);
+		limit = bIsPlayer ? 500.0 * (itof(Player(Player).exp_level) * 0.1) : 500.0;
+		if (dist > 500.0)
+		{
+			continue;
+		}
+		if (bIsPlayer && Player(Player).sp_power >= 5)
+		{
+			Player(Player).sp_power -= 5;
+		}
+		else
+		{
+			return sound;
+		}
+		g = Spawn(Ghost, mo.Origin);
+		if (g)
+		{
+			if (!g.TestLocation() || !Target)
+			{
+				// Didn't fit
+				g.SetState(none);
+				return sound;
+			}
+			// [FB] Make it friendly if needed
+			if (bIsPlayer)
+			{
+				g.bFriendly = true;
+			}
+			if (!Target.bCorpse)
+			{
+				//	Master isn't dead
+				g.Tracer = Target;	// Pointer to master
+			}
+			g.Angles = mo.Angles;
+			if (!sound)
+			{
+				g.PlaySound(g.ActiveSound, CHAN_VOICE);
+				sound = true;
+			}
+		}
+	}
+	
+	return sound;
+}
+
+//==========================================================================
+//
 //	Tick
 //
 //==========================================================================
@@ -424,8 +498,8 @@ void Tick(float deltaTime)
 bool A_NormalDoMove(bool Evade, state AIdleState, state AMeleeState,
 				  state AMissileState, bool PlayActive)
 {
-	return A_DoMove(Evade, false/*FastChase*/, AIdleState, AMeleeState, AMissileState,
-		LineSpecialGameInfo(Level.Game).bNightmareFastChase/*NightmareFast*/, PlayActive);
+	return A_DoMove(Evade, false /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+		LineSpecialGameInfo(Level.Game).bNightmareFastChase /* NightmareFast*/, PlayActive);
 }
 
 //============================================================================
@@ -437,8 +511,8 @@ bool A_NormalDoMove(bool Evade, state AIdleState, state AMeleeState,
 bool A_FastDoMove(bool Evade, state AIdleState, state AMeleeState,
 				  state AMissileState, bool PlayActive)
 {
-	return A_DoMove(Evade, true/*FastChase*/, AIdleState, AMeleeState, AMissileState,
-		true/*NightmareFast*/, PlayActive);
+	return A_DoMove(Evade, true /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+		true /* NightmareFast*/, PlayActive);
 }
 
 

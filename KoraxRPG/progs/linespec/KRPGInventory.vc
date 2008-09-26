@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: PuzzleItem.vc 3379 2008-03-25 21:27:42Z dj_jl $
+//**    $Id: Inventory.vc 3787 2008-09-15 22:10:09Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -22,32 +22,58 @@
 //**  GNU General Public License for more details.
 //**
 //**************************************************************************
+//**
+//**	Base class for all items that a player can carry.
+//**
+//**************************************************************************
 
-class SpellItem : KRPGInventory
+class KRPGInventory : Inventory
 	abstract;
 
-int					Level;
+//	Can be displayed in the spell bar / spell book
+bool				bSpellBar;
 
-replication
+//==========================================================================
+//
+//	PrevSpl
+//
+//	Return previous item with bSpellBar flag set.
+//
+//==========================================================================
+
+KRPGInventory PrevSpl()
 {
-	reliable if (Role == ROLE_Authority && bNetOwner)
-		Level;
+	KRPGInventory Item = KRPGInventory(Inventory);
+	while (Item && !Item.bSpellBar)
+	{
+		Item = KRPGInventory(Item.Inventory);
+	}
+	return Item;
 }
 
 //==========================================================================
 //
-//	ActivateSpell
+//	NextSpl
+//
+//	Return next item with bSpellBar flag set.
 //
 //==========================================================================
 
-bool ActivateSpell(bool Pickup, int level)
+KRPGInventory NextSpl()
 {
-	return true;
+	KRPGInventory Ret = none;
+	KRPGInventory Item = KRPGInventory(EntityEx(Owner).Inventory);
+	while (Item && Item != self)
+	{
+		if (Item.bSpellBar)
+		{
+			Ret = Item;
+		}
+		Item = KRPGInventory(Item.Inventory);
+	}
+	return Ret;
 }
 
 defaultproperties
 {
-	MaxAmount = 1;
-	bNoGravity = true;
-	bSpellBar = true;
 }
