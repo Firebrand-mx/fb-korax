@@ -30,36 +30,30 @@
 //**
 //**************************************************************************
 
-class SpellBerserk : SpellItem;
-
-// [FB] Not actually a spell... but what the hell!! >:P
+class SpellHealing : SpellItem;
 
 //==========================================================================
 //
 //	ActivateSpell
 //
+//  [FB] spell effects are level based... and change depending on that...
+//
 //==========================================================================
 
 bool ActivateSpell(bool Pickup, int level)
 {
-	Actor mo;
-	float dist;
-
-	if (!Actor(Player(Owner.Player).MO).bBerserk &&
-		Player(Owner.Player).sp_power >= 6)
+	if(Player(Owner.Player).sp_power >= 2)
 	{
 		Owner.PlaySound('UseArtifact', CHAN_ITEM);
-		Player(Owner.Player).SetBerserk();
-		Player(Owner.Player).sp_power -= 5;
-		Player(Owner.Player).centreprint("BERSERKER ACTIVATED");
+		if (EntityEx(Owner).GiveBody(5 + Player(Owner.Player).exp_level));
+		{
+			Player(Owner.Player).centreprint("HEALING SPELL ACTIVATED");
+		}
+		Player(Owner.Player).sp_power -= 2;
 	}
-	else if (Actor(Owner.Player.MO).bBerserk)
+	else
 	{
-		Player(Owner.Player).centreprint("YOU'RE ALREADY BERSERKING");
-	}
-	else if (Player(Owner.Player).sp_power < 6)
-	{
-		Player(Owner.Player).centreprint("NOT ENOUGH BATTLE RAGE");
+		Player(Owner.Player).centreprint("NOT ENOUGH FAITH");
 	}
 	
 	return true;
@@ -77,8 +71,8 @@ defaultproperties
 {
 	MaxAmount = DefMaxAmount;
 	PickupSound = 'PickupArtifact';
-	PickupMessage = "$txt_berserk";
-	IconName = 'splf1';
+	PickupMessage = "$txt_healing";
+	IconName = 'splc1';
 	bFloatBob = true;
 	PickupFlashType = PickupFlash;
 	bSpellBar = true;

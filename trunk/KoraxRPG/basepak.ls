@@ -28,6 +28,7 @@ progs/linespec/PoisonCloud.vc				progs/linespec/PoisonCloud.vc
 progs/linespec/ReachTraverse.vc				progs/linespec/ReachTraverse.vc
 progs/linespec/SpellInstance.vc				progs/linespec/SpellInstance.vc
 progs/linespec/SpellItem.vc					progs/linespec/SpellItem.vc
+progs/linespec/KRPGInventory.vc				progs/linespec/KRPGInventory.vc
 
 //	Client progs
 progs/cgame/classes.vc						progs/cgame/classes.vc
@@ -110,6 +111,8 @@ progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
 progs/game/SpellDefensive.vc	progs/game/SpellDefensive.vc
 progs/game/SpellRepulsion.vc	progs/game/SpellRepulsion.vc
 progs/game/SpellBerserk.vc	progs/game/SpellBerserk.vc
+progs/game/SpellHealing.vc	progs/game/SpellHealing.vc
+progs/game/SpellSpirits.vc	progs/game/SpellSpirits.vc
 
 //	Scripts
 animdefs.txt					scripts/animdefs.txt
