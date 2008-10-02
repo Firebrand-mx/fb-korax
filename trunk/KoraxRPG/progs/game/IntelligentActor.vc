@@ -58,8 +58,6 @@ struct pawn_behavior_t
 	bool			bCanGroup;				// can join task leader
 	bool			bCanBeTaskLeader;
 
-
-
 	bool			bKnowFTargetPos;		// if TRUE, pawn knows current FTarget position.
 
 	bool			bLostFTarget;			// if TRUE, pawn has just lost an FTarget,
@@ -72,8 +70,6 @@ struct pawn_behavior_t
 											// or retarget
 											// (in times DoChase is called)
 	int				LostFTargetTime;		// how much strokes left until route build/retarget
-
-
 
 	bool			bNeverUseRoutes;		// obvious..
 	bool			bBuildingRoute;				// 
@@ -115,10 +111,7 @@ TVec				LastKnownPosition;	// for moving targets
 
 EntityEx			LastAttacker;	// the one attacked this IA last time
 
-
 IntelligentActor	TaskLeader;
-
-
 
 //
 // [KoraxRPG] Actor Tasks
@@ -152,11 +145,9 @@ const float		AI_ROUTINE_DELAY = 1.0;
 float			AITime;
 int				StateAction;
 
-
 // [CW] Heh, my first delegate in VavoomC =)))
 delegate bool DoMove(bool Evade, state AIdleState, state AMeleeState,
 				  state AMissileState, bool PlayActive);
-
 
 //==========================================================================
 //
@@ -204,13 +195,13 @@ void Destroy()
 bool OkayToSwitchTarget(EntityEx source)
 {
 	LastAttacker = source;
-
 	bool okaytoswitch = true;
 
 	switch (Behavior.ThreatReaction)
 	{
 	case THREATREACTION__NONE:
-		okaytoswitch = false; break;
+		okaytoswitch = false;
+		break;
 	case THREATREACTION__LOHEALTH:
 		if (Health > default.Health / 3)
 			okaytoswitch = false;
@@ -222,7 +213,6 @@ bool OkayToSwitchTarget(EntityEx source)
 	}
 
 	okaytoswitch = okaytoswitch && ::OkayToSwitchTarget(source);
-
 	//
 	// [CW] We know that Damage method will set new Target itself,
 	// so we have to set F & I generic target datas
@@ -235,8 +225,9 @@ bool OkayToSwitchTarget(EntityEx source)
 		//  A_SetImmediateTarget(&gnTarget);
 		A_OrderAttackThing(true,
 			TASK_PRIORITY_THREAT_BASE +
-					((Health <= default.Health / 3) ? THREATREACTION__LOHEALTH : THREATREACTION__DAMAGE),
-			0.0, source);
+					((Health <= default.Health / 3) ? THREATREACTION__LOHEALTH :
+					THREATREACTION__DAMAGE),
+					0.0, source);
 	}
 
 	return okaytoswitch;
@@ -256,7 +247,7 @@ void A_KRPGPain()
 	::A_KRPGPain();
 
 	// [FB] Take the chance to get berserk
-	if (bCanBerserk && Health < default.Health / 2 &&
+	if (bCanBerserk && !bBerserk && Health < default.Health / 2 &&
 		(1 + (P_Random() & 7)) > 5)
 	{
 		A_SetBerserk();
@@ -277,6 +268,12 @@ void Died(EntityEx source, EntityEx inflictor)
 		CurrentRoute.Destroy();
 	if (RouteList)
 		RouteList.Destroy();
+	if (berserkTics || bBerserk)
+	{
+		// [FB] To avoid bugs when berserk enemies die...
+		bBerserk = false;
+		berserkTics = 0.0;
+	}
 
 	Tasks = none;
 	CurrentRoute = none;
@@ -335,19 +332,21 @@ final void A_AIResurrect()
 
 final void A_SetBerserk()
 {
-	// [FB] Berserker actors get the double of their actual health
-	//	    Doubling their speed and their strength (MissileDamage for non players)
-	// TODO: Find a way to make this evident for the player too...
-	PlaySound('UseArtifact', CHAN_VOICE);	
-	berserkTics = 1.0 + itof(P_Random() & 7) * 80.0; // FIXME: Should we determine it somehow else??
-	preberserk_strength = MissileDamage;
-	preberserk_speed = Speed;
-	preberserk_health = Health;
+	if (!bBerserk && !bCorpse)
+	{
+		// [FB] Berserker actors get the double of their actual health
+		//	    Doubling their speed and their strength (MissileDamage for non players)
+		PlaySound('UseArtifact', CHAN_VOICE);	
+		berserkTics = 1.0 + itof(P_Random() & 7) * 80.0; // FIXME: Should we determine it somehow else??
+		preberserk_strength = MissileDamage;
+		preberserk_speed = Speed;
+		preberserk_health = Health;
 
-	MissileDamage *= 2;
-	Speed *= 2.0;
-	Health *= 2;
-	bBerserk = true;
+		MissileDamage *= 2;
+		Speed *= 2.0;
+		Health *= 2;
+		bBerserk = true;
+	}
 }
 
 //==========================================================================
@@ -360,33 +359,37 @@ final void A_SetBerserk()
 
 final void A_UnsetBerserk()
 {
-	berserkTics = 0.0;
-	MissileDamage = preberserk_strength;
-	Speed = preberserk_speed;
-	Health = preberserk_health;
-	bBerserk = false;
+	if (!bCorpse)
+	{
+		berserkTics = 0.0;
+		MissileDamage = preberserk_strength;
+		Speed = preberserk_speed;
+		Health = preberserk_health;
+		bBerserk = false;
 
-	// Go to the pain state
-	SetState(FindState('Pain'));
+		// Go to the pain state
+		SetState(FindState('Pain'));
+	}
 }
 
 //==========================================================================
 //
 //	A_SpiritsWithin
 //
-//	[FB] Make fallen foes spirits help us out
+//	[FB] Make fallen foes spirits help monster out
 //
 //==========================================================================
 
 final bool A_SpiritsWithin()
 {
+	int i;
+	EntityEx tail;
+	EntityEx next;
 	EntityEx mo;
 	EntityEx g;
 	float dist;
 	float limit;
-	bool sound;
 
-	sound = false;
 	foreach AllThinkers(EntityEx, mo)
 	{
 		 // Not a corpse
@@ -394,54 +397,49 @@ final bool A_SpiritsWithin()
 		{
 			continue;
 		}
-		 //Don't transform non-monster corpses
-		if (!mo.bMonster)
-		{
-			continue;
-		}
 		dist = DistTo(mo);
-		limit = bIsPlayer ? 500.0 * (itof(Player(Player).exp_level) * 0.1) : 500.0;
-		if (dist > 500.0)
+		limit = 500.0;
+		if (dist > limit)
 		{
 			continue;
 		}
-		if (bIsPlayer && Player(Player).sp_power >= 5)
+		g = Spawn(HolySpirit, mo.Origin + vector(0.0, 0.0, 32.0));
+		if (!g)
 		{
-			Player(Player).sp_power -= 5;
+			continue;
 		}
-		else
+		g.Angles.yaw = AngleMod360(mo.Angles.yaw +
+			(45.0 + 45.0 / 2.0));
+		g.Thrust(g.Angles.yaw, g.Speed * Level.Game.frametime);
+		g.Target = self;
+		g.Args[0] = 10;	// initial turn value
+		g.Args[1] = 0;	// initial look angle
+		if (Level.Game.deathmatch)
 		{
-			return sound;
+			// Ghosts last slightly less longer in DeathMatch
+			g.Health = 85;
 		}
-		g = Spawn(Ghost, mo.Origin);
-		if (g)
+		if (Tracer)
 		{
-			if (!g.TestLocation() || !Target)
-			{
-				// Didn't fit
-				g.SetState(none);
-				return sound;
-			}
-			// [FB] Make it friendly if needed
-			if (bIsPlayer)
-			{
-				g.bFriendly = true;
-			}
-			if (!Target.bCorpse)
-			{
-				//	Master isn't dead
-				g.Tracer = Target;	// Pointer to master
-			}
-			g.Angles = mo.Angles;
-			if (!sound)
-			{
-				g.PlaySound(g.ActiveSound, CHAN_VOICE);
-				sound = true;
-			}
+			g.Tracer = Tracer;
+			//	Don't colide with world but colide with things, i.e explode
+			g.bColideWithWorld = false;
+			g.bSkullFly = true;
+			g.bMissile = false;
 		}
+		tail = Spawn(HolyTail, g.Origin);
+		tail.Target = g;	// parent
+		for (i = 1; i < 3; i++)
+		{
+			next = Spawn(HolyTailTrail, g.Origin);
+			tail.Tracer = next;
+			tail = next;
+		}
+		g.PlaySound(g.ActiveSound, CHAN_VOICE);
+		mo.SetState(mo.FindState('FreeTargMobj'));
 	}
-	
-	return sound;
+
+	return true;
 }
 
 //==========================================================================
@@ -456,7 +454,6 @@ void Tick(float deltaTime)
 
 	if (Health > 0)
 	{
-
 		if (Tasks && Tasks.refHead)
 			ActorTask(Tasks.refHead).Tick(deltaTime);
 
@@ -469,10 +466,7 @@ void Tick(float deltaTime)
 				FatalError("I am tired of this stupid game... should we play tetris instead?");
 				return;
 			}*/
-
-			if (Health <= 0 ||
-					bDormant ||
-					StateAction == STATE_ACTION__SPECIAL)
+			if (Health <= 0 ||	bDormant ||	StateAction == STATE_ACTION__SPECIAL)
 				AITime = 0.0;
 			else
 			{
@@ -481,10 +475,14 @@ void Tick(float deltaTime)
 			}
 		}
 	}
-
-	// [FB] Unset berserk when no more berserkTics are found
+	if (berserkTics && bBerserk)
+	{
+		// [FB] We need this to complete the speed increase effect
+		StateTime /= 1.5;
+	}
 	if (!berserkTics && bBerserk)
 	{
+		// [FB] Unset berserk when no more berserkTics are found
 		A_UnsetBerserk();
 	}
 }
@@ -514,7 +512,6 @@ bool A_FastDoMove(bool Evade, state AIdleState, state AMeleeState,
 	return A_DoMove(Evade, true /* FastChase*/, AIdleState, AMeleeState, AMissileState,
 		true /* NightmareFast*/, PlayActive);
 }
-
 
 //**************************************************************************
 //
@@ -624,7 +621,7 @@ void A_CheckThreat()
 		{
 			if (!Target || !Threshold)
 			{
-				Actor targ = Actor(Sector->SoundTarget);
+				Actor targ = bFriendly ? Actor(Target) : Actor(Sector->SoundTarget);
 				// [CW] Do not allow to target other actors than either monsters or KRPGActors
 				if (targ && !targ.IsA('KRPGActor') && !targ.bMonster)
 					targ = none;
@@ -785,7 +782,7 @@ final void A_ChaseAI()
 		}
 	}
 
-	if (/*A_MoveEx(false, true)*/DoMove && DoMove(false, none, MeleeState, MissileState, true))
+	if (/* A_MoveEx(false, true)*/DoMove && DoMove(false, none, MeleeState, MissileState, true))
 	{
 		// [CW] Still has Target to attack
 	}
@@ -1113,10 +1110,9 @@ void A_OrderWalkPath(bool situative, bool Patrol, bool Looped,
 		BackDir = false;
 
 	ActorTask AT = A_IssueOrder(situative,
-									Patrol ? (	Looped ? ActorTask::ORDER__PATROLLOOP :	ActorTask::ORDER__PATROLPATH)
-									: ActorTask::ORDER__WALKPATH,
-									priority, duration);
-	
+								Patrol ? (Looped ? ActorTask::ORDER__PATROLLOOP : ActorTask::ORDER__PATROLPATH)
+								: ActorTask::ORDER__WALKPATH,
+								priority, duration);
 	if (AT)
 	{
 		AT.GnTarget.Node = FirstNode;
@@ -1242,7 +1238,6 @@ void DoTasks()
 			};
 
 			AT.MoveInFront();			
-
 			//
 			// Perform first-priority task
 			//
@@ -1270,7 +1265,6 @@ void PerformTask(ActorTask AT)
 	CurrentTask = AT;
 
 	AT.Owner = self;
-
 	switch (AT.Order)
 	{
 	case ActorTask::ORDER__STANDSTILL:
@@ -1340,8 +1334,7 @@ void PerformTask(ActorTask AT)
 					SetState(EvState);
 				else if (StateAction != STATE_ACTION__CHASE)
 					SetState(SeeState);
-
-			/*{
+			/* {
 				if (Behavior.bRunOnEvade)
 					StepSpeed *= 2.0;
 				A_MoveEx(false, true);
@@ -1414,8 +1407,6 @@ void PerformTask(ActorTask AT)
 
 	return;
 }
-
-
 
 //**************************************************************************
 //
@@ -1495,11 +1486,9 @@ void DoRoute()
 	// check if target has moved far away from it's previous position.
 	//
 	//
-
-	
-	if (	FGnTarget.Thing ?
+	if (FGnTarget.Thing ?
 		(Behavior.bKnowFTargetPos && CanReach(FGnTarget.Thing.Origin, FGnTarget.Thing)) :
-		CanReach(FGnTarget.Pos, none)	)
+		CanReach(FGnTarget.Pos, none))
 	{
 		//print("canreach");
 		if (FGnTarget.Thing && (Behavior.bLostFTarget || Behavior.bUsingRoute))
@@ -1565,7 +1554,7 @@ void DoRoute()
 			return;
 		}
 	}
-	else/* if (FGnTarget.Thing)*/
+	else /* if (FGnTarget.Thing)*/
 	{
 		if (Behavior.bLostFTarget)
 		{
@@ -1652,13 +1641,12 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 {
 	int i;
 
-	/*if (Behavior.bBuildingRoute)
+	/* if (Behavior.bBuildingRoute)
 		print("Try continue build route");
 	else
 		print("Try build route");*/
 
 	Behavior.bUsingRoute = false;
-
 	if (!Behavior.bBuildingRoute)
 	{
 		CurrentNode = FindNearestReachableNode();
@@ -1667,30 +1655,26 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 			//print("no current node");
 			return;			// no luck
 		}
-
 		//print("CurrentNode = %i", CurrentNode.TID);
 
 		FGnTarget.Node = FindAcceptableTargetNode(AimPos, AimEntity, false);
-
 		if (FGnTarget.Node == none)
 		{
 			//print("no final target node");
 			return;				// no luck
 		}
-		
 		//print("Final Target node = %i", FGnTarget.Node.TID);
 	}
 
 	if (BuildWaypoints(CurrentNode, FGnTarget.Node))
 	{
 		// succeeded, route was build, so set next path node to go to
-
 		if (CurrentRoute)
 		{
 			Behavior.bUsingRoute = true;
 			//Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
 
-			/*//// DEBUG -------------------------- DEBUG
+			/* //// DEBUG -------------------------- DEBUG
 			print("succeeded build route, TID = %i", TID);
 			int ii;
 			for (ii = 0; ii < CurrentRoute.Size; ii++)
@@ -1735,7 +1719,6 @@ void SetNextTargetNode()
 		return;
 
 	//print("set next node");
-	
 	if (IGnTarget.Node)
 	{
 		RouteWayIndex++;
@@ -1801,7 +1784,6 @@ Node FindNearestReachableNode()
 	
 	NodeSelected = none;
 	distance = -1.0;
-	
 	foreach AllThinkers(Node, _Node)
 	{
 		//dprint("Actor::FindNearestReachableNode : _Node = %i", _Node.TID);
@@ -1899,12 +1881,9 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFro
 	Angles = OriginalAngles;
 
 	return (MissileState && (!NodeSelectedCanReach || NodeSelectedCanSee && Length(NodeSelectedCanSee.Origin - VTarget) < 
-								Length(NodeSelectedCanReach.Origin - VTarget)))
-				? NodeSelectedCanSee : NodeSelectedCanReach;
+							  Length(NodeSelectedCanReach.Origin - VTarget)))
+							  ? NodeSelectedCanSee : NodeSelectedCanReach;
 }
-
-
-
 
 //**************************************************************************
 //
@@ -1925,7 +1904,6 @@ bool BuildWaypoints(Node N_From, Node N_To)
 	int i;
 	
 	//print("try build waypoints");
-	
 	//
 	// Algorythm for optimal route build, as written in AI Tutorial :)
 	//
@@ -1946,7 +1924,6 @@ bool BuildWaypoints(Node N_From, Node N_To)
 	//										from last node in path to goal
 	//
 	//
-
 	bool						failed;
 	LinkedList					route_list;
 	Route						R;
@@ -1989,7 +1966,6 @@ bool BuildWaypoints(Node N_From, Node N_To)
 	}
 
 	route_list = LinkedList(SpawnObject(LinkedList));
-
 	while (!IsNodeInRoute(Route(RouteList.refHead), N_To))
 	{
 		if (Behavior.RouteBuildIterationsCount == RouteBuildIterationsLimit)
@@ -2020,10 +1996,8 @@ bool BuildWaypoints(Node N_From, Node N_To)
 			failed = true;
 			break;
 		}
-		
 		Behavior.RouteBuildIterationsCount++;
 	};
-	
 	Behavior.bBuildingRoute = false;
 
 	if (!failed)
@@ -2032,7 +2006,6 @@ bool BuildWaypoints(Node N_From, Node N_To)
 		CurrentRoute = Route(RouteList.refHead);
 		RouteList.refHead.UnlinkFromList();
 	}
-	
 	route_list.Destroy();
 	RouteList.Destroy();
 	RouteList = none;
@@ -2144,7 +2117,6 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 			ExtendableRoute.Size = j + 1;
 		}
 	}
-	
 	
 	// Remove original head route
 	route_list.DestroyObject(route_list.refHead);
@@ -2362,7 +2334,7 @@ void AddExtendedRoutes(LinkedList extended_route_list, LinkedList route_list)
 	sort_extended_route_list.Destroy();
 
 	
-	/*/// DEBUG!!! FIXME!!!
+	/* /// DEBUG!!! FIXME!!!
 	R = Route(route_list.refHead);
 	while (R != none)
 	{

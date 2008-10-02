@@ -39,8 +39,8 @@ int wisdom;
 //
 // [FB] Spell bar stuff
 //
-KRPGInventory	SpellFirst;
-KRPGInventory	SpellPtr;
+Inventory		SpellFirst;
+Inventory		SpellPtr;
 float			SpellTime;
 int				SpellSize;
 
@@ -61,38 +61,8 @@ void AddInventory(KRPGInventory Item)
 {
 	if (Item.bSpellBar && !SpellPtr)
 	{
-		SpellPtr = Item;
-		SpellFirst = Item;
-	}
-}
-
-//==========================================================================
-//
-//	RemoveInventory
-//
-//==========================================================================
-
-void RemoveInventory(KRPGInventory Item)
-{
-	if (SpellPtr == Item)
-	{
-		SpellPtr = Item.PrevSpl();
-		if (!SpellPtr)
-		{
-			InvPtr = Item.NextSpl();
-		}
-	}
-	if (SpellFirst == Item)
-	{
-		SpellFirst = Item.PrevSpl();
-		if (!SpellFirst)
-		{
-			SpellFirst = Item.NextSpl();
-		}
-	}
-	if (Item.bSpellBar)
-	{
-		AdjustSpellFirst();
+		SpellPtr = Inventory(Item);
+		SpellFirst = Inventory(Item);
 	}
 }
 
@@ -167,7 +137,7 @@ final void NextSpell()
 	}
 	if (SpellPtr)
 	{
-		KRPGInventory Prev = SpellPtr.PrevSpl();
+		Inventory Prev = KRPGInventory(SpellPtr).PrevSpl();
 		if (Prev)
 		{
 			SpellPtr = Prev;
@@ -195,7 +165,7 @@ final void PreviousSpell()
 	}
 	if (SpellPtr)
 	{
-		KRPGInventory Next = SpellPtr.NextSpl();
+		Inventory Next = KRPGInventory(SpellPtr).NextSpl();
 		if (Next)
 		{
 			SpellPtr = Next;
@@ -250,7 +220,7 @@ final void SpellTick(float deltaTime)
 
 final void AdjustSpellFirst()
 {
-	KRPGInventory Item;
+	Inventory Item;
 
 	if (!SpellPtr)
 	{
@@ -261,7 +231,7 @@ final void AdjustSpellFirst()
 	//	Count how many items are following the current one, also make sure
 	// that first is not after this one.
 	int NumFollowing = 0;
-	for (Item = SpellPtr.NextSpl(); Item; Item = Item.NextSpl())
+	for (Item = KRPGInventory(SpellPtr).NextSpl(); Item; Item = KRPGInventory(Item).NextSpl())
 	{
 		NumFollowing++;
 		if (SpellFirst == Item)
@@ -270,18 +240,18 @@ final void AdjustSpellFirst()
 		}
 	}
 	int FirstOffs = 0;
-	for (Item = SpellPtr; Item && Item != SpellFirst; Item = Item.PrevSpl())
+	for (Item = SpellPtr; Item && Item != SpellFirst; Item = KRPGInventory(Item).PrevSpl())
 	{
 		FirstOffs++;
 	}
 	while (FirstOffs > SpellSize)
 	{
-		SpellFirst = SpellFirst.NextSpl();
+		SpellFirst = KRPGInventory(SpellFirst).NextSpl();
 		FirstOffs--;
 	}
-	while (NumFollowing + FirstOffs < SpellSize &&	SpellFirst.PrevSpl())
+	while (NumFollowing + FirstOffs < SpellSize &&	KRPGInventory(SpellFirst).PrevSpl())
 	{
-		SpellFirst = SpellFirst.PrevSpl();
+		SpellFirst = KRPGInventory(SpellFirst).PrevSpl();
 		FirstOffs++;
 	}
 }
