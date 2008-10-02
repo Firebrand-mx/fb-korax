@@ -602,7 +602,7 @@ void SetTeam(int team)
 	// TODO: special code needed for Intelligent Actors
 	//
 
-	if (bCombatant && Target && Target.IsA('KRPGActor') && Actor(Target).Team == Team)
+	if (bCombatant && Target && Actor(Target).Team == Team)
 	{
 		Target = none;
 		SetState(IdleState);
@@ -741,7 +741,9 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 			continue;
 		}
 		else
+		{
 			NewTarget = mo;
+		}
 
 		break;
 	}
@@ -800,8 +802,8 @@ bool A_LookEx(bool autoSetChase)
 		VisDir = -1;
 	}
 
-	// [CW] Do not allow to target other actors than either monsters or KRPGActors
-	if (targ && !targ.IsA('KRPGActor') && !targ.bMonster)
+	// [CW] Do not allow to target other actors than monsters
+	if (targ && !targ.bMonster)
 		targ = none;
 
 	if (targ && targ.bShootable && (bIgnoreTeams || Team != Actor(targ).Team))

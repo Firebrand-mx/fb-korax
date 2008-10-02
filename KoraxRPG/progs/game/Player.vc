@@ -1809,6 +1809,84 @@ final void UnsetBerserk()
 	MO.SetState(MO.FindState('Pain'));
 }
 
+//==========================================================================
+//
+//	SpiritsWithin
+//
+//	[FB] Make fallen foes spirits help us out
+//
+//==========================================================================
+
+final bool A_SpiritsWithin()
+{
+	int i;
+	EntityEx tail;
+	EntityEx next;
+	EntityEx mo;
+	EntityEx g;
+	float dist;
+	float limit;
+
+	foreach EntityEx(MO).AllThinkers(EntityEx, mo)
+	{
+		 // Not a corpse
+		if (!mo.bCorpse)
+		{
+			continue;
+		}
+		dist = EntityEx(MO).DistTo(mo);
+		limit = 1000.0 * (itof(exp_level) * 0.1);
+		if (dist > limit)
+		{
+			continue;
+		}
+		if (sp_power >= 5)
+		{
+			sp_power -= 5;
+		}
+		else
+		{			
+			return false;
+		}
+		g = Level.Spawn(HolySpirit, mo.Origin + vector(0.0, 0.0, 32.0));
+		if (!g)
+		{
+			continue;
+		}
+		g.Angles.yaw = AngleMod360(mo.Angles.yaw +
+			(45.0 + 45.0 / 2.0));
+		g.Thrust(g.Angles.yaw, g.Speed * Level.Game.frametime);
+		g.Target = EntityEx(MO);
+		g.Args[0] = 10;	// initial turn value
+		g.Args[1] = 0;	// initial look angle
+		if (Level.Game.deathmatch)
+		{
+			// Ghosts last slightly less longer in DeathMatch
+			g.Health = 85;
+		}
+		if (EntityEx(MO).Tracer)
+		{
+			g.Tracer = EntityEx(MO).Tracer;
+			//	Don't colide with world but colide with things, i.e explode
+			g.bColideWithWorld = false;
+			g.bSkullFly = true;
+			g.bMissile = false;
+		}
+		tail = Level.Spawn(HolyTail, g.Origin);
+		tail.Target = g;	// parent
+		for (i = 1; i < 3; i++)
+		{
+			next = Level.Spawn(HolyTailTrail, g.Origin);
+			tail.Tracer = next;
+			tail = next;
+		}
+		g.PlaySound(g.ActiveSound, CHAN_VOICE);
+		mo.SetState(mo.FindState('FreeTargMobj'));
+	}
+
+	return true;
+}
+
 defaultproperties
 {
 	SpellSize = 6;
