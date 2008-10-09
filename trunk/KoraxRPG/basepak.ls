@@ -70,7 +70,6 @@ progs/game/IntelligentActor.vc		progs/game/IntelligentActor.vc
 progs/game/MainGameInfo.vc		progs/game/MainGameInfo.vc
 progs/game/HexenLevelInfo.vc		progs/game/HexenLevelInfo.vc
 progs/game/KRPGLevelInfo.vc		progs/game/KRPGLevelInfo.vc
-progs/game/HexenWorldInfo.vc		progs/game/HexenWorldInfo.vc
 progs/game/KRPGWorldInfo.vc		progs/game/KRPGWorldInfo.vc
 progs/game/KRPGMana.vc		progs/game/KRPGMana.vc
 progs/game/KRPGClientGameBase.vc		progs/game/KRPGClientGameBase.vc
