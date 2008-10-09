@@ -52,7 +52,6 @@ progs/game/GameKTH.vc		progs/game/GameKTH.vc
 progs/game/GameXmasHavoc.vc		progs/game/GameXmasHavoc.vc
 progs/game/MainGameInfo.vc		progs/game/MainGameInfo.vc
 progs/game/HexenLevelInfo.vc		progs/game/HexenLevelInfo.vc
-progs/game/HexenWorldInfo.vc		progs/game/HexenWorldInfo.vc
 progs/game/KArenaPlayerPawn.vc		progs/game/KArenaPlayerPawn.vc
 progs/game/KArenaWeapon.vc		progs/game/KArenaWeapon.vc
 progs/game/Player.vc		progs/game/Player.vc
