@@ -595,7 +595,8 @@ void CheckStuff()
 
 	if (missile)
 	{
-		if (!missile.bMissile || missile.IsDestroyed())
+		// [CW] CHECKME - Not sure the first condition had any sense here
+		if (/*!missile.bMissile ||*/missile.IsDestroyed())
 			missile = none;
 	}
 
@@ -1097,7 +1098,6 @@ Actor FindEnemy()
 				botmo.CanSee(botmo.Sector->SoundTarget)) ||
 				Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
 			{
-				// [CW] I disable this one...
 				if (EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
 				{
 					// [FB] Detect the light level
@@ -1145,12 +1145,16 @@ Actor FindMissile()
 
 	foreach botmo.AllThinkers(Actor, actor)
 	{
-		if (Check_LOS(actor, 90.0))
+		// [CW] Fixed to greatly optimize processing time
+		if (actor.bMissile && (botmo.DistTo(actor) <= AVOID_DIST))
 		{
-			if (!missile && actor.bMissile &&
-				(botmo.DistTo(actor) <= AVOID_DIST))
+			if (Check_LOS(actor, 90.0))
 			{
-				return actor;
+				/*if (!missile && actor.bMissile &&
+					(botmo.DistTo(actor) <= AVOID_DIST))
+				{*/
+					return actor;
+				/*}*/
 			}
 		}
 	}
@@ -1348,7 +1352,6 @@ Actor SetAlly()
 	//is mate alive?
 	if (ally)
 	{
-		print("BotPlayer::SetAlly - Got an ally");
 		if (ally.Health <= 0)
 		{
 			ally = none;
@@ -1366,18 +1369,19 @@ Actor SetAlly()
 		{
 			last_mate = none;
 			ally = last_mate;
-			print("BotPlayer::SetAlly - Last mate is dead, no ally...");
 		}
 		else
 		{
 			ally = last_mate;
-			print("BotPlayer::SetAlly - Last mate is my current ally");
 		}
 	}
 
+	dprint("SetAlly 2");
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (player.Level.Game.Players[i] && botmo != player.Level.Game.Players[i].MO)
+		if ((player.Level.Game.Players[i]) && (player.Level.Game.Players[i].MO) &&
+			(botmo != player.Level.Game.Players[i].MO))
 		{
 			if (MainGameInfo(player.Level.Game).GameModel) // [FB] Check if an advanced game mode is active
 			{
@@ -1413,12 +1417,12 @@ Actor SetAlly()
 	//Check for player friends
 	for (j = 0; j < MAXPLAYERS; j++)
 	{
-		if (player.Level.Game.Players[j] && botmo != player.Level.Game.Players[j].MO)
+		if ((player.Level.Game.Players[j]) && (player.Level.Game.Players[j].MO) &&
+			(botmo != player.Level.Game.Players[j].MO))
 		{
 			// [FB] Team game modes
 			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
-				print("BotPlayer::SetAlly - Second IF");
 				if ((Player(player.Level.Game.Players[j]).Team == player.Team))
 				{
 					int HealthDanger = Player(player.Level.Game.Players[j]).bIsBot ?
@@ -2250,6 +2254,10 @@ void BotTick(float deltaTime)
 	player.FlyMove = 0.0;
 	player.Buttons = 0;
 
+	// [CW]
+	if (!botmo)
+		return;
+
 	// Weed out any bad destinations/enemies
 	CheckStuff();
 
@@ -2284,7 +2292,7 @@ void BotTick(float deltaTime)
 	AITime -= deltaTime;
 	if (AITime <= 0.0)
 	{
-		AITime = AI_TIME_DELAY + (Random() - 0.5) * 2.5;
+		AITime = AI_TIME_DELAY + (Random() - 0.5) * AI_TIME_DELAY / 4.0;// MY CHANGES 2008-10-11
 
 		// [FB] Decide what action we'll take
 		SetAction();
@@ -2748,8 +2756,10 @@ void ProcessImmediate()
 		}
 	}
 
-/*	if (ITarget)
-		print("BOT %s : my target is %n", player.PlayerName, GetClassName(ITarget.Class));*/
+#ifdef DEBUG_BOT_AI_TARGET
+	if (ITarget)
+		print("BOT %s : my target is %n", player.PlayerName, GetClassName(ITarget.Class));
+#endif
 
 	bSoftContact = false;
 	bMeleeUrge = false;
