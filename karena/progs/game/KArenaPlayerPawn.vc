@@ -106,7 +106,7 @@ bool MoveToFreePosition()
 				(4.0 + 3.0 * (Radius) / 2.0) * sin(test_ang), ONFLOORZ)))
 			{
 				// [FB] OK, we are inside the map
-				if (TestLocation()/*TeleportMove(bak_org + test_dir * test_dist)*/)
+				if (TestLocation()/* TeleportMove(bak_org + test_dir * test_dist)*/)
 				{
 					return true;
 				}
@@ -197,7 +197,7 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass)
 		MainGameInfo::TELEFOGHEIGHT));
 
 	beastMo = Spawn(moclass, Origin);
-	beastMo.Tracer = Player(Player).ReadyWeapon;
+	beastMo.Tracer = PlayerEx(Player).ReadyWeapon;
 	beastMo.Angles = Angles;
 	beastMo.Player = Player;
 	beastMo.bIsPlayer = true;
@@ -453,10 +453,23 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 		//	return false;
 
 		// [FB]  3d Floor checks...
-		if (TargetEntity.Origin.z > FloorZ + MaxPassableStep)
-			return false;
+		float dist;
+		if (TargetEntity.Origin.z > FloorZ)
+		{
+			dist = FloorZ + Height + MaxPassableStep;
+
+			if (TargetEntity.Origin.z > dist)
+				return false;
+		}
 		if (TargetEntity.Origin.z < FloorZ)
-			return false;
+		{
+			dist = FloorZ - (TargetEntity.Origin.z + TargetEntity.Height);
+			// [FB] Always evaluate a positive distance
+			dist = dist < 0.0 ? -dist : dist;
+
+			if (dist > MaxPassableDropOff)
+				return false;
+		}
 	}
 
 	return canreach;

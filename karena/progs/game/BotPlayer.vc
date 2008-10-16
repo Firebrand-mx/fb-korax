@@ -352,7 +352,9 @@ void SetAction()
 	int defenders = 0;
 	int attackers = 0;
 
-	if (!player.Team)
+	// [FB] Run this routine only in some gameplay modes
+	if (gameInfo.GameType != HexenDefs::game_ctf &&
+		gameInfo.GameType != HexenDefs::game_football)
 		return;
 
 	// [FB] We are deciding what to do
@@ -369,20 +371,34 @@ void SetAction()
 			{
 				// [FB] Is this bot in Offense?
 				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_offense)
+				{
 					attackers++;
+					print("BOT %s : Attackers: %d", player.PlayerName, attackers);
+				}
 				// [FB] Is this bot in Defense?
-				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_defense)
+				else if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_defense)
+				{
 					defenders++;
+					print("BOT %s : Defenders: %d", player.PlayerName, defenders);
+				}
 			}
 		}
 
+		print("BOT %s : Defenders after cycle: %d", player.PlayerName, defenders);
+		print("BOT %s : Attackers after cycle: %d", player.PlayerName, attackers);
 		// Defense wins championships...
 		if (defenders <= attackers)
+		{
 			// [FB] Then get on defense
 			botstate.BState = bst_defense;
+			print("BOT %s : Got defense", player.PlayerName);
+		}
 		else
+		{
 			// [FB] Then get on offense
 			botstate.BState = bst_offense;
+			print("BOT %s : Got offense", player.PlayerName);
+		}
 	}
 }
 
@@ -902,7 +918,7 @@ void Aim()
 	// [JL] NOTE the old code didn't change weapon correctly meaning this would
 	// never work. I'll enable fixed version but with very low chance.
 	// [CW] removed JL's limit
-	if (/*Random() < 0.001 || */player.ReadyWeapon.bWimpyWeapon)
+	if (/* Random() < 0.001 || */player.ReadyWeapon.bWimpyWeapon)
 	{
 		Weapon Best = ChooseWeapon(dist);
 		if (Best && Best != player.ReadyWeapon)
@@ -1150,11 +1166,11 @@ Actor FindMissile()
 		{
 			if (Check_LOS(actor, 90.0))
 			{
-				/*if (!missile && actor.bMissile &&
+				/* if (!missile && actor.bMissile &&
 					(botmo.DistTo(actor) <= AVOID_DIST))
 				{*/
 					return actor;
-				/*}*/
+				/* }*/
 			}
 		}
 	}
@@ -1185,6 +1201,12 @@ Weapon ChooseWeapon(float dist)
 			{
 				//	Not a weapon.
 				continue;
+			}
+			if (gameInfo.GameType == HexenDefs::game_xmas)
+			{
+				// [FB] We only want to use weapons that do fire damage in XMAS Havoc!
+				if (!Wpn.bFireDamage)
+					continue;
 			}
 			if (dist <= Actor::MELEERANGE)
 			{
@@ -1654,7 +1676,7 @@ void Move(float deltaTime)
 			}
 		}
 
-		an = GetAngle();//botmo.Angles.yaw;
+		an = GetAngle(); //botmo.Angles.yaw;
 		if (sidemove < 0.0)
 			an -= 90.0;
 		else
@@ -2714,7 +2736,7 @@ void ProcessImmediate()
 		if (!ITarget)
 		{
 			// [FB] Determine our state (offense, defense) to make us search for specific path nodes
-			if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_ctf)
+			if (gameInfo.GameType == HexenDefs::game_ctf)
 			{
 				switch(botstate.BState)
 				{
@@ -2729,17 +2751,41 @@ void ProcessImmediate()
 					case bst_defense:
 					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(BlueGuardSpot));
+							if (!ITarget)
+							{
+								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
+							}
+						}
 						else
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(RedGuardSpot));
+							if (!ITarget)
+							{
+								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
+							}
+						}
 					}
 					break;
 					case bst_scoring:
 					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(BlueGoalSpot));
+							if (!ITarget)
+							{
+								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
+							}
+						}
 						else
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(RedGoalSpot));
+							if (!ITarget)
+							{
+								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
+							}
+						}
 					}
 					break;
 				}
@@ -2758,7 +2804,6 @@ void ProcessImmediate()
 	if (ITarget)
 		print("BOT %s : my target is %n", player.PlayerName, GetClassName(ITarget.Class));
 #endif
-
 	bSoftContact = false;
 	bMeleeUrge = false;
 	bKeepDistant = false;
@@ -2805,8 +2850,8 @@ Actor GetSpecialEnemy()
 {
 	switch (gameInfo.GameType)
 	{
-	case HexenDefs::game_xmas:
-		return Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
+		case HexenDefs::game_xmas:
+			return Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
 	}
 	return none;
 }
@@ -2825,7 +2870,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 
 	switch (gameInfo.GameType)
 	{
-	case HexenDefs::game_kth:
+		case HexenDefs::game_kth:
 		{
 			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch)
 			{
@@ -2838,7 +2883,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 				EE = GetNearestEnemy(true);
 		}
 		break;
-	case HexenDefs::game_ctf:
+		case HexenDefs::game_ctf:
 		{
 			// [FB] Get our state and set our actions based on this...
 			switch (botstate.BState)
@@ -2864,13 +2909,17 @@ Actor GetGameModeGoal(optional bool bReachable)
 							}
 							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
 							{
-									// [FB] Flag is carried, check if we are carrying it
-									if (CTFBanner(ee).Capturer == player)
-										// [FB] We are carrying, set our state to scoring to change our goal
-										botstate.BState = bst_scoring;
-									else
-										// [FB] Just support our team....
-										EE = GetNearestEnemy(true);
+								// [FB] Flag is carried, check if we are carrying it
+								if (CTFBanner(ee).Capturer == player)
+								{
+									// [FB] We are carrying, set our state to scoring to change our goal
+									botstate.BState = bst_scoring;
+								}
+								else
+								{
+									// [FB] Just support our team....
+									EE = GetNearestEnemy(true);
+								}
 							}
 						}
 					}
@@ -2884,12 +2933,16 @@ Actor GetGameModeGoal(optional bool bReachable)
 						if (CTFBanner(ee).Team == player.Team)
 						{
 							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE)
+							{
 								EE = GetNearestEnemy(true);
+							}
 							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+							{
 								EE = Actor(CTFBanner(ee).Capturer);
+							}
 							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
 							{
-								if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
+								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
 								{
 									if (!bReachable || CheckTo(ee.Origin, ee))
 									{
@@ -2922,15 +2975,17 @@ Actor GetGameModeGoal(optional bool bReachable)
 								}
 							}
 							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+							{
 								EE = Actor(CTFBanner(ee).Capturer);
+							}
 						}
 					}
 				}
 				break;
 			}
 		}
-	break;
-	case HexenDefs::game_domination:
+		break;
+		case HexenDefs::game_domination:
 		{
 			foreach botmo.AllThinkers(DominationSigil, ee)
 			{
@@ -2946,7 +3001,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 			}
 		}
 		break;
-	case HexenDefs::game_football:
+		case HexenDefs::game_football:
 		{
 			// Get ball
 			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
@@ -2988,8 +3043,8 @@ Actor GetGameModeGoal(optional bool bReachable)
 			}
 		}
 		break;
-	default:
-		EE = GetNearestEnemy(true);
+		default:
+			EE = GetNearestEnemy(true);
 	}
 
 	return EE;
@@ -3013,7 +3068,7 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 	PathNode previous;
 
 	// TODO: make DEQUEUE instead of this bullshit
-	if (nodes.Num > 32)
+	if (nodes.Num > 256)
 		nodes.Num = 0;
 	if (nodes.Num)
 		previous = nodes[nodes.Num - 1];

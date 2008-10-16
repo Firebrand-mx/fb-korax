@@ -94,7 +94,7 @@ bool IsTouched(Entity Toucher)
 	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
 	if (CTF && CTF.IsInPlayableState())
 	{
-		if(Toucher && Toucher.Player.Health > 0 && Toucher.IsA('PlayerPawn'))
+		if(Toucher && Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
 		{
 			if (Status != BANNER_STATUS__CARRIED && Status != BANNER_STATUS__BEING_RETURNED)
 			{
@@ -103,7 +103,10 @@ bool IsTouched(Entity Toucher)
 				{
 					// Defender; if a banner is not on its Base, it should be returned there at once
 					if (Status == BANNER_STATUS__LOST)
+					{
 						ReturnToBase(Toucher, false);
+						Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
+					}
 					// Elsewise banner is on base; check if defender is carrying captured opponents' flag
 					else
 					{
@@ -150,11 +153,11 @@ void CaptureBy(Entity newCapturer)
 	{
 		MainGameInfo(Level.Game).bcentreprint(va("%s got the %s flag!",
 									newCapturer.Player.PlayerName,
-									Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		Capturer = Player(newCapturer.Player);
 		//[FB] We need to let the bots know they must return to their own goal spot
 		if(Capturer.bIsBot)
-			Capturer.Bot.botstate.BState = 3;
+			Capturer.Bot.botstate.BState = BotPlayer::bst_scoring;
 
 		Status = BANNER_STATUS__CARRIED;
 	}
@@ -186,17 +189,17 @@ void ReturnToBase(Entity Savior, bool silent)
 				Player(Savior.Player).UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
 				MainGameInfo(Level.Game).bcentreprint(va("%s returned %s flag!",
 							Savior.Player.PlayerName,
-							Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+							Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 			}
 			else
 				MainGameInfo(Level.Game).bcentreprint(va("%s flag returned to the base",
-							Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+							Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		}
 		
 		Status = BANNER_STATUS__BEING_RETURNED;
-		//[FB] We need to let the bots know they must get on offense again
+		//[FB] We need to let the bots know they must get on deciding state again
 		if(Capturer && Capturer.bIsBot)
-			Capturer.Bot.botstate.BState = 1;
+			Capturer.Bot.botstate.BState = BotPlayer::bst_deciding;
 
 		Capturer = none;
 		bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
@@ -225,10 +228,10 @@ void WasLost()
 	{
 		MainGameInfo(Level.Game).bcentreprint(va("%s dropped the %s flag!",
 									Capturer.PlayerName,
-									Team.Name/*MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
-		//[FB] We need to let the bots know they must get on offense again
+									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+		//[FB] We need to let the bots know they must get on deciding state again
 		if(Capturer && Capturer.bIsBot)
-			Capturer.Bot.botstate.BState = 1;
+			Capturer.Bot.botstate.BState = BotPlayer::bst_deciding;
 
 		Capturer = none;
 		lost_timer = AUTORESPAWN_DELAY;
@@ -368,7 +371,7 @@ Spawn:
 
 defaultproperties
 {
-	Radius = 8.0;
+	Radius = 32.0;
 	Height = 120.0;
 	bSolid = false;
 }
