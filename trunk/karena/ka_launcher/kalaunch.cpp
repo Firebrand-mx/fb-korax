@@ -130,7 +130,7 @@ VMain::VMain()
 : wxFrame(NULL, wxID_ANY, wxT("Korax Arena: Tournament of the Serpent Riders Launcher"), wxDefaultPosition, wxDefaultSize,
 	wxDEFAULT_FRAME_STYLE & ~ (wxRESIZE_BORDER | wxRESIZE_BOX | wxMAXIMIZE_BOX))
 {
-	SetIcon(wxICON(vlaunch));
+	SetIcon(wxICON(kalaunch));
 
 	wxPanel* panel = new wxPanel(this);
 	wxBoxSizer* mainsizer = new wxBoxSizer(wxVERTICAL);
@@ -155,6 +155,7 @@ VMain::VMain()
 	GameChoices[6] = wxT("Hexen");
 	Game = new wxComboBox(page, -1, GameChoices[0], wxDefaultPosition, wxDefaultSize, 7, GameChoices, wxCB_READONLY);
 	gsizer->Add(Game, 0, wxALL, 4);
+	Game->Disable();
 
 	CheckBoxDevGame = new wxCheckBox(page, -1, wxT("Development mode"));
 	gsizer->AddSpacer(1);
@@ -268,6 +269,7 @@ VMain::VMain()
 	panel->SetSizer(mainsizer);
 	mainsizer->SetSizeHints(this);
 
+	nbook->CentreOnParent(wxHORIZONTAL);
 	//	Load saved settings.
 	wxConfigBase* Conf = wxConfigBase::Get();
 	Game->SetSelection(Conf->Read(wxT("Game"), 0l));
