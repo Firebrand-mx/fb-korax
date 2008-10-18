@@ -92,6 +92,7 @@ progs/game/WeaponFighterPunch.vc		progs/game/WeaponFighterPunch.vc
 progs/game/WeaponGauntlets.vc		progs/game/WeaponGauntlets.vc
 progs/game/WeaponFighterAxe.vc		progs/game/WeaponFighterAxe.vc
 progs/game/KArenaHammerMissile.vc		progs/game/KArenaHammerMissile.vc
+progs/game/KArenaPigPlayer.vc		progs/game/KArenaPigPlayer.vc
 progs/game/WeaponFighterHammer.vc		progs/game/WeaponFighterHammer.vc
 progs/game/FighterSwordMissile.vc		progs/game/FighterSwordMissile.vc
 progs/game/WeaponFighterSword.vc		progs/game/WeaponFighterSword.vc
