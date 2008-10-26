@@ -7,8 +7,9 @@ ClientGame		ClGame;
 enum
 {
 	TM_None,
+	TM_Option,
+	TM_OptionConfirm,
 	TM_MoveOnPath,
-	TM_ConfirmAccessAsk,
 	TM_ConfirmAccessWaitResponse,
 	TM_Done,
 	TM_Skip
@@ -16,9 +17,24 @@ enum
 
 int TMState;
 
-//name TextFlat;
-//int TextPic;
+const int ARROW_FLASH_TIME = 20;
+
+enum
+{
+	TM_ARROW__EAST,
+	TM_ARROW__SOUTHEAST,
+	TM_ARROW__SOUTH,
+	TM_ARROW__SOUTHWEST,
+	TM_ARROW__WEST,
+	TM_ARROW__NORTHWEST,
+	TM_ARROW__NORTH,
+	TM_ARROW__NORTHEAST,
+	TM_ARROW__COUNT
+};
+
+
 int TM_PicMain;
+int TM_PicArrows[TM_ARROW__COUNT << 1];
 
 
 struct tm_object_t
@@ -28,15 +44,6 @@ struct tm_object_t
 	bool	visible;
 	bool	accessible;
 };
-
-/*struct tm_pathpoint_t : tm_object_t
-{
-	int colour;
-	int curve;
-	tm_pathpoint_t *	p_p1;
-	tm_pathpoint_t *	p_p2;
-	tm_pathpoint_t *	p_point_jointed;
-};*/
 
 enum
 {
@@ -66,6 +73,8 @@ struct tm_graphic_object_t : tm_object_t
 	int	picId;
 };
 
+const int ENTRY_BLINK_TIME = 20;
+
 struct tm_mapentry_t : tm_graphic_object_t
 {
 	int					mapid;
@@ -75,23 +84,21 @@ struct tm_mapentry_t : tm_graphic_object_t
 	string				entrymessage;
 	name				entryname;
 	int					entrypicId;
-	//tm_pathpoint_t *	p_point;
-	bool				temp;			// fixme
-	int					temp2;
+	array<tm_road_t*>	paths;
+	bool				blink;
+	int					blinktime;
 };
+
+const int TRAVELLER_SPEED = 1;
 
 struct tm_traveller_t : tm_graphic_object_t
 {
-	//tm_pathpoint_t *	p_pathpt;
 	tm_mapentry_t *		p_mapentry;
-};
-
-enum
-{
-	TM_PLCMD_UP		= 0x0001,
-	TM_PLCMD_LEFT	= 0x0002,
-	TM_PLCMD_RIGHT	= 0x0004,
-	TM_PLCMD_DOWN	= 0x0008
+	tm_road_t *			p_road;
+	int					roadpt;
+	bool				roaddiropposite;
+	int					flashdir;
+	int					flashtime;
 };
 
 int					playerCmds;
@@ -150,6 +157,9 @@ void TM_Release()
 
 void Tick(float DeltaTime)
 {
+	TM_UpdateMapEntries();
+	TM_UpdateTraveller();
+
 	if (TMState == TM_Done)
 	{
 		ClGame.skipintermission = false;
@@ -160,52 +170,169 @@ void Tick(float DeltaTime)
 		ClGame.skipintermission = false;
 		CmdBuf_AddText("TeleportNewMap\n");
 	}
-	else if (TMState == TM_ConfirmAccessAsk)
-	{
-		ClGame.messageResult = ClientGame::MBR_Unset;	// FIXME!!
-		ClGame.MessageBoxStartMessage(va("Enter %s (y/n)?", traveller.p_mapentry->title), ClientGame::MB_YesNo, true);
-		TMState = TM_ConfirmAccessWaitResponse;
-		return;
-	}
 	else if (TMState == TM_ConfirmAccessWaitResponse)
 	{
 		if (ClGame.messageResult == ClientGame::MBR_Yes)
 			TMState = TM_Done;
 		else if (ClGame.messageResult == ClientGame::MBR_No)
-			TMState = TM_None;
-		return;
+			TMState = TM_Option;
 	}
-
-	if (traveller.visible)
+	else if (TMState == TM_Option)
 	{
-		int i;
-
-		if (playerCmds & TM_PLCMD_UP)
-			traveller.y--;
-		if (playerCmds & TM_PLCMD_LEFT)
-			traveller.x--;
-		if (playerCmds & TM_PLCMD_RIGHT)
-			traveller.x++;
-		if (playerCmds & TM_PLCMD_DOWN)
-			traveller.y++;
-
-		traveller.p_mapentry = NULL;
-		for (i = 0; i < tmMapEntries.Num; i++)
+		if (traveller.p_mapentry && !traveller.p_mapentry->blink)
 		{
-			if (tmMapEntries[i].visible)
+			traveller.p_mapentry->blinktime = 20;
+			traveller.p_mapentry->blink = true;
+		}		
+	}
+	else if (TMState == TM_OptionConfirm)
+	{
+	}
+	else if (TMState == TM_MoveOnPath)
+	{
+	}
+}
+
+//==========================================================================
+//
+//	TM_UpdateMapEntries
+//
+//==========================================================================
+
+void TM_UpdateMapEntries()
+{
+	int i;
+	for (i = 0; i < tmMapEntries.Num; i++)
+	{
+		if (tmMapEntries[i].blink)
+		{
+			if (tmMapEntries[i].blinktime > 0)
 			{
-				if (tmMapEntries[i].x - 16 <= traveller.x &&
-					tmMapEntries[i].x + 16 >= traveller.x &&
-					tmMapEntries[i].y - 16 <= traveller.y &&
-					tmMapEntries[i].y + 16 >= traveller.y)
+				tmMapEntries[i].blinktime--;
+				if (!tmMapEntries[i].blinktime)
+					tmMapEntries[i].blinktime = -20;
+			}
+			else if (tmMapEntries[i].blinktime < 0)
+			{
+				tmMapEntries[i].blinktime++;
+				if (!tmMapEntries[i].blinktime)
+					tmMapEntries[i].blinktime = 20;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	TM_UpdateTraveller
+//
+//==========================================================================
+
+void TM_UpdateTraveller()
+{
+	//int i;
+
+	if (TMState == TM_Option ||
+		TMState == TM_OptionConfirm)
+	{
+		if (GetCvar('TravelMapCheat'))
+		{
+			if (playerCmds & ROADDIR_JUST_UP)
+				traveller.y--;
+			if (playerCmds & ROADDIR_JUST_LEFT)
+				traveller.x--;
+			if (playerCmds & ROADDIR_JUST_RIGHT)
+				traveller.x++;
+			if (playerCmds & ROADDIR_JUST_DOWN)
+				traveller.y++;
+
+			TM_CheckStayAtMapEntry();
+		}
+		else
+		{
+			if (playerCmds && traveller.flashdir != playerCmds)
+			{
+				bool dummy2;
+				int i, dir, dummy;
+
+				traveller.flashdir = ROADDIR_NONE;
+				for (i = 0; i < traveller.p_mapentry->paths.Num; i++)
 				{
-					if (!tmMapEntries[i].temp)
-						tmMapEntries[i].temp2 = 20;
-					tmMapEntries[i].temp = true;
-					traveller.p_mapentry = &tmMapEntries[i];
+					TM_GetPathData(traveller.p_mapentry, traveller.p_mapentry->paths[i],
+						dir, dummy, dummy2);
+					if (dir == playerCmds)
+					{
+						traveller.flashdir = playerCmds;
+						break;
+					}
+				}
+
+				if (traveller.flashdir)
+				{
+					traveller.flashtime = 20;
+					traveller.flashdir = playerCmds;
+					TMState = TM_OptionConfirm;
 				}
 				else
-					tmMapEntries[i].temp = false;
+					TMState = TM_Option;
+			}
+		}	
+	}
+	else if (TMState == TM_MoveOnPath)
+	{
+		int data = traveller.p_road->route[1 + (traveller.roadpt / 4)];
+		int dir = (data >> ((traveller.roadpt % 4) << /*2*/3)) & 0xF;// CHECKME
+
+		if (traveller.roaddiropposite)
+			dir = TM_DirectionOpposite(dir);
+
+		if (dir & ROADDIR_JUST_LEFT)
+			traveller.x--;
+		if (dir & ROADDIR_JUST_RIGHT)
+			traveller.x++;
+		if (dir & ROADDIR_JUST_UP)
+			traveller.y--;
+		if (dir & ROADDIR_JUST_DOWN)
+			traveller.y++;
+
+		if (dir)
+		{
+			if (traveller.roaddiropposite)
+				traveller.roadpt--;
+			else
+				traveller.roadpt++;
+		}
+
+		if (!dir || (1 + traveller.roadpt / 4 == traveller.p_road->route.Num)/*road end*/ ||
+			traveller.roadpt < 0/*road start (opposite direction)*/)
+		{
+			// travel completed
+			print("travel complete reason:");
+			if (!dir)
+				print("- no dir");
+			if (1 + traveller.roadpt / 4 == traveller.p_road->route.Num)
+				print("- road end due pt index value");
+			if (traveller.roadpt < 0)
+				print("- road start due pt index value");
+			TM_CheckStayAtMapEntry();
+		}
+	}
+
+	if (TMState == TM_OptionConfirm)
+	{
+		if (traveller.flashdir > 0)
+		{
+			if (traveller.flashtime > 0)
+			{
+				traveller.flashtime--;
+				if (!traveller.flashtime)
+					traveller.flashtime = -20;
+			}
+			else if (traveller.flashtime < 0)
+			{
+				traveller.flashtime++;
+				if (!traveller.flashtime)
+					traveller.flashtime = 20;
 			}
 		}
 	}
@@ -229,16 +356,18 @@ void HandleUserCommand(event_t * event)
 			switch (event->data1)
 			{
 			case K_UPARROW:
-				playerCmds |= TM_PLCMD_UP;
+				playerCmds |= ROADDIR_JUST_UP;
 				break;
 			case K_LEFTARROW:
-				playerCmds |= TM_PLCMD_LEFT;
+				playerCmds |= ROADDIR_JUST_LEFT;
 				break;
 			case K_RIGHTARROW:
-				playerCmds |= TM_PLCMD_RIGHT;
+				playerCmds |= ROADDIR_JUST_RIGHT;
 				break;
 			case K_DOWNARROW:
-				playerCmds |= TM_PLCMD_DOWN;
+				playerCmds |= ROADDIR_JUST_DOWN;
+				break;
+			default:
 				break;
 			}
 		}
@@ -249,20 +378,39 @@ void HandleUserCommand(event_t * event)
 			{
 			case K_ENTER:
 			case K_SPACE:
-				if (TM_AccessObject())
-					TMState = TM_ConfirmAccessAsk;
+				if (TMState == TM_Option)
+				{
+					if (TM_AccessObject())
+					{
+						ClGame.messageResult = ClientGame::MBR_Unset;	// FIXME!!
+						ClGame.MessageBoxStartMessage(va("Enter %s (y/n)?", traveller.p_mapentry->title), ClientGame::MB_YesNo, true);
+						TMState = TM_ConfirmAccessWaitResponse;
+					}
+				}
+				else if (TMState == TM_OptionConfirm)
+				{
+					if (TM_AccessRoute())
+						TMState = TM_MoveOnPath;
+				}
+				break;
+			case K_BACKSPACE:
+				if (TMState == TM_OptionConfirm)
+				{
+					traveller.flashdir = ROADDIR_NONE;
+					TMState = TM_Option;
+				}
 				break;
 			case K_UPARROW:
-				playerCmds &= ~TM_PLCMD_UP;
+				playerCmds &= ~ROADDIR_JUST_UP;
 				break;
 			case K_LEFTARROW:
-				playerCmds &= ~TM_PLCMD_LEFT;
+				playerCmds &= ~ROADDIR_JUST_LEFT;
 				break;
 			case K_RIGHTARROW:
-				playerCmds &= ~TM_PLCMD_RIGHT;
+				playerCmds &= ~ROADDIR_JUST_RIGHT;
 				break;
 			case K_DOWNARROW:
-				playerCmds &= ~TM_PLCMD_DOWN;
+				playerCmds &= ~ROADDIR_JUST_DOWN;
 				break;
 			}
 		}
@@ -280,11 +428,59 @@ bool TM_AccessObject()
 {
 	if (traveller.p_mapentry)
 	{
-		NextMap = traveller.p_mapentry->mapname;
-		NextPosition = traveller.p_mapentry->spawnpos;
-		return true;
+		// map entry is not always actually an Entry, it can be
+		// simply roads joint or a dead-end.
+		if (traveller.p_mapentry->mapid != -1)
+		{
+			if (traveller.p_mapentry->accessible)
+			{
+				NextMap = traveller.p_mapentry->mapname;
+				NextPosition = traveller.p_mapentry->spawnpos;
+				return true;
+			}
+			else
+			{
+				ClGame.MessageBoxStartMessage(va("The map is not accessible at the moment."), ClientGame::MB_None, true);
+			}
+		}
 	}
 	
+	return false;
+}
+
+//==========================================================================
+//
+//  TM_AccessRoute
+//
+//==========================================================================
+
+bool TM_AccessRoute()
+{
+	int i, dir, ptindex;
+	bool opposite;
+	for (i = 0; i < traveller.p_mapentry->paths.Num; i++)
+	{
+		TM_GetPathData(traveller.p_mapentry, traveller.p_mapentry->paths[i],
+			dir, opposite, ptindex);
+		
+		if (dir == traveller.flashdir)
+		{
+			if (traveller.p_mapentry->paths[i]->accessible)
+			{
+				traveller.p_road = traveller.p_mapentry->paths[i];
+				traveller.p_mapentry->blink = false;
+				traveller.p_mapentry = NULL;
+				traveller.flashdir = ROADDIR_NONE;
+				traveller.roaddiropposite = opposite;
+				traveller.roadpt = ptindex;
+				return true;
+			}
+			else
+			{
+				ClGame.MessageBoxStartMessage(va("The road is not accessible at the moment."), ClientGame::MB_None, true);
+			}
+		}
+	}
 	return false;
 }
 
@@ -302,14 +498,10 @@ void OnDraw()
 	if (TMState > TM_Done)
 		return;
 
-	if (/*TextPic*/TM_PicMain)
+	if (TM_PicMain)
 	{
-		DrawFullScreenPic(/*TextPic*/TM_PicMain);
+		DrawFullScreenPic(TM_PicMain);
 	}
-	/*else if (TextFlat)
-	{
-		FillRectWithFlat(0, 0, 640, 480, TextFlat);
-	}*/
 	else
 	{
 		R_FillRect(0, 0, 640, 480, 0);
@@ -317,7 +509,7 @@ void OnDraw()
 
 
 	// Draw roads
-	int x, y, PtIndex, data, dir;
+	int x, y, PtIndex, data, dir, colour;
 
 	for (i = 0; i < tmRoads.Num; i++)
 	{
@@ -326,8 +518,8 @@ void OnDraw()
 		if (!pRoad->visible)
 			continue;
 
-		x = 0xFFFF & (pRoad->route[0] >> 16);
-		y = 0xFFFF & pRoad->route[0];
+		x = pRoad->x;
+		y = pRoad->y;
 
 		// first road pixel
 		R_FillRect(x - 1, y - 1, 3, 3, pRoad->colour);
@@ -335,7 +527,7 @@ void OnDraw()
 		for (PtIndex = 0; PtIndex < (pRoad->route.Num - 1) * 4; PtIndex++)
 		{
 			data = pRoad->route[1 + (PtIndex / 4)];
-			dir = (data >> ((PtIndex % 4) << 2)) & 0xF;
+			dir = (data >> ((PtIndex % 4) << /*2*/3)) & 0xF;
 
 			if (!dir)
 			{
@@ -351,7 +543,14 @@ void OnDraw()
 			if (dir & ROADDIR_JUST_DOWN)
 				y++;
 
-			R_FillRect(x - 1, y - 1, 3, 3, pRoad->colour);
+			colour = traveller.p_road == pRoad ? 
+				(traveller.roaddiropposite ? 
+					(traveller.roadpt <= PtIndex ? traveller.colour : pRoad->colour) :
+					(traveller.roadpt >= PtIndex ? traveller.colour : pRoad->colour)
+					) :
+				pRoad->colour;
+
+			R_FillRect(x - 1, y - 1, 3, 3, colour);
 		}
 	}
 
@@ -361,23 +560,9 @@ void OnDraw()
 		if (!tmMapEntries[i].visible)
 			continue;
 
-		if (tmMapEntries[i].temp)
+		if (tmMapEntries[i].blink && tmMapEntries[i].blinktime < 0)
 		{
-			if (tmMapEntries[i].temp2 > 0)
-			{
-				tmMapEntries[i].temp2--;
-				if (!tmMapEntries[i].temp2)
-					tmMapEntries[i].temp2 = -20;
-			}
-			else if (tmMapEntries[i].temp2 < 0)
-			{
-				tmMapEntries[i].temp2++;
-				if (!tmMapEntries[i].temp2)
-					tmMapEntries[i].temp2 = 20;
-			}
-
-			if (tmMapEntries[i].temp2 < 0)
-				continue;
+			continue;
 		}
 
 		if (tmMapEntries[i].picId)
@@ -408,6 +593,124 @@ void OnDraw()
 			R_FillRect(traveller.x - 2, traveller.y - 2, 5, 5, traveller.colour);
 		}
 	}
+
+	// Draw route arrows
+	if ((TMState == TM_Option || TMState == TM_OptionConfirm) && traveller.p_mapentry)
+	{
+		int dummy;
+		bool doflash, dummy2;
+
+		for (i = 0; i < traveller.p_mapentry->paths.Num; i++)
+		{
+			TM_GetPathData(traveller.p_mapentry, traveller.p_mapentry->paths[i], dir, dummy, dummy2);
+
+			doflash = ((dir == traveller.flashdir) && (traveller.flashtime < 0));
+			
+			switch (dir)
+			{
+			case ROADDIR_JUST_LEFT: TM_DrawDirectionArrow(TM_ARROW__WEST, doflash); break;
+			case ROADDIR_JUST_RIGHT: TM_DrawDirectionArrow(TM_ARROW__EAST, doflash); break;
+			case ROADDIR_JUST_UP: TM_DrawDirectionArrow(TM_ARROW__NORTH, doflash); break;
+			case ROADDIR_JUST_DOWN: TM_DrawDirectionArrow(TM_ARROW__SOUTH, doflash); break;
+			case ROADDIR_LEFT_UP: TM_DrawDirectionArrow(TM_ARROW__NORTHWEST, doflash); break;
+			case ROADDIR_RIGHT_UP: TM_DrawDirectionArrow(TM_ARROW__NORTHEAST, doflash); break;
+			case ROADDIR_LEFT_DOWN: TM_DrawDirectionArrow(TM_ARROW__SOUTHWEST, doflash); break;
+			case ROADDIR_RIGHT_DOWN: TM_DrawDirectionArrow(TM_ARROW__SOUTHEAST, doflash); break;
+			}
+		}
+	}
+}
+
+//========================================================================
+//
+//  TM_DrawDirectionArrow
+//
+//========================================================================
+
+void TM_DrawDirectionArrow(int type, bool flash)
+{
+	int X, Y, TXOff, TYOff, TW, TH, AXOff, AYOff, AW, AH;
+	picinfo_t info;
+
+	if (type < 0 || type > TM_ARROW__COUNT)
+	{
+		Error("TravelMapScreen::TM_DrawDirectionArrow : unknown direction arrow type %i", type);
+		return;
+	}
+
+	X = traveller.x;
+	Y = traveller.y;
+	if (traveller.picId)
+	{
+		R_GetPicInfo(traveller.picId, &info);
+		TXOff = info.xoffset;
+		TYOff = info.yoffset;
+		TW = info.width;
+		TH = info.height;
+	}
+	else
+	{
+		TXOff = -2;
+		TYOff = -2;
+		TW = 5;
+		TH = 5;
+	}
+
+	if (TM_PicArrows[(type << 1) + (flash ? 1 : 0)])
+	{
+		R_GetPicInfo(TM_PicArrows[(type << 1) + (flash ? 1 : 0)], &info);
+		AXOff = info.xoffset;
+		AYOff = info.yoffset;
+		AW = info.width;
+		AH = info.height;
+	}
+
+	switch (type)
+	{
+	case TM_ARROW__EAST:
+		X += ((TW >> 1) - TXOff);
+		Y -= ((AH >> 1) - AYOff);
+		break;
+	case TM_ARROW__SOUTHEAST:
+		// EAST
+		X += ((TW >> 1) - TXOff);
+		// SOUTH
+		Y += ((TH >> 1) - TYOff);
+		break;
+	case TM_ARROW__SOUTH:
+		X -= ((AW >> 1) - AXOff);
+		Y += ((TH >> 1) - TYOff);
+		break;
+	case TM_ARROW__SOUTHWEST:
+		// SOUTH
+		Y += ((TH >> 1) - TYOff);
+		// WEST
+		X -= ((TW >> 1) - TXOff) + (AW - AXOff);
+		break;
+	case TM_ARROW__WEST:
+		X -= ((TW >> 1) - TXOff) + (AW - AXOff);
+		Y -= ((AH >> 1) - AYOff);
+		break;
+	case TM_ARROW__NORTHWEST:
+		// WEST
+		X -= ((TW >> 1) - TXOff) + (AW - AXOff);
+		// NORTH
+		Y -= ((TH >> 1) - TYOff) + (AH - AYOff);
+		break;
+	case TM_ARROW__NORTH:
+		X -= ((AW >> 1) - AXOff);
+		Y -= ((TH >> 1) - TYOff) + (AH - AYOff);
+		break;
+	case TM_ARROW__NORTHEAST:
+		// NORTH
+		Y -= ((TH >> 1) - TYOff) + (AH - AYOff);
+		// EAST
+		X += ((TW >> 1) - TXOff);
+		break;
+	}
+
+	if (TM_PicArrows[(type << 1) + (flash ? 1 : 0)])
+		DrawPic(X, Y, TM_PicArrows[(type << 1) + (flash ? 1 : 0)]);
 }
 
 //========================================================================
@@ -420,26 +723,38 @@ void TM_LoadPics()
 {
 	int i;
 
-	/*if (ClGame.im->TextPic)
-	{
-		TextPic = R_RegisterPic(ClGame.im->TextPic);
-	}
-	else if (ClGame.im->TextFlat)
-	{
-		TextFlat = ClGame.im->TextFlat;
-	}*/
-
 	TM_PicMain = R_RegisterPic('trvlmap');
+
+	TM_PicArrows[TM_ARROW__EAST << 1] = R_RegisterPic('tmar_11');
+	TM_PicArrows[(TM_ARROW__EAST << 1) + 1] = R_RegisterPic('tmar_1');
+	TM_PicArrows[TM_ARROW__SOUTHEAST << 1] = R_RegisterPic('tmar_51');
+	TM_PicArrows[(TM_ARROW__SOUTHEAST << 1) + 1] = R_RegisterPic('tmar_5');
+	TM_PicArrows[TM_ARROW__SOUTH << 1] = R_RegisterPic('tmar_81');
+	TM_PicArrows[(TM_ARROW__SOUTH << 1) + 1] = R_RegisterPic('tmar_8');
+	TM_PicArrows[TM_ARROW__SOUTHWEST << 1] = R_RegisterPic('tmar_61');
+	TM_PicArrows[(TM_ARROW__SOUTHWEST << 1) + 1] = R_RegisterPic('tmar_6');
+	TM_PicArrows[TM_ARROW__WEST << 1] = R_RegisterPic('tmar_21');
+	TM_PicArrows[(TM_ARROW__WEST << 1) + 1] = R_RegisterPic('tmar_2');
+	TM_PicArrows[TM_ARROW__NORTHWEST << 1] = R_RegisterPic('tmar_31');
+	TM_PicArrows[(TM_ARROW__NORTHWEST << 1) + 1] = R_RegisterPic('tmar_3');
+	TM_PicArrows[TM_ARROW__NORTH << 1] = R_RegisterPic('tmar_71');
+	TM_PicArrows[(TM_ARROW__NORTH << 1) + 1] = R_RegisterPic('tmar_7');
+	TM_PicArrows[TM_ARROW__NORTHEAST << 1] = R_RegisterPic('tmar_41');
+	TM_PicArrows[(TM_ARROW__NORTHEAST << 1) + 1] = R_RegisterPic('tmar_4');
 
 	for (i = 0; i < tmMapEntries.Num; i++)
 	{
 		tmMapEntries[i].picId = tmMapEntries[i].picname == '' ? 0 : R_RegisterPic(tmMapEntries[i].picname);
 	}
-	traveller.picId = R_RegisterPic(traveller.picname);
 
-	//print("TM_LoadPics : Pic = %i", TextPic);
-	//print("TM_LoadPics : Flat = %i", TextFlat);
-	print("TM_LoadPics : Pic = %i", TM_PicMain);	
+	if (traveller.picname)
+		traveller.picId = R_RegisterPic(traveller.picname);
+
+	print("TM_LoadPics : PicMain = %i", TM_PicMain);
+	for (i = 0; i < (TM_ARROW__COUNT << 1); i++)
+	{
+		print("TM_LoadPics : PicArrow %i = %i", i, TM_PicArrows[i]);
+	}
 }
 
 //========================================================================
@@ -492,56 +807,54 @@ void TM_InitData()
 	}
 
 	//
-	// Load and init map data here
+	// Load and init map data
 	//
-	//
-
 	TM_LoadAndParseDataLump();
 
-	/*tmRoads.Num = 10;
-	tmRoads[0].x = 100;
-	tmRoads[0].y = 100;
-	tmRoads[0].active = true;
-	tmRoads[1].x = 130;
-	tmRoads[1].y = 100;
-	tmRoads[1].active = true;
-	tmRoads[2].x = 140;
-	tmRoads[2].y = 110;
-	tmRoads[2].active = true;
-	tmRoads[3].x = 180;
-	tmRoads[3].y = 130;
-	tmRoads[3].active = true;
-	tmRoads[4].x = 200;
-	tmRoads[4].y = 150;
-	tmRoads[4].active = true;*/
-
-#ifdef FIXME
-	tmMapEntries.Num = 2;
-	tmMapEntries[0].x = 95;
-	tmMapEntries[0].y = 95;
-	tmMapEntries[0].picname = 'fhfxh8h2';
-	tmMapEntries[0].mapid = 1;
-	tmMapEntries[0].mapname = P_TranslateMap(tmMapEntries[0].mapid);
-	tmMapEntries[0].title = P_GetMapName(tmMapEntries[0].mapid - 1);
-	tmMapEntries[0].spawnpos = 0;
-	tmMapEntries[0].active = true;
-
-	tmMapEntries[1].x = 205;
-	tmMapEntries[1].y = 155;
-	tmMapEntries[1].picname = 'w_303';
-	tmMapEntries[1].mapid = 13;
-	tmMapEntries[1].mapname = P_TranslateMap(tmMapEntries[1].mapid);
-	tmMapEntries[1].title = P_GetMapName(tmMapEntries[1].mapid - 1);
-	tmMapEntries[1].spawnpos = 1;
-	tmMapEntries[1].active = true;
-#endif
 
 	traveller.x = 0;
 	traveller.y = 0;
-	traveller.picname = 'playa1';
+	traveller.p_mapentry = NULL;
+	//traveller.picname = 'playa1';
+	traveller.colour = RGBA(0x00,0xFF,0xFF,0xAA);
 	traveller.visible = true;
 
-	int i;
+	int i, j;
+	int x, y, PtIndex, data, dir;
+	tm_road_t * pRoad;
+
+	for (i = 0; i < tmRoads.Num; i++)
+	{
+		pRoad = &tmRoads[i];
+		pRoad->x = 0xFFFF & (pRoad->route[0] >> 16);
+		pRoad->y = 0xFFFF & pRoad->route[0];
+		x = pRoad->x;
+		y = pRoad->y;
+
+		for (PtIndex = 0; PtIndex < (pRoad->route.Num - 1) * 4; PtIndex++)
+		{
+			data = pRoad->route[1 + (PtIndex / 4)];
+			dir = (data >> ((PtIndex % 4) << /*2*/3)) & 0xF;
+
+			if (!dir)
+				break;	// road end
+
+			if (dir & ROADDIR_JUST_LEFT)
+				x--;
+			if (dir & ROADDIR_JUST_RIGHT)
+				x++;
+			if (dir & ROADDIR_JUST_UP)
+				y--;
+			if (dir & ROADDIR_JUST_DOWN)
+				y++;
+		}
+
+		pRoad->ex = x;
+		pRoad->ey = y;
+
+		// CHECKME
+		tmRoads[i].colour = RGBA(0,0,0,0xFF);
+	}
 
 	for (i = 0; i < tmMapEntries.Num; i++)
 	{
@@ -549,44 +862,51 @@ void TM_InitData()
 		{
 			tmMapEntries[i].mapname = P_TranslateMap(tmMapEntries[i].mapid);
 			tmMapEntries[i].title = P_GetMapName(tmMapEntries[i].mapid - 1);
+			tmMapEntries[i].colour = RGBA(0xFF,0,0,0xFF);//CHECKME
 		}
-		tmMapEntries[i].spawnpos = 0;// CHECKME
+		else
+			tmMapEntries[i].colour = RGBA(0,0,0,0xFF);//CHECKME
+		//tmMapEntries[i].spawnpos = 0;// CHECKME
 		tmMapEntries[i].picname = '';
-		tmMapEntries[i].colour = RGBA(0xFF,0,0,0xFF);//CHECKME
+		
 
-		print("map %i, id = %i, name = %n, title = %s", i, tmMapEntries[i].mapid,
+		print("map %i, id = %i, name = %n, title = %s, spawnpos = %i", i, tmMapEntries[i].mapid,
 			tmMapEntries[i].mapname ? tmMapEntries[i].mapname : '',
-			tmMapEntries[i].title ? tmMapEntries[i].title : "");
+			tmMapEntries[i].title ? tmMapEntries[i].title : "",
+			tmMapEntries[i].spawnpos);
+
+		for (j = 0; j < tmRoads.Num; j++)
+		{
+			if (tmRoads[j].x == tmMapEntries[i].x && tmRoads[j].y == tmMapEntries[i].y ||
+				tmRoads[j].ex == tmMapEntries[i].x && tmRoads[j].ey == tmMapEntries[i].y)
+			{
+				tmMapEntries[i].paths.Num = tmMapEntries[i].paths.Num + 1;
+				tmMapEntries[i].paths[tmMapEntries[i].paths.Num - 1] = &tmRoads[j];
+			}
+		}
+
+		print("this map entry has %i paths coming out", tmMapEntries[i].paths.Num);
 	}
 
 	for (i = 0; i < tmMapEntries.Num; i++)
 	{
 		if (tmMapEntries[i].mapname == ClGame.im->LeaveMap
-			/*&& tmMapEntries[i].spawnpos == 0*/)
+			/*&& tmMapEntries[i].spawnpos == 0*/)// CHECKME
 		{
 			traveller.x = tmMapEntries[i].x;
 			traveller.y = tmMapEntries[i].y;
+			//traveller.p_mapentry = &tmMapEntries[i];
+			//TMState = TM_Option;
+			TM_CheckStayAtMapEntry();
 			break;
 		}
 	}
+
+	if (!traveller.p_mapentry && !GetCvar('TravelMapCheat'))
+	{
+		Error("TravelMapScreen::TM_InitData : no map entry object match the map player is leaving");
+	}
 }
-
-#ifdef FIXME
-enum
-{
-	TM_Parse_Block_None,
-	TM_Parse_Block_Read_R,
-	TM_Parse_Block_Read_R_Pt,
-	TM_Parse_Block_Read_M
-};
-
-enum
-{
-	TM_Parse_State_Newline,
-	TM_Parse_State_Skip,
-	TM_Parse_State_Read
-};
-#endif
 
 //==========================================================================
 //
@@ -608,9 +928,7 @@ void TM_LoadAndParseDataLump()
 	array<byte> Data;
 
 	LoadBinaryLump('trvlmap', Data);
-	dprint("TM_LoadAndParseDataLump : Data.Num = %i", Data.Num);
-
-	print("TravelMapScreen::TM_LoadAndParseDataLump : IN");
+	print("TM_LoadAndParseDataLump : Data.Num = %i", Data.Num);
 
 	index = 0;
 	buf = Data[index++];
@@ -631,26 +949,22 @@ void TM_LoadAndParseDataLump()
 		tmMapEntries[i].y += Data[index++] << 8;
 		tmMapEntries[i].y += Data[index++] << 16;
 		tmMapEntries[i].y += Data[index++] << 24;
+		// Map Title (for editorial purposes only
 		buf = Data[index++];
 		buf += Data[index++] << 8;
 		buf += Data[index++] << 16;
 		buf += Data[index++] << 24;
 		index += buf << 1; // wchar string
-		//tmMapEntries[i].title;
-		//for (j = 0; j < buf; j++)
-		//	Data[index++];
-		/*buf = Data[index++];
-		buf += Data[index++] << 8;
-		buf += Data[index++] << 16;
-		buf += Data[index++] << 24;
-		buf <<= 1; // wchar string
-		tmMapEntries[i].mapname;
-		for (j = 0; j < buf; j++)
-			Data[index++];*/
 		tmMapEntries[i].mapid = Data[index++];
 		tmMapEntries[i].mapid += Data[index++] << 8;
 		tmMapEntries[i].mapid += Data[index++] << 16;
 		tmMapEntries[i].mapid += Data[index++] << 24;
+		tmMapEntries[i].spawnpos = Data[index++];
+		tmMapEntries[i].spawnpos += Data[index++] << 8;
+		tmMapEntries[i].spawnpos += Data[index++] << 16;
+		tmMapEntries[i].spawnpos += Data[index++] << 24;
+
+		index += 8;	// 8 bytes reserved
 	}
 
 	buf = Data[index++];
@@ -662,6 +976,9 @@ void TM_LoadAndParseDataLump()
 	{
 		tmRoads[i].visible = Data[index++];
 		tmRoads[i].accessible = Data[index++];
+
+		index += 8;	// 8 bytes reserved
+
 		buf = Data[index++];
 		buf += Data[index++] << 8;
 		buf += Data[index++] << 16;
@@ -675,65 +992,133 @@ void TM_LoadAndParseDataLump()
 			tmRoads[i].route[j] += Data[index++] << 16;
 			tmRoads[i].route[j] += Data[index++] << 24;
 		}
-
-		// CHECKME
-		tmRoads[i].colour = RGBA(0,0,0,0xFF);
 	}
+}
 
-	print("TravelMapScreen::TM_LoadAndParseDataLump : OUT");
+//========================================================================
+//
+//  TM_CheckStayAtMapEntry
+//
+//========================================================================
 
-#ifdef FIXME
-	string Data = LoadTextLump('tm_henfo'); // [CW] Travel Map Hub Entries iNFO
+void TM_CheckStayAtMapEntry()
+{
+	int i, j;
 
-	int i = -1;
-	int DataLen = strlen(Data);
-
-	if (!DataLen)
-		return;
-
-	int ParseBlock = TM_Parse_Block_None;
-	int ParseState = TM_Parse_State_Newline;
-
-	int substr_from = 0;
-	string word;
-
-	while (++i < DataLen)
+	traveller.p_mapentry = NULL;
+	for (i = 0; i < tmMapEntries.Num; i++)
 	{
-		if (ParseState == TM_Parse_State_Skip)
+		if (tmMapEntries[i].x - 1 <= traveller.x &&
+			tmMapEntries[i].x + 1 >= traveller.x &&
+			tmMapEntries[i].y - 1 <= traveller.y &&
+			tmMapEntries[i].y + 1 >= traveller.y)
 		{
-			if (strcmp(substr(Data, i, 1), "\n") == 0)
-			{
-				ParseState = TM_Parse_State_Newline;
-			}
-			continue;
-		}
+			traveller.p_mapentry = &tmMapEntries[i];
+			traveller.p_road = NULL;
 
-		if (strcmp(substr(Data, i, 1), "!") >= 0 && strcmp(substr(Data, i, 1), "~") <= 0)
-		{
-			if (ParseState != TM_Parse_State_Read)
+			// Unveil map entry
+			tmMapEntries[i].visible = true;
+
+			// Unveil any invisible roads conjuncted here
+			for (j = 0; j < traveller.p_mapentry->paths.Num; j++)
 			{
-				ParseState = TM_Parse_State_Read;
-				substr_from = i;
+				traveller.p_mapentry->paths[j]->visible = true;
 			}
+
+			TMState = TM_Option;
+			break;
 		}
 		else
+			tmMapEntries[i].blink = false;
+	}
+}
+
+//========================================================================
+//
+//  TM_GetPathData
+//
+//	The method implies that Entry has a connection with Road;
+//	should not be used otherwise.
+//
+//========================================================================
+
+void TM_GetPathData(tm_mapentry_t * pEntry, tm_road_t * pRoad, out int dir, out bool opposite,
+					out int ptindex)
+{
+	int i, data;
+
+	// Check which road end touches map entry
+	if (pEntry->x == pRoad->x &&
+		pEntry->y == pRoad->y)
+	{
+		// map entry is at the road "start"
+		data = pRoad->route[1];
+		dir = data & 0xF;
+
+		ptindex = 0;
+		opposite = false;
+	}
+	else
+	{
+		i = 0;
+		do
 		{
-			if (ParseState == TM_Parse_State_Newline && strcmp(substr(Data, i, 1), "!") < 0)
-				continue;
+			i++;	// first iteration with i == 1
 
-			if (ParseState == TM_Parse_State_Read)
+			// map entry is at the road "end"
+			data = pRoad->route[pRoad->route.Num - i];
+
+			// seek for the very last route directive
+			dir = (data >> 24) & 0xF;
+			ptindex = (pRoad->route.Num - i) * 4 - 1/*CHECKME!*/;
+
+			if (!dir)
 			{
-				word = substr(Data, substr_from, i - substr_from);
-				
-				//
-				// parse word here
-				//
-			}
+				dir = (data >> 16) & 0xF;
+				ptindex--;
 
-			ParseState = TM_Parse_State_Skip;
+				if (!dir)
+				{
+					dir = (data >> 8) & 0xF;
+					ptindex--;
+				
+					if (!dir)
+					{
+						dir = data & 0xF;
+						ptindex--;
+					}
+				}
+			}
 		}
-	};
-#endif
+		while (!dir);
+
+		// take opposite direction
+		dir = TM_DirectionOpposite(dir);
+
+		opposite = true;
+	}
+}
+
+//========================================================================
+//
+//  TM_DirectionOpposite
+//
+//========================================================================
+
+int TM_DirectionOpposite(int dir)
+{
+	switch (dir)
+	{
+	case ROADDIR_JUST_LEFT: return ROADDIR_JUST_RIGHT;
+	case ROADDIR_JUST_RIGHT: return ROADDIR_JUST_LEFT;
+	case ROADDIR_JUST_UP: return ROADDIR_JUST_DOWN;
+	case ROADDIR_JUST_DOWN: return ROADDIR_JUST_UP;
+	case ROADDIR_LEFT_UP: return ROADDIR_RIGHT_DOWN;
+	case ROADDIR_RIGHT_UP: return ROADDIR_LEFT_DOWN;
+	case ROADDIR_LEFT_DOWN: return ROADDIR_RIGHT_UP;
+	case ROADDIR_RIGHT_DOWN: return ROADDIR_LEFT_UP;
+	}
+	return 0;
 }
 
 //==========================================================================
@@ -747,8 +1132,6 @@ void OnVisibilityChanged(bool bNewVisibility)
 	::OnVisibilityChanged(bNewVisibility);
 
 	bTickEnabled = bNewVisibility;
-
-	print("TravelMap::OnVisibilityChanged : %i", bNewVisibility);
 
 	if (bNewVisibility)
 	{
