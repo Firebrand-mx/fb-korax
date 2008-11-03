@@ -68,7 +68,8 @@ int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
 // [FB] Flash for the Darkness Missile
 int BlindCount;
 float LastBlindTime;
-/* Actor*/Player Blinder;		///// none for non-player mobjs
+Actor Blinder;
+Player PlayerBlinder;
 int count;
 
 BotPlayer Bot;
@@ -247,6 +248,488 @@ void OnNetReborn(EntityEx OldMO)
 
 //==========================================================================
 //
+//  DestroyBot
+//
+//==========================================================================
+
+void DestroyBot()
+{
+	if (Bot != none)
+	{
+		Bot.Destroy();
+		Bot = none;
+	}
+}
+
+//==========================================================================
+//
+//  ResetPlayerOnSpawn
+//
+//==========================================================================
+
+void ResetPlayerOnSpawn()
+{
+	::ResetPlayerOnSpawn();
+
+	BlindCount = 0; // [FB] Reset the blind count too!
+	pcount = 0; // [FB] Reset counter
+	respawn_counter = 2.0;
+
+//[Korax]
+	if (!inited)
+	{
+		InitiateLevel();
+		inited = true;
+	}
+}
+
+//==========================================================================
+//
+//  BotOnSpawn
+//
+//==========================================================================
+
+void BotOnSpawn()
+{
+	Bot.OnSpawn();
+}
+
+//==========================================================================
+//
+//  DoClearPlayer
+//
+//==========================================================================
+
+void DoClearPlayer()
+{
+	// [CW] not needed since no ClearPlayer called? CHECKME
+	//targetinfo_enabled = !bIsBot && GetCvar('TargetInfo');
+}
+
+//==========================================================================
+//
+//  GetRebornHealth
+//
+//==========================================================================
+
+int GetRebornHealth()
+{
+	return max_health;
+}
+
+//==========================================================================
+//
+//	GetMaxHealth
+//
+//==========================================================================
+
+int GetMaxHealth()
+{
+	return max_health;
+}
+
+//==========================================================================
+//
+//  PlayerImpulse
+//
+//==========================================================================
+
+void PlayerImpulse()
+{
+	int impulse;
+	int i;
+
+	impulse = Impulse;
+	Impulse = 0;
+
+	if (bUnControllable)
+	{
+		// Player can do almost nothing when uncontrollable
+		if (impulse != HexenDefs::IMPULSE__SUICIDE && impulse != HexenDefs::IMPULSE__SCOREBOARD)
+			return;
+	}
+
+	if (impulse <= HexenDefs::NUMWEAPONSLOTS)
+	{
+		ChangeWeapon(impulse);
+	}
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV)
+	{
+		PrevWeapon();
+	}
+	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT)
+	{
+		NextWeapon();
+	}
+	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
+	{
+		Actor(MO).Damage(none, Actor(self.MO), 10000);
+	}
+	// [FB] We want to make the scoreboard accesible with a new impulse value
+	else if (impulse == HexenDefs::IMPULSE__SCOREBOARD)
+	{
+		// [FB] The player is calling the scoreboard!!
+		Scoreboard(!bShowScoreboard);
+	}
+	else if (impulse == HexenDefs::IMPULSE__ATTACK2)
+	{
+		AlternateAttack();
+	}
+	else if (impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD)
+	{
+		ToggleAltAttack(HexenDefs::ALTFIRE_BLASTRADIUS);
+	}
+	else if (impulse == HexenDefs::IMPULSE__TOGGLE_POSIONBAG)
+	{
+		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
+	}
+	else if (impulse == HexenDefs::IMPULSE__FIXME)
+	{
+		KArenaPlayerPawn(MO).MoveToFreePosition();
+	}
+	else if (impulse >= 200 && impulse <= 205)
+	{
+		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
+	}
+}
+
+//==========================================================================
+//
+//  BotTick
+//
+//==========================================================================
+
+void BotTick(float deltaTime)
+{
+	if (!bUnControllable)
+	{
+		Bot.BotTick(deltaTime);
+	}
+}
+
+//==========================================================================
+//
+//  SpawnSpeedEffect
+//
+//==========================================================================
+
+void SpawnSpeedEffect()
+{
+	Actor speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
+	if (speedA)
+	{
+		speedA.Angles.yaw = MO.Angles.yaw;
+		speedA.Translation = MO.Translation;
+		speedA.Target = Actor(MO);
+		speedA.Special1 = PClass;
+		if (speedA.Special1 > 2)
+		{
+			speedA.Special1 = 0;
+		}
+		int Idx;
+		switch (PClass)
+		{
+		case HexenDefs::PCLASS_FIGHTER:
+			Idx = 0;
+			break;
+		case HexenDefs::PCLASS_CLERIC:
+			Idx = 2;
+			break;
+		case HexenDefs::PCLASS_MAGE:
+			Idx = 4;
+			break;
+		case HexenDefs::PCLASS_HERETIC:
+			Idx = 6;
+			break;
+		case HexenDefs::PCLASS_MARINE:
+			Idx = 8;
+			break;
+		case HexenDefs::PCLASS_WITCHAVEN:
+			Idx = 10;
+			break;
+		case HexenDefs::PCLASS_PIG:
+			Idx = 12;
+			break;
+		}
+		speedA.SetState(GetStatePlus(speedA.IdleState, Idx, true));
+		speedA.FloorClip = MO.FloorClip;
+#ifdef FIXME
+		if (self == GPlayers[consoleplayer])
+		{
+			speedA.bHidden = true;
+		}
+#endif
+	}
+}
+
+//==========================================================================
+//
+//  Cheat_Gimme
+//
+//==========================================================================
+
+void Cheat_Gimme()
+{
+	class<Inventory>	Cls;
+	class<WeaponPickup>	WpnCls;
+
+	if (Cmd_CheckParm("weapons"))
+	{
+		int i;
+
+		BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(
+			BasicArmor));
+		Armor.Amount = 200;
+		foreach AllClasses(WeaponPickup, WpnCls)
+		{
+			WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
+			Wpn.AmmoGive1 = 0;
+			Wpn.AmmoGive2 = 0;
+			Wpn.AmmoGive3 = 0;
+			if (!Wpn.TryPickup(EntityEx(MO)))
+			{
+				Wpn.Destroy();
+			}
+		}
+		foreach AllClasses(Ammo, Cls)
+		{
+			//	Only direct descendants.
+			if (GetClassParent(Cls) != Ammo)
+			{
+				continue;
+			}
+			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
+			if (!AmmoItem)
+			{
+				AmmoItem = Level.Spawn(Cls,,,, false);
+				if (!AmmoItem.TryPickup(EntityEx(MO)))
+				{
+					AmmoItem.Destroy();
+					AmmoItem = none;
+				}
+			}
+			if (AmmoItem)
+			{
+				AmmoItem.Amount = AmmoItem.MaxAmount;
+			}
+		}
+		cprint("ALL WEAPONS");
+	}
+	if (Cmd_CheckParm("health"))
+	{
+		MO.Health = max_health;
+		Health = MO.Health;
+		cprint("FULL HEALTH");
+	}
+	if (Cmd_CheckParm("keys"))
+	{
+		foreach AllClasses(Key, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
+		cprint("ALL KEYS");
+	}
+	if (Cmd_CheckParm("puzzles"))
+	{
+		foreach AllClasses(PuzzleItem, Cls)
+		{
+			if (!Cls.default.IdleState)
+			{
+				//	Abstract class
+				continue;
+			}
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
+		cprint("ALL ARTIFACTS");
+	}
+	if (Cmd_CheckParm("exp"))
+	{
+		GiveExperience(10000);
+		cprint("LOTS OF EXP");
+	}
+}
+
+//==========================================================================
+//
+//  Cheat_Morph
+//
+//==========================================================================
+
+void Cheat_Morph()
+{
+	if (MorphTime)
+	{
+		UndoPlayerMorph();
+	}
+	else
+	{
+		MorphProjectile Tmp = Level.Spawn(EggMissile);
+		Tmp.MorphPlayer(Actor(MO));
+		Tmp.Destroy();
+	}
+	cprint("SQUEAL!!");
+}
+
+//==========================================================================
+//
+//  Cheat_Class
+//
+//==========================================================================
+
+void Cheat_Class()
+{
+	int i;
+	int pclass;
+
+	if (MorphTime || MO.Class == PlayerHeresiarch)
+	{
+		// don't change class if the player is morphed
+		return;
+	}
+	if (Cmd_CheckParm("fighter"))
+		pclass = HexenDefs::PCLASS_FIGHTER;
+	else if (Cmd_CheckParm("cleric"))
+		pclass = HexenDefs::PCLASS_CLERIC;
+	else if (Cmd_CheckParm("mage"))
+		pclass = HexenDefs::PCLASS_MAGE;
+	else if (Cmd_CheckParm("heretic"))
+		pclass = HexenDefs::PCLASS_HERETIC;
+	else if (Cmd_CheckParm("marine"))
+		pclass = HexenDefs::PCLASS_MARINE;
+	else if (Cmd_CheckParm("witchaven"))
+		pclass = HexenDefs::PCLASS_WITCHAVEN;
+	else
+	{
+		cprint("INVALID PLAYER CLASS");
+		return;
+	}
+	PClass = pclass;
+	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
+	Armor.Amount = 0;
+	BaseClass = pclass;
+//	PostMorphWeapon(HexenDefs::WP_FIRST);
+	SetCvar('class', pclass);
+	SB_Start();
+}
+
+//==========================================================================
+//
+//  IsWeaponAlwaysExtremeDeath
+//
+//==========================================================================
+
+bool IsWeaponAlwaysExtremeDeath()
+{
+	// Always extreme death from eight weapon
+	return ReadyWeapon.bExtremeDeath;
+}
+
+//==========================================================================
+//
+//	KilledActor
+//
+//==========================================================================
+
+void KilledActor(EntityEx Victim)
+{
+	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
+
+	// [CW] Process actor-specific event
+	Actor(Victim).KilledByPlayer(PlayerPawn(MO));
+
+	// [FB] Increase the player's KillCount
+	if (Victim.bMonster)
+	{
+		//[CW] update player's score
+		UpdateScore(HexenDefs::scoreevent_Kill);
+
+		//[CW] update kill trophies
+		UpdateQueuedTrophy(HexenDefs::trophycl_killsatonce, 1);
+		UpdateQueuedTrophy(HexenDefs::trophycl_killsrow, 1);
+		
+		// [FB] Check how many monsters there are in castle sweep mode
+		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
+		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
+		{
+			if (Level.CurrentKills < Level.TotalKills && Level.TotalKills - Level.CurrentKills <= 10)
+			{
+				MO.PlaySound('misc/chat', CHAN_AUTO);
+				MainGameInfo(Level.Game).bcentreprint(va("%i monsters left!", Level.TotalKills - Level.CurrentKills));
+			}
+			
+			// [FB] No more monsters, so end the game!
+			if (Level.TotalKills == Level.CurrentKills)
+			{
+				// [FB] Exit map
+				//Level.ExitLevel(0);
+				int i;
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (Level.Game.Players[i] && !Level.Game.Players[i].bIsBot)
+					{
+						Player(Level.Game.Players[i]).level_ender_counter = 0.5;
+					}
+				}
+			}
+		}
+	}
+
+	// Check for frag changes
+	if (Victim.bIsPlayer)
+	{
+		if (bIsBot)
+		{
+			Bot.Killed(Victim);
+		}
+
+		if (Victim.Player.bIsBot)
+		{
+			Player(Victim.Player).Bot.Died(EntityEx(MO));
+		}
+
+		if (Victim == MO)
+		{
+			// Self-frag
+			Frags--;
+
+			UpdateScore(HexenDefs::scoreevent_SelfFrag);
+		}
+		else
+		{
+			int se = bKilledByAlly ? HexenDefs::scoreevent_TeamFrag : HexenDefs::scoreevent_Frag;
+
+			if (bKilledByAlly)
+			{
+				Frags--;
+			}
+			else
+			{
+				Frags++;
+				GiveExperience(500 * Player(Victim.Player).exp_level / exp_level);
+			}
+
+			if (MainGameInfo(Level.Game).GameModel)
+				se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(self, Player(Victim.Player));
+
+			UpdateScore(se);
+
+			//[CW] update frag trophies
+			if (!bKilledByAlly)
+			{
+				UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
+				UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
 //  DisconnectClient
 //
 //==========================================================================
@@ -263,21 +746,6 @@ void DisconnectClient()
 	// [CW] get rid of the MO corpse
 	MO.Destroy();
 	MO = none;
-}
-
-//==========================================================================
-//
-//  DestroyBot
-//
-//==========================================================================
-
-void DestroyBot()
-{
-	if (Bot != none)
-	{
-		Bot.Destroy();
-		Bot = none;
-	}
 }
 
 //==========================================================================
@@ -572,19 +1040,24 @@ void DeathMatchSpawnPlayer()
 					(Level.DeathmatchStarts[i].arg1 == 1))
 				{
 					SpawnPlayer(&Level.DeathmatchStarts[i], false);
+					return;
 				}
 				else if ((Level.DeathmatchStarts[i].arg1 == 0))
 				{
 					SpawnPlayer(&Level.DeathmatchStarts[i], false);
+					return;
 				}
 			}
 			else
 			{
 				SpawnPlayer(&Level.DeathmatchStarts[i], false);
+				return;
 			}
-			return;
 		}
 	}
+	
+	// no good spot, so the player will probably get stuck 
+	SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
 }
 
 //==========================================================================
@@ -678,28 +1151,6 @@ void SetUpPlayerClass()
 	}
 }
 
-//==========================================================================
-//
-//  ResetPlayerOnSpawn
-//
-//==========================================================================
-
-void ResetPlayerOnSpawn()
-{
-	::ResetPlayerOnSpawn();
-
-	BlindCount = 0; // [FB] Reset the blind count too!
-	pcount = 0; // [FB] Reset counter
-	respawn_counter = 2.0;
-
-//[Korax]
-	if (!inited)
-	{
-		InitiateLevel();
-		inited = true;
-	}
-}
-
 //===========================================================================
 //
 //	AddDefaultInventory
@@ -764,17 +1215,6 @@ void GiveDefaultDeathMatchInventory()
 
 //==========================================================================
 //
-//  BotOnSpawn
-//
-//==========================================================================
-
-void BotOnSpawn()
-{
-	Bot.OnSpawn();
-}
-
-//==========================================================================
-//
 //  PlayerReborn
 //
 //  Called after a player dies almost everything is cleared and initialised
@@ -793,29 +1233,6 @@ void PlayerReborn()
 	{
 		TeamSelection = HexenDefs::teamselection_autoselect;
 	}*/
-}
-
-//==========================================================================
-//
-//  DoClearPlayer
-//
-//==========================================================================
-
-void DoClearPlayer()
-{
-	// [CW] not needed since no ClearPlayer called? CHECKME
-	//targetinfo_enabled = !bIsBot && GetCvar('TargetInfo');
-}
-
-//==========================================================================
-//
-//  GetRebornHealth
-//
-//==========================================================================
-
-int GetRebornHealth()
-{
-	return max_health;
 }
 
 //==========================================================================
@@ -885,17 +1302,6 @@ void GotAmmo(Ammo NewAmmo)
 			PendingWeapon = Best;
 		}
 	}
-}
-
-//==========================================================================
-//
-//	GetMaxHealth
-//
-//==========================================================================
-
-int GetMaxHealth()
-{
-	return max_health;
 }
 
 //[Korax]
@@ -1148,71 +1554,6 @@ void ClientScoreboard(bool show)
 
 //==========================================================================
 //
-//  PlayerImpulse
-//
-//==========================================================================
-
-void PlayerImpulse()
-{
-	int impulse;
-	int i;
-
-	impulse = Impulse;
-	Impulse = 0;
-
-	if (bUnControllable)
-	{
-		// Player can do almost nothing when uncontrollable
-		if (impulse != HexenDefs::IMPULSE__SUICIDE && impulse != HexenDefs::IMPULSE__SCOREBOARD)
-			return;
-	}
-
-	if (impulse <= HexenDefs::NUMWEAPONSLOTS)
-	{
-		ChangeWeapon(impulse);
-	}
-	else if (impulse == HexenDefs::IMPULSE__WEAPON_PREV)
-	{
-		PrevWeapon();
-	}
-	else if (impulse == HexenDefs::IMPULSE__WEAPON_NEXT)
-	{
-		NextWeapon();
-	}
-	else if (impulse == HexenDefs::IMPULSE__SUICIDE)
-	{
-		Actor(MO).Damage(none, Actor(self.MO), 10000);
-	}
-	// [FB] We want to make the scoreboard accesible with a new impulse value
-	else if (impulse == HexenDefs::IMPULSE__SCOREBOARD)
-	{
-		// [FB] The player is calling the scoreboard!!
-		Scoreboard(!bShowScoreboard);
-	}
-	else if (impulse == HexenDefs::IMPULSE__ATTACK2)
-	{
-		AlternateAttack();
-	}
-	else if (impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD)
-	{
-		ToggleAltAttack(HexenDefs::ALTFIRE_BLASTRADIUS);
-	}
-	else if (impulse == HexenDefs::IMPULSE__TOGGLE_POSIONBAG)
-	{
-		ToggleAltAttack(HexenDefs::ALTFIRE_POISONBAG);
-	}
-	else if (impulse == HexenDefs::IMPULSE__FIXME)
-	{
-		KArenaPlayerPawn(MO).MoveToFreePosition();
-	}
-	else if (impulse >= 200 && impulse <= 205)
-	{
-		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
-	}
-}
-
-//==========================================================================
-//
 //  ToggleAltAttack
 //
 //==========================================================================
@@ -1390,8 +1731,8 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if (!MO)
-		Error("Player::PlayerTick : MO reference not set to an instance of an object");
+/*	if (!MO)
+		Error("Player::PlayerTick : MO reference not set to an instance of an object");*/
 
 	if (bIsBot)
 	{
@@ -1435,7 +1776,8 @@ void PlayerTick(float deltaTime)
 	}
 
 	WorldTimer += deltaTime;
-	InventoryTick(deltaTime);
+	// [FB] We don't have any inventory in KA...
+//	InventoryTick(deltaTime);
 
 	if (!bIsBot)
 		UpdateTargetInfo();
@@ -1501,8 +1843,8 @@ void PlayerTick(float deltaTime)
 
 	CalcHeight(deltaTime);
 	
-	if (!MO.Sector)
-		Error("Player::PlayerTick : MO.Sector pointer is NULL");
+/*	if (!MO.Sector)
+		Error("Player::PlayerTick : MO.Sector pointer is NULL");*/
 
 	if (MO.Sector->special || MO.Sector->Damage)
 	{
@@ -1565,7 +1907,6 @@ void PlayerTick(float deltaTime)
 	MovePsprites(deltaTime);
 
 	//	Counters
-	
 	// [CW]
 	if (PoisonCount && Actor(MO).bDormant)
 		PoisonCount = 0;
@@ -1578,9 +1919,9 @@ void PlayerTick(float deltaTime)
 			PoisonCount = 0;
 		}
 		LastPoisonTime = Level.XLevel.Time;
-		if (PoisonerPlayer && !PoisonerPlayer.MO)
-			Error("Player::PlayerTick : PoisonerPlayer.MO reference not set to an instance of an object");
-		Actor(MO).PoisonDamage(none, Poisoner ? Actor(PoisonerPlayer.MO) : none, 1, true);
+/*		if (PoisonerPlayer && !PoisonerPlayer.MO)
+			Error("Player::PlayerTick : PoisonerPlayer.MO reference not set to an instance of an object");*/
+		Actor(MO).PoisonDamage(Poisoner, Poisoner, 1, true);
 	}
 
 	// [FB] Darkness blinding effect
@@ -1595,9 +1936,9 @@ void PlayerTick(float deltaTime)
 		LastBlindTime = Level.XLevel.Time;
 		if(count % 5 == 0) // [FB] Damage the blinded player after some time
 		{
-			if (Blinder && !Blinder.MO)
-				Error("Player::PlayerTick : Blinder.MO reference not set to an instance of an object");
-			KArenaPlayerPawn(MO).BlindDamage(Blinder ? Actor(Blinder.MO) : none, 1, true);
+/*			if (Blinder && !Blinder.MO)
+				Error("Player::PlayerTick : Blinder.MO reference not set to an instance of an object");*/
+			KArenaPlayerPawn(MO).BlindDamage(Blinder, 1, true);
 		}
 	}
 
@@ -1644,75 +1985,6 @@ void PlayerTick(float deltaTime)
 
 	if (bNoHUD)
 		ViewStates[ps_weapon].SY -= 1000.0;
-}
-
-//==========================================================================
-//
-//  BotTick
-//
-//==========================================================================
-
-void BotTick(float deltaTime)
-{
-	if (!bUnControllable)
-	{
-		Bot.BotTick(deltaTime);
-	}
-}
-
-//==========================================================================
-//
-//  SpawnSpeedEffect
-//
-//==========================================================================
-
-void SpawnSpeedEffect()
-{
-	Actor speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
-	if (speedA)
-	{
-		speedA.Angles.yaw = MO.Angles.yaw;
-		speedA.Translation = MO.Translation;
-		speedA.Target = Actor(MO);
-		speedA.Special1 = PClass;
-		if (speedA.Special1 > 2)
-		{
-			speedA.Special1 = 0;
-		}
-		int Idx;
-		switch (PClass)
-		{
-		case HexenDefs::PCLASS_FIGHTER:
-			Idx = 0;
-			break;
-		case HexenDefs::PCLASS_CLERIC:
-			Idx = 2;
-			break;
-		case HexenDefs::PCLASS_MAGE:
-			Idx = 4;
-			break;
-		case HexenDefs::PCLASS_HERETIC:
-			Idx = 6;
-			break;
-		case HexenDefs::PCLASS_MARINE:
-			Idx = 8;
-			break;
-		case HexenDefs::PCLASS_WITCHAVEN:
-			Idx = 10;
-			break;
-		case HexenDefs::PCLASS_PIG:
-			Idx = 12;
-			break;
-		}
-		speedA.SetState(GetStatePlus(speedA.IdleState, Idx, true));
-		speedA.FloorClip = MO.FloorClip;
-#ifdef FIXME
-		if (self == GPlayers[consoleplayer])
-		{
-			speedA.bHidden = true;
-		}
-#endif
-	}
 }
 
 //==========================================================================
@@ -2024,161 +2296,6 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 //	dprint("Player::ParticleEffectEx : %i,%i,%i, vel.z=%f", count,type1,type2,velocity.z);
 	HexenLevelInfo(Level).ParticleEffectEx(count, type1, type2, origin, ornd, velocity, vrnd, acceleration,
 				grav, colour, duration, ramp, Pattern);
-}
-
-//==========================================================================
-//
-//  Cheat_Gimme
-//
-//==========================================================================
-
-void Cheat_Gimme()
-{
-	class<Inventory>	Cls;
-	class<WeaponPickup>	WpnCls;
-
-	if (Cmd_CheckParm("weapons"))
-	{
-		int i;
-
-		BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(
-			BasicArmor));
-		Armor.Amount = 200;
-		foreach AllClasses(WeaponPickup, WpnCls)
-		{
-			WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
-			Wpn.AmmoGive1 = 0;
-			Wpn.AmmoGive2 = 0;
-			Wpn.AmmoGive3 = 0;
-			if (!Wpn.TryPickup(EntityEx(MO)))
-			{
-				Wpn.Destroy();
-			}
-		}
-		foreach AllClasses(Ammo, Cls)
-		{
-			//	Only direct descendants.
-			if (GetClassParent(Cls) != Ammo)
-			{
-				continue;
-			}
-			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
-			if (!AmmoItem)
-			{
-				AmmoItem = Level.Spawn(Cls,,,, false);
-				if (!AmmoItem.TryPickup(EntityEx(MO)))
-				{
-					AmmoItem.Destroy();
-					AmmoItem = none;
-				}
-			}
-			if (AmmoItem)
-			{
-				AmmoItem.Amount = AmmoItem.MaxAmount;
-			}
-		}
-		cprint("ALL WEAPONS");
-	}
-	if (Cmd_CheckParm("health"))
-	{
-		MO.Health = max_health;
-		Health = MO.Health;
-		cprint("FULL HEALTH");
-	}
-	if (Cmd_CheckParm("keys"))
-	{
-		foreach AllClasses(Key, Cls)
-		{
-			if (!Cls.default.IdleState)
-			{
-				//	Abstract class
-				continue;
-			}
-			EntityEx(MO).GiveInventoryType(Cls);
-		}
-		cprint("ALL KEYS");
-	}
-	if (Cmd_CheckParm("puzzles"))
-	{
-		foreach AllClasses(PuzzleItem, Cls)
-		{
-			if (!Cls.default.IdleState)
-			{
-				//	Abstract class
-				continue;
-			}
-			EntityEx(MO).GiveInventoryType(Cls);
-		}
-		cprint("ALL ARTIFACTS");
-	}
-	if (Cmd_CheckParm("exp"))
-	{
-		GiveExperience(10000);
-		cprint("LOTS OF EXP");
-	}
-}
-
-//==========================================================================
-//
-//  Cheat_Morph
-//
-//==========================================================================
-
-void Cheat_Morph()
-{
-	if (MorphTime)
-	{
-		UndoPlayerMorph();
-	}
-	else
-	{
-		MorphProjectile Tmp = Level.Spawn(EggMissile);
-		Tmp.MorphPlayer(Actor(MO));
-		Tmp.Destroy();
-	}
-	cprint("SQUEAL!!");
-}
-
-//==========================================================================
-//
-//  Cheat_Class
-//
-//==========================================================================
-
-void Cheat_Class()
-{
-	int i;
-	int pclass;
-
-	if (MorphTime || MO.Class == PlayerHeresiarch)
-	{
-		// don't change class if the player is morphed
-		return;
-	}
-	if (Cmd_CheckParm("fighter"))
-		pclass = HexenDefs::PCLASS_FIGHTER;
-	else if (Cmd_CheckParm("cleric"))
-		pclass = HexenDefs::PCLASS_CLERIC;
-	else if (Cmd_CheckParm("mage"))
-		pclass = HexenDefs::PCLASS_MAGE;
-	else if (Cmd_CheckParm("heretic"))
-		pclass = HexenDefs::PCLASS_HERETIC;
-	else if (Cmd_CheckParm("marine"))
-		pclass = HexenDefs::PCLASS_MARINE;
-	else if (Cmd_CheckParm("witchaven"))
-		pclass = HexenDefs::PCLASS_WITCHAVEN;
-	else
-	{
-		cprint("INVALID PLAYER CLASS");
-		return;
-	}
-	PClass = pclass;
-	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
-	Armor.Amount = 0;
-	BaseClass = pclass;
-//	PostMorphWeapon(HexenDefs::WP_FIRST);
-	SetCvar('class', pclass);
-	SB_Start();
 }
 
 //==========================================================================
@@ -2870,18 +2987,6 @@ bool CheckFriendlyFire(EntityEx source, int damage)
 
 //==========================================================================
 //
-//  IsWeaponAlwaysExtremeDeath
-//
-//==========================================================================
-
-bool IsWeaponAlwaysExtremeDeath()
-{
-	// Always extreme death from eight weapon
-	return ReadyWeapon.bExtremeDeath;
-}
-
-//==========================================================================
-//
 //	LevelChanged
 //
 //==========================================================================
@@ -3024,105 +3129,6 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 			return false;
 	}
 	return true;
-}
-
-//==========================================================================
-//
-//	KilledActor
-//
-//==========================================================================
-
-void KilledActor(EntityEx Victim)
-{
-	bool bKilledByAlly = Victim.IsTeammate(EntityEx(MO));
-
-	// [CW] Process actor-specific event
-	Actor(Victim).KilledByPlayer(PlayerPawn(MO));
-
-	// [FB] Increase the player's KillCount
-	if (Victim.bMonster)
-	{
-		//[CW] update player's score
-		UpdateScore(HexenDefs::scoreevent_Kill);
-
-		//[CW] update kill trophies
-		UpdateQueuedTrophy(HexenDefs::trophycl_killsatonce, 1);
-		UpdateQueuedTrophy(HexenDefs::trophycl_killsrow, 1);
-		
-		// [FB] Check how many monsters there are in castle sweep mode
-		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
-		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
-		{
-			if (Level.CurrentKills < Level.TotalKills && Level.TotalKills - Level.CurrentKills <= 10)
-			{
-				MO.PlaySound('misc/chat', CHAN_AUTO);
-				MainGameInfo(Level.Game).bcentreprint(va("%i monsters left!", Level.TotalKills - Level.CurrentKills));
-			}
-			
-			// [FB] No more monsters, so end the game!
-			if (Level.TotalKills == Level.CurrentKills)
-			{
-				// [FB] Exit map
-				//Level.ExitLevel(0);
-				int i;
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (Level.Game.Players[i] && !Level.Game.Players[i].bIsBot)
-					{
-						Player(Level.Game.Players[i]).level_ender_counter = 0.5;
-					}
-				}
-			}
-		}
-	}
-
-	// Check for frag changes
-	if (Victim.bIsPlayer)
-	{
-		if (bIsBot)
-		{
-			Bot.Killed(Victim);
-		}
-
-		if (Victim.Player.bIsBot)
-		{
-			Player(Victim.Player).Bot.Died(EntityEx(MO));
-		}
-
-		if (Victim == MO)
-		{
-			// Self-frag
-			Frags--;
-
-			UpdateScore(HexenDefs::scoreevent_SelfFrag);
-		}
-		else
-		{
-			int se = bKilledByAlly ? HexenDefs::scoreevent_TeamFrag : HexenDefs::scoreevent_Frag;
-
-			if (bKilledByAlly)
-			{
-				Frags--;
-			}
-			else
-			{
-				Frags++;
-				GiveExperience(500 * Player(Victim.Player).exp_level / exp_level);
-			}
-
-			if (MainGameInfo(Level.Game).GameModel)
-				se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(self, Player(Victim.Player));
-
-			UpdateScore(se);
-
-			//[CW] update frag trophies
-			if (!bKilledByAlly)
-			{
-				UpdateQueuedTrophy(HexenDefs::trophycl_fragsatonce, 1);
-				UpdateQueuedTrophy(HexenDefs::trophycl_fragsrow, 1);
-			}
-		}
-	}
 }
 
 //==========================================================================
