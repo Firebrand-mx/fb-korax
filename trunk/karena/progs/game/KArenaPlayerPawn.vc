@@ -248,7 +248,7 @@ void BlindPlayer(Actor blinder, int blind)
 	}
 	Player(Player).BlindCount += blind;
 	if (blinder)
-		Player(Player).Blinder = Player(blinder.Player);
+		Player(Player).PlayerBlinder = Player(blinder.Player);
 	if (Player(Player).BlindCount > 220)
 	{
 		Player(Player).BlindCount = 220;
@@ -455,16 +455,16 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 
 		// [FB]  3d Floor checks...
 		float dist;
-		if (TargetEntity.Origin.z > FloorZ)
+		if (TargetEntity.Origin.z > Origin.z)
 		{
-			dist = FloorZ + Height + MaxPassableStep;
+			dist = Origin.z + Height;
 
 			if (TargetEntity.Origin.z > dist)
 				return false;
 		}
-		if (TargetEntity.Origin.z < FloorZ)
+		if (TargetEntity.Origin.z <= Origin.z)
 		{
-			dist = FloorZ - (TargetEntity.Origin.z + TargetEntity.Height);
+			dist = Origin.z - (TargetEntity.Origin.z + TargetEntity.Height);
 			// [FB] Always evaluate a positive distance
 			dist = dist < 0.0 ? -dist : dist;
 
