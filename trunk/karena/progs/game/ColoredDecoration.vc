@@ -33,10 +33,11 @@
 class ColoredDecoration : Actor
 	abstract;
 
-bool TransSet;
-int Team; // [FB] An argument to use for detecting team 0 or 1
-			// [CW] CHECKME --- wouldn't it better to use Team direct reference?
-int Colour; // [FB] The appropiate colour for this decoration
+bool 		TransSet;
+int 		TeamArg; 	// [FB] An argument to use for detecting team 0 or 1
+PlayerTeam	Team;		// Which team this Decoration belongs to
+						// (theoretically can be changed during game for
+						// some weird gameplay effect... (: )
 
 //// [FB] These methods should be here for switchable colored decorations
 //==========================================================================
@@ -80,40 +81,64 @@ bool Deactivate(EntityEx Activator)
 
 void SetTranslation()
 {
-	// [FB] Just select the Banner team
-	// FIXME:
-	// I'll make a small hack and consider the flag to be
-	// a Mage or Cleric, so blue translations are applied to 
-	// it, I'll find a better way to make this work later
-	Translation = Colour + HexenDefs::PCLASS_CLERIC * (MAXPLAYERS - 1);
-	
-	// [FB] We'll set the dynamic light colour here
-	switch(Colour)
+	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
+
+	if (!Team)
+		return;
+
+	if (CTF && CTF.IsInPlayableState())
 	{
-		case 1: // BLUE
-			DLightColour = RGB(0, 0, 255);
-			break;
-		case 2: // RED
-			DLightColour = RGB(255, 0, 0);
-			break;
-		case 3: // GOLD
-			DLightColour = RGB(255, 255, 0);
-			break;
-		case 4: // LIME
-			DLightColour = RGB(0, 255, 0);
-			break;
-		case 5: // GREEN
-			DLightColour = RGB(44, 86, 37);
-			break;
-		case 6: // GRAY
-			DLightColour = RGB(127, 127, 127);
-			break;
-		case 7: // BROWN
-			DLightColour = RGB(151, 99, 59);
-			break;
-		case 8: // MAGENTA
-			DLightColour = RGB(178, 17, 222);
-			break;
+		// [FB] Just select the current banner's team name,
+		//	  then set it's colour using ACS Scripts
+		//
+		// FIXME!! -- this works only for original team list
+		switch (Team.Index)
+		{
+			case 1:
+			{
+				XLevel.StartACS(1, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(255, 0, 0);
+				break;
+			}
+			case 2:
+			{
+				XLevel.StartACS(2, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(255, 255, 0);
+				break;
+			}
+			case 3:
+			{
+				XLevel.StartACS(3, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(0, 255, 0);
+				break;
+			}
+			case 4:
+			{
+				XLevel.StartACS(4, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(44, 86, 37);
+				break;
+			}
+			case 5:
+			{
+				XLevel.StartACS(5, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(127, 127, 127);
+				break;
+			}
+			case 6:
+			{
+				XLevel.StartACS(6, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(151, 99, 59);
+				break;
+			}
+			case 7:
+			{
+				XLevel.StartACS(7, 0, 0, 0, 0, self, NULL, 0, false, false);
+				DLightColour = RGB(178, 17, 222);
+				break;
+			}
+			default:
+				break;
+		}
 	}
 }
 
@@ -121,13 +146,11 @@ void SetTranslation()
 //
 //	Tick
 //
-//	[CW] FIXME!! --- this looks kinda excessive if called every Tick
-//
 //==========================================================================
 
 void Tick(float deltaTime)
 {
-	if (Colour && !TransSet)
+	if (!TransSet)
 		SetTranslation();
 
 	::Tick(deltaTime);
@@ -135,7 +158,6 @@ void Tick(float deltaTime)
 
 defaultproperties
 {
-	Colour = 0;
 	DLightColour = RGB(0, 0, 255);
 	bDynamicLight = true;
 }
