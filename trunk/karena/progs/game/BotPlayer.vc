@@ -185,10 +185,10 @@ enum
 	priorv_GameMode_Last			= 16,
 	priorv_GameMode_Normal			= 8
 };
-
 //
 // [CW] So, idea is, that bot summarize its current situation periodically and decides what he should do next
 //
+
 const float AI_TIME_DELAY	= 5.0;	// in seconds
 float AITime;
 
@@ -217,7 +217,7 @@ MainGameInfo gameInfo;
 // [CW] try this...
 Actor FTarget;			// final target (goal) ----- currently UNUSED
 Actor ITarget;			// immediate target (where to go)
-//TVec ITargetPos;		// immediate target position (valid in specific situations)
+TVec ITargetPos;		// immediate target position (valid in specific situations)
 TVec AttackOffset;		// basically, a point to get to just before heading to target
 PathNode node_current;
 array<PathNode> nodes;  // list of visited nodes (to make bot move freely along the map)
@@ -251,11 +251,11 @@ float forwardmove;		// For building ucmd
 float sidemove;
 
 // Flags, controlling movement
-bool bSoftContact;		// Target is something that could be passed through without slowing down
-bool bMeleeUrge;		// Must come closer to enemy as quickly as possible
-bool bKeepDistant;		// Enemy should be attacked from distance
-//bool bUseTargetPosition;	// ITargetPos is valid
-bool bAttackOffsetValid;// Use AttackOffset
+bool bSoftContact;			// Target is something that could be passed through without slowing down
+bool bMeleeUrge;			// Must come closer to enemy as quickly as possible
+bool bKeepDistant;			// Enemy should be attacked from distance
+bool bUseTargetPosition;	// ITargetPos is valid
+bool bAttackOffsetValid;	// Use AttackOffset
 
 
 // Misc booleans
@@ -355,7 +355,9 @@ void SetAction()
 	// [FB] Run this routine only in some gameplay modes
 	if (gameInfo.GameType != HexenDefs::game_ctf &&
 		gameInfo.GameType != HexenDefs::game_football)
+	{
 		return;
+	}
 
 	// [FB] We are deciding what to do
 	if (botstate.BState == bst_deciding)
@@ -373,19 +375,17 @@ void SetAction()
 				if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_offense)
 				{
 					attackers++;
-					print("BOT %s : Attackers: %d", player.PlayerName, attackers);
 				}
 				// [FB] Is this bot in Defense?
 				else if (Player(player.Level.Game.Players[i]).Bot.botstate.BState == bst_defense)
 				{
 					defenders++;
-					print("BOT %s : Defenders: %d", player.PlayerName, defenders);
 				}
 			}
 		}
 
-		print("BOT %s : Defenders after cycle: %d", player.PlayerName, defenders);
-		print("BOT %s : Attackers after cycle: %d", player.PlayerName, attackers);
+		print("BOT %s : Defenders: %d", player.PlayerName, defenders);
+		print("BOT %s : Attackers: %d", player.PlayerName, attackers);
 		// Defense wins championships...
 		if (defenders <= attackers)
 		{
@@ -472,7 +472,8 @@ bool CheckPath(float ang, float dist)
 			hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
 
 			// Line is impassible
-			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING) || (ld->flags & ML_BLOCKEVERYTHING))
+			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING) ||
+				(ld->flags & ML_BLOCKEVERYTHING))
 			{
 				return false;
 			}
@@ -512,7 +513,8 @@ bool CheckPath(float ang, float dist)
 			else
 			{
 				// [FB] No cliff jumping unless we're going after something
-				if ((open->lowfloor - open->bottom) > 32.0 && (open->lowfloor - open->bottom) < 384.0 && !enemy)
+				if ((open->lowfloor - open->bottom) > 32.0 &&
+					(open->lowfloor - open->bottom) < 384.0 && !enemy)
 				{
 					return false;
 				}
@@ -588,7 +590,9 @@ bool CheckPath(float ang, float dist)
 bool CheckTo(TVec pos, optional EntityEx TargetEntity)
 {
 	if (!specified_TargetEntity)
+	{
 		TargetEntity = none;
+	}
 
 	return botmo.CanReach(pos, TargetEntity, 56.0/*[CW] FIXME! - jump height*/, 384.0/*[CW] FIXME!*/, botmo.Height);
 }
@@ -605,24 +609,31 @@ void CheckStuff()
 {
 	if (enemy)
 	{
-		if (!enemy.bShootable || enemy.bDormant || enemy.Health <= 0 || !EntityEx(botmo).CanSee(enemy))
+		if (!enemy.bShootable || enemy.bDormant || enemy.Health <= 0 ||
+			!EntityEx(botmo).CanSee(enemy))
+		{
 			enemy = none;
+		}
 	}
 
 	if (missile)
 	{
 		// [CW] CHECKME - Not sure the first condition had any sense here
 		if (/*!missile.bMissile ||*/missile.IsDestroyed())
+		{
 			missile = none;
+		}
 	}
 
 	// [CW]
 	if (ITarget)
 	{
 		if ((ITarget.IsA('Inventory') && (ITarget.Owner || ITarget.bInvisible)) ||
-				(ITarget == node_current && Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE) ||
-				!CheckTo(ITarget.Origin, ITarget))
+			(ITarget == node_current && Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE) ||
+			!CheckTo(ITarget.Origin, ITarget))
+		{
 			ITarget = none;
+		}
 	}
 }
 
@@ -643,11 +654,17 @@ void CheckStuff()
 bool Check_LOS(EntityEx to, float vangle)
 {
 	if (!botmo.CanSee(to))
+	{
 		return false; // out of sight
+	}
 	if (vangle == 360.0)
+	{
 		return true;
+	}
 	if (vangle == 0.0)
+	{
 		return false; // Looker seems to be blind.
+	}
 
 	return fabs(AngleMod180(AngleTo(to.Origin) - botmo.Angles.yaw)) <=
 		vangle / 2.0;
@@ -662,11 +679,15 @@ bool Check_LOS(EntityEx to, float vangle)
 int SkillLower(int skill, int num)
 {
 	if (num <= 0)
+	{
 		return skill;
+	}
 
 	skill -= num;
 	if (skill < 0)
+	{
 		skill = 0;
+	}
 
 	return skill;
 }
@@ -686,7 +707,9 @@ void SetAngle(float an)
 //	angle = an;
 
 	if (!enemy)
+	{
 		return;
+	}
 
 	switch (info.accuracy)
 	{
@@ -775,9 +798,13 @@ void AimProjectile(float dist, bool right, float an)
 			else
 			{
 				if (right)
+				{
 					SetAngle(an + Random() * 20.0);
+				}
 				else
+				{
 					SetAngle(an - Random() * 20.0);
+				}
 			}
 			break;
 		case bsk_high:
@@ -788,9 +815,13 @@ void AimProjectile(float dist, bool right, float an)
 			else
 			{
 				if (right)
+				{
 					SetAngle(an + Random() * 20.0);
+				}
 				else
+				{
 					SetAngle(an - Random() * 20.0);
+				}
 			}
 			break;
 		case bsk_excellent:
@@ -801,9 +832,13 @@ void AimProjectile(float dist, bool right, float an)
 			else
 			{
 				if (right)
+				{
 					SetAngle(an + Random() * 20.0);
+				}
 				else
+				{
 					SetAngle(an - Random() * 20.0);
+				}
 			}
 			break;
 		case bsk_supreme:
@@ -814,9 +849,13 @@ void AimProjectile(float dist, bool right, float an)
 			else
 			{
 				if (right)
+				{
 					SetAngle(an + Random() * 20.0);
+				}
 				else
+				{
 					SetAngle(an - Random() * 20.0);
+				}
 			}
 			break;
 		default:
@@ -836,38 +875,54 @@ void AimProjectile(float dist, bool right, float an)
 void AimInstant(float dist, bool right, float an)
 {
 	// [CW] : temporary fix
-	if (info.accuracy < bsk_high && dist < EntityEx::MELEERANGE * 2.0)
+/*	if (info.accuracy < bsk_high && dist < EntityEx::MELEERANGE * 2.0)
 	{
 		SetAngle(an);
 		return;
-	}
+	}*/
 
 	// FIXME: Implement botskill, accuracy, and intelligence
 	switch (info.accuracy)
 	{
 		case bsk_verypoor:
 			if (right)
+			{
 				SetAngle(an + Random() * 60.0);
+			}
 			else
+			{
 				SetAngle(an - Random() * 60.0);
+			}
 			break;
 		case bsk_poor:
 			if (right)
+			{
 				SetAngle(an + Random() * 45.0);
+			}
 			else
+			{
 				SetAngle(an - Random() * 45.0);
+			}
 			break;
 		case bsk_low:
 			if (right)
+			{
 				SetAngle(an + Random() * 30.0);
+			}
 			else
+			{
 				SetAngle(an - Random() * 30.0);
+			}
 			break;
 		case bsk_medium:
 			if (right)
+			{
 				SetAngle(an + Random() * 15.0);
+			}
 			else
+			{
 				SetAngle(an - Random() * 15.0);
+			}
 			break;
 		case bsk_high:
 			SetAngle(an);
@@ -901,12 +956,16 @@ void Aim()
 	{
 		// [CW] Target can be other object, simply face its direction
 		if (ITarget)
+		{
 			SetAngle(AngleTo(ITarget.Origin));
+		}
 		return;
 	}
 
 	if (t_react > 4.0)
+	{
 		return;
+	}
 
 	// Distance to enemy.
 	dist = botmo.DistTo2(enemy);
@@ -937,8 +996,10 @@ void Aim()
 			player.Level.Game.Players[i].bIsBot &&
 			Player(player.Level.Game.Players[i]).Bot.enemy && 
 			Player(player.Level.Game.Players[i]).Bot.enemy == botmo)
+		{
 			Player(player.Level.Game.Players[i]).Bot.t_anticip = 
 					KArenaWeapon(player.ReadyWeapon).refire_tics;
+		}
 	}
 
 	// [FB] set pitch accordingly...
@@ -971,9 +1032,13 @@ Actor FindEnemy()
 
 	// Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
+	{
 		vangle = 360.0;
+	}
 	else
+	{
 		vangle = ENEMY_SCAN_FOV;
+	}
 	bAllRound = false;
 
 	// [CW] no need to pass through this if there are no monsters on map 
@@ -985,21 +1050,33 @@ Actor FindEnemy()
 			dist = botmo.DistTo(actor);
 
 			if (!(actor.bMonster))
+			{
 				continue;
+			}
 			if (!Check_LOS(actor, vangle))
+			{
 				continue;
+			}
 			if (!botmo.CanSee(actor))
+			{
 				continue;
+			}
 			if (actor.Health <= 0)
+			{
 				continue;
+			}
 			// [FB] We spawned the minotaur? we shouldn't attack him then!
 			if (actor.Class == MinotaurFriend)
 			{
 				if (actor.Tracer == botmo)
+				{
 					continue;
+				}
 				// [FB] Don't attack a friendly minotaur in all these cases
 				if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
+				{
 					continue;
+				}
 				else if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 				{
 					bool SameTeam = false;
@@ -1013,7 +1090,9 @@ Actor FindEnemy()
 						// [FB] We've got a team factor, just check if it's an ally or not
 						if (teamfactor != GameModel::teamfactor_any &&
 							teamfactor != GameModel::teamfactor_enemy)
+						{
 							continue;
+						}
 					}
 					// [FB] Check if the minotaur's instigator is in the same team we are on
 					for(i = 0; i < MAXPLAYERS; i++)
@@ -1026,11 +1105,15 @@ Actor FindEnemy()
 						}
 					}
 					if (SameTeam)
+					{
 						continue;
+					}					
 				}
 			}
 			if (dist > MAX_MONSTER_TARGET_DIST)
+			{
 				continue;
+			}
 
 			target = none;
 			closest_dist = 99999.0;
@@ -1049,16 +1132,21 @@ Actor FindEnemy()
 						//[FB] Add static or dynamic lights?
 						light += actor.Sector->floor.LightSourceSector;
 					}
-					// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
+					// [FB] Too dark?
+					// [CW] enhance this a bit, still human players usually CAN see in dark
 					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
 					{
 						if (light <= WHATS_VERYDARK)
 						{
 							if (P_Random() < 196)
+							{
 								continue;
+							}
 						}
 						else if (P_Random() < 128)
+						{
 							continue;
+						}
 					}
 					if (dist < closest_dist)
 					{
@@ -1076,7 +1164,9 @@ Actor FindEnemy()
 
 	// [CW] Don't waste time searching enemy players if this is coop game mode
 	if (MainGameInfo(player.Level.Game).bIsCoopGame[MainGameInfo(player.Level.Game).GameType])
+	{
 		return none;
+	}
 
 	// Search for player enemies
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1085,7 +1175,8 @@ Actor FindEnemy()
 		    player.Level.Game.Players[i].MO.Health > 0 && !Player(player.Level.Game.Players[i]).bUnControllable && 
 			botmo != player.Level.Game.Players[i].MO)
 		{
-			if (MainGameInfo(player.Level.Game).GameModel) // [CW] Check if an advanced game mode is active
+			// [CW] Check if an advanced game mode is active
+			if (MainGameInfo(player.Level.Game).GameModel)
 			{
 				int teamfactor;
 
@@ -1094,14 +1185,18 @@ Actor FindEnemy()
 				// [CW] We've got a team factor, check if it can be an enemy
 				if (teamfactor != GameModel::teamfactor_any &&
 				    teamfactor != GameModel::teamfactor_enemy)
+				{
 					continue;
+				}
 			}
 			// [FB] Are we on a Team gameplay mode?
 			if (MainGameInfo(player.Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				// [FB] Don't attack same team players
 				if (Player(player.Level.Game.Players[i]).Team == player.Team)
+				{
 					continue;
+				}
 			}
 			// Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost
 			// always returns false. tought it should be the same checksight as below but.. (below
@@ -1129,10 +1224,14 @@ Actor FindEnemy()
 						if (light <= WHATS_VERYDARK)
 						{
 							if (P_Random() < 196)
+							{
 								continue;
+							}
 						}
 						else if (P_Random() < 128)
+						{
 							continue;
+						}
 					}
 					if (dist < closest_dist)
 					{
@@ -1166,11 +1265,7 @@ Actor FindMissile()
 		{
 			if (Check_LOS(actor, 90.0))
 			{
-				/* if (!missile && actor.bMissile &&
-					(botmo.DistTo(actor) <= AVOID_DIST))
-				{*/
-					return actor;
-				/* }*/
+				return actor;
 			}
 		}
 	}
@@ -1206,7 +1301,9 @@ Weapon ChooseWeapon(float dist)
 			{
 				// [FB] We only want to use weapons that do fire damage in XMAS Havoc!
 				if (!Wpn.bFireDamage)
+				{
 					continue;
+				}
 			}
 			if (dist <= Actor::MELEERANGE)
 			{
@@ -1250,107 +1347,142 @@ Weapon ChooseWeapon(float dist)
 
 //==========================================================================
 //
+//	ChooseBlastRadiusMode
+//
+//	[FB] Decide which blast radius mode would be best to use in our situation
+//
+//==========================================================================
+
+void ChooseBlastRadiusMode(float dist, int amount)
+{
+	if (dist <= Actor::MELEERANGE)
+	{
+		// [FB] We've got several choices here so we'll cycle them
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
+		{
+			case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
+			case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
+				if (amount >= 10)
+				{
+					// [FB] We can keep this alternate weapon
+					return;
+				}
+				break;
+		}
+	}
+	else if (dist <= 512.0)
+	{
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
+		{
+			case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
+			case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
+			case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
+				if (amount >= 10)
+				{
+					return;
+				}
+				break;
+		}
+	}
+	else
+	{
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
+		{
+			case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
+				if (amount >= 10)
+				{
+					return;
+				}
+				break;
+		}
+	}
+	return;
+}
+
+//==========================================================================
+//
+//	ChoosePoisonBagMode
+//
+//	[FB] Decide which flechette mode would be best to use in our situation
+//
+//==========================================================================
+
+void ChoosePoisonBagMode(float dist, int amount)
+{
+	if (dist <= Actor::MELEERANGE)
+	{
+		// [FB] We've got several choices here so we'll cycle them
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+			case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+			case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+				if (amount >= 10)
+				{
+					// [FB] We can keep this alternate weapon
+					return;
+				}
+				break;
+		}
+	}
+	else if (dist <= 512.0)
+	{
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+			case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+			case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
+			case HexenDefs::ALTFIRE_POISONBAG_BOMB:
+				if (amount >= 10)
+				{
+					return;
+				}
+				break;
+		}
+	}
+	else
+	{
+		switch(player.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
+		{
+			case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
+				if (amount >= 10)
+				{
+					return;
+				}
+				break;
+		}
+	}
+	return;
+}
+
+//==========================================================================
+//
 //	ChooseAltWeapon
 //
 //	[FB] Decide which alternate weapon would be best to use in our situation
 //
 //==========================================================================
 
-void ChooseAltWeapon(float dist)
+void ChooseAltWeapon()
 {
 	Ammo AltWpn;
 
+	player.Impulse = !!P_Random() & 1 ?
+					  HexenDefs::IMPULSE__TOGGLE_BLASTRAD :
+					  HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+	AltWpn = player.Impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD ?
+			 Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius)):
+			 Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+	player.PlayerImpulse();
+
+	// [FB] We'll separate both options in different methods, because if we don't, we'll have
+	//	    duplicated case values...
 	if (enemy)
 	{
-		if (dist <= Actor::MELEERANGE)
+		switch(player.Impulse)
 		{
-			player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-			player.PlayerImpulse();
-			// [FB] We've got several choices here so we'll cycle them
-			switch(player.altWeaponMode[player.altWeapon])
-			{
-				case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
-				{
-					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
-					if (AltWpn && AltWpn.Amount > 10)
-					{
-						// [FB] We can keep this alternate weapon
-						return;
-					}
-					break;
-				}
-				case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-				case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
-				{
-					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-					if (AltWpn && AltWpn.Amount > 10)
-					{
-						// [FB] We can keep this alternate weapon
-						return;
-					}
-					break;
-				}
-				default:
-				{
-					player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-					player.PlayerImpulse();
-					return;
-				}
-			}
-		}
-		else if (dist <= 512.0)
-		{
-			player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-			player.PlayerImpulse();
-			// [FB] We've got several choices here so we'll cycle them
-			switch(player.altWeaponMode[player.altWeapon])
-			{
-				case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
-				{
-					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
-					if (AltWpn && AltWpn.Amount > 10)
-					{
-						// [FB] We can keep this alternate weapon
-						return;
-					}
-					break;
-				}
-				default:
-				{
-					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-					if (AltWpn && AltWpn.Amount > 10)
-					{
-						// [FB] We can keep this alternate weapon
-						return;
-					}
-					break;
-				}
-			}
-		}
-		else
-		{
-			player.Impulse = HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-			player.PlayerImpulse();
-			// [FB] We've got several choices here so we'll cycle them
-			switch(player.altWeaponMode[player.altWeapon])
-			{
-				case HexenDefs::ALTFIRE_POISONBAG_BOMB:
-				{
-					AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-					if (AltWpn && AltWpn.Amount > 10)
-					{
-						// [FB] We can keep this alternate weapon
-						return;
-					}
-					break;
-				}
-				default:
-				{
-					player.Impulse = !!P_Random() & 1 ? HexenDefs::IMPULSE__TOGGLE_BLASTRAD : HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-					player.PlayerImpulse();
-					return;
-				}
-			}
+			case HexenDefs::IMPULSE__TOGGLE_BLASTRAD:
+				ChooseBlastRadiusMode(botmo.DistTo2(enemy), AltWpn.Amount);
+			case HexenDefs::IMPULSE__TOGGLE_POSIONBAG:
+				ChoosePoisonBagMode(botmo.DistTo2(enemy), AltWpn.Amount);
 		}
 	}
 	return;
@@ -1446,8 +1578,8 @@ Actor SetAlly()
 				if ((Player(player.Level.Game.Players[j]).Team == player.Team))
 				{
 					int HealthDanger = Player(player.Level.Game.Players[j]).bIsBot ?
-										Player(player.Level.Game.Players[j]).Bot.info.dangerlevel : 
-										Player(player.Level.Game.Players[j]).max_health / 2;
+									   Player(player.Level.Game.Players[j]).Bot.info.dangerlevel : 
+									   Player(player.Level.Game.Players[j]).max_health / 2;
 					if (player.Level.Game.Players[j].MO.Health <= HealthDanger)
 					{
 						if (botmo.CanSee(player.Level.Game.Players[j].MO))
@@ -1512,13 +1644,21 @@ void Roam(TVec dest)
 	float side_delta = distance * sin(yaw_delta);
 		
 	if (fw_delta > 0.0)
+	{
 		forwardmove = FORWARDRUN > fw_delta ? fw_delta : FORWARDRUN;
+	}
 	else
+	{
 		forwardmove = -FORWARDRUN < fw_delta ? fw_delta : -FORWARDRUN;
+	}
 	if (side_delta > 0.0)
+	{
 		sidemove = SIDERUN > side_delta ? side_delta : SIDERUN;
+	}
 	else
+	{
 		sidemove = -SIDERUN < side_delta ? side_delta : -SIDERUN;
+	}
 
 	TVec short_dest = botmo.Origin;
 	short_dest.x += forwardmove * cos(botmo.Angles.yaw) + sidemove * cos(botmo.Angles.yaw - 90.0);
@@ -1563,7 +1703,9 @@ void Move(float deltaTime)
 	if (enemy && t_anticip <= 0.25)
 	{
 		if (!sidemove)
+		{
 			sidemove = SIDERUN;
+		}
 
 		switch (info.anticip)
 		{
@@ -1598,7 +1740,9 @@ void Move(float deltaTime)
 		case bsk_high:
 			// Switch directions when we think our opponent will fire
 			if (!t_anticip)
+			{
 				sidemove = -sidemove;
+			}
 			break;
 
 		case bsk_excellent:
@@ -1664,7 +1808,9 @@ void Move(float deltaTime)
 		float an;
 
 		if (!sidemove)
+		{
 			sidemove = SIDERUN;
+		}
 
 		if (t_strafe)
 		{
@@ -1678,17 +1824,25 @@ void Move(float deltaTime)
 
 		an = GetAngle(); //botmo.Angles.yaw;
 		if (sidemove < 0.0)
+		{
 			an -= 90.0;
+		}
 		else
+		{
 			an += 90.0;
+		}
 
 		if (!CheckPath(an, 48.0)) // We're blocked, so go the other way!
 		{
 			an += (an > 180.0 ? -180.0 : 180.0);
 			if (CheckPath(an, 48.0))
+			{
 				sidemove = -sidemove;
+			}
 			else
+			{
 				sidemove = 0.0;
+			}
 		}
 //		return;
 	}
@@ -1712,10 +1866,14 @@ void Move(float deltaTime)
 				dest = ITarget.Origin;
 			}
 			else
+			{
 				dest = AttackOffset;
+			}
 		}
 		else
+		{
 			dest = ITarget.Origin;
+		}
 	}
 	else
 	{
@@ -1740,19 +1898,27 @@ void Attack()
 {
 	// Still reacting to something or we don't have an enemy to fight
 	if (t_react > 2.0 || !enemy)
+	{
 		return;
+	}
 
 	// [FB] Check if our allies are out of the way of the attack
 	if (ally && Check_LOS(ally, SHOOTFOV))
+	{
 		return;
+	}
 
 	// No point in firing if we won't hit them
 	if (!Check_LOS(enemy, SHOOTFOV))
+	{
 		return;
+	}
 
 /*	// [FB] We are still shooting
 	if (t_fire)
-		return;*/
+	{
+		return;
+	}*/
 	
 	// [FB] Don't attack if the distance is not the right one for this weapon
 	float combatdist = player.ReadyWeapon.BotCombatDist;
@@ -1763,7 +1929,9 @@ void Attack()
 		combatdist /= 2.0;
 	}
 	if (botmo.DistTo(enemy) > combatdist)
+	{
 		return;
+	}
 
 	player.Buttons |= BT_ATTACK;
 }
@@ -1910,43 +2078,56 @@ void Alternate_Attack()
 
 	// Still reacting to something or we don't have an enemy to fight
 	if (t_react > 2.0 || !enemy)
+	{
 		return;
+	}
 
-	ChooseAltWeapon(botmo.DistTo2(enemy));
+	ChooseAltWeapon();
 	// [FB] We just simply check which weapon is active and do what it's needed for it to work
 	switch (player.altWeapon)
 	{
-	case HexenDefs::ALTFIRE_BLASTRADIUS:
-		type = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
-		if (type && type.Amount > 10)
-		{
-			// [FB] Check if our allies are out of the way of the attack
-			if (ally && Check_LOS(ally, 255.0))
-				return;
+		case HexenDefs::ALTFIRE_BLASTRADIUS:
+			type = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+			if (type && type.Amount >= 10)
+			{
+				// No point in firing if we won't hit them
+				if (!Check_LOS(enemy, 255.0))
+				{
+					return;
+				}
+				// [FB] Check if our allies are out of the way of the attack
+				if (ally && Check_LOS(ally, 255.0))
+				{
+					return;
+				}
+				if (botmo.DistTo2(enemy) > 255.0)
+				{
+					return;
+				}
 
-			// No point in firing if we won't hit them
-			if (!Check_LOS(enemy, 255.0))
-				return;
+				// [FB] We've got enough ammo
+				player.AlternateAttack();
+			}
+			break;
+		case HexenDefs::ALTFIRE_POISONBAG:
+			type = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+			if (type && type.Amount >= 10)
+			{
+				// No point in firing if we won't hit them
+				if (!Check_LOS(enemy, SHOOTFOV))
+				{
+					return;
+				}
+				// [FB] Check if our allies are out of the way of the attack
+				if (ally && Check_LOS(ally, SHOOTFOV))
+				{
+					return;
+				}
 
-			if (botmo.DistTo(enemy) > 255.0)
-				return;
-
-			// [FB] We've got enough ammo
-			player.AlternateAttack();
-		}
-		break;
-	case HexenDefs::ALTFIRE_POISONBAG:
-		type = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-		if (type && type.Amount > 10)
-		{
-			// No point in firing if we won't hit them
-			if (!Check_LOS(enemy, SHOOTFOV))
-				return;
-
-			// [FB] We've got enough ammo
-			player.AlternateAttack();
-		}
-		break;
+				// [FB] We've got enough ammo
+				player.AlternateAttack();
+			}
+			break;
 	}
 }
 
@@ -1977,33 +2158,53 @@ void Turn()
 		case bsk_poor:
 		case bsk_low:
 			if (distance > 7.5)
+			{
 				distance = 7.5;
+			}
 			if (distance < -7.5)
+			{
 				distance = -7.5;
+			}
 			break;
 		case bsk_medium:
 			if (distance > 15.0)
+			{
 				distance = 15.0;
+			}
 			if (distance < -15.0)
+			{
 				distance = -15.0;
+			}
 			break;
 		case bsk_high:
 			if (distance > 22.5)
+			{
 				distance = 22.5;
+			}
 			if (distance < -22.5)
+			{
 				distance = -22.5;
+			}
 			break;
 		case bsk_excellent:
 			if (distance > 30.0)
+			{
 				distance = 30.0;
+			}
 			if (distance < -30.0)
+			{
 				distance = -30.0;
+			}
 			break;
 		case bsk_supreme:
 			if (distance > 37.5)
+			{
 				distance = 37.5;
+			}
 			if (distance < -37.5)
+			{
 				distance = -37.5;
+			}
 			break;
 	}
 
@@ -2130,9 +2331,13 @@ void OnBeginPlay()
 	MainGameInfo(player.Level.Game).botskill = player.Level.World.GameSkill;
 
 	if (MainGameInfo(player.Level.Game).botskill > 4)
+	{
 		MainGameInfo(player.Level.Game).botskill = 4;
+	}
 	if (MainGameInfo(player.Level.Game).botskill < 0)
+	{
 		MainGameInfo(player.Level.Game).botskill = 0;
+	}
 
 	t_strafe = 1.0;
 	// Implement skill settings
@@ -2194,31 +2399,47 @@ void AffectStat()
 	if (accuracy_r && player.BlindCount <= 50)
 	{
 		if (info.accuracy)
+		{
 			info.accuracy--;
+		}
 		// [FB] Make sure this stat isn't less than zero
-		else if (info.accuracy <= bsk_verypoor)
+		else if (info.accuracy < bsk_verypoor)
+		{
 			info.accuracy = bsk_verypoor;
+		}
 	}
 	else if (intelect_r && (player.BlindCount > 50 && player.BlindCount <= 100))
 	{
 		if (info.intelect)
+		{
 			info.intelect--;
-		else if (info.intelect <= bsk_verypoor)
+		}
+		else if (info.intelect < bsk_verypoor)
+		{
 			info.intelect = bsk_verypoor;
+		}
 	}
 	else if (evade_r && (player.BlindCount > 100 && player.BlindCount <= 150))
 	{
 		if (info.evade)
+		{
 			info.evade--;
-		else if (info.evade <= bsk_verypoor)
+		}
+		else if (info.evade < bsk_verypoor)
+		{
 			info.evade = bsk_verypoor;
+		}
 	}
 	else if (anticip_r && (player.BlindCount > 150 && player.BlindCount <= 200))
 	{
 		if (info.anticip)
+		{
 			info.anticip--;
-		else if (info.anticip <= bsk_verypoor)
+		}
+		else if (info.anticip < bsk_verypoor)
+		{
 			info.anticip = bsk_verypoor;
+		}
 	}
 }
 
@@ -2244,11 +2465,17 @@ void SetPissedStats()
 
 	// [FB] Make sure stats don't go beyond
 	if (info.accuracy > bsk_supreme)
+	{
 		info.accuracy = bsk_supreme;
+	}
 	else if (info.evade > bsk_supreme)
+	{
 		info.evade = bsk_supreme;
+	}
 	else if (info.anticip > bsk_supreme)
+	{
 		info.anticip = bsk_supreme;
+	}
 }
 
 //==========================================================================
@@ -2276,7 +2503,9 @@ void BotTick(float deltaTime)
 
 	// [CW]
 	if (!botmo)
+	{
 		return;
+	}
 
 	// Weed out any bad destinations/enemies
 	CheckStuff();
@@ -2318,12 +2547,16 @@ void BotTick(float deltaTime)
 		SetAction();
 
 		// [FB] Set an ally if we're in a mode that has one
+		// [CW] this may change by time in some game modes
 		if (!ally && (gameInfo.bIsCoopGame[gameInfo.GameType] ||
-				// [CW] this may change by time in some game modes
-				gameInfo.GameModel && gameInfo.GameModel.AllowAllies()))
+			gameInfo.GameModel && gameInfo.GameModel.AllowAllies()))
+		{
 			ally = SetAlly();
+		}
 		else
+		{
 			ally = none;
+		}
 
 		ProcessPriorities();
 	}
@@ -2347,13 +2580,21 @@ void BotTick(float deltaTime)
 	if (!gameInfo.botskill || !player.Level.World.GameSkill)
 	{
 		if (forwardmove > FORWARDWALK)
+		{
 			forwardmove = FORWARDWALK;
+		}
 		if (forwardmove < -FORWARDWALK)
+		{
 			forwardmove = -FORWARDWALK;
+		}
 		if (sidemove > SIDEWALK)
+		{
 			sidemove = SIDEWALK;
+		}
 		if (sidemove < -SIDEWALK)
+		{
 			sidemove = -SIDEWALK;
+		}
 	}
 
 	player.SideMove = sidemove;
@@ -2370,7 +2611,9 @@ void UpdateTimedEffects(float deltaTime)
 {
 	// [FB] Apply blind status
 	if(player.BlindCount)
+	{
 		AffectStat();
+	}
 	else if (player.BlindCount <= 0)
 	{
 		//[FB] Darkness effects faded out, now restore everything back!
@@ -2400,9 +2643,13 @@ void UpdateTimedEffects(float deltaTime)
 	if (!(player.Level.XLevel.Time == 255.0))	// [CW] seriously,.. what the # is this 255.0?
 	{
 		if (angerlevel)
+		{
 			angerlevel--;
+		}
 		else if (angerlevel <= 0)
+		{
 			angerlevel = 0;
+		}
 	}
 
 	//--------------------------------------------------------
@@ -2410,23 +2657,33 @@ void UpdateTimedEffects(float deltaTime)
 
 	t_react -= deltaTime;
 	if (t_react <= 0.0)
+	{
 		t_react = 0.0;
+	}
 
 	t_anticip -= deltaTime;
 	if (t_anticip <= 0.0)
+	{
 		t_anticip = 0.0;
+	}
 
 /*	t_fight -= deltaTime;
 	if (t_fight <= 0.0)
+	{
 		t_fight = 0.0;
+	}
 
 	t_rocket -= deltaTime;
 	if (t_rocket <= 0.0)
-		t_rocket = 0.0;*/
+	{
+		t_rocket = 0.0;
+	}*/
 
 	t_turn -= deltaTime;
 	if (t_turn <= 0.0)
+	{
 		t_turn = 0.0;
+	}
 
 	t_pissed -= deltaTime;
 	if (t_pissed <= 0.0)
@@ -2435,7 +2692,9 @@ void UpdateTimedEffects(float deltaTime)
 
 		//[FB] Stop chasing our main target
 		if(nemesis)
+		{
 			nemesis = none;
+		}
 
 		//[FB] Return stats to their original
 		if(p_init)
@@ -2449,11 +2708,15 @@ void UpdateTimedEffects(float deltaTime)
 
 	t_frust -=deltaTime;
 	if (t_frust <= 0.0)
+	{
 		t_frust = 0.0;
+	}
 
 	t_fire -= deltaTime;
 	if (t_fire <= 0.0)
+	{
 		t_fire = 0.0;
+	}
 
 	// [FB] Apply pissed off stats
 	if (t_pissed && !p_init)
@@ -2470,14 +2733,14 @@ void UpdateTimedEffects(float deltaTime)
 
 void ProcessPriorities()
 {
-	int i,j;
+	int i, j;
+
 	for (i = 0; i < NUM_PRIORITIES; i++)
 	{
 		Priority[i] = 0;
 	}
 
 	// [CW] Long way deciding priorities...
-
 	//----------------------------------------
 	// Weaponry
 	//----------------------------------------
@@ -2486,6 +2749,7 @@ void ProcessPriorities()
 	int heaviest_weapon = GetHeaviestEnemyWeapon();
 	int opponent_weapon = 0;
 	int opponent_weapon_current = 0;
+
 	if (enemy && enemy.Player)
 	{
 		wpn = Player(enemy.Player).BestWeapon();
@@ -2495,15 +2759,25 @@ void ProcessPriorities()
 
 	// Has only 2nd level weapon
 	if (my_weapon <= 1)
+	{
 		Priority[priort_Weapons] += priorv_Weapons_BadEquipment;
+	}
 	if (my_weapon < heaviest_weapon)
+	{
 		Priority[priort_Weapons] += priorv_Weapons_HeavyEnemies;
+	}
 	if (my_weapon < opponent_weapon)
+	{
 		Priority[priort_Weapons] += priorv_Weapons_HeavyOpponent;
+	}
 	if (my_weapon < opponent_weapon_current)
+	{
 		Priority[priort_Weapons] += priorv_Weapons_HeavyOffence;
+	}
 	if (my_weapon < 7)
+	{
 		Priority[priort_Weapons] += priorv_Weapons_NotTheBest;
+	}
 
 	//----------------------------------------
 	// Ammo
@@ -2521,24 +2795,26 @@ void ProcessPriorities()
 	}
 	else
 	{
-		if (player.IsAmmoBelowLevel( 50 ))
+		if (player.IsAmmoBelowLevel(50))
 		{
 			Priority[priort_Ammo] += priorv_Ammo_Low;
 			Priority[priort_Ammo] += priorv_Ammo_ThisWeaponLow;
 			Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 		}
-		else if (player.IsAmmoBelowLevel( 50 , class<KArenaWeapon>(player.ReadyWeapon.Class) ) ||
-				player.ReadyWeapon.CheckAmmo(player.ReadyWeapon.FireMode, false, true))
+		else if (player.IsAmmoBelowLevel(50, class<KArenaWeapon>(player.ReadyWeapon.Class)) ||
+				 player.ReadyWeapon.CheckAmmo(player.ReadyWeapon.FireMode, false, true))
 		{
 			Priority[priort_Ammo] += priorv_Ammo_ThisWeaponLow;
 			Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 		}
 		else
 		{
-			if (player.IsAmmoBelowLevel( 200 , none, Mana1 ) ||
-					player.IsAmmoBelowLevel( 200 , none, Mana2) ||
-					player.IsAmmoBelowLevel( 200 , none, ItemManaRed ) )
+			if (player.IsAmmoBelowLevel(200, none, Mana1) ||
+				player.IsAmmoBelowLevel(200, none, Mana2) ||
+				player.IsAmmoBelowLevel(200, none, ItemManaRed))
+			{
 				Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
+			}
 		}
 	}
 	
@@ -2547,13 +2823,21 @@ void ProcessPriorities()
 	//----------------------------------------
 
 	if (EntityEx(player.MO).CheckInventory('Health') <= 15)
+	{
 		Priority[priort_Health] += priorv_Health_Dying;
+	}
 	if (EntityEx(player.MO).CheckInventory('Health') <= (player.max_health >> 1))
+	{
 		Priority[priort_Health] += priorv_Health_Low;
+	}
 	if (EntityEx(player.MO).CheckInventory('Health') < player.max_health)
+	{
 		Priority[priort_Health] += priorv_Health_NotMaximum;
+	}
 	else if (EntityEx(player.MO).CheckInventory('Armor') <= 200)
+	{
 		Priority[priort_Health] += priorv_Health_ArmorNotMaximum;
+	}
 
 	//----------------------------------------
 	// Game Mode
@@ -2561,32 +2845,52 @@ void ProcessPriorities()
 	if (gameInfo.GameType < HexenDefs::NUMGAMESNOTEAM)
 	{
 		int plInPlay = gameInfo.GetPlayerCount();
+
 		if (player.PlayerPosition > 0)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_NotFirst;
+		}
 		if (player.PlayerPosition == plInPlay - 1)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_Last;
+		}
 		else if (player.PlayerPosition > 1)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_Loosing;
+		}
 
 		if (!player.Score)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_NoScore;
+		}
 	}
 	else if (gameInfo.GameType >= HexenDefs::NUMGAMESNOTEAM && player.Team)
 	{
 		int tmInPlay = gameInfo.GetTeamCount();
+
 		if (player.Team.Position > 0)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_NotFirst;
+		}
 		if (player.Team.Position == tmInPlay - 1)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_Last;
+		}
 		else if (player.Team.Position > 1)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_Loosing;
+		}
 
 		if (!player.Team.Score)
+		{
 			Priority[priort_GameMode] += priorv_GameMode_NoScore;
+		}
 	}
 
 	if (GetGameModeGoal(false))
+	{
 		Priority[priort_GameMode] += priorv_GameMode_Normal;
+	}
 
 	int prior_max;
 	int prior_limit = -1;
@@ -2607,7 +2911,7 @@ void ProcessPriorities()
 				continue;
 			}
 			if (Priority[j] > prior_max ||
-					Priority[j] == prior_max && P_Random() > 127)
+				Priority[j] == prior_max && P_Random() > 127)
 			{
 				Prior_Targets[i] = j;
 				prior_max = Priority[j];
@@ -2635,13 +2939,16 @@ int GetHeaviestEnemyWeapon()
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (gameInfo.Players[i]	&& gameInfo.Players[i] != player &&
+		if (gameInfo.Players[i] && gameInfo.Players[i].MO &&
+			gameInfo.Players[i] != player &&
 			Actor(gameInfo.Players[i].MO) == enemy)
 		{
-			wpn = Player(gameInfo.Players[i]).BestWeapon();
+			wpn = PlayerEx(gameInfo.Players[i]).BestWeapon();
 			pl_weapon = wpn ? KArenaWeapon(wpn).Slot : 0;
 			if (pl_weapon > weapon)
+			{
 				weapon = pl_weapon;
+			}
 		}
 	}
 
@@ -2661,33 +2968,50 @@ Actor GetFirstPriorityTarget()
 	Actor ee;
 	Actor candidates[NUM_PRIORITIES];
 	float dist[NUM_PRIORITIES];
-
 	int i, priort;
-	for (i = 0; i < NUM_PRIORITIES; i++)
-		dist[i] = -1.0;
 
+	for (i = 0; i < NUM_PRIORITIES; i++)
+	{
+		dist[i] = -1.0;
+	}
 	candidates[priort_GameMode] = GetGameModeGoal(true);
 
 	foreach botmo.AllThinkers(Actor, ee)
 	{
 		if (ee.bInvisible)
+		{
 			continue;
+		}
 		if (ee.bNoSector)
+		{
 			continue;
+		}
 
 		if (ee.IsA('Weapon'))
+		{
 			priort = priort_Weapons;
+		}
 		else if (ee.IsA('Ammo'))
+		{
 			priort = priort_Ammo;
+		}
 		else if (ee.IsA('Health') || ee.IsA('Armor'))
+		{
 			priort = priort_Health;
-		else if (ee.IsA('Arifact'))
+		}
+		else if (ee.IsA('Artifact'))
+		{
 			priort = priort_Artifacts;
+		}
 		else
+		{
 			continue;
+		}
 
 		if (!Priority[priort])
+		{
 			continue;
+		}
 
 		if (dist[priort] < 0.0 || Length(ee.Origin - botmo.Origin) < dist[priort])
 		{
@@ -2702,7 +3026,9 @@ Actor GetFirstPriorityTarget()
 	for (i = 0; i < NUM_PRIORITIES; i++)
 	{
 		if (!Priority[Prior_Targets[i]])
+		{
 			break;
+		}
 		if (candidates[Prior_Targets[i]])
 		{
 			return candidates[Prior_Targets[i]];
@@ -2722,12 +3048,16 @@ void ProcessImmediate()
 {
 	// Whatever bot is doing, he should be ready to attack an enemy
 	// TODO: if bot has high Evade priority he should not draw attention to himself...
-	
+
 	if (!missile)
+	{
 		missile = FindMissile();
+	}
 
 	if (!enemy)
+	{
 		enemy = FindEnemy();
+	}
 
 	if (!ITarget)
 	{
@@ -2741,18 +3071,20 @@ void ProcessImmediate()
 				switch(botstate.BState)
 				{
 					case bst_offense:
-					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
+						}
 						else
+						{
 							ITarget = GetNearestPathNode(class<Thinker>(RedNode));
-					}
+						}
 					break;
 					case bst_defense:
-					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
 						{
 							ITarget = GetNearestPathNode(class<Thinker>(BlueGuardSpot));
+
 							if (!ITarget)
 							{
 								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
@@ -2761,18 +3093,18 @@ void ProcessImmediate()
 						else
 						{
 							ITarget = GetNearestPathNode(class<Thinker>(RedGuardSpot));
+
 							if (!ITarget)
 							{
 								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
 							}
 						}
-					}
 					break;
 					case bst_scoring:
-					{
 						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
 						{
 							ITarget = GetNearestPathNode(class<Thinker>(BlueGoalSpot));
+
 							if (!ITarget)
 							{
 								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
@@ -2781,17 +3113,19 @@ void ProcessImmediate()
 						else
 						{
 							ITarget = GetNearestPathNode(class<Thinker>(RedGoalSpot));
+
 							if (!ITarget)
 							{
 								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
 							}
 						}
-					}
 					break;
 				}
 			}
 			else
+			{
 				ITarget = GetNearestPathNode(class<Thinker>(PathNode));
+			}
 		}
 
 		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
@@ -2802,7 +3136,9 @@ void ProcessImmediate()
 
 #ifdef DEBUG_BOT_AI_TARGET
 	if (ITarget)
+	{
 		print("BOT %s : my target is %n", player.PlayerName, GetClassName(ITarget.Class));
+	}
 #endif
 	bSoftContact = false;
 	bMeleeUrge = false;
@@ -2818,7 +3154,7 @@ void ProcessImmediate()
 	if (enemy)
 	{
 		bMeleeUrge = KArenaWeapon(player.ReadyWeapon).bBotChooseMelee && enemy.Player &&
-			!KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotChooseMelee;
+					 !KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotChooseMelee;
 		bKeepDistant = !bMeleeUrge && !KArenaWeapon(player.ReadyWeapon).bBotChooseMelee;
 	}
 }
@@ -2834,9 +3170,13 @@ Actor GetNearestEnemy(optional bool bReachable)
 	Actor oldEnemy = enemy;
 	FindEnemy();
 	if (!enemy)
+	{
 		enemy = GetSpecialEnemy();
+	}
 	if (!enemy && oldEnemy)
+	{
 		enemy = oldEnemy;
+	}
 	return enemy;
 }
 
@@ -2871,25 +3211,27 @@ Actor GetGameModeGoal(optional bool bReachable)
 	switch (gameInfo.GameType)
 	{
 		case HexenDefs::game_kth:
-		{
 			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch)
 			{
 				if (GameKTH(gameInfo.GameModel).plHeresiarch != player)
+				{
 					EE = Actor(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
+				}
 				else
+				{
 					EE = GetNearestEnemy(true);
+				}
 			}
 			else if (GameKTH(gameInfo.GameModel).State == GameKTH::state_freeramble)
+			{
 				EE = GetNearestEnemy(true);
-		}
+			}
 		break;
 		case HexenDefs::game_ctf:
-		{
 			// [FB] Get our state and set our actions based on this...
 			switch (botstate.BState)
 			{
 				case bst_offense:
-				{
 					foreach botmo.AllThinkers(CTFBanner, ee)
 					{
 						// [FB] Check status of enemy flag
@@ -2907,7 +3249,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 									}
 								}
 							}
-							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
 							{
 								// [FB] Flag is carried, check if we are carrying it
 								if (CTFBanner(ee).Capturer == player)
@@ -2923,10 +3265,8 @@ Actor GetGameModeGoal(optional bool bReachable)
 							}
 						}
 					}
-				}
 				break;
 				case bst_defense:
-				{
 					foreach botmo.AllThinkers(CTFBanner, ee)
 					{
 						// [FB] Check status of our flag
@@ -2936,11 +3276,11 @@ Actor GetGameModeGoal(optional bool bReachable)
 							{
 								EE = GetNearestEnemy(true);
 							}
-							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
 							{
 								EE = Actor(CTFBanner(ee).Capturer);
 							}
-							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
 							{
 								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
 								{
@@ -2953,10 +3293,8 @@ Actor GetGameModeGoal(optional bool bReachable)
 							}
 						}
 					}
-				}
 				break;
 				case bst_scoring:
-				{
 					foreach botmo.AllThinkers(CTFBanner, ee)
 					{
 						// [FB] Check status of our flag
@@ -2974,19 +3312,16 @@ Actor GetGameModeGoal(optional bool bReachable)
 									}
 								}
 							}
-							else if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
+							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
 							{
 								EE = Actor(CTFBanner(ee).Capturer);
 							}
 						}
 					}
-				}
 				break;
 			}
-		}
 		break;
 		case HexenDefs::game_domination:
-		{
 			foreach botmo.AllThinkers(DominationSigil, ee)
 			{
 				if (DominationSigil(ee).Team != player.Team &&
@@ -2999,10 +3334,8 @@ Actor GetGameModeGoal(optional bool bReachable)
 					}
 				}
 			}
-		}
 		break;
 		case HexenDefs::game_football:
-		{
 			// Get ball
 			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
 
@@ -3015,15 +3348,21 @@ Actor GetGameModeGoal(optional bool bReachable)
 				Actor sts;
 				GameFootball fb = GameFootball(gameInfo.GameModel);
 				if (gameInfo.Teams[0] == player.Team)
+				{
 					team = 1;
+				}
 				else
+				{
 					team = 0;
+				}
 
 				// Get nearest goal target
 				for (i = 0; i < fb.spot_targets.Num; i++)
 				{
 					if (fb.spot_targets[i].Args[0] != team)
+					{
 						continue;
+					}
 					ee = fb.spot_targets[i];
 					if ((dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
 					{
@@ -3041,7 +3380,6 @@ Actor GetGameModeGoal(optional bool bReachable)
 					bAttackOffsetValid = true;
 				}
 			}
-		}
 		break;
 		default:
 			EE = GetNearestEnemy(true);
@@ -3061,22 +3399,27 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 	PathNode PN;
 	PathNode pn;
 	float dist = -1.0;
-
 	bool visited;
 	int i;
 
 	PathNode previous;
 
 	// TODO: make DEQUEUE instead of this bullshit
-	if (nodes.Num > 256)
+	if (nodes.Num > 512)
+	{
 		nodes.Num = 0;
+	}
 	if (nodes.Num)
+	{
 		previous = nodes[nodes.Num - 1];
+	}
 
 	foreach botmo.AllThinkers(NodeType, pn)
 	{
 		if (pn == node_current)
+		{
 			continue;
+		}
 
 		visited = false;
 		for (i = 0; i < nodes.Num; i++)
@@ -3089,7 +3432,9 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 		}
 
 		if (visited)
+		{
 			continue;
+		}
 
 		if (dist < 0.0 || Length(pn.Origin - botmo.Origin) < dist)
 		{
@@ -3118,7 +3463,9 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 			nodes[0] = node_current;
 		}
 		else
+		{
 			nodes.Num = 0;
+		}
 		node_current = previous;
 	}
 	return node_current;
