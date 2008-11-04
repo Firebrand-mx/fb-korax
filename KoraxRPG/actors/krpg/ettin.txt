@@ -101,6 +101,8 @@ actor EttinMissile : HammerMissile
 //------------------------------------------------------------------------------
 actor EttinSlinger : KRPGEttin 16001
 {
+	+EvadeMelee
+	+RunOnEvade
 	states
 	{
 	Missile:
@@ -127,5 +129,25 @@ actor EttinArrow
 	Death:
 		ARRW A 1
 		Stop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor EttinFlechetter : KRPGEttin 16028
+{
+	+EvadeMelee
+	+RunOnEvade
+	-CanBerserk
+	states
+	{
+	Melee:
+		ETTN A 6 A_FaceTarget
+		ETTN G 24 A_SpawnItem("FireBomb")
+		Goto See
+	Missile:
+		ETTN A 6 A_AimGrenade("ThrowingBomb", Random(45,60), 24, "KRPGEttin::See")
+		ETTN EF 12 A_FaceTarget
+		ETTN G 24 A_ThrowAimedGrenade("ThrowingBomb", Random(45,60), 24, 68, Random(90, 99))
+		Goto Super::See
 	}
 }
