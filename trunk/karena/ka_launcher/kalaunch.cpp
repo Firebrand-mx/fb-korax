@@ -487,7 +487,7 @@ bool VLaunchApp::OnInit()
 		return false;
 
 	//	Needed for config
-	SetVendorName(wxT("Korax"));
+	SetVendorName(wxT("KoraxTeam"));
 
 	//	Create our main frame object and show it.
 	VMain* frame = new VMain();
