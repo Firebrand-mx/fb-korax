@@ -140,13 +140,16 @@ enum
 {
 	priort_Weapons,		// tells how much Bot needs a new weapon
 	priort_Ammo,		// tells how much Bot needs an ammo
-	priort_Health,		// tells how much Bot needs health and/or armor
+	priort_AltAmmo,		// tells how much Bot needs an alternative ammo
+	priort_Health,		// tells how much Bot needs health
+	priort_Armor,		// tells how much Bot needs armor
 	priort_Artifacts,	// tells how much Bot needs an artifact... not sure this would be useful, but let's have it
+	priort_Special,		// tells how much Bot needs something special (e.g. special equipment)
 	priort_Evade,		// tells how much Bot needs to get away from enemies
 	priort_Support,		// tells how much Bot needs to support his buddy in combat
 	priort_GameMode,	// tells how much Bot needs to peform some task specific to advanced gamemode
 	NUM_PRIORITIES
-						// those evening bells, those evening bells, something bla-bla-bla their music tells...
+						// those evening bells, those evening bells, so many things this priority tells...
 };
 
 int Priority[NUM_PRIORITIES];		// current priority values
@@ -166,18 +169,26 @@ enum
 	priorv_Ammo_ThisWeaponLow		= 8,	// ammo for selected weapon is low
 	priorv_Ammo_NotMaximum			= 4,	// you can never be sure you have enouph
 
+	priorv_AltAmmo_Null				= 12,	// need alt-ammo
+	priorv_AltAmmo_Low				= 8,	// overall alt-ammo is low
+	priorv_AltAmmo_NotMaximum		= 4,	// you can never be sure you have enouph
+
 	priorv_Health_Dying				= 40,	// need health ...now!!... NO, FASTER THAN NOW!!
 	priorv_Health_Low				= 12,	// health is low
 	priorv_Health_NotMaximum		= 8,	// this won't last for long
-	priorv_Health_ArmorNotMaximum	= 4,	// health is at max limit, but armor still not
 
-	priorv_Artifacts_WantSome		= 4,	// ..huh..
+	priorv_Armor_LowHealth			= 12,	// health is low, so some armor will be useful too
+	priorv_Armor_NotMaximum			= 4,
+
+	priorv_Artifacts_WantSome		= 4,	// ..huh.. (TODO)
+
+	priort_Special_XmasHavocFireWpn	= 60,	// Xmas Havoc is unplayable without fire weapons
 
 	priorv_Evade_Nightmare			= 20,	// SOS!
 	priorv_Evade_Tactical			= 12,	// i'll be back
 	priorv_Evade_TakeABreak			= 8,	// just need to rest for a while
 
-	priorv_Support					= 0,
+	priorv_Support					= 0,	// TODO
 
 	priorv_GameMode_NoScore			= 12,
 	priorv_GameMode_NotFirst		= 8,
@@ -195,8 +206,6 @@ float AITime;
 //
 // Bot states
 //
-// [CW] This is currently not used...
-// [FB] We'll be using it now ;)
 enum
 {
 	bst_deciding,	// 	Bot is deciding what to do
@@ -359,6 +368,22 @@ void SetAction()
 		return;
 	}
 
+	// [CW] Moved from GetGameModeGoal --
+	if (gameInfo.GameType == HexenDefs::game_ctf)
+	{
+		CTFBanner Banner;
+		for (i = 0; i < GameCTF(gameInfo.GameModel).Banners.Num; i++)
+		{
+			Banner = GameCTF(gameInfo.GameModel).Banners[i];
+			if (CTFBanner(Banner).Status == CTFBanner::BANNER_STATUS__CARRIED &&
+				CTFBanner(Banner).Capturer == player)
+			{
+				// [FB] We are carrying, set our state to scoring to change our goal
+				botstate.BState = bst_scoring;
+			}
+		}
+	}
+
 	// [FB] We are deciding what to do
 	if (botstate.BState == bst_deciding)
 	{
@@ -384,20 +409,26 @@ void SetAction()
 			}
 		}
 
+#ifdef DEBUG_BOT_AI_TARGET
 		print("BOT %s : Defenders: %d", player.PlayerName, defenders);
 		print("BOT %s : Attackers: %d", player.PlayerName, attackers);
+#endif
 		// Defense wins championships...
 		if (defenders <= attackers)
 		{
 			// [FB] Then get on defense
 			botstate.BState = bst_defense;
+#ifdef DEBUG_BOT_AI_TARGET
 			print("BOT %s : Got defense", player.PlayerName);
+#endif
 		}
 		else
 		{
 			// [FB] Then get on offense
 			botstate.BState = bst_offense;
+#ifdef DEBUG_BOT_AI_TARGET
 			print("BOT %s : Got offense", player.PlayerName);
+#endif
 		}
 	}
 }
@@ -610,7 +641,11 @@ void CheckStuff()
 	if (enemy)
 	{
 		if (!enemy.bShootable || enemy.bDormant || enemy.Health <= 0 ||
-			!EntityEx(botmo).CanSee(enemy))
+			!EntityEx(botmo).CanSee(enemy) ||
+			// Special cases
+			enemy.IsA('ZXmasHavocTree') &&
+				(KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire' ||
+					!player.ReadyWeapon.CheckAmmo(Weapon::FIRE_Either, false)))
 		{
 			enemy = none;
 		}
@@ -628,8 +663,17 @@ void CheckStuff()
 	// [CW]
 	if (ITarget)
 	{
-		if ((ITarget.IsA('Inventory') && (ITarget.Owner || ITarget.bInvisible)) ||
-			(ITarget == node_current && Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE) ||
+		if (ITarget.IsA('Inventory'))
+		{
+			if (ITarget.Owner || ITarget.bInvisible)
+				ITarget = none;
+			else if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
+			{
+				// [CW] TODO need some method to check if player can pickup this now
+			}
+		}
+		else
+		if (((ITarget == node_current) && (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)) ||
 			!CheckTo(ITarget.Origin, ITarget))
 		{
 			ITarget = none;
@@ -968,23 +1012,10 @@ void Aim()
 	}
 
 	// Distance to enemy.
-	dist = botmo.DistTo2(enemy);
+	dist = botmo.DistTo(enemy);
 
 	right = !!(P_Random() & 1);
 	an = AngleTo(enemy.Origin);
-
-	// [FB] Decide our weapon if we have an enemy
-	// [JL] NOTE the old code didn't change weapon correctly meaning this would
-	// never work. I'll enable fixed version but with very low chance.
-	// [CW] removed JL's limit
-	if (/* Random() < 0.001 || */player.ReadyWeapon.bWimpyWeapon)
-	{
-		Weapon Best = ChooseWeapon(dist);
-		if (Best && Best != player.ReadyWeapon)
-		{
-			player.PendingWeapon = Best;
-		}
-	}
 
 	// [FB] Set fire time
 	t_fire = KArenaWeapon(player.ReadyWeapon).fire_tics;
@@ -1006,13 +1037,13 @@ void Aim()
 	Pitch();
 	
 	// [FB] ...and Decide which kind of aiming the bot will use
-	if (player.ReadyWeapon.bBotProjectile)
+	if (KArenaWeapon(player.ReadyWeapon).bInstantRanged || player.ReadyWeapon.bBlaster)
 	{
-		AimProjectile(dist, right, an);
+		AimInstant(dist, right, an);
 	}
 	else
 	{
-		AimInstant(dist, right, an);
+		AimProjectile(dist, right, an);
 	}
 }
 
@@ -1022,7 +1053,7 @@ void Aim()
 //
 //==========================================================================
 
-Actor FindEnemy()
+Actor FindEnemy(optional bool bReachable)
 {
 	float closest_dist, dist;
 	Actor target;
@@ -1041,6 +1072,8 @@ Actor FindEnemy()
 	}
 	bAllRound = false;
 
+	closest_dist = 99999.0;
+
 	// [CW] no need to pass through this if there are no monsters on map 
 	if (!GetCvar('NoMonsters'))
 	{
@@ -1053,14 +1086,17 @@ Actor FindEnemy()
 			{
 				continue;
 			}
-			if (!Check_LOS(actor, vangle))
+
+			// [CW] Check_LOS and CanSee are checked below, no need to call them here
+			/*if (!Check_LOS(actor, vangle))
 			{
 				continue;
 			}
 			if (!botmo.CanSee(actor))
 			{
 				continue;
-			}
+			}*/
+
 			if (actor.Health <= 0)
 			{
 				continue;
@@ -1115,17 +1151,16 @@ Actor FindEnemy()
 				continue;
 			}
 
-			target = none;
-			closest_dist = 99999.0;
-
 			 // Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
 			 // returns false. tought it should be the same checksight as below but.. (below works) something
 			 // must be fuckin wierd screded up.
-			if (Check_LOS(actor, vangle))
+			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle))
 			{
 				if (EntityEx(botmo).CanSee(actor))
 				{
-					dist = botmo.DistTo(actor);
+					// [CW] already calculated above
+					//dist = botmo.DistTo(actor);
+
 					light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 					if (actor.Sector->floor.LightSourceSector)
 					{
@@ -1148,6 +1183,12 @@ Actor FindEnemy()
 							continue;
 						}
 					}
+
+					if (bReachable && !CheckTo(actor.Origin, actor))
+					{
+						continue;
+					}
+
 					if (dist < closest_dist)
 					{
 						closest_dist = dist;
@@ -1158,9 +1199,6 @@ Actor FindEnemy()
 			return target;
 		}
 	}
-
-	target = none;
-	closest_dist = 99999.0;
 
 	// [CW] Don't waste time searching enemy players if this is coop game mode
 	if (MainGameInfo(player.Level.Game).bIsCoopGame[MainGameInfo(player.Level.Game).GameType])
@@ -1205,8 +1243,10 @@ Actor FindEnemy()
 			dist = botmo.DistTo(player.Level.Game.Players[i].MO);
 
 			if (dist <= EntityEx::MELEERANGE ||
-				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO &&
-				botmo.CanSee(botmo.Sector->SoundTarget)) ||
+				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO
+				/*[CW] No need to check this here, CanSee is called below*/
+				/* && botmo.CanSee(botmo.Sector->SoundTarget)*/
+																	) ||
 				Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
 			{
 				if (EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
@@ -1233,6 +1273,13 @@ Actor FindEnemy()
 							continue;
 						}
 					}
+
+					if (bReachable && !CheckTo(player.Level.Game.Players[i].MO.Origin,
+													EntityEx(player.Level.Game.Players[i].MO)))
+					{
+						continue;
+					}
+
 					if (dist < closest_dist)
 					{
 						closest_dist = dist;
@@ -1275,6 +1322,36 @@ Actor FindMissile()
 
 //==========================================================================
 //
+//	PrepareWeapon
+//
+//==========================================================================
+
+void PrepareWeapon()
+{
+	float dist;
+	
+	if (enemy)
+		dist = botmo.DistTo(enemy);
+	else
+		dist = 99999.0; // [CW] be ready for anything
+
+	// [FB] Decide our weapon if we have an enemy
+	if (player.ReadyWeapon.bWimpyWeapon ||
+		// Special cases
+		(enemy && enemy.IsA('ZXmasHavocTree') &&
+			KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire')
+		)
+	{
+		Weapon Best = ChooseWeapon(dist);
+		if (Best && Best != player.ReadyWeapon)
+		{
+			player.PendingWeapon = Best;
+		}
+	}
+}
+
+//==========================================================================
+//
 //	ChooseWeapon
 //
 //	[FB] Decide which weapon would be best to use in our situation
@@ -1287,8 +1364,8 @@ Weapon ChooseWeapon(float dist)
 	KArenaWeapon	Wpn;
 	Weapon			Best = none;
 
-	if (enemy)
-	{
+	//if (enemy)
+	//{
 		for (Item = botmo.Inventory; Item; Item = Item.Inventory)
 		{
 			Wpn = KArenaWeapon(Item);
@@ -1297,17 +1374,17 @@ Weapon ChooseWeapon(float dist)
 				//	Not a weapon.
 				continue;
 			}
-			if (gameInfo.GameType == HexenDefs::game_xmas)
+			if (enemy && enemy.IsA('ZXmasHavocTree'))
 			{
 				// [FB] We only want to use weapons that do fire damage in XMAS Havoc!
-				if (!Wpn.bFireDamage)
+				if (Wpn.DamageTypeHint != 'Fire')
 				{
 					continue;
 				}
 			}
 			if (dist <= Actor::MELEERANGE)
 			{
-				if (!Wpn.bBotChooseMelee)
+				if (!Wpn.bBotMelee)
 				{
 					//	Not suitable for this range.
 					continue;
@@ -1315,7 +1392,7 @@ Weapon ChooseWeapon(float dist)
 			}
 			else if (dist <= 512.0)
 			{
-				if (!Wpn.bBotChooseMedium)
+				if (!Wpn.bBotProjectileMedium)
 				{
 					//	Not suitable for this range.
 					continue;
@@ -1323,7 +1400,7 @@ Weapon ChooseWeapon(float dist)
 			}
 			else
 			{
-				if (!Wpn.bBotChooseRanged)
+				if (!Wpn.bBotProjectile)
 				{
 					//	Not suitable for this range.
 					continue;
@@ -1340,7 +1417,7 @@ Weapon ChooseWeapon(float dist)
 		{
 			return Best;
 		}
-	}
+	//}
 	// Didn't find anything good
 	return player.ReadyWeapon;
 }
@@ -1625,7 +1702,7 @@ Actor SetAlly()
 //
 //	Roam
 //
-//	Handle non-attack/dodging movement
+//	Handle non-attack/dodging movement (?)
 //
 //	[CW] TODO: must implement bKeepDistant!
 //
@@ -1931,6 +2008,12 @@ void Attack()
 		combatdist /= 2.0;
 	}
 	if (botmo.DistTo(enemy) > combatdist)
+	{
+		return;
+	}
+
+	// [CW] Don't attack if incompatible damage type
+	if (enemy.IsA('ZXmasHavocTree') && KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire')
 	{
 		return;
 	}
@@ -2571,11 +2654,15 @@ void BotTick(float deltaTime)
 	// Immediate action
 	// ---------------------------
 	
+	PrepareWeapon();
 	// Turning towards destination...
 	Aim();
 	Turn();
-	Attack();
-	Alternate_Attack();
+	if (enemy)
+	{
+		Attack();
+		Alternate_Attack();
+	}
 	Move(deltaTime);
 
 	// Only walk if we're on skill 0
@@ -2819,31 +2906,77 @@ void ProcessPriorities()
 			}
 		}
 	}
+
+	//----------------------------------------
+	// AlternativeAmmo
+	//----------------------------------------
+
+	if (player.IsOutOfAmmo(,,true))
+	{
+		Priority[priort_AltAmmo] += priorv_AltAmmo_Null;
+		Priority[priort_AltAmmo] += priorv_AltAmmo_Low;
+		Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
+	}
+	else
+	{
+		if (player.IsAmmoBelowLevel(60,,,true))
+		{
+			Priority[priort_AltAmmo] += priorv_AltAmmo_Low;
+			Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
+		}
+		else
+		{
+			if (player.IsAmmoBelowLevel(200, none, ArtifactFlechette) ||
+				player.IsAmmoBelowLevel(200, none, ArtifactBlastRadius))
+			{
+				Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
+			}
+		}
+	}
 	
 	//----------------------------------------
 	// Health & Armor
 	//----------------------------------------
 
-	if (EntityEx(player.MO).CheckInventory('Health') <= 15)
+	if (EntityEx(player.MO).CheckInventory('health') <= 15)
 	{
 		Priority[priort_Health] += priorv_Health_Dying;
+		Priority[priort_Armor] += priorv_Armor_LowHealth;
 	}
-	if (EntityEx(player.MO).CheckInventory('Health') <= (player.max_health >> 1))
+	if (EntityEx(player.MO).CheckInventory('health') <= (player.max_health >> 1))
 	{
 		Priority[priort_Health] += priorv_Health_Low;
+		Priority[priort_Armor] += priorv_Armor_LowHealth;
 	}
-	if (EntityEx(player.MO).CheckInventory('Health') < player.max_health)
+	if (EntityEx(player.MO).CheckInventory('health') < player.max_health)
 	{
 		Priority[priort_Health] += priorv_Health_NotMaximum;
 	}
-	else if (EntityEx(player.MO).CheckInventory('Armor') <= 200)
+	
+	if (EntityEx(player.MO).CheckInventory('armor') <= 200)
 	{
-		Priority[priort_Health] += priorv_Health_ArmorNotMaximum;
+		Priority[priort_Armor] += priorv_Armor_NotMaximum;
+	}
+
+	//----------------------------------------
+	// Special Equipment
+	//----------------------------------------
+
+	switch (gameInfo.GameType)
+	{
+		case HexenDefs::game_xmas:
+			{
+				if (!player.BestWeaponOfDamageType('Fire'))
+				{
+					Priority[priort_Special] += priort_Special_XmasHavocFireWpn;
+				}
+			}
 	}
 
 	//----------------------------------------
 	// Game Mode
 	//----------------------------------------
+
 	if (gameInfo.GameType < HexenDefs::NUMGAMESNOTEAM)
 	{
 		int plInPlay = gameInfo.GetPlayerCount();
@@ -2897,10 +3030,35 @@ void ProcessPriorities()
 	int prior_max;
 	int prior_limit = -1;
 
+#ifdef DEBUG_BOT_AI_TARGET
+	string PriorityName;
+	print("--------------------------");
+	print("priorities updated for %s:", player.PlayerName);
+#endif
 	for (i = 0; i < NUM_PRIORITIES; i++)
 	{
+#ifdef DEBUG_BOT_AI_TARGET
+		switch (i)
+		{
+		case priort_Weapons: PriorityName = "Weapons"; break;
+		case priort_Ammo: PriorityName = "Ammo"; break;
+		case priort_AltAmmo: PriorityName = "Alt-Ammo"; break;
+		case priort_Health: PriorityName = "Health"; break;
+		case priort_Armor: PriorityName = "Armor"; break;
+		case priort_Artifacts: PriorityName = "Artifact"; break;
+		case priort_Special: PriorityName = "Special"; break;
+		case priort_Evade: PriorityName = "Evade"; break;
+		case priort_Support: PriorityName = "Support"; break;
+		case priort_GameMode: PriorityName = "GameMode"; break;
+		default: PriorityName = "Unknown";
+		}
+		print("%s = %i", PriorityName, Priority[i]);
+#endif
 		Prior_Targets[i] = 0;
 	}
+#ifdef DEBUG_BOT_AI_TARGET
+	print("--------------------------");
+#endif
 
 	// [CW] sort prioritised targets
 	for (i = 0; i < NUM_PRIORITIES; i++)
@@ -2961,7 +3119,10 @@ int GetHeaviestEnemyWeapon()
 //
 //	GetFirstPriorityTarget
 //
-//	[CW] Handles Bot hunt for Inventory items
+//	[CW] Handles Bot hunt for Important Game Objects and Inventory items.
+//		What should be remembered, this method checks only these objects
+//		that are reachable in this very moment. It is not usable for
+//		planning some future actions.
 //
 //==========================================================================
 
@@ -2976,8 +3137,11 @@ Actor GetFirstPriorityTarget()
 	{
 		dist[i] = -1.0;
 	}
+	// [CW] Get a candidate target for this Game Mode (if any)
 	candidates[priort_GameMode] = GetGameModeGoal(true);
 
+	// [CW] Look over all acceptable objects, common to every map and game mode
+	// and remember closest candidates for each of the priority type
 	foreach botmo.AllThinkers(Actor, ee)
 	{
 		if (ee.bInvisible)
@@ -2989,17 +3153,41 @@ Actor GetFirstPriorityTarget()
 			continue;
 		}
 
+		if (ee.IsA('Inventory'))
+		{
+			// [CW] TODO need some method to check if player can pickup this now
+		}
+
 		if (ee.IsA('Weapon'))
 		{
-			priort = priort_Weapons;
+			//
+			// Special cases
+			//
+			if (gameInfo.GameType == HexenDefs::game_xmas &&
+				botmo.WeaponClasses[KArenaWeapon(ee).Slot - 1].default.DamageTypeHint == 'Fire')
+			{
+				priort = priort_Special;
+			}
+			//
+			// Common case
+			//
+			else
+				priort = priort_Weapons;
 		}
 		else if (ee.IsA('Ammo'))
 		{
-			priort = priort_Ammo;
+			if (ee.Class == ArtifactFlechette || ee.Class == ArtifactBlastRadius)
+				priort = priort_AltAmmo;
+			else
+				priort = priort_Ammo;
 		}
-		else if (ee.IsA('Health') || ee.IsA('Armor'))
+		else if (ee.IsA('Health'))
 		{
 			priort = priort_Health;
+		}
+		else if (ee.IsA('Armor'))
+		{
+			priort = priort_Armor;
 		}
 		else if (ee.IsA('Artifact'))
 		{
@@ -3025,6 +3213,7 @@ Actor GetFirstPriorityTarget()
 		}
 	}
 
+	// Finally, select the top priority candidate found
 	for (i = 0; i < NUM_PRIORITIES; i++)
 	{
 		if (!Priority[Prior_Targets[i]])
@@ -3044,92 +3233,48 @@ Actor GetFirstPriorityTarget()
 //
 //	ProcessImmediate
 //
+//	[CW] The method allows Bot to make immediate decisions of what to do,
+//		depending of the current situation and his preset priorities.
+//
 //==========================================================================
 
 void ProcessImmediate()
 {
-	// Whatever bot is doing, he should be ready to attack an enemy
-	// TODO: if bot has high Evade priority he should not draw attention to himself...
-
+	// [CW] Bot should always seek for an incoming missile
 	if (!missile)
 	{
 		missile = FindMissile();
 	}
 
+	// still TODO: if bot has high Evade priority he should not draw attention to himself...
+	// [CW] Bot should always seek for an enemy to attack one
 	if (!enemy)
 	{
-		enemy = FindEnemy();
+		enemy = GetNearestEnemy(false);//FindEnemy();
 	}
 
+	// [CW] Bot should always know where to go; this can be a pickup,
+	//	    a specific map object or simply a path node.
 	if (!ITarget)
 	{
+		// [CW] Get any reachable object according to preset priorities
 		ITarget = GetFirstPriorityTarget();
 
-		if (!ITarget)
+		if (ITarget)
 		{
-			// [FB] Determine our state (offense, defense) to make us search for specific path nodes
-			if (gameInfo.GameType == HexenDefs::game_ctf)
-			{
-				switch(botstate.BState)
-				{
-					case bst_offense:
-						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
-						}
-						else
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(RedNode));
-						}
-					break;
-					case bst_defense:
-						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(BlueGuardSpot));
-
-							if (!ITarget)
-							{
-								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
-							}
-						}
-						else
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(RedGuardSpot));
-
-							if (!ITarget)
-							{
-								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
-							}
-						}
-					break;
-					case bst_scoring:
-						if (MainGameInfo(player.Level.Game).Teams[0] == player.Team)
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(BlueGoalSpot));
-
-							if (!ITarget)
-							{
-								ITarget = GetNearestPathNode(class<Thinker>(BlueNode));
-							}
-						}
-						else
-						{
-							ITarget = GetNearestPathNode(class<Thinker>(RedGoalSpot));
-
-							if (!ITarget)
-							{
-								ITarget = GetNearestPathNode(class<Thinker>(RedNode));
-							}
-						}
-					break;
-				}
-			}
-			else
-			{
-				ITarget = GetNearestPathNode(class<Thinker>(PathNode));
-			}
+			// If Bot has got non-casional target, he should reset his nodes history
+			if (!ITarget.IsA('PathNode') && !ITarget.IsA('Inventory'))
+				nodes.Num = 0;
+		}
+		// If Bot cannot find any reachable priority target at the moment,
+		// he/she should try to get a reachable Path Node.
+		else
+		{
+			ITarget = GetNearestPathNode(class<Thinker>(PathNode), true);
 		}
 
+		// [CW] In the very least case try to use 'enemy' as a "go for" target
+		// (in fact, this is most unlikely to happen, anyway)
 		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
 		{
 			ITarget = enemy;
@@ -3139,7 +3284,7 @@ void ProcessImmediate()
 #ifdef DEBUG_BOT_AI_TARGET
 	if (ITarget)
 	{
-		print("BOT %s : my target is %n", player.PlayerName, GetClassName(ITarget.Class));
+		print("BOT %s : my target is %n / %i", player.PlayerName, GetClassName(ITarget.Class), nodes.Num);
 	}
 #endif
 	bSoftContact = false;
@@ -3148,6 +3293,8 @@ void ProcessImmediate()
 
 	if (ITarget)
 	{
+		// [CW] Soft Contact means Bot should not lower speed when approach target;
+		// That is, either target cannot block way or it HAS to be bumped into (like soccer ball)
 		bSoftContact =	bAttackOffsetValid ||
 						(!ITarget.bMonster && !ITarget.bSolid) ||
 						ITarget.IsA('SoccerBall');
@@ -3155,9 +3302,17 @@ void ProcessImmediate()
 
 	if (enemy)
 	{
-		bMeleeUrge = KArenaWeapon(player.ReadyWeapon).bBotChooseMelee && enemy.Player &&
-					 !KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotChooseMelee;
-		bKeepDistant = !bMeleeUrge && !KArenaWeapon(player.ReadyWeapon).bBotChooseMelee;
+		// [CW] Depending on current weapons, enemy's and Bot's, Bot should decide
+		// whether to approach or keep distance
+		if (enemy.IsA('ZXmasHavocTree') && (KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium ||
+						player.ReadyWeapon.bBotProjectile))
+			bKeepDistant = true;
+		else
+		{
+			bMeleeUrge = KArenaWeapon(player.ReadyWeapon).bBotMelee && enemy.Player &&
+						 !KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotMelee;
+			bKeepDistant = !bMeleeUrge && !KArenaWeapon(player.ReadyWeapon).bBotMelee;
+		}
 	}
 }
 
@@ -3169,17 +3324,15 @@ void ProcessImmediate()
 
 Actor GetNearestEnemy(optional bool bReachable)
 {
-	Actor oldEnemy = enemy;
-	FindEnemy();
-	if (!enemy)
+	if (enemy)
+		return enemy;
+
+	Actor e = GetSpecialEnemy(bReachable);
+	if (!e)
 	{
-		enemy = GetSpecialEnemy();
+		e = FindEnemy(bReachable);
 	}
-	if (!enemy && oldEnemy)
-	{
-		enemy = oldEnemy;
-	}
-	return enemy;
+	return e;
 }
 
 //==========================================================================
@@ -3188,19 +3341,119 @@ Actor GetNearestEnemy(optional bool bReachable)
 //
 //==========================================================================
 
-Actor GetSpecialEnemy()
+Actor GetSpecialEnemy(optional bool bReachable)
 {
+	Actor actor;
+	int i;
+	float dist, closest_dist;
+	float vangle;
+	int light;
+
+	// Note: It's hard to ambush a bot who is not alone
+	if (bAllRound || ally)
+	{
+		vangle = 360.0;
+	}
+	else
+	{
+		vangle = ENEMY_SCAN_FOV;
+	}
+	bAllRound = false;
+
+
 	switch (gameInfo.GameType)
 	{
+		case HexenDefs::game_kth:
+
+			// [CW] In KTH if there's a Heresiarch and he is not this Bot,
+			// Bot must target only Heresiarch
+			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch &&
+				GameKTH(gameInfo.GameModel).plHeresiarch != player)
+			{
+				actor = Actor(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
+				dist = botmo.DistTo(actor);
+			}
+			break;
+
+		case HexenDefs::game_ctf:
+
+			closest_dist = -1.0;
+			for (i = 0; i < GameCTF(gameInfo.GameModel).Banners.Num; i++)
+			{
+				CTFBanner Banner = GameCTF(gameInfo.GameModel).Banners[i];
+				if (Banner.Team == player.Team)
+				{
+					// [CW] In any case Bot should try to gun the opposing flag-carrier down
+					if (Banner.Status == CTFBanner::BANNER_STATUS__CARRIED)
+					{
+						dist = botmo.DistTo(Banner.Capturer.MO);
+						if (closest_dist == -1.0 || closest_dist > dist)
+						{
+							actor = Actor(Banner.Capturer.MO);
+							closest_dist = dist;
+						}
+					}
+				}
+			}
+			break;
+
 		case HexenDefs::game_xmas:
-			return Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
+
+			{
+				if (player.BestWeaponOfDamageType('Fire'))
+				{
+					actor = Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
+					if (actor)
+						dist = botmo.DistTo(actor);
+				}
+			}
+			break;
 	}
+
+	if (actor)
+	{
+		if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle))
+		{
+			if (EntityEx(botmo).CanSee(actor))
+			{
+				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
+				if (actor.Sector->floor.LightSourceSector)
+				{
+					//[FB] Add static or dynamic lights?
+					light += actor.Sector->floor.LightSourceSector;
+				}
+				// [FB] Too dark?
+				// [CW] enhance this a bit, still human players usually CAN see in dark
+				if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
+				{
+					if (light <= WHATS_VERYDARK)
+					{
+						if (P_Random() < 196)
+						{
+							return none;
+						}
+					}
+					else if (P_Random() < 128)
+					{
+						return none;
+					}
+				}
+
+				if (!bReachable || CheckTo(actor.Origin, actor))
+					return actor;
+			}
+		}
+	}
+
 	return none;
 }
 
 //==========================================================================
 //
 //	GetGameModeGoal
+//
+//	[CW] Seeks for special objects, that have importance in current game mode.
+//  No enemies shall be sought here (this is done separately)
 //
 //==========================================================================
 
@@ -3209,123 +3462,122 @@ Actor GetGameModeGoal(optional bool bReachable)
 	Actor EE;
 	Actor ee;
 	float dist = -1.0;
+	int i;
 
 	switch (gameInfo.GameType)
 	{
-		case HexenDefs::game_kth:
-			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch)
-			{
-				if (GameKTH(gameInfo.GameModel).plHeresiarch != player)
-				{
-					EE = Actor(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
-				}
-				else
-				{
-					EE = GetNearestEnemy(true);
-				}
-			}
-			else if (GameKTH(gameInfo.GameModel).State == GameKTH::state_freeramble)
-			{
-				EE = GetNearestEnemy(true);
-			}
-		break;
 		case HexenDefs::game_ctf:
-			// [FB] Get our state and set our actions based on this...
-			switch (botstate.BState)
+
+			for (i = 0; i < GameCTF(gameInfo.GameModel).Banners.Num; i++)
 			{
-				case bst_offense:
-					foreach botmo.AllThinkers(CTFBanner, ee)
+				ee = GameCTF(gameInfo.GameModel).Banners[i];
+
+				// [CW] Our flag (lost or captured) is highest priority
+				// regardless of the bot status (offense/defence)
+				// [FB] Check status of our flag
+				if (CTFBanner(ee).Team == player.Team)
+				{
+					if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED ||
+						CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST ||
+						// [CW] Now, that's special, if bot carries enemy flag
+						// he must seek for his own flag even if it is on the base
+						botstate.BState == bst_scoring &&
+								CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE)
 					{
-						// [FB] Check status of enemy flag
-						if (CTFBanner(ee).Team != player.Team)
+						if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
 						{
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE ||
-								CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
+							if (!bReachable || CheckTo(ee.Origin, ee))
 							{
-								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
-								{
-									if (!bReachable || CheckTo(ee.Origin, ee))
-									{
-										EE = ee;
-										dist = Length(botmo.Origin - ee.Origin);
-									}
-								}
-							}
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
-							{
-								// [FB] Flag is carried, check if we are carrying it
-								if (CTFBanner(ee).Capturer == player)
-								{
-									// [FB] We are carrying, set our state to scoring to change our goal
-									botstate.BState = bst_scoring;
-								}
-								else
-								{
-									// [FB] Just support our team....
-									EE = GetNearestEnemy(true);
-								}
+								EE = ee;
+								dist = Length(botmo.Origin - ee.Origin);
 							}
 						}
 					}
-				break;
-				case bst_defense:
-					foreach botmo.AllThinkers(CTFBanner, ee)
+				}
+				
+				// [CW] I suggest this be high priority in any case,
+				// since if bot really can reach enemy flag at the moment
+				// he better try to get one (unless he already carries a flag)
+				// [FB] Check status of enemy flag
+				if (botstate.BState != bst_scoring && CTFBanner(ee).Team != player.Team)
+				{
+					if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE ||
+						CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
 					{
-						// [FB] Check status of our flag
-						if (CTFBanner(ee).Team == player.Team)
+						if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
 						{
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE)
+							if (!bReachable || CheckTo(ee.Origin, ee))
 							{
-								EE = GetNearestEnemy(true);
-							}
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
-							{
-								EE = Actor(CTFBanner(ee).Capturer);
-							}
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
-							{
-								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
-								{
-									if (!bReachable || CheckTo(ee.Origin, ee))
-									{
-										EE = ee;
-										dist = Length(botmo.Origin - ee.Origin);
-									}
-								}
+								EE = ee;
+								dist = Length(botmo.Origin - ee.Origin);
 							}
 						}
 					}
-				break;
-				case bst_scoring:
-					foreach botmo.AllThinkers(CTFBanner, ee)
-					{
-						// [FB] Check status of our flag
-						if (CTFBanner(ee).Team == player.Team)
-						{
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__BASE ||
-								CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__LOST)
-							{
-								if (dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist)
-								{
-									if (!bReachable || CheckTo(ee.Origin, ee))
-									{
-										EE = ee;
-										dist = Length(botmo.Origin - ee.Origin);
-									}
-								}
-							}
-							if (CTFBanner(ee).Status == CTFBanner::BANNER_STATUS__CARRIED)
-							{
-								EE = Actor(CTFBanner(ee).Capturer);
-							}
-						}
-					}
-				break;
+				}
 			}
-		break;
-		case HexenDefs::game_domination:
-			foreach botmo.AllThinkers(DominationSigil, ee)
+
+			// [CW] If no Flag or Flag Carrier in sight, check for path
+			// leading to our or their Flag
+			if (!EE)
 			{
+				switch(botstate.BState)
+				{
+				case bst_offense:
+					if (player.Team.Index == PlayerTeam::TEAM2_INDEX_BLUE)
+					{
+						EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
+					}
+					else
+					{
+						EE = GetNearestPathNode(class<Thinker>(RedNode), false);
+					}
+					break;
+				case bst_defense:
+					if (player.Team.Index == PlayerTeam::TEAM2_INDEX_BLUE)
+					{
+						EE = GetNearestPathNode(class<Thinker>(BlueGuardSpot), false);
+						if (!EE)
+						{
+							EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
+						}
+					}
+					else
+					{
+						EE = GetNearestPathNode(class<Thinker>(RedGuardSpot), false);
+						if (!EE)
+						{
+							EE = GetNearestPathNode(class<Thinker>(RedNode), false);
+						}
+					}
+					break;
+				case bst_scoring:
+					if (player.Team.Index == PlayerTeam::TEAM2_INDEX_BLUE)
+					{
+						EE = GetNearestPathNode(class<Thinker>(BlueGoalSpot), false);
+						if (!EE)
+						{
+							EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
+						}
+					}
+					else
+					{
+						EE = GetNearestPathNode(class<Thinker>(RedGoalSpot), false);
+						if (!EE)
+						{
+							EE = GetNearestPathNode(class<Thinker>(RedNode), false);
+						}
+					}
+					break;
+				}
+			}
+
+			break;
+
+		case HexenDefs::game_domination:
+
+			for (i = 0; i < GameDomination(gameInfo.GameModel).DomSigils.Num; i++)
+			{
+				ee = GameDomination(gameInfo.GameModel).DomSigils[i];
 				if (DominationSigil(ee).Team != player.Team &&
 					(dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
 				{
@@ -3336,17 +3588,18 @@ Actor GetGameModeGoal(optional bool bReachable)
 					}
 				}
 			}
-		break;
+			break;
+
 		case HexenDefs::game_football:
-			// Get ball
-			EE = Actor(botmo.A_GetNearestEntity(SoccerBall));
+
+			EE = GameFootball(gameInfo.GameModel).Ball;
 
 			bAttackOffsetValid = false;
 
 			// [CW] set a target offset
 			if (EE)
 			{
-				int i, team;
+				int team;
 				Actor sts;
 				GameFootball fb = GameFootball(gameInfo.GameModel);
 				if (gameInfo.Teams[0] == player.Team)
@@ -3382,10 +3635,11 @@ Actor GetGameModeGoal(optional bool bReachable)
 					bAttackOffsetValid = true;
 				}
 			}
-		break;
-		default:
-			EE = GetNearestEnemy(true);
+			break;
 	}
+
+	if (!EE)
+		EE = GetNearestEnemy(true);
 
 	return EE;
 }
@@ -3396,7 +3650,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 //
 //==========================================================================
 
-Actor GetNearestPathNode(class<Thinker> NodeType)
+Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 {
 	PathNode PN;
 	PathNode pn;
@@ -3406,11 +3660,6 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 
 	PathNode previous;
 
-	// TODO: make DEQUEUE instead of this bullshit
-	if (nodes.Num > 512)
-	{
-		nodes.Num = 0;
-	}
 	if (nodes.Num)
 	{
 		previous = nodes[nodes.Num - 1];
@@ -3452,23 +3701,34 @@ Actor GetNearestPathNode(class<Thinker> NodeType)
 	{
 		if (node_current)
 		{
-			nodes.Num = nodes.Num + 1;
+			// emulate Queue
+			if (nodes.Num == 256)
+			{
+				for (i = 1; i < 256; i++)
+					nodes[i-1] = nodes[i];
+			}
+			else
+				nodes.Num = nodes.Num + 1;
 			nodes[nodes.Num - 1] = node_current;
 		}
 		node_current = PN;
 	}
 	else
 	{
-		if (node_current)
+		if (bFinal)
 		{
-			nodes.Num = 1;
-			nodes[0] = node_current;
+			if (node_current)
+			{
+				nodes.Num = 1;
+				nodes[0] = node_current;
+			}
+			else
+			{
+				nodes.Num = 0;
+			}
+			node_current = previous;
 		}
-		else
-		{
-			nodes.Num = 0;
-		}
-		node_current = previous;
+		else return none;
 	}
 	return node_current;
 }

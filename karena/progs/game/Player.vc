@@ -3057,38 +3057,110 @@ void FireWeapon()
 
 //==========================================================================
 //
-// IsOutOfAmmo
+//	BestWeaponOfDamageType
 //
-// [CW] Returns TRUE if cannot attack with any weapon that requires ammo
+//	Returns best weapon to use of selected DamageType
+//
+//	[CW] a slightly modified version of PlayerEx::BestWeapon,
+//		added DamageType check and disabled Powered check
 //
 //==========================================================================
 
-bool IsOutOfAmmo(optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType)
+Weapon BestWeaponOfDamageType(name DamageType, optional class<Ammo> AmmoType)
 {
+	//bool Powered = !!EntityEx(MO).FindInventory(PowerWeaponLevel2);
+	Weapon Best = none;
 	Inventory Item;
 	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
 	{
-		//	Must be a weapon
+		//	Must be a KArena weapon
 		KArenaWeapon Wpn = KArenaWeapon(Item);
 		if (!Wpn)
 		{
 			continue;
 		}
 
-		if (WeaponClass)
-		{
-			if (Wpn.Class != WeaponClass)
-				continue;
-		}
+		if (Wpn.DamageTypeHint != DamageType)
+			continue;
 
-		if (AmmoType)
+		//	Check if best one is better that this one.
+		if (Best && Wpn.SelectionOrder > Best.SelectionOrder)
 		{
-			if (Wpn.AmmoType1 != AmmoType && Wpn.AmmoType2 != AmmoType && Wpn.AmmoType3 != AmmoType)
-				continue;
+			continue;
 		}
+		//	Possibly limit to specific ammo type.
+		if (AmmoType && Wpn.AmmoType1 != AmmoType)
+		{
+			continue;
+		}
+		/*//	Check if it's for the current tome of power state.
+		if (Powered && Wpn.SisterWeapon && Wpn.SisterWeapon.bPoweredUp)
+		{
+			continue;
+		}*/
+		/*if (!Powered && Wpn.bPoweredUp)
+		{
+			continue;
+		}*/
+		//	Make sure it has enough ammo.
+		if (!Wpn.CheckAmmo(Weapon::FIRE_Either, false))
+		{
+			continue;
+		}
+		//	Good one.
+		Best = Wpn;
+	}
+	return Best;
+}
 
-		if (Wpn.CheckAmmo(Weapon::FIRE_Either, false, true))
-			return false;
+//==========================================================================
+//
+// IsOutOfAmmo
+//
+// [CW] Returns TRUE if cannot attack with any weapon that requires ammo
+//
+//==========================================================================
+
+bool IsOutOfAmmo(optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType,
+				 optional bool bAlternativeWeapons)
+{
+	Inventory Item;
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		if (!WeaponClass && (
+			((bAlternativeWeapons || AmmoType == ArtifactFlechette) &&
+													Item.Class == ArtifactFlechette) ||
+			 ((bAlternativeWeapons || AmmoType == ArtifactBlastRadius) &&
+													Item.Class == ArtifactBlastRadius)
+			 ))
+		{
+			if (Item.Amount > 0)
+				return false;
+		}
+		else
+		{
+			//	Must be a weapon
+			KArenaWeapon Wpn = KArenaWeapon(Item);
+			if (!Wpn)
+			{
+				continue;
+			}
+
+			if (WeaponClass)
+			{
+				if (Wpn.Class != WeaponClass)
+					continue;
+			}
+
+			if (AmmoType)
+			{
+				if (Wpn.AmmoType1 != AmmoType && Wpn.AmmoType2 != AmmoType && Wpn.AmmoType3 != AmmoType)
+					continue;
+			}
+
+			if (Wpn.CheckAmmo(Weapon::FIRE_Either, false, true))
+				return false;
+		}
 	}
 	return true;
 }
@@ -3099,7 +3171,8 @@ bool IsOutOfAmmo(optional class<KArenaWeapon> WeaponClass, optional class<Ammo> 
 //
 //==========================================================================
 
-bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType)
+bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass, optional class<Ammo> AmmoType,
+					  optional bool bAlternativeWeapons)
 {
 	Inventory Item;
 	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
@@ -3125,7 +3198,14 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 				continue;
 		}
 
-		if (ammo.Amount > AmountLimit)
+		if (bAlternativeWeapons)
+		{
+			if (ammo.Class != ArtifactFlechette &&
+					ammo.Class != ArtifactBlastRadius)
+				continue;
+		}
+
+		if (ammo.Amount >= AmountLimit)
 			return false;
 	}
 	return true;
