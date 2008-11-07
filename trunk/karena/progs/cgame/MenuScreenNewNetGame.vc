@@ -50,6 +50,7 @@ MenuChoiceEnum		Level;
 int					LevelPic;		// level shot thumbnail
 picinfo_t			LevelPicInfo;
 string				LevelInfo;		// level description
+int					ChoicesHeight;
 
 
 //==========================================================================
@@ -215,15 +216,13 @@ void CreateChoices()
 	currentY += Level.Height;
 
 
-	/*InitMapList(GameTypes[0]);
-	InitMonsters(GameTypes[0]);
-	InitScoreLimit(GameTypes[0]);*/
-
 	ChangeMaxPlayers(none, 7);
 	ChangeSkill(none, 2);
 	ChangeDeathmatch(none, 0);
 	ChangeBots(none, 0);
 	ChangeTimeLimit(none, TimeLimit.Value);
+
+	ChoicesHeight = currentY - ChoicesStartY;
 }
 
 //==========================================================================
@@ -234,13 +233,15 @@ void CreateChoices()
 
 void OnDraw()
 {
-	ShadeRect(0, 0, 640, 480, 1.0);
+	ShadeRect(4, ChoicesStartY - 8, 320, ChoicesHeight + 16, GetCvarF('menu_darkening'));
 
-	int x = 280;
+	int x = 300;
 	int y = 40;
 
+	ShadeRect(x - 8, y - 8, 336, 480 - (y - 8) - 8, 1.0);
+
 	if (LevelPic)
-	{
+	{	
 		R_DrawPic(x, y, LevelPic);
 		y += LevelPicInfo.height + 16;
 	}
@@ -337,7 +338,8 @@ bool ChangeMonsters(Object Sender, int newValue)
 bool ChangeDeathmatch(Object Sender, int newValue)
 {
 	dprint("ChangeDeathmatch : newVal = %i, GameType = %i", newValue, GameTypes[newValue]);
-	SetCvar('DeathMatch', GameTypes[newValue]);
+	//SetCvar('', GameTypes[newValue]);
+	CmdBuf_AddText("DeathMatch %d\n", GameTypes[newValue]);
 	//if (Level)
 	InitMapList(GameTypes[newValue]);
 	InitScoreLimit(GameTypes[newValue]);
@@ -387,7 +389,7 @@ bool ChangeLevel(Object Sender, int newValue)
 	lvlname = strlwr(StrReplace(lvlname, "!", ""));
 	lvlname = strlwr(StrReplace(lvlname, "?", ""));
 	LevelInfo = GetLangString(StrToName(va("%s_info", lvlname)));
-	LevelInfo = SplitTextWithNewlines(LevelInfo, LevelPic ? LevelPicInfo.width : 320);
+	LevelInfo = SplitTextWithNewlines(LevelInfo, 320);
 	return true;
 }
 
@@ -594,7 +596,7 @@ defaultproperties
 	TitleX = 320;//160;
 	TitleY = 24;
 	ChoicesStartX = 132;
-	ChoicesStartY = 40;
+	ChoicesStartY = 120;//40;
 	SelectorType = MenuSelector_SmallRight;
 	Title = "NEW GAME";
 
