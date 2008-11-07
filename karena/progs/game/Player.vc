@@ -2961,9 +2961,9 @@ bool CheckFriendlyFire(EntityEx source, int damage)
 		// [FB] Don't do damage to teammates in team game modes
 		// [CW] ... and allies as well...
 		if (source != MO && source && 
-				(source.bIsPlayer ||
-				!source.bMonster && source.Target && source.Target.bIsPlayer) &&
-				damage < 1000)
+			(source.bIsPlayer ||
+			!source.bMonster && source.Target && source.Target.bIsPlayer) &&
+			damage < 1000)
 		{
 			if (MainGameInfo(Level.Game).GameModel)
 			{
@@ -3094,12 +3094,12 @@ Weapon BestWeaponOfDamageType(name DamageType, optional class<Ammo> AmmoType)
 		{
 			continue;
 		}
-		/*//	Check if it's for the current tome of power state.
+		/* // Check if it's for the current tome of power state.
 		if (Powered && Wpn.SisterWeapon && Wpn.SisterWeapon.bPoweredUp)
 		{
 			continue;
 		}*/
-		/*if (!Powered && Wpn.bPoweredUp)
+		/* if (!Powered && Wpn.bPoweredUp)
 		{
 			continue;
 		}*/
@@ -3130,10 +3130,10 @@ bool IsOutOfAmmo(optional class<KArenaWeapon> WeaponClass, optional class<Ammo> 
 	{
 		if (!WeaponClass && (
 			((bAlternativeWeapons || AmmoType == ArtifactFlechette) &&
-													Item.Class == ArtifactFlechette) ||
-			 ((bAlternativeWeapons || AmmoType == ArtifactBlastRadius) &&
-													Item.Class == ArtifactBlastRadius)
-			 ))
+			Item.Class == ArtifactFlechette) ||
+			((bAlternativeWeapons || AmmoType == ArtifactBlastRadius) &&
+			Item.Class == ArtifactBlastRadius)
+			))
 		{
 			if (Item.Amount > 0)
 				return false;
@@ -3210,6 +3210,22 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 			return false;
 	}
 	return true;
+}
+
+//==========================================================================
+//
+// IsOKToPickupItem
+//
+//==========================================================================
+
+bool IsOKToPickupItem(Inventory Item)
+{
+	if (EntityEx(MO).Inventory.CheckInventory(GetClassName(Item.Class)) < Item.MaxAmount)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 //==========================================================================
