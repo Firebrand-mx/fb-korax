@@ -669,7 +669,11 @@ void CheckStuff()
 				ITarget = none;
 			else if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
 			{
-				// [CW] TODO need some method to check if player can pickup this now
+				if (!player.IsOKToPickupItem(Inventory(ITarget)))
+				{
+					// [FB] We can't actually pick up this
+					ITarget = none;
+				}
 			}
 		}
 		else
@@ -1088,7 +1092,7 @@ Actor FindEnemy(optional bool bReachable)
 			}
 
 			// [CW] Check_LOS and CanSee are checked below, no need to call them here
-			/*if (!Check_LOS(actor, vangle))
+			/* if (!Check_LOS(actor, vangle))
 			{
 				continue;
 			}
@@ -1246,8 +1250,7 @@ Actor FindEnemy(optional bool bReachable)
 				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO
 				/*[CW] No need to check this here, CanSee is called below*/
 				/* && botmo.CanSee(botmo.Sector->SoundTarget)*/
-																	) ||
-				Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
+				) || Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
 			{
 				if (EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
 				{
@@ -1430,7 +1433,7 @@ Weapon ChooseWeapon(float dist)
 //
 //==========================================================================
 
-void ChooseBlastRadiusMode(float dist, int amount)
+bool ChooseBlastRadiusMode(float dist, int amount)
 {
 	if (dist <= Actor::MELEERANGE)
 	{
@@ -1442,7 +1445,7 @@ void ChooseBlastRadiusMode(float dist, int amount)
 				if (amount >= 10)
 				{
 					// [FB] We can keep this alternate weapon
-					return;
+					return true;
 				}
 				break;
 		}
@@ -1456,7 +1459,7 @@ void ChooseBlastRadiusMode(float dist, int amount)
 			case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
 				if (amount >= 10)
 				{
-					return;
+					return true;
 				}
 				break;
 		}
@@ -1468,12 +1471,12 @@ void ChooseBlastRadiusMode(float dist, int amount)
 			case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
 				if (amount >= 10)
 				{
-					return;
+					return true;
 				}
 				break;
 		}
 	}
-	return;
+	return false;
 }
 
 //==========================================================================
@@ -1484,7 +1487,7 @@ void ChooseBlastRadiusMode(float dist, int amount)
 //
 //==========================================================================
 
-void ChoosePoisonBagMode(float dist, int amount)
+bool ChoosePoisonBagMode(float dist, int amount)
 {
 	if (dist <= Actor::MELEERANGE)
 	{
@@ -1496,7 +1499,7 @@ void ChoosePoisonBagMode(float dist, int amount)
 				if (amount >= 10)
 				{
 					// [FB] We can keep this alternate weapon
-					return;
+					return true;
 				}
 				break;
 		}
@@ -1510,7 +1513,7 @@ void ChoosePoisonBagMode(float dist, int amount)
 			case HexenDefs::ALTFIRE_POISONBAG_BOMB:
 				if (amount >= 10)
 				{
-					return;
+					return true;
 				}
 				break;
 		}
@@ -1522,12 +1525,12 @@ void ChoosePoisonBagMode(float dist, int amount)
 			case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
 				if (amount >= 10)
 				{
-					return;
+					return true;
 				}
 				break;
 		}
 	}
-	return;
+	return false;
 }
 
 //==========================================================================
@@ -1538,33 +1541,32 @@ void ChoosePoisonBagMode(float dist, int amount)
 //
 //==========================================================================
 
-void ChooseAltWeapon()
+bool ChooseAltWeapon()
 {
 	Ammo AltWpn;
 
-	player.Impulse = !!P_Random() & 1 ?
-					  HexenDefs::IMPULSE__TOGGLE_BLASTRAD :
-					  HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
-	AltWpn = player.Impulse == HexenDefs::IMPULSE__TOGGLE_BLASTRAD ?
-			 Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius)):
-			 Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-	player.PlayerImpulse();
-
-	// [FB] We'll separate both options in different methods, because if we don't, we'll have
-	//	    duplicated case values...
-	if (enemy)
+	if (!!P_Random() & 1)
 	{
-		switch(player.Impulse)
+		AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+
+		if (ChooseBlastRadiusMode(botmo.DistTo(enemy), AltWpn ? AltWpn.Amount : 0))
 		{
-			case HexenDefs::IMPULSE__TOGGLE_BLASTRAD:
-				ChooseBlastRadiusMode(botmo.DistTo2(enemy), AltWpn.Amount);
-				break;
-			case HexenDefs::IMPULSE__TOGGLE_POSIONBAG:
-				ChoosePoisonBagMode(botmo.DistTo2(enemy), AltWpn.Amount);
-				break;
+			player.Impulse = HexenDefs::IMPULSE__TOGGLE_BLASTRAD;
+			return true;
 		}
 	}
-	return;
+	else
+	{
+		AltWpn = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+
+		if (ChoosePoisonBagMode(botmo.DistTo(enemy), AltWpn ? AltWpn.Amount : 0))
+		{
+			player.Impulse = HexenDefs::IMPULSE__TOGGLE_POSIONBAG;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 //==========================================================================
@@ -2167,52 +2169,57 @@ void Alternate_Attack()
 		return;
 	}
 
-	ChooseAltWeapon();
-	// [FB] We just simply check which weapon is active and do what it's needed for it to work
-	switch (player.altWeapon)
+	// [FB] Have we chosen an alternate weapon?
+	if (ChooseAltWeapon())
 	{
-		case HexenDefs::ALTFIRE_BLASTRADIUS:
-			type = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
-			if (type && type.Amount >= 10)
-			{
-				// No point in firing if we won't hit them
-				if (!Check_LOS(enemy, 255.0))
-				{
-					return;
-				}
-				// [FB] Check if our allies are out of the way of the attack
-				if (ally && Check_LOS(ally, 255.0))
-				{
-					return;
-				}
-				if (botmo.DistTo2(enemy) > 255.0)
-				{
-					return;
-				}
+		player.PlayerImpulse();
 
-				// [FB] We've got enough ammo
-				player.AlternateAttack();
-			}
-			break;
-		case HexenDefs::ALTFIRE_POISONBAG:
-			type = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
-			if (type && type.Amount >= 10)
-			{
-				// No point in firing if we won't hit them
-				if (!Check_LOS(enemy, SHOOTFOV))
+		// [FB] We just simply check which weapon is active and do what it's needed for it to work
+		switch (player.altWeapon)
+		{
+			case HexenDefs::ALTFIRE_BLASTRADIUS:
+				type = Ammo(EntityEx(botmo).FindInventory(ArtifactBlastRadius));
+				if (type && type.Amount >= 10)
 				{
-					return;
-				}
-				// [FB] Check if our allies are out of the way of the attack
-				if (ally && Check_LOS(ally, SHOOTFOV))
-				{
-					return;
-				}
+					// No point in firing if we won't hit them
+					if (!Check_LOS(enemy, 255.0))
+					{
+						return;
+					}
+					// [FB] Check if our allies are out of the way of the attack
+					if (ally && Check_LOS(ally, 255.0))
+					{
+						return;
+					}
+					if (botmo.DistTo(enemy) > 255.0)
+					{
+						return;
+					}
 
-				// [FB] We've got enough ammo
-				player.AlternateAttack();
-			}
-			break;
+					// [FB] We've got enough ammo
+					player.AlternateAttack();
+				}
+				break;
+			case HexenDefs::ALTFIRE_POISONBAG:
+				type = Ammo(EntityEx(botmo).FindInventory(ArtifactFlechette));
+				if (type && type.Amount >= 10)
+				{
+					// No point in firing if we won't hit them
+					if (!Check_LOS(enemy, SHOOTFOV))
+					{
+						return;
+					}
+					// [FB] Check if our allies are out of the way of the attack
+					if (ally && Check_LOS(ally, SHOOTFOV))
+					{
+						return;
+					}
+
+					// [FB] We've got enough ammo
+					player.AlternateAttack();
+				}
+				break;
+		}
 	}
 }
 
@@ -3155,7 +3162,11 @@ Actor GetFirstPriorityTarget()
 
 		if (ee.IsA('Inventory'))
 		{
-			// [CW] TODO need some method to check if player can pickup this now
+			if (!player.IsOKToPickupItem(Inventory(ee)))
+			{
+				// [FB] We can't actually pick up this
+				continue;
+			}
 		}
 
 		if (ee.IsA('Weapon'))
@@ -3399,13 +3410,11 @@ Actor GetSpecialEnemy(optional bool bReachable)
 
 		case HexenDefs::game_xmas:
 
+			if (player.BestWeaponOfDamageType('Fire'))
 			{
-				if (player.BestWeaponOfDamageType('Fire'))
-				{
-					actor = Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
-					if (actor)
-						dist = botmo.DistTo(actor);
-				}
+				actor = Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
+				if (actor)
+					dist = botmo.DistTo(actor);
 			}
 			break;
 	}
@@ -3570,7 +3579,6 @@ Actor GetGameModeGoal(optional bool bReachable)
 					break;
 				}
 			}
-
 			break;
 
 		case HexenDefs::game_domination:
@@ -3593,7 +3601,6 @@ Actor GetGameModeGoal(optional bool bReachable)
 		case HexenDefs::game_football:
 
 			EE = GameFootball(gameInfo.GameModel).Ball;
-
 			bAttackOffsetValid = false;
 
 			// [CW] set a target offset
@@ -3705,7 +3712,7 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 			if (nodes.Num == 256)
 			{
 				for (i = 1; i < 256; i++)
-					nodes[i-1] = nodes[i];
+					nodes[i - 1] = nodes[i];
 			}
 			else
 				nodes.Num = nodes.Num + 1;
