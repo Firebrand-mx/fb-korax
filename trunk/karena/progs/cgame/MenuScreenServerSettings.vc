@@ -40,31 +40,12 @@ class MenuScreenServerSettings : MenuScreen;
 
 void CreateChoices()
 {
+	int i;
 	MenuChoiceSlider	Slider;
 	MenuChoiceEnum		Enum;
 	int					currentY;
 
 	currentY = ChoicesStartY;
-
-	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
-	Slider.SetOrigin(ChoicesStartX, currentY);
-	Slider.Text = "Player corpse amount";
-	Slider.MinValue = 8.0;
-	Slider.MaxValue = 64.0;
-	Slider.ValueDelta = 8.0;
-	Slider.SetInitialValue(itof(GetCvar('BodyQueSize')));
-	Slider.ValueChanging = ChangeBodyQueueSize;
-	currentY += Slider.Height;
-
-	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
-	Slider.SetOrigin(ChoicesStartX, currentY);
-	Slider.Text = "Monster corpse amount";
-	Slider.MinValue = 16.0;
-	Slider.MaxValue = 128.0;
-	Slider.ValueDelta = 16.0;
-	Slider.SetInitialValue(itof(GetCvar('CorpseQueSize')));
-	Slider.ValueChanging = ChangeCorpseQueueSize;
-	currentY += Slider.Height;
 
 	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
 	Enum.SetOrigin(ChoicesStartX, currentY);
@@ -86,30 +67,28 @@ void CreateChoices()
 	Enum.SetInitialValue(GetCvar('FriendlyFire'));
 	Enum.ValueChanging = ChangeFriendlyFire;
 	currentY += Enum.Height;
-}
 
-//==========================================================================
-//
-//	ChangeBodyQueueSize
-//
-//==========================================================================
+	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
+	currentY += Slider.Height; // add some extra space
+	Slider.SetOrigin(ChoicesStartX, currentY);
+	Slider.Text = "Player corpse amount";
+	Slider.MinValue = 8.0;
+	Slider.MaxValue = 64.0;
+	Slider.ValueDelta = 8.0;
+	Slider.SetInitialValue(itof(GetCvar('BodyQueSize')));
+	Slider.ValueChanging = ChangeBodyQueueSize;
+	currentY += Slider.Height;
 
-bool ChangeBodyQueueSize(Object Sender, float newValue)
-{
-	SetCvar('BodyQueSize', ftoi(newValue));
-	return true;
-}
+	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
+	Slider.SetOrigin(ChoicesStartX, currentY);
+	Slider.Text = "Monster corpse amount";
+	Slider.MinValue = 16.0;
+	Slider.MaxValue = 128.0;
+	Slider.ValueDelta = 16.0;
+	Slider.SetInitialValue(itof(GetCvar('CorpseQueSize')));
+	Slider.ValueChanging = ChangeCorpseQueueSize;
+	currentY += Slider.Height;
 
-//==========================================================================
-//
-//	ChangeCorpseQueueSize
-//
-//==========================================================================
-
-bool ChangeCorpseQueueSize(Object Sender, float newValue)
-{
-	SetCvar('CorpseQueSize', ftoi(newValue));
-	return true;
 }
 
 //==========================================================================
@@ -145,6 +124,30 @@ bool ChangeKeepTeamsEqual(Object Sender, int newValue)
 bool ChangeFriendlyFire(Object Sender, int newValue)
 {
 	SetCvar('FriendlyFire', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeBodyQueueSize
+//
+//==========================================================================
+
+bool ChangeBodyQueueSize(Object Sender, float newValue)
+{
+	SetCvar('BodyQueSize', ftoi(newValue));
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeCorpseQueueSize
+//
+//==========================================================================
+
+bool ChangeCorpseQueueSize(Object Sender, float newValue)
+{
+	SetCvar('CorpseQueSize', ftoi(newValue));
 	return true;
 }
 
