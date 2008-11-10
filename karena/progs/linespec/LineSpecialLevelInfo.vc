@@ -1,0 +1,7423 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: LineSpecialLevelInfo.vc 3796 2008-09-22 17:19:37Z dj_jl $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//--------------------------------------------------------------------------
+//
+// [KORAX] [CW] A full susbstitute for common LineSpecialLevelInfo;
+//				at the moment only MapSpawnThing is modified to support
+//				new KArena filter flags.
+//
+//--------------------------------------------------------------------------
+
+class LineSpecialLevelInfo : LevelInfo;
+
+
+const int
+	STROBEBRIGHT	= 5,
+	FASTDARK		= 15,
+	SLOWDARK		= 35;
+
+//
+// Map things flags
+//
+// [CW] These are original flags, left here for information mostly
+//
+const int
+	MTF_AMBUSH		= 0x0008,	// Deaf monsters/do not react to sound.
+	MTF_DORMANT		= 0x0010,	// The thing is dormant
+	MTF_GSINGLE		= 0x0100,	// Appearing in game modes
+	MTF_GCOOP		= 0x0200,
+	MTF_GDEATHMATCH	= 0x0400,
+	MTF_SHADOW		= 0x0800,
+	MTF_ALTSHADOW	= 0x1000,
+	MTF_FRIENDLY	= 0x2000,
+	MTF_STANDSTILL	= 0x4000,
+
+	MTF2_FIGHTER	= 0x000010000,	// Thing appearing in player classes
+	MTF2_CLERIC		= 0x000020000,
+	MTF2_MAGE		= 0x000040000;
+
+
+//
+// [KORAX] KArena Thing Flags
+//
+const int
+	MTFKA_AMBUSH		= MTF_AMBUSH,		// Deaf monsters/do not react to sound.
+	MTFKA_DORMANT		= MTF_DORMANT,		// The thing is dormant
+
+	MTFKA_ALWAYS		= 0x0100,			// Appearing in all game modes
+	MTFKA_DM			= 0x0200,
+	MTFKA_CTF			= 0x0400,
+	MTFKA_DOMINATION	= 0x0800,
+	MTFKA_CSWEEP		= 0x1000,
+	MTFKA_FOOTBALL		= 0x2000,
+	MTFKA_XMASHAVOC		= 0x4000;
+
+
+enum
+{
+	pt_static,
+	pt_explode,
+	pt_explode2,
+	pt_ice_chunk,
+	pt_rail,
+	pt_fountain,
+	pt_spark
+};
+
+//	Flags for SectorDamage
+const int DAMAGE_PLAYERS			= 1;
+const int DAMAGE_NONPLAYERS			= 2;
+const int DAMAGE_IN_AIR				= 4;
+const int DAMAGE_SUBCLASSES_PROTECT	= 8;
+
+const int BODYQUESIZE				= 32;
+const int CORPSEQUEUESIZE			= 64;
+
+const int
+	SECF_SILENT 					= 1,
+	SECF_NOFALLINGDAMAGE			= 2;
+
+name			DefaultDoorSound;
+name			DefaultCeilingSound;
+name			DefaultSilentCeilingSound;
+name			DefaultFloorSound;
+name			DefaultFloorAltSound;
+name			DefaultStairStepSound;
+name			DefaultPlatformSound;
+
+bool			bTeleportNewMapBothSides;
+bool			bCheckStrifeStartSpots;
+bool			bDefaultStopOnCrush;
+
+bool			bPuffSpawned;
+
+int				ExtPlayersBase;
+string			Lock103Message;
+
+EntityEx		CurrentSpeaker;
+EntityEx		CurrentSpeakingTo;
+float			OldSpeakerAngle;
+int				CurrentSpeechIndex;
+bool			ConversationSlideshow;
+
+EntityEx		bodyque[BODYQUESIZE];
+int				BodyQueSize;
+int				bodyqueslot;
+
+// Corpse queue for monsters
+EntityEx		corpseQueue[CORPSEQUEUESIZE];
+int				CorpseQueSize;
+int				corpseQueueSlot;
+
+//==========================================================================
+//
+//  SpawnSpecials
+//
+//==========================================================================
+
+void SpawnSpecials()
+{
+	sector_t *sector;
+	int i;
+
+	if (Level.bLightning)
+	{
+		LightningThinker Lightning = Spawn(LightningThinker);
+		Lightning.Init();
+	}
+
+	//  Init special SECTORs.
+	for (i = 0; i < XLevel.NumSectors; i++)
+	{
+		sector = &XLevel.Sectors[i];
+		if (!sector->special)
+		{
+			continue;
+		}
+		if (sector->special & SECSPEC_SECRET_MASK)
+		{
+			//	Secret sector.
+			TotalSecret++;
+		}
+		switch (sector->special & SECSPEC_BASE_MASK)
+		{
+		case SECSPEC_LightPhased:	//	Phased light
+			//	Hardcoded base, use sector->lightlevel as the index
+			SpawnPhasedLight(sector, 80, -1);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_LightSequenceStart:	// Phased light sequence start
+			SpawnLightSequence(sector, 1.0);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+			// Specials 3 & 4 are used by the phased light sequences
+		case SECSPEC_LightFlicker:
+			SpawnLightFlash(sector);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_LightStrobeFast:
+			SpawnStrobeFlash(sector, FASTDARK, STROBEBRIGHT, 0);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_LightStrobeSlow:
+			SpawnStrobeFlash(sector, SLOWDARK, STROBEBRIGHT, 0);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_LightStrobeFastDamage:
+			SpawnStrobeFlash(sector, FASTDARK, STROBEBRIGHT, 0);
+			break;
+		case SECSPEC_LightGlow:
+			SpawnGlowingLight(sector);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_DoorCloseIn30:
+			SpawnDoorCloseIn30(sector);
+			break;
+		case SECSPEC_LightSyncStrobeSlow:
+			SpawnStrobeFlash(sector, SLOWDARK, STROBEBRIGHT, 1);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_LightSyncStrobeFast:
+			SpawnStrobeFlash(sector, FASTDARK, STROBEBRIGHT, 1);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_DoorRaiseIn5Minutes:
+			SpawnDoorRaiseIn5Mins(sector);
+			break;
+		case SECSPEC_LightFireFlicker:
+			SpawnFireFlicker(sector);
+			sector->special &= ~SECSPEC_BASE_MASK;
+			break;
+		case SECSPEC_ScrollEastLavaDamage:
+			SpawnScrollingFloor(sector, -1, 0, 3);
+			break;
+		case SECSPEC_ScrollNorthSlow:
+		case SECSPEC_ScrollNorthMedium:
+		case SECSPEC_ScrollNorthFast:
+			SpawnScrollingFloor(sector, 0, 1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthSlow);
+			break;
+		case SECSPEC_ScrollEastSlow:
+		case SECSPEC_ScrollEastMedium:
+		case SECSPEC_ScrollEastFast:
+			SpawnScrollingFloor(sector, -1, 0, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollEastSlow);
+			break;
+		case SECSPEC_ScrollSouthSlow:
+		case SECSPEC_ScrollSouthMedium:
+		case SECSPEC_ScrollSouthFast:
+			SpawnScrollingFloor(sector, 0, -1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthSlow);
+			break;
+		case SECSPEC_ScrollWestSlow:
+		case SECSPEC_ScrollWestMedium:
+		case SECSPEC_ScrollWestFast:
+			SpawnScrollingFloor(sector, 1, 0, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollWestSlow);
+			break;
+		case SECSPEC_ScrollNorthWestSlow:
+		case SECSPEC_ScrollNorthWestMedium:
+		case SECSPEC_ScrollNorthWestFast:
+			SpawnScrollingFloor(sector, 1, 1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthWestSlow);
+			break;
+		case SECSPEC_ScrollNorthEastSlow:
+		case SECSPEC_ScrollNorthEastMedium:
+		case SECSPEC_ScrollNorthEastFast:
+			SpawnScrollingFloor(sector, -1, 1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollNorthEastSlow);
+			break;
+		case SECSPEC_ScrollSouthEastSlow:
+		case SECSPEC_ScrollSouthEastMedium:
+		case SECSPEC_ScrollSouthEastFast:
+			SpawnScrollingFloor(sector, -1, -1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthEastSlow);
+			break;
+		case SECSPEC_ScrollSouthWestSlow:
+		case SECSPEC_ScrollSouthWestMedium:
+		case SECSPEC_ScrollSouthWestFast:
+			SpawnScrollingFloor(sector, 1, -1, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollSouthWestSlow);
+			break;
+		case SECSPEC_ScrollEast5:
+		case SECSPEC_ScrollEast10:
+		case SECSPEC_ScrollEast25:
+		case SECSPEC_ScrollEast30:
+		case SECSPEC_ScrollEast35:
+			SpawnScrollingFloor(sector, -1, 0, (sector->special &
+				SECSPEC_BASE_MASK) - SECSPEC_ScrollEast5);
+			break;
+		}
+	}
+
+	//  Init line EFFECTs
+	for (i = 0; i < XLevel.NumLines; i++)
+	{
+		switch (XLevel.Lines[i].special)
+		{
+		case LNSPEC_ScrollTextureLeft:
+			SpawnWallScroller(&XLevel.Lines[i], 1, 0);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureRight:
+			SpawnWallScroller(&XLevel.Lines[i], -1, 0);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureUp:
+			SpawnWallScroller(&XLevel.Lines[i], 0, 1);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureDown:
+			SpawnWallScroller(&XLevel.Lines[i], 0, -1);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureBoth:
+			SpawnTextureBothScroller(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureModel:
+			SpawnScrollTextureModel(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollFloor:
+			SpawnScrollFloor(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollCeiling:
+			SpawnScrollCeiling(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_ScrollTextureOffsets:
+			SpawnWallOffsetsScroller(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		case LNSPEC_TransferWallLight:
+			SpawnTransferWallLight(&XLevel.Lines[i]);
+			XLevel.Lines[i].special = 0;
+			break;
+		}
+	}
+
+	SpawnPushers();
+}
+
+//==========================================================================
+//
+//  ActivateLine
+//
+//==========================================================================
+
+final bool ActivateLine(line_t* Line, EntityEx A, int Side,
+	int ActivationType)
+{
+	int lineActivation;
+	bool repeat;
+	bool buttonSuccess;
+	bool changeBack;
+
+	if (!CheckActivation(ActivationType, Line, Side, A))
+	{
+		return false;
+	}
+
+	lineActivation = Line->SpacFlags;
+	repeat = Line->flags & ML_REPEAT_SPECIAL;
+	buttonSuccess = ExecuteActionSpecial(Line->special, Line->arg1,
+		Line->arg2, Line->arg3, Line->arg4, Line->arg5, Line, Side, A);
+	changeBack = Line->special == LNSPEC_GlassBreak &&
+		(Line->flags & ML_TWOSIDED) && buttonSuccess;
+	if ((lineActivation & (SPAC_Use | SPAC_Impact | SPAC_UseThrough)) &&
+		buttonSuccess)
+	{
+		byte Quest;
+		ChangeSwitchTexture(Line->sidenum[0], repeat,
+			Line->special == LNSPEC_ExitNormal ||
+			Line->special == LNSPEC_ExitSecret ||
+			Line->special == LNSPEC_TeleportNewMap ||
+			Line->special == LNSPEC_TeleportEndGame
+			? 'switches/exitbutn' : 'switches/normbutn', Quest);
+	}
+	if (changeBack)
+	{
+		XLevel.Sides[Line->sidenum[1]].MidTexture =
+			XLevel.Sides[Line->sidenum[0]].MidTexture;
+	}
+	if (!repeat && buttonSuccess)
+	{
+		// clear the special on non-retriggerable lines
+		Line->special = 0;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  CheckActivation
+//
+//==========================================================================
+
+final bool CheckActivation(int activationType, line_t* line, int Side,
+	EntityEx A)
+{
+	if ((line->flags & ML_FIRSTSIDEONLY) && Side == 1)
+	{
+		return false;
+	}
+
+	int lineActivation = line->SpacFlags;
+	if (lineActivation & SPAC_UseThrough)
+	{
+		lineActivation |= SPAC_Use;
+	}
+	else if (line->special == LNSPEC_Teleport &&
+		(lineActivation & SPAC_Cross) && activationType == SPAC_PCross &&
+		A && A.bMissile)
+	{
+		// Let missiles use regular player teleports
+		lineActivation |= SPAC_PCross;
+	}
+	//	BOOM's generalized line types that allow monster use can actually be
+	// activated by anything except projectiles.
+	if (lineActivation & SPAC_AnyCross)
+	{
+		lineActivation |= SPAC_Cross | SPAC_MCross;
+	}
+	if (!(lineActivation & activationType))
+	{
+		if (activationType == SPAC_Use && (lineActivation & SPAC_MUse) &&
+			!A.bIsPlayer && A.bCanUseWalls)
+		{
+			return true;
+		}
+		if (activationType == SPAC_Push && (lineActivation & SPAC_MPush) &&
+			!A.bIsPlayer && A.bActivatePushWall)
+		{
+			return true;
+		}
+		if (activationType != SPAC_MCross || !(lineActivation & SPAC_Cross))
+		{
+			return false;
+		}
+	}
+	if (A && !A.bIsPlayer && !A.bMissile &&
+		!(line->flags & ML_MONSTERSCANACTIVATE) &&
+		(activationType != SPAC_MCross || !(lineActivation & SPAC_MCross)))
+	{
+		//	With lax monster activation monsters can activate several line
+		// specials even when not marked as monster activateable. This is
+		// the default for non-Hexen maps in Hexen format.
+		if (!Level.bLaxMonsterActivation)
+		{
+			return false;
+		}
+
+		if ((activationType == SPAC_Use || activationType == SPAC_Push) &&
+			(line->flags & ML_SECRET))
+		{
+			return false;	// never open secret doors
+		}
+
+		bool noway = true;
+		switch (activationType)
+		{
+		case SPAC_MCross:
+			if (!(lineActivation & SPAC_MCross))
+			{
+				switch (line->special)
+				{
+				case LNSPEC_DoorRaise:
+					if (line->arg2 >= 64)
+					{
+						break;
+					}
+				case LNSPEC_PlatDownWaitUpStay:
+				case LNSPEC_Teleport:
+				case LNSPEC_TeleportNoFog:
+				case LNSPEC_PlatDownWaitUpStayLip:
+				case LNSPEC_TeleportLine:
+					noway = false;
+				}
+			}
+			else
+			{
+				noway = false;
+			}
+			break;
+
+		case SPAC_Use:
+		case SPAC_Push:
+			switch (line->special)
+			{
+			case LNSPEC_DoorRaise:
+				if (line->arg1 == 0 && line->arg2 < 64)
+				{
+					noway = false;
+				}
+				break;
+			case LNSPEC_Teleport:
+			case LNSPEC_TeleportNoFog:
+				noway = false;
+			}
+			break;
+
+		default:
+			noway = false;
+			break;
+		}
+		return !noway;
+	}
+	if (activationType == SPAC_MCross && !(lineActivation & SPAC_MCross) &&
+		!(line->flags & ML_MONSTERSCANACTIVATE))
+	{
+		return false;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  ExecuteActionSpecial
+//
+//==========================================================================
+
+int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* Line, int Side, Entity E)
+{
+	EntityEx A = EntityEx(E);
+	int buttonSuccess = false;
+	switch (Special)
+	{
+	case LNSPEC_PolyStartLine:
+		break;
+	case LNSPEC_PolyRotateLeft:
+		buttonSuccess = EV_RotatePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5, 1,
+			false);
+		break;
+	case LNSPEC_PolyRotateRight:
+		buttonSuccess = EV_RotatePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5, -1,
+			false);
+		break;
+	case LNSPEC_PolyMove:
+		buttonSuccess = EV_MovePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5,
+			false, false);
+		break;
+	case LNSPEC_PolyExplicitLine: // Only used in initialization
+		break;
+	case LNSPEC_PolyMoveTimes8:
+		buttonSuccess = EV_MovePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5, true,
+			false);
+		break;
+	case LNSPEC_PolyDoorSwing:
+		buttonSuccess = EV_OpenPolyDoor(Line, Arg1, Arg2, Arg3, Arg4, Arg5,
+			PolyobjDoor::PODOOR_SWING);
+		break;
+	case LNSPEC_PolyDoorSlide:
+		buttonSuccess = EV_OpenPolyDoor(Line, Arg1, Arg2, Arg3, Arg4, Arg5,
+			PolyobjDoor::PODOOR_SLIDE);
+		break;
+	case LNSPEC_DoorClose:
+		buttonSuccess = EV_DoDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			VerticalDoor::DOOREV_Close, Line, A);
+		break;
+	case LNSPEC_DoorOpen:
+		buttonSuccess = EV_DoDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			VerticalDoor::DOOREV_Open, Line, A);
+		break;
+	case LNSPEC_DoorRaise:
+		buttonSuccess = EV_DoDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			VerticalDoor::DOOREV_Raise, Line, A);
+		break;
+	case LNSPEC_DoorLockedRaise:
+		if (CheckLock(A, Arg4, true))
+		{
+			buttonSuccess = EV_DoDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+				VerticalDoor::DOOREV_RaiseLocked, Line, A);
+		}
+		break;
+	case LNSPEC_DoorAnimated:
+		buttonSuccess = EV_TextureChangeDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Line, A);
+		break;
+	case LNSPEC_Autosave:
+		AutoSave();
+		buttonSuccess = true;
+		break;
+	case LNSPEC_ThingRaise:
+		buttonSuccess = EV_ThingRaise(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_StartConversation:
+		buttonSuccess = EV_StartConversation(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_ThingStop:
+		buttonSuccess = EV_ThingStop(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_FloorLowerByValue:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerByValue, Line);
+		break;
+	case LNSPEC_FloorLowerToLowest:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerToLowest, Line);
+		break;
+	case LNSPEC_FloorLowerToNearest:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerToNearest, Line);
+		break;
+	case LNSPEC_FloorRaiseByValue:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseByValue, Line);
+		break;
+	case LNSPEC_FloorRaiseToHighest:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseToHighest, Line);
+		break;
+	case LNSPEC_FloorRaiseToNearest:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseToNearest, Line);
+		break;
+	case LNSPEC_StairsBuildDownNormal:
+		buttonSuccess = EV_BuildStairs(Arg1, Arg2, Arg3, Arg4, Arg5,
+			StairStepMover::STAIRSEV_DownNormal);
+		break;
+	case LNSPEC_StairsBuildUpNormal:
+		buttonSuccess = EV_BuildStairs(Arg1, Arg2, Arg3, Arg4, Arg5,
+			StairStepMover::STAIRSEV_UpNormal);
+		break;
+	case LNSPEC_FloorRaiseAndCrush:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseAndCrush, Line);
+		break;
+	case LNSPEC_PillarBuild:	// (no crushing)
+		buttonSuccess = EV_BuildPillar(Arg1, Arg2, Arg3, Arg4, Arg5, false);
+		break;
+	case LNSPEC_PillarOpen:
+		buttonSuccess = EV_OpenPillar(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_StairsBuildDownSync:
+		buttonSuccess = EV_BuildStairs(Arg1, Arg2, Arg3, Arg4, Arg5,
+			StairStepMover::STAIRSEV_DownSync);
+		break;
+	case LNSPEC_StairsBuildUpSync:
+		buttonSuccess = EV_BuildStairs(Arg1, Arg2, Arg3, Arg4, Arg5,
+			StairStepMover::STAIRSEV_UpSync);
+		break;
+	case LNSPEC_ForceField:
+		buttonSuccess = EV_ForceField(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_ClearForceField:
+		buttonSuccess = EV_RemoveForceField(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_FloorRaiseByValueTimes8:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseByValueTimes8, Line);
+		break;
+	case LNSPEC_FloorLowerByValueTimes8:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerByValueTimes8, Line);
+		break;
+	case LNSPEC_FloorMoveToValue:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_MoveToValue, Line);
+		break;
+	case LNSPEC_CeilingWaggle:
+		buttonSuccess = EV_StartCeilingWaggle(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_TeleportZombieChanger:
+		if (Side == 0)
+		{
+			//	Only teleport when crossing the front side of a line
+			buttonSuccess = EV_Teleport(Arg1, Arg2, Arg3, Arg4, Arg5, A, Line,
+				true);
+			A.SetState(A.FindState('Pain'));
+		}
+		break;
+	case LNSPEC_CeilingLowerByValue:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerByValue, Line);
+		break;
+	case LNSPEC_CeilingRaiseByValue:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_RaiseByValue, Line);
+		break;
+	case LNSPEC_CeilingCrushAndRaise:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushAndRaise, Line);
+		break;
+	case LNSPEC_CeilingLowerAndCrush:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerAndCrush, Line);
+		break;
+	case LNSPEC_CeilingCrushStop:
+		buttonSuccess = EV_CeilingCrushStop(Line, Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_CeilingCrushRaiseAndStay:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushRaiseAndStay, Line);
+		break;
+	case LNSPEC_FloorCrushStop:
+		buttonSuccess = EV_FloorCrushStop(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_CeilingMoveToValue:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_MoveToValue, Line);
+		break;
+	case LNSPEC_GlassBreak:
+		buttonSuccess = EV_GlassBreak(Arg1, Arg2, Arg3, Arg4, Arg5, Line, A);
+		break;
+	case LNSPEC_ScrollWall:
+		buttonSuccess = EV_ScrollWall(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LineSetTextureOffset:
+		buttonSuccess = EV_LineSetTextureOffset(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorChangeFlags:
+		buttonSuccess = EV_SectorChangeFlags(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_PlatPerpetualRaise:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_PerpetualRaise, Line);
+		break;
+	case LNSPEC_PlatStop:
+		buttonSuccess = EV_StopPlat(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_PlatDownWaitUpStay:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_DownWaitUpStay, Line);
+		break;
+	case LNSPEC_PlatDownByValueWaitUpStay:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_DownByValueWaitUpStay, Line);
+		break;
+	case LNSPEC_PlatUpWaitDownStay:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_UpWaitDownStay, Line);
+		break;
+	case LNSPEC_PlatUpByValueWaitDownStay:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_UpByValueWaitDownStay, Line);
+		break;
+	case LNSPEC_FloorLowerTimes8Instant:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerTimes8Instant, Line);
+		break;
+	case LNSPEC_FloorRaiseTimes8Instant:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseTimes8Instant, Line);
+		break;
+	case LNSPEC_FloorMoveToValueTimes8:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_MoveToValueTimes8, Line);
+		break;
+	case LNSPEC_CeilingMoveToValueTimes8:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_MoveToValueTimes8, Line);
+		break;
+	case LNSPEC_Teleport:
+		if (Side == 0)
+		{
+			// Only teleport when crossing the front side of a line
+			buttonSuccess = EV_Teleport(Arg1, Arg2, Arg3, Arg4, Arg5, A, Line,
+				true);
+		}
+		break;
+	case LNSPEC_TeleportNoFog:
+		if (Side == 0)
+		{
+			// Only teleport when crossing the front side of a line
+			buttonSuccess = EV_Teleport(Arg1, Arg2, Arg3, Arg4, Arg5, A, Line,
+				false);
+		}
+		break;
+	case LNSPEC_ThrustThing:
+		if (A && !Side) // Only thrust on side 0
+		{
+			A.Thrust(itof(Arg1) * (90.0 / 64.0), itof(Arg2));
+			buttonSuccess = 1;
+		}
+		break;
+	case LNSPEC_DamageThing:
+		if (A)
+		{
+			if (Arg1)
+			{
+				A.Damage(none, none, Arg1, ModToDamageType(Arg2));
+			}
+			else
+			{
+				// If arg1 is zero, then guarantee a kill
+				A.Damage(none, none, 10000, ModToDamageType(Arg2));
+			}
+		}
+		buttonSuccess = 1;
+		break;
+	case LNSPEC_TeleportNewMap:
+		if (Side == 0 || bTeleportNewMapBothSides)
+		{
+			// Only teleport when crossing the front side of a line
+			// Players must be alive to teleport
+			if (!(A && A.bIsPlayer && A.Player.PlayerState == PST_DEAD))
+			{
+				Completed(Arg1, Arg2, Arg3);
+				buttonSuccess = true;
+			}
+		}
+		break;
+	case LNSPEC_TeleportEndGame:
+		if (Side == 0)
+		{
+			// Only teleport when crossing the front side of a line
+			// Players must be alive to teleport
+			if (!(A && A.bIsPlayer && A.Player.PlayerState == PST_DEAD))
+			{
+				buttonSuccess = true;
+				if (Game.deathmatch)
+				{
+					// Winning in deathmatch just goes back to map 1
+					Completed(1, 0, 0);
+				}
+				else
+				{
+					// Passing -1, -1 to G_Completed() starts the Finale
+					Completed(-1, -1, 0);
+				}
+			}
+		}
+		break;
+	case LNSPEC_TeleportOther:
+		buttonSuccess = EV_TeleportOther(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_TeleportGroup:
+		buttonSuccess = EV_TeleportGroup(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_TeleportSector:
+		buttonSuccess = EV_TeleportSector(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ACSExecute:
+		buttonSuccess = XLevel.StartACS(Arg1, Arg2, Arg3, Arg4, Arg5, A, Line,
+			Side, false, false);
+		break;
+	case LNSPEC_ACSSuspend:
+		buttonSuccess = XLevel.SuspendACS(Arg1, Arg2);
+		break;
+	case LNSPEC_ACSTerminate:
+		buttonSuccess = XLevel.TerminateACS(Arg1, Arg2);
+		break;
+	case LNSPEC_ACSLockedExecute:
+		if (CheckLock(A, Arg5, false))
+		{
+			buttonSuccess = XLevel.StartACS(Arg1, Arg2, Arg3, Arg4, 0, A,
+				Line, Side, false, false);
+		}
+		break;
+	case LNSPEC_ACSExecuteWithResult:
+		buttonSuccess = XLevel.StartACS(Arg1, 0, Arg2, Arg3, Arg4, A, Line,
+			Side, true, true);
+		break;
+	case LNSPEC_ACSLockedExecuteDoor:
+		if (CheckLock(A, Arg5, true))
+		{
+			buttonSuccess = XLevel.StartACS(Arg1, Arg2, Arg3, Arg4, 0, A,
+				Line, Side, false, false);
+		}
+		break;
+	case LNSPEC_PolyRotateLeftOverride:
+		buttonSuccess = EV_RotatePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5, 1,
+			true);
+		break;
+	case LNSPEC_PolyRotateRightOverride:
+		buttonSuccess = EV_RotatePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5, -1,
+			true);
+		break;
+	case LNSPEC_PolyMoveOverride:
+		buttonSuccess = EV_MovePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5,
+			false, true);
+		break;
+	case LNSPEC_PolyMoveTimes8Override:
+		buttonSuccess = EV_MovePoly(Line, Arg1, Arg2, Arg3, Arg4, Arg5,
+			true, true);
+		break;
+	case LNSPEC_PillarBuildCrush:
+		buttonSuccess = EV_BuildPillar(Arg1, Arg2, Arg3, Arg4, Arg5, true);
+		break;
+	case LNSPEC_FloorAndCeilingLowerByValue:
+		buttonSuccess = EV_DoElevator(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Elevator::ELEVEV_Lower, Line);
+		break;
+	case LNSPEC_FloorAndCeilingRaiseByValue:
+		buttonSuccess = EV_DoElevator(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Elevator::ELEVEV_Raise, Line);
+		break;
+	case LNSPEC_LightForceLightning:
+		buttonSuccess = true;
+		ForceLightning(Arg1);
+		break;
+	case LNSPEC_LightRaiseByValue:
+		buttonSuccess = EV_LightRaiseByValue(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LightLowerByValue:
+		buttonSuccess = EV_LightLowerByValue(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LightChangeToValue:
+		buttonSuccess = EV_LightChangeToValue(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LightFade:
+		buttonSuccess = EV_SpawnLight(Arg1, Arg2, Arg3, Arg4, Arg5,
+			LightEffect::LIGHTEV_Fade);
+		break;
+	case LNSPEC_LightGlow:
+		buttonSuccess = EV_SpawnLight(Arg1, Arg2, Arg3, Arg4, Arg5,
+			LightEffect::LIGHTEV_Glow);
+		break;
+	case LNSPEC_LightFlicker:
+		buttonSuccess = EV_SpawnLight(Arg1, Arg2, Arg3, Arg4, Arg5,
+			LightEffect::LIGHTEV_Flicker);
+		break;
+	case LNSPEC_LightStrobe:
+		buttonSuccess = EV_SpawnLight(Arg1, Arg2, Arg3, Arg4, Arg5,
+			LightEffect::LIGHTEV_Strobe);
+		break;
+	case LNSPEC_LightStop:
+		buttonSuccess = EV_LightStop(Arg1);
+		break;
+	case LNSPEC_ThingDamage:
+		buttonSuccess = EV_ThingDamage(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_QuakeTremor:
+		buttonSuccess = A_LocalQuake(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ThingMove:
+		buttonSuccess = EV_ThingMove(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_ThingSetSpecial:
+		buttonSuccess = EV_ThingSetSpecial(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ThrustThingZ:
+		buttonSuccess = EV_ThrustThingZ(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_UsePuzzleItem:
+		buttonSuccess = EV_LineSearchForPuzzleItem(Arg1, Arg2, Arg3, Arg4,
+			Arg5, A);
+		break;
+	case LNSPEC_ThingActivate:
+		buttonSuccess = EV_ThingActivate(Arg1, A);
+		break;
+	case LNSPEC_ThingDeactivate:
+		buttonSuccess = EV_ThingDeactivate(Arg1, A);
+		break;
+	case LNSPEC_ThingRemove:
+		buttonSuccess = EV_ThingRemove(Arg1);
+		break;
+	case LNSPEC_ThingDestroy:
+		buttonSuccess = EV_ThingDestroy(Arg1, Arg2);
+		break;
+	case LNSPEC_ThingProjectile:
+		buttonSuccess = EV_ThingProjectile(Arg1, Arg2, Arg3, Arg4, Arg5, 0,
+			0, '', A);
+		break;
+	case LNSPEC_ThingSpawn:
+		buttonSuccess = EV_ThingSpawn(Arg1, Arg2, Arg3, Arg4, Arg5, true,
+			false, A);
+		break;
+	case LNSPEC_ThingProjectileGravity:
+		buttonSuccess = EV_ThingProjectile(Arg1, Arg2, Arg3, Arg4, Arg5, 1,
+			0, '', A);
+		break;
+	case LNSPEC_ThingSpawnNoFog:
+		buttonSuccess = EV_ThingSpawn(Arg1, Arg2, Arg3, Arg4, Arg5, false,
+			false, A);
+		break;
+	case LNSPEC_FloorWaggle:
+		buttonSuccess = EV_StartFloorWaggle(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ThingSpawnFacing:
+		buttonSuccess = EV_ThingSpawn(Arg1, Arg2, 0, Arg4, Arg5, !Arg3,
+			true, A);
+		break;
+	case LNSPEC_SectorSoundChange:
+		buttonSuccess = EV_SectorSoundChange(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetPlaneReflection:
+		buttonSuccess = EV_SectorSetPlaneReflection(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_CeilingGenericCrush2:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_GenericCrush2, Line);
+		break;
+	case LNSPEC_SectorSetCeilingScale2:
+		buttonSuccess = EV_SectorSetCeilingScale2(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_SectorSetFloorScale2:
+		buttonSuccess = EV_SectorSetFloorScale2(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_PlaneUpNearestWaitDownStay:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_UpNearestWaitDownStay, Line);
+		break;
+	case LNSPEC_NoiseAlert:
+		buttonSuccess = EV_NoiseAlert(A, Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SendToCommunicator:
+		buttonSuccess = EV_SendToCommunicator(A, Arg1, Arg2, Arg3, Arg4,
+			Arg5, Side);
+		break;
+	case LNSPEC_ThingProjectileIntercept:
+		buttonSuccess = EV_ThingProjectileIntercept(Arg1, Arg2, Arg3, Arg4,
+			Arg5, A);
+		break;
+	case LNSPEC_ThingChangeTID:
+		buttonSuccess = EV_ThingChangeTID(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_ThingHate:
+		buttonSuccess = EV_ThingHate(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_ThingProjectileAimed:
+		buttonSuccess = EV_ThingProjectileAimed(Arg1, Arg2, Arg3, Arg4, Arg5,
+			A);
+		break;
+	case LNSPEC_ChangeSkill:
+		LineSpecialGameInfo(Game).SetSkill(Arg1);
+		buttonSuccess = true;
+		break;
+	case LNSPEC_ThingSetTranslation:
+		buttonSuccess = EV_ThingSetTranslation(Arg1, Arg2, Arg3, Arg4, Arg5,
+			A);
+		break;
+	case LNSPEC_LineAlignCeiling:
+		buttonSuccess = EV_LineAlignCeiling(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LineAlignFloor:
+		buttonSuccess = EV_LineAlignFloor(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetRotation:
+		buttonSuccess = EV_SectorSetRotation(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetCeilingPanning:
+		buttonSuccess = EV_SectorSetCeilingPanning(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_SectorSetFloorPanning:
+		buttonSuccess = EV_SectorSetFloorPanning(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_SectorSetCeilingScale:
+		buttonSuccess = EV_SectorSetCeilingScale(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_SectorSetFloorScale:
+		buttonSuccess = EV_SectorSetFloorScale(Arg1, Arg2, Arg3, Arg4,
+			Arg5);
+		break;
+	case LNSPEC_SetPlayerProperty:
+		buttonSuccess = EV_SetPlayerProperty(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_CeilingLowerToHighestFloor:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerToHighestFloor, Line);
+		break;
+	case LNSPEC_CeilingLowerInstant:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerTimes8Instant, Line);
+		break;
+	case LNSPEC_CeilingRaiseInstant:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_RaiseTimes8Instant, Line);
+		break;
+	case LNSPEC_CeilingCrushRaiseAndStayA:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushRaiseAndStayA, Line);
+		break;
+	case LNSPEC_CeilingCrushAndRaiseA:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushAndRaiseA, Line);
+		break;
+	case LNSPEC_CeilingCrushAndRaiseSilentA:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushAndRaiseSilA, Line);
+		break;
+	case LNSPEC_CeilingRaiseByValueTimes8:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_RaiseByValueTimes8, Line);
+		break;
+	case LNSPEC_CeilingLowerByValueTimes8:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerByValueTimes8, Line);
+		break;
+	case LNSPEC_FloorGeneric:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_Generic, Line);
+		break;
+	case LNSPEC_CeilingGeneric:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_Generic, Line);
+		break;
+	case LNSPEC_DoorGeneric:
+		buttonSuccess = EV_GenericDoor(Arg1, Arg2, Arg3, Arg4, Arg5, Line, A);
+		break;
+	case LNSPEC_PlatGeneric:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_Generic, Line);
+		break;
+	case LNSPEC_StairsGeneric:
+		buttonSuccess = EV_BuildStairsOld(Arg1, Arg2, Arg3, Arg4, Arg5,
+			true, Line);
+		break;
+	case LNSPEC_CeilingGenericCrush:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_GenericCrush, Line);
+		break;
+	case LNSPEC_PlatDownWaitUpStayLip:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_DownWaitUpStayLip, Line);
+		break;
+	case LNSPEC_PlatPerpetualRaiseLip:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_PerpetualRaiseLip, Line);
+		break;
+	case LNSPEC_LineTranslucent:
+		buttonSuccess = EV_LineTranslucent(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetColour:
+		buttonSuccess = EV_SectorSetColour(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetFade:
+		buttonSuccess = EV_SectorSetFade(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetDamage:
+		buttonSuccess = EV_SectorSetDamage(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_TeleportLine:
+		buttonSuccess = EV_SilentLineTeleport(Line, Side, A, Arg2, Arg3);
+		break;
+	case LNSPEC_SectorSetGravity:
+		buttonSuccess = EV_SectorSetGravity(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_StairsBuildUpDoom:
+		buttonSuccess = EV_BuildStairsOld(Arg1, Arg2, Arg3, Arg4, Arg5,
+			false, Line);
+		break;
+	case LNSPEC_SectorSetWind:
+		buttonSuccess = AdjustPusher(Arg1, Arg2, Arg3, Arg4, Arg5, Line,
+			Pusher::PUSHER_Wind);
+		break;
+	case LNSPEC_SectorSetFriction:
+		buttonSuccess = EV_SectorSetFriction(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_SectorSetCurrent:
+		buttonSuccess = AdjustPusher(Arg1, Arg2, Arg3, Arg4, Arg5, Line,
+			Pusher::PUSHER_Current);
+		break;
+	case LNSPEC_ScrollTextureBoth:
+		buttonSuccess = EV_ScrollTextureBoth(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ScrollFloor:
+		buttonSuccess = EV_ScrollFloor(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ScrollCeiling:
+		buttonSuccess = EV_ScrollCeiling(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ACSExecuteAlways:
+		buttonSuccess = XLevel.StartACS(Arg1, Arg2, Arg3, Arg4, Arg5, A,
+			Line, Side, true, false);
+		break;
+	case LNSPEC_FloorRaiseToNearestChange:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseToNearestChange, Line);
+		break;
+	case LNSPEC_ThingSetGoal:
+		buttonSuccess = EV_ThingSetGoal(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_FloorRaiseByValueChangeTex:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseByValueChange2, Line);
+		break;
+	case LNSPEC_PlatToggle:
+		buttonSuccess = EV_DoPlat(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Platform::PLATEV_Toggle, Line);
+		break;
+	case LNSPEC_LightStrobeDoom:
+		buttonSuccess = EV_StartLightStrobing(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LightMinNeighbor:
+		buttonSuccess = EV_TurnTagLightsOff(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_LightMaxNeighbor:
+		buttonSuccess = EV_TagLightTurnOn(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_FloorTransferTrigger:
+		buttonSuccess = EV_FloorTransferTrigger(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Line);
+		break;
+	case LNSPEC_FloorTransferNumeric:
+		buttonSuccess = EV_FloorTransferNumeric(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_ChangeCamera:
+		buttonSuccess = EV_ChangeCamera(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_FloorRaiseToLowestCeiling:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseToLowestCeiling, Line);
+		break;
+	case LNSPEC_FloorRaiseByValueChange:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseByValueChange, Line);
+		break;
+	case LNSPEC_FloorRaiseByTexture:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_RaiseByTexture, Line);
+		break;
+	case LNSPEC_FloorLowerToLowestChange:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerToLowestChange, Line);
+		break;
+	case LNSPEC_FloorLowerToHighest:
+		buttonSuccess = EV_DoFloor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			FloorMover::FLOOREV_LowerToHighest, Line);
+		break;
+	case LNSPEC_ExitNormal:
+		buttonSuccess = true;
+		ExitLevel(Arg1);
+		break;
+	case LNSPEC_ExitSecret:
+		buttonSuccess = true;
+		SecretExitLevel(Arg1);
+		break;
+	case LNSPEC_ElevatorRaiseToNearest:
+		buttonSuccess = EV_DoElevator(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Elevator::ELEVEV_Up, Line);
+		break;
+	case LNSPEC_ElevatorMoveToFloor:
+		buttonSuccess = EV_DoElevator(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Elevator::ELEVEV_Current, Line);
+		break;
+	case LNSPEC_ElevatorLowerToNearest:
+		buttonSuccess = EV_DoElevator(Arg1, Arg2, Arg3, Arg4, Arg5,
+			Elevator::ELEVEV_Down, Line);
+		break;
+	case LNSPEC_HealThing:
+		buttonSuccess = EV_HealThing(Arg1, Arg2, Arg3, Arg4, Arg5, A);
+		break;
+	case LNSPEC_DoorCloseWaitOpen:
+		buttonSuccess = EV_DoDoor(Arg1, Arg2, Arg3, Arg4, Arg5,
+			VerticalDoor::DOOREV_CloseWaitOpen, Line, A);
+		break;
+	case LNSPEC_FloorDonut:
+		buttonSuccess = EV_DoDonut(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case LNSPEC_FloorAndCeilingLowerRaise:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg3, 0, 0, 0,
+			CeilingMover::CEILEV_RaiseToHighest, Line);
+		buttonSuccess |= EV_DoFloor(Arg1, Arg2, 0, 0, 0,
+			FloorMover::FLOOREV_LowerToLowest, Line);
+		break;
+	case LNSPEC_CeilingRaiseToNearest:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_RaiseToNearest, Line);
+		break;
+	case LNSPEC_CeilingLowerToLowest:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerToLowest, Line);
+		break;
+	case LNSPEC_CeilingLowerToFloor:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_LowerToFloor, Line);
+		break;
+	case LNSPEC_CeilingCrushRaiseAndStaySilentA:
+		buttonSuccess = EV_DoCeiling(Arg1, Arg2, Arg3, Arg4, Arg5,
+			CeilingMover::CEILEV_CrushRaiseAndStaySilA, Line);
+		break;
+
+	// Line specials only processed during level initialization
+	// LNSPEC_ScrollTextureLeft:
+	// LNSPEC_ScrollTextureRight:
+	// LNSPEC_ScrollTextureUp:
+	// LNSPEC_ScrollTextureDown:
+	// LNSPEC_LineSetIdentification:
+	// LNSPEC_3DFloor:
+	// LNSPEC_Contents:
+	// LNSPEC_PlaneAlign:
+	// LNSPEC_TransferHeights:
+	// LNSPEC_ScrollTextureModel:
+	// LNSPEC_ScrollTextureOffsets:
+	// LNSPEC_PointPushSetForce:
+
+	default:
+		//	Log everything else to know what needs to be implemented.
+		print("Unknown action special %d(%d, %d, %d, %d, %d)", Special,
+			Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	}
+	return buttonSuccess;
+}
+
+//==========================================================================
+//
+//  StartPlaneWatcher
+//
+//==========================================================================
+
+final void StartPlaneWatcher(Entity it, line_t* line, int lineSide,
+	bool ceiling, int tag, int height, int special, int arg0, int arg1,
+	int arg2, int arg3, int arg4)
+{
+	PlaneWatcher	PW;
+
+	PW = Spawn(PlaneWatcher);
+	PW.Start(it, line, lineSide, ceiling, tag, height, special, arg0, arg1,
+		arg2, arg3, arg4);
+}
+
+//**************************************************************************
+//
+//  Doors
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_DoDoor
+//
+//  Move a door up/down
+//
+//==========================================================================
+
+final int EV_DoDoor(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type, line_t* Line, Entity Thing)
+{
+	int				SecNum;
+	int				RetCode;
+	sector_t*		Sec;
+	VerticalDoor	Door;
+
+	RetCode = false;
+	if (!Arg1)
+	{
+		if (!Line)
+			return false;
+	
+		//	Make sure it's a two-sided line.
+		if (Line->sidenum[1] < 0)
+			return false;
+	
+		// if the sector has an active thinker, use it
+		Sec = XLevel.Sides[Line->sidenum[1]].Sector;
+		if (Sec->CeilingData)
+		{
+			Door = VerticalDoor(Sec->CeilingData);
+			if (Door)
+			{
+				return Door.ReUse(Type, Line, Thing);
+			}
+			return false;
+		}
+	
+		// new door thinker
+		Door = Spawn(VerticalDoor);
+		Door.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type);
+		RetCode = true;
+	}
+	else
+	{
+		for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+			if (Sec->CeilingData)
+			{
+				continue;
+			}
+			// Add new door thinker
+			RetCode = true;
+			Door = Spawn(VerticalDoor);
+			Door.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type);
+		}
+	}
+	return RetCode;
+}
+
+//==========================================================================
+//
+//  EV_GenericDoor
+//
+//	Boom's generic doors.
+//
+//==========================================================================
+
+final int EV_GenericDoor(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	line_t* Line, Entity Thing)
+{
+	int			Tag;
+	int			LightTag;
+
+	//	Check for locked door.
+	if (Arg5 && !CheckLock(Thing, Arg5, true))
+	{
+		return false;
+	}
+
+	//	Check for Boom's local door light special.
+	if (Arg3 & 128)
+	{
+		Tag = 0;
+		LightTag = Arg1;
+	}
+	else
+	{
+		Tag = Arg1;
+		LightTag = 0;
+	}
+
+	switch (Arg3 & 127)
+	{
+	case 0:
+		return EV_DoDoor(Tag, Arg2, Arg4, LightTag, 0,
+			VerticalDoor::DOOREV_Raise, Line, Thing);
+	case 1:
+		return EV_DoDoor(Tag, Arg2, LightTag, 0, 0,
+			VerticalDoor::DOOREV_Open, Line, Thing);
+	case 2:
+		return EV_DoDoor(Tag, Arg2, Arg4, LightTag, 0,
+			VerticalDoor::DOOREV_CloseWaitOpen, Line, Thing);
+	case 3:
+		return EV_DoDoor(Tag, Arg2, LightTag, 0, 0,
+			VerticalDoor::DOOREV_Close, Line, Thing);
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  SpawnDoorCloseIn30
+//
+//  Spawn a door that closes after 30 seconds
+//
+//==========================================================================
+
+final void SpawnDoorCloseIn30(sector_t* sec)
+{
+	VerticalDoor	Door;
+
+	Door = Spawn(VerticalDoor);
+	Door.InitCloseIn30(sec);
+	sec->special = 0;
+}
+
+//==========================================================================
+//
+//  SpawnDoorRaiseIn5Mins
+//
+//  Spawn a door that opens after 5 minutes
+//
+//==========================================================================
+
+final void SpawnDoorRaiseIn5Mins(sector_t* sec)
+{
+	VerticalDoor Door;
+
+	sec->special = 0;
+	Door = Spawn(VerticalDoor);
+	Door.Init(sec, 0, 16, 150, 0, 0, VerticalDoor::DOOREV_RaiseIn5Mins);
+}
+
+//==========================================================================
+//
+//  EV_TextureChangeDoor
+//
+//==========================================================================
+
+final int EV_TextureChangeDoor(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, line_t* Line, Entity E)
+{
+	int					i;
+	int					SecNum;
+	int					Rtn;
+	sector_t*			Sec;
+	TextureChangeDoor	Door;
+
+	Rtn = false;
+
+	if (!Arg1)
+	{
+		if (!Line || !Line->backsector)
+		{
+			return false;
+		}
+
+		// if the sector has an active thinker, use it
+		if (Line->backsector->CeilingData)
+		{
+			if (!E.bIsPlayer)
+				return false;
+			Door = TextureChangeDoor(Line->backsector->CeilingData);
+			if (Door && Door.Direction == 0)
+			{
+				return Door.StartClosing();
+			}
+			return false;
+		}
+	
+		// new door thinker
+		if (FindAnimDoor(XLevel.Sides[Line->sidenum[0]].TopTexture))
+		{
+			Door = Spawn(TextureChangeDoor);
+			Door.Init(Line->backsector, Arg1, Arg2, Arg3, Arg4, Arg5, Line);
+			Rtn = true;
+		}
+	}
+	else
+	{
+		for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+			if (Sec->CeilingData)
+			{
+				continue;
+			}
+			for (i = 0; i < i < Sec->linecount; i++)
+			{
+				Line = Sec->lines[i];
+				if (!Line->backsector)
+				{
+					continue;
+				}
+				//	New door thinker
+				if (FindAnimDoor(XLevel.Sides[Line->sidenum[0]].TopTexture))
+				{
+					Rtn = true;
+					Door = Spawn(TextureChangeDoor);
+					Door.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Line);
+					break;
+				}
+			}
+		}
+	}
+	return Rtn;
+}
+
+//**************************************************************************
+//
+//	Ceilings
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_DoCeiling
+//
+//  Move a ceiling up/down and all around!
+//
+//==========================================================================
+
+final int EV_DoCeiling(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type, line_t* Line)
+{
+	int				SecNum;
+	int				Rtn;
+	sector_t*		Sec;
+	CeilingMover	Ceiling;
+
+	Rtn = false;
+
+	if (!Arg1)
+	{
+		if (!Line || !Line->backsector)
+			return false;
+
+		//  Reactivate in-stasis ceilings...for certain types.
+		if ((Type == CeilingMover::CEILEV_CrushAndRaiseA ||
+			Type == CeilingMover::CEILEV_CrushAndRaiseSilA) &&
+			CeilingMover(Line->backsector->CeilingData))
+		{
+			CeilingMover(Line->backsector->CeilingData).ActivateInStasis(0);
+		}
+
+		if (!Line->backsector->CeilingData)
+		{
+			// new ceiling thinker
+			Rtn = true;
+			Ceiling = Spawn(CeilingMover);
+			Ceiling.Init(Line->backsector, Arg1, Arg2, Arg3, Arg4, Arg5,
+				Type, Line);
+		}
+	}
+	else
+	{
+		//  Reactivate in-stasis ceilings...for certain types.
+		if (Type == CeilingMover::CEILEV_CrushAndRaiseA ||
+			Type == CeilingMover::CEILEV_CrushAndRaiseSilA)
+		{
+			foreach AllThinkers(CeilingMover, Ceiling)
+			{
+				Ceiling.ActivateInStasis(Arg1);
+			}
+		}
+
+		for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+			if (Sec->CeilingData)
+				continue;
+
+			// new ceiling thinker
+			Rtn = true;
+			Ceiling = Spawn(CeilingMover);
+			Ceiling.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type, Line);
+		}
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//  EV_CeilingCrushStop
+//
+//  Stop a ceiling from crushing!
+//
+//==========================================================================
+
+final int EV_CeilingCrushStop(line_t* line, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5)
+{
+	int				rtn;
+	CeilingMover	Ceiling;
+
+	rtn = false;
+	foreach AllThinkers(CeilingMover, Ceiling)
+	{
+		if (Ceiling.CrushStop(Arg1))
+		{
+			rtn = true;
+		}
+	}
+	return rtn;
+}
+
+//==========================================================================
+//
+//	EV_StartCeilingWaggle
+//
+//==========================================================================
+
+final bool EV_StartCeilingWaggle(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int				SectorIndex;
+	sector_t*		Sector;
+	CeilingWaggle	Waggle;
+	bool			RetCode;
+
+	RetCode = false;
+	for (SectorIndex = XLevel.FindSectorFromTag(Arg1, -1); SectorIndex >= 0;
+		SectorIndex = XLevel.FindSectorFromTag(Arg1, SectorIndex))
+	{
+		Sector = &XLevel.Sectors[SectorIndex];
+		if (Sector->CeilingData)
+		{
+			// Already busy with another thinker
+			continue;
+		}
+		RetCode = true;
+		Waggle = Spawn(CeilingWaggle);
+		Waggle.Init(Sector, Arg1, Arg2, Arg3, Arg4, Arg5);
+	}
+	return RetCode;
+}
+
+//**************************************************************************
+//
+//	Floors
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_DoFloor
+//
+//  HANDLE FLOOR TYPES
+//
+//==========================================================================
+
+final int EV_DoFloor(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type, line_t* Line)
+{
+	int			SecNum;
+	int			Rtn;
+	sector_t*	Sec;
+	FloorMover	Floor;
+
+	Rtn = false;
+	if (!Arg1)
+	{
+		if (!Line || !Line->backsector)
+			return false;
+
+		if (!Line->backsector->FloorData)
+		{
+			// new floor thinker
+			Rtn = true;
+			Floor = Spawn(FloorMover);
+			Floor.Init(Line->backsector, Arg1, Arg2, Arg3, Arg4, Arg5, Type,
+				Line);
+		}
+	}
+	else
+	{
+		for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+
+			// ALREADY MOVING?  IF SO, KEEP GOING...
+			if (Sec->FloorData)
+				continue;
+
+			// new floor thinker
+			Rtn = true;
+			Floor = Spawn(FloorMover);
+			Floor.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type, Line);
+		}
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+// EV_FloorCrushStop
+//
+//==========================================================================
+
+final int EV_FloorCrushStop(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	FloorMover	Floor;
+	bool		Rtn;
+
+	Rtn = false;
+	foreach AllThinkers(FloorMover, Floor)
+	{
+		if (Floor.CrushStop(Arg1))
+		{
+			Rtn = true;
+		}
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//  EV_DoDonut()
+//
+//  Handle donut function: lower pillar, raise surrounding pool, both to
+// height, texture and type of the sector surrounding the pool.
+//  Passed the linedef that triggered the donut
+//  Returns whether a thinker was created
+//
+//==========================================================================
+
+final int EV_DoDonut(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	sector_t*	s1;
+	sector_t*	s2;
+	sector_t*	s3;
+	int			secnum;
+	int			rtn;
+	int			i;
+	FloorMover	Floor;
+
+	rtn = 0;
+	// do function on all sectors with same tag as linedef
+	for (secnum = XLevel.FindSectorFromTag(Arg1, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(Arg1, secnum))
+	{
+		s1 = &XLevel.Sectors[secnum];	// s1 is pillar's sector
+
+		// ALREADY MOVING?  IF SO, KEEP GOING...
+		if (s1->FloorData)
+			continue;
+
+		s2 = getNextSector(s1->lines[0], s1);	// s2 is pool's sector
+		rtn = 1;
+
+		// find a two sided line around the pool whose other side isn't the pillar
+		for (i = 0; i < s2->linecount; i++)
+		{
+			if ((!s2->lines[i]->flags & ML_TWOSIDED) ||
+				(s2->lines[i]->backsector == s1))
+				continue;
+			s3 = s2->lines[i]->backsector;
+
+			//  Spawn rising slime
+			Floor = Spawn(FloorMover);
+			Floor.InitDonut(s2, s3, Arg2);
+
+			//  Spawn lowering donut-hole
+			Floor = Spawn(FloorMover);
+			Floor.InitDonut2(s1, s3, Arg3);
+			break;
+		}
+	}
+	return rtn;
+}
+
+//==========================================================================
+//
+//	EV_StartFloorWaggle
+//
+//==========================================================================
+
+final bool EV_StartFloorWaggle(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int				SectorIndex;
+	sector_t*		Sector;
+	FloorWaggle		Waggle;
+	bool			RetCode;
+
+	RetCode = false;
+	for (SectorIndex = XLevel.FindSectorFromTag(Arg1, -1); SectorIndex >= 0;
+		SectorIndex = XLevel.FindSectorFromTag(Arg1, SectorIndex))
+	{
+		Sector = &XLevel.Sectors[SectorIndex];
+		if (Sector->FloorData)
+		{
+			// Already busy with another thinker
+			continue;
+		}
+		RetCode = true;
+		Waggle = Spawn(FloorWaggle);
+		Waggle.Init(Sector, Arg1, Arg2, Arg3, Arg4, Arg5);
+	}
+	return RetCode;
+}
+
+//**************************************************************************
+//
+//	Stairs
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_BuildStairsOld
+//
+//	Build a staircase!
+//
+//==========================================================================
+
+final int EV_BuildStairsOld(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	bool Generic, line_t* Line)
+{
+	int			SecNum;
+	float		Height;
+	int			i;
+	int			j;
+	int			Ok;
+	int			Texture;
+	int			Rtn;
+	sector_t*	Sec;
+	sector_t*	TSec;
+	FloorMover	Floor;
+	line_t*		SecLine;
+	int			Direction;
+	float		StairSize;
+	bool		IgnTxt;
+	int			OldSecNum;
+
+	if (!Arg1 && (!Line || !Line->backsector))
+	{
+		return false;
+	}
+
+	if (Generic)
+	{
+		Direction = Arg4 & 1 ? 1 : -1;
+		IgnTxt = !!(Arg4 & 2);
+	}
+	else
+	{
+		Direction = 1;
+		IgnTxt = false;
+	}
+	StairSize = itof(Arg3 * Direction);
+	Rtn = 0;
+	for (SecNum = Arg1 ? XLevel.FindSectorFromTag(Arg1, -1) : 1; SecNum >= 0;
+		SecNum = Arg1 ? XLevel.FindSectorFromTag(Arg1, SecNum) : -1)
+	{
+		Sec = Arg1 ? &XLevel.Sectors[SecNum] : Line->backsector;
+
+		// ALREADY MOVING?  IF SO, KEEP GOING...
+		if (Sec->FloorData)
+		{
+			continue;
+		}
+
+		// new floor thinker
+		Rtn = 1;
+		Height = GetPlanePointZ(&Sec->floor, vector(0.0, 0.0, 0.0)) +
+			StairSize;
+		Floor = Spawn(FloorMover);
+		Floor.InitStair(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Generic, Height);
+
+		Texture = Sec->floor.pic;
+		OldSecNum = SecNum;	//jff 3/4/98 preserve loop index
+
+		// Find next sector to raise
+		// 1. Find 2-sided line with same sector side[0]
+		// 2. Other side is the next sector to raise
+		// 3. Unless already moving, or different texture, then stop building
+		do
+		{
+			Ok = false;
+			for (i = 0; i < Sec->linecount; i++)
+			{
+				SecLine = Sec->lines[i];
+
+				if (!(SecLine->flags & ML_TWOSIDED))
+					continue;
+
+				TSec = SecLine->frontsector;
+				if (Sec != TSec)
+					continue;
+				TSec = SecLine->backsector;
+				if (!TSec)
+					continue;	//jff 5/7/98 if no backside, continue
+				if (!IgnTxt && TSec->floor.pic != Texture)
+					continue;
+
+				Height += StairSize;
+				if (TSec->FloorData)
+					continue;
+
+				Sec = TSec;
+				//	SecNum = TSec - XLevel.Sectors;
+				for (j = 0; j < XLevel.NumSectors; j++)
+				{
+					if (TSec == &XLevel.Sectors[j])
+					{
+						SecNum = j;
+						break;
+					}
+				}
+				Floor = Spawn(FloorMover);
+				Floor.InitStair(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Generic,
+					Height);
+				Ok = true;
+				break;
+			}
+		}
+		while (Ok);
+		if (!Level.CompatStairs)
+		{
+			SecNum = OldSecNum;	//jff 3/4/98 restore loop index
+		}
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//	EV_BuildStairs
+//
+//	Build a staircase!
+//
+//	StairDirection is either positive or negative, denoting build stairs
+// up or down.
+//
+//==========================================================================
+
+final int EV_BuildStairs(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int StairsType)
+{
+	int				SecNum;
+	sector_t*		Sec;
+	StairStepMover	StairStep;
+	StairStepMover	StairQueueHead;
+
+	StairQueueHead = none;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+
+		// ALREADY MOVING?  IF SO, KEEP GOING...
+		if (Sec->FloorData)
+		{
+			continue;
+		}
+
+		StairStep = Spawn(StairStepMover);
+		StairStep.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5,
+			StairsType);
+		if (StairQueueHead)
+		{
+			StairQueueHead.AppendToQueue(StairStep);
+		}
+		else
+		{
+			StairQueueHead = StairStep;
+		}
+		Sec->special &= ~SECSPEC_BASE_MASK;
+	}
+	for (StairStep = StairQueueHead; StairStep;
+		StairStep = StairStep.QueueNext)
+	{
+		StairStep.ProcessStairSector();
+	}
+	return 1;
+}
+
+//**************************************************************************
+//
+//	Platforms
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_DoPlat
+//
+//  Do Platforms.
+//
+//==========================================================================
+
+final int EV_DoPlat(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type, line_t* Line)
+{
+	Platform	Plat;
+	int			SecNum;
+	int			Rtn;
+	sector_t*	Sec;
+
+	Rtn = false;
+
+	if (!Arg1)
+	{
+		if (!Line || !Line->backsector)
+			return false;
+
+		//  Activate all <type> plats that are in stasis.
+		if ((Type == Platform::PLATEV_PerpetualRaise ||
+			Type == Platform::PLATEV_PerpetualRaiseLip ||
+			Type == Platform::PLATEV_Toggle) && Platform(Line->backsector->FloorData))
+		{
+			//  Activate in stasis
+			Platform(Line->backsector->FloorData).ActivateInStasis(Arg1);
+			if (Type == Platform::PLATEV_Toggle)
+			{
+				Rtn = true;
+			}
+		}
+
+		if (!Line->backsector->FloorData)
+		{
+			// Find lowest & highest floors around sector
+			Rtn = 1;
+			Plat = Spawn(Platform);
+			Plat.Init(Line->backsector, Arg1, Arg2, Arg3, Arg4, Arg5, Type);
+		}
+	}
+	else
+	{
+		//  Activate all <type> plats that are in stasis.
+		if (Type == Platform::PLATEV_PerpetualRaise ||
+			Type == Platform::PLATEV_PerpetualRaiseLip ||
+			Type == Platform::PLATEV_Toggle)
+		{
+			//  Activate in stasis
+			foreach AllThinkers(Platform, Plat)
+			{
+				Plat.ActivateInStasis(Arg1);
+			}
+			if (Type == Platform::PLATEV_Toggle)
+			{
+				Rtn = true;
+			}
+		}
+
+		for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+			if (Sec->FloorData)
+				continue;
+
+			// Find lowest & highest floors around sector
+			Rtn = 1;
+			Plat = Spawn(Platform);
+			Plat.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type);
+		}
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//  EV_StopPlat
+//
+//==========================================================================
+
+final int EV_StopPlat(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	Platform	Plat;
+
+	foreach AllThinkers(Platform, Plat)
+	{
+		Plat.StopPlat(Arg1);
+	}
+	return 1;
+}
+
+//**************************************************************************
+//
+//  Pillar
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_BuildPillar
+//
+//==========================================================================
+
+final int EV_BuildPillar(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	bool Crush)
+{
+	int			SecNum;
+	sector_t*	Sec;
+	Pillar		pillar;
+	int			Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		if (Sec->FloorData || Sec->CeilingData)
+			continue;	// already moving
+		Rtn = true;
+		pillar = Spawn(Pillar);
+		pillar.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Crush);
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//	EV_OpenPillar
+//
+//==========================================================================
+
+final int EV_OpenPillar(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	int			SecNum;
+	sector_t*	Sec;
+	Pillar		pillar;
+	int			Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		if (Sec->FloorData || Sec->CeilingData)
+			continue;	// already moving
+		Rtn = true;
+		pillar = Spawn(Pillar);
+		pillar.InitOpen(Sec, Arg1, Arg2, Arg3, Arg4, Arg5);
+	}
+	return Rtn;
+}
+
+//**************************************************************************
+//
+//  Elevator
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_DoElevator
+//
+//==========================================================================
+
+final int EV_DoElevator(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type, line_t* Line)
+{
+	int			SecNum;
+	int			Rtn;
+	sector_t*	Sec;
+	Elevator	Elev;
+
+	if (!Line && (Type == Elevator::ELEVEV_Current))
+	{
+		return false;
+	}
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+
+		//	Skip if already busy.
+		if (Sec->FloorData || Sec->CeilingData)
+			continue;
+
+		//	New elevator thinker
+		Rtn = true;
+		Elev = Spawn(Elevator);
+		Elev.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type, Line);
+	}
+	return Rtn;
+}
+
+//**************************************************************************
+//
+//	Polyobj Event Code
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_RotatePoly
+//
+//==========================================================================
+
+final bool EV_RotatePoly(line_t* line, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, int direction, bool overRide)
+{
+	int mirror;
+	int polyNum;
+	PolyobjRotator pe;
+	polyobj_t *poly;
+
+	polyNum = Arg1;
+	poly = XLevel.GetPolyobj(polyNum);
+	if (poly)
+	{
+		if (poly->SpecialData && !overRide)
+		{	// poly is already moving
+			return false;
+		}
+	}
+	else
+	{
+		Error("EV_RotatePoly:  Invalid polyobj num");	//: %d\n", polyNum);
+	}
+	pe = Spawn(PolyobjRotator);
+	pe.polyobj = polyNum;
+	if (Arg3)
+	{
+		if (Arg3 == 255)
+		{
+			pe.dist = -1.0;
+		}
+		else
+		{
+			pe.dist = itof(Arg3) * (90.0 / 64.0);	// Angle
+		}
+	}
+	else
+	{
+		pe.dist = 360.0;
+	}
+	pe.speed = AngleMod180(32.0 * itof(Arg2) * itof(direction) * 90.0 / 64.0 / 8.0);
+
+	//THRUST
+	pe.thrust_force = pe.speed / 32.0 * itof(0x800) / 90.0;
+
+	poly->SpecialData = pe;
+	PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+
+	for (mirror = XLevel.GetPolyobjMirror(polyNum); mirror;
+		mirror = XLevel.GetPolyobjMirror(polyNum))
+	{
+		poly = XLevel.GetPolyobj(mirror);
+		if (!poly)
+		{
+			Error("EV_RotatePoly:  Invalid polyobj num");	//: %d\n", polyNum);
+		}
+		if (poly && poly->SpecialData && !overRide)
+		{	// mirroring poly is already in motion
+			break;
+		}
+		pe = Spawn(PolyobjRotator);
+		poly->SpecialData = pe;
+		pe.polyobj = mirror;
+		if (Arg3)
+		{
+			if (Arg3 == 255)
+			{
+				pe.dist = -1.0;
+			}
+			else
+			{
+				pe.dist = itof(Arg3) * (90.0 / 64.0);	// Angle
+			}
+		}
+		else
+		{
+			pe.dist = 360.0;
+		}
+		direction = -direction;
+		pe.speed = AngleMod180(32.0 * itof(Arg2) * itof(direction) * 90.0 / 64.0 / 8.0);
+
+		//THRUST
+		pe.thrust_force = pe.speed / 32.0 * itof(0x800) / 90.0;
+
+		polyNum = mirror;
+		PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+// EV_MovePoly
+//
+//==========================================================================
+
+final bool EV_MovePoly(line_t * line, int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, bool timesEight, bool overRide)
+{
+	int mirror;
+	int polyNum;
+	PolyobjMover pe;
+	polyobj_t *poly;
+	float an;
+
+	polyNum = Arg1;
+	poly = XLevel.GetPolyobj(polyNum);
+	if (poly)
+	{
+		if (poly->SpecialData && !overRide)
+		{	// poly is already moving
+			return false;
+		}
+	}
+	else
+	{
+		Error("EV_MovePoly:  Invalid polyobj num");	//: %d\n", polyNum);
+	}
+	pe = Spawn(PolyobjMover);
+	pe.polyobj = polyNum;
+	if (timesEight)
+	{
+		pe.dist = itof(Arg4) * 8.0;
+	}
+	else
+	{
+		pe.dist = itof(Arg4);	// Distance
+	}
+	pe.speed = itof(Arg2) * 4.0;
+
+	//THRUST
+	pe.thrust_force = pe.speed / 8.0;
+
+	poly->SpecialData = pe;
+
+	an = itof(Arg3) * (90.0 / 64.0);
+
+	pe.angle = an;
+	PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+
+	for (mirror = XLevel.GetPolyobjMirror(polyNum); mirror;
+		mirror = XLevel.GetPolyobjMirror(polyNum))
+	{
+		poly = XLevel.GetPolyobj(mirror);
+		if (poly && poly->SpecialData && !overRide)
+		{	// mirroring poly is already in motion
+			break;
+		}
+		pe = Spawn(PolyobjMover);
+		pe.polyobj = mirror;
+		poly->SpecialData = pe;
+		if (timesEight)
+		{
+			pe.dist = itof(Arg4) * 8.0;
+		}
+		else
+		{
+			pe.dist = itof(Arg4);	// Distance
+		}
+		pe.speed = itof(Arg2) * 4.0;
+
+		//THRUST
+		pe.thrust_force = pe.speed / 8.0;
+
+		an = AngleMod360(an + 180.0);	// reverse the angle
+		pe.angle = an;
+		polyNum = mirror;
+		PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+// EV_OpenPolyDoor
+//
+//==========================================================================
+
+final bool EV_OpenPolyDoor(line_t * line, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, int type)
+{
+	int mirror;
+	int polyNum;
+	PolyobjDoor pd;
+	polyobj_t *poly;
+	float an = 0.0;
+
+	polyNum = Arg1;
+	poly = XLevel.GetPolyobj(polyNum);
+	if (poly)
+	{
+		if (poly->SpecialData)
+		{	// poly is already moving
+			return false;
+		}
+	}
+	else
+	{
+		Error("EV_OpenPolyDoor:  Invalid polyobj num");	//: %d\n", polyNum);
+	}
+	pd = Spawn(PolyobjDoor);
+	pd.type = type;
+	pd.polyobj = polyNum;
+	if (type == PolyobjDoor::PODOOR_SLIDE)
+	{
+		pd.waitTime = itof(Arg5) / 35.0;
+		pd.speed = itof(Arg2) * 4.0;
+		pd.totalDist = itof(Arg4);	// Distance
+		pd.dist = pd.totalDist;
+		an = itof(Arg3) * (90.0 / 64.0);
+		pd.xSpeed = cos(an);
+		pd.ySpeed = sin(an);
+
+		//THRUST
+		pd.thrust_force = pd.speed / 8.0;
+
+		PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+	}
+	else if (type == PolyobjDoor::PODOOR_SWING)
+	{
+		pd.waitTime = itof(Arg4) / 35.0;
+		pd.speed = AngleMod180(4.0 * itof(Arg2) * (90.0 / 64.0));
+		pd.totalDist = itof(Arg3) * (90.0 / 64.0);
+		pd.dist = pd.totalDist;
+
+		//THRUST
+		pd.thrust_force = pd.speed * itof(0x1000) / 180.0;
+
+		PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+	}
+
+	poly->SpecialData = pd;
+
+	for (mirror = XLevel.GetPolyobjMirror(polyNum); mirror;
+		mirror = XLevel.GetPolyobjMirror(polyNum))
+	{
+		poly = XLevel.GetPolyobj(mirror);
+		if (poly && poly->SpecialData)
+		{	// mirroring poly is already in motion
+			break;
+		}
+		pd = Spawn(PolyobjDoor);
+		pd.polyobj = mirror;
+		pd.type = type;
+		poly->SpecialData = pd;
+		if (type == PolyobjDoor::PODOOR_SLIDE)
+		{
+			pd.waitTime = itof(Arg5) / 35.0;
+			pd.speed = itof(Arg2) * 4.0;
+			pd.totalDist = itof(Arg4);	// Distance
+			pd.dist = pd.totalDist;
+			an = AngleMod360(an + 180.0);	// reverse the angle
+			pd.xSpeed = cos(an);
+			pd.ySpeed = sin(an);
+
+			//THRUST
+			pd.thrust_force = pd.speed / 8.0;
+
+			PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+		}
+		else if (type == PolyobjDoor::PODOOR_SWING)
+		{
+			pd.waitTime = itof(Arg4) / 35.0;
+			pd.speed = AngleMod180(4.0 * itof(-Arg2) * (90.0 / 64.0));
+			pd.totalDist = itof(Arg3) * (90.0 / 64.0);
+			pd.dist = pd.totalDist;
+
+			//THRUST
+			pd.thrust_force = pd.speed * itof(0x1000) / 180.0;
+
+			PolyobjStartSequence(poly, GetSeqTrans(poly->seqType, SEQ_Door), 0);
+		}
+		polyNum = mirror;
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//  Light specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  SpawnFireFlicker
+//
+//==========================================================================
+
+final void SpawnFireFlicker(sector_t* sector)
+{
+	FireFlicker Flick;
+
+	Flick = Spawn(FireFlicker);
+	Flick.Init(sector);
+}
+
+//==========================================================================
+//
+//  SpawnGlowingLight
+//
+//  Spawn glowing light
+//
+//==========================================================================
+
+final void SpawnGlowingLight(sector_t* sector)
+{
+	GlowingLight G;
+
+	G = Spawn(GlowingLight);
+	G.Init(sector);
+}
+
+//==========================================================================
+//
+//  SpawnLightFlash
+//
+//==========================================================================
+
+final void SpawnLightFlash(sector_t* sector)
+{
+	LightFlash Flash;
+
+	Flash = Spawn(LightFlash);
+	Flash.Init(sector);
+}
+
+//==========================================================================
+//
+//  SpawnStrobeFlash
+//
+//==========================================================================
+
+final void SpawnStrobeFlash(sector_t* sector, int fastOrSlow, int maxtime,
+	int inSync)
+{
+	Strobe Flash;
+
+	Flash = Spawn(Strobe);
+	Flash.Init(sector, fastOrSlow, maxtime, inSync);
+}
+
+//==========================================================================
+//
+//	SpawnPhasedLight
+//
+//==========================================================================
+
+final void SpawnPhasedLight(sector_t * sector, int base, int index)
+{
+	PhasedLight Phase;
+
+	Phase = Spawn(PhasedLight);
+	Phase.Init(sector, base, index);
+}
+
+//==========================================================================
+//
+//  SpawnLightSequence
+//
+//==========================================================================
+
+final void SpawnLightSequence(sector_t * sector, float indexStep)
+{
+	sector_t *sec;
+	sector_t *nextSec;
+	sector_t *tempSec;
+	int seqSpecial;
+	int i;
+	float count;
+	float index;
+	float indexDelta;
+	int base;
+
+	seqSpecial = SECSPEC_LightSequence;	// look for Light_Sequence, first
+	sec = sector;
+	count = 1.0;
+	do
+	{
+		nextSec = NULL;
+		//	Make sure that the search doesn't back up.
+		sec->special = (sec->special & ~SECSPEC_BASE_MASK) |
+			SECSPEC_LightSequenceStart;
+		for (i = 0; i < sec->linecount; i++)
+		{
+			tempSec = getNextSector(sec->lines[i], sec);
+			if (!tempSec)
+			{
+				continue;
+			}
+			if ((tempSec->special & SECSPEC_BASE_MASK) == seqSpecial)
+			{
+				if (seqSpecial == SECSPEC_LightSequence)
+				{
+					seqSpecial = SECSPEC_LightSequenceAlt;
+				}
+				else
+				{
+					seqSpecial = SECSPEC_LightSequence;
+				}
+				nextSec = tempSec;
+				count += 1.0;
+			}
+		}
+		sec = nextSec;
+	}
+	while (sec);
+
+	sec = sector;
+	count *= indexStep;
+	index = 0.0;
+	indexDelta = 64.0 / count;
+	base = sector->params.lightlevel;
+	do
+	{
+		nextSec = NULL;
+		if (sec->params.lightlevel)
+		{
+			base = sec->params.lightlevel;
+		}
+		SpawnPhasedLight(sec, base, ftoi(index));
+		//	Clear sector special.
+		sec->special &= ~SECSPEC_BASE_MASK;
+		index += indexDelta;
+		for (i = 0; i < sec->linecount; i++)
+		{
+			tempSec = getNextSector(sec->lines[i], sec);
+			if (!tempSec)
+			{
+				continue;
+			}
+			if ((tempSec->special & SECSPEC_BASE_MASK) ==
+				SECSPEC_LightSequenceStart)
+			{
+				nextSec = tempSec;
+			}
+		}
+		sec = nextSec;
+	}
+	while (sec);
+}
+
+//==========================================================================
+//
+//  EV_StartLightStrobing
+//
+//  Start strobing lights (usually from a trigger)
+//
+//==========================================================================
+
+final int EV_StartLightStrobing(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			Ret;
+	int			SecNum;
+	sector_t*	Sec;
+	Strobe		Flash;
+
+	Ret = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		if (Sec->LightingData)
+			continue;
+
+		Ret = true;
+		Flash = Spawn(Strobe);
+		Flash.Init(Sec, Arg3, Arg2, Arg4);
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//  EV_TagLightTurnOn
+//
+//  Turn line's tag lights on
+//
+//==========================================================================
+
+final int EV_TagLightTurnOn(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	int			SecNum;
+	sector_t*	Sec;
+	int			j;
+	sector_t*	TSec;
+	int			Max;
+
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Max = 0;
+		for (j = 0; j < Sec->linecount; j++)
+		{
+			TSec = getNextSector(Sec->lines[j], Sec);
+			if (!TSec)
+				continue;
+			if (TSec->params.lightlevel > Max)
+				Max = TSec->params.lightlevel;
+		}
+		Sec->params.lightlevel = Max;
+	}
+	return 1;
+}
+
+//==========================================================================
+//
+//  EV_TurnTagLightsOff
+//
+//  Turn line's tag lights off
+//
+//==========================================================================
+
+final int EV_TurnTagLightsOff(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			SecNum;
+	sector_t*	Sec;
+	int			i;
+	int			Min;
+	sector_t*	TSec;
+
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Min = Sec->params.lightlevel;
+		for (i = 0; i < Sec->linecount; i++)
+		{
+			TSec = getNextSector(Sec->lines[i], Sec);
+			if (!TSec)
+				continue;
+			if (TSec->params.lightlevel < Min)
+				Min = TSec->params.lightlevel;
+		}
+		Sec->params.lightlevel = Min;
+	}
+	return 1;
+}
+
+//============================================================================
+//
+//  EV_LightRaiseByValue
+//
+//============================================================================
+
+final bool EV_LightRaiseByValue(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	sector_t*	Sec;
+	int			SecNum;
+	bool		Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Sec->params.lightlevel += Arg2;
+		if (Sec->params.lightlevel > 255)
+		{
+			Sec->params.lightlevel = 255;
+		}
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//============================================================================
+//
+//  EV_LightLowerByValue
+//
+//============================================================================
+
+final bool EV_LightLowerByValue(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	sector_t*	Sec;
+	int			SecNum;
+	bool		Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Sec->params.lightlevel -= Arg2;
+		if (Sec->params.lightlevel < 0)
+		{
+			Sec->params.lightlevel = 0;
+		}
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//============================================================================
+//
+//	EV_LightChangeToValue
+//
+//============================================================================
+
+final bool EV_LightChangeToValue(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	sector_t*	Sec;
+	int			SecNum;
+	bool		Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Sec->params.lightlevel = Arg2;
+		if (Sec->params.lightlevel < 0)
+		{
+			Sec->params.lightlevel = 0;
+		}
+		else if (Sec->params.lightlevel > 255)
+		{
+			Sec->params.lightlevel = 255;
+		}
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//============================================================================
+//
+//  EV_SpawnLight
+//
+//============================================================================
+
+final bool EV_SpawnLight(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	int Type)
+{
+	LightEffect	Light;
+	sector_t*	Sec;
+	int			SecNum;
+	bool		Rtn;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Light = Spawn(LightEffect);
+		Light.Init(Sec, Arg1, Arg2, Arg3, Arg4, Arg5, Type);
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//	EV_LightStop
+//
+//==========================================================================
+
+final bool EV_LightStop(int Tag)
+{
+	Lighting		L;
+
+	foreach AllThinkers(Lighting, L)
+	{
+		if (L.Sector->tag == Tag)
+		{
+			if (L.Sector->LightingData == L)
+				L.Sector->LightingData = none;
+			L.Destroy();
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	SpawnTransferWallLight
+//
+//==========================================================================
+
+final void SpawnTransferWallLight(line_t* Line)
+{
+	WallLightTransfer	Tr;
+
+	Tr = Spawn(WallLightTransfer);
+	Tr.Init(Line->frontsector, Line->arg1, Line->arg2, Line->arg3,
+		Line->arg4, Line->arg5);
+}
+
+//**************************************************************************
+//
+//  Scrollers
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  SpawnScrollingFloor
+//
+//==========================================================================
+
+final void SpawnScrollingFloor(sector_t* Sector, int XDir, int YDir,
+	int Speed)
+{
+	Scroller	Scroll;
+
+	Scroll = Spawn(Scroller);
+	Scroll.InitFloor(Sector, XDir, YDir, Speed);
+}
+
+//==========================================================================
+//
+//  SpawnWallScroller
+//
+//==========================================================================
+
+final void SpawnWallScroller(line_t* Line, int XDir, int YDir)
+{
+	Scroller	Scroll;
+
+	Scroll = Spawn(Scroller);
+	Scroll.InitWall(Line, XDir, YDir);
+}
+
+//==========================================================================
+//
+//  SpawnWallOffsetsScroller
+//
+//==========================================================================
+
+final void SpawnWallOffsetsScroller(line_t* Line)
+{
+	Scroller	Scroll;
+
+	Scroll = Spawn(Scroller);
+	Scroll.InitWallOffsets(Line);
+}
+
+//==========================================================================
+//
+//  SpawnTextureBothScroller
+//
+//==========================================================================
+
+final void SpawnTextureBothScroller(line_t* Line)
+{
+	Scroller	Scroll;
+
+	Scroll = Spawn(Scroller);
+	Scroll.InitTextureBoth(Line, itof(Line->arg2 - Line->arg3) / 64.0,
+		itof(Line->arg5 - Line->arg4) / 64.0, 0, 7);
+}
+
+//==========================================================================
+//
+//  SpawnScrollCeiling
+//
+//==========================================================================
+
+final void SpawnScrollCeiling(line_t* Line)
+{
+	Scroller	Scroll;
+	int			SecNum;
+
+	for (SecNum = XLevel.FindSectorFromTag(Line->arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Line->arg1, SecNum))
+	{
+		Scroll = Spawn(Scroller);
+		Scroll.InitGen(Scroller::SCROLLEV_Ceiling, Line, SecNum);
+	}
+}
+
+//==========================================================================
+//
+//  SpawnScrollFloor
+//
+//==========================================================================
+
+final void SpawnScrollFloor(line_t* Line)
+{
+	Scroller	Scroll;
+	int			SecNum;
+
+	for (SecNum = XLevel.FindSectorFromTag(Line->arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Line->arg1, SecNum))
+	{
+		if (Line->arg3 != 1)
+		{
+			//	Scroll the floor texture
+			Scroll = Spawn(Scroller);
+			Scroll.InitGen(Scroller::SCROLLEV_Floor, Line, SecNum);
+		}
+
+		if (Line->arg3 > 0)
+		{
+			//	Carry objects on the floor
+			Scroll = Spawn(Scroller);
+			Scroll.InitGen(Scroller::SCROLLEV_Carry, Line, SecNum);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  SpawnScrollTextureModel
+//
+//	Scroll wall according to linedef
+// (same direction and speed as scrolling floors)
+//
+//==========================================================================
+
+final void SpawnScrollTextureModel(line_t* Line)
+{
+	Scroller	Scroll;
+	int			Searcher;
+	line_t*		Other;
+
+	Searcher = -1;
+	for (Other = XLevel.FindLine(Line->arg1, &Searcher); Other;
+		Other = XLevel.FindLine(Line->arg1, &Searcher))
+	{
+		if (Line != Other)
+		{
+			Scroll = Spawn(Scroller);
+			Scroll.InitTextureModel(Other, Line);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  EV_ScrollTextureBoth
+//
+//==========================================================================
+
+final bool EV_ScrollTextureBoth(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	if (!Arg1)
+	{
+		//	No lines to adjust.
+		return false;
+	}
+
+	int WhichSide = 0;
+	if (Arg1 < 0)
+	{
+		WhichSide = 1;
+		Arg1 = -Arg1;
+	}
+
+	SetWallScroller(Arg1, itof(Arg2 - Arg3) / 64.0, itof(Arg5 - Arg4) / 64.0,
+		WhichSide, 7);
+	return true;
+}
+
+//==========================================================================
+//
+//	EV_ScrollWall
+//
+//==========================================================================
+
+final bool EV_ScrollWall(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	if (!Arg1)
+	{
+		//	No lines to adjust.
+		return false;
+	}
+
+	SetWallScroller(Arg1, itof(Arg2) / itof(0x10000),
+		itof(Arg3) / itof(0x10000), !!Arg4, Arg5);
+	return true;
+}
+
+//==========================================================================
+//
+//	SetWallScroller
+//
+//==========================================================================
+
+final void SetWallScroller(int LineId, float XSpeed, float YSpeed,
+	int WhichSide, int Where)
+{
+	Scroller	Scroll;
+	int			i;
+
+	Where &= 7;
+	if (!Where)
+	{
+		return;
+	}
+
+	if (!XSpeed && !YSpeed)
+	{
+		//	As a special case with no deltas remove any texture scrolers.
+		foreach AllThinkers(Scroller, Scroll)
+		{
+			if (Scroll.Type != Scroller::SCROLLEV_Side)
+			{
+				continue;
+			}
+			//	Check if line has a correct tag.
+			if (Scroll.AffecteeSrcLine->LineTag != LineId)
+			{
+				continue;
+			}
+			//	Check if it's the correct side.
+			if (Scroll.AffecteeSrcLine->sidenum[WhichSide] != Scroll.Affectee)
+			{
+				continue;
+			}
+			//	Check if it's scrolling the same wall parts
+			if (Scroll.SideParts != Where)
+			{
+				continue;
+			}
+			//	OK, destroy the thinker.
+			Scroll.Destroy();
+		}
+	}
+	else
+	{
+		array<Scroller>		FoundScrollers;
+
+		foreach AllThinkers(Scroller, Scroll)
+		{
+			if (Scroll.Type != Scroller::SCROLLEV_Side)
+			{
+				continue;
+			}
+			//	Check if line has a correct tag.
+			if (Scroll.AffecteeSrcLine->LineTag != LineId)
+			{
+				continue;
+			}
+			//	Check if it's the correct side.
+			if (Scroll.AffecteeSrcLine->sidenum[WhichSide] != Scroll.Affectee)
+			{
+				continue;
+			}
+			//	Check if it's scrolling the same wall parts
+			if (Scroll.SideParts != Where)
+			{
+				continue;
+			}
+			//	Found it.
+			Scroll.AdjustTextureBoth(XSpeed, YSpeed);
+			FoundScrollers[FoundScrollers.Num] = Scroll;
+		}
+
+		int			Searcher;
+		line_t*		Other;
+
+		Searcher = -1;
+		for (Other = XLevel.FindLine(LineId, &Searcher); Other;
+			Other = XLevel.FindLine(LineId, &Searcher))
+		{
+			//	Check if this line already has scroller.
+			for (i = 0; i < FoundScrollers.Num; i++)
+			{
+				if (FoundScrollers[i].Affectee == Other->sidenum[WhichSide])
+				{
+					break;
+				}
+			}
+			if (i == FoundScrollers.Num)
+			{
+				//	Start a new scroller.
+				Scroll = Spawn(Scroller);
+				Scroll.InitTextureBoth(Other, XSpeed, YSpeed, WhichSide,
+					Where);
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  EV_ScrollFloor
+//
+//==========================================================================
+
+final bool EV_ScrollFloor(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	//	Set floor scrolling
+	if (Arg4 == 0 || Arg4 == 2)
+	{
+		SetScroller(Scroller::SCROLLEV_Floor, Arg1, Arg2, Arg3);
+	}
+	else
+	{
+		SetScroller(Scroller::SCROLLEV_Floor, Arg1, 0, 0);
+	}
+
+	//	Set carrying of items.
+	if (Arg4 > 0)
+	{
+		SetScroller(Scroller::SCROLLEV_Carry, Arg1, Arg2, Arg3);
+	}
+	else
+	{
+		SetScroller(Scroller::SCROLLEV_Carry, Arg1, 0, 0);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_ScrollCeiling
+//
+//==========================================================================
+
+final bool EV_ScrollCeiling(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	SetScroller(Scroller::SCROLLEV_Ceiling, Arg1, Arg2, Arg3);
+	return true;
+}
+
+//==========================================================================
+//
+//  SetScroller
+//
+//==========================================================================
+
+final void SetScroller(int Type, int Arg1, int Arg2, int Arg3)
+{
+	//	Adjust existing scrollers. If there is any, it means that all
+	// tagged sectors have them and there's no need to spawn new ones.
+	Scroller Sc;
+	bool Found = false;
+	foreach AllThinkers(Scroller, Sc)
+	{
+		if (Sc.Type == Type && Sc.Sector->tag == Arg1)
+		{
+			Sc.SetSpeed(Arg2, Arg3);
+			Found = true;
+		}
+	}
+
+	if (Found)
+	{
+		return;
+	}
+	//	Don't spawn scrollers if both speeds are 0.
+	if (!Arg2 && !Arg3)
+	{
+		return;
+	}
+
+	int			SecNum;
+
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sc = Spawn(Scroller);
+		Sc.InitScripted(Type, Arg2, Arg3, SecNum);
+	}
+}
+
+//**************************************************************************
+//
+//  Transfering floor texture and sector special
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_FloorTransferTrigger
+//
+//==========================================================================
+
+final bool EV_FloorTransferTrigger(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, line_t* Line)
+{
+	int			SecNum;
+	bool		Rtn;
+	sector_t*	Sec;
+
+	if (!Line)
+	{
+		return false;
+	}
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Rtn = true;
+
+		Sec->floor.pic = Line->frontsector->floor.pic;
+		Sec->special = (Sec->special & SECSPEC_SECRET_MASK) |
+			(Line->frontsector->special & ~SECSPEC_SECRET_MASK);
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//	EV_FloorTransferNumeric
+//
+//==========================================================================
+
+final bool EV_FloorTransferNumeric(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			SecNum;
+	bool		Rtn;
+	sector_t*	Sec;
+	sector_t*	MdlSec;
+
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		Sec = &XLevel.Sectors[SecNum];
+		Rtn = true;
+
+		MdlSec = FindModelFloorSector(Sec, GetPlanePointZ(&Sec->floor,
+			Sec->soundorg));
+		if (MdlSec)
+		{
+			Sec->floor.pic = MdlSec->floor.pic;
+			Sec->special = MdlSec->special;
+		}
+	}
+	return Rtn;
+}
+
+//************************************************************************
+//
+//	Changing of sector properties
+//
+//************************************************************************
+
+//=========================================================================
+//
+//	EV_SectorSoundChange
+//
+//=========================================================================
+
+final bool EV_SectorSoundChange(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int secNum;
+	bool rtn;
+
+	if (!Arg1)
+	{
+		return false;
+	}
+	rtn = false;
+	for (secNum = XLevel.FindSectorFromTag(Arg1, -1); secNum >= 0;
+		secNum = XLevel.FindSectorFromTag(Arg1, secNum))
+	{
+		XLevel.Sectors[secNum].seqType = Arg2;
+		rtn = true;
+	}
+	return rtn;
+}
+
+//=========================================================================
+//
+//	EV_SectorSetColour
+//
+//=========================================================================
+
+final bool EV_SectorSetColour(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	int		SecNum;
+	int		Col;
+
+	Col = RGBA(Arg2, Arg3, Arg4, 0);
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		XLevel.Sectors[SecNum].params.LightColour = Col;
+	}
+	return true;
+}
+
+//=========================================================================
+//
+//	EV_SectorSetFade
+//
+//=========================================================================
+
+final bool EV_SectorSetFade(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	int		SecNum;
+	int		Fade;
+
+	Fade = RGBA(Arg2, Arg3, Arg4, 255);
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		XLevel.Sectors[SecNum].params.Fade = Fade;
+	}
+	return true;
+}
+
+//=========================================================================
+//
+//	EV_SectorSetDamage
+//
+//=========================================================================
+
+final bool EV_SectorSetDamage(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int		SecNum;
+	bool	Rtn;
+
+	if (!Arg1)
+	{
+		return false;
+	}
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		XLevel.Sectors[SecNum].Damage = Arg2;
+		//FIXME Arg3 is MOD
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetGravity
+//
+//==========================================================================
+
+final bool EV_SectorSetGravity(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int		SecNum;
+	float	SecGrav;
+	bool	Ret;
+
+	if (Arg3 > 99)
+		Arg3 = 99;
+
+	SecGrav = itof(Arg2) + itof(Arg3) * 0.01;
+	Ret = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		XLevel.Sectors[SecNum].Gravity = SecGrav;
+		Ret = true;
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//  SetSectorFriction
+//
+//==========================================================================
+
+final bool EV_SectorSetFriction(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			s;
+	int			OldFriction;
+	int			OldMoveFactor;
+	float		Friction;
+	float		MoveFactor;
+	bool		Ret;
+
+	// An amount of 100 should result in a friction of
+	// ORIG_FRICTION (0xE800)
+	OldFriction = (0x1EB8 * Arg2) / 0x80 + 0xD001;
+
+	// killough 8/28/98: prevent odd situations
+	if (OldFriction > 0x10000)
+		OldFriction = 0x10000;
+	if (OldFriction < 0)
+		OldFriction = 0;
+
+	// The following check might seem odd. At the time of movement,
+	// the move distance is multiplied by 'friction/0x10000', so a
+	// higher friction value actually means 'less friction'.
+
+	// [RH] Twiddled these values so that momentum on ice (with
+	//		friction 0xf900) is the same as in Heretic/Hexen.
+	if (OldFriction >= 0xe800)	// ice
+//		movefactor = ((0x10092 - friction)*(0x70))/0x158;
+		OldMoveFactor = ((0x10092 - OldFriction) * 1024) / 4352 + 568;
+	else
+		OldMoveFactor = ((OldFriction - 0xDB34) * (0xA)) / 0x80;
+
+	// killough 8/28/98: prevent odd situations
+	if (OldMoveFactor < 32)
+		OldMoveFactor = 32;
+
+	Friction = (1.0 - itof(OldFriction) / itof(0x10000)) * 35.0;
+	MoveFactor = itof(OldMoveFactor) / itof(0x10000);
+
+	Ret = false;
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		// killough 8/28/98:
+		//
+		// Instead of spawning thinkers, which are slow and expensive,
+		// modify the sector's own friction values. Friction should be
+		// a property of sectors, not objects which reside inside them.
+		// Original code scanned every object in every friction sector
+		// on every tic, adjusting its friction, putting unnecessary
+		// drag on CPU. New code adjusts friction of sector only once
+		// at level startup, and then uses this friction value.
+
+		XLevel.Sectors[s].Friction = Friction;
+		XLevel.Sectors[s].MoveFactor = MoveFactor;
+		// When used inside a script, the sectors' friction flags
+		// can be enabled and disabled at will.
+		if (OldFriction == 0xe800)
+		{
+			XLevel.Sectors[s].special &= ~SECSPEC_FRICTION_MASK;
+		}
+		else
+		{
+			XLevel.Sectors[s].special |= SECSPEC_FRICTION_MASK;
+		}
+		Ret = true;
+	}
+	return Ret;
+}
+
+//=========================================================================
+//
+//	EV_SectorChangeFlags
+//
+//=========================================================================
+
+final bool EV_SectorChangeFlags(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int		SecNum;
+	bool	Rtn;
+
+	if (!Arg1)
+	{
+		return false;
+	}
+	Rtn = false;
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		sector_t* Sec = &XLevel.Sectors[SecNum];
+		if (Arg3 & SECF_SILENT)
+		{
+			Sec->bSilent = false;
+		}
+		else if (Arg2 & SECF_SILENT)
+		{
+			Sec->bSilent = true;
+		}
+		if (Arg3 & SECF_NOFALLINGDAMAGE)
+		{
+			Sec->bNoFallingDamage = false;
+		}
+		else if (Arg2 & SECF_NOFALLINGDAMAGE)
+		{
+			Sec->bNoFallingDamage = true;
+		}
+		Rtn = true;
+	}
+	return Rtn;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetFloorPanning
+//
+//==========================================================================
+
+final bool EV_SectorSetFloorPanning(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XOffs = itof(Arg2) + itof(Arg3) / 100.0;
+	float YOffs = itof(Arg4) + itof(Arg5) / 100.0;
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		XLevel.Sectors[s].floor.xoffs = XOffs;
+		XLevel.Sectors[s].floor.yoffs = YOffs;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetCeilingPanning
+//
+//==========================================================================
+
+final bool EV_SectorSetCeilingPanning(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XOffs = itof(Arg2) + itof(Arg3) / 100.0;
+	float YOffs = itof(Arg4) + itof(Arg5) / 100.0;
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		XLevel.Sectors[s].ceiling.xoffs = XOffs;
+		XLevel.Sectors[s].ceiling.yoffs = YOffs;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetRotation
+//
+//==========================================================================
+
+final bool EV_SectorSetRotation(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		XLevel.Sectors[s].floor.Angle = itof(Arg2);
+		XLevel.Sectors[s].ceiling.Angle = itof(Arg3);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetFloorScale
+//
+//==========================================================================
+
+final bool EV_SectorSetFloorScale(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XScale = itof(Arg2) + itof(Arg3) / 100.0;
+	float YScale = itof(Arg4) + itof(Arg5) / 100.0;
+	if (XScale)
+	{
+		XScale = 1.0 / XScale;
+	}
+	if (YScale)
+	{
+		YScale = 1.0 / YScale;
+	}
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		if (XScale)
+		{
+			XLevel.Sectors[s].floor.XScale = XScale;
+		}
+		if (YScale)
+		{
+			XLevel.Sectors[s].floor.YScale = YScale;
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetCeilingScale
+//
+//==========================================================================
+
+final bool EV_SectorSetCeilingScale(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XScale = itof(Arg2) + itof(Arg3) / 100.0;
+	float YScale = itof(Arg4) + itof(Arg5) / 100.0;
+	if (XScale)
+	{
+		XScale = 1.0 / XScale;
+	}
+	if (YScale)
+	{
+		YScale = 1.0 / YScale;
+	}
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		if (XScale)
+		{
+			XLevel.Sectors[s].ceiling.XScale = XScale;
+		}
+		if (YScale)
+		{
+			XLevel.Sectors[s].ceiling.YScale = YScale;
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetFloorScale2
+//
+//==========================================================================
+
+final bool EV_SectorSetFloorScale2(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XScale = itof(Arg2) / itof(0x10000);
+	float YScale = itof(Arg3) / itof(0x10000);
+	if (XScale)
+	{
+		XScale = 1.0 / XScale;
+	}
+	if (YScale)
+	{
+		YScale = 1.0 / YScale;
+	}
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		if (XScale)
+		{
+			XLevel.Sectors[s].floor.XScale = XScale;
+		}
+		if (YScale)
+		{
+			XLevel.Sectors[s].floor.YScale = YScale;
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetCeilingScale2
+//
+//==========================================================================
+
+final bool EV_SectorSetCeilingScale2(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int s;
+	float XScale = itof(Arg2) / itof(0x10000);
+	float YScale = itof(Arg3) / itof(0x10000);
+	if (XScale)
+	{
+		XScale = 1.0 / XScale;
+	}
+	if (YScale)
+	{
+		YScale = 1.0 / YScale;
+	}
+	for (s = XLevel.FindSectorFromTag(Arg1, -1); s >= 0;
+		s = XLevel.FindSectorFromTag(Arg1, s))
+	{
+		if (XScale)
+		{
+			XLevel.Sectors[s].ceiling.XScale = XScale;
+		}
+		if (YScale)
+		{
+			XLevel.Sectors[s].ceiling.YScale = YScale;
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_LineAlignFloor
+//
+//==========================================================================
+
+final bool EV_LineAlignFloor(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			Searcher;
+	line_t*		Line;
+	bool		Ret;
+	sector_t*	Sec;
+
+	Searcher = -1;
+	Ret = false;
+	for (Line = XLevel.FindLine(Arg1, &Searcher); Line;
+		Line = XLevel.FindLine(Arg1, &Searcher))
+	{
+		Sec = Arg2 ? Line->backsector : Line->frontsector;
+		if (!Sec)
+		{
+			continue;
+		}
+
+		TVec v1 = *Line->v1;
+
+		float Angle = atan2(Line->v2->y - v1.y, Line->v2->x - v1.x);
+		float Norm = Angle - 90.0;
+
+		float Dist = -(cos(Norm) * v1.x + sin(Norm) * v1.y);
+
+		if (Arg2)
+		{
+			Angle = AngleMod360(Angle + 180.0);
+			Dist = -Dist;
+		}
+
+		Sec->floor.BaseAngle = Angle;
+		while (Dist < 0.0)
+		{
+			Dist += 256.0;
+		}
+		while (Dist >= 256.0)
+		{
+			Dist -= 256.0;
+		}
+		Sec->floor.BaseYOffs = Dist;
+		Ret = true;
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//  EV_LineAlignCeiling
+//
+//==========================================================================
+
+final bool EV_LineAlignCeiling(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			Searcher;
+	line_t*		Line;
+	bool		Ret;
+	sector_t*	Sec;
+
+	Searcher = -1;
+	Ret = false;
+	for (Line = XLevel.FindLine(Arg1, &Searcher); Line;
+		Line = XLevel.FindLine(Arg1, &Searcher))
+	{
+		Sec = Arg2 ? Line->backsector : Line->frontsector;
+		if (!Sec)
+		{
+			continue;
+		}
+
+		TVec v1 = *Line->v1;
+
+		float Angle = atan2(Line->v2->y - v1.y, Line->v2->x - v1.x);
+		float Norm = Angle - 90.0;
+
+		float Dist = -(cos(Norm) * v1.x + sin(Norm) * v1.y);
+
+		if (Arg2)
+		{
+			Angle = AngleMod360(Angle + 180.0);
+			Dist = -Dist;
+		}
+
+		Sec->ceiling.BaseAngle = Angle;
+		while (Dist < 0.0)
+		{
+			Dist += 256.0;
+		}
+		while (Dist >= 256.0)
+		{
+			Dist -= 256.0;
+		}
+		Sec->ceiling.BaseYOffs = Dist;
+		Ret = true;
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//	EV_LineSetTextureOffset
+//
+//==========================================================================
+
+final bool EV_LineSetTextureOffset(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			Searcher;
+	line_t*		Line;
+
+	//	Check if side is valid.
+	if (Arg4 < 0 || Arg4 > 1)
+	{
+		return false;
+	}
+
+	int NoChange = 0x7fff0000;
+
+	Searcher = -1;
+	for (Line = XLevel.FindLine(Arg1, &Searcher); Line;
+		Line = XLevel.FindLine(Arg1, &Searcher))
+	{
+		if (Line->sidenum[Arg4] < 0)
+		{
+			continue;
+		}
+		side_t* Side = &XLevel.Sides[Line->sidenum[Arg4]];
+
+		//	X offset
+		if (Arg2 != NoChange)
+		{
+			float Offs = itof(Arg2) / itof(0x10000);
+			if (!(Arg5 & 8))
+			{
+				//	Set
+				if (Arg5 & 1)
+				{
+					Side->TopTextureOffset = Offs;
+				}
+				if (Arg5 & 2)
+				{
+					Side->MidTextureOffset = Offs;
+				}
+				if (Arg5 & 4)
+				{
+					Side->BotTextureOffset = Offs;
+				}
+			}
+			else
+			{
+				//	Add
+				if (Arg5 & 1)
+				{
+					Side->TopTextureOffset += Offs;
+				}
+				if (Arg5 & 2)
+				{
+					Side->MidTextureOffset += Offs;
+				}
+				if (Arg5 & 4)
+				{
+					Side->BotTextureOffset += Offs;
+				}
+			}
+		}
+
+		//	Y offset
+		if (Arg3 != NoChange)
+		{
+			float Offs = itof(Arg3) / itof(0x10000);
+			if (!(Arg5 & 8))
+			{
+				//	Set
+				if (Arg5 & 1)
+				{
+					Side->TopRowOffset = Offs;
+				}
+				if (Arg5 & 2)
+				{
+					Side->MidRowOffset = Offs;
+				}
+				if (Arg5 & 4)
+				{
+					Side->BotRowOffset = Offs;
+				}
+			}
+			else
+			{
+				//	Add
+				if (Arg5 & 1)
+				{
+					Side->TopRowOffset += Offs;
+				}
+				if (Arg5 & 2)
+				{
+					Side->MidRowOffset += Offs;
+				}
+				if (Arg5 & 4)
+				{
+					Side->BotRowOffset += Offs;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//  Thing line specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_ThingProjectile
+//
+//==========================================================================
+
+final bool EV_ThingProjectile(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, bool gravity, int newtid, name TypeName, Entity Activator)
+{
+	return DoThingProjectile(Arg1, Arg2, Arg3, Arg4, Arg5, gravity, newtid,
+		TypeName, Activator, 0, none, false);
+}
+
+//==========================================================================
+//
+//	EV_ThingProjectileAimed
+//
+//==========================================================================
+
+final bool EV_ThingProjectileAimed(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, Entity Activator)
+{
+	return DoThingProjectile(Arg1, Arg2, 0, Arg3, 0, 0, Arg5, '', Activator,
+		Arg4, Activator, false);
+}
+
+//==========================================================================
+//
+//	EV_ThingProjectileIntercept
+//
+//==========================================================================
+
+final bool EV_ThingProjectileIntercept(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, Entity Activator)
+{
+	return DoThingProjectile(Arg1, Arg2, 0, Arg3, 0, 0, Arg5, '', Activator,
+		Arg4, Activator, true);
+}
+
+//==========================================================================
+//
+//	DoThingProjectile
+//
+//==========================================================================
+
+final bool DoThingProjectile(int tid, int TypeID, int AAngle, int ASpeed,
+	int AVSpeed, bool gravity, int newtid, name TypeName, Entity Activator,
+	int DestTID, Entity ForceDest, bool Intercept)
+{
+	float		angle;
+	float		speed;
+	float		vspeed;
+	class<EntityEx>	moType;
+	Entity		A;
+	EntityEx	newA;
+	bool		success;
+
+	success = false;
+	if (TypeName)
+	{
+		moType = class<EntityEx>(FindClassLowerCase(TypeName));
+	}
+	else
+	{
+		moType = class<EntityEx>(FindClassFromScriptId(TypeID,
+			LineSpecialGameInfo(Game).GameFilterFlag));
+	}
+	if (!moType)
+	{
+		return false;
+	}
+	moType = class<EntityEx>(GetClassReplacement(moType));
+	if (Level.Game.nomonsters && moType.default.bMonster)
+	{
+		return false;
+	}
+	angle = itof(AAngle) * (360.0 / 256.0);
+	speed = itof(ASpeed) / 8.0;
+	vspeed = itof(AVSpeed) / 8.0;
+	for (A = tid ? FindMobjFromTID(tid, none) : Activator; A;
+		A = FindMobjFromTID(tid, A))
+	{
+		Entity Targ = ForceDest;
+		if (DestTID)
+		{
+			Targ = FindMobjFromTID(DestTID, none);
+			if (!Targ)
+			{
+				continue;
+			}
+		}
+
+		newA = Spawn(moType, A.Origin);
+		if (newA.SightSound)
+		{
+			newA.PlaySound(newA.SightSound, CHAN_VOICE);
+		}
+		newA.Target = EntityEx(A);	// Originator
+		if (Targ)
+		{
+			TVec TargOrg = Targ.Origin + vector(0.0, 0.0, Targ.Height / 2.0);
+			TVec Delta = TargOrg - newA.Origin;
+			TVec TargVel = Targ.Velocity;
+			if (!Targ.bNoGravity && Targ.WaterLevel < 3)
+			{
+				// If the target is subject to gravity and not underwater,
+				// assume that it isn't moving vertically. Thanks to gravity,
+				// even if we did consider the vertical component of the target's
+				// velocity, we would still miss more often than not.
+				TargVel.z = 0.0;
+			}
+
+			if (Intercept && speed > 0.0 && (TargVel.x || TargVel.y || TargVel.z))
+			{
+				// Aiming at the target's position some time in the future
+				// is basically just an application of the law of sines:
+				//     a/sin(A) = b/sin(B)
+
+				float Dist = Length(Delta);
+				float TargSpeed = Length(TargVel) / 35.0;
+				float YDotX = DotProduct(-Delta, TargVel) / 35.0;
+				float a = acos(FClamp(YDotX / TargSpeed / Dist, -1.0, 1.0));
+				float Multiplier = (Random() - Random()) * 0.1 + 1.1;
+				float SinB = FClamp(TargSpeed * Multiplier * sin(a) / speed, -1.0, 1.0);
+
+				//	Use the cross product of two of the triangle's sides to
+				// get a rotation vector.
+				TVec rv = CrossProduct(TargVel, Delta);
+				//	The vector must be normalized.
+				rv = Normalise(rv);
+				//	Rotate around this vector.
+				TVec AimVec = RotateVectorAroundVector(Delta, rv, asin(SinB));
+				// And make the projectile follow that vector at the desired speed.
+				float AimScale = speed / Dist * 35.0;
+				newA.Velocity = AimVec * AimScale;
+				newA.Angles.yaw = atan2(newA.Velocity.y, newA.Velocity.x);
+			}
+			else
+			{
+				newA.Angles.yaw = atan2(Delta.y, Delta.x);
+				newA.Velocity = Normalise(Delta) * speed * 35.0;
+			}
+			if (newA.bSeekerMissile)
+			{
+				newA.Tracer = EntityEx(Targ);
+			}
+		}
+		else
+		{
+			newA.Angles.yaw = angle;
+			newA.Velocity.x = speed * cos(angle) * 35.0;
+			newA.Velocity.y = speed * sin(angle) * 35.0;
+			newA.Velocity.z = vspeed * 35.0;
+		}
+		newA.bDropped = true;	// Don't respawn
+		if (gravity)
+		{
+			newA.bNoGravity = false;
+			newA.Gravity = 0.125;
+		}
+		newA.SetTID(newtid);
+		if (newA.CheckMissileSpawn())
+		{
+			success = true;
+		}
+		if (!tid)
+		{
+			break;
+		}
+	}
+	return success;
+}
+
+//==========================================================================
+//
+//	EV_ThingSpawn
+//
+//==========================================================================
+
+final bool EV_ThingSpawn(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	bool fog, bool Facing, Entity Activator)
+{
+	int				tid;
+	float			angle;
+	Entity			A;
+	EntityEx		newAct;
+	class<EntityEx>	moType;
+	bool			success;
+
+	success = false;
+	tid = Arg1;
+	moType = class<EntityEx>(FindClassFromScriptId(Arg2,
+		LineSpecialGameInfo(Game).GameFilterFlag));
+	if (!moType)
+	{
+		return false;
+	}
+	moType = class<EntityEx>(GetClassReplacement(moType));
+	if (Level.Game.nomonsters && moType.default.bMonster)
+	{
+		return false;
+	}
+	angle = itof(Arg3) * 360.0 / 256.0;
+	for (A = tid ? FindMobjFromTID(tid, none) : Activator; A;
+		A = FindMobjFromTID(tid, A))
+	{
+		newAct = Spawn(moType, A.Origin);
+		if (newAct.bFloatBob)
+		{
+			newAct.Origin.z = A.Origin.z - A.FloorZ;
+			newAct.SetOrigin2(newAct.Origin);
+		}
+		if (newAct.TestLocation() == false)
+		{
+			// Didn't fit
+			newAct.Destroy();
+		}
+		else
+		{
+			newAct.Angles.yaw = Facing ? A.Angles.yaw : angle;
+			newAct.SetTID(Arg4);
+			if (fog == true)
+			{
+				Spawn(TeleportFog, A.Origin + vector(0.0, 0.0,
+					LineSpecialGameInfo(Game).TeleFogHeight));
+			}
+			newAct.bDropped = true;	// Don't respawn
+			if (newAct.bFloatBob)
+			{
+				newAct.Special1f = newAct.Origin.z - newAct.FloorZ;
+			}
+			success = true;
+		}
+		if (!tid)
+		{
+			break;
+		}
+	}
+	return success;
+}
+
+//==========================================================================
+//
+//  AcsSpawnThing
+//
+//==========================================================================
+
+final int AcsSpawnThing(name Name, TVec Org, int Tid, float Angle)
+{
+	class EClass = FindClassLowerCase(Name);
+	if (!EClass)
+	{
+		print("No such class %n", Name);
+		return false;
+	}
+	class<EntityEx> EntClass = class<EntityEx>(EClass);
+	if (!EntClass)
+	{
+		print("%n is not an actor class", Name);
+		return false;
+	}
+
+	EntityEx NewAct = Spawn(EntClass, Org);
+	bool PrevPassMobj = NewAct.bPassMobj;
+	NewAct.bPassMobj = true;
+	if (NewAct.TestLocation() == false)
+	{
+		// Didn't fit
+		NewAct.Destroy();
+		return false;
+	}
+	NewAct.bPassMobj = PrevPassMobj;
+
+	NewAct.Angles.yaw = Angle;
+	NewAct.SetTID(Tid);
+	NewAct.bDropped = true;	// Don't respawn
+	return true;
+}
+
+//==========================================================================
+//
+//  AcsSpawnSpot
+//
+//==========================================================================
+
+final int AcsSpawnSpot(name Name, int SpotTid, int Tid, float Angle)
+{
+	int NumSpawned = 0;
+	Entity A;
+	for (A = FindMobjFromTID(SpotTid, none); A;
+		A = FindMobjFromTID(SpotTid, A))
+	{
+		NumSpawned += AcsSpawnThing(Name, A.Origin, Tid, Angle);
+	}
+	return NumSpawned;
+}
+
+//==========================================================================
+//
+//  AcsSpawnSpotFacing
+//
+//==========================================================================
+
+final int AcsSpawnSpotFacing(name Name, int SpotTid, int Tid)
+{
+	int NumSpawned = 0;
+	Entity A;
+	for (A = FindMobjFromTID(SpotTid, none); A;
+		A = FindMobjFromTID(SpotTid, A))
+	{
+		NumSpawned += AcsSpawnThing(Name, A.Origin, Tid, A.Angles.yaw);
+	}
+	return NumSpawned;
+}
+
+//==========================================================================
+//
+//	EV_ThingActivate
+//
+//==========================================================================
+
+final bool EV_ThingActivate(int tid, EntityEx Activator)
+{
+	Entity	A;
+	bool	success;
+
+	success = false;
+	for (A = FindMobjFromTID(tid, none); A; A = FindMobjFromTID(tid, A))
+	{
+		if (EntityEx(A).Activate(Activator))
+		{
+			success = true;
+		}
+	}
+	return success;
+}
+
+//==========================================================================
+//
+//	EV_ThingDeactivate
+//
+//==========================================================================
+
+final bool EV_ThingDeactivate(int tid, EntityEx Activator)
+{
+	Entity	A;
+	bool	success;
+
+	success = false;
+	for (A = FindMobjFromTID(tid, none); A; A = FindMobjFromTID(tid, A))
+	{
+		if (EntityEx(A).Deactivate(Activator))
+		{
+			success = true;
+		}
+	}
+	return success;
+}
+
+//==========================================================================
+//
+//	EV_ThingRemove
+//
+//==========================================================================
+
+final bool EV_ThingRemove(int tid)
+{
+	Entity	A;
+	bool	success;
+
+	success = false;
+	for (A = FindMobjFromTID(tid, none); A; A = FindMobjFromTID(tid, A))
+	{
+		A.RemoveThing();
+		success = true;
+	}
+	return success;
+}
+
+//==========================================================================
+//
+//	EV_ThingDestroy
+//
+//==========================================================================
+
+final bool EV_ThingDestroy(int tid, int Extreme)
+{
+	EntityEx	A;
+	bool		success;
+
+	success = false;
+	for (A = EntityEx(FindMobjFromTID(tid, none)); A;
+		A = EntityEx(FindMobjFromTID(tid, A)))
+	{
+		if (A.bShootable)
+		{
+			A.Damage(none, none, Extreme ? 1000000 : A.Health, '');
+			success = true;
+		}
+	}
+	return success;
+}
+
+//===========================================================================
+//
+//	EV_HealThing
+//
+//===========================================================================
+
+final bool EV_HealThing(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	if (A)
+	{
+		int Max = Arg2;
+
+		if (Max == 0 || !A.bIsPlayer)
+		{
+			A.GiveBody(Arg1);
+			return true;
+		}
+		else if (Max == 1)
+		{
+			Max = 200;
+			class<Health> SClass = class<Health>(FindClass('Soulsphere'));
+			if (SClass)
+			{
+				Max = SClass.default.MaxAmount;
+			}
+		}
+
+		//	If health is already above max, do nothing
+		if (A.Health < Max)
+		{
+			A.Health += Arg1;
+			if (A.Health > Max && Max > 0)
+			{
+				A.Health = Max;
+			}
+			A.Player.Health = A.Health;
+		}
+	}
+
+	return !!A;
+}
+
+//==========================================================================
+//
+//	EV_ThingDamage
+//
+//==========================================================================
+
+final int EV_ThingDamage(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	Entity Activator)
+{
+	return DoThingDamage(Arg1, Arg2, ModToDamageType(Arg3), Activator);
+}
+
+//==========================================================================
+//
+//	DoThingDamage
+//
+//==========================================================================
+
+final int DoThingDamage(int Tid, int Amount, name DmgType, Entity Activator)
+{
+	Entity	A;
+	int		NumDamaged;
+
+	NumDamaged = 0;
+	for (A = Tid ? FindMobjFromTID(Tid, none) : Activator; A;
+		A = FindMobjFromTID(Tid, A))
+	{
+		if (EntityEx(A).bShootable)
+		{
+			if (Amount > 0)
+			{
+				EntityEx(A).Damage(none, EntityEx(Activator), Amount, DmgType);
+			}
+			else if (A.Health < A.default.Health)
+			{
+				//	Negative amount heals thing.
+				A.Health -= Amount;
+				if (A.Health > A.default.Health)
+				{
+					A.Health = A.default.Health;
+				}
+				if (A.bIsPlayer)
+				{
+					A.Player.Health = A.Health;
+				}
+			}
+			NumDamaged++;
+		}
+		if (!Tid)
+		{
+			break;
+		}
+	}
+	return NumDamaged;
+}
+
+//===========================================================================
+//
+//	EV_ThingSetGoal
+//
+//===========================================================================
+
+final bool EV_ThingSetGoal(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	Entity Ent;
+	EntityEx NewGoal = none;
+	for (Ent = FindMobjFromTID(Arg2, none); Ent;
+		Ent = FindMobjFromTID(Arg2, Ent))
+	{
+		if (!Ent.IsA('PatrolPoint'))
+		{
+			continue;
+		}
+		NewGoal = EntityEx(Ent);
+		break;
+	}
+
+	bool Ret = false;
+	for (Ent = FindMobjFromTID(Arg1, none); Ent;
+		Ent = FindMobjFromTID(Arg1, Ent))
+	{
+		EntityEx E = EntityEx(Ent);
+		Ret = true;
+		if (E.bShootable)
+		{
+			E.Goal = NewGoal;
+			E.bChaseGoal = !!Arg4;
+			if (!E.Target)
+			{
+				E.ReactionTime = itof(Arg3);
+			}
+		}
+	}
+	return Ret;
+}
+
+//===========================================================================
+//
+//	EV_ChangeCamera
+//
+//===========================================================================
+
+final bool EV_ChangeCamera(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	Entity Camera = none;
+	if (Arg1)
+	{
+		Camera = FindMobjFromTID(Arg1, none);
+	}
+
+	if (!A || !A.Player || Arg2)
+	{
+		BasePlayer P;
+		foreach AllActivePlayers(P)
+		{
+			if (Camera)
+			{
+				P.Camera = Camera;
+				if (Arg3)
+				{
+					PlayerEx(P).bRevertCamera = true;
+				}
+			}
+			else
+			{
+				P.Camera = P.MO;
+				PlayerEx(P).bRevertCamera = false;
+			}
+		}
+	}
+	else
+	{
+		if (Camera)
+		{
+			A.Player.Camera = Camera;
+			if (Arg3)
+			{
+				PlayerEx(A.Player).bRevertCamera = true;
+			}
+		}
+		else
+		{
+			A.Player.Camera = A;
+			PlayerEx(A.Player).bRevertCamera = false;
+		}
+	}
+	return true;
+}
+
+//===========================================================================
+//
+//	EV_ThingSetTranslation
+//
+//===========================================================================
+
+final bool EV_ThingSetTranslation(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, EntityEx A)
+{
+	int Trans;
+	if (Arg2 == -1 && A)
+	{
+		Trans = A.Translation;
+	}
+	else if (Arg2 >= 1 && Arg2 < Level::MAX_LEVEL_TRANSLATIONS)
+	{
+		Trans = (Entity::TRANSL_Level << Entity::TRANSL_TYPE_SHIFT) +
+			Arg2 - 1;
+	}
+	else
+	{
+		Trans = 0;
+	}
+
+	Entity Ent;
+	bool Ret = false;
+	for (Ent = FindMobjFromTID(Arg1, none); Ent;
+		Ent = FindMobjFromTID(Arg1, Ent))
+	{
+		Ret = true;
+		Ent.Translation = Trans ? Trans : Ent.default.Translation;
+	}
+	return Ret;
+}
+
+//===========================================================================
+//
+//	EV_ThingHate
+//
+//===========================================================================
+
+final bool EV_ThingHate(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	EntityEx Hatee = none;
+	bool NothingToHate = false;
+	if (Arg2)
+	{
+		for (Hatee = EntityEx(FindMobjFromTID(Arg2, none)); Hatee;
+			Hatee = EntityEx(FindMobjFromTID(Arg2, Hatee)))
+		{
+			if (Hatee.bShootable &&	// can't hate nonshootable things
+				Hatee.Health > 0 &&	// can't hate dead things
+				!Hatee.bDormant)	// can't target dormant things
+			{
+				break;
+			}
+		}
+		if (!Hatee)
+		{
+			// Nothing to hate
+			NothingToHate = true;
+		}
+	}
+
+	EntityEx Hater;
+	if (Arg1 == 0)
+	{
+		if (A && A.bIsPlayer)
+		{
+			// Players cannot have their attitudes set
+			return false;
+		}
+		else
+		{
+			Hater = A;
+		}
+	}
+	else
+	{
+		for (Hater = EntityEx(FindMobjFromTID(Arg1, none)); Hater;
+			Hater = EntityEx(FindMobjFromTID(Arg1, Hater)))
+		{
+			if (Hater.Health > 0 && Hater.bShootable)
+			{
+				break;
+			}
+		}
+	}
+
+	while (Hater)
+	{
+		// Can't hate if can't attack.
+		if (Hater.SeeState)
+		{
+			// If hating a group of things, record the TID and NULL
+			// the target (if its TID doesn't match). A_Look will
+			// find an appropriate thing to go chase after.
+			if (Arg3)
+			{
+				Hater.TIDToHate = Arg2;
+				Hater.LastLookActor = none;
+
+				// If the TID to hate is 0, then don't forget the target and
+				// lastenemy fields.
+				if (Arg2)
+				{
+					if (Hater.Target && Hater.Target.TID != Arg2)
+					{
+						Hater.Target = none;
+					}
+					if (Hater.LastEnemy && Hater.LastEnemy.TID != Arg2)
+					{
+						Hater.LastEnemy = none;
+					}
+				}
+			}
+			// Hate types for Arg3:
+			//
+			// 0 - Just hate one specific actor
+			// 1 - Hate actors with given TID and attack players when shot
+			// 2 - Same as 1, but will go after enemies without seeing them first
+			// 3 - Hunt actors with given TID and also players
+			// 4 - Same as 3, but will go after monsters without seeing them first
+			// 5 - Hate actors with given TID and ignore player attacks
+			// 6 - Same as 5, but will go after enemies without seeing them first
+
+			// Note here: If you use Thing_Hate (tid, 0, 2), you can make
+			// a monster go after a player without seeing him first.
+			Hater.bNoSightCheck = Arg3 == 2 || Arg3 == 4 || Arg3 == 6;
+			Hater.bHuntPlayers = Arg3 == 3 || Arg3 == 4;
+			Hater.bNoHatePlayers = Arg3 == 5 || Arg3 == 6;
+
+			if (Arg2 == 0)
+			{
+				Hatee = A;
+			}
+			else if (NothingToHate)
+			{
+				Hatee = none;
+			}
+			else if (Arg3)
+			{
+				do
+				{
+					Hatee = EntityEx(FindMobjFromTID(Arg2, Hatee));
+				}
+				while (!Hatee ||
+					Hatee == Hater ||		// can't hate self
+					!Hatee.bShootable ||	// can't hate nonshootable things
+					Hatee.Health <= 0 ||	// can't hate dead things
+					Hatee.bDormant);
+			}
+
+			if (Hatee && Hatee != Hater && (Arg3 == 0 || (Hater.Goal && Hater.Target != Hater.Goal)))
+			{
+				if (Hater.Target)
+				{
+					Hater.LastEnemy = Hater.Target;
+				}
+				Hater.Target = Hatee;
+				if (!Hater.bDormant)
+				{
+					if (Hater.Health > 0)
+					{
+						Hater.SetState(Hater.SeeState);
+					}
+				}
+			}
+		}
+		if (Arg1)
+		{
+			for (Hater = EntityEx(FindMobjFromTID(Arg1, Hater)); Hater;
+				Hater = EntityEx(FindMobjFromTID(Arg1, Hater)))
+			{
+				if (Hater.Health > 0 && Hater.bShootable)
+				{
+					break;
+				}
+			}
+		}
+		else
+		{
+			Hater = none;
+		}
+	}
+	return true;
+}
+
+//===========================================================================
+//
+//	EV_ThingMove
+//
+//===========================================================================
+
+final bool EV_ThingMove(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	if (Arg1)
+	{
+		A = EntityEx(FindMobjFromTID(Arg1, none));
+	}
+
+	EntityEx Dest = EntityEx(FindMobjFromTID(Arg2, none));
+
+	if (A && Dest)
+	{
+		TVec OldOrg = A.Origin;
+		A.SetOrigin(Dest.Origin);
+		if (A.TestLocation())
+		{
+			if (Arg3)
+			{
+				Spawn(TeleportFog, OldOrg + vector(0.0, 0.0,
+					LineSpecialGameInfo(Game).TeleFogHeight));
+				Spawn(TeleportFog, A.Origin + vector(0.0, 0.0,
+					LineSpecialGameInfo(Game).TeleFogHeight));
+			}
+			return true;
+		}
+		else
+		{
+			A.SetOrigin(OldOrg);
+			return false;
+		}
+	}
+	return false;
+}
+
+//===========================================================================
+//
+//	EV_ThingSetSpecial
+//
+//	It's recomended to use SetThingSpecial ACS command that can set all 5
+// arguments.
+//
+//===========================================================================
+
+final bool EV_ThingSetSpecial(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	Entity Ent;
+	for (Ent = FindMobjFromTID(Arg1, none); Ent;
+		Ent = FindMobjFromTID(Arg1, Ent))
+	{
+		Ent.Special = Arg2;
+		Ent.Args[0] = Arg3;
+		Ent.Args[1] = Arg4;
+		Ent.Args[2] = Arg5;
+	}
+	return true;
+}
+
+//===========================================================================
+//
+//	EV_ThrustThingZ
+//
+//===========================================================================
+
+final bool EV_ThrustThingZ(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	float Force = itof(Arg2) * 35.0 / 4.0;
+	if (Arg3)
+	{
+		Force = -Force;
+	}
+
+	if (Arg1)
+	{
+		Entity Ent;
+		for (Ent = FindMobjFromTID(Arg1, none); Ent;
+			Ent = FindMobjFromTID(Arg1, Ent))
+		{
+			if (!Arg4)
+			{
+				Ent.Velocity.z = Force;
+			}
+			else
+			{
+				Ent.Velocity.z += Force;
+			}
+		}
+		return true;
+	}
+	if (A)
+	{
+		if (!Arg4)
+		{
+			A.Velocity.z = Force;
+		}
+		else
+		{
+			A.Velocity.z += Force;
+		}
+		return true;
+	}
+	return false;
+}
+
+//===========================================================================
+//
+//	EV_ThingChangeTID
+//
+//===========================================================================
+
+final bool EV_ThingChangeTID(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	if (!Arg1)
+	{
+		if (A)
+		{
+			A.SetTID(Arg2);
+		}
+	}
+	else
+	{
+		Entity Ent;
+		for (Ent = FindMobjFromTID(Arg1, none); Ent;
+			Ent = FindMobjFromTID(Arg1, Ent))
+		{
+			Ent.SetTID(Arg2);
+		}
+	}
+	return true;
+}
+
+//===========================================================================
+//
+//	EV_ThingStop
+//
+//===========================================================================
+
+final bool EV_ThingStop(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	bool Ret = false;
+	if (!Arg1)
+	{
+		if (A)
+		{
+			A.Velocity = vector(0.0, 0.0, 0.0);
+			Ret = true;
+		}
+	}
+	else
+	{
+		Entity Ent;
+		for (Ent = FindMobjFromTID(Arg1, none); Ent;
+			Ent = FindMobjFromTID(Arg1, Ent))
+		{
+			Ent.Velocity = vector(0.0, 0.0, 0.0);
+			Ret = true;
+		}
+	}
+	return Ret;
+}
+
+//===========================================================================
+//
+//	EV_SetPlayerProperty
+//
+//===========================================================================
+
+final bool EV_SetPlayerProperty(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, EntityEx A)
+{
+	if (!Arg1)
+	{
+		if (!A || !A.bIsPlayer)
+		{
+			return false;
+		}
+		return A.SetPlayerProperty(Arg3, Arg2);
+	}
+	else
+	{
+		bool Ret = false;
+		int i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!Game.Players[i] || !Game.Players[i].bSpawned)
+			{
+				continue;
+			}
+			if (EntityEx(Game.Players[i].MO).SetPlayerProperty(Arg3, Arg2))
+			{
+				Ret = true;
+			}
+		}
+		return Ret;
+	}
+}
+
+//===========================================================================
+//
+//	EV_ThingRaise
+//
+//===========================================================================
+
+final bool EV_ThingRaise(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	bool Ret = false;
+	if (!Arg1)
+	{
+		if (A)
+		{
+			Ret = DoThingRaise(A);
+		}
+	}
+	else
+	{
+		Entity Ent;
+		for (Ent = FindMobjFromTID(Arg1, none); Ent;
+			Ent = FindMobjFromTID(Arg1, Ent))
+		{
+			if (DoThingRaise(EntityEx(Ent)))
+			{
+				Ret = true;
+			}
+		}
+	}
+	return true;
+}
+
+//===========================================================================
+//
+//	DoThingRaise
+//
+//===========================================================================
+
+final bool DoThingRaise(EntityEx A)
+{
+	if (!A.DoThingRaise())
+	{
+		return false;
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//	Force field
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_ForceField
+//
+//==========================================================================
+
+final bool EV_ForceField(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx A)
+{
+	A.Damage(none, none, 16, '');
+	A.Velocity.x += 7.8125 * cos(A.Angles.yaw + 180.0) * 35.0;
+	A.Velocity.y += 7.8125 * sin(A.Angles.yaw + 180.0) * 35.0;
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_RemoveForceField
+//
+//==========================================================================
+
+final bool EV_RemoveForceField(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			i;
+	int			secnum;
+	sector_t*	sec;
+	line_t*		secline;
+
+	for (secnum = XLevel.FindSectorFromTag(Arg1, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(Arg1, secnum))
+	{
+		sec = &XLevel.Sectors[secnum];
+		for (i = 0; i < sec->linecount; i++)
+		{
+			secline = sec->lines[i];
+			if (secline->special != LNSPEC_ForceField)
+				continue;
+			if (!(secline->flags & ML_TWOSIDED))
+				continue;
+
+			XLevel.Sides[secline->sidenum[0]].MidTexture = 0;
+			XLevel.Sides[secline->sidenum[1]].MidTexture = 0;
+			secline->special = 0;
+			secline->flags &= ~ML_BLOCKING;
+		}
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//  Teleportation
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_Teleport
+//
+//==========================================================================
+
+final bool EV_Teleport(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	EntityEx thing, line_t* Line, bool fog)
+{
+	int			i;
+	int			count;
+	EntityEx	A;
+	int			SecTag;
+	int			SecNum;
+	sector_t*	Sec;
+	bool		SrcFog;
+	bool		KeepOrient;
+	TVec		DstOrg;
+	float		Angle;
+	TVec		OldVel;
+
+	if (!thing)
+	{
+		// Teleport function called with an invalid mobj
+		return false;
+	}
+	if (thing.bNoTeleport)
+	{
+		return false;
+	}
+
+	A = none;
+	if (fog)
+	{
+		SecTag = Arg2;
+		SrcFog = !Arg3;
+		KeepOrient = false;
+	}
+	else
+	{
+		SecTag = Arg3;
+		SrcFog = false;
+		KeepOrient = !Arg2;
+	}
+	if (Arg1)
+	{
+		count = 0;
+		for (A = EntityEx(FindMobjFromTID(Arg1, none)); A;
+			A = EntityEx(FindMobjFromTID(Arg1, A)))
+		{
+			if (SecTag == 0 || A.Sector->tag == SecTag)
+			{
+				count++;
+			}
+		}
+		if (count == 0)
+		{
+			return false;
+		}
+		count = 1 + (P_Random() % count);
+		A = none;
+		for (i = 0; i < count; i++)
+		{
+			do
+			{
+				A = EntityEx(FindMobjFromTID(Arg1, A));
+			}
+			while (A && SecTag != 0 && A.Sector->tag != SecTag);
+		}
+	}
+	else if (SecTag)
+	{
+		for (SecNum = XLevel.FindSectorFromTag(SecTag, -1); SecNum >= 0;
+			SecNum = XLevel.FindSectorFromTag(SecTag, SecNum))
+		{
+			Sec = &XLevel.Sectors[SecNum];
+			foreach AllThinkers(EntityEx, A)
+			{
+				if (!TeleportDest(A))
+				{
+					//	Not a teleportman
+					continue;
+				}
+				if (A.Sector != Sec)
+				{
+					//	Wrong sector
+					continue;
+				}
+				break;
+			}
+			if (A)
+			{
+				break;
+			}
+		}
+	}
+	if (!A)
+	{
+		return false;
+	}
+
+	DstOrg = A.Origin;
+	// Lee Killough's changes for silent teleporters from BOOM
+	if (KeepOrient && Line)
+	{
+		// Get the angle between the exit thing and source linedef.
+		// Rotate 180 degrees, so that walking perpendicularly across
+		// teleporter linedef causes thing to exit in the direction
+		// indicated by the exit thing.
+		Angle = atan2(Line->normal.y, Line->normal.x) - A.Angles.yaw + 180.0;
+
+		// Momentum of thing crossing teleporter linedef
+		OldVel = thing.Velocity;
+	}
+	if (!TeleportDest2(A))
+	{
+		DstOrg.z = EntityEx::ONFLOORZ;
+	}
+	if (thing.Teleport(DstOrg, A.Angles.yaw, fog, SrcFog, KeepOrient))
+	{
+		// Lee Killough's changes for silent teleporters from BOOM
+		if (!fog && Line && KeepOrient)
+		{
+			// Rotate thing according to difference in angles
+			thing.Angles.yaw = AngleMod360(thing.Angles.yaw + Angle);
+
+			// Rotate thing's momentum to come out of exit just like it entered
+			thing.Velocity.x = OldVel.x * cos(Angle) - OldVel.y * sin(Angle);
+			thing.Velocity.y = OldVel.y * cos(Angle) + OldVel.x * sin(Angle);
+		}
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_TeleportOther
+//
+//	Teleport anything matching other_tid to dest_tid
+//
+//==========================================================================
+
+final bool EV_TeleportOther(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	bool		Ret;
+	EntityEx	A;
+
+	Ret = false;
+	if (Arg1 && Arg2)
+	{
+		for (A = EntityEx(FindMobjFromTID(Arg1, none)); A;
+			A = EntityEx(FindMobjFromTID(Arg1, A)))
+		{
+			Ret |= EV_Teleport(Arg2, 0, 0, 0, 0, A, NULL, !!Arg3);
+		}
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
+//	DoGroupForOne
+//
+//==========================================================================
+
+final bool DoGroupForOne(EntityEx victim, EntityEx source, EntityEx dest,
+	bool floorz, bool fog)
+{
+	float an = dest.Angles.yaw - source.Angles.yaw;
+	float offX = victim.Origin.x - source.Origin.x;
+	float offY = victim.Origin.y - source.Origin.y;
+	float offAngle = victim.Angles.yaw - source.Angles.yaw;
+	float newX = offX * cos(an) - offY * sin(an);
+	float newY = offX * sin(an) + offY * cos(an);
+	bool res;
+
+	res = victim.Teleport(vector(dest.Origin.x + newX,
+		dest.Origin.y + newY, floorz ? EntityEx::ONFLOORZ : dest.Origin.z +
+		victim.Origin.z - source.Origin.z), 0.0, fog, fog, !fog);
+	// P_Teleport only changes angle if fog is true
+	victim.Angles.yaw = AngleMod360(dest.Angles.yaw + offAngle);
+
+	return res;
+}
+
+//==========================================================================
+//
+//	EV_TeleportGroup
+//
+//	[RH] Teleport a group of actors centred around source_tid so
+// that they become centred around dest_tid instead.
+//
+//==========================================================================
+
+final bool EV_TeleportGroup(int group_tid, int source_tid, int dest_tid,
+	bool moveSource, bool fog, EntityEx victim)
+{
+	EntityEx	sourceOrigin;
+	EntityEx	destOrigin;
+	bool		didSomething;
+	bool		floorz;
+
+	sourceOrigin = EntityEx(FindMobjFromTID(source_tid, none));
+	if (!sourceOrigin)
+	{
+		//	If there is no source origin, behave like TeleportOther
+		return EV_TeleportOther(group_tid, dest_tid, fog, 0, 0);
+	}
+
+	destOrigin = none;
+	do
+	{
+		destOrigin = EntityEx(FindMobjFromTID(dest_tid, destOrigin));
+	}
+	while (destOrigin && !TeleportDest(destOrigin));
+	if (!destOrigin)
+	{
+		return false;
+	}
+
+	didSomething = false;
+	floorz = !TeleportDest2(destOrigin);
+
+	// Use the passed victim if group_tid is 0
+	if (group_tid == 0 && victim)
+	{
+		didSomething = DoGroupForOne(victim, sourceOrigin, destOrigin,
+			floorz, fog);
+	}
+	else
+	{
+		// For each actor with tid matching arg0, move it to the same
+		// position relative to destOrigin as it is relative to
+		// sourceOrigin before the teleport.
+		for (victim = EntityEx(FindMobjFromTID(group_tid, none)); victim;
+			victim = EntityEx(FindMobjFromTID(group_tid, victim)))
+		{
+			didSomething |= DoGroupForOne(victim, sourceOrigin, destOrigin,
+				floorz, fog);
+		}
+	}
+
+	if (moveSource && didSomething)
+	{
+		didSomething |= sourceOrigin.Teleport(vector(destOrigin.Origin.x,
+			destOrigin.Origin.y, floorz ? EntityEx::ONFLOORZ : destOrigin.Origin.z),
+			0.0, false, false, true);
+		sourceOrigin.Angles.yaw = destOrigin.Angles.yaw;
+	}
+
+	return didSomething;
+}
+
+//==========================================================================
+//
+//	EV_TeleportSector
+//
+//	[RH] Teleport a group of actors in a sector. Source_tid is used as a
+// reference point so that they end up in the same position relative to
+// dest_tid. Group_tid can be used to not teleport all actors in the sector.
+//
+//==========================================================================
+
+final bool EV_TeleportSector(int tag, int source_tid, int dest_tid, bool fog,
+	int group_tid)
+{
+	EntityEx	sourceOrigin;
+	EntityEx	destOrigin;
+	bool		didSomething;
+	bool		floorz;
+	int			secnum;
+	sector_t*	sec;
+	EntityEx	A;
+
+	sourceOrigin = EntityEx(FindMobjFromTID(source_tid, none));
+	if (!sourceOrigin)
+	{
+		return false;
+	}
+
+	destOrigin = none;
+	do
+	{
+		destOrigin = EntityEx(FindMobjFromTID(dest_tid, destOrigin));
+	}
+	while (destOrigin && !TeleportDest(destOrigin));
+	if (!destOrigin)
+	{
+		return false;
+	}
+
+	didSomething = false;
+	floorz = !TeleportDest2(destOrigin);
+
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		sec = &XLevel.Sectors[secnum];
+
+		msecnode_t*Node = sec->TouchingThingList;
+		while (Node)
+		{
+			A = EntityEx(Node->Thing);
+			msecnode_t*Next = Node->SNext;
+			// possibly limit actors by group
+			if (A.Sector == sec && (group_tid == 0 || A.TID == group_tid))
+			{
+				didSomething |= DoGroupForOne(A, sourceOrigin, destOrigin,
+					floorz, fog);
+			}
+			Node = Next;
+		}
+	}
+	return didSomething;
+}
+
+//==========================================================================
+//
+//	EV_SilentLineTeleport
+//
+// Silent linedef-based TELEPORTATION, by Lee Killough
+// Primarily for rooms-over-rooms etc.
+// This is the complete player-preserving kind of teleporter.
+// It has advantages over the teleporter with thing exits.
+//
+// [RH] Modified to support different source and destination ids.
+//
+//==========================================================================
+
+final bool EV_SilentLineTeleport(line_t *line, int side, EntityEx thing,
+	int id, bool reverse)
+{
+	int searcher;
+	line_t *l;
+
+	if (side || thing.bNoTeleport || !line)
+	{
+		return false;
+	}
+
+	searcher = -1;
+	for (l = XLevel.FindLine(id, &searcher); l;
+		l = XLevel.FindLine(id, &searcher))
+	{
+		TVec SrcXAxis;
+		TVec SrcYAxis;
+		TVec DstXAxis;
+		TVec DstYAxis;
+		TVec newPos;
+		TVec TempV;
+		TAVec TempA;
+		float pos;
+		float TempX;
+		float TempY;
+		float oldZ;
+
+		if (l == line || !l->backsector)
+		{
+			continue;
+		}
+
+		// Get the thing's position along the source linedef
+		SrcXAxis = Normalise(*line->v2 - *line->v1);
+		SrcYAxis = -line->normal;
+		pos = DotProduct(SrcXAxis, thing.Origin - *line->v1);
+		oldZ = thing.Origin.z;
+
+		// Interpolate position across the exit linedef
+		if (reverse)
+		{
+			DstXAxis = Normalise(*l->v2 - *l->v1);
+			DstYAxis = -l->normal;
+			newPos = *l->v1 + pos * DstXAxis;
+			newPos.z = thing.Origin.z - GetPlanePointZ(
+				line->frontsector->botregion->floor, thing.Origin) +
+				GetPlanePointZ(l->frontsector->botregion->floor, newPos);
+		}
+		else
+		{
+			DstXAxis = Normalise(*l->v1 - *l->v2);
+			DstYAxis = l->normal;
+			newPos = *l->v2 + pos * DstXAxis;
+			newPos.z = thing.Origin.z - GetPlanePointZ(
+				line->frontsector->botregion->floor, thing.Origin) +
+				GetPlanePointZ(l->backsector->botregion->floor, newPos);
+		}
+
+		// Attempt to teleport, aborting if blocked
+		if (!thing.TeleportMove(newPos))
+		{
+			return false;
+		}
+
+		// Rotate thing's orientation according to difference in linedef angles
+		TempV.x = DotProduct(DstXAxis, SrcXAxis);
+		TempV.y = DotProduct(DstYAxis, SrcXAxis);
+		TempV.z = 0.0;
+		VectorAngles(&TempV, &TempA);
+		thing.Angles.yaw = AngleMod360(thing.Angles.yaw - TempA.yaw);
+
+		// Rotate thing's momentum to come out of exit just like it entered
+		TempX = DotProduct(thing.Velocity, SrcXAxis);
+		TempY = DotProduct(thing.Velocity, SrcYAxis);
+		thing.Velocity.x = TempX * DstXAxis.x + TempY * DstYAxis.x;
+		thing.Velocity.y = TempX * DstXAxis.y + TempY * DstYAxis.y;
+
+		// Adjust a player's view, in case there has been a height change
+		if (thing.bIsPlayer)
+		{
+			thing.Player.ViewOrg.z += thing.Origin.z - oldZ;
+
+			thing.Player.bFixAngle = true;
+		}
+		return true;
+	}
+	return false;
+}
+
+//**************************************************************************
+//
+//	Noise alert
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  RecursiveSound
+//
+//  Called by NoiseAlert. Recursively traverse adjacent sectors, sound
+// blocking lines cut off traversal.
+//
+//==========================================================================
+
+final void RecursiveSound(sector_t* sec, int soundblocks, Entity soundtarget)
+{
+	int			i;
+	line_t*		check;
+	sector_t*	other;
+
+	// wake up all monsters in this sector
+	if (sec->validcount == *Game.validcount &&
+		sec->soundtraversed <= soundblocks + 1)
+	{
+		return;	// already flooded
+	}
+
+	sec->validcount = *Game.validcount;
+	sec->soundtraversed = soundblocks + 1;
+	sec->SoundTarget = soundtarget;
+
+	for (i = 0; i < sec->linecount; i++)
+	{
+		check = sec->lines[i];
+		if (check->sidenum[1] == -1 || !(check->flags & ML_TWOSIDED))
+		{
+			continue;
+		}
+
+		// Early out for intra-sector lines
+		if (check->frontsector == check->backsector)
+		{
+			continue;
+		}
+
+		if (!LineOpenings(check, *check->v1))
+		{
+			if (!LineOpenings(check, *check->v2))
+			{
+				//	Closed door
+				continue;
+			}
+		}
+
+		if (check->frontsector == sec)
+		{
+			other = check->backsector;
+		}
+		else
+		{
+			other = check->frontsector;
+		}
+
+		if (check->flags & ML_SOUNDBLOCK)
+		{
+			if (!soundblocks)
+			{
+				RecursiveSound(other, 1, soundtarget);
+			}
+		}
+		else
+		{
+			RecursiveSound(other, soundblocks, soundtarget);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  NoiseAlert
+//
+//  If a monster yells at a player, it will alert other monsters to the
+// player.
+//
+//==========================================================================
+
+final void NoiseAlert(Entity target, Entity emmiter)
+{
+	if (!emmiter)
+	{
+		return;
+	}
+
+	if (target && target.bIsPlayer && PlayerEx(target.Player).bNoTarget)
+	{
+		return;
+	}
+
+	(*Game.validcount)++;
+	RecursiveSound(emmiter.Sector, 0, target);
+}
+
+//==========================================================================
+//
+//  EV_NoiseAlert
+//
+//==========================================================================
+
+final bool EV_NoiseAlert(EntityEx A, int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	EntityEx	ASource;
+	EntityEx	ATarget;
+
+	if (!Arg1)
+	{
+		ASource = A;
+	}
+	else
+	{
+		ASource = EntityEx(FindMobjFromTID(Arg1, none));
+	}
+
+	if (!Arg2)
+	{
+		ATarget = A;
+	}
+	else
+	{
+		ATarget = EntityEx(FindMobjFromTID(Arg2, none));
+	}
+
+	NoiseAlert(ASource, ATarget);
+	return true;
+}
+
+//==========================================================================
+//
+// EV_LineSearchForPuzzleItem
+//
+//==========================================================================
+
+final bool EV_LineSearchForPuzzleItem(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, EntityEx A)
+{
+	Inventory Item;
+
+	if (!A)
+		return false;
+	if (!A.bIsPlayer)
+		return false;
+
+	// Search player's inventory for puzzle items
+	for (Item = A.Inventory; Item; Item = Item.Inventory)
+	{
+		if (!PuzzleItem(Item))
+			continue;
+		if (PuzzleItem(Item).PuzzleItemNumber == Arg1)
+		{
+			// A puzzle item was found for the line
+			if (A.UseInventory(Item))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//**************************************************************************
+//
+//	Point pushers and pullers
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	GetPushThing
+//
+//	Returns a pointer to an MT_PUSH or MT_PULL thing, NULL otherwise.
+//
+//==========================================================================
+
+final EntityEx GetPushThing(int s)
+{
+	Entity		thing;
+	sector_t*	sec;
+
+	sec = &XLevel.Sectors[s];
+	for (thing = sec->ThingList; thing; thing = thing.SNext)
+	{
+		if (PointPusher(thing) || PointPuller(thing))
+		{
+			return EntityEx(thing);
+		}
+	}
+	return none;
+}
+
+//==========================================================================
+//
+//	SpawnPushers
+//
+//	Initialise the sectors where pushers are present
+//
+//==========================================================================
+
+final void SpawnPushers()
+{
+	int			i;
+	line_t*		l;
+	int			s;
+	Pusher		P;
+	EntityEx	thing;
+
+	for (i = 0; i < XLevel.NumLines; i++)
+	{
+		l = &XLevel.Lines[i];
+		switch (l->special)
+		{
+		case LNSPEC_SectorSetWind: // wind
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				P = Spawn(Pusher);
+				P.Init(Pusher::PUSHER_Wind, l->arg4 ? l : NULL, l->arg2,
+					l->arg3, none, s);
+			}
+			break;
+
+		case LNSPEC_SectorSetCurrent: // current
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				P = Spawn(Pusher);
+				P.Init(Pusher::PUSHER_Current, l->arg4 ? l : NULL, l->arg2,
+					l->arg3, none, s);
+			}
+			break;
+
+		case LNSPEC_PointPushSetForce: // push/pull
+			if (l->arg1)
+			{
+				// [RH] Find thing by sector
+				for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+					s = XLevel.FindSectorFromTag(l->arg1, s))
+				{
+					thing = GetPushThing(s);
+					if (thing)
+					{
+						// No MT_P* means no effect
+						// [RH] Allow narrowing it down by tid
+						if (!l->arg2 || l->arg2 == thing.TID)
+						{
+							P = Spawn(Pusher);
+							P.Init(Pusher::PUSHER_Push, l->arg4 ? l : NULL,
+								l->arg3, 0, thing, s);
+						}
+					}
+				}
+			}
+			else
+			{
+				// [RH] Find thing by tid
+				for (thing = EntityEx(FindMobjFromTID(l->arg2, none));
+					thing;
+					thing = EntityEx(FindMobjFromTID(l->arg2, thing)))
+				{
+					if (PointPuller(thing) || PointPusher(thing))
+					{
+						for (s = 0; s < XLevel.NumSectors; s++)
+							if (&XLevel.Sectors[s] == thing.Sector)
+								break;
+						P = Spawn(Pusher);
+						P.Init(Pusher::PUSHER_Push, l->arg4 ? l : NULL,
+							l->arg3, 0, thing, s);
+					}
+				}
+			}
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	AdjustPusher
+//
+//==========================================================================
+
+final bool AdjustPusher(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	line_t* Line, int Type)
+{
+	int		tag;
+	int		magnitude;
+	int		angle;
+	Pusher	Collection;
+	Pusher	P;
+	int		secnum;
+
+	if (Line || Arg4)
+	{
+		return false;
+	}
+	tag = Arg1;
+	magnitude = Arg2;
+	angle = Arg3;
+	Collection = none;
+	// Find pushers already attached to the sector, and change their parameters.
+	foreach AllThinkers(Pusher, P)
+	{
+		if (P.CheckForSectorMatch(Type, tag) >= 0)
+		{
+			P.ChangeValues(magnitude, angle);
+			P.AdjustLink = Collection;
+			Collection = P;
+		}
+	}
+
+	// Now create pushers for any sectors that don't already have them.
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		for (P = Collection; P; P = P.AdjustLink)
+		{
+			if (P.Affectee == secnum)
+				break;
+		}
+		if (!P)
+		{
+			P = Spawn(Pusher);
+			P.Init(Type, NULL, magnitude, angle, none, secnum);
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	EV_LineTranslucent
+//
+//==========================================================================
+
+final bool EV_LineTranslucent(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			Searcher;
+	line_t*		Other;
+
+	Searcher = -1;
+	for (Other = XLevel.FindLine(Arg1, &Searcher); Other;
+		Other = XLevel.FindLine(Arg1, &Searcher))
+	{
+		Other->alpha = itof(Arg2) / 255.0;
+		if (Arg3 == 0)
+		{
+			Other->flags &= ~ML_ADDITIVE;
+		}
+		else if (Arg3 == 1)
+		{
+			Other->flags |= ML_ADDITIVE;
+		}
+		else
+		{
+			print("Invalid line translucency type %d", Arg3);
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  EV_SectorSetPlaneReflection
+//
+//==========================================================================
+
+int EV_SectorSetPlaneReflection(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5)
+{
+	int			SecNum;
+
+	for (SecNum = XLevel.FindSectorFromTag(Arg1, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Arg1, SecNum))
+	{
+		XLevel.Sectors[SecNum].floor.MirrorAlpha = itof(255 - Arg2) / 255.0;
+		XLevel.Sectors[SecNum].ceiling.MirrorAlpha = itof(255 - Arg3) / 255.0;
+	}
+	return 1;
+}
+
+//==========================================================================
+//
+//  EV_GlassBreak
+//
+//==========================================================================
+
+final bool EV_GlassBreak(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
+	line_t* Line, EntityEx A)
+{
+	bool		switched;
+	byte		Quest1;
+	byte		Quest2;
+	float		x;
+	float		y;
+	int			i;
+	EntityEx	glass;
+	float		an;
+	float		speed;
+
+	if (!Line)
+	{
+		return false;
+	}
+	if (Line->flags & ML_TWOSIDED)
+	{
+		Line->flags &= ~(ML_BLOCKING | ML_BLOCKEVERYTHING);
+	}
+	switched = ChangeSwitchTexture(Line->sidenum[0], false,
+		'switches/normbutn', Quest1);
+	Line->special = 0;
+	if (Line->sidenum[1] != -1)
+	{
+		if (ChangeSwitchTexture(Line->sidenum[1], false, 'switches/normbutn',
+			Quest2))
+		{
+			switched = true;
+		}
+	}
+	else
+	{
+		Quest2 = Quest1;
+	}
+	if (switched)
+	{
+		if (!Arg1)
+		{
+			// Break some glass
+			x = Line->v1->x + (Line->v2->x - Line->v1->x) / 2.0;
+			y = Line->v1->y + (Line->v2->y - Line->v1->y) / 2.0;
+			x += (Line->frontsector->soundorg.x - x) / 5.0;
+			y += (Line->frontsector->soundorg.y - y) / 5.0;
+
+			for (i = 0; i < 7; i++)
+			{
+				glass = Spawn(GlassJunk, vector(x, y, EntityEx::ONFLOORZ));
+				glass.Origin.z += 24.0;
+				glass.SetState(GetStatePlus(glass.IdleState, P_Random() % glass.Health, true));
+				an = Random() * 360.0;
+				glass.Angles.yaw = an;
+				speed = Random() * 4.0 * 35.0;
+				glass.Velocity.x = cos(an) * speed;
+				glass.Velocity.y = sin(an) * speed;
+				glass.Velocity.z = Random() * 8.0 * 35.0;
+			}
+		}
+		if (Quest1 || Quest2)
+		{
+			// Up stats and signal this mission is complete
+			if (!A)
+			{
+				for (i = 0; i < MAXPLAYERS; ++i)
+				{
+					if (Game.Players[i] && Game.Players[i].bSpawned)
+					{
+						A = EntityEx(Game.Players[i].MO);
+						break;
+					}
+				}
+			}
+			if (A && A.bIsPlayer)
+			{
+				A.GiveInventoryType(QuestItem29);
+				A.GiveInventoryType(class<Inventory>(FindClass('UpgradeAccuracy')));
+				A.GiveInventoryType(class<Inventory>(FindClass('UpgradeStamina')));
+			}
+		}
+	}
+	//	We already changed the switch texture, so don't make the main code
+	// switch it back.
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_SendToCommunicator
+//
+//==========================================================================
+
+final bool EV_SendToCommunicator(EntityEx A, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, int Side)
+{
+	if (Arg2 && Side)
+	{
+		return false;
+	}
+
+	if (A && A.bIsPlayer && A.FindInventory(Communicator))
+	{
+		if (!Arg4)
+		{
+			PlayerEx(A.Player).SetObjectives(Arg1);
+		}
+
+		PlayerEx(A.Player).ClientVoice(Arg1);
+
+		if (Arg3 == 0)
+		{
+			A.Player.cprint("Incoming Message");
+		}
+		else if (Arg3 == 1)
+		{
+			A.Player.cprint("Incoming Message from BlackBird");
+		}
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_StartConversation
+//
+//==========================================================================
+
+final bool EV_StartConversation(int Arg1, int Arg2, int Arg3, int Arg4,
+	int Arg5, EntityEx A)
+{
+	EntityEx	Ent;
+
+	if (!A || !A.bIsPlayer)
+	{
+		return false;
+	}
+	for (Ent = EntityEx(FindMobjFromTID(Arg1, none)); Ent;
+		Ent = EntityEx(FindMobjFromTID(Arg1, Ent)))
+	{
+		if (StartConversation(A, Ent))
+		{
+			if (Arg2)
+			{
+				A.Angles.yaw = atan2(Ent.Origin.y - A.Origin.y,
+					Ent.Origin.x - A.Origin.x);
+				A.Player.bFixAngle = true;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+//===========================================================================
+// Quake variables
+//
+//      Arg1     Intensity on richter scale (2..9)
+//      Arg2     Duration in tics
+//      Arg3     Radius for damage, in tile units (64 pixels)
+//      Arg4     Radius for tremor in tile units (64 pixels)
+//      Arg5     TID of map thing for focus of quake
+//
+//===========================================================================
+
+//===========================================================================
+//
+//	A_LocalQuake
+//
+//===========================================================================
+
+final bool A_LocalQuake(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5)
+{
+	QuakeFocus focus;
+	EntityEx target;
+	int success = false;
+
+	// Find all quake foci
+	for (target = EntityEx(FindMobjFromTID(Arg5, none)); target;
+		target = EntityEx(FindMobjFromTID(Arg5, target)))
+	{
+		focus = Spawn(QuakeFocus, target.Origin);
+		if (focus)
+		{
+			focus.Richters = Arg1;
+			focus.QuakeDuration = Arg2 >> 1;	// decremented every 2 tics
+			focus.DamageRadius = itof(Arg3) * 64.0;
+			focus.TremorRadius = itof(Arg4) * 64.0;
+			success = true;
+		}
+	}
+
+	return success;
+}
+
+//==========================================================================
+//
+//	ForceLightning
+//
+//==========================================================================
+
+final void ForceLightning(int Mode)
+{
+	LightningThinker Lightning = none;
+	Thinker Th;
+	foreach AllThinkers(LightningThinker, Th)
+	{
+		Lightning = LightningThinker(Th);
+		break;
+	}
+	if (!Lightning)
+	{
+		Lightning = Spawn(LightningThinker);
+		Lightning.Init();
+	}
+	Lightning.ForceLightning(Mode);
+}
+
+//==========================================================================
+//
+//	ModToDamageType
+//
+//==========================================================================
+
+final name ModToDamageType(int Mod)
+{
+	switch (Mod)
+	{
+	case 9:
+		return 'BFGSplash';
+	case 12:
+		return 'Drowning';
+	case 13:
+		return 'Slime';
+	case 14:
+		return 'Fire';
+	case 15:
+		return 'Crush';
+	case 16:
+		return 'Telefrag';
+	case 17:
+		return 'Falling';
+	case 18:
+		return 'Suicide';
+	case 20:
+		return 'Exit';
+	case 22:
+		return 'Melee';
+	case 23:
+		return 'Railgun';
+	case 24:
+		return 'Ice';
+	case 25:
+		return 'Disintegrate';
+	case 26:
+		return 'Poison';
+	case 27:
+		return 'Electric';
+	case 1000:
+		return 'Massacre';
+	default:
+		return '';
+	}
+}
+
+//==========================================================================
+//
+//  PolyThrustMobj
+//
+//==========================================================================
+
+final void PolyThrustMobj(Entity Other, TVec thrustDir, polyobj_t* po)
+{
+	float force;
+	PolyobjThinker pe;
+
+	if (!EntityEx(Other).bShootable && !Other.bIsPlayer)
+	{
+		return;
+	}
+
+	pe = PolyobjThinker(po->SpecialData);
+	if (pe)
+	{
+		force = pe.thrust_force;
+		if (force < 1.0)
+		{
+			force = 1.0;
+		}
+		else if (force > 128.0)
+		{
+			force = 128.0;
+		}
+	}
+	else
+	{
+		force = 1.0;
+	}
+
+	Other.Velocity += force * thrustDir;
+	if (po->bCrush)
+	{
+		TVec testPos;
+
+		testPos = Other.Origin + force * thrustDir * Game.frametime;
+		if (po->bHurtOnTouch || !Other.CheckPosition(testPos))
+		{
+			EntityEx(Other).Damage(none, none, 3, 'Crush');
+		}
+	}
+}
+
+//==========================================================================
+//
+//  PolyBusy
+//
+//==========================================================================
+
+final bool PolyBusy(int polyobj)
+{
+	polyobj_t *poly;
+
+	poly = XLevel.GetPolyobj(polyobj);
+	if (!poly->SpecialData)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+//==========================================================================
+//
+//	ThingCount
+//
+//==========================================================================
+
+final int ThingCount(int type, name TypeName, int tid)
+{
+	class<EntityEx>		moType;
+
+	if (!(type + tid) && !TypeName)
+	{
+		// Nothing to count
+		return 0;
+	}
+	if (TypeName)
+	{
+		moType = class<EntityEx>(FindClassLowerCase(TypeName));
+		if (!moType)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		moType = class<EntityEx>(FindClassFromScriptId(type,
+			LineSpecialGameInfo(Game).GameFilterFlag));
+	}
+
+	//	Count things.
+	int Count = DoThingCount(moType, tid);
+	if (moType)
+	{
+		//	If this class has a replacement, count number of instances of
+		// replacement class too.
+		class<EntityEx> RepType = class<EntityEx>(GetClassReplacement(
+			moType));
+		if (RepType != moType)
+		{
+			Count += DoThingCount(RepType, tid);
+		}
+	}
+	return Count;
+}
+
+//==========================================================================
+//
+//	DoThingCount
+//
+//==========================================================================
+
+final int DoThingCount(class<EntityEx> moType, int tid)
+{
+	int					count;
+	EntityEx			Ent;
+
+	count = 0;
+	if (tid)
+	{
+		// Count TID things
+		for (Ent = EntityEx(FindMobjFromTID(tid, none)); Ent != none;
+			Ent = EntityEx(FindMobjFromTID(tid, Ent)))
+		{
+			if (Ent.bMonster && Ent.Health <= 0)
+			{
+				// Don't count dead monsters
+				continue;
+			}
+			if (Inventory(Ent) && Ent.Owner)
+			{
+				//	Don't count things in somebody's inventory
+				continue;
+			}
+			if (!moType || moType == Ent.Class)
+			{
+				count++;
+			}
+		}
+	}
+	else if (moType)
+	{
+		// Count only types
+		foreach AllThinkers(moType, Ent)
+		{
+			if (Ent.Class != moType)
+			{
+				// Doesn't match
+				continue;
+			}
+			if (Ent.bMonster && Ent.Health <= 0)
+			{
+				// Don't count dead monsters
+				continue;
+			}
+			if (Inventory(Ent) && Ent.Owner)
+			{
+				//	Don't count things in somebody's inventory
+				continue;
+			}
+			count++;
+		}
+	}
+	return count;
+}
+
+//==========================================================================
+//
+//  SectorDamage
+//
+//==========================================================================
+
+final void SectorDamage(int Tag, int Amount, name DamageType,
+	name ProtectionType, int Flags)
+{
+	class<Inventory> ProtectClass = class<Inventory>(FindClassLowerCase(
+		ProtectionType));
+
+	int SecNum = -1;
+	for (SecNum = XLevel.FindSectorFromTag(Tag, -1); SecNum >= 0;
+		SecNum = XLevel.FindSectorFromTag(Tag, SecNum))
+	{
+		sector_t* Sec = &XLevel.Sectors[SecNum];
+		Entity Ent;
+		Entity Next;
+
+		for (Ent = Sec->ThingList; Ent; Ent = Next)
+		{
+			Next = Ent.SNext;
+
+			if (!EntityEx(Ent).bShootable)
+			{
+				continue;
+			}
+			if (!(Flags & DAMAGE_NONPLAYERS) && !Ent.bIsPlayer)
+			{
+				continue;
+			}
+			if (!(Flags & DAMAGE_PLAYERS) && Ent.bIsPlayer)
+			{
+				continue;
+			}
+
+			if (!(Flags & DAMAGE_IN_AIR) && Ent.Origin.z !=
+				GetPlanePointZ(&Sec->floor, Ent.Origin) && !Ent.WaterLevel)
+			{
+				continue;
+			}
+
+			if (ProtectClass)
+			{
+				if (!(Flags & DAMAGE_SUBCLASSES_PROTECT))
+				{
+					if (EntityEx(Ent).FindInventory(ProtectClass))
+					{
+						continue;
+					}
+				}
+				else
+				{
+					Inventory Item;
+
+					for (Item = EntityEx(Ent).Inventory; Item; Item = Item.Inventory)
+					{
+						if (Item.IsA(ProtectionType))
+						{
+							break;
+						}
+					}
+					if (Item)
+					{
+						continue;
+					}
+				}
+			}
+
+			EntityEx(Ent).Damage(none, none, Amount, DamageType);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SpawnMapThing
+//
+//	The fields of the mapthing should already be in host byte order.
+//
+//==========================================================================
+
+final void SpawnMapThing(mthing_t* mthing)
+{
+	int				spawnMask;
+	class<EntityEx>	moClass;
+
+	if (mthing->type <= 0)
+	{
+		return;
+	}
+
+	// count deathmatch start positions
+	if (mthing->type == 11)
+	{
+		DeathmatchStarts.Num = DeathmatchStarts.Num + 1;
+		CopyMThing(mthing, &DeathmatchStarts[DeathmatchStarts.Num - 1]);
+		return;
+	}
+
+	if (bCheckStrifeStartSpots && mthing->type >= 118 && mthing->type <= 127)
+	{
+		//	Map start spots, i.e. player starts.
+		mthing->arg1 = mthing->type - 117;
+		mthing->type = 1;
+	}
+
+	// Check for player starts 1 to 4
+	bool IsPlayerStart = false;
+	if (mthing->type <= 4)
+	{
+		IsPlayerStart = true;
+	}
+	// Check for player starts 5 to 8
+	if (mthing->type >= ExtPlayersBase && mthing->type < ExtPlayersBase + 4)
+	{
+		//	Change type to range 5-8.
+		mthing->type = 5 + mthing->type - ExtPlayersBase;
+		IsPlayerStart = true;
+	}
+
+	if (!IsPlayerStart || bFilterStarts)
+	{
+		//
+		// [KORAX]
+		//
+		/*// Check current game type with spawn flags
+		if (Game.netgame == false)
+		{
+			spawnMask = MTF_GSINGLE;
+		}
+		else if (Game.deathmatch)
+		{
+			spawnMask = MTF_GDEATHMATCH;
+		}
+		else
+		{
+			spawnMask = MTF_GCOOP;
+		}*/
+		//
+		// [CW] New KArena spawn filters
+		//
+
+		if (!(mthing->options & MTFKA_ALWAYS))
+		{
+			switch (GetCvar('deathmatch'))
+			{
+			case HexenDefs::game_ctf:
+				spawnMask = MTFKA_CTF;
+				break;
+			case HexenDefs::game_domination:
+				spawnMask = MTFKA_DOMINATION;
+				break;
+			case HexenDefs::game_sweep:
+			case HexenDefs::game_sweepteam:
+				spawnMask = MTFKA_CSWEEP;
+				break;
+			case HexenDefs::game_football:
+				spawnMask = MTFKA_FOOTBALL;
+				break;
+			case HexenDefs::game_xmas:
+				spawnMask = MTFKA_XMASHAVOC;
+				break;
+			default:
+				spawnMask = MTFKA_DM;
+				break;
+			}
+
+			if (!(mthing->options & spawnMask))
+			{
+				return;
+			}
+		}
+
+		// Check current skill with spawn flags
+		if (!(mthing->SkillClassFilter & World.SkillSpawnFilter))
+		{
+			return;
+		}
+
+		//
+		// [CW] Not appliable for KA, at all
+		//
+		/*// Check current character classes with spawn flags
+		spawnMask = GetPClassSpawnFlags();
+		if (spawnMask && !(mthing->SkillClassFilter & spawnMask))
+		{
+			// Not for current class
+			return;
+		}*/
+	}
+
+	if (IsPlayerStart)
+	{
+		// save spots for respawning in network games
+		PlayerStarts.Num = PlayerStarts.Num + 1;
+		CopyMThing(mthing, &PlayerStarts[PlayerStarts.Num - 1]);
+		return;
+	}
+
+	//	Sector's sound sequence types.
+	if (mthing->type >= 1400 && mthing->type < 1410)
+	{
+		XLevel.PointInSector(vector(mthing->x,
+			mthing->y, 0.0))->seqType = mthing->type - 1400;
+		return;
+	}
+	if (mthing->type == 1411)
+	{
+		int			SeqType;
+
+		if (mthing->arg1 == 255)
+			SeqType = -1;
+		else
+			SeqType = mthing->arg1;
+
+		if (SeqType > 63)
+		{
+			print("Sound sequence %d out of range", SeqType);
+		}
+		else
+		{
+			XLevel.PointInSector(vector(mthing->x,
+				mthing->y, 0.0))->seqType = SeqType;
+		}
+		return;
+	}
+
+	//	Remap old ambient sound types to the generic one.
+	if (mthing->type >= 14001 && mthing->type <= 14064)
+	{
+		mthing->arg1 = mthing->type - 14000;
+		mthing->type = 14065;
+	}
+
+	// find which type to spawn
+	moClass = class<EntityEx>(FindClassFromEditorId(mthing->type,
+		LineSpecialGameInfo(Game).GameFilterFlag));
+	if (!moClass)
+	{
+		// Can't find thing type
+		dprint("SpawnMapThing: Unknown type %d at (%f, %f)",
+			mthing->type, mthing->x, mthing->y);
+		moClass = Unknown;
+	}
+	else
+	{
+		moClass = class<EntityEx>(GetClassReplacement(moClass));
+
+		//	If actor has no sprites, also map it to the unknown thing
+		if (FindClassState(moClass, 'Spawn') &&
+			!AreStateSpritesPresent(FindClassState(moClass, 'Spawn')))
+		{
+			print("%n at (%f, %f), has no frames", GetClassName(moClass),
+				mthing->x, mthing->y);
+			moClass = Unknown;
+		}
+	}
+
+	if (Level.Game.nomonsters && moClass.default.bMonster)
+	{
+		return;
+	}
+
+	// spawn it
+	Spawn(moClass,,, mthing, false);
+}
+
+//==========================================================================
+//
+//  CheckLock
+//
+//==========================================================================
+
+final bool CheckLock(Entity user, int lock, bool door)
+{
+	if (!user.bIsPlayer)
+	{
+		return false;
+	}
+	if (!lock)
+	{
+		return true;
+	}
+	LockDef* Lock = GetLockDef(lock);
+	if (!Lock)
+	{
+		if (lock == 103)
+		{
+			user.Player.centreprint(Lock103Message);
+		}
+		else
+		{
+			user.Player.centreprint("That doesn't seem to work");
+		}
+		user.PlaySound('misc/keytry', CHAN_VOICE);
+		return false;
+	}
+	if (CheckLockDef(Lock, EntityEx(user)))
+	{
+		return true;
+	}
+	user.Player.centreprint(door ? Lock->Message : Lock->RemoteMessage);
+	user.PlaySound(Lock->LockedSound, CHAN_VOICE);
+	return false;
+}
+
+//==========================================================================
+//
+//  GetDefaultDoorSound
+//
+//==========================================================================
+
+final bool CheckLockDef(LockDef* Lock, EntityEx User)
+{
+	int			i;
+	int			j;
+	Inventory	Item;
+
+	//	Empty lock list means check for any key.
+	if (!Lock->Locks.Num)
+	{
+		for (Item = User.Inventory; Item; Item = Item.Inventory)
+		{
+			if (Key(Item))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	for (i = 0; i < Lock->Locks.Num; i++)
+	{
+		bool Good = false;
+		for (j = 0; j < Lock->Locks[i].AnyKeyList.Num; j++)
+		{
+			if (User.FindInventory(class<Inventory>(
+				Lock->Locks[i].AnyKeyList[j])))
+			{
+				Good = true;
+				break;
+			}
+		}
+		if (!Good)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//	CONVERSATION STUFF
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	StartConversation
+//
+//==========================================================================
+
+bool StartConversation(EntityEx User, EntityEx UseOn)
+{
+	int SpeechNum;
+
+	if (Game.netgame)
+	{
+		return false;
+	}
+	if (!User || !User.bIsPlayer || User.Health <= 0)
+	{
+		return false;
+	}
+	if (!UseOn || UseOn.Health <= 0)
+	{
+		return false;
+	}
+	if (UseOn.bInCombat)
+	{
+		//	This dude is too busy to talk right now.
+		return false;
+	}
+	if (!UseOn.ConversationID)
+	{
+		return false;
+	}
+	SpeechNum = UseOn.GetSpeech();
+	if (SpeechNum)
+	{
+		CurrentSpeaker = UseOn;
+		CurrentSpeakingTo = User;
+		OldSpeakerAngle = UseOn.Angles.yaw;
+		UseOn.Angles.yaw = atan2(User.Origin.y - UseOn.Origin.y,
+			User.Origin.x - UseOn.Origin.x);
+		User.PlaySound('misc/chat', CHAN_VOICE);
+		StartSpeech(SpeechNum);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	StartSpeech
+//
+//==========================================================================
+
+final void StartSpeech(int SpeechNum)
+{
+	RogueConSpeech *Speech;
+	bool conJumped;
+
+	do
+	{
+		conJumped = false;
+		if (!SpeechNum)
+		{
+			StopSpeech();
+			return;
+		}
+		if (SpeechNum < 0)
+		{
+			Speech = &XLevel.GenericSpeeches[-SpeechNum - 1];
+		}
+		else
+		{
+			Speech = &XLevel.LevelSpeeches[SpeechNum - 1];
+		}
+		if (Speech->JumpToConv &&
+			CheckForNeededItem(CurrentSpeakingTo, Speech->CheckItem1, 1) != -2 &&
+			CheckForNeededItem(CurrentSpeakingTo, Speech->CheckItem2, 1) != -2 &&
+			CheckForNeededItem(CurrentSpeakingTo, Speech->CheckItem3, 1) != -2)
+		{
+			CurrentSpeaker.CurrentSpeech = Speech->JumpToConv;
+			SpeechNum = CurrentSpeaker.GetSpeech();
+			conJumped = true;
+		}
+	}
+	while (conJumped);
+	CurrentSpeechIndex = SpeechNum;
+
+	PlayerEx(CurrentSpeakingTo.Player).ClientSpeech(CurrentSpeaker, SpeechNum);
+}
+
+//==========================================================================
+//
+//	GetClassFromID
+//
+//==========================================================================
+
+final class<EntityEx> GetClassFromID(int ID)
+{
+	class Cls;
+	foreach (AllClasses(EntityEx, Cls))
+	{
+		if (class<EntityEx>(Cls).default.ConversationID == ID)
+		{
+			return class<EntityEx>(Cls);
+		}
+	}
+	if (ID)
+	{
+		print("Unknown item %d", ID);
+	}
+	return none;
+}
+
+//==========================================================================
+//
+//	CheckForNeededItem
+//
+//==========================================================================
+
+final int CheckForNeededItem(EntityEx A, int ID, int Amount)
+{
+	int i;
+
+	if (!ID)
+	{
+		return -1;
+	}
+	//	Get class ID.
+	class<EntityEx> CID = GetClassFromID(ID);
+	//	Check inventory items.
+	if (class<Inventory>(CID) && class<Inventory>(CID).default.bInvBar)
+	{
+		Inventory Item = A.FindInventory(class<Inventory>(CID));
+		return !Item || Item.Amount < Amount ? -2 : 0;
+	}
+	//	Check keys.
+	Inventory Item = A.FindInventory(class<Inventory>(CID));
+	if (Item)
+	{
+		return -1;
+	}
+	return -2;
+}
+
+//==========================================================================
+//
+//	StopSpeech
+//
+//==========================================================================
+
+final void StopSpeech()
+{
+	CurrentSpeaker.Angles.yaw = OldSpeakerAngle;
+	CurrentSpeaker = none;
+	CurrentSpeakingTo = none;
+	CurrentSpeechIndex = 0;
+}
+
+//==========================================================================
+//
+//	ConChoiceImpulse
+//
+//==========================================================================
+
+final void ConChoiceImpulse(int ChoiceNum)
+{
+	RogueConSpeech *Speech;
+	RogueConChoice *Choice;
+	int SpeechNum;
+	int Item1;
+	int Item2;
+	int Item3;
+	class<EntityEx> ItemType;
+	Inventory Item;
+	bool GaveItem;
+
+	if (ConversationSlideshow)
+	{
+		//	Resume conversation after slideshow.
+		StartSpeech(CurrentSpeaker.GetSpeech());
+		ConversationSlideshow = false;
+		return;
+	}
+	if (!CurrentSpeaker || !CurrentSpeechIndex)
+	{
+		return;
+	}
+	if (!ChoiceNum)
+	{
+		StopSpeech();
+		return;
+	}
+	if (CurrentSpeechIndex < 0)
+	{
+		Speech = &XLevel.GenericSpeeches[-CurrentSpeechIndex - 1];
+	}
+	else
+	{
+		Speech = &XLevel.LevelSpeeches[CurrentSpeechIndex - 1];
+	}
+	Choice = &Speech->Choices[ChoiceNum - 1];
+	//	Check if player has needed items.
+	Item1 = CheckForNeededItem(CurrentSpeakingTo, Choice->NeedItem1, Choice->NeedAmount1);
+	Item2 = CheckForNeededItem(CurrentSpeakingTo, Choice->NeedItem2, Choice->NeedAmount2);
+	Item3 = CheckForNeededItem(CurrentSpeakingTo, Choice->NeedItem3, Choice->NeedAmount3);
+	if (Item1 == -2 || Item2 == -2 || Item3 == -2)
+	{
+		CurrentSpeakingTo.Player.cprint(Choice->TextNo);
+		StopSpeech();
+		return;
+	}
+	GaveItem = true;
+	if (Choice->GiveItem > 0)
+	{
+		ItemType = GetClassFromID(Choice->GiveItem);
+		if (ItemType)
+		{
+			Item = Inventory(Spawn(ItemType,,,, false));
+			GaveItem = Item.TryPickup(CurrentSpeakingTo);
+			if (!GaveItem)
+			{
+				Item.Destroy();
+			}
+		}
+	}
+	if (GaveItem)
+	{
+		if (Item1 != -1)
+		{
+			Item = CurrentSpeakingTo.FindInventory(
+				class<Inventory>(GetClassFromID(Choice->NeedItem1)));
+			Item.Amount -= Choice->NeedAmount1;
+			if (Item.Amount <= 0)
+			{
+				Item.Destroy();
+			}
+		}
+		if (Item2 != -1)
+		{
+			Item = CurrentSpeakingTo.FindInventory(
+				class<Inventory>(GetClassFromID(Choice->NeedItem2)));
+			Item.Amount -= Choice->NeedAmount2;
+			if (Item.Amount <= 0)
+			{
+				Item.Destroy();
+			}
+		}
+		if (Item3 != -1)
+		{
+			Item = CurrentSpeakingTo.FindInventory(
+				class<Inventory>(GetClassFromID(Choice->NeedItem3)));
+			Item.Amount -= Choice->NeedAmount3;
+			if (Item.Amount <= 0)
+			{
+				Item.Destroy();
+			}
+		}
+	}
+	if (Choice->Objectives)
+	{
+		PlayerEx(CurrentSpeakingTo.Player).SetObjectives(Choice->Objectives);
+	}
+	if (!GaveItem)
+	{
+		CurrentSpeakingTo.Player.cprint(Choice->TextNo);
+	}
+	else if (strcmp(Choice->TextOK, "") && strcmp(Choice->TextOK, "_"))
+	{
+		CurrentSpeakingTo.Player.cprint(Choice->TextOK);
+	}
+	if (Choice->Next < 0)
+	{
+		CurrentSpeaker.CurrentSpeech = -Choice->Next;
+		if (!ConversationSlideshow)
+		{
+			StartSpeech(CurrentSpeaker.GetSpeech());
+		}
+	}
+	else
+	{
+		if (Choice->Next)
+		{
+			CurrentSpeaker.CurrentSpeech = Choice->Next;
+		}
+		StopSpeech();
+		ConversationSlideshow = false;
+	}
+}
+
+//==========================================================================
+//
+//	AddPlayerCorpse
+//
+//==========================================================================
+
+final void AddPlayerCorpse(EntityEx Corpse)
+{
+	if (!Corpse)
+		Error("AddPlayerCorpse : Corpse is null reference");
+	if (!XLevel)
+		Error("AddPlayerCorpse : XLevel is null reference");
+
+	if (bodyqueslot >= BodyQueSize)
+	{
+		if (bodyque[bodyqueslot % BodyQueSize])
+			// Too many player corpses - remove an old one
+			bodyque[bodyqueslot % BodyQueSize].Destroy();
+		else
+		{
+			dprint("AddPlayerCorpse : bodyqueslot is null reference");
+			dprint("AddPlayerCorpse : bodyqueslot %% BodyQueSize = %i", (bodyqueslot % BodyQueSize));
+		}
+	}
+	bodyque[bodyqueslot % BodyQueSize] = Corpse;
+	Corpse.Translation = XLevel.SetBodyQueueTrans(
+		bodyqueslot % BodyQueSize, Corpse.Translation);
+	bodyqueslot++;
+}
+
+//==========================================================================
+//
+//  ParticleEffect
+//
+//==========================================================================
+
+void ParticleEffect(int count, int type1, int type2, TVec origin, float ornd,
+	TVec velocity, float vrnd, float acceleration, float grav, int colour, float duration, float ramp)
+{
+	int i;
+	particle_t *p;
+
+	for (i = 0; i < count; i++)
+	{
+		p = Level.NewParticle();
+		if (!p)
+			return;
+
+		p->die = Level.XLevel.Time + duration * Random();
+		p->colour = colour;
+		p->Size = 1.0;
+		if(ramp)
+			p->ramp = Random() * ramp;
+
+		if(type2)
+		{
+			// Choose between the two types
+			if (i & 1)
+			{
+				p->type = type1;
+			}
+			else
+			{
+				p->type = type2;
+			}
+		}
+		else
+		{
+			p->type = type1;
+		}
+
+		// No random origin
+		if(!ornd)
+		{
+			p->org = origin;
+		}
+		else
+		{
+			p->org.x = origin.x + ((Random() * ornd) - ornd / 2.0);
+			p->org.y = origin.y + ((Random() * ornd) - ornd / 2.0);
+			p->org.z = origin.z + ((Random() * ornd) - ornd / 2.0);
+		}
+
+		// No random velocity
+		if(!vrnd)
+		{
+			p->vel = velocity;
+		}
+		else
+		{
+			p->vel.x = velocity.x * (Random() - vrnd);
+			p->vel.y = velocity.y * (Random() - vrnd);
+			p->vel.z = velocity.z * (Random() - vrnd);
+		}
+		p->accel.x = acceleration;
+		p->accel.y = acceleration;
+		p->accel.z = acceleration;
+		p->gravity = grav;
+	}
+}
+
+//==========================================================================
+//
+//  UpdateParticle
+//
+//==========================================================================
+
+void UpdateParticle(particle_t * p, float DeltaTime)
+{
+	float time2, time3;
+	float dvel;
+	float grav;
+
+	time2 = DeltaTime * 10.0;	// 15;
+	time3 = DeltaTime * 15.0;
+	dvel = 4.0 * DeltaTime;
+	grav = DeltaTime * p->gravity /*sv_gravity.value * 0.05*/;
+	p->vel.z -= grav;
+
+	switch (p->type)
+	{
+	case pt_static:
+		p->vel += p->accel * DeltaTime;
+		break;
+
+	case pt_explode:
+		p->ramp += time2;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+			p->colour = LineSpecialGameInfo.default.ramp1[ftoi(p->ramp)];
+		p->vel.x += p->vel.x * dvel;
+		p->vel.y += p->vel.y * dvel;
+		p->vel.z += p->vel.z * dvel;
+		p->vel += p->accel * DeltaTime;
+		p->vel.z -= grav;
+		break;
+
+	case pt_explode2:
+		p->ramp += time3;
+		if (p->ramp >= 16.0)
+			p->die = -1.0;
+		else
+			p->colour = LineSpecialGameInfo.default.ramp2[ftoi(p->ramp)];
+		p->vel.x -= p->vel.x * DeltaTime;
+		p->vel.y -= p->vel.y * DeltaTime;
+		p->vel.z -= p->vel.z * DeltaTime;
+		p->vel += p->accel * DeltaTime;
+		p->vel.z -= grav;
+		break;
+
+	case pt_fountain:
+		p->vel += p->accel * DeltaTime;
+		p->colour = (p->colour & 0x00ffffff) | (ftoi(
+			itof(p->colour >> 24) - 255.0 / 51.0 * 35.0 * DeltaTime) << 24);
+		break;
+
+	case pt_spark:
+		p->vel += p->accel * DeltaTime;
+		p->colour = (p->colour & 0x00ffffff) | (ftoi(
+			itof(p->colour >> 24) - 255.0 / 10.0 * 35.0 * DeltaTime) << 24);
+		break;
+
+	case pt_ice_chunk:
+		p->vel.x -= p->vel.x * DeltaTime;
+		p->vel.y -= p->vel.y * DeltaTime;
+		p->vel.z += p->accel.z * DeltaTime;
+		break;
+
+	case pt_rail:
+		p->vel += p->accel * DeltaTime;
+		p->colour = (p->colour & 0x00ffffff) | (ftoi(
+			itof(p->colour >> 24) - 255.0 * DeltaTime) << 24);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	AcsFadeRange
+//
+//==========================================================================
+
+void AcsFadeRange(float BlendR1, float BlendG1, float BlendB1, float BlendA1,
+	float BlendR2, float BlendG2, float BlendB2, float BlendA2,
+	float Duration, Entity Activator)
+{
+	if (Activator)
+	{
+		if (!Activator.bIsPlayer)
+		{
+			return;
+		}
+		StartFlashFader(BlendR1, BlendG1, BlendB1, BlendA1, BlendR2,
+			BlendG2, BlendB2, BlendA2, Duration, Activator);
+	}
+	else
+	{
+		BasePlayer P;
+		foreach AllActivePlayers(P)
+		{
+			StartFlashFader(BlendR1, BlendG1, BlendB1, BlendA1, BlendR2,
+				BlendG2, BlendB2, BlendA2, Duration, P.MO);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	StartFlashFader
+//
+//==========================================================================
+
+final void StartFlashFader(float BlendR1, float BlendG1, float BlendB1,
+	float BlendA1, float BlendR2, float BlendG2, float BlendB2,
+	float BlendA2, float Duration, Entity ForWho)
+{
+	PlayerEx P = PlayerEx(ForWho.Player);
+	if (Duration <= 0.0)
+	{
+		P.BlendR = BlendR2;
+		P.BlendG = BlendG2;
+		P.BlendB = BlendB2;
+		P.BlendA = BlendA2;
+	}
+	else
+	{
+		if (BlendA1 < 0.0)
+		{
+			if (P.BlendA <= 0.0)
+			{
+				BlendR1 = BlendR2;
+				BlendG1 = BlendG2;
+				BlendB1 = BlendB2;
+				BlendA1 = 0.0;
+			}
+			else
+			{
+				BlendR1 = P.BlendR;
+				BlendG1 = P.BlendG;
+				BlendB1 = P.BlendB;
+				BlendA1 = P.BlendA;
+			}
+		}
+		FlashFader F = Spawn(FlashFader);
+		F.Init(BlendR1, BlendG1, BlendB1, BlendA1, BlendR2, BlendG2, BlendB2,
+			BlendA2, Duration, EntityEx(ForWho));
+	}
+}
+
+//==========================================================================
+//
+//	AcsCancelFade
+//
+//==========================================================================
+
+void AcsCancelFade(Entity Activator)
+{
+	Thinker Th;
+	foreach AllThinkers(FlashFader, Th)
+	{
+		if (!Activator || FlashFader(Th).ForWho == Activator)
+		{
+			FlashFader(Th).Cancel();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  P_Massacre
+//
+//  Kills all monsters.
+//
+//==========================================================================
+
+final int P_Massacre()
+{
+	int count;
+	EntityEx mo;
+
+	count = 0;
+	foreach AllThinkers(EntityEx, mo)
+	{
+		if (mo.bMonster && mo.Health > 0)
+		{
+			mo.bNonShootable = false;
+			mo.bInvulnerable = false;
+			mo.bShootable = true;
+			mo.Damage(none, none, 10000);
+			count++;
+		}
+	}
+	return count;
+}
+
+//==========================================================================
+//
+//	SetMarineWeapon
+//
+//==========================================================================
+
+final void SetMarineWeapon(int Tid, int Weapon, Entity Activator)
+{
+	if (Tid)
+	{
+		Entity Ent;
+		for (Ent = Level.FindMobjFromTID(Tid, none); Ent;
+			Ent = Level.FindMobjFromTID(Tid, Ent))
+		{
+			if (ScriptedMarine(Ent))
+			{
+				ScriptedMarine(Ent).SetWeapon(Weapon);
+			}
+		}
+	}
+	else if (ScriptedMarine(Activator))
+	{
+		ScriptedMarine(Activator).SetWeapon(Weapon);
+	}
+}
+
+//==========================================================================
+//
+//	SetMarineSprite
+//
+//==========================================================================
+
+final void SetMarineSprite(int Tid, name SrcClassName, Entity Activator)
+{
+	//	If there's no such class, print message and do nothing.
+	class TmpClass = FindClass(SrcClassName);
+	if (!TmpClass)
+	{
+		print("Unknown class %n", SrcClassName);
+		return;
+	}
+	//	If it's not a valid actor class, it will set sprite back to default.
+	class<EntityEx> SrcClass = class<EntityEx>(TmpClass);
+
+	if (Tid)
+	{
+		Entity Ent;
+		for (Ent = Level.FindMobjFromTID(Tid, none); Ent;
+			Ent = Level.FindMobjFromTID(Tid, Ent))
+		{
+			if (ScriptedMarine(Ent))
+			{
+				ScriptedMarine(Ent).SetSprite(SrcClass);
+			}
+		}
+	}
+	else if (ScriptedMarine(Activator))
+	{
+		ScriptedMarine(Activator).SetSprite(SrcClass);
+	}
+}
+
+//==========================================================================
+//
+//  GetDefaultDoorSound
+//
+//==========================================================================
+
+name GetDefaultDoorSound(sector_t* Sector)
+{
+	return DefaultDoorSound;
+}
+
+//==========================================================================
+//
+//  GetClassSpawnFlags
+//
+//==========================================================================
+
+int GetPClassSpawnFlags()
+{
+	return 0;
+}
+
+//==========================================================================
+//
+//  GetDehackedItemType
+//
+//==========================================================================
+
+class<Inventory> GetDehackedItemType(EntityEx Ent)
+{
+	return none;
+}
+
+defaultproperties
+{
+	ExtPlayersBase = 4001;
+	Lock103Message = "That doesn't seem to work";
+	BodyQueSize = BODYQUESIZE;
+	CorpseQueSize = CORPSEQUEUESIZE;
+	DefaultDoorSound = 'DoorNormal';
+	DefaultCeilingSound = 'CeilingNormal';
+	DefaultSilentCeilingSound = 'CeilingSemiSilent';
+	DefaultFloorSound = 'Floor';
+	DefaultFloorAltSound = 'Floor';
+	DefaultStairStepSound = 'Floor';
+	DefaultPlatformSound = 'Platform';
+}

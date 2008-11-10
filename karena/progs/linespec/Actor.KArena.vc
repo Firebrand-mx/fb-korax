@@ -40,7 +40,7 @@ int experience;
 // [CW] Since there are sometimes references to pawn stored for future use,
 // it is important to store reference to player as well (in case it is player pawn)
 // so that if that pawn die, player reference will be still accessible.
-KAPlayerBase		PInstigator;
+KAPlayerBase		PInstigator;	// [CW] CHECKME -- is this not used anymore??
 
 /* KORAX */
 bool		bNoAccuracy;		// [CW] forbid to give accuracy trophy for this
@@ -53,16 +53,180 @@ TVec		SpawnOrigin;		// [CW] coordinates of projectile's spawn point;
 //
 //	OnMapSpawn
 //
+//	[CW] Now contains a duplicate of common EntityEx.Misc::OnMapSpawn
+//		 with modified flags reading (excluded some unused in KA)
+//
 //==========================================================================
 
 void OnMapSpawn(mthing_t* mthing)
 {
+	//**********************************************************
+	//
+	// Commence of common OnMapSpawn
+	//
+	//**********************************************************
+
+	if (IsFast())
+	{
+		ReactionCount = 0;
+	}
+
+	LastLook = P_Random() % MAXPLAYERS;
+
+	bCheckLineBlocking = false;
+	bCheckLineBlockMonsters = false;
+	if (!bMissile)
+	{
+		bCheckLineBlocking = true;
+		if (!bNoBlockMonst)
+		{
+			bCheckLineBlockMonsters = true;
+		}
+	}
+
+	if (!IdleState)
+	{
+		IdleState = FindState('Spawn');
+	}
+	if (!SeeState)
+	{
+		SeeState = FindState('See');
+	}
+	if (!MeleeState)
+	{
+		MeleeState = FindState('Melee');
+	}
+	if (!MissileState)
+	{
+		MissileState = FindState('Missile');
+	}
+
+	if (Level.Game.fastparm && FastSpeed)
+	{
+		Speed = FastSpeed;
+	}
+
+	//	Set the state, but do not use SetState, because action routines can't
+	// be called yet.  If the spawnstate has an action routine, it will not
+	// be called.
+	SetInitialState(IdleState);
+
+	if (mthing)
+	{
+		float x;
+		float y;
+		float z;
+
+		if (bNoDeathmatch && Level.Game.deathmatch)
+		{
+			Destroy();
+			return;
+		}
+
+		Level.CopyMThing(mthing, &SpawnPoint);
+
+		x = mthing->x;
+		y = mthing->y;
+		if (bSpawnCeiling)
+		{
+			z = ONCEILINGZ;
+		}
+		else if (bSpawnFloat)
+		{
+			z = FLOATRANDZ;
+		}
+		else if (bFloatBob)
+		{
+			z = mthing->height;
+		}
+		else
+		{
+			z = ONFLOORZ;
+		}
+		SetOrigin2(vector(x, y, z));
+		if (z == ONFLOORZ)
+		{
+			Origin.z += mthing->height;
+		}
+		else if (z == ONCEILINGZ)
+		{
+			Origin.z -= mthing->height;
+		}
+		LinkToWorld();
+
+		SetTID(mthing->tid);
+		Special = mthing->special;
+		if (!bArgsDefined)
+		{
+			Args[0] = mthing->arg1;
+			Args[1] = mthing->arg2;
+			Args[2] = mthing->arg3;
+			Args[3] = mthing->arg4;
+			Args[4] = mthing->arg5;
+		}
+		if (bFloatBob)
+		{
+			// Seed random starting index for bobbing motion
+			FloatBobPhase = Random() * 256.0 / 35.0;
+			Special1f = mthing->height;
+		}
+		if (!bSynchronised && StateTime > 0.0)
+		{
+			StateTime = 0.1 + Random() * StateTime;
+		}
+		if (bCountKill)
+		{
+			Level.TotalKills++;
+		}
+		if (bCountItem)
+		{
+			Level.TotalItems++;
+		}
+
+		Angles.yaw = itof(AngleIncrements() * (mthing->angle /
+			AngleIncrements()));
+		if (mthing->options & LineSpecialLevelInfo::MTFKA_AMBUSH)
+		{
+			bAmbush = true;
+		}
+		if (mthing->options & LineSpecialLevelInfo::MTFKA_DORMANT)
+		{
+			Deactivate(none);
+		}
+	}
+	else
+	{
+		SetOrigin2(Origin);
+	}
+
+	if (bStaticLight && mthing && !TID)
+	{
+		if (LightColour == 0xffffffff)
+		{
+			Level.AddStaticLight(Origin + LightOffset, mthing->arg1 ?
+				itof(mthing->arg1) * 8.0 : LightRadius);
+		}
+		else
+		{
+			Level.AddStaticLightRGB(Origin + LightOffset, mthing->arg1 ?
+				itof(mthing->arg1) * 8.0 : LightRadius, LightColour);
+		}
+		bStaticLightSpwned = true;
+	}
+
+	//**********************************************************
+	//
+	// End of common OnMapSpawn
+	//
+	//**********************************************************
+
+
 	//[Korax]
 	if (!bMissile && !bPickUp)
 	{
 		experience = default.Health;
 	}
-	::OnMapSpawn(mthing);
+	//::OnMapSpawn(mthing);
 }
 
 //==========================================================================
@@ -156,14 +320,23 @@ void SpawnCombatAttributes(Actor master, Thinker shooter)
 			Target = master;
 			PInstigator = KAPlayerBase(Target.Player);
 		}
-		else
+		else if (master.Target)
 		{
 			Target = master.Target;
-			PInstigator = master ? master.PInstigator : none;
+			PInstigator = master.PInstigator;
+		}
+		else
+		{
+			Target = master;
+			PInstigator = none;
 		}
 
 		if (!Target)
+		{
+			print("master is %n", GetClassName(master.Class));
+			print("shooter is %n", shooter ? GetClassName(shooter.Class) : '');
 			Error("Actor::SpawnCombatAttributes : Target reference is not set to an object; bad algorythm?");
+		}
 	}
 	
 	if (EntityEx(shooter))
