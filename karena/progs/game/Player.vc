@@ -3220,7 +3220,135 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 
 bool IsOKToPickupItem(Inventory Item)
 {
-	if (EntityEx(MO).Inventory.CheckInventory(GetClassName(Item.Class)) < Item.MaxAmount)
+	name parent_class;
+
+#ifdef DEBUG_BOT_AI_ITEMS
+	print("IsOKToPickupItem : %n?", GetClassName(Item.Class));
+	print("Item.MaxAmount = : %i", Item.MaxAmount);
+#endif
+
+	//
+	// [CW] Mana, health and armor classes are all stored as items of
+	//      their corresponding parent class, hence we must seek
+	//		for parent class, not for exactly the class of item we are
+	//		checking. Plus, some items should be tested differently.
+	//
+
+	if (Item.IsA('Health'))
+	{
+		// [CW] Health is tested differently
+		if (EntityEx(MO).Inventory.CheckInventory('health') < max_health)
+			return true;
+		return false;
+	}
+	else if (Item.IsA('Armor'))
+	{
+		// [CW] Armor is tested differently
+		BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
+		if (Armor.Amount < ArmorPickup(Item).MaxSaveAmount)
+			return true;
+		return false;
+	}
+	else if (Item.IsA('ItemManaBlue'))
+	{
+		parent_class = 'Mana1';
+	}
+	else if (Item.IsA('ItemManaGreen'))
+	{
+		parent_class = 'Mana2';
+	}
+	else if (Item.IsA('ItemManaRed'))
+	{
+		parent_class = 'ItemManaRed';
+	}
+	else if (Item.IsA('ItemManaCombined') || Item.IsA('ArtifactBoostMana'))
+	{
+		// [CW] Combined mana and BoostMana are tested differently
+		if (EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+			EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+			EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+		{
+			return true;
+		}
+		return false;
+	}
+	else if (Item.IsA('WeaponPickup'))
+	{
+		class RealWeaponClass = KArenaPlayerPawn(MO).WeaponClasses[WeaponPickup(Item).Slot - 1];
+		KArenaWeapon RealWeaponItem = KArenaWeapon(EntityEx(MO).Inventory.FindInventory(class<Inventory>(RealWeaponClass)));
+
+#ifdef DEBUG_BOT_AI_TARGET
+		print("WeaponPickup = %n", GetClassName(Item.Class));
+		print("RealWeaponClass = %n", GetClassName(RealWeaponClass));
+		print("RealWeaponItem = %i", RealWeaponItem);
+#endif
+		// [CW] Weapon is tested differently
+		if (!RealWeaponItem)
+			return true;	// no such weapon yet
+
+#ifdef DEBUG_BOT_AI_TARGET
+		print("has weapon");
+#endif
+
+		if (RealWeaponItem.AmmoType1)
+		{
+			if (ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaBlue) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaGreen) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaRed) &&
+				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+			{
+				return true;
+			}
+		}
+		if (RealWeaponItem.AmmoType2)
+		{
+			if (ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaBlue) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaGreen) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaRed) &&
+				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+			{
+				return true;
+			}
+		}
+		if (RealWeaponItem.AmmoType3)
+		{
+			if (ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaBlue) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaGreen) &&
+				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaRed) &&
+				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	else if (!Item.MaxAmount)
+	{
+		// [CW] must be some instant use artifact (?)
+		return true;
+	}
+	else
+	{
+		parent_class = GetClassName(Item.Class);
+	}
+
+	//if (EntityEx(MO).Inventory.CheckInventory(parent_class) < Item.MaxAmount)
+	int amount;
+	Inventory RealItem;
+	class<Inventory> RealItemClass = class<Inventory>(FindClass(parent_class));
+	if (RealItemClass)
+	{
+		RealItem = EntityEx(MO).Inventory.FindInventory(RealItemClass);
+		amount = (RealItem ? RealItem.Amount : 0);
+	}
+	
+	if (amount < (RealItem ? RealItem.MaxAmount : Item.MaxAmount))
 	{
 		return true;
 	}
