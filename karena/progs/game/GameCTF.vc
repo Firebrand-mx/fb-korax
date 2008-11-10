@@ -44,9 +44,9 @@ enum
 
 
 array<CTFBanner>	Banners;
-array<CTFBase>		spot_banners;
-array<bool>			bBannersCreated;
-array<bool>			bSpotBannersCreated;
+array<CTFBase>		spot_banners;	// Bases are all created during initialization
+//array<bool>		bBannersCreated;
+//array<bool>		bSpotBannersCreated;
 
 
 //==========================================================================
@@ -230,7 +230,7 @@ void EndCurrentState(int nextstate)
 void Cleanup()
 {
 	int i;
-	for (i = 0; i < Banners.Num; i++)
+	/*for (i = 0; i < Banners.Num; i++)
 	{
 		if (bBannersCreated[i])
 		{
@@ -238,14 +238,14 @@ void Cleanup()
 			bBannersCreated[i] = false;
 		}
 		Banners[i] = none;
-	}
+	}*/
 
 	for (i = 0; i < spot_banners.Num; i++)
 	{
-		if (bSpotBannersCreated[i])
+	//	if (bSpotBannersCreated[i])
 		{
 			spot_banners[i].Destroy();
-			bSpotBannersCreated[i] = false;
+	//		bSpotBannersCreated[i] = false;
 		}
 		spot_banners[i] = none;
 	}
@@ -259,7 +259,7 @@ void Cleanup()
 
 bool PrepareGame()
 {
-	int i,j, teams, teams_ready;
+	int i/*,j*/, teams, teams_ready;
 	int pairs;
 
 	if (!Game.Teams[0] || !Game.Teams[1])
@@ -296,9 +296,9 @@ bool PrepareGame()
 			break;
 	}
 
-	bBannersCreated.Num = Banners.Num;
+	//bBannersCreated.Num = Banners.Num;
 
-	foreach Level.AllThinkers(CTFBase, base)
+	/*foreach Level.AllThinkers(CTFBase, base)
 	{
 		if (base.Args[0] >= teams)
 		{
@@ -314,14 +314,15 @@ bool PrepareGame()
 			break;
 	}
 
-	bSpotBannersCreated.Num = spot_banners.Num;
+	bSpotBannersCreated.Num = spot_banners.Num;*/
 
-	dprint("GameCTF : found %i active banners and %i active bases", Banners.Num, spot_banners.Num);
+	//dprint("GameCTF : found %i active banners and %i active bases", Banners.Num, spot_banners.Num);
+	dprint("GameCTF : found %i active banners", Banners.Num);
 
 
 	for (i = 0; i < Banners.Num; i++)
 	{
-		for (j = 0; j < spot_banners.Num; j++)
+		/*for (j = 0; j < spot_banners.Num; j++)
 		{
 			if (Banners[i].Args[0] ==  spot_banners[j].Args[0] &&
 				Banners[i].Args[1] ==  spot_banners[j].Args[1])
@@ -344,28 +345,28 @@ bool PrepareGame()
 				}
 				break;
 			}
-		}
+		}*/
 
-		if (!Banners[i].BaseOrigin)
-		{
-			j = spot_banners.Num;
+		//if (!Banners[i].BaseOrigin)
+		//{
+			//j = spot_banners.Num;
 			spot_banners.Num = spot_banners.Num + 1;
-			bSpotBannersCreated.Num = bSpotBannersCreated.Num + 1;
-			spot_banners[j] = HexenLevelInfo(Level).Spawn(CTFBase, Banners[i].Origin);
-			if (spot_banners[j])
+			//bSpotBannersCreated.Num = bSpotBannersCreated.Num + 1;
+			spot_banners[/*j*/i] = HexenLevelInfo(Level).Spawn(CTFBase, Banners[i].Origin);
+			if (spot_banners[/*j*/i])
 			{
 				dprint("GameCTF : successfully spawned CTFBase at initial banner (%i/%i) position", 
 					Banners[i].Args[0], Banners[i].Args[1]);
 				pairs++;
-				bSpotBannersCreated[j] = true;
-				Banners[i].BaseOrigin = spot_banners[j];
-				spot_banners[j].Banner = Banners[i];
-				spot_banners[j].Args[0] = Banners[i].Args[0];
-				spot_banners[j].Args[1] = Banners[i].Args[1];
+				//bSpotBannersCreated[j] = true;
+				Banners[i].BaseOrigin = spot_banners[/*j*/i];
+				spot_banners[/*j*/i].Banner = Banners[i];
+				spot_banners[/*j*/i].Args[0] = Banners[i].Args[0];
+				spot_banners[/*j*/i].Args[1] = Banners[i].Args[1];
 				if (Banners[i].Args[0] < teams_ready)
 				{
 					Banners[i].Team = Game.Teams[Banners[i].Args[0]];
-					spot_banners[j].Team = Game.Teams[spot_banners[j].Args[0]];
+					spot_banners[/*j*/i].Team = Game.Teams[spot_banners[/*j*/i].Args[0]];
 					Banners[i].SetTranslation();
 					// [FB] This is important for bots AI
 					Banners[i].Status = CTFBanner::BANNER_STATUS__BASE;
@@ -375,7 +376,7 @@ bool PrepareGame()
 					dprint("GameCTF : banner and base (%i/%i) belong to inactive Team and will be disabled until Team %i enters to the game",
 						Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0]);
 					Banners[i].Deactivate(none);
-					spot_banners[j].Deactivate(none);
+					spot_banners[/*j*/i].Deactivate(none);
 				}
 			}
 			else
@@ -383,12 +384,12 @@ bool PrepareGame()
 				dprint("GameCTF : failed to spawn CTFBase at initial banner (%i/%i) position; banner (%i/%i) will be disabled",
 					Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0], Banners[i].Args[1]);
 				Banners[i].Deactivate(none);
-				spot_banners.Num = spot_banners.Num - 1;
+				//spot_banners.Num = spot_banners.Num - 1;
 			}
-		}
+		//}
 	}
 
-	for (i = 0; i < spot_banners.Num; i++)
+	/*for (i = 0; i < spot_banners.Num; i++)
 	{
 		if (!spot_banners[i].Banner)
 		{
@@ -428,7 +429,7 @@ bool PrepareGame()
 				Banners.Num = Banners.Num - 1;
 			}
 		}
-	}
+	}*/
 
 	if (pairs < MINREQUIREDBANNERS)
 	{
@@ -458,7 +459,7 @@ void CommitCapture(CTFBanner Banner)
 			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare4 : 
 			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare6 : 
 			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare8 :
-			HexenDefs::lsid_ctf_fanfare11)))),	true, 2.0);
+			HexenDefs::lsid_ctf_fanfare11)))),	false, 0.0);
 	Game.bcentreprint(va("%s flag captured by %s! %s team scores!",
 						/* Game.ColourNames[Banner.Team.Colour]*/Banner.Team.Name,
 						Banner.Capturer.PlayerName,
