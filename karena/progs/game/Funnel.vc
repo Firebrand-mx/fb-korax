@@ -1,0 +1,92 @@
+
+class Funnel : Thinker;
+
+const float FUNNEL_FACTOR = 1.0; // ?CHECKME
+
+float		ZForce;
+float		ZBase;
+float		ZLimit;
+int			Affectee;
+
+Funnel		AdjustLink;
+
+//==========================================================================
+//
+//	Init
+//
+//	Add a funnel thinker to the thinker list
+//
+//==========================================================================
+
+void Init(int Zforce, int Zbase, int Zlimit, int affectee)
+{
+	ZForce = itof(Zforce);
+	ZBase = itof(Zbase);
+	ZLimit = itof(Zlimit);
+	Affectee = affectee;
+}
+
+//==========================================================================
+//
+//	ChangeValues
+//
+//==========================================================================
+
+void ChangeValues(int Zforce, int Zbase, int Zlimit)
+{
+	ZForce = itof(Zforce);
+	ZBase = itof(Zbase);
+	ZLimit = itof(Zlimit);
+}
+
+//==========================================================================
+//
+//	CheckForSectorMatch
+//
+//==========================================================================
+
+int CheckForSectorMatch(int tag)
+{
+	if (XLevel.Sectors[Affectee].tag == tag)
+		return Affectee;
+	else
+		return -1;
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//	Looks for all objects that are inside the radius of the effect.
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	sector_t*		sec;
+	EntityEx		thing;
+	msecnode_t*		Node;
+
+	sec = &XLevel.Sectors[Affectee];
+
+	// things touching this sector
+	for (Node = sec->TouchingThingList; Node; Node = Node->SNext)
+	{
+		thing = EntityEx(Node->Thing);
+		if (!thing.bWindThrust || !thing.bColideWithWorld)
+			continue;
+		
+		if (ZBase <= ZLimit && thing.Origin.z >= ZBase && thing.Origin.z <= ZLimit)
+		{
+			thing.Velocity.z += ZForce / FUNNEL_FACTOR * 35.0 * DeltaTime;
+		}
+		else if (ZBase > ZLimit && thing.Origin.z <= ZBase && thing.Origin.z >= ZLimit)
+		{
+			thing.Velocity.z -= ZForce / FUNNEL_FACTOR * 35.0 * DeltaTime;
+		}
+	}
+}
+
+defaultproperties
+{
+}

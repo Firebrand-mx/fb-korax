@@ -38,7 +38,7 @@ class HexenLevelInfo : LineSpecialLevelInfo;
 //	their ids should be greater than 255)
 enum
 {
-	ACTSPEC_Thing_Thrust3d			= 256,
+	ACTSPEC_Thing_Thrust3d			= LNSPEC_Max + 1,
 
 	ACTSPEC_AdvancedGame_BeginState = 750,
 	ACTSPEC_AdvancedGame_EndState,
@@ -46,6 +46,21 @@ enum
 	ACTSPEC_AdvancedGame_SetACSNotifier,
 	ACTSPEC_IsConditionTrue,
 	ACTSPEC_RunACSConditional,
+
+	//
+	// Sector Properties
+	//
+	LNSPEC_KA_SectorSetBounce		= 1000,
+	// Arg1 - Sector Tag
+	// Arg2 - X force
+	// Arg3 - Y force
+	// Arg4 - Z force
+
+	LNSPEC_KA_SectorSetFunnel,
+	// Arg1 - Sector Tag
+	// Arg2 - Z force
+	// Arg3 - Z base
+	// Arg4 - Z height limit (abolute units), can be higher or lower than base
 
 	//
 	// Enviroment
@@ -154,7 +169,34 @@ float FindHighestFloorZAtPoint(TVec v, optional sector_t * in_sector)
 
 void SpawnSpecials()
 {
+	int			i, s;
+	line_t * l;
+
 	::SpawnSpecials();
+
+	for (i = 0; i < XLevel.NumLines; i++)
+	{
+		l = &XLevel.Lines[i];
+		switch (l->special)
+		{
+		case LNSPEC_KA_SectorSetBounce:
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				BouncePad B = Spawn(BouncePad);
+				B.Init(l->arg2, l->arg3, l->arg4, s);
+			}
+			break;
+		case LNSPEC_KA_SectorSetFunnel:
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				Funnel F = Spawn(Funnel);
+				F.Init(l->arg2, l->arg3, l->arg4, s);
+			}
+			break;
+		}
+	}
 
 	MainGameInfo(Game).InitLevel(self);
 	Purge();
@@ -172,7 +214,9 @@ void Purge()
 	foreach AllThinkers(EntityEx, ee)
 	{
 		if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
-					ee.IsA('CTFBanner') ||
+					(ee.IsA('CTFBanner') || ee.IsA('BlueNode') || ee.IsA('BlueGuardSpot') ||
+					ee.IsA('BlueGoalSpot') || ee.IsA('RedNode') || ee.IsA('RedGuardSpot') ||
+					ee.IsA('RedGoalSpot')) ||
 				MainGameInfo(Game).GameType != HexenDefs::game_domination &&
 					ee.IsA('DominationSigil') ||
 				MainGameInfo(Game).GameType != HexenDefs::game_football &&
@@ -243,6 +287,17 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 			buttonSuccess = true;
 			MainGameInfo(Game).GameModel.SetACSNotifier(Arg1, Arg2);
 		}
+		break;
+
+
+	//
+	// Sector properties
+	//
+	case LNSPEC_KA_SectorSetBounce:
+		buttonSuccess = EV_SectorSetBounce(Arg1, Arg2, Arg3, Arg4);
+		break;
+	case LNSPEC_KA_SectorSetFunnel:
+		buttonSuccess = EV_SectorSetFunnel(Arg1, Arg2, Arg3, Arg4);
 		break;
 
 
@@ -377,6 +432,102 @@ bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int
 
 	return runACS;
 }
+
+//**************************************************************************
+//
+//  Sector properties
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_SectorSetBounce
+//
+//==========================================================================
+
+bool EV_SectorSetBounce(int tag, int xforce, int yforce, int zforce)
+{
+	BouncePad B;
+	BouncePad Collection;
+	int		secnum;
+
+	// First, find which sectors already have a bounce pads and adjust these
+	foreach AllThinkers(BouncePad, B)
+	{
+		if (B.CheckForSectorMatch(tag) >= 0)
+		{
+			B.ChangeValues(xforce, yforce, zforce);
+			B.AdjustLink = Collection;
+			Collection = B;
+		}
+	}
+
+	// Now create bounce pads for any sectors that don't already have them.
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		for (B = Collection; B; B = B.AdjustLink)
+		{
+			if (B.Affectee == secnum)
+				break;
+		}
+		if (!B)
+		{
+			print("CREATING BOUNCEPAD: tag %i, data %i,%i,%i", tag, xforce, yforce, zforce);
+			B = Spawn(BouncePad);
+			B.Init(xforce, yforce, zforce, secnum);
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	EV_SectorSetFunnel
+//
+//==========================================================================
+
+bool EV_SectorSetFunnel(int tag, int zforce, int zbase, int zlimit)
+{
+	Funnel F;
+	Funnel Collection;
+	int		secnum;
+
+	// First, find which sectors already have a funnels and adjust these
+	foreach AllThinkers(Funnel, F)
+	{
+		if (F.CheckForSectorMatch(tag) >= 0)
+		{
+			F.ChangeValues(zforce, zbase, zlimit);
+			F.AdjustLink = Collection;
+			Collection = F;
+		}
+	}
+
+	// Now create funnels for any sectors that don't already have them.
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		for (F = Collection; F; F = F.AdjustLink)
+		{
+			if (F.Affectee == secnum)
+				break;
+		}
+		if (!F)
+		{
+			print("CREATING FUNNEL: tag %i, data %i,%i,%i", tag, zforce, zbase, zlimit);
+			F = Spawn(Funnel);
+			F.Init(zforce, zbase, zlimit, secnum);
+		}
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//  Enviroment
+//
+//**************************************************************************
 
 //==========================================================================
 //
