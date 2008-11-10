@@ -14,6 +14,7 @@ progs/linespec/classes.vc					progs/linespec/classes.vc
 progs/linespec/Actor.KArena.vc				progs/linespec/Actor.KArena.vc
 progs/linespec/HexenDefs.vc					progs/linespec/HexenDefs.vc
 progs/linespec/HolyFX.vc					progs/linespec/HolyFX.vc
+progs/linespec/LineSpecialLevelInfo.vc		progs/linespec/LineSpecialLevelInfo.vc
 progs/linespec/KAPlayerBase.vc				progs/linespec/KAPlayerBase.vc
 progs/linespec/PoisonCloud.vc				progs/linespec/PoisonCloud.vc
 
@@ -199,6 +200,9 @@ progs/game/WeatherSnow.vc		progs/game/WeatherSnow.vc
 progs/game/WeatherRain.vc		progs/game/WeatherRain.vc
 progs/game/ReachTraverse.vc		progs/game/ReachTraverse.vc
 progs/game/ClientGameBaseEx.vc		progs/game/ClientGameBaseEx.vc
+progs/game/BouncePad.vc		progs/game/BouncePad.vc
+progs/game/Funnel.vc		progs/game/Funnel.vc
+progs/game/PriorityNode.vc		progs/game/PriorityNode.vc
 
 //	Scripts
 animdefs.txt			scripts/animdefs.txt
