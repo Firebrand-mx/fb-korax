@@ -59,8 +59,17 @@ void IsDeathInflictor(EntityEx victim)
 	//[CW] DEBUGGING *****************
 	if (!victim)
 		Error("KArenaPlayerPawn::IsDeathInflictor : victim reference not set to an instance of an object");
+
+	//
+	// This may happen if poisoner died before poisoned one and his corpse existed until poisoned died...
+	// rare but possible
 	if (!Player)
-		Error("KArenaPlayerPawn::IsDeathInflictor : Player reference not set to an instance of an object");
+	{
+		// Since only Instant Ranged weapons have meaning below, and there's no poisonous weapon
+		// of that type, we can simply ignore this situation.
+		return;
+	}
+
 	if (!Player(Player).ReadyWeapon)
 		Error("KArenaPlayerPawn::IsDeathInflictor : Player.ReadyWeapon reference not set to an instance of an object");
 	//[CW] DEBUGGING *****************
@@ -438,7 +447,7 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	if (!specified_MinPassableOpening)
 		MinPassableOpening = Height;
 	
-	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData,
+	canreach = DoCanReachPathTraverse(TargetPos, TargetEntity, &CRTRData,
 		MaxPassableStep, MaxPassableDropOff, MinPassableOpening, bCanUseLines);
 	
 	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
@@ -452,18 +461,19 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 		//if (CRTRData.linetarget != TargetEntity)
 		//	return false;
 
+		
 		// [FB]  3d Floor checks...
 		float dist;
-		if (TargetEntity.Origin.z > Origin.z)
+		if (TargetEntity.Origin.z > CRTRData.finalPos.z)
 		{
-			dist = Origin.z + Height;
+			dist = CRTRData.finalPos.z + Height/2.0 + MaxPassableStep;
 
 			if (TargetEntity.Origin.z > dist)
 				return false;
 		}
-		if (TargetEntity.Origin.z <= Origin.z)
+		if (TargetEntity.Origin.z <= CRTRData.finalPos.z)
 		{
-			dist = Origin.z - (TargetEntity.Origin.z + TargetEntity.Height);
+			dist = CRTRData.finalPos.z - (TargetEntity.Origin.z + TargetEntity.Height);
 			// [FB] Always evaluate a positive distance
 			dist = dist < 0.0 ? -dist : dist;
 
@@ -484,15 +494,29 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 //==========================================================================
 
 bool DoCanReachPathTraverse(TVec TargetPos,
+							EntityEx TargetThing,
 							ReachTraverse::reach_traverse_data_t * pCRTRData,
 							float MaxPassableStep,
 							float MaxPassableDropOff,
 							float MinPassableOpening,
 							bool bCanUseLines)
 {
-	intercept_t * in;
+	intercept_t *	in;
+	//sector_t *		p_sector;
+	opening_t *		opening;					// [FB] For 3d floors
+	TVec			tracedir;
+	TVec			hit_point;
+
+
 	pCRTRData->intercepted_once = false;
 	pCRTRData->prev_sector = Sector;
+
+	float traceZ = Origin.z; // Z coordinate of the trace
+
+	// [CW] A unit vector determines the direction of tracing
+	//		Needed to get the hit_point for each 2-sided line found
+	tracedir = Normalise(TargetPos - Origin);
+	tracedir.z = 0.0;
 
 	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
 		PT_ADDLINES | PT_ADDTHINGS)
@@ -501,17 +525,14 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 		if (in->bIsALine)
 		{
-			sector_t * p_sector;
-			TVec tracedir;
-			TVec hit_point;
-
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
 					(in->line->flags & ML_BLOCKEVERYTHING) ||
 					!in->line->backsector)
 				return false;
 
-			// in case of two-sided lines a passability check is made
+			// [CW] This is not used anymore
+			/*// in case of two-sided lines a passability check is made
 			if (in->line->frontsector == pCRTRData->prev_sector)
 				p_sector = in->line->backsector;
 			else if (in->line->backsector == pCRTRData->prev_sector)
@@ -520,36 +541,96 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				// something was really messed up		
 				return false;
 
-			pCRTRData->prev_sector = p_sector;
+			pCRTRData->prev_sector = p_sector;*/
 
+			//
 			// [FB] partial 3d floor support...
-			tracedir.x = cos(Angles.yaw);
-			tracedir.y = sin(Angles.yaw);
-			tracedir.z = FloorZ;
+			//
+
 			hit_point = Origin + (Length(Origin - TargetPos) * in->frac) * tracedir;
-			pCRTRData->opening = LineOpenings(in->line, hit_point);
-			pCRTRData->opening = FindOpening(pCRTRData->opening, hit_point.z, hit_point.z + Height);
+			hit_point.z = traceZ;
+			// (c) JL: LineOpenings: sets opentop and openbottom to the window through a two sided line.
+			opening = LineOpenings(in->line, hit_point);
+			// (c) JL: FindOpening: Find the best gap that the thing could fit in, given a certain Z
+			// position (z1 is foot, z2 is head)
+			opening = FindOpening(opening, hit_point.z, hit_point.z + MinPassableOpening);
 
 			// only valid openings
-			if (!pCRTRData->opening)
+			if (!opening)
 			{
 				//	No openings.
 				return false;
 			}
-			if ((pCRTRData->opening->range <= MinPassableOpening) ||
-				(pCRTRData->opening->lowfloor - pCRTRData->opening->bottom > MaxPassableStep) ||
-				(pCRTRData->opening->lowfloor - pCRTRData->opening->bottom > MaxPassableDropOff))
+
+#ifdef DEBUG_BOT_AI_CANREACH
+			print("z = %f, opening = f %f/%f", traceZ, opening->bottom, opening->lowfloor);
+			print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
+							MinPassableOpening);
+#endif
+
+			// [CW] Now, when we have the best opening available, we must check
+			//		if the best is actually the passable
+			//
+			//		From what I saw in engine code, -
+			//		opening->top is the lowest ceiling between previous and next sector;
+			//		opening->bottom is the highest floor between previous and next sector;
+			//		opening->range is distance between opening->top and opening->bottom;
+			//		opening->lowfloor is the lowest floor between previous and next sector;
+			//
+			//
+			if ((opening->range <= MinPassableOpening) // cannot fit through, do not bother
+				||
+				// If can fit through...
+				// use traceZ to know which height is player's "ghost" previous position
+				(traceZ == opening->bottom &&
+					((opening->bottom - opening->lowfloor) > MaxPassableDropOff))
+					// drop from highest floor to lowest one is too much to accept it
+				||
+				(traceZ == opening->lowfloor &&
+					((opening->bottom - opening->lowfloor) > MaxPassableStep))
+					// raise from lowest floor to highest one is too much to step/jump there
+				)
 			{
+#ifdef DEBUG_BOT_AI_CANREACH
+				print("failed");
+#endif
 				return false;
 			}
+#ifdef DEBUG_BOT_AI_CANREACH
+				print("succeed");
+#endif
 			// [FB] This should partially cover it...
+
+			// [CW] Update height position;
+			// TODO WARNING FIXME -- what about slopes?? :(
+			if (traceZ == opening->bottom)
+				traceZ = opening->lowfloor;
+			else
+				traceZ = opening->bottom;
 		}
 		else
 		{
+			// [CW] Frankly speaking, this is no use in most situations... :(
 			// TODO: check this precisely...
-			pCRTRData->linetarget = Actor(in->Thing);
+			pCRTRData->linetarget = EntityEx(in->Thing);
+
+			if (!pCRTRData->linetarget)
+				continue; // something out there
+
+			if (pCRTRData->linetarget == TargetThing)
+				break; // it is the target
+
+			if (pCRTRData->linetarget.bSolid)
+			{
+				if (pCRTRData->linetarget.Height > MaxPassableStep &&
+						!pCRTRData->linetarget.bShootable)
+					return false;
+			}
 		}
 	}
+
+	pCRTRData->finalPos = TargetPos;
+	pCRTRData->finalPos.z = traceZ;
 
 	return true;
 }
