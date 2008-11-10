@@ -1,0 +1,169 @@
+
+class BouncePad : Thinker;
+
+const float BOUNCE_FACTOR = 1.0;
+
+int						XForce;
+int						YForce;
+int						ZForce;
+int						Affectee;
+
+// used only if applied to 3dFloor
+/*struct extra_affectee_t
+{
+	sector_t *		p_sec;
+	sec_plane_t *	p_floor;	// we store this for faster tick processing
+};*/
+
+array</*extra_affectee_t*/sector_t*>	ExtraFloors;
+
+BouncePad	AdjustLink;
+
+//==========================================================================
+//
+//	Init
+//
+//	Add a funnel thinker to the thinker list
+//
+//==========================================================================
+
+void Init(int Xforce, int Yforce, int Zforce, int affectee)
+{
+	XForce = Xforce;
+	YForce = Yforce;
+	ZForce = Zforce;
+	Affectee = affectee;
+
+	// Check 3d floors
+	sector_t * p_affectee = &XLevel.Sectors[Affectee];
+	if (!p_affectee->bExtrafloorSource)
+		return;
+
+	// Find any region in any other sector which has
+	// an floor reference pointing to affectee's floor (type sec_plane_t)
+
+	// NOTE:
+	// 3dFloor line special is erased when 3d floors are being spawned,
+	// but arg1 (sector tag) should be left untouched... , however
+	// there is no guarantee that mapper does not have some map script that
+	// changes that for some reason, so we cannot use it, sadly :(
+	//
+
+	int i;
+	sector_t * p_sec;
+	sec_region_t * p_reg;
+	sec_plane_t * p_floor;
+
+	for (i = 0; i < XLevel.NumSectors; i++)
+	{
+		if (i == Affectee)
+			continue;	// do not bother
+
+		p_sec = &XLevel.Sectors[i];
+
+		if (!p_sec->bHasExtrafloors)
+			continue;	// no 3dfloors
+
+		for (p_reg = p_sec->botregion; p_reg; p_reg = p_reg->next)
+		{
+			if (p_reg->floor == &p_affectee->floor)
+			{
+				// Okay, we found one
+				ExtraFloors.Num = ExtraFloors.Num + 1;
+				ExtraFloors[ExtraFloors.Num - 1] = p_sec;
+				break;
+				//ExtraFloors[ExtraFloors.Num - 1].p_sec = p_sec;
+				//ExtraFloors[ExtraFloors.Num - 1].p_floor = p_reg->floor;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	ChangeValues
+//
+//==========================================================================
+
+void ChangeValues(int Xforce, int Yforce, int Zforce)
+{
+	XForce = Xforce;
+	YForce = Yforce;
+	ZForce = Zforce;
+}
+
+//==========================================================================
+//
+//	CheckForSectorMatch
+//
+//==========================================================================
+
+int CheckForSectorMatch(int tag)
+{
+	if (XLevel.Sectors[Affectee].tag == tag)
+		return Affectee;
+	else
+		return -1;
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//	Looks for all objects that are inside the radius of the effect.
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	int i;
+	sector_t*		affectee;
+	sector_t*		sec;
+	EntityEx		thing;
+	msecnode_t*		Node;
+	sec_plane_t*	floor;
+	float			point;
+
+
+	affectee = &XLevel.Sectors[Affectee];
+
+	for (i = -1; i < ExtraFloors.Num; i++)
+	{
+		if (i == -1)
+			sec = affectee;
+		else
+			sec = ExtraFloors[i];
+
+		// things touching this sector
+		for (Node = sec->TouchingThingList; Node; Node = Node->SNext)
+		{
+			thing = EntityEx(Node->Thing);
+			if (!thing.bWindThrust || !thing.bColideWithWorld)
+				continue;
+
+			// In any case (whether its a real or extra floor), the affectee floor
+			// should be taken for comparison
+			floor = &affectee->floor;
+			
+			point = GetPlanePointZ(floor, thing.Origin);
+			if (thing.Origin.z > point)
+			{	
+				// above floor
+			}
+			// If it is real floor, we do not care if origin.z is lower than floor height,
+			// but for extra floors equality is critical
+			else if (point == thing.Origin.z || i == -1)
+			{
+				thing.Velocity.x += itof(XForce) / BOUNCE_FACTOR * 35.0 /** DeltaTime*/;
+				thing.Velocity.y += itof(YForce) / BOUNCE_FACTOR * 35.0 /** DeltaTime*/;
+				thing.Velocity.z += itof(ZForce) / BOUNCE_FACTOR * 35.0 /** DeltaTime*/;
+
+				thing.PlaySound('BlastRadius', CHAN_BODY);
+			}			
+		}
+	}
+}
+
+defaultproperties
+{
+}
