@@ -39,7 +39,7 @@ class DominationSigilLightning : DominationSigilOffensive
 //
 //==========================================================================
 
-void Shoot()
+bool Shoot()
 {
 	if (CurrentEnemy)
 	{
@@ -50,20 +50,20 @@ void Shoot()
 		cmo = LightningMissile(SpawnMissile(CurrentEnemy, LightningCeiling));
 		if (fmo)
 		{
-			fmo.Target = self;
 			fmo.ZigZagCount = 0;
 			fmo.LightningLink = cmo;
 			fmo.A_KArenaLightningZap();
 		}
 		if (cmo)
 		{
-			cmo.Target = self;
 			cmo.Tracer = CurrentEnemy;	// mobj that it will track
 			cmo.LightningLink = fmo;
 			cmo.A_KArenaLightningZap();
 			PlaySound('MageLightningFire', CHAN_WEAPON);
 		}
+		return true;
 	}
+	return false;
 }
 
 

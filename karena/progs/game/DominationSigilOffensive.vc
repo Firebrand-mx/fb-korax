@@ -51,12 +51,9 @@ void CaptureBy(Entity Capturer)
 {
 	::CaptureBy(Capturer);
 
-	if (Team)
-	{
-		CurrentEnemy = none;
-		Ammo = 0;
-		ready_time = ReloadDelay;
-	}
+	CurrentEnemy = none;
+	Ammo = 0;
+	ready_time = ReloadDelay;
 }
 
 //==========================================================================
@@ -80,6 +77,9 @@ void Tick(float deltaTime)
 			{
 				int i;
 				float dist = -1.0;
+
+				CurrentEnemy = none;
+
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
 					Player Pl = Player(MainGameInfo(Level.Game).Players[i]);
@@ -93,12 +93,17 @@ void Tick(float deltaTime)
 					}
 				}
 			}
-			Shoot();
-			Ammo--;
-			if (Ammo)
-				ready_time = FireRepeatDelay;
-			else
-				ready_time = ReloadDelay;
+
+			if (Shoot())
+			{
+				Ammo--;
+				if (Ammo)
+					ready_time = FireRepeatDelay;
+				else
+					ready_time = ReloadDelay;
+			}
+			else if (Ammo < MaxAmmo)
+				Ammo++;
 		}
 	}
 }
@@ -111,8 +116,9 @@ void Tick(float deltaTime)
 //
 //==========================================================================
 
-void Shoot()
+bool Shoot()
 {
+	return false;
 }
 
 
