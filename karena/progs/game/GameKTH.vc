@@ -190,6 +190,9 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 	{
 	case state_freeramble:
 		// First fragger becomes Heresiarch
+		if (EntityEx(pl.MO).DamageType == 'Telefrag')
+			break;	// Not interested
+
 		if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
 		{
 			plHeresiarch = Player(source.Player);
@@ -440,7 +443,6 @@ void PlayBirthSequence()
 	case 40:
 		// Spawn Sorcerer's balls
 		{
-			EntityEx ball;
 			TVec org;
 			plHeresiarch.MO.Args[0] = 0;	// Currently no defense
 			plHeresiarch.MO.Args[2] = Actor::SORCBALL_INITIAL_SPEED;	// target speed
@@ -465,7 +467,6 @@ void PlayBirthSequence()
 			plHeresiarch.MO.bNoGravity = true;
 			plHeresiarch.MO.Velocity.z = 8.0;
 			Game.BroadcastLocalSound(HexenDefs::lsid_kth_mus_birth, true, 2.0);
-			////////ChangeMusic(va("%n", 'kth_mus2'));
 		}
 		break;
 	case 44:
@@ -569,7 +570,6 @@ void PlayBirthSequence()
 			EntityEx(plHeresiarch.MO).GiveInventoryType(InitialInvulnerability);
 			plHeresiarch.SetControllable(true);
 			plHeresiarch.MO.bNoGravity = false;
-			////////ChangeMusic(va("%n", originalMusic));
 			break;
 		}
 	}
