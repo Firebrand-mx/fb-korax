@@ -48,16 +48,26 @@ const float
 	SIDEWALK				= 192.0,
 	SIDERUN					= 320.0,
 
+	// [CW] CHECKME -- not used!
 	MAX_TRAVERSE_DIST		= 1024.0,		// 10 meters, used within b_func.c
 	AVOID_DIST				= 512.0,		// Try avoid incoming missiles once they reached this close
+	// [CW] CHECKME -- not used!
 	SAFE_SELF_MISDIST		= 128.0,		// Distance from self to target where it's safe to pull a rocket.
+	// [CW] CHECKME -- not used!
 	FRIEND_DIST				= 1024.0,		// To friend.
 	DARK_DIST				= 256.0,		// Distance that bot can see enemies in the dark from.
+	// [CW] CHECKME -- not used!
 	MAX_MONSTER_TARGET_DIST	= 1024.0,		// Too high can slow down the performance, see P_mobj.c
 	ENEMY_SCAN_FOV			= 120.0,
-	MAXMOVEHEIGHT			= 32.0,			// MAXSTEPMOVE but with jumping counted in.
+	MAXSTEPHEIGHT			= 24.0,
+	MAXJUMPHEIGHT			= 56.0,
+	MAXMOVEHEIGHT			= MAXJUMPHEIGHT,
+	MAXDROPHEIGHT			= 384.0,
+	//MAXMOVEHEIGHT			= 32.0,			// MAXSTEPMOVE but with jumping counted in.
+	// [CW] CHECKME -- not used!
 	GETINCOMBAT				= 512.0,		// Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
+	// [CW] CHECKME -- not used!
 	MAXROAM					= (5.0 * 35.0);	// When this time is elapsed the bot will roam after something else.
 const int
 	WHATS_DARK		= 64,					// light value thats classed as dark.
@@ -190,10 +200,10 @@ enum
 
 	priorv_Support					= 0,	// TODO
 
-	priorv_GameMode_NoScore			= 12,
-	priorv_GameMode_NotFirst		= 8,
-	priorv_GameMode_Loosing			= 12,
-	priorv_GameMode_Last			= 16,
+	priorv_GameMode_NoScore			= 18,
+	priorv_GameMode_NotFirst		= 12,
+	priorv_GameMode_Loosing			= 18,
+	priorv_GameMode_Last			= 24,
 	priorv_GameMode_Normal			= 8
 };
 //
@@ -544,8 +554,8 @@ bool CheckPath(float ang, float dist)
 			else
 			{
 				// [FB] No cliff jumping unless we're going after something
-				if ((open->lowfloor - open->bottom) > 32.0 &&
-					(open->lowfloor - open->bottom) < 384.0 && !enemy)
+				if ((open->lowfloor - open->bottom) > /*32.0*/MAXMOVEHEIGHT &&
+					(open->lowfloor - open->bottom) < /*384.0*/MAXDROPHEIGHT && !(enemy && enemy == ITarget))
 				{
 					return false;
 				}
@@ -555,12 +565,12 @@ bool CheckPath(float ang, float dist)
 
 				if (diffheight > 0.0)
 				{
-					if (diffheight >= 24.0 && diffheight <= 56.0)
+					if (diffheight >= MAXSTEPHEIGHT && diffheight <= MAXJUMPHEIGHT)
 					{
 						botmo.Player.Buttons |= BT_JUMP;
 						continue;
 					}
-					else if (diffheight > 56.0)
+					else if (diffheight > MAXJUMPHEIGHT)
 					{
 						// CHECKME!!
 					/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
@@ -587,7 +597,7 @@ bool CheckPath(float ang, float dist)
 				// [FB] Jump to avoid something
 				dheight = th.Origin.z + th.Height - botmo.Origin.z;
 
-				if (dheight >= 24.0 && dheight <= 56.0)
+				if (dheight >= MAXSTEPHEIGHT && dheight <= MAXJUMPHEIGHT)
 				{
 					botmo.Player.Buttons |= BT_JUMP;
 					continue;
@@ -599,7 +609,7 @@ bool CheckPath(float ang, float dist)
 			// [FB] Jump to reach something
 			dheight = th.Origin.z + th.Height - botmo.Origin.z;
 
-			if (dheight >= 24.0 && dheight <= 56.0)
+			if (dheight >= MAXSTEPHEIGHT && dheight <= MAXJUMPHEIGHT)
 			{
 				botmo.Player.Buttons |= BT_JUMP;
 				continue;
@@ -625,7 +635,7 @@ bool CheckTo(TVec pos, optional EntityEx TargetEntity)
 		TargetEntity = none;
 	}
 
-	return botmo.CanReach(pos, TargetEntity, 56.0/*[CW] FIXME! - jump height*/, 384.0/*[CW] FIXME!*/, botmo.Height);
+	return botmo.CanReach(pos, TargetEntity, MAXJUMPHEIGHT, MAXDROPHEIGHT, botmo.Height);
 }
 
 //==========================================================================
@@ -666,21 +676,36 @@ void CheckStuff()
 		if (ITarget.IsA('Inventory'))
 		{
 			if (ITarget.Owner || ITarget.bInvisible)
+			{
 				ITarget = none;
+				return;
+			}
 			else if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
 			{
 				if (!player.IsOKToPickupItem(Inventory(ITarget)))
 				{
 					// [FB] We can't actually pick up this
 					ITarget = none;
+					return;
 				}
 			}
 		}
-		else
+
+		//
+		// Special cases
+		if (ITarget.IsA('DominationSigil') && DominationSigil(ITarget).Team == player.Team)
+		{
+			// [CW] Domination Sigil already captured
+			ITarget = none;
+			return;
+		}
+		// TODO -- think out same specials for CTF banner
+		
 		if (((ITarget == node_current) && (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)) ||
 			!CheckTo(ITarget.Origin, ITarget))
 		{
 			ITarget = none;
+			return;
 		}
 	}
 }
@@ -3596,6 +3621,7 @@ Actor GetGameModeGoal(optional bool bReachable)
 					}
 				}
 			}
+
 			break;
 
 		case HexenDefs::game_football:
@@ -3646,6 +3672,9 @@ Actor GetGameModeGoal(optional bool bReachable)
 	}
 
 	if (!EE)
+		EE = GetNearestPathNode(class<Thinker>(PriorityNode), false);
+
+	if (!EE)
 		EE = GetNearestEnemy(true);
 
 	return EE;
@@ -3664,6 +3693,8 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 	float dist = -1.0;
 	bool visited;
 	int i;
+
+	array<PathNode> skipped;
 
 	PathNode previous;
 
@@ -3698,6 +3729,14 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 		{
 			if (CheckTo(pn.Origin))
 			{
+				if (pn.Class == PathNode && P_Random() < 33)
+				{
+					// skip common nodes sometimes to give bot movement more variety
+					skipped.Num = skipped.Num + 1;
+					skipped[skipped.Num - 1] = pn;
+					continue;
+				}
+
 				PN = pn;
 				dist = Length(pn.Origin - botmo.Origin);
 			}
@@ -3706,12 +3745,22 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 
 	if (PN)
 	{
+		if (skipped.Num)
+		{
+			int oldNum = nodes.Num;
+			nodes.Num = nodes.Num + skipped.Num;
+			for (i = oldNum; i < nodes.Num; i++)
+			{
+				nodes[i] = skipped[i - oldNum];
+			}
+		}
+
 		if (node_current)
 		{
 			// emulate Queue
-			if (nodes.Num == 256)
+			if (nodes.Num >= 256)
 			{
-				for (i = 1; i < 256; i++)
+				for (i = 1; i < nodes.Num; i++)
 					nodes[i - 1] = nodes[i];
 			}
 			else
