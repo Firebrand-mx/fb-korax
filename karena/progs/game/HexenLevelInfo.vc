@@ -163,6 +163,30 @@ float FindHighestFloorZAtPoint(TVec v, optional sector_t * in_sector)
 
 //============================================================================
 //
+//  SpawnSpecialNetmatchStart
+//
+//============================================================================
+
+bool SpawnSpecialNetmatchStart(mthing_t * mthing)
+{
+	// At the moment CTF and Football has special player starts
+	if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
+			MainGameInfo(Game).GameType != HexenDefs::game_football)
+		return false;
+
+	if (mthing->type == 15040 || mthing->type == 15041)
+	{
+		DeathmatchStarts.Num = DeathmatchStarts.Num + 1;
+		CopyMThing(mthing, &DeathmatchStarts[DeathmatchStarts.Num - 1]);
+		dprint("HexenLevelInfo::AddSpecialNetmatchStarts : added of type %i", mthing->type);
+		return true;
+	}
+
+	return false;
+}
+
+//============================================================================
+//
 //  SpawnSpecials
 //
 //============================================================================
