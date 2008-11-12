@@ -55,6 +55,7 @@ progs/game/MainGameInfo.vc		progs/game/MainGameInfo.vc
 progs/game/HexenLevelInfo.vc		progs/game/HexenLevelInfo.vc
 progs/game/KArenaPlayerPawn.vc		progs/game/KArenaPlayerPawn.vc
 progs/game/KArenaWeapon.vc		progs/game/KArenaWeapon.vc
+progs/game/KArenaSeekerMissile.vc	progs/game/KArenaSeekerMissile.vc
 progs/game/Player.vc		progs/game/Player.vc
 progs/game/PlayerTeam.vc		progs/game/PlayerTeam.vc
 progs/game/BotPlayer.vc		progs/game/BotPlayer.vc
@@ -118,6 +119,7 @@ progs/game/LightningSpark.vc		progs/game/LightningSpark.vc
 progs/game/WeaponMageLightning.vc		progs/game/WeaponMageLightning.vc
 progs/game/InfernalHandFX.vc		progs/game/InfernalHandFX.vc
 progs/game/InfernalHandFX2.vc		progs/game/InfernalHandFX2.vc
+progs/game/MageStaffFX22.vc		progs/game/MageStaffFX22.vc
 progs/game/WeaponMageStaff.vc		progs/game/WeaponMageStaff.vc
 progs/game/WeaponPigSnout.vc		progs/game/WeaponPigSnout.vc
 progs/game/WeaponStaff.vc		progs/game/WeaponStaff.vc
