@@ -155,6 +155,8 @@ enum
 	priort_Armor,		// tells how much Bot needs armor
 	priort_Artifacts,	// tells how much Bot needs an artifact... not sure this would be useful, but let's have it
 	priort_Special,		// tells how much Bot needs something special (e.g. special equipment)
+	priort_Enemy,		// tells how much Bot needs to fight the enemy, ignoring all other things for awhile
+	priort_Nemesis,		// tells how much Bot needs to fight the hated enemy, in particular
 	priort_Evade,		// tells how much Bot needs to get away from enemies
 	priort_Support,		// tells how much Bot needs to support his buddy in combat
 	priort_GameMode,	// tells how much Bot needs to peform some task specific to advanced gamemode
@@ -201,9 +203,15 @@ enum
 
 	priort_Special_XmasHavocFireWpn	= 24,	// Xmas Havoc is unplayable without fire weapons
 
-	priorv_Evade_Nightmare			= 20,	// SOS!
-	priorv_Evade_Tactical			= 12,	// i'll be back
-	priorv_Evade_TakeABreak			= 8,	// just need to rest for a while
+	priorv_Enemy_Frustrated			= 24,	// arghh! arghh!! argh!!!
+	priorv_Enemy_Pissed				= 18,	// arghh! I want to kill everyone!
+	priorv_Enemy_Normal				= 8,	// just a normal urge to whack someone
+	priorv_Enemy_HitMeBonus			= 12,	// enemy just hit me, I want revenge!
+
+	priorv_Nemesis_Frustrated		= 48,
+	priorv_Nemesis_Pissed			= 24,
+
+	priorv_Evade					= 0,	// TODO
 
 	priorv_Support					= 0,	// TODO
 
@@ -243,7 +251,8 @@ MainGameInfo gameInfo;
 // [CW] try this...
 Actor FTarget;			// final target (goal) ----- currently UNUSED
 Actor ITarget;			// immediate target (where to go)
-TVec ITargetPos;		// immediate target position (valid in specific situations)
+//TVec ITargetPos;		// immediate target position (valid in specific situations)
+int IPriorityType;		// current ITarget priority type
 TVec AttackOffset;		// basically, a point to get to just before heading to target
 PathNode node_current;
 array<PathNode> nodes;  // list of visited nodes (to make bot move freely along the map)
@@ -266,6 +275,7 @@ float t_react;
 /* float t_fight;
 float t_rocket;*/
 float t_turn;
+float t_hitme;			// someone hit me!!
 float t_pissed;
 float t_frust;
 float t_fire;			// Tics left until our gun will actually fire again
@@ -277,7 +287,9 @@ float forwardmove;		// For building ucmd
 float sidemove;
 
 // Flags, controlling movement
+// regarding ITarget:
 bool bSoftContact;			// ITarget is something that could be passed through without slowing down
+// regarding ITarget = enemy (or nemesis)
 bool bMeleeUrge;			// Must come closer to enemy as quickly as possible
 bool bKeepDistant;			// Enemy should be attacked from distance
 //bool bUseTargetPosition;	// ITargetPos is valid
@@ -1738,8 +1750,6 @@ Actor SetAlly()
 //
 //	Handle non-attack/dodging movement (?)
 //
-//	[CW] TODO: must implement bKeepDistant!
-//
 //==========================================================================
 
 void Roam(TVec dest)
@@ -1747,6 +1757,7 @@ void Roam(TVec dest)
 	// [CW] let it be only for 2d first
 	float yaw_delta = botmo.Angles.yaw - AngleTo(dest);
 	float distance = fabs(Length(dest - botmo.Origin));
+	float distance_bak = distance;
 
 	if (bSoftContact || bMeleeUrge)
 	{
@@ -1755,6 +1766,19 @@ void Roam(TVec dest)
 
 	float fw_delta = distance * cos(yaw_delta);
 	float side_delta = distance * sin(yaw_delta);
+
+	if (bKeepDistant)
+	{
+		if (distance_bak > 256.0)
+		{
+			fw_delta *= -1.0;
+			side_delta *= -1.0;
+		}
+		else if (distance_bak < 384.0)
+		{
+			fw_delta = 0.0;
+		}
+	}
 		
 	if (fw_delta > 0.0)
 	{
@@ -2066,6 +2090,9 @@ void Attack()
 void React(EntityEx inflictor)
 {
 	bAllRound = true;
+
+	// [CW]
+	t_hitme += AI_TIME_DELAY + 1.0; // to make sure this will affect priority recalculations
 
 	// [BC] 
 	if (inflictor && inflictor != botmo && ally != inflictor)
@@ -2813,6 +2840,10 @@ void UpdateTimedEffects(float deltaTime)
 		t_turn = 0.0;
 	}
 
+	t_hitme -= deltaTime;
+	if (t_hitme < 0.0)
+		t_hitme = 0.0;
+
 	t_pissed -= deltaTime;
 	if (t_pissed <= 0.0)
 	{
@@ -3048,6 +3079,49 @@ void ProcessPriorities()
 	}
 
 	//----------------------------------------
+	// Enemy
+	//----------------------------------------
+
+	if (t_frust > 0.0)
+	{
+		Priority[priort_Enemy] += priorv_Enemy_Frustrated;
+		if (t_hitme > 0.0)
+			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus << 2;	// AWOOOOO!!!
+	}
+	else if (t_pissed > 0.0)
+	{
+		Priority[priort_Enemy] += priorv_Enemy_Pissed;
+		if (t_hitme > 0.0)
+			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus << 1;
+	}
+	else
+	{
+		Priority[priort_Enemy] += priorv_Enemy_Normal;
+		if (t_hitme > 0.0)
+			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus;
+	}
+
+	//----------------------------------------
+	// Nemesis
+	//----------------------------------------
+
+	if (nemesis)
+	{
+		if (t_frust > 0.0)
+		{
+			Priority[priort_Nemesis] += priorv_Nemesis_Frustrated;
+			if (t_hitme > 0.0)
+				Priority[priort_Nemesis] += priorv_Enemy_HitMeBonus << 2;	// AWOOOOO!!! BARK!! BARK!!
+		}
+		else	// 'just' pissed off
+		{
+			Priority[priort_Nemesis] += priorv_Nemesis_Pissed;
+			if (t_hitme > 0.0)
+				Priority[priort_Nemesis] += priorv_Enemy_HitMeBonus << 1;
+		}
+	}
+
+	//----------------------------------------
 	// Game Mode
 	//----------------------------------------
 
@@ -3215,8 +3289,22 @@ Actor GetFirstPriorityTarget()
 	{
 		dist[i] = -1.0;
 	}
-	// [CW] Get a candidate target for this Game Mode (if any)
+
+	if (nemesis)
+		candidates[priort_Nemesis] = (botmo.CanReach(nemesis.Origin, nemesis) ? nemesis : none);
+	if (!candidates[priort_Nemesis] && enemy && enemy != nemesis)
+		candidates[priort_Enemy] = (botmo.CanReach(enemy.Origin, enemy) ? enemy : none);
+
 	candidates[priort_GameMode] = GetGameModeGoal(true);
+	if (!candidates[priort_GameMode])
+	{
+		if (candidates[priort_Nemesis])
+			candidates[priort_GameMode] = candidates[priort_Nemesis];
+		else if (candidates[priort_Enemy])
+			candidates[priort_GameMode] = candidates[priort_Enemy];
+		else
+			candidates[priort_GameMode] = GetNearestPathNode(class<Thinker>(PathNode), true);
+	}
 
 	// [CW] Look over all acceptable objects, common to every map and game mode
 	// and remember closest candidates for each of the priority type
@@ -3304,6 +3392,7 @@ Actor GetFirstPriorityTarget()
 		}
 		if (candidates[Prior_Targets[i]])
 		{
+			IPriorityType = Prior_Targets[i];
 			return candidates[Prior_Targets[i]];
 		}
 	}
@@ -3360,19 +3449,22 @@ void ProcessImmediate()
 			if (!ITarget.IsA('PathNode') && !ITarget.IsA('Inventory'))
 				nodes.Num = 0;
 		}
-		// If Bot cannot find any reachable priority target at the moment,
+
+		// [CW] Nearest node was being searched in GetFirstPriorityTarget
+		/*// If Bot cannot find any reachable priority target at the moment,
 		// he/she should try to get a reachable Path Node.
 		else
 		{
 			ITarget = GetNearestPathNode(class<Thinker>(PathNode), true);
-		}
+		}*/
 
-		// [CW] In the very least case try to use 'enemy' as a "go for" target
+		// [CW] No need to do this here anymore
+		/*// [CW] In the very least case try to use 'enemy' as a "go for" target
 		// (in fact, this is most unlikely to happen HERE, anyway)
 		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
 		{
 			ITarget = enemy;
-		}
+		}*/
 	}
 
 #ifdef DEBUG_BOT_AI_TARGET
@@ -3392,20 +3484,22 @@ void ProcessImmediate()
 		bSoftContact =	bAttackOffsetValid ||
 						(!ITarget.bMonster && !ITarget.bSolid) ||
 						ITarget.IsA('SoccerBall');
-	}
 
-	if (enemy)
-	{
-		// [CW] Depending on current weapons, enemy's and Bot's, Bot should decide
-		// whether to approach or keep distance
-		if (enemy.IsA('ZXmasHavocTree') && (KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium ||
-						player.ReadyWeapon.bBotProjectile))
-			bKeepDistant = true;
-		else
+		if (ITarget == enemy)
 		{
-			bMeleeUrge = KArenaWeapon(player.ReadyWeapon).bBotMelee && enemy.Player &&
-						 !KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotMelee;
-			bKeepDistant = !bMeleeUrge && !KArenaWeapon(player.ReadyWeapon).bBotMelee;
+			// [CW] Depending on current weapons, enemy's and Bot's, Bot should decide
+			// whether to approach or keep distance
+			if (enemy.IsA('ZXmasHavocTree') && (KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium ||
+							player.ReadyWeapon.bBotProjectile))
+				bKeepDistant = true;
+			else
+			{
+				bMeleeUrge = KArenaWeapon(player.ReadyWeapon).bBotMelee && enemy.Player &&
+							 (KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
+								KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectile);
+				bKeepDistant = !bMeleeUrge && (!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium &&
+								!KArenaWeapon(player.ReadyWeapon).bBotProjectile);
+			}
 		}
 	}
 }
@@ -3732,11 +3826,12 @@ Actor GetGameModeGoal(optional bool bReachable)
 			break;
 	}
 
-	if (!EE)
-		EE = GetNearestPathNode(class<Thinker>(PriorityNode), false);
+	//if (!EE)
+	//	EE = GetNearestPathNode(class<Thinker>(PriorityNode), false);
 
-	if (!EE)
-		EE = GetNearestEnemy(true);
+	// [CW] No need in this since now we have separate Enemy priority type
+	//if (!EE)
+	//	EE = GetNearestEnemy(true);
 
 	return EE;
 }
