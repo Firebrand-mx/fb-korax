@@ -30,65 +30,12 @@
 //**
 //**************************************************************************
 
-class InfernalHandFX : Actor;
+class InfernalHandFX : KArenaSeekerMissile;
 
 
 int ExplodeDamage;
 float ExplodeDistance;
 int BlastDamage;
-
-//===========================================================================
-//
-//  FindEnemy
-//
-//===========================================================================
-
-final void FindEnemy()
-{
-	Entity Other;
-
-	foreach RoughBlockSearch(Other, 10)
-	{
-		EntityEx link = EntityEx(Other);
-
-		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
-			link.bDormant)
-		{
-			continue;
-		}
-		if (!link.bShootable)
-		{
-			continue;
-		}
-		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameModel && 
-			MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
-			link.bIsPlayer && Player(Target.Player).Team == Player(link.Player).Team)
-		{
-			continue;
-		}
-		if (CanSee(link))
-		{
-			float angle = AngleMod360(atan2(
-				link.Origin.y - Target.Origin.y,
-				link.Origin.x - Target.Origin.x) -
-				Target.Angles.yaw);
-			if (angle > 226.0 * 360.0 / 256.0 ||
-				angle < 30.0 * 360.0 / 256.0)
-			{
-				Tracer = link;
-				return;
-			}
-		}
-	}
-}
 
 //==========================================================================
 //
@@ -112,7 +59,7 @@ int SpecialMissileHit(EntityEx Other)
 	return -1;
 }
 
-/*//==========================================================================
+//==========================================================================
 //
 //	GetExplodeParms
 //
@@ -125,7 +72,7 @@ void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
 	distance = ExplodeDistance;
 }
 
-//==========================================================================
+/*//==========================================================================
 //
 //  A_HandExplode
 //
@@ -159,29 +106,14 @@ final void A_HandExplode()
 	::A_Explode();
 }*/
 
-//==========================================================================
-//
-//  A_HHandTrack
-//
-//==========================================================================
-
-final void A_HHandTrack()
-{
-	if (!Tracer && (P_Random() < 50))
-	{
-		FindEnemy();
-	}
-	SeekerMissile(2.0, 10.0);
-}
-
 states
 {
 Spawn:
-	SBS1 AABBCCDD 1 Bright A_HHandTrack
+	SBS1 AABBCCDD 1 Bright A_SeekerMissileTrack
 	Loop
 Death:
 	MSP1 G 2 Bright
-	MSP1 H 4 Bright //A_HandExplode
+	MSP1 H 4 Bright A_Explode // A_HandExplode
 	MSP1 IJKLMNO 4 Bright
 	MSP1 P 2 Bright
 	Stop
@@ -189,6 +121,7 @@ Death:
 
 defaultproperties
 {
+	BlockSearchDistance = 10;
 	ExplodeDamage = 125;
 	ExplodeDistance = 192.0;
 	BlastDamage = 40;
@@ -198,7 +131,6 @@ defaultproperties
 	Speed = 800.0;
 	MissileDamage = 8;
 	DamageType = 'Fire';
-	bMissile = true;
 	bNoBlockmap = true;
 	bDropOff = true;
 	bNoGravity = true;
@@ -206,11 +138,9 @@ defaultproperties
 	bActivateImpact = true;
 	bActivatePCross = true;
 	bBloodSplatter = true;
-	bSeekerMissile = true;
 	DeathSound = 'MageStaffExplode';
 	DLightColour = RGB(255, 63, 0);
 	DLightRadius = 200.0;
-	//Obituary = "$ob_heresiarchinfernalhand";
 
 	bNoAccuracy = true;
 	bThruGhost = true;

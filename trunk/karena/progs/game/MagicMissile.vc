@@ -30,80 +30,12 @@
 //**
 //**************************************************************************
 
-class MagicMissile : Actor;
-
-//===========================================================================
-//
-//  FindEnemy
-//
-//===========================================================================
-
-final void FindEnemy()
-{
-	Entity Other;
-
-	foreach RoughBlockSearch(Other, 2)
-	{
-		EntityEx link = EntityEx(Other);
-
-		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
-			link.bDormant)
-		{
-			continue;
-		}
-		if (!link.bShootable)
-		{
-			continue;
-		}
-		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameModel && 
-			MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
-			link.bIsPlayer && Player(Target.Player).Team == Player(link.Player).Team)
-		{
-			continue;
-		}
-		if (CanSee(link))
-		{
-			float angle = AngleMod360(atan2(
-				link.Origin.y - Target.Origin.y,
-				link.Origin.x - Target.Origin.x) -
-				Target.Angles.yaw);
-			if (angle > 226.0 * 360.0 / 256.0 ||
-				angle < 30.0 * 360.0 / 256.0)
-			{
-				Tracer = link;
-				return;
-			}
-		}
-	}
-}
-
-//==========================================================================
-//
-//  A_MMissileTrack
-//
-//==========================================================================
-
-final void A_MMissileTrack()
-{
-	if (!Tracer && (P_Random() < 50))
-	{
-		FindEnemy();
-	}
-	SeekerMissile(2.0, 10.0);
-}
+class MagicMissile : KArenaSeekerMissile;
 
 states
 {
 Spawn:
-	WENE AB 2 Bright A_MMissileTrack
+	WENE AB 2 Bright A_SeekerMissileTrack
 	Wait
 Death:
 	WENE B 4 Bright
@@ -118,7 +50,6 @@ defaultproperties
 	Height = 8.0;
 	Speed = 600.0;
 	MissileDamage = 5;
-	bMissile = true;
 	bNoBlockmap = true;
 	bDropOff = true;
 	bNoGravity = true;
@@ -126,10 +57,8 @@ defaultproperties
 	bActivateImpact = true;
 	bActivatePCross = true;
 	bBloodSplatter = true;
-	bSeekerMissile = true;
 	bThruGhost = true;
 	DeathSound = 'MageStaffExplode';
 	DLightColour = RGB(67, 197, 246);
 	DLightRadius = 118.0;
-//	Obituary = "$ob_magicmissile";
 }

@@ -30,80 +30,12 @@
 //**
 //**************************************************************************
 
-class FireBallMissile : Actor;
-
-//===========================================================================
-//
-//  FindEnemy
-//
-//===========================================================================
-
-final void FindEnemy()
-{
-	Entity Other;
-
-	foreach RoughBlockSearch(Other, 2)
-	{
-		EntityEx link = EntityEx(Other);
-
-		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
-			link.bDormant)
-		{
-			continue;
-		}
-		if (!link.bShootable)
-		{
-			continue;
-		}
-		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameModel && 
-			MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
-		{
-			continue;
-		}
-		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
-			link.bIsPlayer && Player(Target.Player).Team == Player(link.Player).Team)
-		{
-			continue;
-		}
-		if (CanSee(link))
-		{
-			float angle = AngleMod360(atan2(
-				link.Origin.y - Target.Origin.y,
-				link.Origin.x - Target.Origin.x) -
-				Target.Angles.yaw);
-			if (angle > 226.0 * 360.0 / 256.0 ||
-				angle < 30.0 * 360.0 / 256.0)
-			{
-				Tracer = link;
-				return;
-			}
-		}
-	}
-}
-
-//==========================================================================
-//
-//  A_FBallTrack
-//
-//==========================================================================
-
-final void A_FBallTrack()
-{
-	if (!Tracer && (P_Random() < 50))
-	{
-		FindEnemy();
-	}
-	SeekerMissile(2.0, 10.0);
-}
+class FireBallMissile : KArenaSeekerMissile;
 
 states
 {
 Spawn:
-	WEFT ABCD 2 Bright A_FBallTrack
+	WEFT ABCD 2 Bright A_SeekerMissileTrack
 	Loop
 Death:
 	WEFT EFGHIJKLMN 2 Bright
@@ -117,7 +49,6 @@ defaultproperties
 	Speed = 1050.0;
 	MissileDamage = 75;
 	DamageType = 'Fire';
-	bMissile = true;
 	bNoBlockmap = true;
 	bDropOff = true;
 	bNoGravity = true;
@@ -125,9 +56,7 @@ defaultproperties
 	bActivateImpact = true;
 	bActivatePCross = true;
 	bBloodSplatter = true;
-	bSeekerMissile = true;
 	DeathSound = 'MageStaffExplode';
 	DLightColour = RGB(255, 128, 0);
 	DLightRadius = 126.0;
-	//Obituary = "$ob_wfireball";
 }
