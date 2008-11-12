@@ -680,6 +680,17 @@ void InsertPlayer(Player pl, int TeamIndex)
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Index = TeamIndex;
+
+		// For 2-team games
+		if (GameType == HexenDefs::game_ctf || GameType == HexenDefs::game_domination
+			|| GameType == HexenDefs::game_football)
+		{
+			if (teamnum)
+				Teams[teamnum].T2 = PlayerTeam::TEAM2_INDEX_RED;
+			else
+				Teams[teamnum].T2 = PlayerTeam::TEAM2_INDEX_BLUE;
+		}
+
 		TeamInfos[TeamIndex].bTeamInPlay = true;
 
 		if (GameType < HexenDefs::NUMGAMESNOTEAM)
