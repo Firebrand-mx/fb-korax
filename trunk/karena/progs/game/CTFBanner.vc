@@ -287,7 +287,15 @@ void SetTranslation()
 
 	if (CTF && CTF.IsInPlayableState())
 	{
-		int i;
+
+		//
+		// [CW] WTF IS THIS???
+		// Following code works so, that translation here is set not to
+		// THIS banner, but to ALL banners EXCEPT THIS one.
+		// Besides there no need to make a loop here to check ALL banners,
+		// since we are already in CTFBanner class.
+		//
+		/*int i;
 
 		for (i = 0; i < GameCTF::MAXBANNERS; i++)
 		{
@@ -338,8 +346,15 @@ void SetTranslation()
 						break;
 				}
 			}
-		}
+		}*/
 
+		//
+		// [CW] I am changing how it works; moved actual translation setting to
+		//		LevelInfo class, mainly because not only Banner, but Colored Decor
+		//		uses this as well.
+		//
+		HexenLevelInfo(Level).SetTeamTranslation(Team.Index, TID);
+		
 		TransSet = true;
 	}
 }
