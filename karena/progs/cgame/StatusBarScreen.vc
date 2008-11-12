@@ -61,11 +61,11 @@ int pic_minus;
 
 int pic_statbar;
 int pic_kills;
-int pic_manadim[14];
+int pic_manadim[18];
 int pic_manavial[10];
 int pic_manavial6;
 int pic_manavial7;
-/*int pic_artiflash[5];
+/* int pic_artiflash[5];
 int pic_wpslot;
 int pic_wpfull;
 int pic_wppiece[3];
@@ -73,7 +73,7 @@ int wppiecex[3];
 int pic_keybar;
 int pic_armor[4];*/
 
-/*int pic_invbar;
+/* int pic_invbar;
 int pic_selectbox;
 int pic_invgeml[2];
 int pic_invgemr[2];*/
@@ -221,6 +221,10 @@ void StartMap()
 	pic_manadim[11] = R_RegisterPic('manabrt6');
 	pic_manadim[12] = R_RegisterPic('manadim7');
 	pic_manadim[13] = R_RegisterPic('manabrt7');
+	pic_manadim[14] = R_RegisterPic('manadim8');
+	pic_manadim[15] = R_RegisterPic('manabrt8');
+	pic_manadim[16] = R_RegisterPic('manadim9');
+	pic_manadim[17] = R_RegisterPic('manabrt9');
 	pic_manavial[0] = R_RegisterPic('manavl1d');
 	pic_manavial[1] = R_RegisterPic('manavl1');
 	pic_manavial[2] = R_RegisterPic('manavl2d');
@@ -459,6 +463,7 @@ void SB_DrawMainBar()
 	int sb_manaVial3;
 	int sb_manaVial4;
 	int sb_manaVial5;
+	int Mana4DimBase;
 	int Mana5DimBase;
 
 	SB_DrawBackground();
@@ -571,7 +576,22 @@ void SB_DrawMainBar()
 		sb_manaVial4 = 0;
 		sb_manaVial5 = 0;
 	}
-	// [FB] Choose correct mana type to display
+
+	// [FB] Choose correct alternate mana type to display for blast radius
+	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
+	{
+	case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
+		Mana4DimBase = 0;
+		break;
+	case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
+		Mana4DimBase = 2;
+		break;
+	case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
+		Mana4DimBase = 4;
+		break;
+	}
+
+	// [FB] Choose correct alternate mana type to display for poison bag
 	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
 	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
@@ -590,8 +610,8 @@ void SB_DrawMainBar()
 	DrawMana(Mana1, 77, sb_manaVial1, 0, sb_mana1);
 	DrawMana(Mana2, 107, 2 + sb_manaVial2, 2, sb_mana2);
 	DrawMana(ItemManaRed, 138, 4 + sb_manaVial3, 4, sb_mana3);
-	DrawMana(ArtifactBlastRadius, 169, 6 + sb_manaVial4, 6, sb_mana4);
-	DrawMana(ArtifactFlechette, 200, 8 + sb_manaVial5, 8 + Mana5DimBase, sb_mana5);
+	DrawMana(ArtifactBlastRadius, 169, 6 + sb_manaVial4, 6 + Mana4DimBase, sb_mana4);
+	DrawMana(ArtifactFlechette, 200, 8 + sb_manaVial5, 12 + Mana5DimBase, sb_mana5);
 	if (cl.next_level != cl.old_level)
 	{
 	   ShadeRect(BAR_X + 232, BAR_Y + 5, 3, 22 - (22 * (cl.experience - cl.old_level)) / (cl.next_level - cl.old_level), 0.99);
@@ -676,7 +696,7 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 //
 //==========================================================================
 
-/*void SB_DrawKeyBar()
+/* void SB_DrawKeyBar()
 {
 	int i;
 	int num;
@@ -728,7 +748,7 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 //
 //==========================================================================
 
-/*void SB_DrawInventoryBar()
+/* void SB_DrawInventoryBar()
 {
 	int i;
 
@@ -846,8 +866,24 @@ void SB_DrawFullscreenStats()
 		// Draw Dim Mana icon
 		sb_mana5 = 0;
 	}
+
+	int Mana4DimBase = 0;
+	// [FB] Choose correct alternate mana type to display for blast radius
+	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_BLASTRADIUS])
+	{
+	case HexenDefs::ALTFIRE_BLASTRADIUS_INSTANT:
+		Mana4DimBase = 0;
+		break;
+	case HexenDefs::ALTFIRE_BLASTRADIUS_BOMB:
+		Mana4DimBase = 2;
+		break;
+	case HexenDefs::ALTFIRE_BLASTRADIUS_MISSILE:
+		Mana4DimBase = 4;
+		break;
+	}
+
 	int Mana5DimBase = 0;
-	// [FB] Choose correct mana type to display
+	// [FB] Choose correct alternate mana type to display for poison bag
 	switch(cl.altWeaponMode[HexenDefs::ALTFIRE_POISONBAG])
 	{
 	case HexenDefs::ALTFIRE_POISONBAG_GRENADE:
@@ -860,6 +896,7 @@ void SB_DrawFullscreenStats()
 		Mana5DimBase = 4;
 		break;
 	}
+
 	// [FB] Update mana graphics based upon mana count/weapon type
 	if (cl.ReadyWeapon &&
 		cl.ReadyWeapon.AmmoType1 != Mana1 &&
@@ -886,8 +923,8 @@ void SB_DrawFullscreenStats()
 	DrawFullscreenMana(Mana1, 235, 0, sb_mana1);
 	DrawFullscreenMana(Mana2, 295, 2, sb_mana2);
 	DrawFullscreenMana(ItemManaRed, 355, 4, sb_mana3);
-	DrawFullscreenMana(ArtifactBlastRadius, 415, 6, sb_mana4);
-	DrawFullscreenMana(ArtifactFlechette, 475, 8 + Mana5DimBase, sb_mana5);
+	DrawFullscreenMana(ArtifactBlastRadius, 415, 6 + Mana4DimBase, sb_mana4);
+	DrawFullscreenMana(ArtifactFlechette, 475, 12 + Mana5DimBase, sb_mana5);
 	DrawPic(534, 439, pic_manavial6, 0.6);
 	DrawPic(546, 439, pic_manavial7, 0.6);
 	if (cl.next_level != cl.old_level)
