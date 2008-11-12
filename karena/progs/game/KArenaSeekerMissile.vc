@@ -1,0 +1,88 @@
+
+class KArenaSeekerMissile : Actor
+		abstract;
+
+int BlockSearchDistance;
+float TraceThreshold;
+float TraceTurnMax;
+
+//===========================================================================
+//
+//  MissileFindEnemy
+//
+//===========================================================================
+
+void MissileFindEnemy(optional int blockSearch)
+{
+	Entity Other;
+
+	if (!specified_blockSearch)
+		blockSearch = BlockSearchDistance;
+
+	foreach RoughBlockSearch(Other, blockSearch)
+	{
+		EntityEx link = EntityEx(Other);
+
+		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
+			link.bDormant)
+		{
+			continue;
+		}
+		if (!link.bShootable)
+		{
+			continue;
+		}
+		if (Level.Game.netgame && !Level.Game.deathmatch && link.bIsPlayer)
+		{
+			continue;
+		}
+		if (MainGameInfo(Level.Game).GameModel && 
+			MainGameInfo(Level.Game).GameModel.TeamFactor(Target, link))
+		{
+			continue;
+		}
+		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
+			link.bIsPlayer && Player(Target.Player).Team == Player(link.Player).Team)
+		{
+			continue;
+		}
+		if (CanSee(link))
+		{
+			float angle = AngleMod360(atan2(
+				link.Origin.y - Target.Origin.y,
+				link.Origin.x - Target.Origin.x) -
+				Target.Angles.yaw);
+			if (angle > 226.0 * 360.0 / 256.0 ||
+				angle < 30.0 * 360.0 / 256.0)
+			{
+				Tracer = link;
+				return;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  A_SeekerMissileTrack
+//
+//==========================================================================
+
+final void A_SeekerMissileTrack()
+{
+	if (!Tracer && (P_Random() < 50))
+	{
+		MissileFindEnemy();
+	}
+	SeekerMissile(TraceThreshold, TraceTurnMax);
+}
+
+defaultproperties
+{
+	bMissile = true;
+	bSeekerMissile = true;
+
+	BlockSearchDistance = 2;
+	TraceThreshold = 2.0;
+	TraceTurnMax = 10.0;
+}
