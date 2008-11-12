@@ -83,6 +83,7 @@ int pic_mino[16];
 int pic_boot[16];
 int pic_shld[16];
 int pic_pidm[8];
+int pic_pidm_width;
 int pic_shsp;
 
 int pic_paused;
@@ -310,6 +311,8 @@ void StartMap()
 	{
 		pic_pidm[i] = R_RegisterPic(StrToName(va("sppidm%d", i)));
 	}
+	R_GetPicInfo(pic_pidm[0], &info);
+	pic_pidm_width = info.width;
 
 	// [FB] Invisibility icon
 	pic_shsp = R_RegisterPic('spshsp0');
@@ -1026,7 +1029,7 @@ void SB_DrawIcons()
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		// [FB] This one should appear where the wings of wrath are supposed to
-		DrawPic(20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7], 0.6);
+		DrawPic(/*20*/Width - pic_pidm_width - 20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7], 0.6);
 	}
 
 	// [FB] Invisibility power
