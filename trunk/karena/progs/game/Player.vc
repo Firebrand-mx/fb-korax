@@ -1026,29 +1026,53 @@ void DeathMatchSpawnPlayer()
 	int i;
 	int j;
 
-	for (j = 0; j < 20; j++)
+	// [CW] CTF and Football special rule
+	if (Team /* must already have a Team, otherwise pointless */
+		&& (MainGameInfo(Level.Game).GameType == HexenDefs::game_ctf
+			|| MainGameInfo(Level.Game).GameType == HexenDefs::game_football))
 	{
-		i = P_Random() % Level.DeathmatchStarts.Num;
-		if (CheckSpot(&Level.DeathmatchStarts[i]))
+		bool enouph = false;
+		j = 0;
+		while(true)
 		{
-			if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
-				(MainGameInfo(Level.Game).GameType == HexenDefs::game_ctf
-				|| MainGameInfo(Level.Game).GameType == HexenDefs::game_football))
+			if (enouph)
 			{
-				// [FB] Use the second argument of deathmatch starts to determine team grouping
-				if (MainGameInfo(Level.Game).Teams[1] == Team &&
-					(Level.DeathmatchStarts[i].arg1 == 1))
+				if (j == Level.DeathmatchStarts.Num)
+					break; // ah! just go spawn where you can, oh unlucky one...
+				i = j;
+			}
+			else
+				i = P_Random() % Level.DeathmatchStarts.Num;
+
+			print("Level.DeathmatchStarts[i].type = %i", Level.DeathmatchStarts[i].type);
+			if (Level.DeathmatchStarts[i].type != 11 /*common*/ &&
+				((Level.DeathmatchStarts[i].type == 15040 /*aka Blue*/ &&
+					Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE) ||
+				(Level.DeathmatchStarts[i].type == 15041 /*aka Red*/ &&
+					Team.T2 == PlayerTeam::TEAM2_INDEX_RED)))
+			{
+				if (CheckSpot(&Level.DeathmatchStarts[i]))
 				{
-					SpawnPlayer(&Level.DeathmatchStarts[i], false);
-					return;
-				}
-				else if ((Level.DeathmatchStarts[i].arg1 == 0))
-				{
+					print("spawning at team location");
 					SpawnPlayer(&Level.DeathmatchStarts[i], false);
 					return;
 				}
 			}
-			else
+
+			j++;
+			if (!enouph && j > 20)
+			{
+				enouph = true;
+				j = 0;
+			}
+		};
+	}
+	else
+	{
+		for (j = 0; j < 20; j++)
+		{
+			i = P_Random() % Level.DeathmatchStarts.Num;
+			if (CheckSpot(&Level.DeathmatchStarts[i]))
 			{
 				SpawnPlayer(&Level.DeathmatchStarts[i], false);
 				return;
@@ -1057,6 +1081,7 @@ void DeathMatchSpawnPlayer()
 	}
 	
 	// no good spot, so the player will probably get stuck 
+	print("spawning at random location");
 	SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
 }
 
