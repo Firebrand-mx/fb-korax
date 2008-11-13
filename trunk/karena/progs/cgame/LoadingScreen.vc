@@ -38,7 +38,10 @@ string intro;
 string enter;
 int pic;
 
-int NumIntros;
+int NumRandIntros;
+int NumMapIntros;
+int NumGameIntros;
+int NumHintIntros;
 int NumEnter;
 
 float Delay;
@@ -56,7 +59,8 @@ void Init()
 	string enter_txt;
 	string enter_txt_lang;
 
-	NumIntros = -1;
+	NumRandIntros = -1;
+	NumHintIntros = -1;
 	NumEnter = -1;
 
 	do
@@ -68,7 +72,13 @@ void Init()
 
 	do
 	{
-		intro_txt = va("intro_rand_%i", ++NumIntros);
+		intro_txt = va("intro_rand_%i", ++NumRandIntros);
+		intro_txt_lang = GetLangString(StrToName(intro_txt));
+	}
+	while(strcmp(intro_txt, intro_txt_lang));
+	do
+	{
+		intro_txt = va("intro_hint_%i", ++NumHintIntros);
 		intro_txt_lang = GetLangString(StrToName(intro_txt));
 	}
 	while(strcmp(intro_txt, intro_txt_lang));
@@ -148,16 +158,93 @@ void OnVisibilityChanged(bool bNewVisibility)
 {
 	if (bNewVisibility)
 	{
+		string dummy;
+		string intro_txt;
+		string intro_txt_lang;
+		NumMapIntros = -1;
+		NumGameIntros = -1;
+
+		intro = "";
+
+		if (NumHintIntros && P_Random() < 96)
+		{
+			intro = GetLangString(StrToName(va("intro_hint_%i", P_Random() % NumHintIntros)));
+		}
+		
+		if (!strlen(intro) && P_Random() < 96)
+		{
+			dummy = strlwr(StrReplace(MapTitle, " ", ""));
+			dummy = strlwr(StrReplace(dummy, ",", ""));
+			dummy = strlwr(StrReplace(dummy, ".", ""));
+			dummy = strlwr(StrReplace(dummy, "!", ""));
+			dummy = strlwr(StrReplace(dummy, "?", ""));
+			do
+			{
+				intro_txt = va("intro_map_%s_%i", dummy, ++NumMapIntros);
+				intro_txt_lang = GetLangString(StrToName(intro_txt));
+			}
+			while(strcmp(intro_txt, intro_txt_lang));
+
+			if (NumMapIntros)
+			{
+				intro = GetLangString(StrToName(va("intro_map_%s_%i", dummy, P_Random() % NumMapIntros)));
+				intro = SplitTextWithNewlines(intro, 520);
+			}
+		}
+		
+		if (!strlen(intro) && P_Random() < 96)
+		{
+			switch (GetCvar('deathmatch'))
+			{
+			case HexenDefs::game_dm:
+				dummy = "dm"; break;
+			case HexenDefs::game_dmteam:
+				dummy = "tdm"; break;
+			case HexenDefs::game_sweep:
+				dummy = "cs"; break;
+			case HexenDefs::game_sweepteam:
+				dummy = "tcs"; break;
+			case HexenDefs::game_kth:
+				dummy = "kth"; break;
+			case HexenDefs::game_ctf:
+				dummy = "ctf"; break;
+			case HexenDefs::game_domination:
+				dummy = "do"; break;
+			case HexenDefs::game_football:
+				dummy = "fb"; break;
+			case HexenDefs::game_xmas:
+				dummy = "xm"; break;
+			default:
+				dummy = "-";
+			}
+			do
+			{
+				intro_txt = va("intro_game_%s_%i", dummy, ++NumGameIntros);
+				intro_txt_lang = GetLangString(StrToName(intro_txt));
+			}
+			while(strcmp(intro_txt, intro_txt_lang));
+
+			if (NumGameIntros)
+			{
+				intro = GetLangString(StrToName(va("intro_game_%s_%i", dummy, P_Random() % NumGameIntros)));
+				intro = SplitTextWithNewlines(intro, 520);
+			}
+		}
+		
+		if (!strlen(intro) && NumRandIntros)
+		{
+			intro = GetLangString(StrToName(va("intro_rand_%i", P_Random() % NumRandIntros)));
+			intro = SplitTextWithNewlines(intro, 520);
+		}
+
+		intro = SplitTextWithNewlines(intro, 520);
+
+
 		Delay = 1.0;
 		string picname = va("%nim", MapName);
 		pic = R_RegisterPic(StrToName(picname));
 		if (NumEnter)
 			enter = GetLangString(StrToName(va("enter_rand_%i", P_Random() % NumEnter)));
-		if (NumIntros)
-		{
-			intro = GetLangString(StrToName(va("intro_rand_%i", P_Random() % NumIntros)));
-			intro = SplitTextWithNewlines(intro, 520);
-		}
 	}
 	bTickEnabled = bNewVisibility;
 }
