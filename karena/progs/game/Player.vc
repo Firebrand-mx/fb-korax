@@ -3262,8 +3262,10 @@ bool IsOKToPickupItem(Inventory Item)
 	if (Item.IsA('Health'))
 	{
 		// [CW] Health is tested differently
-		if (EntityEx(MO).Inventory.CheckInventory('health') < max_health)
+		if (EntityEx(MO).CheckInventory('health') < max_health)
+		{
 			return true;
+		}
 		return false;
 	}
 	else if (Item.IsA('Armor'))
@@ -3289,9 +3291,9 @@ bool IsOKToPickupItem(Inventory Item)
 	else if (Item.IsA('ItemManaCombined') || Item.IsA('ArtifactBoostMana'))
 	{
 		// [CW] Combined mana and BoostMana are tested differently
-		if (EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
-			EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
-			EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+		if (EntityEx(MO).CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+			EntityEx(MO).CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+			EntityEx(MO).CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
 		{
 			return true;
 		}
@@ -3300,9 +3302,9 @@ bool IsOKToPickupItem(Inventory Item)
 	else if (Item.IsA('WeaponPickup'))
 	{
 		class RealWeaponClass = KArenaPlayerPawn(MO).WeaponClasses[WeaponPickup(Item).Slot - 1];
-		KArenaWeapon RealWeaponItem = KArenaWeapon(EntityEx(MO).Inventory.FindInventory(class<Inventory>(RealWeaponClass)));
+		KArenaWeapon RealWeaponItem = KArenaWeapon(EntityEx(MO).FindInventory(class<Inventory>(RealWeaponClass)));
 
-#ifdef DEBUG_BOT_AI_TARGET
+#ifdef DEBUG_BOT_AI_ITEMS
 		print("WeaponPickup = %n", GetClassName(Item.Class));
 		print("RealWeaponClass = %n", GetClassName(RealWeaponClass));
 		print("RealWeaponItem = %i", RealWeaponItem);
@@ -3311,18 +3313,18 @@ bool IsOKToPickupItem(Inventory Item)
 		if (!RealWeaponItem)
 			return true;	// no such weapon yet
 
-#ifdef DEBUG_BOT_AI_TARGET
+#ifdef DEBUG_BOT_AI_ITEMS
 		print("has weapon");
 #endif
 
 		if (RealWeaponItem.AmmoType1)
 		{
 			if (ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaBlue) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaGreen) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType1, ItemManaRed) &&
-				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+				EntityEx(MO).CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
 			{
 				return true;
 			}
@@ -3330,11 +3332,11 @@ bool IsOKToPickupItem(Inventory Item)
 		if (RealWeaponItem.AmmoType2)
 		{
 			if (ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaBlue) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaGreen) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType2, ItemManaRed) &&
-				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+				EntityEx(MO).CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
 			{
 				return true;
 			}
@@ -3342,11 +3344,11 @@ bool IsOKToPickupItem(Inventory Item)
 		if (RealWeaponItem.AmmoType3)
 		{
 			if (ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaBlue) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaGreen) &&
-				EntityEx(MO).Inventory.CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
+				EntityEx(MO).CheckInventory('Mana2') < ItemManaGreen.default.MaxAmount ||
 				ClassIsChildOf(RealWeaponItem.AmmoType3, ItemManaRed) &&
-				EntityEx(MO).Inventory.CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
+				EntityEx(MO).CheckInventory('ItemManaRed') < ItemManaRed.default.MaxAmount)
 			{
 				return true;
 			}
@@ -3363,13 +3365,13 @@ bool IsOKToPickupItem(Inventory Item)
 		parent_class = GetClassName(Item.Class);
 	}
 
-	//if (EntityEx(MO).Inventory.CheckInventory(parent_class) < Item.MaxAmount)
+	//if (EntityEx(MO).CheckInventory(parent_class) < Item.MaxAmount)
 	int amount;
 	Inventory RealItem;
 	class<Inventory> RealItemClass = class<Inventory>(FindClass(parent_class));
 	if (RealItemClass)
 	{
-		RealItem = EntityEx(MO).Inventory.FindInventory(RealItemClass);
+		RealItem = EntityEx(MO).FindInventory(RealItemClass);
 		amount = (RealItem ? RealItem.Amount : 0);
 	}
 	
