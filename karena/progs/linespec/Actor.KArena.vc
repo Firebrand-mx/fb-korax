@@ -43,6 +43,11 @@ int experience;
 KAPlayerBase		PInstigator;	// [CW] CHECKME -- is this not used anymore??
 
 /* KORAX */
+bool		bFixedFloatZ;		// [CW] maintain same height over the floor;
+								//      similar for Inventory using bFloatBob && bSpecial
+								//		but without bobbing.
+								//		bNoGravity does not seem to be important if you
+								//		use this flag
 bool		bNoAccuracy;		// [CW] forbid to give accuracy trophy for this
 								//		projectile killing a target
 TVec		SpawnOrigin;		// [CW] coordinates of projectile's spawn point;
@@ -164,7 +169,7 @@ void OnMapSpawn(mthing_t* mthing)
 			Args[3] = mthing->arg4;
 			Args[4] = mthing->arg5;
 		}
-		if (bFloatBob)
+		if (bFloatBob || bFixedFloatZ /* [CW] */)
 		{
 			// Seed random starting index for bobbing motion
 			FloatBobPhase = Random() * 256.0 / 35.0;
@@ -242,6 +247,265 @@ void BeginPlay()
 	{
 		SpawnOrigin = Origin;
 	}
+}
+
+//==========================================================================
+//
+//	Physics
+//
+//	[CW] A duplicate of common EntityEx.Physics::Physics;
+//		 yeah, I did this only for DominationSigil, to add support
+//		 for bFixedFloatZ flag. Maybe there was better way, but I
+//		 do not know it.
+//
+//==========================================================================
+
+bool Physics(float DeltaTime)
+{
+	EntityEx		onmo;
+	SectorThinker	SecThink;
+	float			scrollx;
+	float			scrolly;
+	float			height;
+	float			waterheight;	// killough 4/4/98: add waterheight
+
+	if (bBlaster)
+	{
+		return BlasterPhysics(DeltaTime);
+	}
+
+	if (Sector->AffectorData && bColideWithWorld && !bNoSector)
+	{
+		// killough 3/7/98: Carry things on floor
+		// killough 3/20/98: use new sector list which reflects true members
+		// killough 3/27/98: fix carrier bug
+		// killough 4/4/98: Underwater, carry things even w/o gravity
+
+		// Move objects only if on floor or underwater,
+		// non-floating, and clipped.
+
+		float CummX = 0.0;
+		float CummY = 0.0;
+		int CountX = 0;
+		int CountY = 0;
+		for (SecThink = SectorThinker(Sector->AffectorData); SecThink;
+			SecThink = SecThink.NextAffector)
+		{
+			if (!Scroller(SecThink))
+			{
+				continue;
+			}
+			scrollx = Scroller(SecThink).CarryScrollX;
+			scrolly = Scroller(SecThink).CarryScrollY;
+			if (!scrollx && !scrolly)
+			{
+				continue;
+			}
+			if (bNoGravity && (!Sector->heightsec ||
+				(Sector->heightsec->bIgnoreHeightSec)))
+			{
+				continue;
+			}
+			height = GetPlanePointZ(&Sector->floor, Origin);
+			if (Origin.z > height)
+			{
+				if (!Sector->heightsec || (Sector->heightsec->bIgnoreHeightSec))
+				{
+					continue;
+				}
+
+				waterheight = GetPlanePointZ(&Sector->heightsec->floor, Origin);
+				if (waterheight > height && Origin.z >= waterheight)
+				{
+					continue;
+				}
+			}
+
+			CummX += scrollx;
+			CummY += scrolly;
+			if (scrollx)
+			{
+				CountX++;
+			}
+			if (scrolly)
+			{
+				CountY++;
+			}
+		}
+
+		// Some levels designed with Boom in mind actually want things to accelerate
+		// at neighboring scrolling sector boundaries. But it is only important for
+		// non-player objects.
+		if (bIsPlayer || !Level.CompatBoomScroll)
+		{
+			if (CountX > 1)
+			{
+				CummX /= itof(CountX);
+			}
+			if (CountY > 1)
+			{
+				CummY /= itof(CountY);
+			}
+		}
+
+		Velocity.x += CummX;
+		Velocity.y += CummY;
+	}
+
+	CheckWater();
+	if (!bFloatBob && !bFixedFloatZ)
+	{
+		UpdateVelocity();
+	}
+
+	// momentum movement
+	if (Velocity.x || Velocity.y)
+	{
+		// Handle X and Y momentums
+		XYMovement(DeltaTime);
+		if (IsDestroyed())
+		{
+			// mobj was removed
+			return false;
+		}
+	}
+	else if (bSkullFly && Health > 0)
+	{
+		//	A flying mobj slammed into something
+		bSkullFly = false;
+		Velocity = vector(0.0, 0.0, 0.0);
+		if (!SetState(SeeState ? SeeState : IdleState))
+		{
+			// mobj was removed
+			return false;
+		}
+	}
+	else if (bBlasted)
+	{
+		// Reset to not blasted when momentums are gone
+		ResetBlasted();
+	}
+
+	if (bFloatBob && bSpecial)
+	{
+		// Floating item bobbing motion (special1 is height)
+		if (Sector->bHasExtrafloors)
+		{
+			//	Make sure FloorZ is from bottom region.
+			Origin.z = ONFLOORZ;
+			LinkToWorld();
+		}
+		FloatBobPhase += DeltaTime;
+		Origin.z = FloorZ + Special1f +
+			Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63];
+	}
+	else if (bFixedFloatZ /* [CW] here it goes */)
+	{
+		if (Sector->bHasExtrafloors)
+		{
+			//	Make sure FloorZ is from bottom region.
+			Origin.z = ONFLOORZ;
+			LinkToWorld();
+		}
+		Origin.z = FloorZ + Special1f;
+	}
+	else if (bPassMobj && !bMissile && !Level.CompatNoPassOver)
+	{
+		//	Floating bobbing motion for monsters.
+		if (bFloatBob)
+		{
+			Origin.z -= Level.Game.FloatBobOffsets[
+				ftoi(FloatBobPhase * 35.0) & 63];
+			FloatBobPhase += DeltaTime;
+			Origin.z += Level.Game.FloatBobOffsets[
+				ftoi(FloatBobPhase * 35.0) & 63];
+		}
+
+		// Handle Z momentum and gravity
+		onmo = EntityEx(CheckOnmobj());
+		if (onmo)
+		{
+			if (bIsPlayer)
+			{
+				if (Velocity.z < -DEFAULT_GRAVITY * 0.25 && !bFly)
+				{
+					PlayerLandedOnThing();
+				}
+			}
+			if (onmo.Origin.z + onmo.Height - Origin.z <= MaxStepHeight)
+			{
+				if (bIsPlayer)
+				{
+					PlayerEx(Player).ViewHeight -=
+						onmo.Origin.z + onmo.Height - Origin.z;
+					PlayerEx(Player).DeltaViewHeight =
+						(PlayerPawn(self).ViewHeight -
+						PlayerEx(Player).ViewHeight) * 4.0;
+				}
+				Origin.z = onmo.Origin.z + onmo.Height;
+			}
+			bOnMobj = true;
+			Velocity.z = 0.0;
+
+			if (onmo.bOnmobjCopyVel)
+			{
+				Velocity.x = onmo.Velocity.x;
+				Velocity.y = onmo.Velocity.y;
+				if (onmo.Origin.z < onmo.FloorZ)
+				{
+					Origin.z += onmo.FloorZ - onmo.Origin.z;
+					if (onmo.bIsPlayer)
+					{
+						PlayerEx(onmo.Player).ViewHeight -=
+							onmo.FloorZ - onmo.Origin.z;
+						PlayerEx(onmo.Player).DeltaViewHeight =
+							(PlayerPawn(self).ViewHeight -
+							PlayerEx(onmo.Player).ViewHeight) * 4.0;
+					}
+					onmo.Origin.z = onmo.FloorZ;
+				}
+			}
+		}
+		else if ((Origin.z != FloorZ) || Velocity.z)
+		{
+			ZMovement(DeltaTime);
+			bOnMobj = false;
+		}
+		if (IsDestroyed())
+		{
+			// entity was removed
+			return false;
+		}
+	}
+	else if ((Origin.z != FloorZ) || Velocity.z)
+	{
+		//	Floating bobbing motion for monsters.
+		if (bFloatBob)
+		{
+			Origin.z -= Level.Game.FloatBobOffsets[
+				ftoi(FloatBobPhase * 35.0) & 63];
+			FloatBobPhase += DeltaTime;
+			Origin.z += Level.Game.FloatBobOffsets[
+				ftoi(FloatBobPhase * 35.0) & 63];
+		}
+
+		// Handle Z momentum and gravity
+		ZMovement(DeltaTime);
+		if (IsDestroyed())
+		{
+			// entity was removed
+			return false;
+		}
+	}
+	else if (bFloatBob)
+	{
+		Origin.z -= Level.Game.FloatBobOffsets[
+			ftoi(FloatBobPhase * 35.0) & 63];
+		FloatBobPhase += DeltaTime;
+		Origin.z += Level.Game.FloatBobOffsets[
+			ftoi(FloatBobPhase * 35.0) & 63];
+	}
+	return true;
 }
 
 //==========================================================================
