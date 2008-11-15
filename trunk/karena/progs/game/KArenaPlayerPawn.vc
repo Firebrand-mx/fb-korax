@@ -563,7 +563,8 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			}
 
 #ifdef DEBUG_BOT_AI_CANREACH
-			print("z = %f, opening = f %f/%f", traceZ, opening->bottom, opening->lowfloor);
+			print("z = %f, opening = f %f/%f ; ctop = %f; r = %f", traceZ, opening->bottom, opening->lowfloor,
+				opening->top, opening->range);
 			print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
 							MinPassableOpening);
 #endif
@@ -578,16 +579,16 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			//		opening->lowfloor is the lowest floor between previous and next sector;
 			//
 			//
-			if ((opening->range <= MinPassableOpening) // cannot fit through, do not bother
+			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
 				||
 				// If can fit through...
 				// use traceZ to know which height is player's "ghost" previous position
-				(traceZ == opening->bottom &&
-					((opening->bottom - opening->lowfloor) > MaxPassableDropOff))
+				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
+					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
 					// drop from highest floor to lowest one is too much to accept it
 				||
-				(traceZ == opening->lowfloor &&
-					((opening->bottom - opening->lowfloor) > MaxPassableStep))
+				(traceZ <= opening->lowfloor && ((opening->lowfloor - traceZ) > MaxPassableStep ||
+					((opening->bottom - opening->lowfloor) > MaxPassableStep)))
 					// raise from lowest floor to highest one is too much to step/jump there
 				)
 			{
@@ -602,7 +603,7 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			// [FB] This should partially cover it...
 
 			// [CW] Update height position;
-			// TODO WARNING FIXME -- what about slopes?? :(
+			// TODO WARNING CHECKME -- what about slopes??
 			if (traceZ == opening->bottom)
 				traceZ = opening->lowfloor;
 			else
