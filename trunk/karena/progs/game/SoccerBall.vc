@@ -37,6 +37,8 @@ const int	MINFRAMES_NOKICK		= 4;
 const int	MAXFRAMES_TARGETTING		= 9;
 const float 	VELPOWER_MULTIPLIER		= 4.0;
 const float 	STRENGTHPOWER_MULTIPLIER	= 100.0;
+const float		STRENGTHPOWER_HORIZONTAL_FACTOR = 0.5;
+const float		STRENGTHPOWER_VERTICAL_FACTOR = 1.5;
 
 int	nokick_timer;				// free fly time (to avoid repeatable touch bug)
 Player	Owner;					// a player who kicked the ball last
@@ -90,8 +92,8 @@ void DoKick(Player Kicker)
 	else
 		strpower = 0.0;
 
-	Thrust(an, velpower + strpower * cos(van));
-	Velocity.z += strpower * sin(van) * 35.0;
+	Thrust(an, velpower + strpower * cos(van) * STRENGTHPOWER_HORIZONTAL_FACTOR);
+	Velocity.z += strpower * sin(van) * 35.0 * STRENGTHPOWER_VERTICAL_FACTOR;
 
 	nokick_timer = MINFRAMES_NOKICK;
 	Kicker.use_power = 0;
