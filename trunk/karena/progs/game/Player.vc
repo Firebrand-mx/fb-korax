@@ -1044,7 +1044,9 @@ void DeathMatchSpawnPlayer()
 			else
 				i = P_Random() % Level.DeathmatchStarts.Num;
 
+#ifdef DEBUG_PLAYER_SPAWN
 			print("Level.DeathmatchStarts[i].type = %i", Level.DeathmatchStarts[i].type);
+#endif
 			if (Level.DeathmatchStarts[i].type != 11 /*common*/ &&
 				((Level.DeathmatchStarts[i].type == 15040 /*aka Blue*/ &&
 					Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE) ||
@@ -1053,7 +1055,9 @@ void DeathMatchSpawnPlayer()
 			{
 				if (CheckSpot(&Level.DeathmatchStarts[i]))
 				{
+#ifdef DEBUG_PLAYER_SPAWN
 					print("spawning at team location");
+#endif
 					SpawnPlayer(&Level.DeathmatchStarts[i], false);
 					return;
 				}
@@ -1067,22 +1071,24 @@ void DeathMatchSpawnPlayer()
 			}
 		};
 	}
-	//else
-	//{
-		for (j = 0; j < 20; j++)
-		{
-			i = P_Random() % Level.DeathmatchStarts.Num;
-			if (CheckSpot(&Level.DeathmatchStarts[i]))
-			{
-				print("spawning at random deathmatch location");
-				SpawnPlayer(&Level.DeathmatchStarts[i], false);
-				return;
-			}
-		}
-	//}
 	
-	// no good spot, so the player will probably get stuck 
+	for (j = 0; j < 20; j++)
+	{
+		i = P_Random() % Level.DeathmatchStarts.Num;
+		if (CheckSpot(&Level.DeathmatchStarts[i]))
+		{
+#ifdef DEBUG_PLAYER_SPAWN
+			print("spawning at random deathmatch location");
+#endif
+			SpawnPlayer(&Level.DeathmatchStarts[i], false);
+			return;
+		}
+	}
+	
+	// no good spot, so the player will probably get stuck
+#ifdef DEBUG_PLAYER_SPAWN
 	print("spawning at random player location");
+#endif
 	SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
 }
 
