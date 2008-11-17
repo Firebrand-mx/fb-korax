@@ -42,11 +42,16 @@ enum
 	state_finished
 };
 
+enum
+{
+	event_colortranslation		= GameModel::event_custom,
+	num_ctfevents	= event_colortranslation - GameModel::event_custom + 1
+};
+
+acsnotifier_t	AcsNotifiersCTF[num_ctfevents];
 
 array<CTFBanner>	Banners;
 array<CTFBase>		spot_banners;	// Bases are all created during initialization
-//array<bool>		bBannersCreated;
-//array<bool>		bSpotBannersCreated;
 
 
 //==========================================================================
@@ -223,6 +228,84 @@ void EndCurrentState(int nextstate)
 
 //==========================================================================
 //
+//	HandleEvent
+//
+//	ACS callable
+//
+//==========================================================================
+
+void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
+{
+	int notifyACSArgs[3];
+
+	dprint("GameCTF::HandleEvent : %i", Event);
+
+	switch (Event)
+	{
+	case event_colortranslation:
+		notifyACSArgs[0] = arg1;	// should be team index
+		notifyACSArgs[1] = arg2;	// should be object tag
+		break;
+	default:
+		::HandleEvent(Event, A, arg1, arg2, arg3, arg4);
+		return;
+	}
+
+	NotifyACS(Event, notifyACSArgs[0],notifyACSArgs[1],notifyACSArgs[2]);
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	if (event >= GameModel::event_custom && event < event_colortranslation + num_ctfevents)
+	{
+		event -= GameModel::event_custom;
+		AcsNotifiersCTF[event].enabled = true;
+		AcsNotifiersCTF[event].script = script;
+	}
+	else
+	{
+		::SetACSNotifier(event, script);
+	}
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	dprint("GameCTF::NotifyACS : Event = %i", Event);
+	if (Event >= GameModel::event_custom && Event < event_colortranslation + num_ctfevents)
+	{
+		Event -= GameModel::event_custom;
+		if (AcsNotifiersCTF[Event].enabled)
+		{
+			dprint("calling script = %i; %i,%i,%i", AcsNotifiersCTF[Event].script, Arg1,Arg2,Arg3);
+			Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
+					AcsNotifiersCTF[Event].script,
+					0,
+					Arg1,
+					Arg2,
+					Arg3,
+					NULL, 0, none);
+		}
+	}
+	else
+		::NotifyACS(Event, Arg1, Arg2, Arg3);
+}
+
+//==========================================================================
+//
 //	Cleanup
 //
 //==========================================================================
@@ -230,23 +313,10 @@ void EndCurrentState(int nextstate)
 void Cleanup()
 {
 	int i;
-	/*for (i = 0; i < Banners.Num; i++)
-	{
-		if (bBannersCreated[i])
-		{
-			Banners[i].Destroy();
-			bBannersCreated[i] = false;
-		}
-		Banners[i] = none;
-	}*/
 
 	for (i = 0; i < spot_banners.Num; i++)
 	{
-	//	if (bSpotBannersCreated[i])
-		{
-			spot_banners[i].Destroy();
-	//		bSpotBannersCreated[i] = false;
-		}
+		spot_banners[i].Destroy();
 		spot_banners[i] = none;
 	}
 }
@@ -259,7 +329,7 @@ void Cleanup()
 
 bool PrepareGame()
 {
-	int i/*,j*/, teams, teams_ready;
+	int i, teams, teams_ready;
 	int pairs;
 
 	if (!Game.Teams[0] || !Game.Teams[1])
@@ -296,140 +366,45 @@ bool PrepareGame()
 			break;
 	}
 
-	//bBannersCreated.Num = Banners.Num;
-
-	/*foreach Level.AllThinkers(CTFBase, base)
-	{
-		if (base.Args[0] >= teams)
-		{
-			dprint("GameCTF : initial base (%i/%i) belongs to unsupported Team and will be disabled",
-				base.Args[0], base.Args[1]);
-			base.Deactivate(none);
-			continue;
-		}
-
-		spot_banners.Num = spot_banners.Num + 1;
-		spot_banners[spot_banners.Num - 1] = base;
-		if (spot_banners.Num == MAXBANNERS)
-			break;
-	}
-
-	bSpotBannersCreated.Num = spot_banners.Num;*/
-
-	//dprint("GameCTF : found %i active banners and %i active bases", Banners.Num, spot_banners.Num);
 	dprint("GameCTF : found %i active banners", Banners.Num);
 
 
 	for (i = 0; i < Banners.Num; i++)
 	{
-		/*for (j = 0; j < spot_banners.Num; j++)
+		spot_banners.Num = spot_banners.Num + 1;
+		spot_banners[i] = HexenLevelInfo(Level).Spawn(CTFBase, Banners[i].Origin);
+		if (spot_banners[i])
 		{
-			if (Banners[i].Args[0] ==  spot_banners[j].Args[0] &&
-				Banners[i].Args[1] ==  spot_banners[j].Args[1])
+			dprint("GameCTF : successfully spawned CTFBase at initial banner (%i/%i) position", 
+				Banners[i].Args[0], Banners[i].Args[1]);
+			pairs++;
+			Banners[i].BaseOrigin = spot_banners[i];
+			spot_banners[i].Banner = Banners[i];
+			spot_banners[i].Args[0] = Banners[i].Args[0];
+			spot_banners[i].Args[1] = Banners[i].Args[1];
+			if (Banners[i].Args[0] < teams_ready)
 			{
-				pairs++;
-				Banners[i].BaseOrigin = spot_banners[j];
-				spot_banners[j].Banner = Banners[i];
-				if (Banners[i].Args[0] < teams_ready)
-				{
-					Banners[i].Team = Game.Teams[Banners[i].Args[0]];
-					spot_banners[j].Team = Game.Teams[spot_banners[j].Args[0]];
-					Banners[i].SetTranslation();
-				}
-				else
-				{
-					dprint("GameCTF : initial banner and base (%i/%i) belong to inactive Team and will be disabled until Team %i enters to the game",
-						Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0]);
-					Banners[i].Deactivate(none);
-					spot_banners[j].Deactivate(none);
-				}
-				break;
-			}
-		}*/
-
-		//if (!Banners[i].BaseOrigin)
-		//{
-			//j = spot_banners.Num;
-			spot_banners.Num = spot_banners.Num + 1;
-			//bSpotBannersCreated.Num = bSpotBannersCreated.Num + 1;
-			spot_banners[/*j*/i] = HexenLevelInfo(Level).Spawn(CTFBase, Banners[i].Origin);
-			if (spot_banners[/*j*/i])
-			{
-				dprint("GameCTF : successfully spawned CTFBase at initial banner (%i/%i) position", 
-					Banners[i].Args[0], Banners[i].Args[1]);
-				pairs++;
-				//bSpotBannersCreated[j] = true;
-				Banners[i].BaseOrigin = spot_banners[/*j*/i];
-				spot_banners[/*j*/i].Banner = Banners[i];
-				spot_banners[/*j*/i].Args[0] = Banners[i].Args[0];
-				spot_banners[/*j*/i].Args[1] = Banners[i].Args[1];
-				if (Banners[i].Args[0] < teams_ready)
-				{
-					Banners[i].Team = Game.Teams[Banners[i].Args[0]];
-					spot_banners[/*j*/i].Team = Game.Teams[spot_banners[/*j*/i].Args[0]];
-					Banners[i].SetTranslation();
-					// [FB] This is important for bots AI
-					Banners[i].Status = CTFBanner::BANNER_STATUS__BASE;
-				}
-				else
-				{
-					dprint("GameCTF : banner and base (%i/%i) belong to inactive Team and will be disabled until Team %i enters to the game",
-						Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0]);
-					Banners[i].Deactivate(none);
-					spot_banners[/*j*/i].Deactivate(none);
-				}
+				Banners[i].Team = Game.Teams[Banners[i].Args[0]];
+				spot_banners[i].Team = Game.Teams[spot_banners[i].Args[0]];
+				Banners[i].SetTranslation();
+				// [FB] This is important for bots AI
+				Banners[i].Status = CTFBanner::BANNER_STATUS__BASE;
 			}
 			else
 			{
-				dprint("GameCTF : failed to spawn CTFBase at initial banner (%i/%i) position; banner (%i/%i) will be disabled",
-					Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0], Banners[i].Args[1]);
+				dprint("GameCTF : banner and base (%i/%i) belong to inactive Team and will be disabled until Team %i enters to the game",
+					Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0]);
 				Banners[i].Deactivate(none);
-				//spot_banners.Num = spot_banners.Num - 1;
-			}
-		//}
-	}
-
-	/*for (i = 0; i < spot_banners.Num; i++)
-	{
-		if (!spot_banners[i].Banner)
-		{
-			j = Banners.Num;
-			Banners.Num = Banners.Num + 1;
-			bBannersCreated.Num = bBannersCreated.Num + 1;
-			Banners[j] = HexenLevelInfo(Level).Spawn(CTFBanner, spot_banners[i].Origin);
-			if (Banners[j])
-			{
-				dprint("GameCTF : successfully spawned CTFBanner at initial base (%i/%i) position",
-					spot_banners[i].Args[0], spot_banners[i].Args[1]);
-				pairs++;
-				bBannersCreated[j] = true;
-				Banners[j].BaseOrigin = spot_banners[i];
-				spot_banners[i].Banner = Banners[j];
-				Banners[i].Args[0] = spot_banners[j].Args[0];
-				Banners[i].Args[1] = spot_banners[j].Args[1];
-				if (Banners[j].Args[0] < teams_ready)
-				{
-					Banners[j].Team = Game.Teams[Banners[j].Args[0]];
-					spot_banners[i].Team = Game.Teams[spot_banners[i].Args[0]];
-					Banners[i].SetTranslation();
-				}
-				else
-				{
-					dprint("GameCTF : banner and base (%i/%i) belong to inactive Team and will be disabled until Team %i enters to the game",
-						spot_banners[i].Args[0], spot_banners[i].Args[1], spot_banners[i].Args[0]);
-					Banners[j].Deactivate(none);
-					spot_banners[i].Deactivate(none);
-				}
-			}
-			else
-			{
-				dprint("GameCTF : failed to spawn CTFBanner at initial base (%i/%i) position; base (%i/%i) will be disabled",
-					spot_banners[i].Args[0], spot_banners[i].Args[1], spot_banners[i].Args[0], spot_banners[i].Args[1]);
 				spot_banners[i].Deactivate(none);
-				Banners.Num = Banners.Num - 1;
 			}
 		}
-	}*/
+		else
+		{
+			dprint("GameCTF : failed to spawn CTFBase at initial banner (%i/%i) position; banner (%i/%i) will be disabled",
+				Banners[i].Args[0], Banners[i].Args[1], Banners[i].Args[0], Banners[i].Args[1]);
+			Banners[i].Deactivate(none);
+		}
+	}
 
 	if (pairs < MINREQUIREDBANNERS)
 	{
@@ -453,7 +428,6 @@ bool PrepareGame()
 void CommitCapture(CTFBanner Banner)
 {
 	// TADA!!
-	// play some sound here
 	Game.BroadcastLocalSound((P_Random() > 127 ? (P_Random() > 127 ?
 			HexenDefs::lsid_ctf_fanfare1 : HexenDefs::lsid_ctf_fanfare3) : 
 			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare4 : 
@@ -461,9 +435,9 @@ void CommitCapture(CTFBanner Banner)
 			(P_Random() > 127 ? HexenDefs::lsid_ctf_fanfare8 :
 			HexenDefs::lsid_ctf_fanfare11)))),	false, 0.0);
 	Game.bcentreprint(va("%s flag captured by %s! %s team scores!",
-						/* Game.ColourNames[Banner.Team.Colour]*/Banner.Team.Name,
+						Banner.Team.Name,
 						Banner.Capturer.PlayerName,
-						/* Game.ColourNames[Banner.Capturer.Team.Colour]*/Banner.Capturer.Team.Name));
+						Banner.Capturer.Team.Name));
 	Banner.Capturer.UpdateScore(HexenDefs::scoreevent_CtfCapture);
 	Banner.ReturnToBase(none, true);
 }
