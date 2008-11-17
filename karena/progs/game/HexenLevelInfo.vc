@@ -224,6 +224,7 @@ void SpawnSpecials()
 
 	MainGameInfo(Game).InitLevel(self);
 	Purge();
+	//AddSpecialNetmatchStarts();
 }
 
 //============================================================================
@@ -240,7 +241,7 @@ void Purge()
 		if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
 					(ee.IsA('CTFBanner') || ee.IsA('BlueNode') || ee.IsA('BlueGuardSpot') ||
 					ee.IsA('BlueGoalSpot') || ee.IsA('RedNode') || ee.IsA('RedGuardSpot') ||
-					ee.IsA('RedGoalSpot')) ||
+					ee.IsA('RedGoalSpot') || ee.IsA('BlueNetmatchStart') || ee.IsA('RedNetmatchStart')) ||
 				MainGameInfo(Game).GameType != HexenDefs::game_domination &&
 					ee.IsA('DominationSigil') ||
 				MainGameInfo(Game).GameType != HexenDefs::game_football &&
@@ -251,6 +252,30 @@ void Purge()
 		}
 	}
 }
+
+/*//============================================================================
+//
+//  AddSpecialNetmatchStarts
+//
+//============================================================================
+
+void AddSpecialNetmatchStarts()
+{
+	// At the moment only CTF has special player starts
+	if (MainGameInfo(Game).GameType != HexenDefs::game_ctf)
+		return;
+
+	EntityEx ee;
+	foreach AllThinkers(EntityEx, ee)
+	{
+		if (ee.IsA('BlueNetmatchStart') || ee.IsA('RedNetmatchStart'))
+		{
+			DeathmatchStarts.Num = DeathmatchStarts.Num + 1;
+			CopyMThing(mthing, &DeathmatchStarts[DeathmatchStarts.Num - 1]);
+			dprint("HexenLevelInfo::AddSpecialNetmatchStarts : added %n", GetClassName(ee.Class));
+		}	
+	}
+}*/
 
 //==========================================================================
 //
@@ -928,7 +953,7 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 	::UpdateParticle(p, DeltaTime);
 }
 
-//==========================================================================
+/*//==========================================================================
 //
 //  SetTeamTranslation
 //
@@ -945,7 +970,7 @@ void SetTeamTranslation(int TeamIndex, int TID)
 	// so Blue Team (index 0) must not set any translation.
 	if (TeamIndex)
 		XLevel.StartACS(TeamIndex, 0, TID, 0, 0, none, NULL, 0, false, false);
-}
+}*/
 
 defaultproperties
 {
