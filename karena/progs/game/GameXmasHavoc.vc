@@ -32,6 +32,14 @@
 
 class GameXmasHavoc : GameModel;
 
+enum
+{
+	event_snowfallcommence		= GameModel::event_custom,
+	num_xmashavocevents	= event_snowfallcommence - GameModel::event_custom + 1
+};
+
+acsnotifier_t	AcsNotifiersXmasHavoc[num_xmashavocevents];
+
 int TotalBurnt;
 bool bSnowSpawned;
 
@@ -58,25 +66,6 @@ void NotifyPlayerSpawn(Player pl)
 		pl.centreprint("burn xmas trees down!");
 }
 
-/*//==========================================================================
-//
-//	NotifyPlayerDeath
-//
-//==========================================================================
-
-void NotifyPlayerDeath(Player pl, EntityEx source)
-{
-	if (IsInPlayableState())
-	{
-		if (source && source.Player && source.Player != pl)
-		{
-			KArenaPlayerPawn(source).Kill(none, none, true);
-			Player(source.Player).Scoreboard(false);
-			source.Player.centreprint("no fraggin' on xmas eve!");
-		}
-	}
-}*/
-
 //==========================================================================
 //
 //	NotifyXMasTreeBurnt
@@ -90,7 +79,81 @@ void NotifyXMasTreeBurnt(ZXmasHavocTree xmtree)
 	{
 		HexenLevelInfo(Level).EV_WeatherSnow(WeatherSnow.default.Amount >> 1,0,0,0,0);
 		bSnowSpawned = true;
+		NotifyACS(event_snowfallcommence, 0,0,0);
 	}
+}
+
+//==========================================================================
+//
+//	HandleEvent
+//
+//	ACS callable
+//
+//==========================================================================
+
+void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
+{
+	dprint("GameXmasHavoc::HandleEvent : %i", Event);
+
+	switch (Event)
+	{
+	case event_snowfallcommence:
+		break;
+	default:
+		::HandleEvent(Event, A, arg1, arg2, arg3, arg4);
+		return;
+	}
+
+	NotifyACS(Event, 0,0,0);
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	if (event >= GameModel::event_custom && event < event_snowfallcommence + num_xmashavocevents)
+	{
+		event -= GameModel::event_custom;
+		AcsNotifiersXmasHavoc[event].enabled = true;
+		AcsNotifiersXmasHavoc[event].script = script;
+	}
+	else
+	{
+		::SetACSNotifier(event, script);
+	}
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	dprint("GameXmasHavoc::NotifyACS : Event = %i", Event);
+	if (Event >= GameModel::event_custom && Event < event_snowfallcommence + num_xmashavocevents)
+	{
+		Event -= GameModel::event_custom;
+		if (AcsNotifiersXmasHavoc[Event].enabled)
+		{
+			Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
+					AcsNotifiersXmasHavoc[Event].script,
+					0,
+					Arg1,
+					Arg2,
+					Arg3,
+					NULL, 0, none);
+		}
+	}
+	else
+		::NotifyACS(Event, Arg1, Arg2, Arg3);
 }
 
 defaultproperties
