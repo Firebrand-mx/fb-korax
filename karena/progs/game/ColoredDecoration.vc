@@ -34,7 +34,7 @@ class ColoredDecoration : Actor
 	abstract;
 
 bool 		TransSet;
-int 		TeamArg; 	// [FB] An argument to use for detecting team 0 or 1
+//////int 		TeamArg; 	// [FB] An argument to use for detecting team 0 or 1
 PlayerTeam	Team;		// Which team this Decoration belongs to
 						// (theoretically can be changed during game for
 						// some weird gameplay effect... (: )
@@ -50,8 +50,7 @@ bool Activate(EntityEx Activator)
 {
 	SetState(FindState('Active'));
 	bDynamicLight = true;
-	DLightRadius = Args[0] ? itof(Args[0]) * 8.0 : LightRadius;
-	DLightColour = LightColour;
+	DLightRadius = Args[/*0*/ 1] ? itof(Args[/*0*/ 1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
 
 	return true;
 }
@@ -96,6 +95,8 @@ void SetTranslation()
 		//
 		//HexenLevelInfo(Level).SetTeamTranslation(Team.Index, TID);*/
 		CTF.HandleEvent(GameCTF::event_colortranslation, none, Team.Index, TID, 0,0);
+
+		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
 
 		TransSet = true;
 	}
