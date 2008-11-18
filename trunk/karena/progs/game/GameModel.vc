@@ -298,6 +298,51 @@ void End()
 	Destroy();
 }
 
+//==========================================================================
+//
+//	PrepareColoredDecorations
+//
+//	[CW] Utility method for assigning teams to colored decor.
+//		 Recommended to call this from overriden PrepareGame method.
+//
+//==========================================================================
+
+void PrepareColoredDecorations()
+{
+	int teams, teams_ready, i_debug;
+	ColoredDecoration cd;
+
+	teams = AllowedTeams();
+	teams_ready = Game.GetTeamCount();
+
+	foreach Level.AllThinkers(ColoredDecoration, cd)
+	{
+		i_debug++;
+
+		if (cd.Args[0] >= teams)
+		{
+			dprint("GameModel : colored decoration with TID = %i belongs to unsupported Team and will be disabled",
+				cd.TID);
+			cd.Deactivate(none);
+			continue;
+		}
+
+		if (cd.Args[0] < teams_ready)
+		{
+			cd.Team = Game.Teams[cd.Args[0]];
+			cd.SetTranslation();
+		}
+		else
+		{
+			dprint("GameModel : colored decoration with TID = %i belongs to inactive Team and will be disabled until Team %i enters to the game",
+				cd.TID);
+			cd.Deactivate(none);
+		}
+	}
+
+	dprint("GameModel : processed %i colored decorations total", i_debug);
+}
+
 defaultproperties
 {
 	State = -1;
