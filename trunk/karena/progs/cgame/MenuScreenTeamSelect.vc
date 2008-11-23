@@ -127,16 +127,28 @@ void CreateChoices()
 	// Available Teams
 	if (activeTeams < maxTeams && activeTeams < HexenDefs::MAXTEAMSINGAME)
 	{
+		bool fixed_teams = GetCvar('FixedTeams');
+		int fixed_team1 = GetCvar('FixedTeam1');
+		int fixed_team2 = GetCvar('FixedTeam2');
+
 		staticText = MenuStaticText(NewChild(MenuStaticText));
 		staticText.Text = "AVAILABLE TEAMS";
 		staticText.SetPos(ChoicesStartX, y);
 		y += 24;
+
 		for (i = 0; i < /* HexenDefs::MAXPLAYERTEAMS*/registeredTeams; i++)
 		{
 			if (teams_active[i])
 			{
 				continue;
 			}
+
+			if (fixed_teams &&
+				i != fixed_team1 && i != fixed_team2)
+			{
+				continue;
+			}
+
 			newChoice = MenuChoice_Team(NewChild(MenuChoice_Team));
 			newChoice.SetOrigin(ChoicesStartX, y);
 			newChoice.Text = TeamNames[i];
