@@ -831,6 +831,11 @@ void AutoSelectTeam()
 	//bool team_indices_free[HexenDefs::MAXPLAYERTEAMS];
 	array<bool> team_indices_free;
 
+	bool fixed_teams = GetCvar('FixedTeams');
+	int fixed_team1 = GetCvar('FixedTeam1');
+	int fixed_team2 = GetCvar('FixedTeam2');
+	int auto_player_team = GetCvar('AutoPlayerTeam');
+
 //	dprint("Player::AutoSelectTeam : AAA");
 
 	MainGameInfo Game = MainGameInfo(Level.Game);
@@ -848,7 +853,9 @@ void AutoSelectTeam()
 	//	team_indices_free[i] = true;
 	for (i = 0; i < /*HexenDefs::MAXTEAMSINGAME*/team_indices_free.Num; i++)
 	{
-		if (Game.TeamInfos[i].bTeamInPlay)
+		if (Game.TeamInfos[i].bTeamInPlay ||
+			(fixed_teams && ((i != fixed_team1 && i != fixed_team2))) ||
+			(!bIsBot && auto_player_team != -1 && i != auto_player_team))
 			team_indices_free[i] = false;
 		else
 			team_indices_free[i] = true;
