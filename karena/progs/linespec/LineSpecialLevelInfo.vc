@@ -33,13 +33,12 @@
 //--------------------------------------------------------------------------
 //
 // [KORAX] [CW] A full susbstitute for common LineSpecialLevelInfo;
-//				at the moment only MapSpawnThing is modified to support
+//				at the moment only SpawnMapThing is modified to support
 //				new KArena filter flags.
 //
 //--------------------------------------------------------------------------
 
 class LineSpecialLevelInfo : LevelInfo;
-
 
 const int
 	STROBEBRIGHT	= 5,
@@ -80,7 +79,10 @@ const int
 	MTFKA_DOMINATION	= 0x0800,
 	MTFKA_CSWEEP		= 0x1000,
 	MTFKA_FOOTBALL		= 0x2000,
-	MTFKA_XMASHAVOC		= 0x4000;
+	MTFKA_XMASHAVOC		= 0x4000,
+	
+	
+	MTFKA_VALIDMASK		= 0xFF00 | MTF_AMBUSH | MTF_DORMANT;
 
 
 enum
@@ -6462,6 +6464,9 @@ final void SpawnMapThing(mthing_t* mthing)
 	{
 		return;
 	}
+
+	// [CW] Safety hack (just in case)
+	mthing->options &= MTFKA_VALIDMASK;
 
 	// count deathmatch start positions
 	if (mthing->type == 11)
