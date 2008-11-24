@@ -1,0 +1,294 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: MenuScreenTeamSettings.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class MenuScreenTeamSettings : MenuScreen;
+
+MenuChoiceEnum FixedTeam1;
+MenuChoiceEnum FixedTeam2;
+MenuChoiceEnum AutoPlayerTeam;
+
+array<string>	TeamNames;
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	int i;
+	MenuChoiceEnum		Enum;
+	int					currentY;
+
+	currentY = ChoicesStartY;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetOrigin(ChoicesStartX, currentY);
+	Enum.Text = "Fixed Teams";
+	Enum.SetInitialValue(GetCvar('FixedTeams'));
+	Enum.ValueChanging = ChangeFixedTeams;
+	currentY += Enum.Height;
+
+	ReadTeams();
+
+	FixedTeam1 = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	FixedTeam1.SetOrigin(ChoicesStartX, currentY);
+	FixedTeam1.Text = "Team 1";
+	FixedTeam1.ValueChanging = ChangeFixedTeam1;
+	currentY += FixedTeam1.Height;
+
+	FixedTeam2 = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	FixedTeam2.SetOrigin(ChoicesStartX, currentY);
+	FixedTeam2.Text = "Team 2";
+	FixedTeam2.ValueChanging = ChangeFixedTeam2;
+	currentY += FixedTeam2.Height << 1;
+
+	for (i = 0; i < TeamNames.Num; i++)
+	{
+		FixedTeam1.AddItem(TeamNames[i]);
+		FixedTeam2.AddItem(TeamNames[i]);
+	}
+
+	FixedTeam1.SetInitialValue(GetCvar('FixedTeam1'));
+	FixedTeam2.SetInitialValue(GetCvar('FixedTeam2'));
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetOrigin(ChoicesStartX, currentY);
+	Enum.Text = "Team Autoselect";
+	Enum.SetInitialValue(GetCvar('TeamAutoSelect'));
+	Enum.ValueChanging = ChangeTeamAutoSelect;
+	currentY += Enum.Height;	
+
+	AutoPlayerTeam = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	AutoPlayerTeam.SetOrigin(ChoicesStartX, currentY);
+	AutoPlayerTeam.Text = "Auto Player Team";
+	AutoPlayerTeam.ValueChanging = ChangeAutoPlayerTeam;
+	currentY += AutoPlayerTeam.Height;
+
+	SetAutoPlayerTeamValues(true);
+}
+
+//==========================================================================
+//
+//	ChangeFixedTeams
+//
+//==========================================================================
+
+bool ChangeFixedTeams(Object Sender, int newValue)
+{
+	SetCvar('FixedTeams', newValue);
+	SetAutoPlayerTeamValues(false);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeFixedTeam1
+//
+//==========================================================================
+
+bool ChangeFixedTeam1(Object Sender, int newValue)
+{
+	if (FixedTeam2.Value == newValue)
+	{
+		if (newValue == 0 && FixedTeam1.Value == FixedTeam1.EnumNames.Num - 1)
+		{
+			if (newValue + 1 < FixedTeam1.EnumNames.Num)
+				FixedTeam1.Value = newValue + 1;
+		}
+		else if (newValue > FixedTeam1.Value)
+		{
+			if (newValue + 1 < FixedTeam1.EnumNames.Num)
+				FixedTeam1.Value = newValue + 1;
+			else
+				FixedTeam1.Value = 0;
+		}
+		else
+		{
+			if (newValue - 1 >= 0)
+			{
+				FixedTeam1.Value = newValue - 1;
+			}
+			else
+				FixedTeam1.Value = FixedTeam1.EnumNames.Num - 1;
+		}
+
+		SetCvar('FixedTeam1', FixedTeam1.Value);
+		SetAutoPlayerTeamValues(false);
+		LocalSound('menu/change');
+		return false;
+	}
+	SetCvar('FixedTeam1', newValue);
+	SetAutoPlayerTeamValues(false);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeFixedTeam2
+//
+//==========================================================================
+
+bool ChangeFixedTeam2(Object Sender, int newValue)
+{
+	if (FixedTeam1.Value == newValue)
+	{
+		if (newValue == 0 && FixedTeam2.Value == FixedTeam2.EnumNames.Num - 1)
+		{
+			if (newValue + 1 < FixedTeam2.EnumNames.Num)
+				FixedTeam2.Value = newValue + 1;
+		}
+		else if (newValue > FixedTeam2.Value)
+		{
+			if (newValue + 1 < FixedTeam2.EnumNames.Num)
+				FixedTeam2.Value = newValue + 1;
+			else
+				FixedTeam2.Value = 0;
+		}
+		else
+		{
+			if (newValue - 1 >= 0)
+			{
+				FixedTeam2.Value = newValue - 1;
+			}
+			else
+				FixedTeam2.Value = FixedTeam2.EnumNames.Num - 1;
+		}
+		SetCvar('FixedTeam2', FixedTeam2.Value);
+		SetAutoPlayerTeamValues(false);
+		LocalSound('menu/change');
+		return false;
+	}
+	SetCvar('FixedTeam2', newValue);
+	SetAutoPlayerTeamValues(false);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeFixedPlayerTeam
+//
+//==========================================================================
+
+bool ChangeAutoPlayerTeam(Object Sender, int newValue)
+{
+	dprint("ChangeAutoPlayerTeam : newValue = %i", newValue - 1);
+	SetCvar('AutoPlayerTeam', newValue - 1);
+	dprint("ChangeAutoPlayerTeam : GetCvar = %i", GetCvar('AutoPlayerTeam'));
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeTeamAutoSelect
+//
+//==========================================================================
+
+bool ChangeTeamAutoSelect(Object Sender, int newValue)
+{
+	SetCvar('TeamAutoSelect', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	SetAutoPlayerTeamValues
+//
+//==========================================================================
+
+void SetAutoPlayerTeamValues(bool initial)
+{
+	AutoPlayerTeam.EnumNames.Num = 0;
+
+	AutoPlayerTeam.AddItem("Random");
+	
+	if (GetCvar('FixedTeams'))
+	{
+		// [CW] We should not use FixedTeam1/2.Value property here, because this
+		// method is usually called when they are not set to their real new values yet
+		AutoPlayerTeam.AddItem(FixedTeam1.EnumNames[GetCvar('FixedTeam1')]);
+		AutoPlayerTeam.AddItem(FixedTeam2.EnumNames[GetCvar('FixedTeam2')]);
+	}
+	else
+	{
+		int i;
+		for (i = 0; i < TeamNames.Num; i++)
+		{
+			AutoPlayerTeam.AddItem(TeamNames[i]);
+		}
+	}
+
+	if (initial)
+		AutoPlayerTeam.SetInitialValue(GetCvar('AutoPlayerTeam') + 1);
+	else
+		AutoPlayerTeam.SetNewValue(0);
+}
+
+//==========================================================================
+//
+//	ReadTeams
+//
+//==========================================================================
+
+void ReadTeams()
+{
+	TeamInfoParser::teaminfo_t tinfo;
+	TeamInfoParser sc = TeamInfoParser(SpawnObject(TeamInfoParser));
+
+	TeamNames.Num = 0;
+
+	sc.OpenLumpName('teaminfo');
+	if (sc.AtEnd())
+	{
+		sc.Destroy();
+		Error("MenuScreenTeamSelect::ReadTeams : TEAMINFO lump missing or empty");
+		return;
+	}
+
+	while(sc.ReadTeam(&tinfo))
+	{
+		TeamNames.Num = TeamNames.Num + 1;
+		TeamNames[TeamNames.Num - 1] = tinfo.Name;
+	}
+
+	sc.Destroy();
+}
+
+defaultproperties
+{
+	ChoicesStartX = 185;
+	ChoicesStartY = 37;
+	Width = 340;
+	SelectorType = MenuSelector_SmallRight;
+	Title = "TEAM SETTINGS";
+}
