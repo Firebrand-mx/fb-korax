@@ -25,6 +25,7 @@ progs/cgame/MenuStaticText.vc				progs/cgame/MenuStaticText.vc
 progs/cgame/MenuScreenMain.vc				progs/cgame/MenuScreenMain.vc
 progs/cgame/MenuScreenMultiplayer.vc		progs/cgame/MenuScreenMultiplayer.vc
 progs/cgame/MenuScreenServerSettings.vc		progs/cgame/MenuScreenServerSettings.vc
+progs/cgame/MenuScreenTeamSettings.vc		progs/cgame/MenuScreenTeamSettings.vc
 progs/cgame/MenuScreenNewNetGame.vc			progs/cgame/MenuScreenNewNetGame.vc
 progs/cgame/MenuScreenPlayerSetup.vc		progs/cgame/MenuScreenPlayerSetup.vc
 progs/cgame/MenuScreenOptions.vc			progs/cgame/MenuScreenOptions.vc
