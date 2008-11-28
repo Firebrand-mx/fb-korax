@@ -137,6 +137,16 @@ static boolean soundchanged;
 static KMenuScreen *MenuStack[MAX_MENU_STACK];
 static int MenuSP;
 
+//
+// [CW] 2008-11-28
+enum
+{
+	QuitEndMsgType_None = -1,
+	QuitEndMsgType_Quit,
+	QuitEndMsgType_EndGame,
+	QuitEndMsgType_Suicide
+};
+
 boolean askforquit;
 boolean typeofask;
 static boolean slottextloaded;
@@ -145,8 +155,9 @@ static char oldSlotText[SLOTTEXTLEN+2];
 static int _SlotStatus[6];
 static int slotptr;
 static int currentSlot;
-static int quicksave;
-static int quickload;
+// [CW] 2008-11-28
+//static int quicksave;
+//static int quickload;
 
 static char *GammaText[] = 
 {
@@ -398,8 +409,9 @@ char *QuitEndMsg[] =
 {
 	"ARE YOU SURE YOU WANT TO QUIT?",
 	"ARE YOU SURE YOU WANT TO END THE GAME?",
-	"DO YOU WANT TO QUICKSAVE THE GAME NAMED",
-	"DO YOU WANT TO QUICKLOAD THE GAME NAMED",
+// [CW] 2008-11-28
+	//"DO YOU WANT TO QUICKSAVE THE GAME NAMED",
+	//"DO YOU WANT TO QUICKLOAD THE GAME NAMED",
 	"ARE YOU SURE YOU WANT TO SUICIDE?"
 };
 
@@ -430,9 +442,13 @@ void MN_Drawer(void)
 		if (askforquit)  //Draw questioning
 		{
 			GCanvas->SetOrigin(160, 120);
-			MN_DrTextA(QuitEndMsg[typeofask-1], 160-
-				MN_TextAWidth(QuitEndMsg[typeofask-1])/2, 80);
-			if (typeofask == 3)
+			//
+			// [CW] 2008-11-28: typeofask usage changed
+			MN_DrTextA(QuitEndMsg[typeofask/*-1*/], 160-
+				MN_TextAWidth(QuitEndMsg[typeofask/*-1*/])/2, 80);
+			//
+			// [CW] 2008-11-28: Quicksave and quickload questions disabled
+			/*if (typeofask == 3)
 			{
 				MN_DrTextA(_SlotText[quicksave-1], 160-
 					MN_TextAWidth(_SlotText[quicksave-1])/2, 90);
@@ -445,7 +461,7 @@ void MN_Drawer(void)
 					MN_TextAWidth(_SlotText[quickload-1])/2, 90);
 				MN_DrTextA("?", 160+
 					MN_TextAWidth(_SlotText[quicksave-1])/2, 90);
-			}
+			}*/
 			DD_GameUpdate(DDUF_FULLSCREEN);
 			GCanvas->SetOrigin(0, 0);
 		}
@@ -472,8 +488,9 @@ void MN_Drawer(void)
 static void DrawFilesMenu(void)
 {
 // clear out the quicksave/quickload stuff
-	quicksave = 0;
-	quickload = 0;
+	// [CW] 2008-11-28
+	//quicksave = 0;
+	//quickload = 0;
 	P_ClearMessage(&players[consoleplayer]);
 }
 
@@ -535,7 +552,8 @@ static void SCQuitGame(int option)
 	MenuActive = false;
 	ForceMenuOff();
 	askforquit = true;
-	typeofask = 1; //quit game
+	// [CW] 2008-11-28
+	typeofask = QuitEndMsgType_Quit;//1; //quit game
 	if(!netgame && !demoplayback)
 	{
 		paused = true;
@@ -582,7 +600,9 @@ static boolean SCNetCheck(int option)
 
 static void SCLoadGame(int option)
 {
-	if (!_SlotStatus[option])
+	// [CW] 2008-11-28
+	if (option != QUICK_SLOT &&
+		!_SlotStatus[option])
 	{ // Don't try to load from an empty slot
 		return;
 	}
@@ -591,11 +611,12 @@ static void SCLoadGame(int option)
 	MN_DeactivateMenu();
 	//BorderNeedRefresh = true;
 	DD_GameUpdate(DDUF_BORDER);
-	if(quickload == -1)
+	// [CW] 2008-11-28 CHECKME
+	/*if(quickload == -1)
 	{
 		quickload = option+1;
 		P_ClearMessage(&players[consoleplayer]);
-	}
+	}*/
 }
 
 //---------------------------------------------------------------------------
@@ -606,15 +627,20 @@ static void SCLoadGame(int option)
 
 static void SCSaveGame(int option)
 {
-	G_SaveGame(option, _SlotText[option]);
+	// [CW] 2008-11-28:
+	if (option == QUICK_SLOT)
+		G_SaveGame(QUICK_SLOT, QUICK_DESCRIPTION);
+	else
+		G_SaveGame(option, _SlotText[option]);
 	MN_DeactivateMenu();
 	//BorderNeedRefresh = true;
 	DD_GameUpdate(DDUF_BORDER);
-	if (quicksave == -1)
+	// [CW] 2008-11-28 CHECKME!!
+	/*if (quicksave == -1)
 	{
 		quicksave = option+1;
 		P_ClearMessage(&players[consoleplayer]);
-	}
+	}*/
 }
 
 fixed_t init_speed[NUMCLASSES] =
@@ -790,21 +816,24 @@ boolean MN_Responder(event_t *event)
 			case 'y':
 				if(askforquit)
 				{
+					//
+					// [CW] 2008-11-28: typeofask constants
 					switch(typeofask) //Switch questioning
 					{
-						case 1:
+						case QuitEndMsgType_Quit/*1*/:
 							G_CheckDemoStatus(); 
 							I_Quit();
 							break;
-						case 2:
+						case QuitEndMsgType_EndGame/*2*/:
 							P_ClearMessage(&players[consoleplayer]);
-							typeofask = 0;
+							typeofask = QuitEndMsgType_None/*0*/;
 							askforquit = false;
 							paused = false;
 							GL_SetFilter(0);
 							H2_StartTitle(); // go to intro/demo mode.
 							break;
-						case 3:
+						// [CW] 2008-11-28: quicksaving amd quickloading are now instant
+						/*case 3:
 							P_SetMessage(&players[consoleplayer], 
 								"QUICKSAVING....", false);
 							SCSaveGame(quicksave-1);
@@ -821,10 +850,10 @@ boolean MN_Responder(event_t *event)
 							typeofask = 0;
 							//BorderNeedRefresh = true;
 							DD_GameUpdate(DDUF_BORDER);
-							return true;
-						case 5:
+							return true;*/
+						case QuitEndMsgType_Suicide/*5*/:
 							askforquit = false;
-							typeofask = 0;	
+							typeofask = QuitEndMsgType_None/*0*/;
 							//BorderNeedRefresh = true;
 							DD_GameUpdate(DDUF_BORDER);
 							mn_SuicideConsole = true;
@@ -842,7 +871,7 @@ boolean MN_Responder(event_t *event)
 					players[consoleplayer].messageTics = 0;
 					players[consoleplayer].messageTics2 = 0;
 					askforquit = false;
-					typeofask = 0;
+					typeofask = QuitEndMsgType_None/*0*/;
 					paused = false;
 					/*UpdateState |= I_FULLSCRN;
 					BorderNeedRefresh = true;*/
@@ -1079,14 +1108,27 @@ int CCmdMenuAction(int argc, char **argv)
 		CON_Open(false);
 		MenuActive = false;
 		askforquit = true;
-		typeofask = 5; // suicide
+		// [CW] 2008-11-28
+		typeofask = QuitEndMsgType_Suicide/*5*/; // suicide
 		return true;
 	}
 	else if(!stricmp(argv[0], "quicksave"))
 	{
 		if(gamestate == GS_LEVEL && !demoplayback)
 		{
-			if(!quicksave || quicksave == -1)
+			//
+			// [CW] 2008-11-28 : instant Quicksaving
+			//
+
+			P_SetMessage(&players[consoleplayer], 
+								"QUICKSAVING....", false);
+			SCSaveGame(/*quicksave-1*/QUICK_SLOT);
+			askforquit = false;
+			//typeofask = QuitEndMsgType_None;
+			//BorderNeedRefresh = true;
+			DD_GameUpdate(DDUF_BORDER);
+
+			/*if(!quicksave || quicksave == -1)
 			{
 				StartMenu(MENU_SAVE);
 				quicksave = -1;
@@ -1102,14 +1144,26 @@ int CCmdMenuAction(int argc, char **argv)
 					paused = true;
 				}
 				S_StartSound(NULL, SFX_CHAT);
-			}
+			}*/
 		}
 	}
 	else if(!stricmp(argv[0], "quickload"))
 	{
 		if(SCNetCheck(2))
 		{
-			if(!quickload || quickload == -1)
+			//
+			// [CW] 2008-11-28 : instant Quickloading
+			//
+
+			P_SetMessage(&players[consoleplayer], 
+				"QUICKLOADING....", false);
+			SCLoadGame(/*quickload-1*/QUICK_SLOT);
+			askforquit = false;
+			//typeofask = 0;
+			//BorderNeedRefresh = true;
+			DD_GameUpdate(DDUF_BORDER);
+
+			/*if(!quickload || quickload == -1)
 			{
 				StartMenu(MENU_LOAD);
 				quickload = -1;
@@ -1125,7 +1179,7 @@ int CCmdMenuAction(int argc, char **argv)
 				}
 				typeofask = 4;
 				S_StartSound(NULL, SFX_CHAT);
-			}
+			}*/
 		}
 	}
 	else if(!stricmp(argv[0], "quit"))

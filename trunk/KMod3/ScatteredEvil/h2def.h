@@ -186,7 +186,7 @@ extern	doomdata_t		*netbuffer;		// points inside doomcom
 #define	BT_WEAPONSHIFT	3
 
 #define BT_SPECIAL		128			// game events, not really buttons
-#define	BTS_SAVEMASK	(4+8+16)
+#define	BTS_SAVEMASK	(4+8+16 +32 /* [CW] 2008-11-28 : for quicksave slot */)
 #define	BTS_SAVESHIFT	2
 #define	BT_SPECIALMASK	3
 #define	BTS_PAUSE		1			// pause the game
@@ -963,6 +963,16 @@ extern boolean demoplayback, demorecording;
 #define HXS_VERSION_TEXT "HXS Ver 2.37"
 #define HXS_VERSION_TEXT_LENGTH 16
 #define HXS_DESCRIPTION_LENGTH 24
+
+// [CW] 2008-11-28: moved from sv_save.cpp
+#define BASE_SLOT 6
+#define REBORN_SLOT 7
+#define REBORN_DESCRIPTION "TEMP GAME"
+//
+// [CW] 2008-11-28: now.. talking about hacking the Core... :P
+#define QUICK_SLOT 8
+#define QUICK_DESCRIPTION "QUICK SAVE"
+//
 
 void SV_SaveGame(int slot, char *description);
 void SV_SaveMap(boolean savePlayers);
