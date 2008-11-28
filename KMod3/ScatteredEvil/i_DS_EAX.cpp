@@ -95,8 +95,10 @@ int I2_Init()
 	LPDIRECTSOUNDBUFFER	bufTemp;
 
 	if (initOk) return true;	// Don't init a second time.
+#if defined _CW_FIXME_
 	if (FAILED(hr = CoCreateInstance(CLSID_EAXDirectSound, NULL,
 			CLSCTX_INPROC_SERVER, IID_IDirectSound, (void**)&dsound)))
+#endif
 	{
 		// EAX can't be initialized. Use normal DS, then.
 		ST_Message( "I2_Init: EAX 2 couldn't be initialized (result: %i).\n", hr & 0xffff);
@@ -140,10 +142,14 @@ int I2_Init()
 		{
 			DWORD support = 0, revsize = 0;
 			// Check for support.
+#if defined _CW_FIXME_
 			if (FAILED(hr = eaxListener->QuerySupport(DSPROPSETID_EAX_ListenerProperties,
 				DSPROPERTY_EAXLISTENER_ENVIRONMENT,
 				&support)) 
 				|| ((support & NEEDED_SUPPORT) != NEEDED_SUPPORT))
+#else
+			if (true)
+#endif
 			{
 				ST_Message( "I2_Init: Property set acquired, but EAX 2 not supported.\n  Result:%i, support:%x\n", hr&0xffff, support);
 				IKsPropertySet_Release(eaxListener);
@@ -204,8 +210,10 @@ static int LinLog(float zero_to_one)
 
 void EAX_dwSet(DWORD prop, int value)
 {
+#if defined _CW_FIXME_
 	if(FAILED(hr = eaxListener->Set(DSPROPSETID_EAX_ListenerProperties,
 		prop | DSPROPERTY_EAXLISTENER_DEFERRED, NULL, 0, &value, sizeof(int))))
+#endif
 	{
 		I_Error("EAX_dwSet (prop:%i value:%i) failed. Result: %i.\n", 
 			prop, value, hr&0xffff);
@@ -214,8 +222,10 @@ void EAX_dwSet(DWORD prop, int value)
 
 void EAX_fSet(DWORD prop, float value)
 {
+#if defined _CW_FIXME_
 	if(FAILED(hr = eaxListener->Set(DSPROPSETID_EAX_ListenerProperties,
 		prop | DSPROPERTY_EAXLISTENER_DEFERRED, NULL, 0, &value, sizeof(float))))
+#endif
 	{
 		I_Error("EAX_fSet (prop:%i value:%f) failed. Result: %i.\n", 
 			prop, value, hr&0xffff);
@@ -227,8 +237,10 @@ void EAX_dwMul(DWORD prop, float mul)
 	DWORD	retBytes;
 	LONG	value;
 
+#if defined _CW_FIXME_
 	if(FAILED(hr = eaxListener->Get(DSPROPSETID_EAX_ListenerProperties,
 		prop, NULL, 0, &value, sizeof(value), &retBytes)))
+#endif
 	{
 		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
 	}
@@ -240,8 +252,10 @@ void EAX_fMul(DWORD prop, float mul, float min, float max)
 	DWORD retBytes;
 	float value;
 
+#if defined _CW_FIXME_
 	if(FAILED(hr = eaxListener->Get(DSPROPSETID_EAX_ListenerProperties,
 		prop, NULL, 0, &value, sizeof(value), &retBytes)))
+#endif
 	{
 		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
 	}
@@ -254,8 +268,10 @@ void EAX_fMul(DWORD prop, float mul, float min, float max)
 void EAX_CommitDeferred()
 {
 	if(!eaxListener) return;
+#if defined _CW_FIXME_
 	if(FAILED(eaxListener->Set(DSPROPSETID_EAX_ListenerProperties,
 		DSPROPERTY_EAXLISTENER_COMMITDEFERREDSETTINGS, NULL, 0, NULL, 0)))
+#endif
 	{
 		I_Error("EAX_CommitDeferred failed.\n");
 	}
