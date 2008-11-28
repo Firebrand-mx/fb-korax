@@ -659,7 +659,8 @@ class KMenuScreen:public KModalWindow
 			{
 				ForceMenuOff();
 				askforquit = true;
-				typeofask = 2; //endgame
+				// [CW] 2008-11-28
+				typeofask = QuitEndMsgType_EndGame;//2; //endgame
 			}
 			break;
 

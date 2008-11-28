@@ -28,9 +28,11 @@
 #define GET_WORD (*SavePtr.w++)
 #define GET_LONG (*SavePtr.l++)
 #define MAX_MAPS 99
-#define BASE_SLOT 6
+//
+// [CW] 2008-11-28: moved to h2def.h
+/*#define BASE_SLOT 6
 #define REBORN_SLOT 7
-#define REBORN_DESCRIPTION "TEMP GAME"
+#define REBORN_DESCRIPTION "TEMP GAME"*/
 #define MAX_THINKER_SIZE 256
 
 // TYPES -------------------------------------------------------------------
