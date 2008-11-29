@@ -174,7 +174,7 @@ int I2_Init()
 	if(dsListener)
 	{
 		dsListener->SetDistanceFactor(1/36.0f, DS3D_DEFERRED);
-		dsListener->SetDopplerFactor(2, DS3D_DEFERRED);
+		dsListener->SetDopplerFactor(0.2f/*2*/, DS3D_DEFERRED);
 	}
 
 	// Success!
@@ -215,7 +215,9 @@ void EAX_dwSet(DWORD prop, int value)
 		prop | DSPROPERTY_EAXLISTENER_DEFERRED, NULL, 0, &value, sizeof(int))))
 #endif
 	{
-		I_Error("EAX_dwSet (prop:%i value:%i) failed. Result: %i.\n", 
+/*		I_Error("EAX_dwSet (prop:%i value:%i) failed. Result: %i.\n", 
+			prop, value, hr&0xffff);*/
+		ST_Message("EAX_dwSet (prop:%i value:%i) failed. Result: %i.\n", 
 			prop, value, hr&0xffff);
 	}
 }
@@ -227,7 +229,9 @@ void EAX_fSet(DWORD prop, float value)
 		prop | DSPROPERTY_EAXLISTENER_DEFERRED, NULL, 0, &value, sizeof(float))))
 #endif
 	{
-		I_Error("EAX_fSet (prop:%i value:%f) failed. Result: %i.\n", 
+/*		I_Error("EAX_fSet (prop:%i value:%f) failed. Result: %i.\n", 
+			prop, value, hr&0xffff);*/
+		ST_Message("EAX_fSet (prop:%i value:%f) failed. Result: %i.\n", 
 			prop, value, hr&0xffff);
 	}
 }
@@ -242,7 +246,8 @@ void EAX_dwMul(DWORD prop, float mul)
 		prop, NULL, 0, &value, sizeof(value), &retBytes)))
 #endif
 	{
-		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
+//		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
+		ST_Message("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
 	}
 	EAX_dwSet(prop, LinLog(pow(10, value/2000.0f) * mul));
 }
@@ -257,7 +262,8 @@ void EAX_fMul(DWORD prop, float mul, float min, float max)
 		prop, NULL, 0, &value, sizeof(value), &retBytes)))
 #endif
 	{
-		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
+//		I_Error("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
+		ST_Message("EAX_fMul (prop:%i) get failed. Result: %i.\n", prop, hr & 0xffff);
 	}
 	value *= mul;
 	if(value < min) value = min;
@@ -273,7 +279,8 @@ void EAX_CommitDeferred()
 		DSPROPERTY_EAXLISTENER_COMMITDEFERREDSETTINGS, NULL, 0, NULL, 0)))
 #endif
 	{
-		I_Error("EAX_CommitDeferred failed.\n");
+//		I_Error("EAX_CommitDeferred failed.\n");
+		ST_Message("EAX_CommitDeferred failed.\n");
 	}
 }
 
@@ -378,11 +385,11 @@ void I_UpdateListener(listener3d_t *desc)
 			if(val < .2) val = .2f;
 		}
 		EAX_dwSet(DSPROPERTY_EAXLISTENER_ENVIRONMENT,
-			val >= 1? EAX_ENVIRONMENT_PLAIN
-			: val >= .8? EAX_ENVIRONMENT_CONCERTHALL
-			: val >= .6? EAX_ENVIRONMENT_AUDITORIUM
-			: val >= .4? EAX_ENVIRONMENT_CAVE
-			: val >= .2? EAX_ENVIRONMENT_GENERIC
+			val >= 1 ? EAX_ENVIRONMENT_PLAIN
+			: val >= .8 ? EAX_ENVIRONMENT_CONCERTHALL
+			: val >= .6 ? EAX_ENVIRONMENT_AUDITORIUM
+			: val >= .4 ? EAX_ENVIRONMENT_CAVE
+			: val >= .2 ? EAX_ENVIRONMENT_GENERIC
 			: EAX_ENVIRONMENT_ROOM);
 
 		EAX_dwSet(DSPROPERTY_EAXLISTENER_ROOM, LinLog(desc->reverb.volume));
