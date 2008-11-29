@@ -163,7 +163,7 @@ int I3_Init()
 	}
 	IA3d5_SetCoordinateSystem(a3d, A3D_LEFT_HANDED_CS);
 	IA3d5_SetUnitsPerMeter(a3d, 36); // Based on the player sprite.
-	IA3d5_SetDopplerScale(a3d, 1.5);
+	IA3d5_SetDopplerScale(a3d, 0.15/*1.5*/);
 	hwCaps.dwSize = sizeof(hwCaps);
 	IA3d5_GetHardwareCaps(a3d, &hwCaps);
 	ST_Message( "I3_Init: Number of 3D buffers: %d\n", hwCaps.dwMax3DBuffers);
