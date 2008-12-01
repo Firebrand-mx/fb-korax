@@ -153,15 +153,23 @@ void CaptureBy(Entity newCapturer)
 	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
 	if (CTF && CTF.IsInPlayableState())
 	{
+		int i;
 		MainGameInfo(Level.Game).bcentreprint(va("%s got the %s flag!",
 									newCapturer.Player.PlayerName,
 									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		Capturer = Player(newCapturer.Player);
+		Capturer.Banner = self;
+
 		//[FB] We need to let the bots know they must return to their own goal spot
 		if(Capturer.bIsBot)
 			Capturer.Bot.botstate.BState = BotPlayer::bst_scoring;
 
 		Status = BANNER_STATUS__CARRIED;
+
+		for (i = 0; i < Team.GetPlayerCount(); i++)
+		{
+			Team.Players[i].BannerStatus = Status;
+		}
 	}
 }
 
@@ -181,12 +189,11 @@ void ReturnToBase(Entity Savior, bool silent)
 	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
 	if (CTF && CTF.IsInPlayableState())
 	{
+		int i;
+
 		if (!silent)
 		{
-			if (!Savior)
-				return;
-
-			if (Savior.Player)
+			if (Savior && Savior.Player)
 			{
 				Player(Savior.Player).UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
 				MainGameInfo(Level.Game).bcentreprint(va("%s returned %s flag!",
@@ -200,8 +207,12 @@ void ReturnToBase(Entity Savior, bool silent)
 		
 		Status = BANNER_STATUS__BEING_RETURNED;
 		//[FB] We need to let the bots know they must get on deciding state again
-		if(Capturer && Capturer.bIsBot)
-			Capturer.Bot.botstate.BState = BotPlayer::bst_deciding;
+		if(Capturer)
+		{
+			if (Capturer.bIsBot)
+				Capturer.Bot.botstate.BState = BotPlayer::bst_decide;
+			Capturer.Banner = none;
+		}
 
 		Capturer = none;
 		bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
@@ -209,6 +220,11 @@ void ReturnToBase(Entity Savior, bool silent)
 		Teleport(BaseOrigin.Origin, BaseOrigin.Angles.yaw, !silent, !silent && Savior, false);
 		bColideWithThings = true;
 		Status = BANNER_STATUS__BASE;
+
+		for (i = 0; i < Team.GetPlayerCount(); i++)
+		{
+			Team.Players[i].BannerStatus = Status;
+		}
 	}
 }
 
@@ -228,16 +244,27 @@ void WasLost()
 	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
 	if (CTF && CTF.IsInPlayableState())
 	{
+		int i;
+
 		MainGameInfo(Level.Game).bcentreprint(va("%s dropped the %s flag!",
 									Capturer.PlayerName,
 									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
 		//[FB] We need to let the bots know they must get on deciding state again
-		if(Capturer && Capturer.bIsBot)
-			Capturer.Bot.botstate.BState = BotPlayer::bst_deciding;
+		if(Capturer)
+		{
+			if (Capturer.bIsBot)
+				Capturer.Bot.botstate.BState = BotPlayer::bst_decide;
+			Capturer.Banner = none;
+		}
 
 		Capturer = none;
 		lost_timer = AUTORESPAWN_DELAY;
 		Status = BANNER_STATUS__LOST;
+
+		for (i = 0; i < Team.GetPlayerCount(); i++)
+		{
+			Team.Players[i].BannerStatus = Status;
+		}
 	}
 }
 

@@ -92,6 +92,11 @@ int pic_paused;
 int pic_health;
 int pic_armor2;
 
+const float IMPORTANT_MESSAGE_SHOWTIME = 1.0;
+const float IMPORTANT_MESSAGE_HIDETIME = 0.5;
+
+float important_message_ticker;
+
 //==========================================================================
 //
 //  StartMap
@@ -1129,8 +1134,28 @@ void SB_Drawer(int sb_view)
 	//  Pause icon
 	SB_DrawPause();
 
+	//
+	// Various HUD messages
+	//
+
+	if (cl.Banner && important_message_ticker > 0.0)
+	{
+		SetTextAlign(hcentre, vcentre);
+		SetFont('smallfont');
+		DrawText(320, 320, "You have enemy flag!", CR_LIGHTBLUE);
+	}
+
+	if (cl.BannerStatus != CTFBanner::BANNER_STATUS__BASE && important_message_ticker > 0.0)
+	{
+		SetTextAlign(hcentre, vcentre);
+		SetFont('smallfont');
+		if (cl.BannerStatus == CTFBanner::BANNER_STATUS__CARRIED)
+			DrawText(320, 180, "Enemy has your flag!", CR_RED);
+		else if (cl.BannerStatus == CTFBanner::BANNER_STATUS__LOST)
+			DrawText(320, 180, "Your flag is dropped on ground!", CR_RED);
+	}
+
 	// [CW] Targeted enemy info
-	// (don't know where to put it if not here)
 	byte tinfoFormat = GetCvar('TargetInfo');
 	if (sb_view != SB_VIEW_AUTOMAP && tinfoFormat > 0 && cl.targetinfo.type != Player::targetinfo_none)
 	{
@@ -1208,6 +1233,28 @@ void SB_UpdateWidgets()
 		}
 		HealthMarker += delta;
 	}
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float DeltaTime)
+{
+	::Tick(DeltaTime);
+
+	if (cl.Banner || cl.BannerStatus != CTFBanner::BANNER_STATUS__BASE)
+	{
+		important_message_ticker -= DeltaTime;
+		if (important_message_ticker < -IMPORTANT_MESSAGE_HIDETIME)
+		{
+			important_message_ticker = IMPORTANT_MESSAGE_SHOWTIME;
+		}
+	}
+	else
+		important_message_ticker = 0.0;
 }
 
 //==========================================================================
