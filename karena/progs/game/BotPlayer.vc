@@ -303,6 +303,7 @@ float sidemove;
 // Flags, controlling movement
 // regarding ITarget:
 bool bSoftContact;			// ITarget is something that could be passed through without slowing down
+bool bCanReachNoCare;		// Do not care if bot can reach destination
 // regarding ITarget = enemy (or nemesis)
 bool bMeleeUrge;			// Must come closer to enemy as quickly as possible
 bool bKeepDistant;			// Enemy should be attacked from distance
@@ -1061,7 +1062,7 @@ void Aim()
 
 	if (!enemy)
 	{
-		// [CW] Target can be other object, simply face its direction
+		// [CW] ITarget can be other object, simply face its direction
 		if (ITarget)
 		{
 			SetAngle(AngleTo(ITarget.Origin));
@@ -1369,8 +1370,9 @@ Actor FindMissile()
 
 	foreach botmo.AllThinkers(Actor, actor)
 	{
-		// [CW] Fixed to greatly optimize processing time
-		if (actor.bMissile && (botmo.DistTo(actor) <= AVOID_DIST))
+		if (actor.bMissile && !actor.bBlaster /*too little chance to avoid blaster missile*/
+			&& actor.PInstigator != player && actor.Target != botmo &&
+			(botmo.DistTo(actor) <= AVOID_DIST))
 		{
 			if (Check_LOS(actor, 90.0))
 			{
@@ -1834,25 +1836,84 @@ void Move(float deltaTime)
 {
 	TVec dest;
 
+	// [CW] Set a real destination for movement
+	if (bMeleeUrge && enemy && (ITarget != enemy) && CheckTo(enemy.Origin, enemy))
+	{
+		dest = enemy.Origin;
+	}
+	else if (ITarget)
+	{
+		if (bAttackOffsetValid)
+		{
+			TAVec anglesFromOffset, anglesFromMO;
+			TVec vOff = ITarget.Origin - AttackOffset;
+			TVec vMO = ITarget.Origin - botmo.Origin;
+
+			VectorAngles(&vOff, &anglesFromOffset);
+			VectorAngles(&vMO, &anglesFromMO);
+			
+			// TODO: count accuracy level here maybe
+			if (P_Random() < 64 && anglesFromMO.yaw >= anglesFromOffset.yaw - 5.0 &&
+				anglesFromMO.yaw <= anglesFromOffset.yaw + 5.0)
+			{
+				dest = ITarget.Origin;
+			}
+			else
+			{
+				dest = AttackOffset;
+			}
+		}
+		else
+		{
+			dest = ITarget.Origin;
+		}
+	}
+	else
+	{
+		dest = botmo.Origin;
+	}
+
 	// Worry about missiles above all else
 	if (missile)
 	{
-		if (t_strafe)
+		bool DoEvade = false;
+		TVec crosspt;
+		TVec missile_vel = missile.Velocity;
+		missile_vel = Normalise(missile_vel);
+		TVec missile_progression = missile.Origin + missile_vel * AVOID_DIST;
+		float distto = botmo.DistTo(missile);
+
+		if (missile.bSeekerMissile)
+			DoEvade = true;
+		// Check if the missile crosses our planned movement line in flight
+		else if (LinesCross(botmo.Origin.x, botmo.Origin.y, dest.x, dest.y,
+						missile.Origin.x, missile.Origin.y, missile_progression.x, missile_progression.y,
+						&crosspt))
 		{
-			t_strafe -= deltaTime;
-			if (t_strafe <= 0.0)
+			// Rouphly calculate expected bot Z when at crosspt
+			float rouph_time = FMax(crosspt.x - botmo.Origin.x, crosspt.y - botmo.Origin.y) / FMax(FORWARDRUN, SIDERUN);
+			crosspt.z = (botmo.Origin.z + (fabs(crosspt.x - botmo.Origin.x) * (dest.z - botmo.Origin.z) / fabs(dest.x - botmo.Origin.x))
+							+
+						botmo.Origin.z + (fabs(crosspt.y - botmo.Origin.y) * (dest.z - botmo.Origin.z) / fabs(dest.y - botmo.Origin.y))
+							) / 2.0;
+			TVec missile_at_rough_time = missile.Origin + missile.Velocity * rouph_time;
+
+			// Check rouphly if missile will be dangerously close when bot is at crosspt
+			if (Length(crosspt - missile_at_rough_time) <= 128.0)
 			{
-				// Don't change direction while dodging missiles (that could be bad)
-				//bot->sidemove = -bot->sidemove;
-				t_strafe = 2.0;
+				DoEvade = true;
 			}
 		}
 
-		// Look at the missile and sidestep it
-		SetAngle(AngleTo(missile.Origin));
-		//forwardmove = -FORWARDRUN;	 //??? where's "sidestep" here?
-		sidemove = Random() < 0.5 ? SIDERUN : -SIDERUN;
-		return;
+		// Do evasive action
+		if (DoEvade)
+		{
+			// Look at the missile and sidestep it
+			SetAngle(AngleTo(missile.Origin));
+			if (!sidemove)
+				sidemove = Random() < 0.5 ? SIDERUN : -SIDERUN;
+			return;
+		}
 	}
 
 	// Anticipate a shot: time to dodge!
@@ -1868,7 +1929,7 @@ void Move(float deltaTime)
 		case bsk_verypoor:
 			// Deer caught in the headlights
 			sidemove = 0.0;
-			return;
+			break;
 
 		case bsk_poor:
 			// Always walk right
@@ -1956,8 +2017,12 @@ void Move(float deltaTime)
 			Error("BotPlayer::Move::Unknown bot anticipation skill level: %d", info.anticip);
 			return;
 		}
+		return;
 	}
 
+	// [CW] The following code is absolutely useless, since sidemove value it sets is
+	//		always overwritten by Roam function or conflicts with decisions	made there.
+#ifdef FIXME
 	// Now handle attack movement
 	if (enemy)
 	{
@@ -2002,48 +2067,18 @@ void Move(float deltaTime)
 		}
 //		return;
 	}
+#endif
 
-	// [CW] Set a real destination for movement
-	if (bMeleeUrge && enemy)
-		dest = enemy.Origin;
-	else if (ITarget)
-	{
-		if (bAttackOffsetValid)
-		{
-			TAVec anglesFromOffset, anglesFromMO;
-			TVec vOff = ITarget.Origin - AttackOffset;
-			TVec vMO = ITarget.Origin - botmo.Origin;
-
-			VectorAngles(&vOff, &anglesFromOffset);
-			VectorAngles(&vMO, &anglesFromMO);
-			
-			// TODO: count accuracy level here maybe
-			if (P_Random() < 64 && anglesFromMO.yaw >= anglesFromOffset.yaw - 5.0 &&
-				anglesFromMO.yaw <= anglesFromOffset.yaw + 5.0)
-			{
-				dest = ITarget.Origin;
-			}
-			else
-			{
-				dest = AttackOffset;
-			}
-		}
-		else
-		{
-			dest = ITarget.Origin;
-		}
-	}
+	if(dest != botmo.Origin /*&& CheckTo(dest)*/ /* [CW] No need to call CheckTo here since it
+												 certainly was called before setting a
+												 movement target */)
+		Roam(dest);
 	else
 	{
-//		dest = botmo.Origin;	// just hang on place where standing
 		// do nothing?
 		SetAngle(GetAngle() + 15.0);
 		forwardmove = -FORWARDWALK;
-		return;
 	}
-
-	if(CheckTo(dest))
-		Roam(dest);
 }
 
 //==========================================================================
@@ -3634,6 +3669,7 @@ void ProcessImmediate()
 	}
 #endif
 	bSoftContact = false;
+	bCanReachNoCare = false;
 	bMeleeUrge = false;
 	bKeepDistant = false;
 
@@ -4198,6 +4234,52 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 	}
 	return node_current;
 }
+
+bool LinesCross(float x11, float y11, float x12, float y12, float x21, float y21, float x22, float y22,
+				  TVec * crosspt)
+{
+
+	float maxx1 = FMax(x11, x12), maxy1 = FMax(y11, y12);
+	float minx1 = FMin(x11, x12), miny1 = FMin(y11, y12);
+	float maxx2 = FMax(x21, x22), maxy2 = FMax(y21, y22);
+	float minx2 = FMin(x21, x22), miny2 = FMin(y21, y22);
+
+	if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+		return false;
+ 
+	float dx1 = x12-x11, dy1 = y12-y11; // First line projection to x & y axes
+	float dx2 = x22-x21, dy2 = y22-y21; // Second line projection to x & y axes
+	float dxx = x11-x21, dyy = y11-y21;
+	float div, mul;
+
+
+	div = (dy2*dx1-dx2*dy1);
+	if (div == 0.0) 
+	  return false; // Parallel lines
+	if (div > 0.0) {
+		mul = (dx1*dyy-dy1*dxx);
+		if (mul < 0.0 || mul > div)
+			return false; // first line crossing out of limits
+		mul = (dx2*dyy-dy2*dxx);
+		if (mul < 0.0 || mul > div)
+			return false; // second line crossing out of limits
+	}
+
+	mul = -(dx1*dyy-dy1*dxx);
+	if (mul < 0.0 || mul > -div)
+		return false; // first line crossing out of limits
+	mul = -(dx2*dyy-dy2*dxx);
+	if (mul < 0.0 || mul > -div)
+	  return false; // second line crossing out of limits
+
+	float factor = (dx2*dyy - dy2*dxx) / div;
+
+	crosspt->x = x11 + factor * (x21 - x11);
+	crosspt->y = y11 + factor * (y21 - y11);
+
+	return true;
+}
+
 
 defaultproperties
 {
