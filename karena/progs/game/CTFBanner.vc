@@ -110,7 +110,12 @@ bool IsTouched(Entity Toucher)
 					// Elsewise banner is on base; check if defender is carrying captured opponents' flag
 					else
 					{
-						int i;
+						if (Player(Toucher.Player).Banner)
+						{
+							CTF.CommitCapture(Player(Toucher.Player).Banner);
+							Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
+						}
+						/*int i;
 						for (i = 0; i < GameCTF::MAXBANNERS; i++)
 						{
 							if (CTF.Banners[i] && CTF.Banners[i] != self &&
@@ -119,7 +124,7 @@ bool IsTouched(Entity Toucher)
 								CTF.CommitCapture(CTF.Banners[i]);
 								Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
 							}
-						}						
+						}*/
 					}
 				}
 				else
@@ -215,10 +220,10 @@ void ReturnToBase(Entity Savior, bool silent)
 		}
 
 		Capturer = none;
-		bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
+		//bColideWithThings = false;	// we don't want to stomp anything... banner shouldn't act this way
 		dprint("ReturnToBase : BaseOrigin = %i", BaseOrigin);
 		Teleport(BaseOrigin.Origin, BaseOrigin.Angles.yaw, !silent, !silent && Savior, false);
-		bColideWithThings = true;
+		//bColideWithThings = true;
 		Status = BANNER_STATUS__BASE;
 
 		for (i = 0; i < Team.GetPlayerCount(); i++)
