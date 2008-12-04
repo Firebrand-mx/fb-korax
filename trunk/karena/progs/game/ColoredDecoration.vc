@@ -50,7 +50,7 @@ bool Activate(EntityEx Activator)
 {
 	SetState(FindState('Active'));
 	bDynamicLight = true;
-	DLightRadius = Args[/*0*/ 1] ? itof(Args[/*0*/ 1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
+	DLightRadius = Args[/* 0*/ 1] ? itof(Args[/* 0*/ 1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
 
 	return true;
 }
@@ -88,16 +88,26 @@ void SetTranslation()
 	if (CTF && CTF.IsInPlayableState())
 	{
 		// [CW] Huh, another change
-		/*//
+		/* //
 		// [CW] I am changing how it works; moved actual translation setting to
 		//		LevelInfo class, mainly because not only Banner, but Colored Decor
 		//		uses this as well.
 		//
 		//HexenLevelInfo(Level).SetTeamTranslation(Team.Index, TID);*/
-		CTF.HandleEvent(GameCTF::event_colortranslation, none, Team.Index, TID, 0,0);
+		CTF.HandleEvent(GameCTF::event_colortranslation, none, Team.Index, TID, 0, 0);
 
 		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		Activate(none);
+		TransSet = true;
+	}
+	GameFootball FB = GameFootball(MainGameInfo(Level.Game).GameModel);
 
+	if (FB && FB.IsInPlayableState())
+	{
+		FB.HandleEvent(GameFootball::event_colortranslation, none, Team.Index, TID, 0, 0);
+
+		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		Activate(none);
 		TransSet = true;
 	}
 }
@@ -118,6 +128,6 @@ void Tick(float deltaTime)
 
 defaultproperties
 {
-	DLightColour = RGB(0, 0, 255);
+	DLightColour = RGB(255, 255, 255);
 	bDynamicLight = true;
 }
