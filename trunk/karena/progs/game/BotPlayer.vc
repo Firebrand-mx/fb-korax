@@ -3781,13 +3781,14 @@ void ProcessImmediate()
 		else
 		{
 			bMeleeUrge = (!KArenaWeapon(player.ReadyWeapon).bBotProjectile &&
-							!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium)
-							&& enemy.Player &&
-						 (KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
+							!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium) &&
+						(!ITarget ||
+							enemy.Player &&
+						 (((KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
 							KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectile) &&
-							botmo.DistTo(enemy) < 512.0 &&
+							botmo.DistTo(enemy) < 512.0)) &&
 							!ITarget.IsA('KArenaWeapon')
-							&& !player.Banner;
+							&& !player.Banner);
 			bKeepDistant = !bMeleeUrge && (!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium &&
 							!KArenaWeapon(player.ReadyWeapon).bBotProjectile);
 		}
