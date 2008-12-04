@@ -33,16 +33,16 @@
 class SoccerBall : Actor
 	__mobjinfo__(15021);
 
-const int	MINFRAMES_NOKICK		= 4;
-const int	MAXFRAMES_TARGETTING		= 9;
-const float 	VELPOWER_MULTIPLIER		= 4.0;
-const float 	STRENGTHPOWER_MULTIPLIER	= 100.0;
+const int		MINFRAMES_NOKICK				= 4;
+const int		MAXFRAMES_TARGETTING			= 9;
+const float 	VELPOWER_MULTIPLIER				= 4.0;
+const float 	STRENGTHPOWER_MULTIPLIER		= 100.0;
 const float		STRENGTHPOWER_HORIZONTAL_FACTOR = 0.5;
-const float		STRENGTHPOWER_VERTICAL_FACTOR = 1.5;
+const float		STRENGTHPOWER_VERTICAL_FACTOR 	= 1.5;
 
 int	nokick_timer;				// free fly time (to avoid repeatable touch bug)
-Player	Owner;					// a player who kicked the ball last
-
+Player Owner;					// a player who kicked the ball last
+bool Rolling;
 
 //==========================================================================
 //
@@ -59,7 +59,9 @@ bool IsTouched(Entity Toucher)
 	{
 		if(!(nokick_timer && Owner == Toucher.Player)
 			&& Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+		{
 			DoKick(Player(Toucher.Player));
+		}
 	}
 	return true;
 }
@@ -88,9 +90,13 @@ void DoKick(Player Kicker)
 	van = itof(Kicker.use_power * 10);
 	velpower = VELPOWER_MULTIPLIER * Length(Kicker.MO.Velocity) / 100.0;
 	if (Kicker.use_power)
+	{
 		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength) / 100.0;
+	}
 	else
+	{
 		strpower = 0.0;
+	}
 
 	Thrust(an, velpower + strpower * cos(van) * STRENGTHPOWER_HORIZONTAL_FACTOR);
 	Velocity.z += strpower * sin(van) * 35.0 * STRENGTHPOWER_VERTICAL_FACTOR;
@@ -117,7 +123,9 @@ final void A_LetKick()
 
 	GameFootball FB = GameFootball(MainGameInfo(Level.Game).GameModel);
 	if (!FB || !FB.IsInPlayableState())
+	{
 		return;
+	}
 
 	if (nokick_timer)
 	{
@@ -130,11 +138,14 @@ final void A_LetKick()
 		P = Player(Level.Game.Players[i]);
 
 		if (!P || !P.bSpawned || !P.MO)
+		{
 			continue;	// [FB] Can't kick the ball if not playing!
+		}
 		if (P.Health <= 0)
+		{
 			continue;	// [FB] Dead meat can't kick balls!
-					// [CW]... and asses as well =)
-
+						// [CW]... and asses as well =)
+		}
 		playernum = P.GetPlayerNum();
 		dist = DistTo(P.MO);
 
@@ -151,20 +162,54 @@ final void A_LetKick()
 			}
 				
 			if (P.Buttons & BT_USE && P.use_power < MAXFRAMES_TARGETTING)
+			{
 				P.use_power++;
+			}
 			else if (!(P.Buttons & BT_USE) && P.use_power > 0)
+			{
 				P.use_power = 0;
+			}
 		}
 		else
+		{
 			P.use_power = 0;
+		}
 	}
 }
 
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if ((Velocity.x || Velocity.y || Velocity.z) &&
+		!Rolling)
+	{
+		SetState(FindState('Roll'));
+		Rolling = true;
+	}
+	else
+	{
+		SetState(FindState('Spawn'));
+		Rolling = false;
+	}
+}
 
 states
 {
 Spawn:
-	FDMN X 2 Bright A_LetKick
+	FBAL A 2 A_LetKick
+	Loop
+Roll:
+	FBAL A 1 A_LetKick
+	FBAL B 1 A_LetKick
+	FBAL C 1 A_LetKick
+	FBAL D 1 A_LetKick
 	Loop
 }
 
@@ -172,7 +217,7 @@ defaultproperties
 {
 	Health = 1000;
 	Radius = 20.0;
-	Height = 68.0;
+	Height = 48.0;
 	Mass = 40.0;
 
 	bSolid = true;
