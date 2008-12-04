@@ -518,6 +518,7 @@ bool CheckPath(float ang, float dist)
 	intercept_t* in;
 	float bottracerange;
 	TVec bottracedir;
+	float distance_passed;
 
 	bottracerange = dist;
 	bottracedir.x = cos(ang);
@@ -527,9 +528,6 @@ bool CheckPath(float ang, float dist)
 	y1 = botmo.Origin.y;
  	x2 = x1 + botmo.Radius + dist * bottracedir.x;
  	y2 = y1 + botmo.Radius + dist * bottracedir.y;
-
-	// [FB] Use lines
-	EntityEx(player.MO).UseLines(Player::USERANGE, Player::USETHINGRANGE, '*usefail');
 
 	//	[BC] For the bots
 	//	[FB] Additions for 3d floor checks
@@ -543,10 +541,20 @@ bool CheckPath(float ang, float dist)
 		opening_t *open;
 		float diffheight, dheight;
 
+		distance_passed = dist * in->frac;
+
 		if (in->bIsALine)
 		{
 			ld = in->line;	// This linedef
 			hit_point = botmo.Origin + (bottracerange * in->frac) * bottracedir;
+
+			// [CW]
+			if (distance_passed <= Player::USERANGE &&
+				(in->line->SpacFlags & SPAC_UseThrough || in->line->SpacFlags & SPAC_Use))
+			{
+				// [FB] Use lines
+				EntityEx(player.MO).UseLines(Player::USERANGE, Player::USETHINGRANGE, '*usefail');
+			}
 
 			// Line is impassible
 			if (!(ld->flags & ML_TWOSIDED) || (ld->flags & ML_BLOCKING) ||
@@ -603,7 +611,10 @@ bool CheckPath(float ang, float dist)
 				{
 					if (diffheight >= MAXSTEPHEIGHT && diffheight <= MAXJUMPHEIGHT)
 					{
-						player.Buttons |= BT_JUMP;
+						if (distance_passed <= 32.0)
+						{
+							player.Buttons |= BT_JUMP;
+						}
 						continue;
 					}
 					else if (diffheight > MAXJUMPHEIGHT)
@@ -618,6 +629,11 @@ bool CheckPath(float ang, float dist)
 					}
 				}
 			}
+
+			// [CW] Since this method is for short distances only, we should
+			//      break the procedure after certain distance is reached
+			if (distance_passed >= 128.0)
+				break;
 		}
 		else
 		{
@@ -869,8 +885,8 @@ void AimProjectile(float dist, bool right, float an)
 	// [BC] Cajun prediction
 	// Here goes the prediction.
 	float m = (dist / 875.0); // FIXME Determine current weapon's missile speed
-	float px = enemy.Origin.x + (enemy.Origin.x + (enemy.Velocity.x * m * 2.0));
-	float py = enemy.Origin.y + (enemy.Origin.y + (enemy.Velocity.y * m * 2.0));
+	float px = enemy.Origin.x + (/*enemy.Origin.x +*/ (enemy.Velocity.x * m * 2.0));
+	float py = enemy.Origin.y + (/*enemy.Origin.y +*/ (enemy.Velocity.y * m * 2.0));
 
 	switch (info.intelect)
 	{
@@ -985,12 +1001,12 @@ void AimProjectile(float dist, bool right, float an)
 
 void AimInstant(float dist, bool right, float an)
 {
-	// [CW] : temporary fix
-/*	if (info.accuracy < bsk_high && dist < EntityEx::MELEERANGE * 2.0)
+	// [CW]
+	if (info.accuracy > bsk_verypoor && info.accuracy <= bsk_high && dist <= EntityEx::MELEERANGE * 2.0)
 	{
 		SetAngle(an);
 		return;
-	}*/
+	}
 
 	// FIXME: Implement botskill, accuracy, and intelligence
 	switch (info.accuracy)
@@ -1221,46 +1237,43 @@ Actor FindEnemy(optional bool bReachable)
 			 // Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
 			 // returns false. tought it should be the same checksight as below but.. (below works) something
 			 // must be fuckin wierd screded up.
-			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle))
+			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && EntityEx(botmo).CanSee(actor))
 			{
-				if (EntityEx(botmo).CanSee(actor))
-				{
-					// [CW] already calculated above
-					//dist = botmo.DistTo(actor);
+				// [CW] already calculated above
+				//dist = botmo.DistTo(actor);
 
-					light = actor.Sector->params.lightlevel; // [FB] Detect the light level
-					if (actor.Sector->floor.LightSourceSector)
+				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
+				if (actor.Sector->floor.LightSourceSector)
+				{
+					//[FB] Add static or dynamic lights?
+					light += actor.Sector->floor.LightSourceSector;
+				}
+				// [FB] Too dark?
+				// [CW] enhance this a bit, still human players usually CAN see in dark
+				if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
+				{
+					if (light <= WHATS_VERYDARK)
 					{
-						//[FB] Add static or dynamic lights?
-						light += actor.Sector->floor.LightSourceSector;
-					}
-					// [FB] Too dark?
-					// [CW] enhance this a bit, still human players usually CAN see in dark
-					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
-					{
-						if (light <= WHATS_VERYDARK)
-						{
-							if (P_Random() < 196)
-							{
-								continue;
-							}
-						}
-						else if (P_Random() < 128)
+						if (P_Random() < 196)
 						{
 							continue;
 						}
 					}
-
-					if (bReachable && !CheckTo(actor.Origin, actor))
+					else if (P_Random() < 128)
 					{
 						continue;
 					}
+				}
 
-					if (dist < closest_dist)
-					{
-						closest_dist = dist;
-						target = actor;
-					}
+				if (bReachable && !CheckTo(actor.Origin, actor))
+				{
+					continue;
+				}
+
+				if (dist < closest_dist)
+				{
+					closest_dist = dist;
+					target = actor;
 				}
 			}
 			return target;
@@ -1310,47 +1323,43 @@ Actor FindEnemy(optional bool bReachable)
 			dist = botmo.DistTo(player.Level.Game.Players[i].MO);
 
 			if (dist <= EntityEx::MELEERANGE ||
-				(botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO
-				/*[CW] No need to check this here, CanSee is called below*/
-				/* && botmo.CanSee(botmo.Sector->SoundTarget)*/
-				) || Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle))
+				((botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO)
+				  || Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle)) &&
+				  EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
 			{
-				if (EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
+				// [FB] Detect the light level
+				light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
+				if (player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector)
 				{
-					// [FB] Detect the light level
-					light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
-					if (player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector)
+					//[FB] Add static or dynamic lights?
+					light += player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector;
+				}
+				// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
+				if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
+				{
+					if (light <= WHATS_VERYDARK)
 					{
-						//[FB] Add static or dynamic lights?
-						light += player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector;
-					}
-					// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
-					if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
-					{
-						if (light <= WHATS_VERYDARK)
-						{
-							if (P_Random() < 196)
-							{
-								continue;
-							}
-						}
-						else if (P_Random() < 128)
+						if (P_Random() < 196)
 						{
 							continue;
 						}
 					}
-
-					if (bReachable && !CheckTo(player.Level.Game.Players[i].MO.Origin,
-													EntityEx(player.Level.Game.Players[i].MO)))
+					else if (P_Random() < 128)
 					{
 						continue;
 					}
+				}
 
-					if (dist < closest_dist)
-					{
-						closest_dist = dist;
-						target = Actor(player.Level.Game.Players[i].MO);
-					}
+				if (bReachable && !CheckTo(player.Level.Game.Players[i].MO.Origin,
+												EntityEx(player.Level.Game.Players[i].MO)))
+				{
+					continue;
+				}
+
+				if (dist < closest_dist)
+				{
+					closest_dist = dist;
+					target = Actor(player.Level.Game.Players[i].MO);
 				}
 			}
 		}
@@ -2424,10 +2433,19 @@ void Turn()
 	float distance;
 
 	distance = GetAngle() - botmo.Angles.yaw;
+
+#ifdef DEBUG_BOT_AI_TURN
+	dprint("Turn: now %f to %f; d = %f", botmo.Angles.yaw, angle, distance);
+#endif
+
 	if (distance > 180.0)
 		distance -= 360.0;
 	else if (distance < -180.0)
 		distance += 360.0;
+
+#ifdef DEBUG_BOT_AI_TURN
+	dprint("final d = %f", distance);
+#endif
 
 	/*if (!enemy)
 	{
@@ -2492,7 +2510,15 @@ void Turn()
 			break;
 	}
 
+#ifdef DEBUG_BOT_AI_TURN
+	dprint("yaw was = %f", player.ViewAngles.yaw);
+#endif
+
 	player.ViewAngles.yaw = AngleMod360(botmo.Angles.yaw + distance);
+
+#ifdef DEBUG_BOT_AI_TURN
+	dprint("yaw now = %f", player.ViewAngles.yaw);
+#endif
 }
 
 //==========================================================================
@@ -3539,11 +3565,20 @@ Actor GetFirstPriorityTarget()
 	}
 
 	if (nemesis)
-		candidates[priort_Nemesis] = (botmo.CanReach(nemesis.Origin, nemesis) ? nemesis : none);
+		candidates[priort_Nemesis] = (CheckTo(nemesis.Origin, nemesis) ? nemesis : none);
 	if (!candidates[priort_Nemesis] && enemy && enemy != nemesis)
-		candidates[priort_Enemy] = (botmo.CanReach(enemy.Origin, enemy) ? enemy : none);
+	{
+#ifdef DEBUG_BOT_AI_TARGET
+		dprint("check priort_enemy");
+#endif
+		candidates[priort_Enemy] = (CheckTo(enemy.Origin, enemy) ? enemy : none);
+	}
+#ifdef DEBUG_BOT_AI_TARGET
+	dprint("enemy = %i, nemesis = %i", enemy, nemesis);
+	dprint("candidates[priort_Enemy] = %i", candidates[priort_Enemy]);
+#endif
 	if (ally)
-		candidates[priort_Support] = (botmo.CanReach(ally.Origin, ally) ? ally : none);
+		candidates[priort_Support] = (CheckTo(ally.Origin, ally) ? ally : none);
 
 	candidates[priort_Objective] = GetGameObjective(true);
 
@@ -3786,7 +3821,7 @@ void ProcessImmediate()
 							enemy.Player &&
 						 (((KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
 							KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectile) &&
-							botmo.DistTo(enemy) < 512.0)) &&
+							(ITarget == enemy || botmo.DistTo(enemy) < 512.0))) &&
 							!ITarget.IsA('KArenaWeapon')
 							&& !player.Banner);
 			bKeepDistant = !bMeleeUrge && (!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium &&
@@ -3806,7 +3841,7 @@ Actor GetNearestEnemy(optional bool bReachable)
 	if (enemy)
 		return enemy;
 
-	if (nemesis && botmo.CanSee(nemesis) && (!bReachable || botmo.CanReach(nemesis.Origin, nemesis)))
+	if (nemesis && botmo.CanSee(nemesis) && (!bReachable || CheckTo(nemesis.Origin, nemesis)))
 		return nemesis;
 
 	Actor e = GetSpecialEnemy(bReachable);
