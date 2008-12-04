@@ -47,6 +47,7 @@ enum
 	event_goal			= GameModel::event_custom,
 	event_offside,
 	event_dokickoff,
+	event_colortranslation,
 	event_returnball,
 	num_footballevents	= event_returnball - GameModel::event_custom + 1
 };
@@ -319,6 +320,11 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		EndCurrentState(state_kickoff);
 		break;
 
+	case event_colortranslation:
+		notifyACSArgs[0] = arg1;	// should be team index
+		notifyACSArgs[1] = arg2;	// should be object tag
+		break;
+
 	case event_returnball:
 		if (fbTimer)
 			fbTimer.Destroy();
@@ -369,6 +375,7 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 		Event -= GameModel::event_custom;
 		if (AcsNotifiersFootball[Event].enabled)
 		{
+			dprint("calling script = %i; %i,%i,%i", AcsNotifiersFootball[Event].script, Arg1, Arg2, Arg3);
 			Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
 					AcsNotifiersFootball[Event].script,
 					0,
@@ -427,7 +434,7 @@ bool PrepareMatch()
 
 	if (!Game.Teams[0] || !Game.Teams[1])
 	{
-		dprint("GameFootball : not enouph teams");
+		dprint("GameFootball : not enough teams");
 		return false;
 	}
 
