@@ -32,7 +32,9 @@
 
 class MenuScreenNewNetGame : MenuScreen;
 
+array<int>			MapLumpIdx;
 array<name>			MapLumpNames;
+
 // [CW] an order of game modes in list
 int					GameTypes[HexenDefs::NUMGAMES - HexenDefs::GAMEFIRSTUSED];
 
@@ -467,6 +469,7 @@ void InitMapList(int GameType)
 	// Begin parsing...
 	//
 	Level.EnumNames.Num = 0;
+	MapLumpIdx.Num = 0;
 	MapLumpNames.Num = 0;
 
 	while (!sc.AtEnd())
@@ -482,6 +485,36 @@ void InitMapList(int GameType)
 		}
 	}
 	sc.Destroy();
+
+	//
+	// Sorting alphabetically
+	//
+	int isorted, iraw;
+	string dummy;
+	string leftmost;
+	int leftmost_idx;
+
+	MapLumpNames.Num = MapLumpIdx.Num;
+	for (isorted = 0; isorted < MapLumpNames.Num; isorted++)
+	{
+		leftmost = "";
+		for (iraw = 0; iraw < MapLumpIdx.Num; iraw++)
+		{
+			if (MapLumpIdx[iraw] >= 0)
+			{
+				dummy = P_GetMapName(MapLumpIdx[iraw]);
+				if (!strlen(leftmost) || stricmp(dummy, leftmost) < 0)
+				{
+					leftmost = dummy;
+					leftmost_idx = iraw;
+				}
+			}
+		}
+
+		MapLumpNames[isorted] = P_GetMapLumpName(MapLumpIdx[leftmost_idx]);
+		Level.AddItem(P_GetMapName(MapLumpIdx[leftmost_idx]));
+		MapLumpIdx[leftmost_idx] = -1;
+	}
 
 	Level.SetInitialValue(0);
 	ChangeLevel(none, Level.Value);
@@ -515,9 +548,11 @@ void AddMapsToList(string mapLumpName, bool useAsPrefix)
 			!strcmp(testmapname, mapLumpName))
 		{
 			count++;
-			MapLumpNames.Num = MapLumpNames.Num + 1;
-			MapLumpNames[MapLumpNames.Num - 1] = P_GetMapLumpName(i);
-			Level.AddItem(P_GetMapName(i));
+			MapLumpIdx.Num = MapLumpIdx.Num + 1;
+			MapLumpIdx[MapLumpIdx.Num - 1] = i;
+			//MapLumpNames.Num = MapLumpNames.Num + 1;
+			//MapLumpNames[MapLumpNames.Num - 1] = P_GetMapLumpName(i);
+			//Level.AddItem(P_GetMapName(i));
 			
 			if (!useAsPrefix)
 				break;
