@@ -491,25 +491,59 @@ void SB_DrawMainBar()
 /*		DrawPic(38, 162, pic_kills);
 		SB_DrawNumber9(40, 176, cl.Frags, 0);
 		*/
-		SB_DrawNumber9(32, 20, cl.Frags, 0);
+		if (ClGame.deathmatch == HexenDefs::game_dm)
+		{
+			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+		}
+		SB_DrawNumber9(62, 20, cl.Frags, 0);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
-			SB_DrawNumber9(85, 20, cl.TeamFrags, 0);
+			SB_DrawNumber9(105, 20, cl.TeamFrags, 0);
+			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
-		SB_DrawNumber9(32, 20, cl.KillCount, 0);
-		SB_DrawNumber9(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		SB_DrawNumber9(62, 20, cl.KillCount, 0);
+		SB_DrawNumber9(158, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		if (ClGame.deathmatch == HexenDefs::game_sweep)
+		{
+			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+		}
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
-			SB_DrawNumber9(85, 20, cl.TeamKills, 0);
+			SB_DrawNumber9(105, 20, cl.TeamKills, 0);
+			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
 		}
 	}
 
+	if (ClGame.deathmatch == HexenDefs::game_football)
+	{
+		SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		if (cl.Team)
+		{
+			SB_DrawNumber9(62, 20, cl.Team.Goals, 0);
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_ctf)
+	{
+		SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		if (cl.Team)
+		{
+			SB_DrawNumber9(62, 20, cl.Team.FlagCaptures, 0);
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_xmas)
+	{
+		SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+		SB_DrawNumber9(92, 20, cl.Score, 0);
+	}
+	
 	if (cl.Health >= 25)
 	{
 		SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
@@ -826,19 +860,27 @@ void SB_DrawFullscreenStats()
 	SB_DrawNumber9(580, 20, 0+cl.next_level, 1);*/
 
 	// Frags
-	if (ClGame.deathmatch == HexenDefs::game_dm ||
-	    ClGame.deathmatch == HexenDefs::game_dmteam)
+	if (ClGame.deathmatch == HexenDefs::game_dm)
 	{
-/*		DrawPic(38, 162, pic_kills);
-		SB_DrawNumber9(40, 176, cl.Frags, 0);
-		*/
-		if (cl.Frags)
-			SB_DrawNumber9(32, 20, cl.Frags, 0);
-
-		if (ClGame.deathmatch == HexenDefs::game_dmteam)
+		if (cl.PlayerPosition + 1)
 		{
-			if (cl.TeamFrags)
-				SB_DrawNumber9(85, 20, cl.TeamFrags, 0);
+			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+		}
+		if(cl.Frags)
+		{
+			SB_DrawNumber9(62, 20, cl.Frags, 0);
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_dmteam)
+	{
+		if (cl.TeamFrags)
+		{
+			SB_DrawNumber9(105, 20, cl.TeamFrags, 0);
+		}
+		if (cl.TeamPosition + 1)
+		{
+			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
 		}
 	}
 
@@ -846,12 +888,87 @@ void SB_DrawFullscreenStats()
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		if (cl.KillCount)
-			SB_DrawNumber9(32, 20, cl.KillCount, 0);
-		SB_DrawNumber9(138, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		{
+			SB_DrawNumber9(62, 20, cl.KillCount, 0);
+		}
+		if (cl.Level.TotalKills - cl.Level.CurrentKills)
+		{
+			SB_DrawNumber9(148, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		}
+		if (ClGame.deathmatch == HexenDefs::game_sweep)
+		{
+			if (cl.PlayerPosition + 1)
+			{
+				SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+			}
+		}
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
 			if (cl.TeamKills)
-				SB_DrawNumber9(85, 20, cl.TeamKills, 0);
+			{
+				SB_DrawNumber9(105, 20, cl.TeamKills, 0);
+			}
+			if (cl.TeamPosition + 1)
+			{
+				SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
+			}
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_football)
+	{
+		if (cl.TeamPosition + 1)
+		{
+			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		}
+		if (cl.Team)
+		{
+			if (cl.Team.Goals)
+			{
+				SB_DrawNumber9(62, 20, cl.Team.Goals, 0);
+			}
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_ctf)
+	{
+		if (cl.TeamPosition + 1)
+		{
+			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		}
+		if (cl.Team)
+		{
+			if (cl.Team.FlagCaptures)
+			{
+				SB_DrawNumber9(62, 20, cl.Team.FlagCaptures, 0);
+			}
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_xmas)
+	{
+		if (cl.PlayerPosition + 1)
+		{
+			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+		}
+		if (cl.Score)
+		{
+			SB_DrawNumber9(92, 20, cl.Score, 0);
+		}
+	}
+
+	if (ClGame.deathmatch == HexenDefs::game_domination)
+	{
+		if (cl.TeamPosition + 1)
+		{
+			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		}
+		if (cl.Team)
+		{
+			if (cl.Team.Score)
+			{
+				SB_DrawNumber9(92, 20, cl.Team.Score, 0);
+			}
 		}
 	}
 
