@@ -34,7 +34,6 @@ class ColoredDecoration : Actor
 	abstract;
 
 bool 		TransSet;
-//////int 		TeamArg; 	// [FB] An argument to use for detecting team 0 or 1
 PlayerTeam	Team;		// Which team this Decoration belongs to
 						// (theoretically can be changed during game for
 						// some weird gameplay effect... (: )
@@ -50,7 +49,7 @@ bool Activate(EntityEx Activator)
 {
 	SetState(FindState('Active'));
 	bDynamicLight = true;
-	DLightRadius = Args[/* 0*/ 1] ? itof(Args[/* 0*/ 1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
+	DLightRadius = Args[1] ? itof(Args[1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
 
 	return true;
 }
@@ -80,21 +79,24 @@ bool Deactivate(EntityEx Activator)
 
 void SetTranslation()
 {
-	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
-
 	if (!Team)
 		return;
 
-	if (CTF && CTF.IsInPlayableState())
+	GameModel GM = MainGameInfo(Level.Game).GameModel;
+
+	if (GM && GM.IsInPlayableState())
 	{
-		// [CW] Huh, another change
-		/* //
-		// [CW] I am changing how it works; moved actual translation setting to
-		//		LevelInfo class, mainly because not only Banner, but Colored Decor
-		//		uses this as well.
-		//
-		//HexenLevelInfo(Level).SetTeamTranslation(Team.Index, TID);*/
-		CTF.HandleEvent(GameCTF::event_colortranslation, none, Team.Index, TID, 0, 0);
+		GM.HandleEvent(GameModel::event_colourtranslation, none, Team.Index, TID, 0, 0);
+
+		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		Activate(none);
+		TransSet = true;
+	}
+
+
+	/*if (CTF && CTF.IsInPlayableState())
+	{
+		CTF.HandleEvent(GameCTF::event_colourtranslation, none, Team.Index, TID, 0, 0);
 
 		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
 		Activate(none);
@@ -104,12 +106,12 @@ void SetTranslation()
 
 	if (FB && FB.IsInPlayableState())
 	{
-		FB.HandleEvent(GameFootball::event_colortranslation, none, Team.Index, TID, 0, 0);
+		FB.HandleEvent(GameFootball::event_colourtranslation, none, Team.Index, TID, 0, 0);
 
 		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
 		Activate(none);
 		TransSet = true;
-	}
+	}*/
 }
 
 //==========================================================================

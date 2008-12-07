@@ -312,22 +312,17 @@ bool Physics(float DeltaTime)
 
 void SetTranslation()
 {
-	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
-
 	if (!Team)
 		return;
 
+	GameCTF CTF = GameCTF(MainGameInfo(Level.Game).GameModel);
+
 	if (CTF && CTF.IsInPlayableState())
 	{
-		// [CW] Huh, another change
-		/* //
-		// [CW] I am changing how it works; moved actual translation setting to
-		//		LevelInfo class, mainly because not only Banner, but Colored Decor
-		//		uses this as well.
-		//
-		//HexenLevelInfo(Level).SetTeamTranslation(Team.Index, TID);*/
-		CTF.HandleEvent(GameCTF::event_colortranslation, none, Team.Index, TID, 0, 0);
-		
+		CTF.HandleEvent(GameModel::event_colourtranslation, none, Team.Index, TID, 0, 0);
+		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		DLightRadius = 128.0;
+		bDynamicLight = true;
 		TransSet = true;
 	}
 }
