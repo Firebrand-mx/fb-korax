@@ -47,7 +47,7 @@ enum
 	event_goal			= GameModel::event_custom,
 	event_offside,
 	event_dokickoff,
-	event_colortranslation,
+	// event_colortranslation,
 	event_returnball,
 	num_footballevents	= event_returnball - GameModel::event_custom + 1
 };
@@ -114,6 +114,7 @@ void BeginState(int newstate)
 		
 		dprint("GameFootball::BeginState : starting match");
 		Game.bcentreprint("Let the game begin!");
+		Game.BroadcastLocalSoundNamed((P_Random() > 127 ? (P_Random() > 127 ? 'Football_GameBegin1' : 'Football_GameBegin2') : 'Football_GameBegin3'), false, 0.0);
 		
 		HandleEvent(event_playablestatebegins, none, 0,0,0,0);
 		
@@ -169,8 +170,8 @@ void BeginState(int newstate)
 			}
 		}
 		Game.bcentreprint("kick off!");
-		Game.BroadcastLocalSoundNamed('Football_Whistle', false, 0.25);
 		Game.BroadcastLocalSoundNamed('Football_KickOff', false, 0.0);
+		Game.BroadcastLocalSoundNamed('Football_Whistle', true, 0.5);
 
 		EndCurrentState(state_freeplay);
 		return;
@@ -289,23 +290,31 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 			if (Ball.Owner && Game.Teams[team_index] == Ball.Owner.Team)
 			{
 				// 'self-goal'
+				Game.bcentreprint(va("OOOPS! %s Team kicked a ball into their own gates!", Game.Teams[team_index].Name));
+				Game.BroadcastLocalSoundNamed('Football_FoolsGoal', false, 0.0);
+				Game.BroadcastLocalSoundNamed('Football_Whistle', false, 0.0);
+
+				// [CW] Score update should take place after announcements, because it may change order of Teams
+				//		and team_index/opponent_index values will become obsolete
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbSelfGoal);
 				// opponent team is getting aware of this happening
 				// (in case a special score should be provided for it)
 				Game.Teams[opponent_index].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
-				Game.bcentreprint(va("OOOPS! Team %d kicked a ball into their own gates!", arg1));
-				Game.BroadcastLocalSoundNamed('Football_FoolsGoal', false, 0.0);
 				
 				notifyACSArgs[1] = arg1;
 			}
 			else if (Ball.Owner)
 			{
 				// normal goal
+				Game.bcentreprint(va("%s Team scores a goal!", Game.Teams[opponent_index].Name));
+				Game.BroadcastLocalSoundNamed((P_Random() > 127 ? (P_Random() > 127 ? 'Football_Goal1' : 'Football_Goal2') : 'Football_Goal3'), false, 0.0);
+				Game.BroadcastLocalSoundNamed('Football_Whistle', false, 0.0);
+
+				// [CW] Score update should take place after announcements, because it may change order of Teams
+				//		and team_index/opponent_index values will become obsolete
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbGoal);
-				Game.bcentreprint(va("Team %d scores a goal!", arg1 ? 0 : 1));
-				Game.BroadcastLocalSoundNamed('Football_Goal', false, 0.0);
+
 				notifyACSArgs[1] = arg1 ? 0 : 1;
-				Game.BroadcastLocalSoundNamed((P_Random() > 127 ? (P_Random() > 127 ? 'Football_Goal1' : 'Football_Goal2') : 'Football_Goal3'), false, 2.0);
 			}
 			else
 			{
@@ -331,7 +340,8 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		if (!fbTimer)
 		{
 			Game.bcentreprint("Offside!");
-			Game.BroadcastLocalSoundNamed('Football_Offside', false, 0.0);
+			Game.BroadcastLocalSoundNamed('Football_Whistle', false, 0.0);
+			Game.BroadcastLocalSoundNamed('Football_Offside', true, 0.5);
 			
 			fbTimer = Level.Spawn(GameSequencer);
 			if (fbTimer)
@@ -350,11 +360,11 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		EndCurrentState(state_kickoff);
 		break;
 
-	case event_colortranslation:
+/*	case event_colortranslation:
 		notifyACSArgs[0] = arg1;	// should be team index
 		notifyACSArgs[1] = arg2;	// should be object tag
 		break;
-
+*/
 	case event_returnball:
 		if (fbTimer)
 		{
