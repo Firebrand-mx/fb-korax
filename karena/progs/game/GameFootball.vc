@@ -97,7 +97,9 @@ void BeginState(int newstate)
 	dprint("GameFootball::BeginState : %i", newstate);
 
 	if (fbTimer)
+	{
 		fbTimer.Destroy();
+	}
 
 	switch(newstate)
 	{
@@ -118,14 +120,22 @@ void BeginState(int newstate)
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (Game.Teams[0] && Game.Teams[0].Players[i])
-			   Game.Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			{
+				Game.Teams[0].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			}
 			if (Game.Teams[1] && Game.Teams[1].Players[i])
-			   Game.Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			{
+				Game.Teams[1].Players[i].UpdateScore(HexenDefs::scoreevent_PlayerReset);
+			}
 		}
 		if (Game.Teams[0])
+		{
 			Game.Teams[0].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		}
 		if (Game.Teams[1])
+		{
 			Game.Teams[1].UpdateScore(HexenDefs::scoreevent_TeamReset);
+		}
 		EndCurrentState(state_waitkickoff);
 		return;
 		
@@ -150,14 +160,18 @@ void BeginState(int newstate)
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (Game.Teams[0].Players[i] && spot_players[Game.Teams[0].T2].ms[i])
-			   EntityEx(Game.Teams[0].Players[i].MO).Teleport(spot_players[Game.Teams[0].T2].ms[i].Origin, spot_players[Game.Teams[0].T2].ms[i].Angles.yaw, true, true, false);
+			{
+				EntityEx(Game.Teams[0].Players[i].MO).Teleport(spot_players[Game.Teams[0].T2].ms[i].Origin, spot_players[Game.Teams[0].T2].ms[i].Angles.yaw, true, true, false);
+			}
 			if (Game.Teams[1].Players[i] && spot_players[Game.Teams[1].T2].ms[i])
-			   EntityEx(Game.Teams[1].Players[i].MO).Teleport(spot_players[Game.Teams[1].T2].ms[i].Origin, spot_players[Game.Teams[1].T2].ms[i].Angles.yaw, true, true, false);
+			{
+				EntityEx(Game.Teams[1].Players[i].MO).Teleport(spot_players[Game.Teams[1].T2].ms[i].Origin, spot_players[Game.Teams[1].T2].ms[i].Angles.yaw, true, true, false);
+			}
 		}
-		
 		Game.bcentreprint("kick off!");
+		Game.BroadcastLocalSoundNamed('Football_Whistle', false, 0.25);
 		Game.BroadcastLocalSoundNamed('Football_KickOff', false, 0.0);
-		
+
 		EndCurrentState(state_freeplay);
 		return;
 	case state_freeplay:
@@ -219,9 +233,13 @@ void EndCurrentState(int nextstate)
 void NotifyUpdateTeams()
 {
 	if (!IsInPlayableState() && (Game.Teams[0] && Game.Teams[1]))
+	{
 		BeginState(state_preparematch);
+	}
 	else if (IsInPlayableState() && (!Game.Teams[0] || !Game.Teams[1]))
+	{
 		EndCurrentState(state_finished);
+	}
 }
 
 //==========================================================================
@@ -242,15 +260,19 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 	{
 	case event_goal:
 		if (State != state_freeplay)
+		{
 			return;
+		}
 
 		if (!A || A != Ball)
+		{
 			return;
-			
-		// arg1 is a team, in which gates a ball was thrown
+		}
+
+		// arg1 is the team, in which gates the ball was thrown
 		if (arg1 == PlayerTeam::TEAM2_INDEX_BLUE || arg1 == PlayerTeam::TEAM2_INDEX_RED)
 		{
-			// [CW] Please notice, following works OK only if we have 2 teams in game
+			// [CW] Please notice that the following works OK only if we have 2 teams in the game
 			int team_index, opponent_index;
 			if (Game.Teams[0] && Game.Teams[0].T2 == arg1)
 			{
@@ -268,8 +290,8 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 			{
 				// 'self-goal'
 				Ball.Owner.UpdateScore(HexenDefs::scoreevent_FtbSelfGoal);
-				// opponent team is getting aware of happening
-				// (in case special score should be provided for it)
+				// opponent team is getting aware of this happening
+				// (in case a special score should be provided for it)
 				Game.Teams[opponent_index].UpdateScore(HexenDefs::scoreevent_FtbOpSelfGoal);
 				Game.bcentreprint(va("OOOPS! Team %d kicked a ball into their own gates!", arg1));
 				Game.BroadcastLocalSoundNamed('Football_FoolsGoal', false, 0.0);
@@ -283,11 +305,13 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 				Game.bcentreprint(va("Team %d scores a goal!", arg1 ? 0 : 1));
 				Game.BroadcastLocalSoundNamed('Football_Goal', false, 0.0);
 				notifyACSArgs[1] = arg1 ? 0 : 1;
+				Game.BroadcastLocalSoundNamed((P_Random() > 127 ? (P_Random() > 127 ? 'Football_Goal1' : 'Football_Goal2') : 'Football_Goal3'), false, 2.0);
 			}
 			else
+			{
 				notifyACSArgs[1] = -1;
+			}
 		}
-		
 		notifyACSArgs[0] = arg1;
 		
 		EndCurrentState(state_waitkickoff);
@@ -295,10 +319,14 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 
 	case event_offside:
 		if (State != state_freeplay)
+		{
 			return;
+		}
 
 		if (!A || A != Ball)
+		{
 			return;
+		}
 
 		if (!fbTimer)
 		{
@@ -316,7 +344,9 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		
 	case event_dokickoff:
 		if (fbTimer)
+		{
 			fbTimer.Destroy();
+		}
 		EndCurrentState(state_kickoff);
 		break;
 
@@ -327,7 +357,9 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 
 	case event_returnball:
 		if (fbTimer)
+		{
 			fbTimer.Destroy();
+		}
 		Ball.Teleport(spot_ball.Origin, spot_ball.Angles.yaw, true, true, false);
 		break;
 		
@@ -376,13 +408,13 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 		if (AcsNotifiersFootball[Event].enabled)
 		{
 			dprint("calling script = %i; %i,%i,%i", AcsNotifiersFootball[Event].script, Arg1, Arg2, Arg3);
-			Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
-					AcsNotifiersFootball[Event].script,
-					0,
-					Arg1,
-					Arg2,
-					Arg3,
-					NULL, 0, none);
+				   Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
+				   AcsNotifiersFootball[Event].script,
+				   0,
+				   Arg1,
+				   Arg2,
+				   Arg3,
+				   NULL, 0, none);
 		}
 	}
 	else
@@ -400,14 +432,18 @@ void Cleanup()
 	if (bBallCreated)
 	{
 		if (Ball)
+		{
 			Ball.Destroy();
+		}
 		bBallCreated = false;
 	}
 	Ball = none;
 	if (bSpotBallCreated)
 	{
 		if (spot_ball)
+		{
 			spot_ball.Destroy();
+		}
 		bSpotBallCreated = false;
 	}
 	spot_ball = none;
@@ -455,10 +491,14 @@ bool PrepareMatch()
 	foreach Level.AllThinkers(KickOffSpot, kos)
 	{
 		if (kos.Args[0] >= 0 && kos.Args[0] < AllowedTeams() && kos.Args[1] >= 0 && kos.Args[1] < MAXPLAYERS)
+		{
 			spot_players[kos.Args[0]].ms[kos.Args[1]] = kos;
+		}
 		else
+		{
 			dprint("GameFootball::PrepareMatch : bad argument(s) for kick off spot at %f,%f,%f",
 				kos.Origin.x, kos.Origin.y, kos.Origin.z);
+		}
 	}
 
 	foreach Level.AllThinkers(SoccerTargetSpot, sts)
@@ -469,8 +509,10 @@ bool PrepareMatch()
 			spot_targets[spot_targets.Num - 1] = sts;
 		}
 		else
+		{
 			dprint("GameFootball::PrepareMatch : bad argument(s) for target spot at %f,%f,%f",
 				sts.Origin.x, sts.Origin.y, sts.Origin.z);
+		}
 	}
 
 	if (!Ball)
@@ -479,7 +521,9 @@ bool PrepareMatch()
 		{
 			Ball = HexenLevelInfo(Level).Spawn(SoccerBall, spot_ball.Origin);
 			if (Ball)
+			{
 				bBallCreated = true;
+			}
 			else
 			{
 				dprint("GameFootball::PrepareMatch : failed to spawn ball at spot_ball");
@@ -497,7 +541,9 @@ bool PrepareMatch()
 	{
 		spot_ball = HexenLevelInfo(Level).Spawn(SoccerBallSpot, Ball.Origin);
 		if (spot_ball)
+		{
 			bSpotBallCreated = true;
+		}
 		else
 		{
 			dprint("GameFootball::PrepareMatch : failed to spawn spot_ball at initial ball position; ball will be unable to set position on kickoff");
