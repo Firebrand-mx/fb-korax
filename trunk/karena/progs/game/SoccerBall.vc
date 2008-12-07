@@ -100,6 +100,7 @@ void DoKick(Player Kicker)
 
 	Thrust(an, velpower + strpower * cos(van) * STRENGTHPOWER_HORIZONTAL_FACTOR);
 	Velocity.z += strpower * sin(van) * 35.0 * STRENGTHPOWER_VERTICAL_FACTOR;
+	PlaySound('FootballKick', CHAN_VOICE);
 
 	nokick_timer = MINFRAMES_NOKICK;
 	Kicker.use_power = 0;
@@ -193,7 +194,8 @@ void Tick(float deltaTime)
 		SetState(FindState('Roll'));
 		Rolling = true;
 	}
-	else
+	else if(!Velocity.x && !Velocity.y && !Velocity.z &&
+			Rolling)
 	{
 		SetState(FindState('Spawn'));
 		Rolling = false;
@@ -217,8 +219,10 @@ defaultproperties
 {
 	Health = 1000;
 	Radius = 20.0;
-	Height = 48.0;
+	Height = 28.0;
 	Mass = 40.0;
+	ScaleX = 0.6;
+	ScaleY = 0.6;
 
 	bSolid = true;
 	bShootable = true;
