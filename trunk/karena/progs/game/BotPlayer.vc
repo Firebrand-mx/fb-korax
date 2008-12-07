@@ -706,8 +706,8 @@ void CheckStuff()
 			!EntityEx(botmo).CanSee(enemy) ||
 			// Special cases
 			enemy.IsA('ZXmasHavocTree') &&
-				(KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire' ||
-					!player.ReadyWeapon.CheckAmmo(Weapon::FIRE_Either, false)))
+			(KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire' ||
+			!player.ReadyWeapon.CheckAmmo(Weapon::FIRE_Either, false)))
 		{
 			enemy = none;
 			t_dodge = 0.0;
@@ -828,7 +828,9 @@ int SkillLower(int skill, int num)
 void SetAngle(float an)
 {
 	if (t_turn)
+	{
 		return;
+	}
 
 	angle = AngleMod360(an);
 //	angle = an;
@@ -896,9 +898,9 @@ void AimProjectile(float dist, bool right, float an)
 			{
 				SetAngle(AngleTo(vector(px, py, enemy.Origin.z)));
 /*				SetAngle(R_PointToAngle2(MO->x,
-							      MO->y,
-							      enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
-							      enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));*/	
+					     MO->y,
+					     enemy->x + FixedMul (enemy->momx, (m*2*FRACUNIT)),
+					     enemy->y + FixedMul (enemy->momy, (m*2*FRACUNIT))));*/	
 			}
 			else
 			{
@@ -1415,7 +1417,7 @@ void PrepareWeapon()
 	if (player.ReadyWeapon.bWimpyWeapon ||
 		// Special cases
 		(enemy && enemy.IsA('ZXmasHavocTree') &&
-			KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire')
+		 KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire')
 		)
 	{
 		Weapon Best = ChooseWeapon(dist);
@@ -1694,7 +1696,7 @@ Actor SetAlly()
 				int teamfactor;
 
 				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
-						Actor(player.Level.Game.Players[i].MO));
+							 Actor(player.Level.Game.Players[i].MO));
 				// [FB] We've got a team factor, just check if it's an ally or not
 				if (teamfactor != GameModel::teamfactor_any &&
 					teamfactor != GameModel::teamfactor_enemy)
@@ -1887,27 +1889,31 @@ void Move(float deltaTime)
 		float distto = botmo.DistTo(missile);
 
 		if (missile.bSeekerMissile)
+		{
 			DoEvade = true;
+		}
 		// Check if the missile crosses our planned movement line in flight
 		else if (LinesCross(botmo.Origin.x, botmo.Origin.y, dest.x, dest.y,
-						missile.Origin.x, missile.Origin.y, missile_progression.x, missile_progression.y,
-						&crosspt))
+				 missile.Origin.x, missile.Origin.y, missile_progression.x, missile_progression.y,
+				 &crosspt))
 		{
-			// Rouphly calculate expected bot Z when at crosspt
-			float rouph_time = FMax(crosspt.x - botmo.Origin.x, crosspt.y - botmo.Origin.y) / FMax(FORWARDRUN, SIDERUN);
+			// Roughly calculate expected bot Z when at crosspt
+			float rough_time = FMax(crosspt.x - botmo.Origin.x, crosspt.y - botmo.Origin.y) / FMax(FORWARDRUN, SIDERUN);
 			if ((dest.x - botmo.Origin.x != 0.0) && (dest.y - botmo.Origin.y != 0.0))
 			{
 				crosspt.z = (botmo.Origin.z + (fabs(crosspt.x - botmo.Origin.x) * (dest.z - botmo.Origin.z) / fabs(dest.x - botmo.Origin.x))
-								+
-							botmo.Origin.z + (fabs(crosspt.y - botmo.Origin.y) * (dest.z - botmo.Origin.z) / fabs(dest.y - botmo.Origin.y))
-								) / 2.0;
+							 +
+							 botmo.Origin.z + (fabs(crosspt.y - botmo.Origin.y) * (dest.z - botmo.Origin.z) / fabs(dest.y - botmo.Origin.y))
+							) / 2.0;
 			}
 			else
+			{
 				crosspt.z = dest.z;
+			}
 
-			TVec missile_at_rough_time = missile.Origin + missile.Velocity * rouph_time;
+			TVec missile_at_rough_time = missile.Origin + missile.Velocity * rough_time;
 			
-			// Check rouphly if missile will be dangerously close when bot is at crosspt
+			// Check roughly if missile will be dangerously close when bot is at crosspt
 			if (Length(crosspt - missile_at_rough_time) <= 128.0)
 			{
 				DoEvade = true;
@@ -1936,7 +1942,7 @@ void Move(float deltaTime)
 	}
 
 	t_strafe -= deltaTime;
-	/*if (t_strafe <= 0.0)
+	/* if (t_strafe <= 0.0)
 	{
 		sidemove = -sidemove;
 		t_strafe = 2.0;
@@ -1949,7 +1955,7 @@ void Move(float deltaTime)
 		bool DoEvade = false;
 
 		//
-		// Anticipation time depend on skill
+		// Anticipation time depends on skill
 		switch (info.anticip)
 		{
 		case bsk_verypoor:
@@ -2439,15 +2445,19 @@ void Turn()
 #endif
 
 	if (distance > 180.0)
+	{
 		distance -= 360.0;
+	}
 	else if (distance < -180.0)
+	{
 		distance += 360.0;
+	}
 
 #ifdef DEBUG_BOT_AI_TURN
 	dprint("final d = %f", distance);
 #endif
 
-	/*if (!enemy)
+/*	if (!enemy)
 	{
 		player.ViewAngles.yaw = GetAngle();
 		return;
@@ -2668,13 +2678,6 @@ void OnBeginPlay()
 void OnSpawn()
 {
 	botstate.BState = bst_decide;
-	// [CW] these all are initially 0 (none/false) so no need in this init
-	/*enemy = none;
-	accuracy_r = false;
-	intelect_r = false;
-	evade_r = false;
-	anticip_r = false;
-	p_init = false;*/
 }
 
 //==========================================================================
@@ -3003,7 +3006,9 @@ void UpdateTimedEffects(float deltaTime)
 
 	t_hitme -= deltaTime;
 	if (t_hitme < 0.0)
+	{
 		t_hitme = 0.0;
+	}
 
 	t_pissed -= deltaTime;
 	if (t_pissed <= 0.0)
@@ -3229,7 +3234,9 @@ void ProcessPriorities()
 	}
 
 	if (Priority[priort_Weapons])
+	{
 		Priority[priort_Weapons] += priorv_Weapons_LooserBonus * looser;
+	}
 
 	//----------------------------------------
 	// Ammo
@@ -3245,7 +3252,9 @@ void ProcessPriorities()
 		Priority[priort_Ammo] += priorv_Ammo_ThisWeaponLow;
 		Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 		if (enemy)
+		{
 			Priority[priort_Ammo] += (priorv_Ammo_UnderFireBonus << 1);
+		}
 	}
 	else
 	{
@@ -3255,7 +3264,9 @@ void ProcessPriorities()
 			Priority[priort_Ammo] += priorv_Ammo_ThisWeaponLow;
 			Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 			if (enemy)
+			{
 				Priority[priort_Ammo] += priorv_Ammo_UnderFireBonus;
+			}
 		}
 		else if (player.IsAmmoBelowLevel(50, class<KArenaWeapon>(player.ReadyWeapon.Class)) ||
 				 player.ReadyWeapon.CheckAmmo(player.ReadyWeapon.FireMode, false, true))
@@ -3263,7 +3274,9 @@ void ProcessPriorities()
 			Priority[priort_Ammo] += priorv_Ammo_ThisWeaponLow;
 			Priority[priort_Ammo] += priorv_Ammo_NotMaximum;
 			if (enemy)
+			{
 				Priority[priort_Ammo] += priorv_Ammo_UnderFireBonus;
+			}
 		}
 		else
 		{
@@ -3277,7 +3290,9 @@ void ProcessPriorities()
 	}
 
 	if (Priority[priort_Ammo])
+	{
 		Priority[priort_Ammo] += priorv_Ammo_LooserBonus * looser;
+	}
 
 	//----------------------------------------
 	// AlternativeAmmo
@@ -3289,7 +3304,9 @@ void ProcessPriorities()
 		Priority[priort_AltAmmo] += priorv_AltAmmo_Low;
 		Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
 		if (enemy)
+		{
 			Priority[priort_AltAmmo] += priorv_AltAmmo_UnderFireBonus << 1;
+		}
 	}
 	else
 	{
@@ -3298,19 +3315,25 @@ void ProcessPriorities()
 			Priority[priort_AltAmmo] += priorv_AltAmmo_Low;
 			Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
 			if (enemy)
+			{
 				Priority[priort_AltAmmo] += priorv_AltAmmo_UnderFireBonus;
+			}
 		}
 		else if (player.IsAmmoBelowLevel(200, none, ArtifactFlechette) ||
 				player.IsAmmoBelowLevel(200, none, ArtifactBlastRadius))
 		{			
 			Priority[priort_AltAmmo] += priorv_AltAmmo_NotMaximum;
 			if (enemy)
+			{
 				Priority[priort_AltAmmo] += priorv_AltAmmo_UnderFireBonus;
+			}
 		}
 	}
 
 	if (Priority[priort_AltAmmo])
+	{
 		Priority[priort_AltAmmo] += priorv_AltAmmo_LooserBonus * looser;
+	}
 	
 	//----------------------------------------
 	// Health & Armor
@@ -3321,14 +3344,18 @@ void ProcessPriorities()
 		Priority[priort_Health] += priorv_Health_Dying;
 		Priority[priort_Armor] += priorv_Armor_LowHealthBonus << 1;
 		if (enemy)
+		{
 			Priority[priort_Health] += priorv_Health_UnderFireBonus << 1;
+		}
 	}
 	if (EntityEx(player.MO).CheckInventory('health') <= (player.max_health >> 1))
 	{
 		Priority[priort_Health] += priorv_Health_Low;
 		Priority[priort_Armor] += priorv_Armor_LowHealthBonus;
 		if (enemy)
+		{
 			Priority[priort_Health] += priorv_Health_UnderFireBonus;
+		}
 	}
 	if (EntityEx(player.MO).CheckInventory('health') < player.max_health)
 	{
@@ -3336,19 +3363,25 @@ void ProcessPriorities()
 	}
 
 	if (Priority[priort_Health])
+	{
 		Priority[priort_Health] += priorv_Health_LooserBonus * looser;
+	}
 	
 	if (EntityEx(player.MO).CheckInventory('armor') == 0)
 	{
 		Priority[priort_Armor] += priorv_Armor_None;
 		if (enemy)
+		{
 			Priority[priort_Armor] += priorv_Armor_UnderFireBonus << 1;
+		}
 	}
 	else if (EntityEx(player.MO).CheckInventory('armor') <= 50)
 	{
 		Priority[priort_Armor] += priorv_Armor_Low;
 		if (enemy)
+		{
 			Priority[priort_Armor] += priorv_Armor_UnderFireBonus;
+		}
 	}
 	else if (EntityEx(player.MO).CheckInventory('armor') <= 100)
 	{
@@ -3360,7 +3393,9 @@ void ProcessPriorities()
 	}
 
 	if (Priority[priort_Armor])
+	{
 		Priority[priort_Armor] += priorv_Armor_LooserBonus * looser;
+	}
 
 	//----------------------------------------
 	// Artifacts
@@ -3391,19 +3426,25 @@ void ProcessPriorities()
 	{
 		Priority[priort_Enemy] += priorv_Enemy_Frustrated;
 		if (t_hitme > 0.0)
+		{
 			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus << 2;	// AWOOOOO!!!
+		}
 	}
 	else if (t_pissed > 0.0)
 	{
 		Priority[priort_Enemy] += priorv_Enemy_Pissed;
 		if (t_hitme > 0.0)
+		{
 			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus << 1;
+		}
 	}
 	else
 	{
 		Priority[priort_Enemy] += priorv_Enemy_Normal;
 		if (t_hitme > 0.0)
+		{
 			Priority[priort_Enemy] += priorv_Enemy_HitMeBonus;
+		}
 	}
 
 	//----------------------------------------
@@ -3416,27 +3457,27 @@ void ProcessPriorities()
 		{
 			Priority[priort_Nemesis] += priorv_Nemesis_Frustrated;
 			if (t_hitme > 0.0)
+			{
 				Priority[priort_Nemesis] += priorv_Enemy_HitMeBonus << 2;	// AWOOOOO!!! BARK!! BARK!!
+			}
 		}
 		else	// 'just' pissed off
 		{
 			Priority[priort_Nemesis] += priorv_Nemesis_Pissed;
 			if (t_hitme > 0.0)
+			{
 				Priority[priort_Nemesis] += priorv_Enemy_HitMeBonus << 1;
+			}
 		}
 	}
-
-
 
 	//
 	//
 	// [CW] Sort priorities
 	//
-
 	int prior_max;
 	int excluded[NUM_PRIORITIES];
 	bool is_excluded;
-
 
 	for (i = 0; i < NUM_PRIORITIES; i++)
 	{
@@ -3454,7 +3495,9 @@ void ProcessPriorities()
 			for (k = 0; k < NUM_PRIORITIES; k++)
 			{
 				if (excluded[k] < 0)
+				{
 					break;
+				}
 				if (excluded[k] == j)
 				{
 					is_excluded = true;
@@ -3505,7 +3548,6 @@ void ProcessPriorities()
 	}
 	print("--------------------------");
 #endif
-
 
 	ITarget = none;
 }
@@ -3565,24 +3607,28 @@ Actor GetFirstPriorityTarget()
 	}
 
 	if (nemesis)
+	{
 		candidates[priort_Nemesis] = (CheckTo(nemesis.Origin, nemesis) ? nemesis : none);
+	}
 	if (!candidates[priort_Nemesis] && enemy && enemy != nemesis)
 	{
-#ifdef DEBUG_BOT_AI_TARGET
-		dprint("check priort_enemy");
-#endif
+		#ifdef DEBUG_BOT_AI_TARGET
+			dprint("check priort_enemy");
+		#endif
 		candidates[priort_Enemy] = (CheckTo(enemy.Origin, enemy) ? enemy : none);
 	}
-#ifdef DEBUG_BOT_AI_TARGET
-	dprint("enemy = %i, nemesis = %i", enemy, nemesis);
-	dprint("candidates[priort_Enemy] = %i", candidates[priort_Enemy]);
-#endif
+	#ifdef DEBUG_BOT_AI_TARGET
+		dprint("enemy = %i, nemesis = %i", enemy, nemesis);
+		dprint("candidates[priort_Enemy] = %i", candidates[priort_Enemy]);
+	#endif
+
 	if (ally)
+	{
 		candidates[priort_Support] = (CheckTo(ally.Origin, ally) ? ally : none);
-
+	}
 	candidates[priort_Objective] = GetGameObjective(true);
-
 	candidates[priort_Wander] = GetGamePathNode(true);
+
 	if (!candidates[priort_Wander])
 	{
 		#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
@@ -3592,16 +3638,16 @@ Actor GetFirstPriorityTarget()
 		if (candidates[priort_Nemesis])
 		{
 			candidates[priort_Wander] = candidates[priort_Nemesis];
-		#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
-			print("set to nemesis, %i", candidates[priort_Wander]);
-		#endif
+			#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
+				print("set to nemesis, %i", candidates[priort_Wander]);
+			#endif
 		}
 		else if (candidates[priort_Enemy])
 		{
 			candidates[priort_Wander] = candidates[priort_Enemy];
-		#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
-			print("set to enemy, %i", candidates[priort_Wander]);
-		#endif
+			#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
+				print("set to enemy, %i", candidates[priort_Wander]);
+			#endif
 		}
 		else if (candidates[priort_Support] &&
 			/* Prevent bot allies stuck in each other */
@@ -3609,16 +3655,16 @@ Actor GetFirstPriorityTarget()
 			Player(candidates[priort_Support].Player).Bot.ITarget == botmo))
 		{
 			candidates[priort_Wander] = candidates[priort_Support];
-		#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
-			print("set to ally, %i", candidates[priort_Wander]);
-		#endif
+			#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
+				print("set to ally, %i", candidates[priort_Wander]);
+			#endif
 		}
 		else
 		{
 			candidates[priort_Wander] = GetNearestPathNode(class<Thinker>(PathNode), true);
-		#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
-			print("set to path node, %i", candidates[priort_Wander]);
-		#endif
+			#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
+				print("set to path node, %i", candidates[priort_Wander]);
+			#endif
 		}
 	}
 
@@ -3658,14 +3704,20 @@ Actor GetFirstPriorityTarget()
 			// Common case
 			//
 			else
+			{
 				priort = priort_Weapons;
+			}
 		}
 		else if (ee.IsA('Ammo'))
 		{
 			if (ee.Class == ArtifactFlechette || ee.Class == ArtifactBlastRadius)
+			{
 				priort = priort_AltAmmo;
+			}
 			else
+			{
 				priort = priort_Ammo;
+			}
 		}
 		else if (ee.IsA('Health'))
 		{
@@ -3704,9 +3756,9 @@ Actor GetFirstPriorityTarget()
 	{
 		if (!Priority[Prior_Targets[i]])
 		{
-#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
-			print("top priority is 0, nothing to do :(");
-#endif
+			#ifdef DEBUG_BOT_AI_TARGET_EXCEPTIONS
+				print("top priority is 0, nothing to do :(");
+			#endif
 			break;
 		}
 		if (candidates[Prior_Targets[i]])
@@ -3743,7 +3795,9 @@ void ProcessImmediate()
 		enemy = GetNearestEnemy(false);
 	}
 	else if (nemesis && botmo.CanSee(nemesis))
+	{
 		enemy = nemesis;	// [CW] switch to hated enemy
+	}
 
 	// [CW] Bot should always know where to go; this can be a pickup,
 	//	    a specific map object or simply a path node.
@@ -3768,30 +3822,14 @@ void ProcessImmediate()
 			if (!ITarget.IsA('PathNode') && !ITarget.IsA('Inventory'))
 				nodes.Num = 0;
 		}
-
-		// [CW] Nearest node was being searched in GetFirstPriorityTarget
-		/*// If Bot cannot find any reachable priority target at the moment,
-		// he/she should try to get a reachable Path Node.
-		else
-		{
-			ITarget = GetNearestPathNode(class<Thinker>(PathNode), true);
-		}*/
-
-		// [CW] No need to do this here anymore
-		/*// [CW] In the very least case try to use 'enemy' as a "go for" target
-		// (in fact, this is most unlikely to happen HERE, anyway)
-		if (!ITarget && enemy && CheckTo(enemy.Origin, enemy))
-		{
-			ITarget = enemy;
-		}*/
 	}
 
-#ifdef DEBUG_BOT_AI_TARGET
-	if (ITarget)
-	{
-		print("BOT %s : my target is %n / %i", player.PlayerName, GetClassName(ITarget.Class), nodes.Num);
-	}
-#endif
+	#ifdef DEBUG_BOT_AI_TARGET
+		if (ITarget)
+		{
+			print("BOT %s : my target is %n / %i", player.PlayerName, GetClassName(ITarget.Class), nodes.Num);
+		}
+	#endif
 	bSoftContact = false;
 	bCanReachNoCare = false;
 	bMeleeUrge = false;
@@ -3812,18 +3850,20 @@ void ProcessImmediate()
 		// whether to approach or keep distance
 		if (enemy.IsA('ZXmasHavocTree') && (KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium ||
 						player.ReadyWeapon.bBotProjectile))
+		{
 			bKeepDistant = true;
+		}
 		else
 		{
 			bMeleeUrge = (!KArenaWeapon(player.ReadyWeapon).bBotProjectile &&
-							!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium) &&
-						(!ITarget ||
+						  !KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium) &&
+						  (!ITarget ||
 							enemy.Player &&
 						 (((KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
 							KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectile) &&
 							(ITarget == enemy || botmo.DistTo(enemy) < 512.0))) &&
 							!ITarget.IsA('KArenaWeapon')
-							&& !player.Banner);
+						   && !player.Banner);
 			bKeepDistant = !bMeleeUrge && (!KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium &&
 							!KArenaWeapon(player.ReadyWeapon).bBotProjectile);
 		}
@@ -3839,10 +3879,14 @@ void ProcessImmediate()
 Actor GetNearestEnemy(optional bool bReachable)
 {
 	if (enemy)
+	{
 		return enemy;
+	}
 
 	if (nemesis && botmo.CanSee(nemesis) && (!bReachable || CheckTo(nemesis.Origin, nemesis)))
+	{
 		return nemesis;
+	}
 
 	Actor e = GetSpecialEnemy(bReachable);
 	if (!e)
@@ -3876,7 +3920,6 @@ Actor GetSpecialEnemy(optional bool bReachable)
 		vangle = ENEMY_SCAN_FOV;
 	}
 	bAllRound = false;
-
 
 	switch (gameInfo.GameType)
 	{
@@ -3955,7 +3998,9 @@ Actor GetSpecialEnemy(optional bool bReachable)
 				}
 
 				if (!bReachable || CheckTo(actor.Origin, actor))
+				{
 					return actor;
+				}
 			}
 		}
 	}
@@ -4053,62 +4098,6 @@ Actor GetGameObjective(optional bool bReachable)
 					}
 				}
 			}
-
-			// [CW] Done elsewhere now
-			/*// [CW] If no Flag or Flag Carrier in sight, check for path
-			// leading to our or their Flag
-			if (!EE)
-			{
-				switch(botstate.BState)
-				{
-				case bst_offense:
-					if (player.Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE)
-					{
-						EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
-					}
-					else
-					{
-						EE = GetNearestPathNode(class<Thinker>(RedNode), false);
-					}
-					break;
-				case bst_defense:
-					if (player.Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE)
-					{
-						EE = GetNearestPathNode(class<Thinker>(BlueGuardSpot), false);
-						if (!EE)
-						{
-							EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
-						}
-					}
-					else
-					{
-						EE = GetNearestPathNode(class<Thinker>(RedGuardSpot), false);
-						if (!EE)
-						{
-							EE = GetNearestPathNode(class<Thinker>(RedNode), false);
-						}
-					}
-					break;
-				case bst_scoring:
-					if (player.Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE)
-					{
-						EE = GetNearestPathNode(class<Thinker>(BlueGoalSpot), false);
-						if (!EE)
-						{
-							EE = GetNearestPathNode(class<Thinker>(BlueNode), false);
-						}
-					}
-					else
-					{
-						EE = GetNearestPathNode(class<Thinker>(RedGoalSpot), false);
-						if (!EE)
-						{
-							EE = GetNearestPathNode(class<Thinker>(RedNode), false);
-						}
-					}
-					break;
-				}
-			}*/
 			break;
 
 		case HexenDefs::game_domination:
@@ -4118,8 +4107,7 @@ Actor GetGameObjective(optional bool bReachable)
 				ee = GameDomination(gameInfo.GameModel).DomSigils[i];
 				if (DominationSigil(ee).Team != player.Team ||
 					(botstate.BState == bst_defense && DominationSigil(ee).Team == player.Team &&
-												P_Random() < 64)
-					&&
+					 P_Random() < 64) &&
 					(dist < 0.0 || Length(botmo.Origin - ee.Origin) < dist))
 				{
 					if (!bReachable || CheckTo(ee.Origin, ee))
@@ -4129,7 +4117,6 @@ Actor GetGameObjective(optional bool bReachable)
 					}
 				}
 			}
-
 			break;
 
 		case HexenDefs::game_football:
@@ -4143,7 +4130,7 @@ Actor GetGameObjective(optional bool bReachable)
 				int target_team;
 				Actor sts;
 				GameFootball fb = GameFootball(gameInfo.GameModel);
-				if (/*gameInfo.Teams[0] == */ player.Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE)
+				if (/* gameInfo.Teams[0] == */ player.Team.T2 == PlayerTeam::TEAM2_INDEX_BLUE)
 				{
 					target_team = PlayerTeam::TEAM2_INDEX_RED;
 				}
@@ -4178,14 +4165,6 @@ Actor GetGameObjective(optional bool bReachable)
 			}
 			break;
 	}
-
-	// [CW] Done elsewhere now
-	/*if (!EE)
-		EE = GetNearestPathNode(class<Thinker>(PriorityNode), false);*/
-
-	// [CW] No need in this since now we have separate Enemy priority type
-	//if (!EE)
-	//	EE = GetNearestEnemy(true);
 
 	return EE;
 }
@@ -4375,48 +4354,58 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 bool LinesCross(float x11, float y11, float x12, float y12, float x21, float y21, float x22, float y22,
 				  TVec * crosspt)
 {
-
 	float maxx1 = FMax(x11, x12), maxy1 = FMax(y11, y12);
 	float minx1 = FMin(x11, x12), miny1 = FMin(y11, y12);
 	float maxx2 = FMax(x21, x22), maxy2 = FMax(y21, y22);
 	float minx2 = FMin(x21, x22), miny2 = FMin(y21, y22);
 
 	if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+	{
 		return false;
+	}
  
-	float dx1 = x12-x11, dy1 = y12-y11; // First line projection to x & y axes
-	float dx2 = x22-x21, dy2 = y22-y21; // Second line projection to x & y axes
-	float dxx = x11-x21, dyy = y11-y21;
+	float dx1 = x12 - x11, dy1 = y12 - y11; // First line projection to x & y axes
+	float dx2 = x22 - x21, dy2 = y22 - y21; // Second line projection to x & y axes
+	float dxx = x11 - x21, dyy = y11 - y21;
 	float div, mul;
 
-
-	div = (dy2*dx1-dx2*dy1);
-	if (div == 0.0) 
+	div = (dy2 * dx1 - dx2 * dy1);
+	if (div == 0.0)
+	{
 	  return false; // Parallel lines
-	if (div > 0.0) {
-		mul = (dx1*dyy-dy1*dxx);
+	}
+	if (div > 0.0)
+	{
+		mul = (dx1 * dyy - dy1 * dxx);
 		if (mul < 0.0 || mul > div)
+		{
 			return false; // first line crossing out of limits
+		}
 		mul = (dx2*dyy-dy2*dxx);
 		if (mul < 0.0 || mul > div)
+		{
 			return false; // second line crossing out of limits
+		}
 	}
 
-	mul = -(dx1*dyy-dy1*dxx);
+	mul = -(dx1 * dyy - dy1 * dxx);
 	if (mul < 0.0 || mul > -div)
+	{
 		return false; // first line crossing out of limits
-	mul = -(dx2*dyy-dy2*dxx);
+	}
+	mul = -(dx2 * dyy - dy2 * dxx);
 	if (mul < 0.0 || mul > -div)
-	  return false; // second line crossing out of limits
+	{
+		return false; // second line crossing out of limits
+	}
 
-	float factor = (dx2*dyy - dy2*dxx) / div;
+	float factor = (dx2 * dyy - dy2 * dxx) / div;
 
 	crosspt->x = x11 + factor * (x21 - x11);
 	crosspt->y = y11 + factor * (y21 - y11);
 
 	return true;
 }
-
 
 defaultproperties
 {
