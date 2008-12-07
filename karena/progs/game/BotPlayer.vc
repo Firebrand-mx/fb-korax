@@ -3957,6 +3957,16 @@ Actor GetSpecialEnemy(optional bool bReachable)
 			}
 			break;
 
+		case HexenDefs::game_football:
+
+			if (GameFootball(gameInfo.GameModel).Ball && 
+				GameFootball(gameInfo.GameModel).Ball.Owner &&
+				GameFootball(gameInfo.GameModel).Ball.Owner.Team != player.Team)
+			{
+				actor = Actor(GameFootball(gameInfo.GameModel).Ball.Owner.MO);
+			}
+			break;
+
 		case HexenDefs::game_xmas:
 
 			if (player.BestWeaponOfDamageType('Fire'))
@@ -3970,37 +3980,34 @@ Actor GetSpecialEnemy(optional bool bReachable)
 
 	if (actor)
 	{
-		if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle))
+		if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && EntityEx(botmo).CanSee(actor))
 		{
-			if (EntityEx(botmo).CanSee(actor))
+			light = actor.Sector->params.lightlevel; // [FB] Detect the light level
+			if (actor.Sector->floor.LightSourceSector)
 			{
-				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
-				if (actor.Sector->floor.LightSourceSector)
+				//[FB] Add static or dynamic lights?
+				light += actor.Sector->floor.LightSourceSector;
+			}
+			// [FB] Too dark?
+			// [CW] enhance this a bit, still human players usually CAN see in dark
+			if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
+			{
+				if (light <= WHATS_VERYDARK)
 				{
-					//[FB] Add static or dynamic lights?
-					light += actor.Sector->floor.LightSourceSector;
-				}
-				// [FB] Too dark?
-				// [CW] enhance this a bit, still human players usually CAN see in dark
-				if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
-				{
-					if (light <= WHATS_VERYDARK)
-					{
-						if (P_Random() < 196)
-						{
-							return none;
-						}
-					}
-					else if (P_Random() < 128)
+					if (P_Random() < 196)
 					{
 						return none;
 					}
 				}
-
-				if (!bReachable || CheckTo(actor.Origin, actor))
+				else if (P_Random() < 128)
 				{
-					return actor;
+					return none;
 				}
+			}
+
+			if (!bReachable || CheckTo(actor.Origin, actor))
+			{
+				return actor;
 			}
 		}
 	}
