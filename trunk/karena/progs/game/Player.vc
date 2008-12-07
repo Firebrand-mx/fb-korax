@@ -113,6 +113,7 @@ int				teamscores[HexenDefs::MAXTEAMSINGAME];
 
 int use_power;				// [CW] is needed for some advanced game modes (football);
 							//	stores time USE button was held pressed
+int use_power_rangefrac;
 
 int		TeamSelection;	//[CW] team selection process state
 int		curTeamIndex;	//[CW] Team to join when spawn
@@ -145,7 +146,7 @@ replication
 		Score, TeamFrags, TeamKills, TeamPosition, PlayerPosition,
 		experience, exp_level, next_level, old_level, strength,
 		/* intelligence, */wisdom, dexterity, constitution, max_health,
-		old_maxhealth, bak_health, use_power, altWeapon, teamscores,
+		old_maxhealth, bak_health, use_power, use_power_rangefrac, altWeapon, teamscores,
 		altWeaponMode, targetinfo, Banner, BannerStatus;
 
 	unreliable if (!bIsClient)
@@ -3069,6 +3070,13 @@ void Damaged(EntityEx inflictor)
 	{
 		Bot.React(inflictor);
 	}
+
+	if (MainGameInfo(Level.Game).GameType == HexenDefs::game_football)
+	{
+		use_power--;
+		if (use_power < 0)
+			use_power = 0;
+	}
 }
 
 //==========================================================================
@@ -3409,6 +3417,9 @@ bool IsOKToPickupItem(Inventory Item)
 void Killed(EntityEx source, EntityEx inflictor)
 {
 	::Killed(source, inflictor);
+
+	use_power = 0;
+	use_power_rangefrac = 0;
 
 	//[CW] Show scoreboard for died player
 	Scoreboard(true);

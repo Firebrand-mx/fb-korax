@@ -36,7 +36,7 @@ class SoccerBall : Actor
 const int		MINFRAMES_NOKICK				= 4;
 const int		MAXFRAMES_TARGETTING			= 9;
 const float 	VELPOWER_MULTIPLIER				= 4.0;
-const float 	STRENGTHPOWER_MULTIPLIER		= 100.0;
+const float 	STRENGTHPOWER_MULTIPLIER		= 50.0;
 const float		STRENGTHPOWER_HORIZONTAL_FACTOR = 0.5;
 const float		STRENGTHPOWER_VERTICAL_FACTOR 	= 1.5;
 
@@ -58,7 +58,7 @@ bool IsTouched(Entity Toucher)
 	if (FB && FB.IsInPlayableState())
 	{
 		if(!(nokick_timer && Owner == Toucher.Player)
-			&& Toucher.IsA('PlayerPawn') && Toucher.Player.Health > 0)
+			&& Toucher.Player && Toucher.Player.Health > 0)
 		{
 			DoKick(Player(Toucher.Player));
 		}
@@ -77,14 +77,12 @@ bool IsTouched(Entity Toucher)
 void DoKick(Player Kicker)
 {
 	int i;
-	int	playernum;
 	float an;
 	float van;
 	float velpower;
 	float strpower;
 
 	Owner = Kicker;
-	playernum = Kicker.GetPlayerNum();
 	an = AngleMod360(atan2(Kicker.MO.Origin.y - Origin.y, Kicker.MO.Origin.x - Origin.x));
 	an += (an < 180.0 ? 180.0 : -180.0);
 	van = itof(Kicker.use_power * 10);
@@ -92,6 +90,7 @@ void DoKick(Player Kicker)
 	if (Kicker.use_power)
 	{
 		strpower = STRENGTHPOWER_MULTIPLIER * itof(Kicker.strength) / 100.0;
+		strpower *= itof(Kicker.Health) / itof(Kicker.max_health);
 	}
 	else
 	{
@@ -119,7 +118,6 @@ final void A_LetKick()
 {
 	int i;
 	Player P;
-	int	playernum;
 	float dist;
 
 	GameFootball FB = GameFootball(MainGameInfo(Level.Game).GameModel);
@@ -147,11 +145,21 @@ final void A_LetKick()
 			continue;	// [FB] Dead meat can't kick balls!
 						// [CW]... and asses as well =)
 		}
-		playernum = P.GetPlayerNum();
 		dist = DistTo(P.MO);
 
 		if (dist <= MELEERANGE * 6.0)
 		{
+			if (P.Buttons & BT_ATTACK || P.Buttons & BT_JUMP || P.Buttons & BT_ALT_ATTACK)
+			{
+				P.use_power -= 2;
+				if (P.use_power < 0)
+					P.use_power = 0;
+			}
+
+			P.use_power_rangefrac = ftoi(MELEERANGE * 100.0 / dist);
+			if (P.use_power_rangefrac > 100)
+				P.use_power_rangefrac = 100;
+
 			//
 			//[CW]
 			//
@@ -166,7 +174,7 @@ final void A_LetKick()
 			{
 				P.use_power++;
 			}
-			else if (!(P.Buttons & BT_USE) && P.use_power > 0)
+			else if (!(P.Buttons & BT_USE))
 			{
 				P.use_power = 0;
 			}
