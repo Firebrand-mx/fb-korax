@@ -217,6 +217,10 @@ terrain.txt				scripts/terrain.txt
 teaminfo.txt			scripts/teaminfo.txt
 vfxdefs.txt				vfxdefs.txt
 
+//  Default Configuration
+default.cfg				default.cfg
+
+//  Map Lists
 gm_ctf.txt				scripts/gm_ctf.txt
 gm_dm.txt				scripts/gm_dm.txt
 gm_dom.txt				scripts/gm_dom.txt
@@ -227,9 +231,10 @@ gm_tdm.txt				scripts/gm_tdm.txt
 gm_tswp.txt				scripts/gm_tswp.txt
 gm_xmas.txt				scripts/gm_xmas.txt
 
-//	Decorate definition file
+//	DECORATE definition file
 vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
 
+//  DECORATE Files
 decorate.txt					decorate.txt
 decorate/armor.txt				decorate/armor.txt
 decorate/artifacts.txt			decorate/artifacts.txt
