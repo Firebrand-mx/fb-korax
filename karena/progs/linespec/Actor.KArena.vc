@@ -510,6 +510,30 @@ bool Physics(float DeltaTime)
 
 //==========================================================================
 //
+//  DoSpecialDamage
+//
+//	[CW] Added CheckFriendlyFire
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (victim.bIsPlayer && MissilePoisonDamage > 0)
+	{
+		if (PlayerEx(victim.Player).CheckFriendlyFire(source, damage))
+		{
+			return -1;
+		}
+
+		victim.PoisonPlayer(source, MissilePoisonDamage);
+		damage >>= 1;
+		return damage;
+	}
+	return ::DoSpecialDamage(victim, source, damage);
+}
+
+//==========================================================================
+//
 //  Died
 //
 //==========================================================================
