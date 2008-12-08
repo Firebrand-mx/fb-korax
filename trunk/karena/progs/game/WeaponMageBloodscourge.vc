@@ -1,0 +1,188 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: WeaponMageBloodscourge.vc 1757 2008-11-12 12:50:10Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponMageBloodscourge : KArenaWeapon;
+
+int				CShift;
+
+//==========================================================================
+//
+//	GetBlend
+//
+//==========================================================================
+
+int GetBlend()
+{
+	return CShift;
+}
+
+//==========================================================================
+//
+//	KArenaKArenaMStaffSpawn
+//
+//==========================================================================
+
+final void KArenaMStaffSpawn(float angle)
+{
+	EntityEx mo;
+
+	mo = KArenaPlayerPawn(Owner).SpawnPlayerMissileAngle_2(self, MageStaffFX22, angle);
+	if (mo)
+	{
+		MageStaffFX22(mo).MissileFindEnemy();
+		ApplyDamageModifiers(mo.MissileDamage);
+	}
+}
+
+//==========================================================================
+//
+//  A_KArenaMStaffAttack
+//
+//==========================================================================
+
+final void A_KArenaMStaffAttack() self(KArenaPlayerPawn)
+{
+	float angle;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	WeaponMageBloodscourge Wpn = WeaponMageBloodscourge(PlayerEx(Player).ReadyWeapon);
+
+	Wpn.UseWeaponMana();
+	angle = Angles.yaw;
+
+	Wpn.KArenaMStaffSpawn(angle);
+	Wpn.KArenaMStaffSpawn(angle - 5.0);
+	Wpn.KArenaMStaffSpawn(angle + 5.0);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
+	WeaponMageBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 76);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette1
+//
+//==========================================================================
+
+final void A_MStaffPalette1() self(KArenaPlayerPawn)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponMageBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 63);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette2
+//
+//==========================================================================
+
+final void A_MStaffPalette2() self(KArenaPlayerPawn)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	WeaponMageBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 51);
+}
+
+//==========================================================================
+//
+//  A_MStaffPalette3
+//
+//==========================================================================
+
+final void A_MStaffPalette3() self(KArenaPlayerPawn)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	// reset back to original playpal
+	WeaponMageBloodscourge(Wpn).CShift = 0;
+}
+
+states
+{
+Ready:
+	MSTF AAAAAABBBBBBCCCCCCDDDDDDEEEEEEFFFFF 1 A_WeaponReady
+	Loop
+Deselect:
+	MSTF A 1 A_Lower
+	Loop
+Select:
+	MSTF A 1 A_Raise
+	Loop
+Fire:
+	MSTF G 4 Offset(0, 40)
+	MSTF H 4 Bright Offset(0, 48) A_KArenaMStaffAttack
+	MSTF H 2 Bright Offset(0, 48) A_MStaffPalette1
+	MSTF I 2 Offset(0, 48) A_MStaffPalette2
+	MSTF I 2 Offset(0, 48) A_MStaffPalette3
+	MSTF I 1 Offset(0, 40)
+	MSTF J 5 Offset(0, 36)
+	Goto Ready
+}
+
+/* SIXTH */
+defaultproperties
+{
+	Slot = 6;
+	SelectionOrder = 2300;
+	AmmoType1 = Mana2;
+	AmmoUse1 = 20;
+	PSpriteSY = 20.0;
+	BotCombatDist = 192.0 + MISSILERANGE;
+	wis_mod = true;
+	int_mod = true;
+	dex_mod = false;
+	str_mod = false;
+	bBotMelee = false;
+	bBotProjectileMedium = true;
+	bBotProjectile = true;
+	//bFireDamage = true;
+	DamageTypeHint = 'Fire';
+	PickupMessage = "BLOODSCOURGE";
+	Obituary = "$ob_mstaff";
+	refire_tics = 20.0;
+	fire_tics = 8.0;
+}
