@@ -32,157 +32,87 @@
 
 class WeaponMageStaff : KArenaWeapon;
 
-int				CShift;
-
-//==========================================================================
+//===========================================================================
 //
-//	GetBlend
+//  A_KArenaStaffAttackPL1
 //
-//==========================================================================
+//===========================================================================
 
-int GetBlend()
+final void A_KArenaStaffAttackPL1() self(KArenaPlayerPawn)
 {
-	return CShift;
-}
+	TAVec		angles;
+	int			damage;
+	TVec		vforward;
+	EntityEx	AimTarget;
 
-//==========================================================================
-//
-//	KArenaKArenaMStaffSpawn
-//
-//==========================================================================
-
-final void KArenaMStaffSpawn(float angle)
-{
-	EntityEx mo;
-
-	mo = KArenaPlayerPawn(Owner).SpawnPlayerMissileAngle_2(self, MageStaffFX22, angle);
-	if (mo)
-	{
-		MageStaffFX22(mo).MissileFindEnemy();
-		ApplyDamageModifiers(mo.MissileDamage);
-	}
-}
-
-//==========================================================================
-//
-//  A_KArenaMStaffAttack
-//
-//==========================================================================
-
-final void A_KArenaMStaffAttack() self(KArenaPlayerPawn)
-{
-	float angle;
-
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	WeaponMageStaff Wpn = WeaponMageStaff(PlayerEx(Player).ReadyWeapon);
-
-	Wpn.UseWeaponMana();
-	angle = Angles.yaw;
-
-	Wpn.KArenaMStaffSpawn(angle);
-	Wpn.KArenaMStaffSpawn(angle - 5.0);
-	Wpn.KArenaMStaffSpawn(angle + 5.0);
-	PlaySound('MageStaffFire', CHAN_WEAPON);
-	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 76);
-}
-
-//==========================================================================
-//
-//  A_MStaffPalette1
-//
-//==========================================================================
-
-final void A_MStaffPalette1() self(KArenaPlayerPawn)
-{
 	if (!bIsPlayer)
 	{
 		return;
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 63);
-}
-
-//==========================================================================
-//
-//  A_MStaffPalette2
-//
-//==========================================================================
-
-final void A_MStaffPalette2() self(KArenaPlayerPawn)
-{
-	if (!bIsPlayer)
+	damage = 12; //5 + (P_Random() & 15);
+	Wpn.ApplyDamageModifiers(damage);
+	angles = Angles;
+	angles.yaw = AngleMod360(angles.yaw +
+		(Random() - Random()) * 45.0 / 8.0);
+	AimTarget = AimLineAttack(vforward, angles, 1.5 * MELEERANGE);
+	if (AimTarget)
 	{
-		return;
+		LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff);
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, 2.0);
+		}
+		Player(Player).AdjustPlayerAngle(AimTarget);
 	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	WeaponMageStaff(Wpn).CShift = RGBA(255, 187, 4, 51);
-}
-
-//==========================================================================
-//
-//  A_MStaffPalette3
-//
-//==========================================================================
-
-final void A_MStaffPalette3() self(KArenaPlayerPawn)
-{
-	if (!bIsPlayer)
+	else
 	{
-		return;
+		// didn't find any creatures, so try to strike any walls
+		angles = Angles;
+		AimLineAttack(vforward, angles, MELEERANGE);
+		if (LineAttack(vforward, MELEERANGE, damage, StaffPuff))
+		{
+			PlaySound('StaffHit', CHAN_WEAPON);
+		}
 	}
-	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
-
-	// reset back to original playpal
-	WeaponMageStaff(Wpn).CShift = 0;
 }
 
 states
 {
 Ready:
-	MSTF AAAAAABBBBBBCCCCCCDDDDDDEEEEEEFFFFF 1 A_WeaponReady
+	CSTF A 1 A_WeaponReady
 	Loop
 Deselect:
-	MSTF A 1 A_Lower
+	CSTF A 1 A_Lower
 	Loop
 Select:
-	MSTF A 1 A_Raise
+	CSTF A 1 A_Raise
 	Loop
 Fire:
-	MSTF G 4 Offset(0, 40)
-	MSTF H 4 Bright Offset(0, 48) A_KArenaMStaffAttack
-	MSTF H 2 Bright Offset(0, 48) A_MStaffPalette1
-	MSTF I 2 Offset(0, 48) A_MStaffPalette2
-	MSTF I 2 Offset(0, 48) A_MStaffPalette3
-	MSTF I 1 Offset(0, 40)
-	MSTF J 5 Offset(0, 36)
+	CSTF B 6
+	CSTF C 8 A_KArenaStaffAttackPL1
+	CSTF B 8 A_ReFire
 	Goto Ready
 }
 
-/* SIXTH */
+/* FIRST */
 defaultproperties
 {
-	Slot = 6;
-	SelectionOrder = 2300;
-	AmmoType1 = Mana2;
-	AmmoUse1 = 20;
-	PSpriteSY = 20.0;
-	BotCombatDist = 192.0 + MISSILERANGE;
-	wis_mod = true;
-	int_mod = true;
-	dex_mod = false;
-	str_mod = false;
-	bBotMelee = false;
-	bBotProjectileMedium = true;
-	bBotProjectile = true;
-	//bFireDamage = true;
-	DamageTypeHint = 'Fire';
-	PickupMessage = "BLOODSCOURGE";
-	Obituary = "$ob_mstaff";
-	refire_tics = 20.0;
-	fire_tics = 8.0;
+	Slot = 1;
+	SelectionOrder = 7300;
+	PSpriteSY = 0.0;
+	BotCombatDist = 1.5 * MELEERANGE;
+	wis_mod = false;
+	int_mod = false;
+	dex_mod = true;
+	str_mod = true;
+	bBotMelee = true;
+	bBotProjectileMedium = false;
+	bBotProjectile = false;
+	bWimpyWeapon = true;
+	//bFireDamage = false;
+	HitObituary = "$ob_mstaff1";
+	refire_tics = 22.0;
+	fire_tics = 6.0;
 }
