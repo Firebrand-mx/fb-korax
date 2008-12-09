@@ -86,7 +86,7 @@ progs/game/WeaponFighterHellstaff.vc		progs/game/WeaponFighterHellstaff.vc
 progs/game/WeaponHereticHellstaff.vc		progs/game/WeaponHereticHellstaff.vc
 progs/game/WeaponHereticFiremace.vc		progs/game/WeaponHereticFiremace.vc
 progs/game/WeaponHereticFiremaceUp.vc		progs/game/WeaponHereticFiremaceUp.vc
-progs/gameWeaponHereticPhoenixFlame.vc		progs/game/WeaponHereticPhoenixFlame.vc
+progs/game/WeaponHereticPhoenixFlame.vc		progs/game/WeaponHereticPhoenixFlame.vc
 progs/game/WeaponClericPhoenixRod.vc		progs/game/WeaponClericPhoenixRod.vc
 progs/game/KArenaBlasterFX1.vc		progs/game/KArenaBlasterFX1.vc
 progs/game/WeaponHereticDragonClaw.vc		progs/game/WeaponHereticDragonClaw.vc
