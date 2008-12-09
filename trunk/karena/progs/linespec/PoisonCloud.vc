@@ -36,6 +36,8 @@ int LifeCount;
 int SpawnChildren;	// [CW] advanced ability
 int BobIndex;
 
+bool bCheckFriendlyFire;
+
 //==========================================================================
 //
 //	GetExplodeParms
@@ -58,7 +60,8 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
 	if (victim.bIsPlayer && !victim.bDormant)
 	{
-		if (PlayerEx(victim.Player).PoisonCount < 4)
+		if (!(bCheckFriendlyFire && PlayerEx(victim.Player).CheckFriendlyFire(source, damage)) &&
+			PlayerEx(victim.Player).PoisonCount < 4)
 		{
 			Actor(victim).PoisonDamage(self, Actor(source), 15 + (P_Random() & 15), false);	// Don't play painsound
 			Actor(victim).PoisonPlayer(Actor(source), 50);
@@ -155,6 +158,7 @@ final void A_SpawnChildren()
 					pc.Obituary = Obituary;
 					pc.LifeCount >> 2;
 					pc.Velocity.x = 0.00001;
+					pc.bCheckFriendlyFire = bCheckFriendlyFire;
 					if (!pc.TryMove(pc.Origin + pc.Velocity, false))
 						SetState(GetStatePlus(FindState('Death'), 1));
 				}
