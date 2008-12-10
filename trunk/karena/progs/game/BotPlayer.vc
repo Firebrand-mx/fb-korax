@@ -1088,11 +1088,19 @@ void Aim()
 		{
 			SetAngle(AngleTo(ITarget.Origin));
 		}
+		// [CW] Just look around
+		else
+		{
+			SetAngle(GetAngle() + (Random() * 2.0 - 1.0) * 35.0);
+		}
 		return;
 	}
 
 	if (t_react > 4.0)
 	{
+		#ifdef DEBUG_BOT_AI_ATTACK
+			print("BOT %s : my t_react = %f", player.PlayerName, t_react);
+		#endif
 		return;
 	}
 
@@ -1122,7 +1130,8 @@ void Aim()
 	Pitch();
 	
 	// [FB] ...and Decide which kind of aiming the bot will use
-	if (KArenaWeapon(player.ReadyWeapon).bInstantRanged || player.ReadyWeapon.bBlaster)
+	if (KArenaWeapon(player.ReadyWeapon).bInstantRanged || player.ReadyWeapon.bBlaster ||
+		!(KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium || KArenaWeapon(player.ReadyWeapon).bBotProjectile))
 	{
 		AimInstant(dist, right, an);
 	}
@@ -2678,6 +2687,20 @@ void OnBeginPlay()
 void OnSpawn()
 {
 	botstate.BState = bst_decide;
+
+	// [CW] Reset some stats in case we were REspawned
+	AITime = 0.0;
+
+	ITarget = none;
+	enemy = none;
+	node_current = none;
+	nodes.Num = 0;
+
+	t_react = 0.0;
+	t_strafe = 1.0;
+	t_turn = 0.0;
+	t_evade = 0.0;
+	t_dodge = 0.0;
 }
 
 //==========================================================================
@@ -3799,6 +3822,13 @@ void ProcessImmediate()
 		enemy = nemesis;	// [CW] switch to hated enemy
 	}
 
+	#ifdef DEBUG_BOT_AI_ENEMY
+		if (enemy)
+		{
+			print("BOT %s : my enemy is %n", player.PlayerName, GetClassName(enemy.Class));
+		}
+	#endif
+
 	// [CW] Bot should always know where to go; this can be a pickup,
 	//	    a specific map object or simply a path node.
 	if (!ITarget)
@@ -3878,10 +3908,10 @@ void ProcessImmediate()
 
 Actor GetNearestEnemy(optional bool bReachable)
 {
-	if (enemy)
+	/*if (enemy)
 	{
 		return enemy;
-	}
+	}*/
 
 	if (nemesis && botmo.CanSee(nemesis) && (!bReachable || CheckTo(nemesis.Origin, nemesis)))
 	{
