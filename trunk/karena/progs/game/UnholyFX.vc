@@ -52,7 +52,7 @@ void Tick(float deltaTime)
 		{
 			bAttacking = true;
 			bInvisible = false;
-			SetState(GetStatePlus(IdleState, 1, true));
+			SetState(FindState('Death')/*GetStatePlus(IdleState, 1, true)*/);
 		}
 	}
 
@@ -69,11 +69,19 @@ final void AttackDie()
 {
 	EntityEx pawn;
 
-	PlaySound('SpiritDie', CHAN_VOICE);
+	switch (P_Random() & 6)
+	{
+	case 0: PlaySound('PlayerFighterExtremeDeathPicker', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	case 1: PlaySound('PlayerClericExtremeDeathPicker', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	case 2: PlaySound('PlayerMageExtremeDeathPicker', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	case 3: PlaySound('HPlayerExtremeDeath', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	case 4: PlaySound('DPlayerExtremeDeath', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	case 5: PlaySound('WPlayerDeath', CHAN_VOICE, 1.0, ATTN_NONE); break;
+	}
 
 	foreach AllThinkers(EntityEx, pawn)
 	{
-		if (pawn.bMonster && Length(pawn.Origin - Origin) < 128.0)
+		if (pawn.bShootable && (pawn.bMonster || pawn.bIsPlayer) && (Length(pawn.Origin - Origin) < 128.0))
 		{
 			if (pawn != Target)
 				pawn.Damage(self, Target, AttackDamage);
