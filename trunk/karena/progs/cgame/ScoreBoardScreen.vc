@@ -42,8 +42,9 @@ const int
 
 	TABLE_LEFT_X		= 48,
 	TABLE_DATA_LEFT_X	= 96,
-	TABLE_HEAD_Y		= 48,
-	TABLE_TOP_Y		= 82,
+	TABLE_GEN_HEAD_Y	= 48,
+	TABLE_HEAD_Y		= 88,
+	TABLE_TOP_Y		= 122,
 	TABLE_HEADER_MARGIN_TOP = 10,
 	TABLE_HEADER_MARGIN_BOTTOM = 10,
 	TABLE_STRING_DELTA	= 14,
@@ -100,28 +101,55 @@ void OnDraw()
 {
 	int j, y;
 	int gamemode;
-	/*int*/string current_team;
+	string current_team;
 	int current_team_idx;
 	int current_player_inteam_idx;
 	bool team_player_skipped;
 	string tmp;
 	KArenaPlayerReplicationInfo RepInfo;
+	// [FB] For calculating current time and time limit
+	int timer;
+	int c_hours;
+	int c_minutes;
+	int c_seconds;
+/*	int l_hours;
+	int l_minutes;*/
 
 	SetFont('smallfont');
 	ShadeRect(SHADE_LEFT, SHADE_TOP, SHADE_WIDTH, SHADE_HEIGHT, 0.6);
 
-	// Game mode
+	// Game mode & settings
 	gamemode = GetCvar('deathmatch');
 
 	SetTextAlign(hleft, vtop);
-	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y , va("game mode:   %s", gamemodenames[gamemode]), CR_BRICK);
+	DrawText(TABLE_LEFT_X, TABLE_GEN_HEAD_Y, va("game mode:   %s", gamemodenames[gamemode]), CR_BRICK);
+
+	// [FB] Calculate time from the WorldTimer
+	timer = ftoi(ClGame.cl.WorldTimer);
+	c_hours = timer / 3600;
+	timer -= c_hours * 3600;
+	c_minutes = timer / 60;
+	timer -= c_minutes * 60;
+	c_seconds = timer;
+/*	l_hours = GetCvar('TimeLimit') / 3600;
+	l_minutes = GetCvar('TimeLimit') / 60;*/
+	if (GetCvar('ScoreLimit'))
+	{
+		DrawText(TABLE_LEFT_X, TABLE_GEN_HEAD_Y + 10, va("max. score:   %d",
+				 GetCvar('ScoreLimit')), CR_BRICK);
+	}
+	if (GetCvar('TimeLimit'))
+	{
+		DrawText(TABLE_LEFT_X, TABLE_GEN_HEAD_Y + 20, va("time / time limit:   %d:%d:%d / %d:0",
+				 c_hours, c_minutes, c_seconds, GetCvar('TimeLimit')), CR_BRICK);
+	}
 
 	/*--------------------------------------
 		General Scoring Table
 	--------------------------------------*/
 
 	/* Table Head		*/
-	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y + TABLE_STRING_DELTA , "player", CR_BLUE);
+	DrawText(TABLE_LEFT_X, TABLE_HEAD_Y + TABLE_STRING_DELTA, "player", CR_BLUE);
 	DrawText(TABLE_COL2, TABLE_HEAD_Y + TABLE_STRING_DELTA, "score", CR_GREEN);
 	DrawText(TABLE_COL3, TABLE_HEAD_Y + TABLE_STRING_DELTA, "ctrl", CR_ORANGE);
 
@@ -144,8 +172,10 @@ void OnDraw()
 		foreach ClGame.GLevel.LevelInfo.AllThinkers(KArenaPlayerReplicationInfo, RepInfo)
 		{
 			if (RepInfo.teampos != current_team_idx ||
-					RepInfo.playerpos < current_player_inteam_idx)
+				RepInfo.playerpos < current_player_inteam_idx)
+			{
 				continue;
+			}
 			
 			if (RepInfo.playerpos > current_player_inteam_idx)
 			{
@@ -154,17 +184,17 @@ void OnDraw()
 			}
 		
 			// Insert team string if a new team encountered
-			if (gamemode >= HexenDefs::NUMGAMESNOTEAM && strcmp(RepInfo./*team*/teamname, current_team))
+			if (gamemode >= HexenDefs::NUMGAMESNOTEAM && strcmp(RepInfo.teamname, current_team))
 			{
-				if (current_team/* != -1*/)
+				if (current_team /* != -1*/)
+				{
 					y += TABLE_HEADER_MARGIN_TOP;
-				R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 13, RepInfo.teamcolour
-					/*colourmark[RepInfo.team]*/);
-				DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", RepInfo.teamname
-					/*colournames[RepInfo.team]*/,
-									Player(ClGame.cl).teamscores[current_team_idx]));
+				}
+				R_FillRect(SHADE_LEFT + 8, y - 2, SHADE_WIDTH - 16, 13, RepInfo.teamcolour);
+				DrawText(TABLE_LEFT_X, y, va("%s team,   score:   %d", RepInfo.teamname,
+						 Player(ClGame.cl).teamscores[current_team_idx]));
 				y += TABLE_HEADER_MARGIN_BOTTOM;
-				current_team = RepInfo./*team*/teamname;
+				current_team = RepInfo.teamname;
 			}
 
 			// Mark current client with special background colour
@@ -177,12 +207,10 @@ void OnDraw()
 				}
 			}*/
 
-			// Player portrait
+			// Player's class portrait
 			DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[RepInfo.plclass]) >> 1),
-								pic_portraits[RepInfo.plclass], , RepInfo.translation);
-
+					pic_portraits[RepInfo.plclass], , RepInfo.translation);
 			y += 6;
-
 			// Player's name
 			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName, ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : RepInfo.teamfont/*GetTeamFontColour(RepInfo.teamcolour)*/);
 
@@ -195,7 +223,7 @@ void OnDraw()
 				default: tmp = "th";
 			}
 			DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-				RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : GetClassFontColour(RepInfo.plclass));
+					 RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : GetClassFontColour(RepInfo.plclass));
 
 			y += TABLE_STRING_DELTA >> 1;
 
@@ -204,9 +232,13 @@ void OnDraw()
 
 			// Player is human/cpu
 			if (RepInfo.IsBot)
+			{
 				DrawText(TABLE_COL3, y, "bot", ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_ORANGE);
+			}
 			else
+			{
 				DrawText(TABLE_COL3, y, "hum", ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_ORANGE);
+			}
 
 			// Those are mode dependent
 			DrawText(TABLE_COL4 + TABLE_VALINDENT4, y, va("%d", RepInfo.Frags), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : CR_UNTRANSLATED);
@@ -225,7 +257,7 @@ void OnDraw()
 	}
 }
 
-/*//==========================================================================
+/* //==========================================================================
 //
 //  GetTeamFontColour
 //
@@ -311,7 +343,7 @@ defaultproperties
 	Width = 640;
 	Height = 480;
 
-	/*colourmark[0] = 0xff0000aa;
+	/* colourmark[0] = 0xff0000aa;
 	colourmark[1] = 0xffaa0000;
 	colourmark[2] = 0xffaaaa00;
 	colourmark[3] = 0xff55aa00;
