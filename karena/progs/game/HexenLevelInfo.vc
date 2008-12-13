@@ -764,9 +764,9 @@ int GetPClassSpawnFlags()
 //
 //==========================================================================
 
-void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
-	TVec velocity, TVec vrnd, TVec acceleration, float grav, int colour, float duration, float ramp,
-	int Pattern)
+void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd, TVec camera,
+	float zcameradome, float zoffset, TVec velocity, TVec vrnd, TVec acceleration, float grav,
+	int colour, float duration, float ramp,	int Pattern)
 {
 	int i, j;
 	particle_t *p, *p2;
@@ -774,11 +774,24 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 	float max_dist;
 	float real_duration;
 	sector_t * pt_sector;
+	TVec p_org_dummy;
+	TVec camera_no_z;
+	float dome_radius;			// distance from camera to top of the particle-spawning "dome";
+	float dome_radius_squared;
+	float l;
+	float pt_ceilz;
+	float pt_ceilz2;
 	float pt_floorz;
 	float time;
 
 	if (!XLevel)
 		Error("HexenLevelInfo::ParticleEffectEx : XLevel reference not set to an instance of an object");
+
+	//camera.z = 0.0;
+	camera_no_z = camera;
+	camera_no_z.z = 0.0;
+	dome_radius = zcameradome - camera.z;	// [CW] CHECKME: what if zcameradome is lower than camera.z?
+	dome_radius_squared = dome_radius * dome_radius;
 
 	for (i = 0; i < count; i++)
 	{
@@ -817,9 +830,9 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 		}
 		else
 		{
-			p->org.x = origin.x + ((Random() * ornd.x) - 16.0);
-			p->org.y = origin.y + ((Random() * ornd.y) - 16.0);
-			p->org.z = origin.z + ((Random() * ornd.z) - 16.0);
+			p->org.x = origin.x + ((Random() * ornd.x) - ornd.x / 2.0);
+			p->org.y = origin.y + ((Random() * ornd.y) - ornd.y / 2.0);
+			p->org.z = origin.z + ((Random() * ornd.z) - ornd.z / 2.0);
 		}
 
 		if (p->type == pt_weather_snow || p->type == pt_weather_rain)
@@ -828,7 +841,35 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 			pt_sector = XLevel.PointInSector(p->org);
 			if (pt_sector && pt_sector->ceiling.pic == skyflatnum)
 			{
-				p->org.z += GetPlanePointZ(&pt_sector->ceiling, p->org);
+				pt_ceilz = GetPlanePointZ(&pt_sector->ceiling, p->org);
+				pt_ceilz2 = pt_ceilz + zoffset;
+				if (pt_ceilz2 < zcameradome)
+				{
+					if (pt_ceilz < zcameradome)
+						pt_ceilz2 = pt_ceilz;
+					else
+						pt_ceilz2 = zcameradome;
+				}
+
+				p_org_dummy.x = p->org.x;
+				p_org_dummy.y = p->org.y;
+				l = Length(p_org_dummy - camera_no_z);
+
+				// [CW] Initially we have a p->org.z value in the range of
+				// randomization; now we add general position, which is,
+				// technically, an absolute center of randomization;
+				//
+				// pt_ceilz2 is a point somewhere between sky (ceiling) and
+				// top of the "dome" (usually closest to the last one);
+				//
+				p->org.z += pt_ceilz2 - (dome_radius - sqrt(dome_radius_squared - l * l));
+
+				// [CW] TODO: we need to adjust initial velocity as if particle
+				// fell all the way from the sky (assuming gravity as applied all the time)
+				// however... won't all these calculations lower game speed?
+				// need to make more tests; maybe add console variables to toggle these
+				// accurate calculations on/off?
+
 				pt_floorz = FindHighestFloorZAtPoint(p->org, pt_sector);
 				if (pt_floorz != EntityEx::ONFLOORZ)
 				{
@@ -844,16 +885,18 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 		if(ramp)
 			p->ramp = Random() * ramp;
 
+		// [CW] Notice p->vel should add velocity at this point,
+		//		because it could have been already changed above
 		// No random velocity
 		if(vrnd == vector(0.0,0.0,0.0))
 		{
-			p->vel = velocity;
+			p->vel += velocity;
 		}
 		else
 		{
-			p->vel.x = velocity.x * (Random() - vrnd.x);
-			p->vel.y = velocity.y * (Random() - vrnd.y);
-			p->vel.z = velocity.z * (Random() - vrnd.z);
+			p->vel.x += velocity.x * (Random() - vrnd.x);
+			p->vel.y += velocity.y * (Random() - vrnd.y);
+			p->vel.z += velocity.z * (Random() - vrnd.z);
 		}
 		p->accel.x = acceleration.x;
 		p->accel.y = acceleration.y;
@@ -865,6 +908,7 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 		// [CW] TODO: fix lifetime for weather particles according to accel & velocity
 		// currently does not care about accel since there's no sqrt func :(
 		// so using simplest formula this time
+		// [CW] <-- FIXME, now there's SQRT func
 		if (max_dist >= 0.0)
 		{
 			if (p->vel.z != 0.0)

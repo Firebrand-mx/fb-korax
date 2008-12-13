@@ -32,7 +32,8 @@
 
 class WeatherSnow : Sequencer;
 
-float FarDistance;
+float FarHDistance;
+float FarVDistance;
 float OriginSpacing;
 int Amount;
 int ParticleType;
@@ -46,6 +47,14 @@ int Colour;
 float ParticleDuration;
 float ParticleRamp;
 int Pattern;
+
+bool bInitialFallSequence;	// tells if a commencement of weather should be
+							// simulated explicitly; otherwise weather effect
+							// appears as if it was happening for some time already
+
+private float ZDistancePassed; // how much of distance first particles
+						// passed since the weather commenced; used to determine at
+						// which height new particles can appear in player's sight
 
 
 //==========================================================================
@@ -80,22 +89,23 @@ void Continue()
 			continue;
 		}
 
-		x = pl.Camera.Origin.x - FarDistance;
-		y = pl.Camera.Origin.y - FarDistance;
-		mx = pl.Camera.Origin.x + FarDistance;
-		my = pl.Camera.Origin.y + FarDistance;
+		x = pl.Camera.Origin.x - FarHDistance;
+		y = pl.Camera.Origin.y - FarHDistance;
+		mx = pl.Camera.Origin.x + FarHDistance;
+		my = pl.Camera.Origin.y + FarHDistance;
 
 		for (Origin.x = x; Origin.x < mx; Origin.x += OriginSpacing)
 		{
 			for (Origin.y = y; Origin.y < my; Origin.y += OriginSpacing)
 			{
-				dprint("WeatherSnow : call ParticleEffectEx : amount: %i, type: %i, type2: %i, vel.z=%f", Amount, ParticleType, ParticleType2, InitialVelocity.z);
 				pl.ParticleEffectEx(
 						Amount,
 						ParticleType,
 						ParticleType2,
 						vector(Origin.x, Origin.y, 0.0),
 						Spread,
+						pl.Camera.Origin.z + FarHDistance,
+						(bInitialFallSequence ? -ZDistancePassed : -99999.0),
 						InitialVelocity,
 						VelocityRange,
 						InitialAcceleration,
@@ -107,15 +117,24 @@ void Continue()
 			}
 		}
 	}
+
+	if (ZDistancePassed < 99999.0)
+	{
+		ZDistancePassed += InitialVelocity.z * time_limit +
+						(InitialAcceleration.z + AppliedGravity) * time_limit * time_limit / 2.0;
+	}
 }
 
 defaultproperties
 {
-	time_limit = 0.8;
+	time_limit = 0.2;
 
-	FarDistance = 384.0; //768.0;
-	OriginSpacing = 256.0; //512.0;
-	Amount = 220; //120;
+	bInitialFallSequence = true;
+
+	FarHDistance = 512.0;
+	FarVDistance = 256.0;
+	OriginSpacing = 256.0;
+	Amount = 8;
 	ParticleType = HexenLevelInfo::pt_weather_snow;
 	ParticleType2 = 0;
 	Spread = vector(512.0, 512.0, 512.0);
