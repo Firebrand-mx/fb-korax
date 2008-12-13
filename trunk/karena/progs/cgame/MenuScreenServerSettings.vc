@@ -82,6 +82,15 @@ void CreateChoices()
 	Slider.ValueChanging = ChangeCorpseQueueSize;
 	currentY += Slider.Height;
 
+	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
+	Slider.SetOrigin(ChoicesStartX, currentY);
+	Slider.Text = "Weather Effects amount";
+	Slider.MinValue = 1.0;
+	Slider.MaxValue = itof(WeatherSnow.default.Amount);
+	Slider.ValueDelta = 1.0;
+	Slider.SetInitialValue(itof(WeatherSnow.default.Amount - GetCvar('WeatherAmount')));
+	Slider.ValueChanging = ChangeWeatherEffectsAmount;
+	currentY += Slider.Height;
 }
 
 //==========================================================================
@@ -129,6 +138,18 @@ bool ChangeBodyQueueSize(Object Sender, float newValue)
 bool ChangeCorpseQueueSize(Object Sender, float newValue)
 {
 	SetCvar('CorpseQueSize', ftoi(newValue));
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeWeatherEffectsAmount
+//
+//==========================================================================
+
+bool ChangeWeatherEffectsAmount(Object Sender, float newValue)
+{
+	SetCvar('WeatherAmount', WeatherSnow.default.Amount - ftoi(newValue));
 	return true;
 }
 
