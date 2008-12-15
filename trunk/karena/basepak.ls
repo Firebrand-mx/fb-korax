@@ -123,7 +123,7 @@ progs/game/InfernalHandFX2.vc		progs/game/InfernalHandFX2.vc
 progs/game/MageStaffFX22.vc		progs/game/MageStaffFX22.vc
 progs/game/WeaponMageStaff.vc		progs/game/WeaponMageStaff.vc
 progs/game/WeaponPigSnout.vc		progs/game/WeaponPigSnout.vc
-progs/game/WeaponMageStaff.vc		progs/game/WeaponMageStaff.vc
+progs/game/WeaponMageBloodscourge.vc		progs/game/WeaponMageBloodscourge.vc
 progs/game/WeaponHereticGoldWand.vc					progs/game/WeaponHereticGoldWand.vc
 progs/game/WeaponHereticGoldWandUp.vc				progs/game/WeaponHereticGoldWandUp.vc
 progs/game/WeaponHereticCrossbow.vc					progs/game/WeaponHereticCrossbow.vc
