@@ -63,8 +63,6 @@ GameSequencer		birthSequencer;
 int		deathsequence_state;
 int		birthsequence_state;
 
-////////name	originalMusic;
-
 // Animated sequences stuff
 int				dlDelay1, dlDelay2;	// dynamic lighting delays
 int				dmDelay;			// darkness missiles' delay
@@ -122,7 +120,6 @@ void BeginState(int newstate)
 		Game.bcentreprint("first fragger is determined");
 	case state_deathsequence:
 	case state_rebornsequence:
-		////////originalMusic = Game.level->SongLump;
 		deathsequence_state = 0;
 		birthsequence_state = 0;
 		break;
@@ -151,10 +148,12 @@ bool IsInPlayableState()
 int TeamFactor(EntityEx a1, EntityEx a2)
 {
 	if ( ( State == state_heresiarch || State == state_birthsequence ||
-				State == state_deathsequence || State == state_rebornsequence )	&&
-				a1.bIsPlayer && a2.bIsPlayer &&
-				( plHeresiarch == none || (a1 != plHeresiarch.MO && a2 != plHeresiarch.MO) ) )
+		State == state_deathsequence || State == state_rebornsequence )	&&
+		a1.bIsPlayer && a2.bIsPlayer &&
+		( plHeresiarch == none || (a1 != plHeresiarch.MO && a2 != plHeresiarch.MO) ) )
+	{
 		return teamfactor_coop;
+	}
 	return teamfactor_any;
 }
 
@@ -169,7 +168,9 @@ void NotifyPlayerSpawn(Player pl)
 	// If the game hasn't been started yet and
 	// if there're at least 2 players in game, begin free ramble mode
 	if (State < 0 && pl.GetPlayerNum() > 0)
+	{
 		BeginState(state_preparegame);
+	}
 }
 
 //==========================================================================
@@ -191,9 +192,12 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 	case state_freeramble:
 		// First fragger becomes Heresiarch
 		if (EntityEx(pl.MO).DamageType == 'Telefrag')
+		{
 			break;	// Not interested
+		}
 
-		if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
+		if (source && source.bIsPlayer && Player(source.Player) != pl &&
+			source.Health > 0)
 		{
 			plHeresiarch = Player(source.Player);
 			plHeresiarch.SetControllable(false);
@@ -201,7 +205,9 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 
 			birthSequencer = Level.Spawn(GameSequencer);
 			if (birthSequencer)
+			{
 				birthSequencer.event_id = event_playbirthsequence;
+			}
 		}
 		break;
 	case state_heresiarch:
@@ -210,7 +216,8 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 		{
 			DeathSpot = EntityEx(plHeresiarch.MO);
 			oldHeresiarchName = plHeresiarch.PlayerName;
-			if (source && source.bIsPlayer && Player(source.Player) != pl && source.Health > 0)
+			if (source && source.bIsPlayer && Player(source.Player) != pl &&
+				source.Health > 0)
 			{
 				plHeresiarch = Player(source.Player);
 				plHeresiarch.SetControllable(false);
@@ -218,10 +225,14 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 
 				deathSequencer = Level.Spawn(GameSequencer);
 				if (deathSequencer)
+				{
 					deathSequencer.event_id = event_playdeathsequence;
+				}
 				birthSequencer = Level.Spawn(GameSequencer);
 				if (birthSequencer)
+				{
 					birthSequencer.event_id = event_playbirthsequence;
+				}
 			}
 			else
 			{
@@ -230,7 +241,9 @@ void NotifyPlayerDeath(Player pl, EntityEx source)
 				
 				deathSequencer = Level.Spawn(GameSequencer);
 				if (deathSequencer)
+				{
 					deathSequencer.event_id = event_playdeathsequence;
+				}
 			}
 		}
 		break;
@@ -250,23 +263,29 @@ int GetFragScoreEvent(Player plFragger, Player plFragged)
 	switch (State)
 	{
 	case state_deathsequence:
-		return HexenDefs::scoreevent_NoScore;	// [CW] It is an interesting precedent;
-							//		Heresiarch is dying, however there's no
-							//		new Heresiarch (old one probably killed himself).
-							//		In this case, I assume, we should make a
-							//		score-less period in the game for awhile.
+	// [CW] It is an interesting precedent;
+	//      Heresiarch is dying, however there's no
+	//      new Heresiarch (old one probably killed himself).
+	//      In this case, I assume, we should make a
+	//      score-less period in the game for awhile.
+		return HexenDefs::scoreevent_NoScore;
 	case state_birthsequence:
 	case state_rebornsequence:
 	case state_heresiarch:
 
 		// [CW] H. is fragged
 		if (plFragged == plHeresiarch)
+		{
 			return HexenDefs::scoreevent_KthHeresiarchDeath;
+		}
 		else
-			return HexenDefs::scoreevent_KthHeresiarchFrag;	// [CW] We assume that any player frag
-									// (except for H.'es death) occured when
-									// a H. is alive or even while he's rising
-									// (birth / reborn sequence) should add a score to H.
+		{
+			// [CW] We assume that any player frag
+			// (except for H.'es death) occured when
+			// a H. is alive or even while he's rising
+			// (birth / reborn sequence) should add a score to H.
+			return HexenDefs::scoreevent_KthHeresiarchFrag;
+		}
 	default:
 		return HexenDefs::scoreevent_Frag;
 	}
@@ -287,17 +306,19 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 	{
 	case event_heresiarchspawn:
 		if (plHeresiarch)
+		{
 			Game.bcentreprint(va("%s is now the heresiarch", plHeresiarch.PlayerName));
+		}
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
-					(P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
-					true, 2.0);
+								 (P_Random() > 127 ? HexenDefs::lsid_kth_an_hasreborn : HexenDefs::lsid_kth_an_ishere) : HexenDefs::lsid_kth_an_ishere),
+								 true, 2.0);
 		EndCurrentState(state_heresiarch);
 		break;
 	case event_heresiarchdead:
 		Game.bcentreprint(va("%s the heresiarch is dead", oldHeresiarchName));
 		Game.BroadcastLocalSound((State == state_rebornsequence ?
-					(P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
-					true, 2.0);
+								  (P_Random() > 127 ? HexenDefs::lsid_kth_an_isdefeated : HexenDefs::lsid_kth_an_isdown) : HexenDefs::lsid_kth_an_isdown),
+								  true, 2.0);
 		break;
 	case event_playdeathsequence:
 		PlayDeathSequence();
@@ -307,7 +328,9 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		break;
 	case event_allowfreeramble:
 		if (!plHeresiarch)
+		{
 			EndCurrentState(state_freeramble);
+		}
 		break;
 	}
 }
@@ -340,14 +363,15 @@ void PlayDeathSequence()
 		CircularPosition.y = 64.0;
 		CircularPosition.z = 0.0;
 		Game.BroadcastLocalSound(HexenDefs::lsid_kth_mus_death, true, 2.0);
-		////////ChangeMusic(va("%n", 'kth_mus1'));
 		break;
 	case 13:
 		{
 			EntityEx flame;
 			flame = Level.Spawn(FlameLargeTemp, DeathSpot.Origin);
 			if (flame)
+			{
 				flame.Args[0] = 8;
+			}
 		}
 		break;
 	case 30:
@@ -359,7 +383,9 @@ void PlayDeathSequence()
 	default:
 
 		if (dlDelay1)
+		{
 			dlDelay1--;
+		}
 		else
 		{
 			TVec vec;
@@ -410,8 +436,6 @@ void PlayDeathSequence()
 			{
 				deathSequencer.Destroy();
 			}
-			/* if (State != state_rebornsequence)
-				ChangeMusic(va("%n", originalMusic));*/
 			break;
 		}
 	}
@@ -438,7 +462,9 @@ void PlayBirthSequence()
 		dmDelay = 0;
 		plHeresiarch.MO.SetState(plHeresiarch.MO.FindState('Pain'));
 		if (State != state_rebornsequence)
+		{
 			birthsequence_state = 39;	// skip waiting for death sequence completion
+		}
 		break;
 	case 40:
 		// Spawn Sorcerer's balls
@@ -459,10 +485,14 @@ void PlayBirthSequence()
 			}
 			srcballs[1] = Level.Spawn(SorcBall2, org);
 			if (srcballs[1])
+			{
 				srcballs[1].Target = EntityEx(plHeresiarch.MO);
+			}
 			srcballs[2] = Level.Spawn(SorcBall3, org);
 			if (srcballs[2])
+			{
 				srcballs[2].Target = EntityEx(plHeresiarch.MO);
+			}
 
 			plHeresiarch.MO.bNoGravity = true;
 			plHeresiarch.MO.Velocity.z = 8.0;
@@ -475,21 +505,38 @@ void PlayBirthSequence()
 		break;
 	case 70:
 		plHeresiarch.MO.Velocity.z = 0.0;
-		if (srcballs[0]) { srcballs[0].Args[4] = 0; srcballs[0].Args[3] = 0; srcballs[0].A_BounceCheck(); }
-		if (srcballs[1]) { srcballs[1].Args[4] = 0; srcballs[1].Args[3] = 0; srcballs[1].A_BounceCheck(); }
-		if (srcballs[2]) { srcballs[2].Args[4] = 0; srcballs[2].Args[3] = 0; srcballs[2].A_BounceCheck(); }
+		if (srcballs[0])
+		{
+			srcballs[0].Args[4] = 0;
+			srcballs[0].Args[3] = 0;
+			srcballs[0].A_BounceCheck();
+		}
+		if (srcballs[1])
+		{
+			srcballs[1].Args[4] = 0;
+			srcballs[1].Args[3] = 0;
+			srcballs[1].A_BounceCheck();
+		}
+		if (srcballs[2])
+		{
+			srcballs[2].Args[4] = 0;
+			srcballs[2].Args[3] = 0;
+			srcballs[2].A_BounceCheck();
+		}
 		srcballs[0] = none;
 		srcballs[1] = none;
 		srcballs[2] = none;
 		CircularPosition.x = 128.0;
 		CircularPosition.y = 128.0;
-		HandleEvent(event_heresiarchspawn, none, 0,0,0,0);
+		HandleEvent(event_heresiarchspawn, none, 0, 0, 0, 0);
 		break;
 	default:
 		if (birthsequence_state > 12)
 		{
 			if (dlDelay2)
+			{
 				dlDelay2--;
+			}
 			else
 			{
 				TVec vec;
@@ -523,7 +570,9 @@ void PlayBirthSequence()
 			DarknessMissile dm;
 
 			if (dmDelay)
+			{
 				dmDelay--;
+			}
 			else
 			{
 				dmDelay = 2;
@@ -570,7 +619,9 @@ void PlayBirthSequence()
 			EntityEx HSS = KArenaPlayerPawn(plHeresiarch.MO).A_GetNearestEntity(HeresiarchSpawnSpot);
 
 			if (HSS)
+			{
 				EntityEx(plHeresiarch.MO).TeleportMove(HSS.Origin, true);
+			}
 
 			EntityEx(plHeresiarch.MO).bInvulnerable = false;
 			KArenaPlayerPawn(plHeresiarch.MO).HeresiarchMorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch);
