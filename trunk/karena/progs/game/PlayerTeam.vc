@@ -157,7 +157,7 @@ void DiscardPlayer(Player pl)
 
 	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
-		pl.Level.bprint("%s has left %s team", pl.PlayerName, Name/*Game.ColourNames[Colour]*/);
+		pl.Level.bprint("%s has left %s team", pl.PlayerName, Name);
 	}
 
 	// if there's no players, team is gone...
@@ -174,7 +174,9 @@ void DiscardPlayer(Player pl)
 		}
 
 		if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
-		   pl.Level.bprint("team %s is no longer in competition", Name/*Game.ColourNames[Colour]*/);
+		{
+		   pl.Level.bprint("team %s is no longer in competition", Name);
+		}
 
 		Game.Teams[Position] = none;
 		Game.TeamInfos[Index].bTeamInPlay = false;
@@ -215,9 +217,13 @@ void UpdateScore(int event)
 //		dprint("PlayerTeam::UpdateScore : scoreevent_TeamDiscard");
 		i = Game.GetTeamCount();
 		if (i > 1)
+		{
 			mod = Game.Teams[--i].Score - Score - 1;
+		}
 		else
+		{
 			mod = -Score;
+		}
 		force_update = true;
 		break;
 	case HexenDefs::scoreevent_TeamReset:
@@ -234,7 +240,9 @@ void UpdateScore(int event)
 		if (Game.GameType != HexenDefs::game_football &&
 			Game.GameType != HexenDefs::game_ctf &&
 			Game.GameType != HexenDefs::game_domination)
+		{
 			mod = 1;
+		}
 		break;
 	case HexenDefs::scoreevent_Kill:
 		Kills++;
@@ -249,14 +257,18 @@ void UpdateScore(int event)
 		if (Game.GameType != HexenDefs::game_football &&
 			Game.GameType != HexenDefs::game_ctf &&
 			Game.GameType != HexenDefs::game_domination)
+		{
 			mod = -1;
+		}
 		break;
 	case HexenDefs::scoreevent_TeamFrag:
 		Frags--;
 		if (Game.GameType != HexenDefs::game_football &&
 			Game.GameType != HexenDefs::game_ctf &&
 			Game.GameType != HexenDefs::game_domination)
+		{
 			mod = -1;
+		}
 		break;
 	case HexenDefs::scoreevent_CtfCapture:
 		FlagCaptures++;
@@ -275,12 +287,16 @@ void UpdateScore(int event)
 
 		if (Game && Game.Level && (Game.GameType >= HexenDefs::NUMGAMESNOTEAM) &&
 				(Game.GetTeamCount() > 1))
+		{
 			CompetitionAnnouncements(Score - mod);
+		}
 
 		if (Game && Game.Level)
 		{
 			if (mod > 0)
+			{
 				Game.bCompetitionOpened = true;
+			}
 		}
 
 		Game.ScoreboardsUpdate(none);
@@ -288,7 +304,9 @@ void UpdateScore(int event)
 
 	// [CW] Check score limit
 	if (Game && Game.Level && (Game.GameType >= HexenDefs::NUMGAMESNOTEAM))
+	{
 		Game.UpdateHighscore(Score);
+	}
 }
 
 //==========================================================================
@@ -303,9 +321,8 @@ void CompetitionAnnouncements(int oldScore)
 {
 	int i;
 
-	// [CW] NOTE: following agorythm works good only for 2 teams in game;
+	// [CW] NOTE: following algorythm works good only for 2 teams in game;
 	//      If there will be more than 2 teams, we should modify this.
-
 	if (Score > oldScore)
 	{
 		// Is this player a new and only leader?
@@ -372,7 +389,9 @@ void UpdateCompetition()
 	for (i = 0; i < HexenDefs::MAXTEAMSINGAME; i++)
 	{
 		if(Game.Teams[i] == self)
+		{
 			break;
+		}
 	}
 	
 	Position = i;
@@ -380,7 +399,7 @@ void UpdateCompetition()
 	// first see if previous players has lower score now
 	if (i != 0)
 	{
-		j = i-1;
+		j = i - 1;
 		while (j >= 0)
 		{
 			plteam2 = Game.Teams[j];
@@ -395,19 +414,23 @@ void UpdateCompetition()
 				for (k = 0; k < MAXPLAYERS; k++)
 				{
 					if (plteam2.Players[k])
+					{
 						plteam2.Players[k].TeamPosition = i;
+					}
 				}
 				i = j;
 			}
 			else
+			{
 				break;
+			}
 			j--;
 		}
 	}
 	// secondly (in other case) see if next players has higher score (in case score gone down)
 	if (!bPositionShifted && i != HexenDefs::MAXTEAMSINGAME - 1)
 	{
-		j = i+1;
+		j = i + 1;
 		while (j < HexenDefs::MAXTEAMSINGAME && Game.Teams[j])
 		{
 			plteam2 = Game.Teams[j];
@@ -421,12 +444,16 @@ void UpdateCompetition()
 				for (k = 0; k < MAXPLAYERS; k++)
 				{
 					if (plteam2.Players[k])
+					{
 						plteam2.Players[k].TeamPosition = i;
+					}
 				}
 				i = j;
 			}
 			else
+			{
 				break;
+			}
 			j++;
 		}
 	}
@@ -435,7 +462,9 @@ void UpdateCompetition()
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (Players[i])
+		{
 			Players[i].TeamPosition = Position;
+		}
 	}
 }
 
