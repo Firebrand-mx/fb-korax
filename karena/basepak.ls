@@ -171,7 +171,7 @@ progs/game/BotSpawner.vc		progs/game/BotSpawner.vc
 progs/game/KArenaFlameSmall2.vc		progs/game/KArenaFlameSmall2.vc
 progs/game/KArenaFlameLarge2.vc		progs/game/KArenaFlameLarge2.vc
 progs/game/ZCandle2.vc		progs/game/ZCandle2.vc
-progs/game/ZTWinedTorch2.vc		progs/game/ZTWinedTorch2.vc
+progs/game/ZTwinedTorch2.vc		progs/game/ZTwinedTorch2.vc
 progs/game/ZWallTorch2.vc		progs/game/ZWallTorch2.vc
 progs/game/ZFireBull2.vc		progs/game/ZFireBull2.vc
 progs/game/BrassTorch2.vc		progs/game/BrassTorch2.vc
