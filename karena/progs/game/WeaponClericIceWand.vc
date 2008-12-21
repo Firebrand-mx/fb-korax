@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: WeaponMageHorriblePain.vc 1726 2008-11-06 12:11:16Z crimsonwizard $
+//**    $Id: WeaponClericIceWand.vc 1726 2008-11-06 12:11:16Z crimsonwizard $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -30,83 +30,69 @@
 //**
 //**************************************************************************
 
-class WeaponMageHorriblePain : KArenaWeapon;
+class WeaponClericIceWand : KArenaWeapon;
 
 //==========================================================================
 //
-//  A_FireHorriblePain
+//  A_MWandAttack
 //
 //==========================================================================
 
-final void A_FireHorriblePain() self(KArenaPlayerPawn)
+final void A_MWandAttack() self(KArenaPlayerPawn)
 {
-	EntityEx mo;
-
 	if (!bIsPlayer)
 	{
 		return;
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	mo = KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, TeleportOtherFX1);
+	EntityEx mo;
+	mo = KArenaPlayerPawn(self).SpawnPlayerMissile_2(Wpn, MageWandMissile);
 	if (mo)
-	{
-		//Actor(mo).Obituary = "$ob_horiblepain";
-		//mo.Target = Actor(Owner);
-		Actor(mo).Special1 = 1;
 		Wpn.ApplyDamageModifiers(mo.MissileDamage);
-	}
 	Wpn.UseWeaponMana();
-	PlaySound('MageShardsFire', CHAN_WEAPON);
+	PlaySound('MageWandFire', CHAN_WEAPON);
 }
 
 states
 {
 Ready:
-	CONE A 1 A_WeaponReady
+	MWND A 1 A_WeaponReady
 	Loop
 Deselect:
-	CONE A 1 A_Lower
+	MWND A 1 A_Lower
 	Loop
 Select:
-	CONE A 1 A_Raise
+	MWND A 1 A_Raise
 	Loop
 Fire:
-	CONE B 3
-	CONE C 4
-Hold:
-	CONE D 3
-	CONE E 5
-	CONE F 3 A_FireHorriblePain
-	CONE G 3
-	CONE A 9
-	CONE A 10 A_ReFire
+	MWND A 6
+	MWND B 6 Bright Offset(0, 48) A_MWandAttack
+	MWND A 3 Offset(0, 40)
+	MWND A 3 Offset(0, 36) A_ReFire
 	Goto Ready
 }
 
-/*EIGHTH*/
+
+/* FIFTH */
 defaultproperties
 {
-	Slot = 8;
-	SelectionOrder = 300;
+	Slot = 5;
+	SelectionOrder = 3200;
 	AmmoType1 = Mana1;
-	AmmoType2 = Mana2;
-	AmmoType3 = ItemManaRed;
-	AmmoUse1 = 100;
-	AmmoUse2 = 100;
-	AmmoUse3 = 100;
-	PSpriteSY = 20.0;
-	BotCombatDist = 384.0 + MISSILERANGE;
+	AmmoUse1 = 7;
+	PSpriteSY = 9.0;
+	BotCombatDist = 192.0 + MISSILERANGE;
 	wis_mod = true;
-	int_mod = false;
+	int_mod = true;
 	dex_mod = false;
 	str_mod = false;
-	bBotMelee = true;
+	bBotMelee = false;
 	bBotProjectileMedium = true;
-	bBotProjectile = false;
+	bBotProjectile = true;
 	//bFireDamage = false;
-	fire_tics = 18.0;
-	refire_tics = 40.0;
-	PickupMessage = "HORRIBLE PAIN";
-	Obituary = "$ob_horiblepain";
+	PickupMessage = "ICE WAND";
+	Obituary = "$ob_mwand";
+	refire_tics = 18.0;
+	fire_tics = 12.0;
 }
