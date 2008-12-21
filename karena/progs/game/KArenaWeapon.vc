@@ -43,7 +43,7 @@ bool			dex_mod;
 bool			str_mod;
 bool			int_mod;
 bool			wis_mod;
-bool			active_damage; 	// [FB] TRUE if PI Damage is active
+// bool			active_damage; 	// [FB] TRUE if PI Damage is active
 
 bool			bInstantRanged;	// [CW] Can be used for BotAI too
 TVec			ShotPosition;	// [CW]
@@ -240,6 +240,9 @@ final void GunShot1(EntityEx A, int accurate, TVec dir)
 		AngleVector(&angles, &dir);
 	}
 
+	// [CW] CHECKME!! -- this method is used by 2 Marine weapons
+	// - Pistol and Shotgun; is this damage value should be
+	// determined as a local constant here?
 	damage = 10;//5 * (P_Random() % 3 + 1);
 	ApplyDamageModifiers(damage);
 
@@ -290,7 +293,7 @@ final void ApplyDamageModifiers(out int damage)
 		damage = damage * Player(Owner.Player).intelligence / 10;
 
 	// PI Damage
-	if(active_damage)
+	if(/*active_damage*/Player(Owner.Player).pi_damage)
 		damage *= ftoi(3.1415);
 }
 
