@@ -38,15 +38,10 @@ array<name>			MapLumpNames;
 // [CW] an order of game modes in list
 int					GameTypes[HexenDefs::NUMGAMES - HexenDefs::GAMEFIRSTUSED];
 
-//MenuChoiceEnum	Players;		// not needed as variable
-//MenuChoiceEnum	Bots;			// not needed as variable
 MenuChoiceEnum		Monsters;
-//MenuChoiceEnum	DeathMatch;		// not needed as variable
-//MenuChoiceEnum	Skill;			// not needed as variable
 MenuChoiceEnum		ScoreLimit;
 MenuChoiceEnum		TimeLimit;
 MenuChoiceEnum		Level;
-//MenuTextButton	ServSettings;	// not needed as variable
 
 
 int					LevelPic;		// level shot thumbnail
@@ -87,19 +82,6 @@ void CreateChoices()
 	Btn.Text = "Team Settings";
 	Btn.Activated = ActivateTeamSettings;
 	currentY += Btn.Height;
-
-	/* Players = MenuChoiceEnum(NewChild(MenuChoiceEnum));
-	Players.SetOrigin(ChoicesStartX, ChoicesStartY);
-	Players.Text = "Max players";
-	Players.AddItem("2");
-	Players.AddItem("3");
-	Players.AddItem("4");
-	Players.AddItem("5");
-	Players.AddItem("6");
-	Players.AddItem("7");
-	Players.AddItem("8");
-	Players.SetInitialValue(6);
-	ChoicesStartY += Players.Height;*/
 
 	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Enum.SetOrigin(ChoicesStartX, currentY);
@@ -151,17 +133,6 @@ void CreateChoices()
 	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	Enum.SetOrigin(ChoicesStartX, currentY);
 	Enum.Text = "Game type";
-	/* // [FB] The order here should be the same as in HexenDefs.vc
-	DeathMatch.AddItem("Deathmatch");
-	DeathMatch.AddItem("Kill the Heresiarch");
-	DeathMatch.AddItem("Castle Sweep");
-	DeathMatch.AddItem("XMas Havoc");
-	DeathMatch.AddItem("Team Deathmatch");
-	DeathMatch.AddItem("Capture The Flag");
-	DeathMatch.AddItem("Domination");
-	DeathMatch.AddItem("Team Castle Sweep");
-	DeathMatch.AddItem("Football");
-	DeathMatch.SetInitialValue(0);*/
 	for (i = 0; i < HexenDefs::NUMGAMES - HexenDefs::GAMEFIRSTUSED; i++)
 	{
 		switch (GameTypes[i])
@@ -189,16 +160,6 @@ void CreateChoices()
 	Enum.SetInitialValue(0);
 	Enum.ValueChanging = ChangeDeathmatch;
 	currentY += Enum.Height;
-
-	/* Skill = MenuChoiceEnum(NewChild(MenuChoiceEnum));
-	Skill.SetOrigin(ChoicesStartX, ChoicesStartY);
-	Skill.Text = "Skill";
-	for (i = 0; i < P_GetNumSkills(); i++)
-	{
-		Skill.AddItem(P_GetSkillDef(i)->Name);
-	}
-	Skill.SetInitialValue(2);
-	ChoicesStartY += Skill.Height;*/
 
 	ScoreLimit = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	ScoreLimit.SetOrigin(ChoicesStartX, currentY);
@@ -244,12 +205,10 @@ void OnDraw()
 	int x = 300;
 	int y = 16;
 
-	//ShadeRect(4, ChoicesStartY - 8, 320, ChoicesHeight + 16, GetCvarF('menu_darkening'));
 	FillRectWithFlat(4, FirstChild.Y - 8, 320,
 		ChoicesStartY - FirstChild.Y + ChoicesHeight + 16, 'kaf_012');
 
 	FillRectWithFlat(x - 8, y - 8, 336, 480 - (y - 8) - 8, 'kaf_010');
-	//ShadeRect(4, y, 616/* 320*/, 464 - (y - 8) - 8/* ChoicesHeight + 16*/, GetCvarF('menu_darkening'));
 
 	if (LevelPic)
 	{	
@@ -271,13 +230,6 @@ void OnDraw()
 void ActivateStartNewGame(Object Sender)
 {
 	CmdBuf_AddText("Disconnect\n");
-	//CmdBuf_AddText("MaxPlayers %d\n", Players.Value + 2);
-	//CmdBuf_AddText("BotsAutoSpawn %d\n", Bots.Value);
-	//CmdBuf_AddText("NoMonsters %d\n", !Monsters.Value);
-	//CmdBuf_AddText("DeathMatch %d\n", GameTypes[DeathMatch.Value]);
-	//CmdBuf_AddText("ScoreLimit %d\n", ScoreLimit.Value * 5);
-	//CmdBuf_AddText("TimeLimit %d\n", TimeLimit.Value * 5);
-	//CmdBuf_AddText("Skill %d\n", Skill.Value);
 	ClientGame(ClGame).LoadingScreenStart(MapLumpNames[Level.Value], Level.EnumNames[Level.Value]);
 }
 
@@ -550,9 +502,6 @@ void AddMapsToList(string mapLumpName, bool useAsPrefix)
 			count++;
 			MapLumpIdx.Num = MapLumpIdx.Num + 1;
 			MapLumpIdx[MapLumpIdx.Num - 1] = i;
-			//MapLumpNames.Num = MapLumpNames.Num + 1;
-			//MapLumpNames[MapLumpNames.Num - 1] = P_GetMapLumpName(i);
-			//Level.AddItem(P_GetMapName(i));
 			
 			if (!useAsPrefix)
 				break;
@@ -642,14 +591,14 @@ void InitScoreLimit(int GameType)
 
 defaultproperties
 {
-	X = 0; //160;
-	Y = 0; //140;
-	Width = 640; //320;
-	Height = 480; //200;
-	TitleX = 150; //320; //160;
-	TitleY = 104; //24;
+	X = 0;
+	Y = 0;
+	Width = 640;
+	Height = 480;
+	TitleX = 150;
+	TitleY = 104;
 	ChoicesStartX = 132;
-	ChoicesStartY = 120; //40;
+	ChoicesStartY = 120;
 	SelectorType = MenuSelector_SmallRight;
 	Title = "NEW GAME";
 
