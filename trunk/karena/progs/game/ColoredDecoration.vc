@@ -38,6 +38,53 @@ PlayerTeam	Team;		// Which team this Decoration belongs to
 						// (theoretically can be changed during game for
 						// some weird gameplay effect... (: )
 
+//==========================================================================
+//
+//	OnMapSpawn
+//
+//	[CW] We should not change any object property except for
+//	     LightColour and LightRadius here.
+//
+//==========================================================================
+
+void OnMapSpawn(mthing_t* mthing)
+{
+	if (mthing->arg1 > PlayerTeam::NUM_TEAM2_INDEXES)
+	{
+		dprint("ColoredDecoration::OnMapSpawn : Arg1 (Team) is %i, object destroyed", mthing->arg1);
+		Destroy();
+	}
+	else
+	{
+		if (MainGameInfo(Level.Game).Teams[mthing->arg1])
+		{
+			int TID_bak = mthing->tid;
+			int Arg1_bak = mthing->arg1;
+			PlayerTeam pteam = MainGameInfo(Level.Game).Teams[mthing->arg1];
+			mthing->tid = 0;	// [CW] This special hack allows to pass the
+								// condition in Actor.KArena::OnMapSpawn and
+								// spawn a static light regardless of TID.
+			mthing->arg1 = 0;	// [CW] Arg1 of ColoredDecoration means Team;
+								// this hack will make Actor.KArena::OnMapSpawn
+								// ignore arg1 parameter and use this object's
+								// LightRadius variable.
+
+			LightColour = RGB((pteam.Colour >> 16) & 0xFF, (pteam.Colour >> 8) & 0xFF, pteam.Colour & 0xFF);
+			LightRadius = mthing->arg2 ? itof(mthing->arg2) * 8.0 : default.LightRadius;
+
+			::OnMapSpawn(mthing);
+
+			SetTID(TID_bak);
+			Args[0] = Arg1_bak;
+		}
+		else
+		{
+			dprint("ColoredDecoration::OnMapSpawn : Team %i does not exist, object destroyed", mthing->arg1);
+			Destroy();
+		}
+	}
+}
+
 //// [FB] These methods should be here for switchable colored decorations
 //==========================================================================
 //
@@ -50,8 +97,13 @@ bool Activate(EntityEx Activator)
 	state S = FindState('Active');
 	if (S)
 		SetState(S);
-	bDynamicLight = true;
-	DLightRadius = Args[1] ? itof(Args[1]) * 8.0 : LightRadius; // [CW] Args[0] is used for TEAM INDEX
+
+	if (default.bDynamicLight)
+	{
+		bDynamicLight = default.bDynamicLight;
+		DLightRadius = Args[1] ? itof(Args[1]) * 8.0 : default.DLightRadius;
+	}
+	// [CW] Toggling static lights is handled through vfxdefs script
 
 	return true;
 }
@@ -67,7 +119,12 @@ bool Deactivate(EntityEx Activator)
 	state S = FindState('Inactive');
 	if (S)
 		SetState(S);
-	bDynamicLight = false;
+	
+	if (default.bDynamicLight)
+	{
+		bDynamicLight = false;
+	}
+	// [CW] Toggling static lights is handled through vfxdefs script
 
 	return true;
 }
@@ -77,7 +134,7 @@ bool Deactivate(EntityEx Activator)
 //
 //	SetTranslation
 //
-//	[FB] Set the team colour for this Banner
+//	[FB] Set the team colour for this Colored Decoration
 //
 //==========================================================================
 
@@ -92,7 +149,15 @@ void SetTranslation()
 	{
 		GM.HandleEvent(GameModel::event_colourtranslation, none, Team.Index, TID, 0, 0);
 
-		DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		if (default.bDynamicLight)
+		{
+			DLightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		}
+		// [CW] Static light handled elsewise and elsewhere
+		/*else
+		{
+			LightColour = RGB((Team.Colour >> 16) & 0xFF, (Team.Colour >> 8) & 0xFF, Team.Colour & 0xFF);
+		}*/
 		Activate(none);
 		TransSet = true;
 	}
@@ -114,6 +179,4 @@ void Tick(float deltaTime)
 
 defaultproperties
 {
-	DLightColour = RGB(255, 255, 255);
-	bDynamicLight = true;
 }
