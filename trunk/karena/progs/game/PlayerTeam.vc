@@ -39,7 +39,8 @@ MainGameInfo	Game;
 enum
 {
 	TEAM2_INDEX_BLUE,
-	TEAM2_INDEX_RED
+	TEAM2_INDEX_RED,
+	NUM_TEAM2_INDEXES
 };
 
 int		Index;	// team definition
@@ -68,12 +69,9 @@ void EnlistPlayer(Player pl)
 {
 	int i;
 
-//	dprint("PlayerTeam::EnlistPlayer : ");
-
 	// first check if player already has reference to this team
 	if (pl.Team == self)
 	{
-//		dprint("PlayerTeam::EnlistPlayer : already in team, skip...");
 		return;
 	}
 
@@ -86,7 +84,6 @@ void EnlistPlayer(Player pl)
 		// we simply need to re-assign Team reference for him.
 		if (Players[i] == pl)
 		{
-//			dprint("PlayerTeam::EnlistPlayer : reattach team reference, done...");
 			pl.Team = self;
 			return;
 		}
@@ -95,26 +92,22 @@ void EnlistPlayer(Player pl)
 		{
 			if (pl.Team)
 			{
-//				dprint("PlayerTeam::EnlistPlayer : discard player from previous team...");
 				pl.Team.DiscardPlayer(pl);
 			}
 			pl.Team = self;
 			Players[i] = pl;
 			playercount++;
-//			dprint("playercount now = %i", playercount);
-//			dprint("PlayerTeam::EnlistPlayer : add player to current team as no %i, done...", i);
 
 			// This should be taken into account:
 			// player, who changes team, looses his score!!
 			//
-//			dprint("PlayerTeam::EnlistPlayer : reset player's score");
 			pl.TeamPosition = Position;
 			pl.UpdateScore(HexenDefs::scoreevent_PlayerReset);
 
 			if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 			{
 				pl.Colour = Colour;
-				pl.Level.bprint("%s joins %s team", pl.PlayerName, Name/*Game.ColourNames[Colour]*/);
+				pl.Level.bprint("%s joins %s team", pl.PlayerName, Name);
 			}
 			else
 			{
@@ -143,23 +136,19 @@ void DiscardPlayer(Player pl)
 	}
 
 	// push player down the competition table
-//	dprint("PlayerTeam::DiscardPlayer : pushing player down the table");
-//	dprint("PlayerTeam::DiscardPlayer : player position was %i", pl.PlayerPosition);
 	pl.UpdateScore(HexenDefs::scoreevent_PlayerDiscard);
-//	dprint("PlayerTeam::DiscardPlayer : player position now is %i", pl.PlayerPosition);
 
 	pl.Team = none;
 	Players[pl.PlayerPosition] = none;
 	playercount--;
-//	dprint("playercount now = %i", playercount);
-
-//	dprint("PlayerTeam::DiscardPlayer : removed player from team");
 
 	if (Game.GameType >= HexenDefs::NUMGAMESNOTEAM)
 	{
 		pl.Level.bprint("%s has left %s team", pl.PlayerName, Name);
 	}
 
+	// [CW] Removing teams from the game is forbidden now
+#ifdef OBSOLETE
 	// if there's no players, team is gone...
 	if (!playercount)
 	{
@@ -182,6 +171,7 @@ void DiscardPlayer(Player pl)
 		Game.TeamInfos[Index].bTeamInPlay = false;
 		Destroy();
 	}
+#endif
 }
 
 //==========================================================================
@@ -192,7 +182,6 @@ void DiscardPlayer(Player pl)
 
 int GetPlayerCount()
 {
-//	dprint("playercount is = %i", playercount);
 	return playercount;
 }
 
@@ -214,7 +203,6 @@ void UpdateScore(int event)
 	switch(event)
 	{
 	case HexenDefs::scoreevent_TeamDiscard:
-//		dprint("PlayerTeam::UpdateScore : scoreevent_TeamDiscard");
 		i = Game.GetTeamCount();
 		if (i > 1)
 		{
@@ -227,7 +215,6 @@ void UpdateScore(int event)
 		force_update = true;
 		break;
 	case HexenDefs::scoreevent_TeamReset:
-//		dprint("PlayerTeam::UpdateScore : scoreevent_TeamReset");
 		Frags = 0;
 		Kills = 0;
 		Goals = 0;
@@ -333,7 +320,7 @@ void CompetitionAnnouncements(int oldScore)
 			{
 				// [FB] Announce new leader!
 				Game.BroadcastLocalSoundNamed(sndAnLeads, true, 0.0);
-				Game.Level.bprint(va("%s team leads!", Name/*Game.ColourNames[Colour]*/));
+				Game.Level.bprint(va("%s team leads!", Name));
 			}
 		}
 		// Is he tied for the lead then?
@@ -367,7 +354,7 @@ void CompetitionAnnouncements(int oldScore)
 		{
 			// [FB] Announce new leader! // [CW] (another team leads now)
 			Game.BroadcastLocalSoundNamed(Game.Teams[1].sndAnLeads, true, 0.0);
-			Game.Level.bprint(va("%s team leads!", Game.Teams[1].Name/*Game.ColourNames[Game.Teams[1].Colour]*/));
+			Game.Level.bprint(va("%s team leads!", Game.Teams[1].Name));
 		}
 	}
 }

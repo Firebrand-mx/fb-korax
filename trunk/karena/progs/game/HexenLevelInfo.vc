@@ -224,7 +224,31 @@ void SpawnSpecials()
 
 	MainGameInfo(Game).InitLevel(self);
 	Purge();
-	//AddSpecialNetmatchStarts();
+}
+
+//==========================================================================
+//
+//  UpdateSpecials
+//
+//==========================================================================
+
+void UpdateSpecials()
+{
+	// [CW] This is temporary solution. I suppose making GameModel
+	//		Thinker's child will be best, but that will require some
+	//		general changes.
+
+	// [CW] Since Teams are precreated now, we must force
+	// teams checkup for GameModel
+	if (MainGameInfo(Game).GameModel && !MainGameInfo(Game).GameModel.IsInPlayableState()
+		&& XLevel.Time > 1.0 /* [CW] We must 'wait' when OPEN scripts are executed
+								and all ACS Notifiers are registered.. stupid, indeed :P */)
+	{
+		dprint("HexenLevelInfo::UpdateSpecials : call GameModel.NotifyUpdateTeams()");
+		MainGameInfo(Game).GameModel.NotifyUpdateTeams();
+	}
+	
+	::UpdateSpecials();
 }
 
 //============================================================================
