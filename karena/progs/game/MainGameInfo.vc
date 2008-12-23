@@ -42,9 +42,6 @@ int		AltWeaponModeCount[HexenDefs::NUM_ALTFIRE];
 BotPlayer::botinfo_t botinfo[NUMTOTALBOTS];
 int botskill;
 
-// Colour names
-//string ColourNames[HexenDefs::MAXPLAYERTEAMS];
-
 // Registered team infos
 array<TeamInfoParser::teaminfo_t> TeamInfos;
 
@@ -73,6 +70,7 @@ int			Highscore;
 
 void Init()
 {
+	dprint("MainGameInfo::Init: - ");
 	::Init();
 	SetSeqTrans('Platform', 0, SEQ_Platform);
 	SetSeqTrans('Platform', 1, SEQ_Platform);	// a 'heavy' platform is just a platform
@@ -130,13 +128,9 @@ void RegisterTeams()
 		TeamInfos[TeamInfos.Num - 1].Colour = tinfo.Colour;
 		TeamInfos[TeamInfos.Num - 1].FontColour = tinfo.FontColour;
 		TeamInfos[TeamInfos.Num - 1].sndAnLeads = tinfo.sndAnLeads;
-//		print("Registered Team %s", TeamInfos[TeamInfos.Num - 1].Name);
 	}
 
 	sc.Destroy();
-
-
-//	print("TEAMINFO lump read, %i teams registered", TeamInfos.Num);
 }
 
 //==========================================================================
@@ -147,7 +141,9 @@ void RegisterTeams()
 
 void InitNewGame(int skill)
 {
-	int mode;
+	int teamnum, teamindex;
+
+	dprint("MainGameInfo::InitNewGame: - ");
 
 	SetSkill(skill);
 
@@ -163,9 +159,14 @@ void InitNewGame(int skill)
 
 	//[CW] we must use GetCvar here because deathmatch param
 	//	   is not initialized yet at this point
-	// init GameModel
+	// CHECKME - is this still true
+
 	GameType = GetCvar('deathmatch');
 	dprint("MainGameInfo::InitNewGame : GameType = %i", GameType);
+
+	//
+	// [CW] Initialize GameModel
+	//
 	switch (GameType)
 	{
 	case HexenDefs::game_ctf:
@@ -184,10 +185,51 @@ void InitNewGame(int skill)
 		dprint("Spawn XMas Havoc");
 		GameModel = GameModel(SpawnObject(GameXmasHavoc)); break;
 	}
+
 	if (GameModel)
 	{
 		GameModel.Init(self);
 		MaxTeamsInGame[GameType] = GameModel.AllowedTeams();
+	}
+
+	//
+	// [CW] PreCreate Teams
+	//
+	for (teamnum = 0; teamnum < MaxTeamsInGame[GameType]; teamnum++)
+	{
+		teamindex = GetCvar(StrToName(va("FixedTeam%i", teamnum + 1))); 
+
+		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
+		Teams[teamnum].Game = self;
+		Teams[teamnum].Index = teamindex;
+
+		if (GameType == HexenDefs::game_ctf || GameType == HexenDefs::game_domination
+			|| GameType == HexenDefs::game_football)
+		{
+			switch (teamnum)
+			{
+			case 0:
+				Teams[teamnum].T2 = PlayerTeam::TEAM2_INDEX_BLUE; break;
+			case 1:
+				Teams[teamnum].T2 = PlayerTeam::TEAM2_INDEX_RED; break;
+			default:
+				Error("MainGameInfo::InitNewGame : teamnum > 1");
+			}
+		}
+
+		TeamInfos[teamindex].bTeamInPlay = true;
+
+		if (GameType < HexenDefs::NUMGAMESNOTEAM)
+		{
+			Teams[teamnum].FontColour = CR_UNTRANSLATED;
+		}
+		else
+		{
+			Teams[teamnum].Name = TeamInfos[teamindex].Name;
+			Teams[teamnum].Colour = TeamInfos[teamindex].Colour;
+			Teams[teamnum].FontColour = TeamInfos[teamindex].FontColour;
+			Teams[teamnum].sndAnLeads = TeamInfos[teamindex].sndAnLeads;
+		}
 	}
 
 	bFirstLevelInited = false;
@@ -204,8 +246,7 @@ void InitNewGame(int skill)
 
 void InitLevel(HexenLevelInfo levelinfo)
 {
-//	dprint("MainGameInfo::InitLevel : GO");
-
+	dprint("MainGameInfo::InitLevel: - ");
 	//[CW]
 	Level = levelinfo;
 	if (GameModel)
@@ -673,6 +714,10 @@ void InsertPlayer(Player pl, int TeamIndex)
 	// if this team does not exist, create a new one
 	if (!Teams[teamnum])
 	{
+		// [CW] Now when teams are fixed and precreated this should not happen
+		Error("MainGameInfo::InsertPlayer : creating new team in game is forbidden! (%i)", teamnum);
+		return;
+
 		Teams[teamnum] = PlayerTeam(SpawnObject(PlayerTeam));
 		Teams[teamnum].Game = self;
 		Teams[teamnum].Index = TeamIndex;
@@ -699,8 +744,6 @@ void InsertPlayer(Player pl, int TeamIndex)
 			Teams[teamnum].Colour = TeamInfos[TeamIndex].Colour;
 			Teams[teamnum].FontColour = TeamInfos[TeamIndex].FontColour;
 			Teams[teamnum].sndAnLeads = TeamInfos[TeamIndex].sndAnLeads;
-			//Teams[teamnum].Colour = pl.Colour;
-			//pl.Colour = Teams[teamnum].Colour;
 		}
 
 		// if an advanced game mode is running, notify it that
@@ -710,7 +753,6 @@ void InsertPlayer(Player pl, int TeamIndex)
 			
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 			pl.Level.bprint("team %s enters competition", Teams[teamnum].Name);
-			//ColourNames[Teams[teamnum].Colour]);
 		
 		Teams[teamnum].UpdateCompetition();
 	}
@@ -727,7 +769,6 @@ void InsertPlayer(Player pl, int TeamIndex)
 					(Player(Players[i]).TeamSelection == HexenDefs::teamselection_wait ||
 					Player(Players[i]).TeamSelection == HexenDefs::teamselection_reselect) )
 			{
-//				dprint("MainGameInfo::InsertPlayer : call team selection screen update for player %i", i);
 				Player(Players[i]).SelectPlayerTeam();
 			}
 		}
@@ -945,6 +986,9 @@ void BroadcastLocalSoundNamed(name sound, bool put_in_queue, float delay)
 //				lifetime and decay are treated as 1/100 parts of second
 //					(i.e. lifetime = 1250 actually means 12.5 secs)
 //
+//	CHECKME -- is this method still needed? maybe there are some new
+//			generic methods available
+//
 //==========================================================================
 
 void SpawnDynamicLight(int colour, TVec org, int radius, int lifetime, int decay)
@@ -986,7 +1030,7 @@ defaultproperties
 	bIsCoopGame[HexenDefs::game_domination] = false;
 	bIsCoopGame[HexenDefs::game_sweepteam] = false;
 	bIsCoopGame[HexenDefs::game_football] = false;
-	bIsCoopGame[HexenDefs::game_xmas] = false; //true;
+	bIsCoopGame[HexenDefs::game_xmas] = false;
 
 	MaxTeamsInGame[HexenDefs::game_unused] = 0;
 	MaxTeamsInGame[HexenDefs::game_dm] = 1;
@@ -997,19 +1041,11 @@ defaultproperties
 	AltWeaponModeCount[HexenDefs::ALTFIRE_BLASTRADIUS] = HexenDefs::ALTFIRE_BLASTRADIUS_MODES;
 	AltWeaponModeCount[HexenDefs::ALTFIRE_POISONBAG] = HexenDefs::ALTFIRE_POISONBAG_MODES;
 
-/*	ColourNames[0] = "blue";
-	ColourNames[1] = "red";
-	ColourNames[2] = "gold";
-	ColourNames[3] = "lime";
-	ColourNames[4] = "green";
-	ColourNames[5] = "gray";
-	ColourNames[6] = "brown";
-	ColourNames[7] = "magenta";*/
-
 	//
 	//		Trophy Names
 	//
 	
+	// FIXME!! -- use localization
 	TrophyText[0] = "double kill!";
 	TrophyText[1] = "tripple kill!";
 	TrophyText[2] = "quadrupple kill!";
@@ -1037,7 +1073,7 @@ defaultproperties
 
 	WeaponSlots[1].Weapons[0] = WeaponFighterPunch;
 	WeaponSlots[2].Weapons[0] = WeaponFighterAxe;
-	WeaponSlots[3].Weapons[0] = WeaponFighterDarkness; //WeaponFighterHammerMelee,
+	WeaponSlots[3].Weapons[0] = WeaponFighterDarkness;
 	WeaponSlots[4].Weapons[0] = WeaponFighterRipper;
 	WeaponSlots[5].Weapons[0] = WeaponFighterHellstaff;
 	WeaponSlots[6].Weapons[0] = WeaponFighterHammer;
@@ -1046,7 +1082,7 @@ defaultproperties
 
 	WeaponSlots[1].Weapons[1] = WeaponClericMace;
 	WeaponSlots[2].Weapons[1] = WeaponClericStaff;
-	WeaponSlots[3].Weapons[1] = WeaponClericMorningStar; //WeaponHealing,
+	WeaponSlots[3].Weapons[1] = WeaponClericMorningStar;
 	WeaponSlots[4].Weapons[1] = WeaponClericFire;
 	WeaponSlots[5].Weapons[1] = WeaponClericIceWand;
 	WeaponSlots[6].Weapons[1] = WeaponClericPoisonBreath;
@@ -1058,8 +1094,8 @@ defaultproperties
 	WeaponSlots[3].Weapons[2] = WeaponMageWandRed;
 	WeaponSlots[4].Weapons[2] = WeaponMageCone;
 	WeaponSlots[5].Weapons[2] = WeaponMageLightning;
-	WeaponSlots[6].Weapons[2] = WeaponMageBloodscourge; //WeaponWhirlWind;
-	WeaponSlots[7].Weapons[2] = WeaponMageWyvern; //WeaponMageBloodscourge;
+	WeaponSlots[6].Weapons[2] = WeaponMageBloodscourge;
+	WeaponSlots[7].Weapons[2] = WeaponMageWyvern;
 	WeaponSlots[8].Weapons[2] = WeaponMageHorriblePain;
 
 	WeaponSlots[1].Weapons[3] = WeaponHereticGauntlets;
