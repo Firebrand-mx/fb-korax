@@ -461,6 +461,10 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 		//if (CRTRData.linetarget != TargetEntity)
 		//	return false;
 
+	#ifdef DEBUG_BOT_AI_CANREACH
+		print("TargetEntity.Origin.z = %f; CRTRData.finalPos.z = %f", TargetEntity.Origin.z, CRTRData.finalPos.z);
+	#endif
+
 		
 		// [FB]  3d Floor checks...
 		float dist;
@@ -502,11 +506,22 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 							bool bCanUseLines)
 {
 	intercept_t *	in;
-	//sector_t *		p_sector;
 	opening_t *		opening;					// [FB] For 3d floors
 	TVec			tracedir;
 	TVec			hit_point;
 
+#ifdef DEBUG_BOT_AI_CANREACH
+	print("try reach");
+	print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
+							MinPassableOpening);
+#endif
+
+	//
+	// [CW] For slope recognition
+	float			distance_bak;
+	float			distance_traced;		// distance traced total
+	float			distance_traced_last;	// distance traced last iteration
+	float			slope_angle;
 
 	pCRTRData->intercepted_once = false;
 	pCRTRData->prev_sector = Sector;
@@ -523,31 +538,25 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	{
 		pCRTRData->intercepted_once = true;
 
+		distance_bak = distance_traced;
+		distance_traced = Length(Origin - TargetPos) * in->frac;
+		distance_traced_last = distance_traced - distance_bak;
+
 		if (in->bIsALine)
 		{
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
 					(in->line->flags & ML_BLOCKEVERYTHING) ||
 					!in->line->backsector)
+			{
 				return false;
-
-			// [CW] This is not used anymore
-			/*// in case of two-sided lines a passability check is made
-			if (in->line->frontsector == pCRTRData->prev_sector)
-				p_sector = in->line->backsector;
-			else if (in->line->backsector == pCRTRData->prev_sector)
-				p_sector = in->line->frontsector;
-			else
-				// something was really messed up		
-				return false;
-
-			pCRTRData->prev_sector = p_sector;*/
+			}
 
 			//
 			// [FB] partial 3d floor support...
 			//
 
-			hit_point = Origin + (Length(Origin - TargetPos) * in->frac) * tracedir;
+			hit_point = Origin + distance_traced * tracedir;
 			hit_point.z = traceZ;
 			// (c) JL: LineOpenings: sets opentop and openbottom to the window through a two sided line.
 			opening = LineOpenings(in->line, hit_point);
@@ -559,18 +568,22 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			if (!opening)
 			{
 				//	No openings.
+#ifdef DEBUG_BOT_AI_CANREACH
+				print("failed: no openings");
+#endif
 				return false;
 			}
 
 #ifdef DEBUG_BOT_AI_CANREACH
 			print("z = %f, opening = f %f/%f ; ctop = %f; r = %f", traceZ, opening->bottom, opening->lowfloor,
 				opening->top, opening->range);
-			print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
-							MinPassableOpening);
+			print("hitpoint : %f, %f, %f", hit_point.x, hit_point.y, hit_point.z);
 #endif
 
 			// [CW] Now, when we have the best opening available, we must check
 			//		if the best is actually the passable
+			//
+			// [CW]
 			//
 			//		From what I saw in engine code, -
 			//		opening->top is the lowest ceiling between previous and next sector;
@@ -578,7 +591,55 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			//		opening->range is distance between opening->top and opening->bottom;
 			//		opening->lowfloor is the lowest floor between previous and next sector;
 			//
+
 			//
+			// [CW] Check floor planes for slopes
+			//
+			if (traceZ != opening->bottom && traceZ != opening->lowfloor)
+			{
+				// There was definitely a slope;
+				// [CW] CHECKME -- there's a chance this won't work properly
+				// if the height of the floor after slope is not equal to the one
+				// at the end point of a slope; more than that, if height of the
+				// floor after slope is equal to starting height of a slope,
+				// this algorythm will work as if there was no slope at all :?
+
+				// Examples:
+				//               /|
+				//             /  |
+				//   --------/    |------------
+				//
+				//
+				//   -------\  |---------------
+				//           \ |
+				//            \|
+				//
+
+				// [CW] For now we assume that previous floor plane has seamless
+				//		connection with next one, i.e opening->bottom eq opening->lowfloor
+				
+				slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+
+			#ifdef DEBUG_BOT_AI_CANREACH
+					print("slope angle %f", slope_angle);
+			#endif
+
+				// Check if slope angle is to high to ascend
+				if (slope_angle > 45.0)
+				{
+			#ifdef DEBUG_BOT_AI_CANREACH
+					print("failed: steep slope angle %f", slope_angle);
+			#endif
+					return false;
+				}
+
+				// Make our "ghost" player stand at the end of the slope
+				traceZ = opening->bottom;
+			#ifdef DEBUG_BOT_AI_CANREACH
+				print("passed slope, now at Z = %f", traceZ);
+			#endif
+			}
+
 			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
 				||
 				// If can fit through...
@@ -603,7 +664,6 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			// [FB] This should partially cover it...
 
 			// [CW] Update height position;
-			// TODO WARNING CHECKME -- what about slopes??
 			if (traceZ == opening->bottom)
 				traceZ = opening->lowfloor;
 			else
@@ -632,6 +692,10 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 	pCRTRData->finalPos = TargetPos;
 	pCRTRData->finalPos.z = traceZ;
+
+#ifdef DEBUG_BOT_AI_CANREACH
+	print("finally succeed");
+#endif
 
 	return true;
 }
