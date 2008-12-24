@@ -758,6 +758,9 @@ void CheckStuff()
 		if (((ITarget == node_current) && (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)) ||
 			!CheckTo(ITarget.Origin, ITarget))
 		{
+#ifdef DEBUG_BOT_AI_TARGET
+			print("reset target");
+#endif
 			ITarget = none;
 			return;
 		}
@@ -3958,7 +3961,9 @@ Actor GetSpecialEnemy(optional bool bReachable)
 			// [CW] In KTH if there's a Heresiarch and he is not this Bot,
 			// Bot must target only Heresiarch
 			if (GameKTH(gameInfo.GameModel).State == GameKTH::state_heresiarch &&
-				GameKTH(gameInfo.GameModel).plHeresiarch != player)
+				GameKTH(gameInfo.GameModel).plHeresiarch &&
+				GameKTH(gameInfo.GameModel).plHeresiarch != player &&
+				GameKTH(gameInfo.GameModel).plHeresiarch.MO)
 			{
 				actor = Actor(GameKTH(gameInfo.GameModel).plHeresiarch.MO);
 				dist = botmo.DistTo(actor);
@@ -3974,7 +3979,8 @@ Actor GetSpecialEnemy(optional bool bReachable)
 				if (Banner.Team == player.Team)
 				{
 					// [CW] In any case Bot should try to gun the opposing flag-carrier down
-					if (Banner.Status == CTFBanner::BANNER_STATUS__CARRIED)
+					if (Banner.Status == CTFBanner::BANNER_STATUS__CARRIED &&
+						Banner.Capturer && Banner.Capturer.MO)
 					{
 						dist = botmo.DistTo(Banner.Capturer.MO);
 						if (closest_dist == -1.0 || closest_dist > dist)

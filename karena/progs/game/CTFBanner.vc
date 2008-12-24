@@ -42,7 +42,7 @@ enum
 	BANNER_STATUS__BEING_RETURNED	// Flying home (just in case we'll use delayed respawn for any reason)
 };
 
-const float		AUTORESPAWN_DELAY	= 120.0 * 35.0;	// 2 minutes
+const float		AUTORESPAWN_DELAY	= 30.0 * 35.0;	// 30 seconds
 
 PlayerTeam	Team;		// Which team this banner do belong
 						// (theoretically can be changed during game for some weird gameplay effect... (: )
@@ -115,16 +115,6 @@ bool IsTouched(Entity Toucher)
 							CTF.CommitCapture(Player(Toucher.Player).Banner);
 							Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
 						}
-						/*int i;
-						for (i = 0; i < GameCTF::MAXBANNERS; i++)
-						{
-							if (CTF.Banners[i] && CTF.Banners[i] != self &&
-								CTF.Banners[i].Capturer == Player(Toucher.Player))
-							{
-								CTF.CommitCapture(CTF.Banners[i]);
-								Toucher.PlaySound('misc/p_pkup', CHAN_AUTO);
-							}
-						}*/
 					}
 				}
 				else
@@ -161,7 +151,7 @@ void CaptureBy(Entity newCapturer)
 		int i;
 		MainGameInfo(Level.Game).bcentreprint(va("%s got the %s flag!",
 									newCapturer.Player.PlayerName,
-									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+									Team.Name));
 		Capturer = Player(newCapturer.Player);
 		Capturer.Banner = self;
 
@@ -203,18 +193,18 @@ void ReturnToBase(Entity Savior, bool silent)
 				Player(Savior.Player).UpdateScore(HexenDefs::scoreevent_CtfSaveFlag);
 				MainGameInfo(Level.Game).bcentreprint(va("%s returned %s flag!",
 							Savior.Player.PlayerName,
-							Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+							Team.Name));
 			}
 			else
 				MainGameInfo(Level.Game).bcentreprint(va("%s flag returned to the base",
-							Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+							Team.Name));
 		}
 		
 		Status = BANNER_STATUS__BEING_RETURNED;
 		//[FB] We need to let the bots know they must get on deciding state again
-		if(Capturer)
+		if (Capturer)
 		{
-			if (Capturer.bIsBot)
+			if (Capturer.Bot)
 				Capturer.Bot.botstate.BState = BotPlayer::bst_decide;
 			Capturer.Banner = none;
 		}
@@ -253,11 +243,11 @@ void WasLost()
 
 		MainGameInfo(Level.Game).bcentreprint(va("%s dropped the %s flag!",
 									Capturer.PlayerName,
-									Team.Name /* MainGameInfo(Level.Game).ColourNames[Team.Colour]*/));
+									Team.Name));
 		//[FB] We need to let the bots know they must get on deciding state again
-		if(Capturer)
+		if (Capturer)
 		{
-			if (Capturer.bIsBot)
+			if (Capturer.Bot)
 				Capturer.Bot.botstate.BState = BotPlayer::bst_decide;
 			Capturer.Banner = none;
 		}
@@ -284,18 +274,22 @@ bool Physics(float DeltaTime)
 	// Carried flag should follow capturer
 	if (Status == BANNER_STATUS__CARRIED)
 	{
-		UnlinkFromWorld();
 		if (Capturer)
 		{
-			TVec forward;
-			Origin = Capturer.MO.Origin;
-			Origin.z = Origin.z + Capturer.MO.Height;
-			AngleVector(&Capturer.MO.Angles, &forward);
-			VectorRotateAroundZ(&forward, -90.0);
-			forward = forward * (Capturer.MO.Radius / 2.0);
-			Origin += forward;
+			if (Capturer.MO)
+			{
+				TVec forward;
+				UnlinkFromWorld();
+				Origin = Capturer.MO.Origin;
+				Origin.z = Origin.z + Capturer.MO.Height;
+				AngleVector(&Capturer.MO.Angles, &forward);
+				VectorRotateAroundZ(&forward, -90.0);
+				forward = forward * (Capturer.MO.Radius / 2.0);
+				Origin += forward;
+				LinkToWorld();
+			}
 		}
-		LinkToWorld();
+		
 		return true;
 	}
 	else
@@ -344,6 +338,13 @@ void Tick(float deltaTime)
 		lost_timer -= deltaTime;
 		if (lost_timer <= 0.0)
 			ReturnToBase(none, false);
+	}
+	else if (Status == BANNER_STATUS__CARRIED)
+	{
+		if (!Capturer || !Capturer.MO)
+		{
+			WasLost();
+		}
 	}
 
 	::Tick(deltaTime);
