@@ -611,7 +611,7 @@ bool CheckPath(float ang, float dist)
 				{
 					if (diffheight >= MAXSTEPHEIGHT && diffheight <= MAXJUMPHEIGHT)
 					{
-						if (distance_passed <= 32.0)
+						if (distance_passed <= 48.0)
 						{
 							player.Buttons |= BT_JUMP;
 						}
@@ -1837,7 +1837,7 @@ void Roam(TVec dest)
 	TVec short_dest = botmo.Origin;
 	short_dest.x += forwardmove * cos(botmo.Angles.yaw) + sidemove * cos(botmo.Angles.yaw - 90.0);
 	short_dest.y += forwardmove * sin(botmo.Angles.yaw) + sidemove * sin(botmo.Angles.yaw - 90.0);
-	CheckPath(Length(short_dest - botmo.Origin), AngleTo(short_dest));
+	CheckPath(AngleTo(short_dest), Length(short_dest - botmo.Origin));
 }
 
 //==========================================================================
@@ -1954,15 +1954,9 @@ void Move(float deltaTime)
 	}
 
 	t_strafe -= deltaTime;
-	/* if (t_strafe <= 0.0)
-	{
-		sidemove = -sidemove;
-		t_strafe = 2.0;
-	}*/
 
 	// Try to dodge anticipated enemy fire
-	if (//!bMeleeUrge && /* This condition is temporary solution */
-		enemy && t_dodge <= 0.0)
+	if (enemy && t_dodge <= 0.0)
 	{
 		bool DoEvade = false;
 
@@ -2087,8 +2081,7 @@ void Move(float deltaTime)
 		}
 	}
 	
-	if (//!bMeleeUrge && /* This condition is temporary solution */
-		enemy && t_dodge > 0.0)
+	if (enemy && t_dodge > 0.0)
 	{
 		switch (info.anticip)
 		{
