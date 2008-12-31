@@ -179,26 +179,27 @@ bool IsTeammate(EntityEx Other)
 
 //==========================================================================
 //
-//  HeresiarchMorphPlayer
+//  MorphPlayerToClass
 //
 //  [CW] Morph player into given class
 //
 //==========================================================================
 
-bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass)
+bool MorphPlayerToClass(int pclass, class<Actor> moclass, bool bAlways)
 {
 	Actor beastMo;
 	int i;
 	int bak_level;
 
-	if (bInvulnerable)
+	if (!bAlways && bInvulnerable)
 	{
 		// Immune when invulnerable
 		return false;
 	}
-	if (Player(Player).MorphTime || Class == PlayerHeresiarch)
+
+	if (Player(Player).MorphTime || Class == moclass)
 	{
-		// Player is already a beast
+		// Player is already this class
 		return false;
 	}
 
@@ -213,6 +214,7 @@ bool HeresiarchMorphPlayer(int pclass, class<Actor> moclass)
 	Player.Health = beastMo.Health;
 	Player.MO = beastMo;
 	Player.Camera = beastMo;
+	Player(Player).ViewHeight = PlayerPawn(beastMo).ViewHeight;
 	BasicArmor BArmor = BasicArmor(FindInventory(BasicArmor));
 	BArmor.Amount = 0;
 	Player.PClass = pclass;
