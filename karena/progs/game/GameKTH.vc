@@ -504,7 +504,6 @@ void PlayBirthSequence()
 		plHeresiarch.MO.Args[3] = Actor::SORC_ACCELERATE;	// speed mode
 		break;
 	case 70:
-		plHeresiarch.MO.Velocity.z = 0.0;
 		if (srcballs[0])
 		{
 			srcballs[0].Args[4] = 0;
@@ -528,7 +527,8 @@ void PlayBirthSequence()
 		srcballs[2] = none;
 		CircularPosition.x = 128.0;
 		CircularPosition.y = 128.0;
-		HandleEvent(event_heresiarchspawn, none, 0, 0, 0, 0);
+		// [CW] Negate thrust provided by exploded srcballs
+		plHeresiarch.MO.Velocity = vector(0.0, 0.0, 0.0);
 		break;
 	default:
 		if (birthsequence_state > 12)
@@ -623,11 +623,10 @@ void PlayBirthSequence()
 				EntityEx(plHeresiarch.MO).TeleportMove(HSS.Origin, true);
 			}
 
-			EntityEx(plHeresiarch.MO).bInvulnerable = false;
-			KArenaPlayerPawn(plHeresiarch.MO).HeresiarchMorphPlayer(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch);
+			KArenaPlayerPawn(plHeresiarch.MO).MorphPlayerToClass(HexenDefs::PCLASS_HERESIARCH, PlayerHeresiarch, true);
 			EntityEx(plHeresiarch.MO).GiveInventoryType(InitialInvulnerability);
 			plHeresiarch.SetControllable(true);
-			plHeresiarch.MO.bNoGravity = false;
+			HandleEvent(event_heresiarchspawn, none, 0, 0, 0, 0);
 			break;
 		}
 	}
