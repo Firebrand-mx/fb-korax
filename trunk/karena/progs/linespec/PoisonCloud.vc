@@ -60,7 +60,8 @@ int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
 {
 	if (victim.bIsPlayer && !victim.bDormant)
 	{
-		if (!(bCheckFriendlyFire && PlayerEx(victim.Player).CheckFriendlyFire(source, damage)) &&
+		if (!victim.bInvulnerable &&
+			!(bCheckFriendlyFire && PlayerEx(victim.Player).CheckFriendlyFire(source, damage)) &&
 			PlayerEx(victim.Player).PoisonCount < 4)
 		{
 			Actor(victim).PoisonDamage(self, Actor(source), 15 + (P_Random() & 15), false);	// Don't play painsound
