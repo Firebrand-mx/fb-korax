@@ -512,6 +512,7 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 #ifdef DEBUG_BOT_AI_CANREACH
 	print("try reach");
+	print("at: %f, %f, %f", Origin.x, Origin.y, Origin.z);
 	print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
 							MinPassableOpening);
 #endif
@@ -624,6 +625,11 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 					print("slope angle %f", slope_angle);
 			#endif
 
+				// [CW] I am disabling this for a while, because
+				// in current unfinished implementation of 
+				// slope recognition bot may sometimes 'invent'
+				// slopes in places where aren't any.
+#ifdef FIXME_LATER
 				// Check if slope angle is to high to ascend
 				if (slope_angle > 45.0)
 				{
@@ -632,6 +638,7 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			#endif
 					return false;
 				}
+#endif
 
 				// Make our "ghost" player stand at the end of the slope
 				traceZ = opening->bottom;
