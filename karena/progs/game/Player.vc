@@ -830,7 +830,7 @@ void SelectPlayerTeam()
 		}
 		
 		ClientTeamSelect(maxTeams, MainGameInfo(Level.Game).TeamInfos.Num, i,
-			/* curTeamIndex*/Team ? Team.Index : -1,
+			Team ? Team.Index : -1,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].Index : -1,
 			MainGameInfo(Level.Game).Teams[0] ? MainGameInfo(Level.Game).Teams[0].GetPlayerCount() : 0,
 			MainGameInfo(Level.Game).Teams[1] ? MainGameInfo(Level.Game).Teams[1].Index : -1,
@@ -848,8 +848,6 @@ void AutoSelectTeam()
 {
 	int i;
 	int new_index = -1;
-	int free_team_slots = 0;
-	array<bool> team_indices_free;
 
 	bool fixed_teams = GetCvar('FixedTeams');
 	int fixed_team1 = GetCvar('FixedTeam1');
@@ -859,76 +857,48 @@ void AutoSelectTeam()
 	MainGameInfo Game = MainGameInfo(Level.Game);
 
 	bool bKeepEqual = GetCvar('KeepTeamsEqual');
-	int count_limit = 0;
-	if (bKeepEqual && Game.Teams[0] && Game.Teams[1])
-		count_limit = Game.Teams[0].GetPlayerCount();
 
-	team_indices_free.Num = Game.TeamInfos.Num;
+	if (bKeepEqual)
+	{
+		int count;
+		int count_limit = Game.Teams[0].GetPlayerCount();
 
-	for (i = 0; i < team_indices_free.Num; i++)
-	{
-		if (Game.TeamInfos[i].bTeamInPlay ||
-			(fixed_teams && ((i != fixed_team1 && i != fixed_team2))) ||
-			(!bIsBot && auto_player_team != -1 && i != auto_player_team))
-		{
-			team_indices_free[i] = false;
-		}
-		else
-		{
-			team_indices_free[i] = true;
-		}
-	}
-
-	for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
-	{
-		if (Game.Teams[i] == none)
-			free_team_slots++;
-		else
-		{
-			if (bKeepEqual)
-			{
-				int count = Game.Teams[i].GetPlayerCount();
-				if (count_limit > count)
-					count_limit = count;
-			}
-		}
-	}
-		
-	if (free_team_slots != Game.MaxTeamsInGame[Game.GameType] && bKeepEqual)
-	{
 		for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
 		{
-			// [CW] Choose one of the existing teams that is available for joining
-			if (Game.Teams[i] == none)
-				break;
-			if (Game.Teams[i].GetPlayerCount() <= count_limit)
-			{
-				new_index = Game.Teams[i].Index;
-				break;
-			}
+			count = Game.Teams[i].GetPlayerCount();
+			if (count_limit > count)
+				count_limit = count;
 		}
 
-		if (new_index < 0)
+		if (!bIsBot && auto_player_team != -1 &&
+			Game.Teams[auto_player_team].GetPlayerCount() <= count_limit)
 		{
-			// [CW] Choose new team
-			do
-				new_index = P_Random() % /* HexenDefs::MAXPLAYERTEAMS*/team_indices_free.Num;
-			while (!team_indices_free[new_index]);
+			new_index = Game.Teams[auto_player_team].Index;
+		}
+		else
+		{
+			for (i = 0; i < Game.MaxTeamsInGame[Game.GameType]; i++)
+			{
+				// [CW] Choose one of the existing teams that is available for joining
+				if (Game.Teams[i].GetPlayerCount() <= count_limit)
+				{
+					new_index = Game.Teams[i].Index;
+					break;
+				}
+			}
 		}
 	}
 	else
 	{
-		if (!free_team_slots ||
-			((free_team_slots != Game.MaxTeamsInGame[Game.GameType]) && P_Random() > 127))
-			// [CW] Choose one of the existing teams
-			new_index = 
-				Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType] - free_team_slots)].Index;
+		// [CW] Choose one of the existing teams
+		if (!bIsBot && auto_player_team != -1)
+		{
+			new_index = Game.Teams[auto_player_team].Index;
+		}
 		else
 		{
-			// [CW] Choose new team
-			do
-				new_index = P_Random() % team_indices_free.Num;
-			while (!team_indices_free[new_index]);
+			new_index = 
+				Game.Teams[P_Random() % (Game.MaxTeamsInGame[Game.GameType])].Index;
 		}
 	}
 
