@@ -1,0 +1,34 @@
+//------------------------------------------------------------------------------
+actor KArenaDragon : Dragon replaces Dragon
+{
+	+NoRadiusDmg
+	HitObituary "$ob_dragonhit"
+}
+
+//------------------------------------------------------------------------------
+actor DragonMissile replaces DragonFireball
+{
+	Radius 12
+	Height 10
+	Speed 24
+	Damage 6
+	DamageType "Fire"
+	Projectile
+	-ActivateImpact
+	-ActivatePCross
+	DeathSound "DragonFireballExplode"
+
+	action native A_KArenaDragonFX2();
+
+	states
+	{
+	Spawn:
+		DRFX ABCDEF 4 Bright
+		Loop
+	Death:
+		DRFX GHI 4 Bright
+		DRFX J 4 Bright A_KArenaDragonFX2
+		DRFX KL 3 Bright
+		Stop
+	}
+}
