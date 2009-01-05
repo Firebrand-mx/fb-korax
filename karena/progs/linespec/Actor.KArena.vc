@@ -366,6 +366,22 @@ bool Physics(float DeltaTime)
 		// mobj was removed
 		return false;
 	}
+	else if (bSkullFly && Health > 0)
+	{
+		//	A flying mobj slammed into something
+		bSkullFly = false;
+		Velocity = vector(0.0, 0.0, 0.0);
+		if (!SetState(SeeState ? SeeState : IdleState))
+		{
+			// mobj was removed
+			return false;
+		}
+	}
+	else if (bBlasted)
+	{
+		// Reset to not blasted when momentums are gone
+		ResetBlasted();
+	}
 
 	if (bFloatBob)
 	{
@@ -454,7 +470,7 @@ bool Physics(float DeltaTime)
 				return false;
 			}
 		}
-		else
+		else if ((Origin.z != FloorZ) || Velocity.z)
 		{
 			// Handle Z momentum and gravity
 			ZMovement(DeltaTime);
