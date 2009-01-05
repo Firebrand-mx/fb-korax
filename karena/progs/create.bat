@@ -1,10 +1,7 @@
 @ECHO OFF
 cd..
-cd..
 vlumpy d:\korax\vavoom\source\basev\common\basepak.ls
-copy "d:\korax\vavoom\source\basev\common\basepak.pk3" "D:\Korax\Vavoom\basev\common\"
-cd karena
+move basepak.pk3 "D:\Korax\KArena\basev\common\"
 vlumpy basepak.ls
 pause
-copy basepak.pk3 "D:\Korax\KArena\karena\"
-
+move basepak.pk3 "D:\Korax\KArena\karena\"
