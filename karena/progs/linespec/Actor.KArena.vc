@@ -274,6 +274,8 @@ bool Physics(float DeltaTime)
 		return BlasterPhysics(DeltaTime);
 	}
 
+	float CummX = 0.0;
+	float CummY = 0.0;
 	if (Sector->AffectorData && bColideWithWorld && !bNoSector)
 	{
 		// killough 3/7/98: Carry things on floor
@@ -284,8 +286,6 @@ bool Physics(float DeltaTime)
 		// Move objects only if on floor or underwater,
 		// non-floating, and clipped.
 
-		float CummX = 0.0;
-		float CummY = 0.0;
 		int CountX = 0;
 		int CountY = 0;
 		for (SecThink = SectorThinker(Sector->AffectorData); SecThink;
@@ -353,157 +353,117 @@ bool Physics(float DeltaTime)
 	}
 
 	CheckWater();
-	if (!bFloatBob && !bFixedFloatZ)
+	if ((!bFloatBob || !bSpecial) && !bFixedFloatZ)
 	{
 		UpdateVelocity();
 	}
 
 	// momentum movement
-	if (Velocity.x || Velocity.y)
+	// Handle X and Y momentums
+	XYMovement(DeltaTime, CummX, CummY);
+	if (IsDestroyed())
 	{
-		// Handle X and Y momentums
-		XYMovement(DeltaTime);
-		if (IsDestroyed())
-		{
-			// mobj was removed
-			return false;
-		}
-	}
-	else if (bSkullFly && Health > 0)
-	{
-		//	A flying mobj slammed into something
-		bSkullFly = false;
-		Velocity = vector(0.0, 0.0, 0.0);
-		if (!SetState(SeeState ? SeeState : IdleState))
-		{
-			// mobj was removed
-			return false;
-		}
-	}
-	else if (bBlasted)
-	{
-		// Reset to not blasted when momentums are gone
-		ResetBlasted();
+		// mobj was removed
+		return false;
 	}
 
-	if (bFloatBob && bSpecial)
+	if (bFloatBob)
 	{
-		// Floating item bobbing motion (special1 is height)
-		if (Sector->bHasExtrafloors)
+		if (bSpecial)
 		{
-			//	Make sure FloorZ is from bottom region.
-			Origin.z = ONFLOORZ;
-			LinkToWorld();
+			// Floating item bobbing motion (special1 is height)
+			if (Sector->bHasExtrafloors)
+			{
+				//	Make sure FloorZ is from bottom region.
+				Origin.z = ONFLOORZ;
+				LinkToWorld();
+			}
+			FloatBobPhase += DeltaTime;
+			Origin.z = FloorZ + Special1f +
+				Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63];
 		}
-		FloatBobPhase += DeltaTime;
-		Origin.z = FloorZ + Special1f +
-			Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63];
-	}
-	else if (bFixedFloatZ /* [CW] here it goes */)
-	{
-		if (Sector->bHasExtrafloors)
+		else
 		{
-			//	Make sure FloorZ is from bottom region.
-			Origin.z = ONFLOORZ;
-			LinkToWorld();
-		}
-		Origin.z = FloorZ + Special1f;
-	}
-	else if (bPassMobj && !bMissile && !Level.CompatNoPassOver)
-	{
-		//	Floating bobbing motion for monsters.
-		if (bFloatBob)
-		{
+			//	Floating bobbing motion for monsters.
 			Origin.z -= Level.Game.FloatBobOffsets[
 				ftoi(FloatBobPhase * 35.0) & 63];
 			FloatBobPhase += DeltaTime;
 			Origin.z += Level.Game.FloatBobOffsets[
 				ftoi(FloatBobPhase * 35.0) & 63];
 		}
+	}
 
-		// Handle Z momentum and gravity
-		onmo = EntityEx(CheckOnmobj());
-		if (onmo)
+	if (Velocity.z || (Origin.z != FloorZ && (!bFloatBob || (!bSpecial &&
+		Origin.z - Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63] != FloorZ))))
+	{
+		if (bPassMobj && !bMissile && !Level.CompatNoPassOver)
 		{
-			if (bIsPlayer)
-			{
-				if (Velocity.z < -DEFAULT_GRAVITY * 0.25 && !bFly)
-				{
-					PlayerLandedOnThing();
-				}
-			}
-			if (onmo.Origin.z + onmo.Height - Origin.z <= MaxStepHeight)
+			// Handle Z momentum and gravity
+			onmo = EntityEx(CheckOnmobj());
+			if (onmo)
 			{
 				if (bIsPlayer)
 				{
-					PlayerEx(Player).ViewHeight -=
-						onmo.Origin.z + onmo.Height - Origin.z;
-					PlayerEx(Player).DeltaViewHeight =
-						(PlayerPawn(self).ViewHeight -
-						PlayerEx(Player).ViewHeight) * 4.0;
-				}
-				Origin.z = onmo.Origin.z + onmo.Height;
-			}
-			bOnMobj = true;
-			Velocity.z = 0.0;
-
-			if (onmo.bOnmobjCopyVel)
-			{
-				Velocity.x = onmo.Velocity.x;
-				Velocity.y = onmo.Velocity.y;
-				if (onmo.Origin.z < onmo.FloorZ)
-				{
-					Origin.z += onmo.FloorZ - onmo.Origin.z;
-					if (onmo.bIsPlayer)
+					if (Velocity.z < -DEFAULT_GRAVITY * 0.25 && !bFly)
 					{
-						PlayerEx(onmo.Player).ViewHeight -=
-							onmo.FloorZ - onmo.Origin.z;
-						PlayerEx(onmo.Player).DeltaViewHeight =
-							(PlayerPawn(self).ViewHeight -
-							PlayerEx(onmo.Player).ViewHeight) * 4.0;
+						PlayerLandedOnThing();
 					}
-					onmo.Origin.z = onmo.FloorZ;
+				}
+				if (onmo.Origin.z + onmo.Height - Origin.z <= MaxStepHeight)
+				{
+					if (bIsPlayer)
+					{
+						PlayerEx(Player).ViewHeight -=
+							onmo.Origin.z + onmo.Height - Origin.z;
+						PlayerEx(Player).DeltaViewHeight =
+							(PlayerPawn(self).ViewHeight -
+							PlayerEx(Player).ViewHeight) * 4.0;
+					}
+					Origin.z = onmo.Origin.z + onmo.Height;
+				}
+				bOnMobj = true;
+				Velocity.z = 0.0;
+
+				if (onmo.bOnmobjCopyVel)
+				{
+					Velocity.x = onmo.Velocity.x;
+					Velocity.y = onmo.Velocity.y;
+					if (onmo.Origin.z < onmo.FloorZ)
+					{
+						Origin.z += onmo.FloorZ - onmo.Origin.z;
+						if (onmo.bIsPlayer)
+						{
+							PlayerEx(onmo.Player).ViewHeight -=
+								onmo.FloorZ - onmo.Origin.z;
+							PlayerEx(onmo.Player).DeltaViewHeight =
+								(PlayerPawn(self).ViewHeight -
+								PlayerEx(onmo.Player).ViewHeight) * 4.0;
+						}
+						onmo.Origin.z = onmo.FloorZ;
+					}
 				}
 			}
+			else
+			{
+				ZMovement(DeltaTime);
+				bOnMobj = false;
+			}
+			if (IsDestroyed())
+			{
+				// entity was removed
+				return false;
+			}
 		}
-		else if ((Origin.z != FloorZ) || Velocity.z)
+		else
 		{
+			// Handle Z momentum and gravity
 			ZMovement(DeltaTime);
-			bOnMobj = false;
+			if (IsDestroyed())
+			{
+				// entity was removed
+				return false;
+			}
 		}
-		if (IsDestroyed())
-		{
-			// entity was removed
-			return false;
-		}
-	}
-	else if ((Origin.z != FloorZ) || Velocity.z)
-	{
-		//	Floating bobbing motion for monsters.
-		if (bFloatBob)
-		{
-			Origin.z -= Level.Game.FloatBobOffsets[
-				ftoi(FloatBobPhase * 35.0) & 63];
-			FloatBobPhase += DeltaTime;
-			Origin.z += Level.Game.FloatBobOffsets[
-				ftoi(FloatBobPhase * 35.0) & 63];
-		}
-
-		// Handle Z momentum and gravity
-		ZMovement(DeltaTime);
-		if (IsDestroyed())
-		{
-			// entity was removed
-			return false;
-		}
-	}
-	else if (bFloatBob)
-	{
-		Origin.z -= Level.Game.FloatBobOffsets[
-			ftoi(FloatBobPhase * 35.0) & 63];
-		FloatBobPhase += DeltaTime;
-		Origin.z += Level.Game.FloatBobOffsets[
-			ftoi(FloatBobPhase * 35.0) & 63];
 	}
 	return true;
 }
