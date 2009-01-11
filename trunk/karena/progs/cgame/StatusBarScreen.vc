@@ -486,12 +486,14 @@ void SB_DrawMainBar()
 
 	// Frags
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
-	    ClGame.deathmatch == HexenDefs::game_dmteam)
+	    ClGame.deathmatch == HexenDefs::game_dmteam ||
+		ClGame.deathmatch == HexenDefs::game_kth)
 	{
 /*		DrawPic(38, 162, pic_kills);
 		SB_DrawNumber9(40, 176, cl.Frags, 0);
 		*/
-		if (ClGame.deathmatch == HexenDefs::game_dm)
+		if (ClGame.deathmatch == HexenDefs::game_dm ||
+			ClGame.deathmatch == HexenDefs::game_kth)
 		{
 			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
 		}
@@ -707,6 +709,11 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 	int UsesMana)
 {
 	Inventory		ManaItem;
+
+	if (!cl.MO)
+	{
+		return;
+	}
 
 	ManaItem = cl.MO ? EntityEx(cl.MO).FindInventory(Type) : none;
 	if (!ManaItem || ManaItem.Amount == 0)
@@ -1099,6 +1106,11 @@ void SB_DrawFullscreenStats()
 void DrawFullscreenMana(class<Ammo> Type, int X, int DimBase, int UsesMana)
 {
 	Inventory		ManaItem;
+
+	if (!cl.MO)
+	{
+		return;
+	}
 
 	ManaItem = cl.MO ? EntityEx(cl.MO).FindInventory(Type) : none;
 	if (!ManaItem || ManaItem.Amount == 0)
