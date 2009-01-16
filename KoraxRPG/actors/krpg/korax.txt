@@ -34,6 +34,7 @@ actor KRPGKorax : IntelligentActor replaces Korax
 		KORX A 5 A_LookAI
 		Loop
 	See:
+		KORX A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		KORX A 0 A_PlaySoundEx("KoraxStep", "Body", 0, 1)
 		KORX A 3 A_ChaseAI
 		KORX AAA 3 A_KoraxChase
@@ -45,26 +46,62 @@ actor KRPGKorax : IntelligentActor replaces Korax
 		KORX D 3 A_ChaseAI
 		KORX DDD 3 A_KoraxChase
 		Loop
+	SeeDamaged:
+		KOD1 A 0 A_PlaySoundEx("KoraxStep", "Body", 0, 1)
+		KOD1 A 3 A_ChaseAI
+		KOD1 AAA 3 A_KoraxChase
+		KOD1 B 3 A_ChaseAI
+		KOD1 BBB 3 A_KoraxChase
+		KOD1 C 0 A_PlaySoundEx("KoraxStep", "Body", 0, 1)
+		KOD1 C 3 A_ChaseAI
+		KOD1 CCC 3 A_KoraxChase
+		KOD1 D 3 A_ChaseAI
+		KOD1 DDD 3 A_KoraxChase
+		Loop
 	Pain:
+		KORX A 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		KORX H 5 A_KRPGPain
 		KORX H 5
 		Goto See+1
+	PainDamaged:
+		KORX H 5 A_KRPGPain
+		KORX H 5
+		Goto SeeDamaged+1
 	Missile:
+		KORX A 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		KORX E 2 Bright A_FaceTarget
 		KORX E 5 Bright A_KoraxDecide
 		Wait
+	MissileDamaged:
+		KOD1 E 2 Bright A_FaceTarget
+		KOD1 E 5 Bright A_KoraxDecide
+		Wait
 	Attack:
+		KORX A 0 A_JumpIf(Health < default_health / 2, "AttackDamaged")
 		KORX E 4 Bright A_FaceTarget
 		KORX F 8 Bright A_KoraxMissile
 		KORX E 8 Bright
 		Goto See+1
+	AttackDamaged:
+		KOD1 E 4 Bright A_FaceTarget
+		KOD1 F 8 Bright A_KoraxMissile
+		KOD1 E 8 Bright
+		Goto SeeDamaged+1
 	Command:
+		KORX A 0 A_JumpIf(Health < default_health / 2, "CommandDamaged")
 		KORX E 5 Bright A_FaceTarget
 		KORX W 10 Bright A_FaceTarget
 		KORX G 15 Bright A_KoraxCommand
 		KORX W 10 Bright
 		KORX E 5 Bright
 		Goto See+1
+	CommandDamaged:
+		KOD1 E 5 Bright A_FaceTarget
+		KOD1 W 10 Bright A_FaceTarget
+		KOD1 G 15 Bright A_KoraxCommand
+		KOD1 W 10 Bright
+		KOD1 E 5 Bright
+		Goto SeeDamaged+1
 	Death:
 		KORX I 5
 		KORX J 5 A_FaceTarget

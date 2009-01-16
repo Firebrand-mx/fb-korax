@@ -36,6 +36,7 @@ actor KRPGFireDemon : IntelligentActor replaces FireDemon
 		FDMN EFG 10 Bright A_LookAI
 		Goto Spawn+1
 	See:
+		FDMN E 0 A_JumpIf(Health < default_health, "SeeDamaged")
 		FDMN E 8 Bright
 		FDMN F 6 Bright
 		FDMN G 5 Bright
@@ -46,13 +47,33 @@ actor KRPGFireDemon : IntelligentActor replaces FireDemon
 		FDMN J 5 Bright A_UnSetInvulnerable
 		FDMN ABC 5 Bright A_ChaseAI
 		Goto See+9
+	SeeDamaged:
+		FDMD E 8 Bright
+		FDMD F 6 Bright
+		FDMD G 5 Bright
+		FDMD F 8 Bright
+		FDMD E 6 Bright
+		FDMD F 7 Bright A_FiredRocks
+		FDMD HI 5 Bright
+		FDMD J 5 Bright A_UnSetInvulnerable
+		FDMD ABC 5 Bright A_ChaseAI
+		Goto SeeDamaged+9
 	Pain:
+		FDMN E 0 A_JumpIf(Health < default_health, "PainDamaged")
 		FDMN D 6 Bright A_KRPGPain
 		Goto See+9
+	PainDamaged:
+		FDMD D 6 Bright A_KRPGPain
+		Goto SeeDamaged+9
 	Missile:
+		FDMN E 0 A_JumpIf(Health < default_health, "MissileDamaged")
 		FDMN K 3 Bright A_FaceTarget
 		FDMN KKK 5 Bright A_FiredAttack
 		Goto See+9
+	MissileDamaged:
+		FDMN K 3 Bright A_FaceTarget
+		FDMN KKK 5 Bright A_FiredAttack
+		Goto SeeDamaged+9
 	Death:
 		FDMN D 4 Bright A_FaceTarget
 		FDMN L 4 Bright A_Scream
