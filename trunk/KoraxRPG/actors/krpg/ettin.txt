@@ -26,15 +26,28 @@ actor KRPGEttin : IntelligentActor replaces Ettin
 		ETTN AA 10 A_LookAI
 		Loop
 	See:
+		ETTN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		ETTN ABCD 5 A_ChaseAI
 		Loop
+	SeeDamaged:
+		ETTN STUV 5 A_ChaseAI
+		Loop
 	Pain:
+		ETTN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		ETTN H 7 A_KRPGPain
 		Goto See
+	PainDamaged:
+		ETTN Z 7 A_KRPGPain
+		Goto SeeDamaged
 	Melee:
+		ETTN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
 		ETTN EF 6 A_FaceTarget
 		ETTN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto See
+	MeleeDamaged:
+		ETTN WX 6 A_FaceTarget
+		ETTN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto SeeDamaged
 	Death:
 		ETTN IJ 4
 		ETTN K 4 A_Scream
