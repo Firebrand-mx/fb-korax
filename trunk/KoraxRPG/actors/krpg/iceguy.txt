@@ -30,18 +30,34 @@ actor KRPGIceGuy : IntelligentActor replaces IceGuy
 		ICEY A -1
 		Goto Spawn
 	See:
+		ICEY A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		ICEY A 4 A_ChaseAI
 		ICEY B 4 A_KRPGIceGuyChase
 		ICEY CD 4 A_ChaseAI
 		Loop
+	SeeDamaged:
+		ICED A 4 A_ChaseAI
+		ICED B 4 A_KRPGIceGuyChase
+		ICED CD 4 A_ChaseAI
+		Loop
 	Missile:
+		ICEY E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		ICEY EF 3 A_FaceTarget
 		ICEY G 8 Bright A_IceGuyAttack
 		ICEY F 4 A_FaceTarget
 		Goto See
+	MissileDamaged:
+		ICED EF 3 A_FaceTarget
+		ICED G 8 Bright A_IceGuyAttack
+		ICED F 4 A_FaceTarget
+		Goto SeeDamaged
 	Pain:
+		ICEY A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		ICEY A 1 A_KRPGPain
 		Goto See
+	PainDamaged:
+		ICED A 1 A_KRPGPain
+		Goto SeeDamaged
 	Death:
 		ICEY A 1 A_IceGuyDie
 		Stop

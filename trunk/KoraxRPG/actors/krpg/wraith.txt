@@ -37,22 +37,43 @@ actor KRPGWraith : IntelligentActor replaces Wraith
 		WRTH AB 15 A_LookAI
 		Loop
 	See:
+		WRTH A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		WRTH ABCD 4 A_WraithChaseAI
 		Loop
+	SeeDamaged:
+		WRTD ABCD 4 A_WraithChaseAI
+		Loop
 	Melee:
+		WRTH A 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
 		WRTH E 6 A_FaceTarget
 		WRTH F 6 A_WraithFX3
 		WRTH G 6 A_WraithMelee
 		Goto See
+	MeleeDamaged:
+		WRTD E 6 A_FaceTarget
+		WRTD F 6 A_WraithFX3
+		WRTD G 6 A_WraithMelee
+		Goto SeeDamaged
 	Missile:
+		WRTH A 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		WRTH E 6 A_FaceTarget
 		WRTH F 6
 		WRTH G 6 A_CustomMissile("WraithFX1", 32, 0)
 		Goto See
+	MissileDamaged:
+		WRTD E 6 A_FaceTarget
+		WRTD F 6
+		WRTD G 6 A_CustomMissile("WraithFX1", 32, 0)
+		Goto SeeDamaged
 	Pain:
+		WRTH A 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		WRTH A 2
 		WRTH H 6 A_KRPGPain
 		Goto See
+	PainDamaged:
+		WRTD A 2
+		WRTD H 6 A_KRPGPain
+		Goto SeeDamaged
 	Death:
 		WRTH I 4
 		WRTH J 4 A_Scream

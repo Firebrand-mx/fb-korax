@@ -33,17 +33,32 @@ actor KRPGDragon : IntelligentActor replaces Dragon
 		DRAG D 10 A_LookAI
 		Loop
 	See:
+		DRAG A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		DRAG CB 5
 		DRAG A 5 A_DragonInitFlight
 		DRAG B 3 A_DragonFlapAI
 		DRAG BCCDDCCBBAA 3 A_DragonFlightAI
 		Goto See+3
+	SeeDamaged:
+		DRGD CB 5
+		DRGD A 5 A_DragonInitFlight
+		DRGD B 3 A_DragonFlapAI
+		DRGD BCCDDCCBBAA 3 A_DragonFlightAI
+		Goto SeeDamaged+3
 	Missile:
+		DRAG A 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		DRAG E 8 A_CustomMissile("DragonFireball", 32, 0)
 		Goto See+3
+	MissileDamaged:
+		DRGD E 8 A_CustomMissile("DragonFireball", 32, 0)
+		Goto SeeDamaged+3
 	Pain:
+		DRGD A 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		DRAG F 10 A_DragonPain
 		Goto See+3
+	PainDamaged:
+		DRGD F 10 A_DragonPain
+		Goto SeeDamaged+3
 	Death:
 		DRAG G 5 A_Scream
 		DRAG H 4 A_NoBlocking
