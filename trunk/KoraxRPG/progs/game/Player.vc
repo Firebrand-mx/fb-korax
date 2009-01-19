@@ -225,6 +225,7 @@ void ActivateLevel(int to_lvl)
 			break;
 		case 7:
 			centreprint("YOU CAN NOW CAST BANISHMENT!");
+			EntityEx(MO).GiveInventoryType(SpellBanishment);
 			break;
 		case 8:
 			centreprint("YOU NOW HAVE THE ICE WAND!");
@@ -376,11 +377,11 @@ void UpdateStats(int n_strength, int n_vitality, int n_speed, int n_intelligence
 	float Value;
 	if (MorphTime)
 	{
-		Value = (itof(speed) * 2.5) / 100.0;
+		Value = (itof(speed) * 0.25) / 100.0;
 	}
 	else
 	{
-		Value = (itof(speed) * 5.0) / 100.0;
+		Value = (itof(speed) * 0.5) / 100.0;
 	}
 	KRPGPlayerPawn(MO).ForwardMove1 += Value;
 	KRPGPlayerPawn(MO).ForwardMove2 += Value;
@@ -1514,8 +1515,8 @@ void Cheat_Morph()
 	}
 	else
 	{
-		Actor(MO).MorphPlayer(PorkFX.default.PlayerClass,
-			MorphProjectile::MORPHTIME);
+		Actor(MO).MorphPlayer(PorkFX.default.PlayerClass, 0.0,
+			PorkFX.default.MorphStyle, none, none);
 	}
 	cprint("SQUEAL!!");
 }
@@ -1780,7 +1781,7 @@ final void SetBerserk()
 	speed *= 2;
 	Health *= 2;
 	MO.Health = Health;
-//	sp_power = 0;
+	sp_power = 0;
 	Actor(MO).bBerserk = true;
 }
 
