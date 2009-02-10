@@ -112,7 +112,6 @@ void BeginPlay()
 	if (!bNonScalable)
 	{
 		float rand = (Random() - 0.5) * 0.15;
-		//float rand = -0.5;
 		ScaleX += ScaleX * rand;
 		ScaleY += ScaleY * rand;
 		Height += Height * rand;
@@ -160,8 +159,6 @@ void Died(EntityEx source, EntityEx inflictor)
 	{
 		if (bIsMountedOn) Dismount();
 		else RidePartner.Dismount();
-		// NEWVER:
-		//RidePartner.Dismount();
 	}
 
 	Target = none;
@@ -245,7 +242,7 @@ bool Physics(float DeltaTime)
 			float ly = Origin.y - saddle.y;
 			float limit = (RidePartner.Radius + Radius) * 2.0;
 
-			if (fabs(lx) > limit|| fabs(ly) > limit)
+			if (fabs(lx) > limit || fabs(ly) > limit)
 				Dismount();
 		}
 	}
@@ -269,6 +266,25 @@ void Tick(float deltaTime)
 		berserkTics -= 1.0;
 	
 	::Tick(deltaTime);
+}
+
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//	KRPG
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster && P_Random() < 33))
+	{
+		Actor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
+			itof(MissilePoisonDamage) / 10.0);
+		damage >>= 1;
+	}
+	return damage;
 }
 
 //==========================================================================
@@ -451,7 +467,7 @@ bool TryUse(optional float fUseRange, optional float fUseThingRange, optional na
 bool UseThing(EntityEx Thing)
 {
 	if (!Thing)
-		Error("KRPGActor::UseThing : Thing reference not set to an instance of an object");
+		Error("Actor.KRPG::UseThing : Thing reference not set to an instance of an object");
 
 	if (Thing == self)
 		return false;
@@ -466,7 +482,6 @@ bool UseThing(EntityEx Thing)
 	// [CW] TODO: thinkout what conversation style do we need;
 	//			  also, should other persons have ability to talk with each other?
 	//
-	// [CW] that's how it could look like if we used Strife-like dialogs
 	dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
 	if (Thing.ConversationID > 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
 		return true;
@@ -1778,16 +1793,13 @@ ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigat
 
 void NotifyConditions(int notification, EntityEx E, int param)
 {
-	if (/*Conditions && Conditions.refHead*/Conditions.Num)
+	if (Conditions.Num)
 	{
-		//LinkedReferer acref = LinkedReferer(Conditions.refHead);
-		//while (acref)
 		int i;
 		for (i = 0; i < Conditions.Num; i++)
 		{
 			if (Conditions[i])
-			/*ActorCondition(acref.refObject)*/Conditions[i].Notify(notification, E, param);
-			//acref = LinkedReferer(acref.refNext);
+			Conditions[i].Notify(notification, E, param);
 		};
 	}
 }
@@ -1832,25 +1844,6 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 			ee.Velocity += DirectVelocity;
 		}
 	}
-}
-
-//==========================================================================
-//
-//  DoSpecialDamage
-//
-//	KRPG
-//
-//==========================================================================
-
-int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
-{
-	if (MissilePoisonDamage && (victim.bIsPlayer || victim.bMonster && P_Random() < 33))
-	{
-		Actor(victim).CastCondition(ACPoisoned, true, Actor(source), 1,
-			itof(MissilePoisonDamage) / 10.0);
-		damage >>= 1;
-	}
-	return damage;
 }
 
 int decorate_default_health
