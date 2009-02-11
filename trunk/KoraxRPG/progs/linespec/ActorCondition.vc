@@ -42,7 +42,7 @@ enum
 };
 
 
-Actor			ARecepient;
+Actor	ARecepient;
 
 string  CastMessage;
 
@@ -58,7 +58,8 @@ enum
 
 int		CShiftOperation;		// Logical operation to use when modifying player's CShift
 int		CShift;					// CShift value to set when active
-bool	bCShiftDecreasePermanent;
+bool	bCShiftFadeOverTime;	// decrease cshift amount all the time
+bool	bCShiftFadeBeforeDeath;	// decrease cshift amount just before spell dies
 
 
 
@@ -101,9 +102,9 @@ void MakeCShift(int * pCShift)
 {
 	int Amount;
 
-	if (bCShiftDecreasePermanent)
+	if (bCShiftFadeOverTime)
 		Amount = ftoi(LifeTime / LifeDuration * 256.0);
-	else if (LifeTime / LifeDuration <= 0.25)
+	else if (bCShiftFadeBeforeDeath && LifeTime / LifeDuration <= 0.25)
 		Amount = ftoi((LifeTime / (LifeDuration * 0.25) * 256.0));
 	else
 		Amount = 0xFF;
@@ -162,8 +163,4 @@ defaultproperties
 	CastMessage = "";
 
 	MaxAccumulatedLifePerLevel = -1.0;
-
-	CShiftOperation = CSHIFT_OP_NONE;
-	CShift = 0;
-	bCShiftDecreasePermanent = false;
 }
