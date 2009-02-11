@@ -15,7 +15,9 @@ final void A_AimGrenade(class<Actor> ItemType, float Pitch, float MaxSpeed, stat
 	float VelXY, VelZ; // dummies;
 	if (!AimThrowAngle(ItemType, specified_AimTarget ? AimTarget : Target, Pitch,
 																MaxSpeed, VelXY, VelZ))
+	{
 		SetState(FailedState);
+	}
 }
 
 //==========================================================================
@@ -34,7 +36,9 @@ final void A_ThrowAimedGrenade(class<Actor> ItemType, float Pitch, float MaxSpee
 	float VelXY, VelZ;
 
 	if (!AimThrowAngle(ItemType, AimTarget, Pitch, MaxSpeed, VelXY, VelZ))
+	{
 		return;
+	}
 
 
 	if (specified_Precision)
@@ -44,7 +48,9 @@ final void A_ThrowAimedGrenade(class<Actor> ItemType, float Pitch, float MaxSpee
 		Precision = 1.0 - Precision;	// invert value to simplify futher calculations
 	}
 	else
+	{
 		Precision = 0.0;				// this actually means 0% deviation
+	}
 
 	if (Precision)
 	{
@@ -94,7 +100,9 @@ final bool AimThrowAngle(class<Actor> ItemType, EntityEx AimTarget, float Pitch,
 	float max_Zdist = VelZ * max_timereachZ - (gravity * max_timereachZ * max_timereachZ)/2.0;
 
 	if (max_Zdist < AimTarget.Origin.z - Origin.z)
+	{
 		return false;
+	}
 
 	float max_timereachN = sqrt(2.0 * (max_Zdist + (Origin.z - AimTarget.Origin.z)) / gravity);
 	float max_time_total = max_timereachZ + max_timereachN;
@@ -104,9 +112,13 @@ final bool AimThrowAngle(class<Actor> ItemType, EntityEx AimTarget, float Pitch,
 	// Check other opportunities
 	if (ItemType.default.BounceType == BOUNCE_Doom ||
 			ItemType.default.BounceType == BOUNCE_Hexen)
+	{
 		max_XYdist += max_XYdist / 4.0;
+	}
 	else if (ItemType.default.BounceType == BOUNCE_Heretic)
+	{
 		max_XYdist += max_XYdist;
+	}
 	max_XYdist += 64.0/* half of the default explosion radius */;
 
 
@@ -115,9 +127,13 @@ final bool AimThrowAngle(class<Actor> ItemType, EntityEx AimTarget, float Pitch,
 		VelXY *= (aim_distance/max_XYdist);
 
 		if (AimTarget.Origin.z < Origin.z)
+		{
 			VelZ *= (aim_distance/max_XYdist);
+		}
 	}
 	else if (max_XYdist < aim_distance)
+	{
 		return false;
+	}
 	return true;
 }
