@@ -33,7 +33,7 @@
 class SpellInstance : Thinker
 	abstract;
 
-EntityEx	EInstigator;	// the caster object
+Actor	AInstigator;	// the caster object
 
 name	CastSound;
 
@@ -45,7 +45,9 @@ int		Level;
 float	LifeTime;
 float	LifeDuration;
 
-int		SpiritPowerRequired;
+int		SpiritPowerDrain;
+float	SPDrainDelay;
+float	SPDrainTime;
 
 //==========================================================================
 //
@@ -65,6 +67,15 @@ void Tick(float deltaTime)
 			Dispell();
 			return;
 		}
+	}
+
+	SPDrainTime -= deltaTime;
+	if (SPDrainTime <= 0.0)
+	{
+		// [CW] TODO: how to drain spirit power from caster player/monster?
+		//		TODO: if not enouph SP, should call Dispell and return
+		// use SpiritPowerDrain amount;
+		SPDrainTime = SPDrainDelay;
 	}
 
 	Do(deltaTime);
