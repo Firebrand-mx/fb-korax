@@ -59,8 +59,10 @@ bool			bCanRide;		// actor is allowed to ride saddlehorses
 bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
 Actor			RidePartner;	// either 'rider' or 'horse', depending on flags
 
+// [CW] TODO: this should be changed to using Berserk spell from monster's
+//            inventory instead...
 bool			bCanBerserk;	// actor is able to berserk when it's hit
-bool			bBerserk;		// actor is actually in berserk state
+//bool			bBerserk;		// actor is actually in berserk state
 
 //
 // [KoraxRPG] Advanced AI
@@ -82,10 +84,10 @@ array<ActorCondition> Conditions;
 
 //Remi: Preberserk stats
 // [FB] Now all actors can use these...
-int preberserk_health;
-float preberserk_speed; // [FB] Made this one a float
-int preberserk_strength;
-float berserkTics;			// [FB] Berserker duration for actors
+//int preberserk_health;
+//float preberserk_speed; // [FB] Made this one a float
+//int preberserk_strength;
+//float berserkTics;			// [FB] Berserker duration for actors
 
 //**************************************************************************
 //
@@ -262,8 +264,8 @@ void Tick(float deltaTime)
 		Kill();
 	if (Alertness > 0.0)
 		Alertness -= deltaTime;
-	if (berserkTics > 0.0)
-		berserkTics -= 1.0;
+	//if (berserkTics > 0.0)
+	//	berserkTics -= 1.0;
 	
 	::Tick(deltaTime);
 }
@@ -410,6 +412,11 @@ final bool UseSpell(Inventory Item)
 {
 	//	Don't use items if you are dead.
 	if (Health <= 0)
+	{
+		return false;
+	}
+	// [CW] Do not use item other than SpellItem
+	if (!SpellItem(Item))
 	{
 		return false;
 	}
@@ -644,7 +651,6 @@ bool OkayToSwitchTarget(EntityEx source)
 {
 	Alertness = HIGH_ALERTNESS;
 
-	// [CW] Do not allow to target other actors than either monsters or KRPGActors
 	if (!bIgnoreTeams && Team == Actor(source).Team)
 	{
 		return false;
@@ -1737,7 +1743,7 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 			Conditions.Num = Conditions.Num + 1;
 			Conditions[Conditions.Num - 1] = AC;
 			AC.ARecepient = self;
-			AC.EInstigator = Instigator;
+			AC.AInstigator = Instigator;
 			AC.Level = level;
 			AC.LifeDuration = life_duration;
 			AC.Activate();
@@ -1761,11 +1767,9 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 //
 //	GetCondition
 //
-//	TODO: optional instigator and level
-//
 //==========================================================================
 
-ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigator, int level)
+ActorCondition GetCondition(class<ActorCondition> ConditionClass, optional Actor Instigator, optional int level)
 {
 	if (Conditions.Num)
 	{
@@ -1774,8 +1778,8 @@ ActorCondition GetCondition(class<ActorCondition> ConditionClass, Actor Instigat
 		{
 			ActorCondition ac = Conditions[i];
 			if (ac && ac.Class == ConditionClass &&
-					ac.EInstigator == Instigator &&
-					ac.Level == level)
+					(!specified_Instigator || ac.AInstigator == Instigator) &&
+					(!specified_level || ac.Level == level))
 			{
 				return ac;
 			}
