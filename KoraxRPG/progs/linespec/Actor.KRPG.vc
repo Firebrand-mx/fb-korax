@@ -1546,10 +1546,23 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 		//	return false;
 
 		// [FB]  3d Floor checks...
-		if (TargetEntity.Origin.z > FloorZ + MaxPassableStep)
-			return false;
-		if (TargetEntity.Origin.z < FloorZ)
-			return false;
+		float dist;
+		if (TargetEntity.Origin.z > Origin.z)
+		{
+			dist = Origin.z + Height;
+
+			if (TargetEntity.Origin.z > dist)
+				return false;
+		}
+		if (TargetEntity.Origin.z <= Origin.z)
+		{
+			dist = Origin.z - (TargetEntity.Origin.z + TargetEntity.Height);
+			// [FB] Always evaluate a positive distance
+			dist = dist < 0.0 ? -dist : dist;
+
+			if (dist > MaxPassableDropOff)
+				return false;
+		}
 	}
 
 	return canreach;
