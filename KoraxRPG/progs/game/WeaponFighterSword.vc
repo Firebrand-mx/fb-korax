@@ -1,0 +1,128 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponFighterSword : KRPGWeapon;
+
+//============================================================================
+//
+//  A_KRPGFSwordAttack
+//
+//============================================================================
+
+final void A_KRPGFSwordAttack() self(Actor)
+{
+	EntityEx mo;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
+
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -10.0),
+		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 4.0));
+	if (mo)
+	{
+		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -5.0),
+		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 8.0));
+	if (mo)
+	{
+		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin, FSwordMissile,
+		Angles.yaw);
+	if (mo)
+	{
+		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 5.0),
+		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 8.0));
+	if (mo)
+	{
+		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+	}
+	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 10.0),
+		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 4.0));
+	if (mo)
+	{
+		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+	}
+	PlaySound('FighterSwordFire', CHAN_WEAPON);
+	KRPGWeapon(Wpn).UseWeaponMana();
+}
+
+	states
+	{
+	Ready:
+		FSRD AAAABBBBCCCC 1 Bright A_WeaponReady
+		Loop
+	Deselect:
+		FSRD A 1 Bright A_Lower
+		Loop
+	Select:
+		FSRD A 1 Bright A_Raise
+		Loop
+	Fire:
+		FSRD D 3 Bright Offset(5, 36)
+		FSRD E 3 Bright Offset(5, 36)
+		FSRD F 2 Bright Offset(5, 36)
+		FSRD G 3 Bright Offset(5, 36) A_KRPGFSwordAttack
+		FSRD H 2 Bright Offset(5, 36)
+		FSRD I 2 Bright Offset(5, 36)
+		FSRD I 10 Bright Offset(5, 150)
+		FSRD A 1 Bright Offset(5, 60)
+		FSRD B 1 Bright Offset(5, 55)
+		FSRD C 1 Bright Offset(5, 50)
+		FSRD A 1 Bright Offset(5, 45)
+		FSRD B 1 Bright Offset(5, 40)
+		Goto Ready
+	}
+
+defaultproperties
+{
+	Slot = 4;
+	SelectionOrder = 2900;
+	AmmoType1 = Mana1;
+	AmmoType2 = Mana2;
+	AmmoUse1 = 14;
+	AmmoUse2 = 14;
+	PSpriteSY = 10.0;
+	BotCombatDist = 256.0;
+	bBotMelee = false;
+	bBotProjectile = true;
+	bBotProjectile = true;
+	PickupMessage = "QUIETUS";
+	HitObituary = "$ob_quietus";
+	Obituary = "$ob_quietus";
+}

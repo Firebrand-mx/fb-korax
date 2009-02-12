@@ -1,0 +1,312 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponFighterAxe : KRPGWeapon;
+
+//==========================================================================
+//
+//	GetUpState
+//
+//==========================================================================
+
+state GetUpState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowSelect') : ::GetUpState();
+}
+
+//==========================================================================
+//
+//	GetDownState
+//
+//==========================================================================
+
+state GetDownState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowDeselect') : ::GetDownState();
+}
+
+//==========================================================================
+//
+//	GetReadyState
+//
+//==========================================================================
+
+state GetReadyState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowReady') : ::GetReadyState();
+}
+
+//==========================================================================
+//
+//	GetAttackState
+//
+//==========================================================================
+
+state GetAttackState(bool Hold)
+{
+	return Ammo1.Amount > 0 ? FindState('GlowFire') :	// Glowing axe
+		::GetAttackState(Hold);
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckReady
+//
+//==========================================================================
+
+final void A_FAxeCheckReady()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount > 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('GlowReady'));
+	}
+	else
+	{
+		A_WeaponReady();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckReadyG
+//
+//==========================================================================
+
+final void A_FAxeCheckReadyG()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount <= 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('Ready'));
+	}
+	else
+	{
+		A_WeaponReady();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckUp
+//
+//==========================================================================
+
+final void A_FAxeCheckUp()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount > 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('GlowSelect'));
+	}
+	else
+	{
+		A_Raise();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckUpG
+//
+//==========================================================================
+
+final void A_FAxeCheckUpG()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount <= 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('Select'));
+	}
+	else
+	{
+		A_Raise();
+	}
+}
+//==========================================================================
+//
+//  A_KRPGFAxeAttack
+//
+//==========================================================================
+
+final void A_KRPGFAxeAttack() self(Actor)
+{
+	float			power;
+	int				damage;
+	int				useMana;
+	TAVec			angles;
+	TVec			vforward;
+	class<Actor>	PuffType;
+	EntityEx		AimTarget;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
+
+	damage = 40 + (P_Random() & 15) + (P_Random() & 7) * (KRPGPlayerBase(Player).strength / 10);
+	power = 0.0;
+	if (FindInventory(Mana1).Amount > 0)
+	{
+		damage <<= 1;
+		power = 6.0;
+		PuffType = AxePuffGlow;
+		useMana = 1;
+	}
+	else
+	{
+		PuffType = AxePuff;
+		useMana = 0;
+	}
+	AimTarget = AimEx(vforward, AxeRange, 45.0 / 16.0, 16, MELEERANGE);
+	if (AimTarget)
+	{
+		VectorAngles(&vforward, &angles);
+		if (LineAttack(vforward, AxeRange, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, power);
+		}
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
+		useMana++;
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+	}
+
+	if (useMana == 2)
+	{
+		KRPGWeapon(Wpn).UseWeaponMana();
+		if (!Wpn.CheckAmmo(Wpn.FireMode, false, true))
+		{
+			Player.SetViewState(ps_weapon, Wpn.FindState('NoMoreMana'));
+		}
+	}
+}
+
+states
+{
+Ready:
+	FAXE A 1 A_FAxeCheckReady
+	Loop
+Deselect:
+	FAXE A 1 A_Lower
+	Loop
+Select:
+	FAXE A 1 A_FAxeCheckUp
+	Loop
+Fire:
+	FAXE B 4 Offset(15, 32)
+	FAXE C 3 Offset(15, 32)
+	FAXE D 2 Offset(15, 32)
+	FAXE D 1 Offset(-5, 70) A_KRPGFAxeAttack
+NoMoreMana:
+	FAXE D 2 Offset(-25, 90)
+	FAXE E 1 Offset(15, 32)
+	FAXE E 2 Offset(10, 54)
+	FAXE E 7 Offset(10, 150)
+	FAXE A 1 Offset(0, 60) A_ReFire
+	FAXE A 1 Offset(0, 52)
+	FAXE A 1 Offset(0, 44)
+	FAXE A 1 Offset(0, 36)
+	FAXE A 1
+	Goto Ready
+
+GlowReady:
+	FAXE LLLMMM 1 A_FAxeCheckReadyG
+	Loop
+GlowDeselect:
+	FAXE L 1 A_Lower
+	Loop
+GlowSelect:
+	FAXE L 1 A_FAxeCheckUpG
+	Loop
+GlowFire:
+	FAXE N 4 Offset(15, 32)
+	FAXE O 3 Offset(15, 32)
+	FAXE P 2 Offset(15, 32)
+	FAXE P 1 Offset(-5, 70) A_KRPGFAxeAttack
+	FAXE P 2 Offset(-25, 90)
+	FAXE Q 1 Offset(15, 32)
+	FAXE Q 2 Offset(10, 54)
+	FAXE Q 7 Offset(10, 150)
+	FAXE A 1 Offset(0, 60) A_ReFire
+	FAXE A 1 Offset(0, 52)
+	FAXE A 1 Offset(0, 44)
+	FAXE A 1 Offset(0, 36)
+	FAXE A 1
+	Goto Ready
+}
+
+defaultproperties
+{
+	Slot = 2;
+	SelectionOrder = 1500;
+	AmmoType1 = Mana1;
+	AmmoUse1 = 2;
+	AmmoGive1 = 25;
+	PSpriteSY = -12.0;
+	bAmmoOptional = true;
+	bAxeBlood = true;
+	PickupMessage = "$txt_weapon_f2";
+	BotCombatDist = 48.0;
+	bBotMelee = true;
+}

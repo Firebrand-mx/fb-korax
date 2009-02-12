@@ -1,0 +1,136 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//------------------------------------------------------------------------------
+class KRPGClericPlayer : KRPGPlayerPawn;
+
+states
+{
+	Spawn:
+		CLER A -1
+		Stop
+	See:
+		CLER ABCD 4
+		Loop
+	Melee:
+	Missile:
+		CLER EFG 6
+		Goto Spawn
+	Pain:
+		CLER H 4
+		CLER H 4 A_PlayPain
+		Goto Spawn
+	Death:
+		CLER I 6
+		CLER K 6 A_PlayerScream
+		CLER LL 6
+		CLER M 6 A_NoBlocking
+		CLER NOP 6
+		CLER Q -1
+		Stop
+	XDeath:
+		CLER R 5 A_PlayerScream
+		CLER S 5
+		CLER T 5 A_NoBlocking
+		CLER UVWXYZ 5
+		CLER "[" -1
+		Stop
+	Ice:
+		CLER "\\" 5 A_FreezeDeath
+		CLER "\\" 1 A_FreezeDeathChunks
+		Wait
+	Burn:
+		FDTH C 5 Bright { A_PlaySound("*burndeath"); }
+		FDTH D 4 Bright
+		FDTH G 5 Bright
+		FDTH H 4 Bright A_PlayerScream
+		FDTH I 5 Bright
+		FDTH J 4 Bright
+		FDTH K 5 Bright
+		FDTH L 4 Bright
+		FDTH M 5 Bright
+		FDTH N 4 Bright
+		FDTH O 5 Bright
+		FDTH P 4 Bright
+		FDTH Q 5 Bright
+		FDTH R 4 Bright
+		FDTH S 5 Bright A_NoBlocking
+		FDTH T 4 Bright
+		FDTH U 5 Bright
+		FDTH V 4 Bright
+		ACLO E 35 A_CheckPlayerDone
+		Wait
+		ACLO E 8
+		Stop
+}
+
+defaultproperties
+{
+	Health = 100;
+	Radius = 16.0;
+	Height = 64.0;
+	PainChance = 1.0;
+	RDFactor = 0.25;
+	PainSound = 'PlayerClericPain';
+	ViewHeight = 48.0;
+	TranslStart = 146;
+	TranslEnd = 163;
+	HexenArmor[0] = 10.0;
+	HexenArmor[1] = 10.0;
+	HexenArmor[2] = 25.0;
+	HexenArmor[3] = 5.0;
+	HexenArmor[4] = 20.0;
+	JumpVelZ = 9.5;
+	DisplayName = "Cleric";
+	HealRadiusType = 'Health';
+	InvulnerabilityMode = 'Ghost';
+	SoundClass = 'cleric';
+	SpawnClass = 'Cleric';
+	ScoreIcon = 'clerface';
+
+	WeaponClasses[0] = WeaponClericMace;
+	WeaponClasses[1] = WeaponClericStaff;
+	WeaponClasses[2] = WeaponClericFire;
+	WeaponClasses[3] = WeaponClericHoly;
+
+	StandHeight = 64.0;
+	DuckHeight = 32.0;
+	MaxStrength = 60;
+	MaxVitality = 60;
+	MaxIntelligence = 60;
+	MaxWisdom = 40;
+	MaxSpeed = 20;
+
+	DropItemList.Num = 2;
+	DropItemList[0].Type = WeaponClericMace; DropItemList[0].Amount = 1;
+	DropItemList[1].Type = SpellHealing; DropItemList[1].Amount = 1;
+}
