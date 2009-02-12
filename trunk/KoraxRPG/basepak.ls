@@ -45,10 +45,10 @@ actors/krpg/iceguy.txt			actors/krpg/iceguy.txt
 actors/krpg/korax.txt			actors/krpg/korax.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
 actors/krpg/mana.txt			actors/krpg/mana.txt
-actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
 actors/krpg/wraith.txt			actors/krpg/wraith.txt
+actors/krpg/weapon_items.txt	actors/krpg/weapon_items.txt
 
 //	Language strings
 language.en				language.en

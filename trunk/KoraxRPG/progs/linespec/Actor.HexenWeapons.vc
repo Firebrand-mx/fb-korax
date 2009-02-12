@@ -30,6 +30,12 @@
 //**
 //**************************************************************************
 
+//// [FB] NOTE: Most of these methods aren't directly used in KRPG, since for adding a third
+////			   ammo and other RPG elements, we had to duplicate some of the methods used here
+////			   they are still compiled and included for compatibility with the DECORATE versions
+////			   used by common progs to allow the game to start without errors, I'll change this
+////			   sometime when things are easier to do :P
+
 //==========================================================================
 //
 //  A_FPunchAttack
@@ -49,7 +55,7 @@ final void A_FPunchAttack() self(Actor)
 	{
 		return;
 	}
-	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
 	damage = 40 + (P_Random() & 15) * (KRPGPlayerBase(Player).strength / 10);
 	power = 2.0;
@@ -74,7 +80,7 @@ final void A_FPunchAttack() self(Actor)
 		{
 			AimTarget.Thrust(angles.yaw, power);
 		}
-		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
@@ -327,7 +333,7 @@ final void A_CMaceAttack() self(Actor)
 	{
 		return;
 	}
-	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
 	damage = 25 + (P_Random() & 15) * (KRPGPlayerBase(Player).strength / 10);
 	AimTarget = AimEx(vforward, 2.0 * MELEERANGE, 45.0 / 16.0, 16, MELEERANGE);
@@ -337,7 +343,7 @@ final void A_CMaceAttack() self(Actor)
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
-		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
 	}
 	else
 	{
@@ -364,6 +370,7 @@ final void A_CStaffInitBlink() self(Actor)
 
 	Special1 = (P_Random() >> 1) + 20;
 }
+
 //==========================================================================
 //
 //  A_CStaffCheckBlink
@@ -376,7 +383,7 @@ final void A_CStaffCheckBlink() self(Actor)
 	{
 		return;
 	}
-	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
 	if (!--Special1)
 	{
@@ -509,7 +516,7 @@ final void A_CHolyAttack() self(Actor)
 		A.Tracer = AimTarget;
 		A.MissileDamage *= (KRPGPlayerBase(Player).strength / 10);
 	}
-	CWeapWraithverge(Wpn).CShift = RGBA(255, 255, 255, 66);
+//	CWeapWraithverge(Wpn).CShift = RGBA(255, 255, 255, 66);
 	PlaySound('HolySymbolFire', CHAN_WEAPON);
 	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
 }
@@ -687,7 +694,7 @@ final void A_MStaffAttack() self(Actor)
 	MStaffSpawn(angle - 5.0);
 	MStaffSpawn(angle + 5.0);
 	PlaySound('MageStaffFire', CHAN_WEAPON);
-	MWeapBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 76);
+//	MWeapBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 76);
 
 	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
 }
@@ -709,7 +716,7 @@ final void A_SnoutAttack()
 	{
 		return;
 	}
-	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
 	damage = 3 + (P_Random() & 3);
 	angles = Angles;
@@ -719,7 +726,7 @@ final void A_SnoutAttack()
 	PlaySound((P_Random() & 1) ? 'PigActive2' : 'PigActive1', CHAN_VOICE);
 	if (AimTarget)
 	{
-		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
 		if (LineSpecialLevelInfo(Level).bPuffSpawned)
 		{
 			// Bit something

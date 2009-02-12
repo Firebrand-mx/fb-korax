@@ -1,0 +1,121 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponPickup : KRPGWeapon
+	abstract;
+
+//==========================================================================
+//
+//	CreateCopy
+//
+//==========================================================================
+
+Inventory CreateCopy(EntityEx Toucher)
+{
+	class<Weapon> WpnClass = KRPGPlayerPawn(Toucher).WeaponClasses[Slot - 1];
+	if (!WpnClass)
+	{
+		return none;
+	}
+
+	AddAmmo(Toucher, AmmoType1, AmmoGive1);
+	AddAmmo(Toucher, AmmoType2, AmmoGive2);
+	AddAmmo(Toucher, AmmoType3, AmmoGive3);
+
+	Weapon Copy = Spawn(WpnClass);
+	PickupMessage = Copy.PickupMessage;
+	GoAwayAndDie();
+	return Copy;
+}
+
+//==========================================================================
+//
+//	PickupForMana
+//
+//==========================================================================
+
+final bool PickupForMana(EntityEx Toucher)
+{
+	class<Weapon> WpnClass = KRPGPlayerPawn(Toucher).WeaponClasses[Slot - 1];
+	if (!WpnClass)
+	{
+		return false;
+	}
+
+	bool gaveMana = false;
+	if (Player(Toucher.Player).GiveAmmo(AmmoType1, AmmoGive1))
+	{
+		gaveMana = true;
+	}
+	if (Player(Toucher.Player).GiveAmmo(AmmoType2, AmmoGive2))
+	{
+		gaveMana = true;
+	}
+	if (Player(Toucher.Player).GiveAmmo(AmmoType3, AmmoGive3))
+	{
+		gaveMana = true;
+	}
+	if (!gaveMana)
+	{
+		// Player didn't need any mana
+		return false;
+	}
+	PickupMessage = WpnClass.default.PickupMessage;
+	return true;
+}
+
+//==========================================================================
+//
+//	GetPickupMessage
+//
+//==========================================================================
+
+string GetPickupMessage()
+{
+	return PickupMessage;
+}
+
+//	Dummy ready state so that sprites check in Weapon class can pass.
+states
+{
+Ready:
+	TNT1 A -1
+	Stop
+}
+
+defaultproperties
+{
+	Height = 32.0;
+	AmmoGive1 = 25;
+	AmmoGive2 = 25;
+	AmmoGive3 = 25;
+}

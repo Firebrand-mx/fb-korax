@@ -1,0 +1,139 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//------------------------------------------------------------------------------
+class KRPGFighterPlayer : KRPGPlayerPawn;
+
+states
+{
+	Spawn:
+		PLAY A -1
+		Stop
+	See:
+		PLAY ABCD 4
+		Loop
+	Melee:
+	Missile:
+		PLAY EF 8
+		Goto Spawn
+	Pain:
+		PLAY G 4
+		PLAY G 4 A_PlayPain
+		Goto Spawn
+	Death:
+		PLAY H 6
+		PLAY I 6 A_PlayerScream
+		PLAY JK 6
+		PLAY L 6 A_NoBlocking
+		PLAY M 6
+		PLAY N -1
+		Stop
+	XDeath:
+		PLAY O 5 A_PlayerScream
+		PLAY P 5 { A_SkullPop(HexenBloodySkull); }
+		PLAY R 5 A_NoBlocking
+		PLAY STUV 5
+		PLAY W -1
+		Stop
+	Ice:
+		PLAY X 5 A_FreezeDeath
+		PLAY X 1 A_FreezeDeathChunks
+		Wait
+	Burn:
+		FDTH A 5 Bright { A_PlaySound("*burndeath"); }
+		FDTH B 4 Bright
+		FDTH G 5 Bright
+		FDTH H 4 Bright A_PlayerScream
+		FDTH I 5 Bright
+		FDTH J 4 Bright
+		FDTH K 5 Bright
+		FDTH L 4 Bright
+		FDTH M 5 Bright
+		FDTH N 4 Bright
+		FDTH O 5 Bright
+		FDTH P 4 Bright
+		FDTH Q 5 Bright
+		FDTH R 4 Bright
+		FDTH S 5 Bright A_NoBlocking
+		FDTH T 4 Bright
+		FDTH U 5 Bright
+		FDTH V 4 Bright
+		ACLO E 35 A_CheckPlayerDone
+		Wait
+		ACLO E 8
+		Stop
+}
+
+defaultproperties
+{
+	Health = 100;
+	Radius = 16.0;
+	Height = 64.0;
+	PainChance = 1.0;
+	RDFactor = 0.25;
+	PainSound = 'PlayerFighterPain';
+	ViewHeight = 48.0;
+	ForwardMove1 = 1.08;
+	ForwardMove2 = 1.2;
+	SideMove1 = 1.125;
+	SideMove2 = 1.475;
+	TranslStart = 246;
+	TranslEnd = 254;
+	HexenArmor[0] = 15.0;
+	HexenArmor[1] = 25.0;
+	HexenArmor[2] = 20.0;
+	HexenArmor[3] = 15.0;
+	HexenArmor[4] = 5.0;
+	JumpVelZ = 9.5;
+	DisplayName = "Fighter";
+	HealRadiusType = 'Armor';
+	SoundClass = 'fighter';
+	SpawnClass = 'Fighter';
+	ScoreIcon = 'fiteface';
+
+	WeaponClasses[0] = WeaponFighterPunch;
+	WeaponClasses[1] = WeaponFighterAxe;
+	WeaponClasses[2] = WeaponFighterHammer;
+	WeaponClasses[3] = WeaponFighterSword;
+
+	StandHeight = 64.0;
+	DuckHeight = 32.0;
+	MaxStrength = -1;
+	MaxVitality = -1;
+	MaxIntelligence = 5;
+	MaxWisdom = 5;
+	MaxSpeed = 30;
+
+	DropItemList.Num = 2;
+	DropItemList[0].Type = WeaponFighterPunch; DropItemList[0].Amount = 1;
+	DropItemList[1].Type = SpellBerserk; DropItemList[1].Amount = 1;
+}

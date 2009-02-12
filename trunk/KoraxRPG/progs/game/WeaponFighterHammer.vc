@@ -1,0 +1,168 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class WeaponFighterHammer : KRPGWeapon;
+
+//============================================================================
+//
+//  A_KRPGFHammerAttack
+//
+//============================================================================
+
+final void A_KRPGFHammerAttack() self(Actor)
+{
+	int			damage;
+	int			r_damage;
+	int			m_damage;
+	float		power;
+	TAVec		angles;
+	TVec		vforward;
+	EntityEx	AimTarget;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
+
+	damage = 60 + (P_Random() & 63);
+	// [FB] IMO It's even more cool to separate the ranged and melee damage rates respectively
+	r_damage = damage  * (KRPGPlayerBase(Player).intelligence / 10);
+	m_damage = damage  * (KRPGPlayerBase(Player).strength / 10);
+	power = 10.0;
+	AimTarget = AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
+	if (AimTarget)
+	{
+		VectorAngles(&vforward, &angles);
+		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		{
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, power);
+		}
+		Special1 = false;	// Don't throw a hammer
+	}
+	else
+	{
+		// didn't find any targets in meleerange, so set to throw out a hammer
+		LineSpecialLevelInfo(Level).bPuffSpawned = false;
+		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		{
+			PlaySound('FighterHammerMiss', CHAN_WEAPON);
+		}
+		if (LineSpecialLevelInfo(Level).bPuffSpawned)
+		{
+			Special1 = false;
+		}
+		else
+		{
+			Special1 = true;
+		}
+	}
+
+	if (!Wpn.CheckAmmo(Wpn.FireMode, false, true))
+	{
+		// Don't spawn a hammer if the player doesn't have enough mana
+		Special1 = false;
+	}
+	return;
+}
+
+//============================================================================
+//
+//  A_KRPGFHammerThrow
+//
+//============================================================================
+
+final void A_KRPGFHammerThrow() self(Actor)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
+
+	if (!Special1)
+	{
+		return;
+	}
+	
+	SpawnPlayerMissile(HammerMissile);
+	KRPGWeapon(Wpn).UseWeaponMana();
+}
+
+
+	states
+	{
+	Ready:
+		FHMR A 1 A_WeaponReady
+		Loop
+	Deselect:
+		FHMR A 1 A_Lower
+		Loop
+	Select:
+		FHMR A 1 A_Raise
+		Loop
+	Fire:
+		FHMR B 6 Offset(5, 0)
+		FHMR C 3 Offset(5, 0) A_KRPGFHammerAttack
+		FHMR D 3 Offset(5, 0)
+		FHMR E 2 Offset(5, 0)
+		FHMR E 10 Offset(5, 150) A_KRPGFHammerThrow
+		FHMR A 1 Offset(0, 60)
+		FHMR A 1 Offset(0, 55)
+		FHMR A 1 Offset(0, 50)
+		FHMR A 1 Offset(0, 45)
+		FHMR A 1 Offset(0, 40)
+		FHMR A 1 Offset(0, 35)
+		FHMR A 1
+		Goto Ready
+	}
+
+defaultproperties
+{
+	Slot = 3;
+	SelectionOrder = 900;
+	AmmoType1 = Mana2;
+	AmmoUse1 = 3;
+	PSpriteSY = -10.0;
+	BotCombatDist = 192.0;
+	bBotMelee = false;
+	bBotProjectile = true;
+	bBotProjectile = true;
+	PickupMessage = "HAMMER OF RETRIBUTION";
+	HitObituary = "$ob_hammer";
+	Obituary = "$ob_hammer";
+}

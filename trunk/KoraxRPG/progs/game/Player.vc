@@ -147,8 +147,6 @@ void GiveExperience(int exp)
 //
 //  ActivateLevel
 //
-//  [FB] Using the new leveling system the maximum level is 10
-//
 //============================================================================
 
 void ActivateLevel(int to_lvl)
@@ -1358,7 +1356,7 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 void Cheat_Gimme()
 {
 	class<Inventory>			Cls;
-	class<Weapon>				WpnCls;
+	class<WeaponPickup>			WpnCls;
 	class<FourthWeaponPiece>	PieceCls;
 	Inventory					Inv;
 
@@ -1372,16 +1370,17 @@ void Cheat_Gimme()
 		{
 			HArmor.Slots[i] = HArmor.SlotsIncrement[i];
 		}
-		foreach AllClasses(Weapon, WpnCls)
+		foreach AllClasses(WeaponPickup, WpnCls)
 		{
 			if (!FindClassState(WpnCls, 'Ready'))
 			{
 				//	Abstract class.
 				continue;
 			}
-			Weapon Wpn = Level.Spawn(WpnCls,,,, false);
+			WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
+			Wpn.AmmoGive3 = 0;
 			if (!Wpn.TryPickup(EntityEx(MO)))
 			{
 				Wpn.Destroy();
