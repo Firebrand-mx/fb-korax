@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class SpellDefensive : SpellItem;
+class SpellItemSpirits : SpellItem;
 
 //==========================================================================
 //
@@ -42,14 +42,22 @@ class SpellDefensive : SpellItem;
 
 bool ActivateSpell(bool Pickup, int level)
 {
-	if(Player(Owner.Player).sp_power >= 40)
+	if(Player(Owner.Player).sp_power >= 5)
 	{
-		EntityEx(Owner).UseInventory(EntityEx(Owner).GiveInventoryType(ArtiInvulnerability));
-		Player(Owner.Player).sp_power -= 40;
+		Owner.PlaySound('UseArtifact', CHAN_ITEM);
+		if (Player(Owner.Player).A_SpiritsWithin())
+		{
+			Player(Owner.Player).centreprint("SPIRITS WITHIN ACTIVATED");
+			Player(Owner.Player).sp_power -= 5;
+		}
+		else
+		{
+			Player(Owner.Player).centreprint("SPIRITS WITHIN FAILED");
+		}		
 	}
 	else
 	{
-		Player(Owner.Player).centreprint("NOT ENOUGH MAGIC POWER");
+		Player(Owner.Player).centreprint("NOT ENOUGH FAITH");
 	}
 	
 	return true;
@@ -67,8 +75,8 @@ defaultproperties
 {
 	MaxAmount = DefMaxAmount;
 	PickupSound = 'PickupArtifact';
-	PickupMessage = "$txt_defensive";
-	IconName = 'splm3';
+	PickupMessage = "$txt_healing";
+	IconName = 'splc2';
 	bFloatBob = true;
 	PickupFlashType = PickupFlash;
 	bSpellBar = true;

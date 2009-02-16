@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class SpellSpirits : SpellItem;
+class SpellItemBanishment : SpellItem;
 
 //==========================================================================
 //
@@ -42,18 +42,22 @@ class SpellSpirits : SpellItem;
 
 bool ActivateSpell(bool Pickup, int level)
 {
-	if(Player(Owner.Player).sp_power >= 5)
+	EntityEx mo;
+
+	if(Player(Owner.Player).sp_power >= 30)
 	{
 		Owner.PlaySound('UseArtifact', CHAN_ITEM);
-		if (Player(Owner.Player).A_SpiritsWithin())
+		mo = EntityEx(Owner).SpawnPlayerMissile(TelOtherFX1);
+		if (mo)
 		{
-			Player(Owner.Player).centreprint("SPIRITS WITHIN ACTIVATED");
-			Player(Owner.Player).sp_power -= 5;
+			mo.Target = EntityEx(Owner);
+			Player(Owner.Player).centreprint("BANISHMENT SPELL ACTIVATED");
 		}
 		else
 		{
-			Player(Owner.Player).centreprint("SPIRITS WITHIN FAILED");
+			Player(Owner.Player).centreprint("BANISHMENT SPELL FAILED");
 		}		
+		Player(Owner.Player).sp_power -= 30;
 	}
 	else
 	{
@@ -76,7 +80,7 @@ defaultproperties
 	MaxAmount = DefMaxAmount;
 	PickupSound = 'PickupArtifact';
 	PickupMessage = "$txt_healing";
-	IconName = 'splc2';
+	IconName = 'splc3';
 	bFloatBob = true;
 	PickupFlashType = PickupFlash;
 	bSpellBar = true;
