@@ -1,0 +1,145 @@
+//------------------------------------------------------------------------------
+//
+//	KRPG Weapons for Cleric
+//
+//------------------------------------------------------------------------------
+actor WeaponClericMaceCommon : WeaponClericMace replaces CWeapMace
+{
+	+BloodSplatter
+	Weapon.SelectionOrder 3500
+	Weapon.YAdjust -8
+	Weapon.BotCombatDist 48
+	+Weapon.MeleeWeapon
+
+	action native A_CMaceAttack();
+
+	states
+	{
+	Ready:
+		CMCE A 1 A_WeaponReady
+		Loop
+	Deselect:
+		CMCE A 1 A_Lower
+		Loop
+	Select:
+		CMCE A 1 A_Raise
+		Loop
+	Fire:
+		CMCE B 2 Offset(60, 20)
+		CMCE B 1 Offset(30, 33)
+		CMCE B 2 Offset(8, 45)
+		CMCE C 1 Offset(8, 45)
+		CMCE D 1 Offset(8, 45)
+		CMCE E 1 Offset(8, 45)
+		CMCE E 1 Offset(-11, 58) A_CMaceAttack
+		CMCE F 1 Offset(8, 45)
+		CMCE F 2 Offset(-8, 74)
+		CMCE F 1 Offset(-20, 96)
+		CMCE F 8 Offset(-33, 160)
+		CMCE A 2 Offset(8, 75) A_ReFire
+		CMCE A 1 Offset(8, 65)
+		CMCE A 2 Offset(8, 60)
+		CMCE A 1 Offset(8, 55)
+		CMCE A 2 Offset(8, 50)
+		CMCE A 1 Offset(8, 45)
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponClericSerpentStaff : WeaponClericPoison replaces CWeapStaff
+{
+	Game Hexen
+	SpawnID 32
+	Inventory.PickupMessage "$txt_weapon_c2"
+	Weapon.SelectionOrder 1600
+	Weapon.AmmoType1 "Mana1"
+	Weapon.AmmoUse1 1
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust 10
+	Weapon.BotCombatDist 192
+	+Weapon.Explosive
+
+	action native A_CStaffInitBlink();
+	action native A_CStaffCheckBlink();
+	action native A_CStaffCheck();
+	action native A_CStaffAttack();
+
+	states
+	{
+	Ready:
+		CSSF C 4
+		CSSF B 3 A_CStaffInitBlink
+		CSSF AAAAAAA 1 A_WeaponReady
+		CSSF A 1 A_CStaffCheckBlink
+		Goto Ready+2
+	Blink:
+		CSSF BBBCCCCCBBB 1 A_WeaponReady
+		Goto Ready+2
+	Deselect:
+		CSSF B 3
+		CSSF C 4
+		CSSF C 1 A_Lower
+		Wait
+	Select:
+		CSSF C 1 A_Raise
+		Wait
+	Fire:
+		CSSF A 1 Offset(0, 45) A_CStaffCheck
+		CSSF J 1 Offset(0, 50) A_CStaffAttack
+		CSSF J 2 Offset(0, 50)
+		CSSF J 2 Offset(0, 45)
+		CSSF A 2 Offset(0, 40)
+		CSSF A 2 Offset(0, 36)
+		Goto Ready+2
+	Fire2:
+		CSSF K 10 Offset(0, 36)
+		Goto Ready+2
+	Spawn:
+		WCSS A -1
+		Stop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponClericFirestorm : WeaponClericFire replaces CWeapFlame
+{
+	Game Hexen
+	+NoGravity
+	Inventory.PickupMessage "$txt_weapon_c3"
+	Weapon.SelectionOrder 1000
+	Weapon.AmmoType1 "Mana2"
+	Weapon.AmmoUse1 4
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust 10
+	Weapon.BotCombatDist 256
+	+Weapon.Explosive
+
+	action native A_CFlameAttack();
+
+	states
+	{
+	Ready:
+		CFLM AAAABBBBCCCC 1 A_WeaponReady
+		Loop
+	Deselect:
+		CFLM A 1 A_Lower
+		Loop
+	Select:
+		CFLM A 1 A_Raise
+		Loop
+	Fire:
+		CFLM A 2 Offset(0, 40)
+		CFLM D 2 Offset(0, 50)
+		CFLM D 2 Offset(0, 36)
+		CFLM E 4 Bright
+		CFLM F 4 Bright A_CFlameAttack
+		CFLM E 4 Bright
+		CFLM G 2 Offset(0, 40)
+		CFLM G 2
+		Goto Ready
+	Spawn:
+		WCFM ABCDEFGH 4 Bright
+		Loop
+	}
+}

@@ -1,0 +1,125 @@
+//------------------------------------------------------------------------------
+//
+//	KRPG Weapons for Mage
+//
+//------------------------------------------------------------------------------
+
+actor WeaponMageWandBlue : WeaponMageWand replaces MWeapWand
+{
+	Weapon.SelectionOrder 3600
+	Weapon.YAdjust 9
+	Weapon.BotCombatDist 192
+	+Weapon.Explosive
+	states
+	{
+	Ready:
+		MWND A 1 A_WeaponReady
+		Loop
+	Deselect:
+		MWND A 1 A_Lower
+		Loop
+	Select:
+		MWND A 1 A_Raise
+		Loop
+	Fire:
+		MWND A 6
+		MWND B 6 Bright Offset(0, 48) A_FireCustomMissile("MageWandMissile")
+		MWND A 3 Offset(0, 40)
+		MWND A 3 Offset(0, 36) A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageFrostCone : WeaponMageFrost replaces MWeapFrost
+{
+	SpawnID 36
+	+BloodSplatter
+	Inventory.PickupMessage "$txt_weapon_m2"
+	Weapon.SelectionOrder 1700
+	Weapon.AmmoType1 "Mana1"
+	Weapon.AmmoUse1 3
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust 20
+	Weapon.BotCombatDist 256
+	+Weapon.Explosive
+
+	action native A_FireConePL1();
+
+	states
+	{
+	Ready:
+		CONE A 1 A_WeaponReady
+		Loop
+	Deselect:
+		CONE A 1 A_Lower
+		Loop
+	Select:
+		CONE A 1 A_Raise
+		Loop
+	Fire:
+		CONE B 3
+		CONE C 4
+	Hold:
+		CONE D 3
+		CONE E 5
+		CONE F 3 A_FireConePL1
+		CONE G 3
+		CONE A 9
+		CONE A 10 A_ReFire
+		Goto Ready
+	Spawn:
+		WMCS ABC 8 Bright
+		Loop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageArcOfLightning : WeaponMageLightning replaces MWeapLightning
+{
+	Game Hexen
+	+NoGravity
+	Inventory.PickupMessage "$txt_weapon_m3"
+	Weapon.SelectionOrder 1100
+	Weapon.AmmoType1 "Mana2"
+	Weapon.AmmoUse1 5
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust 20
+	Weapon.BotCombatDist 384
+	+Weapon.Explosive
+
+	action native A_LightningReady();
+	action native A_MLightningAttack();
+
+	states
+	{
+	Ready:
+		MLNG AAAAA 1 Bright A_WeaponReady
+		MLNG A 1 Bright A_LightningReady
+		MLNG BBBBBBCCCCC 1 Bright A_WeaponReady
+		MLNG C 1 Bright A_LightningReady
+		MLNG BBBBBB 1 Bright A_WeaponReady
+		Loop
+	Deselect:
+		MLNG A 1 Bright A_Lower
+		Wait
+	Select:
+		MLNG A 1 Bright A_Raise
+		Wait
+	Fire:
+		MLNG DE 3 Bright
+		MLNG F 4 Bright A_MLightningAttack
+		MLNG G 4 Bright
+		MLNG H 3 Bright
+		MLNG I 3 Bright
+		MLNG I 6 Bright Offset(0, 199)
+		MLNG C 2 Bright Offset(0, 55)
+		MLNG B 2 Bright Offset(0, 50)
+		MLNG B 2 Bright Offset(0, 45)
+		MLNG B 2 Bright Offset(0, 40)
+		Goto Ready
+	Spawn:
+		WMLG ABCDEFGH 4 Bright
+		Loop
+	}
+}
