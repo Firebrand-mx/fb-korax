@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: WeaponMageBloodscourge.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**    $Id: WeaponClericWraithverge.vc 1921 2009-02-12 18:03:42Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,7 +30,7 @@
 //**
 //**************************************************************************
 
-class WeaponMageBloodscourge : WeaponMageBlood;
+class WeaponClericWraithverge : WeaponClericHoly;
 
 int				CShift;
 
@@ -45,13 +45,13 @@ int GetBlend()
 	return CShift;
 }
 
-//==========================================================================
+//============================================================================
 //
-//  A_MStaffPalette1
+//  A_CHolyPalette1
 //
-//==========================================================================
+//============================================================================
 
-final void A_MStaffPalette1() self(Actor)
+final void A_CHolyPalette1() self(Actor)
 {
 	if (!bIsPlayer)
 	{
@@ -59,16 +59,16 @@ final void A_MStaffPalette1() self(Actor)
 	}
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
-	WeaponMageBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 63);
+	WeaponClericWraithverge(Wpn).CShift = RGBA(255, 255, 255, 51);
 }
 
-//==========================================================================
+//============================================================================
 //
-//  A_MStaffPalette2
+//  A_CHolyPalette2
 //
-//==========================================================================
+//============================================================================
 
-final void A_MStaffPalette2() self(Actor)
+final void A_CHolyPalette2() self(Actor)
 {
 	if (!bIsPlayer)
 	{
@@ -76,16 +76,16 @@ final void A_MStaffPalette2() self(Actor)
 	}
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
-	WeaponMageBloodscourge(Wpn).CShift = RGBA(255, 187, 4, 51);
+	WeaponClericWraithverge(Wpn).CShift = RGBA(255, 255, 255, 36);
 }
 
-//==========================================================================
+//============================================================================
 //
-//  A_MStaffPalette3
+//  A_CHolyPalette3
 //
-//==========================================================================
+//============================================================================
 
-final void A_MStaffPalette3() self(Actor)
+final void A_CHolyPalette3() self(Actor)
 {
 	if (!bIsPlayer)
 	{
@@ -94,43 +94,45 @@ final void A_MStaffPalette3() self(Actor)
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
 	// reset back to original playpal
-	WeaponMageBloodscourge(Wpn).CShift = 0;
+	WeaponClericWraithverge(Wpn).CShift = 0;
 }
 
 states
 {
 Ready:
-	MSTF AAAAAABBBBBBCCCCCCDDDDDDEEEEEEFFFFF 1 A_WeaponReady
+	CHLY A 1 A_WeaponReady
 	Loop
 Deselect:
-	MSTF A 1 A_Lower
+	CHLY A 1 A_Lower
 	Loop
 Select:
-	MSTF A 1 A_Raise
+	CHLY A 1 A_Raise
 	Loop
 Fire:
-	MSTF G 4 Offset(0, 40)
-	MSTF H 4 Bright Offset(0, 48) A_MStaffAttack
-	MSTF H 2 Bright Offset(0, 48) A_MStaffPalette1
-	MSTF I 2 Offset(0, 48) A_MStaffPalette2
-	MSTF I 2 Offset(0, 48) A_MStaffPalette3
-	MSTF I 1 Offset(0, 40)
-	MSTF J 5 Offset(0, 36)
+	CHLY A 1 Bright Offset(0, 40)
+	CHLY B 1 Bright Offset(0, 40)
+	CHLY C 2 Bright Offset(0, 43)
+	CHLY D 2 Bright Offset(0, 43)
+	CHLY E 2 Bright Offset(0, 45)
+	CHLY F 6 Bright Offset(0, 48) A_CHolyAttack
+	CHLY G 2 Bright Offset(0, 40) A_CHolyPalette1
+	CHLY G 2 Bright Offset(0, 40) A_CHolyPalette2
+	CHLY G 2 Bright Offset(0, 36) A_CHolyPalette3
 	Goto Ready
 }
 
 defaultproperties
 {
-	SelectionOrder = 3100;
+	SelectionOrder = 3000;
 	AmmoType1 = Mana1;
 	AmmoType2 = Mana2;
-	AmmoUse1 = 15;
-	AmmoUse2 = 15;
+	AmmoUse1 = 18;
+	AmmoUse2 = 18;
 	AmmoGive1 = 20;
 	AmmoGive2 = 20;
-	PSpriteSY = 20.0;
-	PickupMessage = "$txt_weapon_m4";
-	BotCombatDist= 384.0;
+	PSpriteSY = 0.0;
+	PickupMessage = "$txt_weapon_c4";
+	BotCombatDist = 384.0;
 	bBotProjectile = true;
 	bExtremeDeath = true;
 	bPrimaryUsesBoth = true;

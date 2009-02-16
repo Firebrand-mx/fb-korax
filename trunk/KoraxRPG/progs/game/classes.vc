@@ -1,15 +1,22 @@
 //**************************************************************************
 //**
-//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
-//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
-//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
-//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
-//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
-//**       #    ##    ##    #      ####     ####   ##       ##
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
 //**
 //**    $Id$
 //**
-//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
 //**    This program is free software; you can redistribute it and/or
 //**  modify it under the terms of the GNU General Public License
@@ -49,35 +56,48 @@ import 'uibase';
 
 #include "PlayerSpeed.vc"
 
-#include "KRPGFighterPlayer.vc"
+/* #include "KRPGFighterPlayer.vc"
 #include "KRPGClericPlayer.vc"
 #include "KRPGMagePlayer.vc"
-#include "KRPGPigPlayer.vc"
+#include "KRPGPigPlayer.vc" */
 
 #include "KRPGHeresiarch.vc"
 
-// ------------------------------------
-// [KoraxRPG]
-// ------------------------------------
+//
+// KRPG weapon categories
+//
+#include "WeaponFighterPunch.vc"
+#include "WeaponFighterAxe.vc"
+#include "WeaponFighterHammer.vc"
+#include "WeaponFighterSword.vc"
+#include "WeaponClericMace.vc"
+#include "WeaponClericPoison.vc"
+#include "WeaponClericFire.vc"
+#include "WeaponClericHoly.vc"
+#include "WeaponMageWand.vc"
+#include "WeaponMageFrost.vc"
+#include "WeaponMageLightning.vc"
+#include "WeaponMageBlood.vc"
 
 //
 // weapons
 //
 
-#include "KRPGWeapon.vc"	// KoraxRPG
-#include "WeaponPickup.vc"	// KoraxRPG
-#include "WeaponClericFire.vc"	// KoraxRPG
-#include "WeaponClericHoly.vc"	// KoraxRPG
-#include "WeaponClericMace.vc"	// KoraxRPG
+//#include "KRPGWeapon.vc"	// KoraxRPG
+//#include "WeaponPickup.vc"	// KoraxRPG
+// #include "WeaponClericFire.vc"	// KoraxRPG
+//#include "WeaponClericHoly.vc"	// KoraxRPG
+#include "WeaponClericWraithverge.vc"	// KoraxRPG
+/* #include "WeaponClericMace.vc"	// KoraxRPG
 #include "WeaponClericStaff.vc"	// KoraxRPG
 #include "WeaponFighterAxe.vc"	// KoraxRPG
 #include "WeaponFighterHammer.vc"	// KoraxRPG
 #include "WeaponFighterPunch.vc"	// KoraxRPG
-#include "WeaponFighterSword.vc"	// KoraxRPG
+#include "WeaponFighterSword.vc"	// KoraxRPG */
 #include "WeaponMageBloodscourge.vc"	// KoraxRPG
-#include "WeaponMageCone.vc"	// KoraxRPG
+/* #include "WeaponMageCone.vc"	// KoraxRPG
 #include "WeaponMageLightning.vc"	// KoraxRPG
-#include "WeaponMageWandBlue.vc"	// KoraxRPG
+#include "WeaponMageWandBlue.vc"	// KoraxRPG*/
 
 //
 // advanced AI
@@ -90,11 +110,11 @@ import 'uibase';
 //
 // actor conditions
 //
+#include "ACSpellBerserk.vc"
 #include "ACSpellConfusion.vc"
 #include "ACSpellManaBurn.vc"
 #include "ACSpellShield.vc"
 #include "ACSpellShrink.vc"
-#include "ACSpellBerserk.vc"
 
 //
 // spells
@@ -102,12 +122,14 @@ import 'uibase';
 #include "SpellPointBased.vc"
 #include "SpellGoldenStorm.vc"
 #include "SpellGravitator.vc"
-#include "SpellBerserk.vc"
-#include "SpellDefensive.vc"
-#include "SpellRepulsion.vc"
-#include "SpellHealing.vc"
-#include "SpellSpirits.vc"
-#include "SpellBanishment.vc"
+
+// spell items
+#include "SpellItemBanishment.vc"
+#include "SpellItemBerserk.vc"
+#include "SpellItemDefensive.vc"
+#include "SpellItemHealing.vc"
+#include "SpellItemRepulsion.vc"
+#include "SpellItemSpirits.vc"
 
 //
 // projectile classes
@@ -190,13 +212,13 @@ class FireBomb : Actor decorate;
 class ThrowingBomb : Actor decorate;
 class LightningCeiling : Lightning decorate;
 class LightningFloor : Lightning decorate;
-class WeaponClericFirePickup : WeaponPickup decorate;
+/* class WeaponClericFirePickup : WeaponPickup decorate;
 class WeaponClericStaffPickup : WeaponPickup decorate;
 class WeaponFighterAxePickup : WeaponPickup decorate;
 class WeaponFighterHammerPickup : WeaponPickup decorate;
 class WeaponMageConePickup : WeaponPickup decorate;
-class WeaponMageLightingPickup : WeaponPickup decorate;
-class FWeapFist : Weapon decorate;
+class WeaponMageLightingPickup : WeaponPickup decorate; */
+/* class FWeapFist : Weapon decorate;
 class FWeapHammer : Weapon decorate;
 class FWeapQuietus : Weapon decorate;
 class CWeapMace : Weapon decorate;
@@ -204,5 +226,8 @@ class CWeapStaff : Weapon decorate;
 class CWeapFlame : Weapon decorate;
 class MWeapWand : Weapon decorate;
 class MWeapFrost : Weapon decorate;
-class MWeapLightning : Weapon decorate;
+class MWeapLightning : Weapon decorate; */
 class Snout : Weapon decorate;
+class KRPGFighterPlayer : Actor decorate;
+class KRPGClericPlayer : Actor decorate;
+class KRPGMagePlayer : Actor decorate;

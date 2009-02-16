@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**    $Id: WeaponMageLightning.vc 1921 2009-02-12 18:03:42Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,84 +30,9 @@
 //**
 //**************************************************************************
 
-class WeaponMageLightning : KRPGWeapon;
-
-//==========================================================================
-//
-//  A_KRPGMLightningAttack
-//
-//==========================================================================
-
-final void A_KRPGMLightningAttack() self(Actor)
-{
-	Lightning fmo;
-	Lightning cmo;
-
-	if (!bIsPlayer)
-	{
-		return;
-	}
-	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
-
-	fmo = Lightning(SpawnPlayerMissile(LightningFloor));
-	cmo = Lightning(SpawnPlayerMissile(LightningCeiling));
-	if (fmo)
-	{
-		fmo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
-		fmo.ZigZagCount = 0;
-		fmo.LightningLink = cmo;
-		fmo.A_LightningZap();
-	}
-	if (cmo)
-	{
-		cmo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
-		cmo.Tracer = none;	// mobj that it will track
-		cmo.LightningLink = fmo;
-		cmo.A_LightningZap();
-	}
-	PlaySound('MageLightningFire', CHAN_WEAPON);
-	KRPGWeapon(Wpn).UseWeaponMana();
-}
-
-	states
-	{
-	Ready:
-		MLNG AAAAA 1 Bright A_WeaponReady
-		MLNG A 1 Bright A_LightningReady
-		MLNG BBBBBBCCCCC 1 Bright A_WeaponReady
-		MLNG C 1 Bright A_LightningReady
-		MLNG BBBBBB 1 Bright A_WeaponReady
-		Loop
-	Deselect:
-		MLNG A 1 Bright A_Lower
-		Wait
-	Select:
-		MLNG A 1 Bright A_Raise
-		Wait
-	Fire:
-		MLNG DE 3 Bright
-		MLNG F 4 Bright A_KRPGMLightningAttack
-		MLNG G 4 Bright
-		MLNG H 3 Bright
-		MLNG I 3 Bright
-		MLNG I 6 Bright Offset(0, 199)
-		MLNG C 2 Bright Offset(0, 55)
-		MLNG B 2 Bright Offset(0, 50)
-		MLNG B 2 Bright Offset(0, 45)
-		MLNG B 2 Bright Offset(0, 40)
-		Goto Ready
-	}
+class WeaponMageLightning : MageWeapon
+	abstract;
 
 defaultproperties
 {
-	Slot = 3;
-	SelectionOrder = 1100;
-	AmmoType1 = Mana2;
-	AmmoUse1 = 5;
-	PSpriteSY = 20.0;
-	BotCombatDist = 384.0;
-	bBotMelee = false;
-	bBotProjectile = true;
-	PickupMessage = "ARC OF DEATH";
-	Obituary = "$ob_lightning";
 }
