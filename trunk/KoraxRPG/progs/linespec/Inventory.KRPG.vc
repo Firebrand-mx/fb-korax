@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: Inventory.vc 3787 2008-09-15 22:10:09Z dj_jl $
+//**    $Id: Inventory.KRPG.vc 3787 2008-09-15 22:10:09Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -22,16 +22,6 @@
 //**  GNU General Public License for more details.
 //**
 //**************************************************************************
-//**
-//**	Base class for all items that a player can carry.
-//**
-//**************************************************************************
-
-class KRPGInventory : Inventory
-	abstract;
-
-//	Can be displayed in the spell bar / spell book
-bool				bSpellBar;
 
 //==========================================================================
 //
@@ -43,12 +33,14 @@ bool				bSpellBar;
 
 Inventory PrevSpl()
 {
-	KRPGInventory Item = KRPGInventory(Inventory);
+	// KRPGInventory Item = KRPGInventory(Inventory);
+	Inventory Item = Inventory;
 	while (Item && !Item.bSpellBar)
 	{
-		Item = KRPGInventory(Item.Inventory);
+		// Item = KRPGInventory(Item.Inventory);
+		Item = Item.Inventory;
 	}
-	return Inventory(Item);
+	return (Item && Item.bSpellBar) ? Item : none;
 }
 
 //==========================================================================
@@ -61,19 +53,19 @@ Inventory PrevSpl()
 
 Inventory NextSpl()
 {
-	KRPGInventory Ret = none;
-	KRPGInventory Item = KRPGInventory(EntityEx(Owner).Inventory);
+	// KRPGInventory Ret = none;
+	// KRPGInventory Item = KRPGInventory(EntityEx(Owner).Inventory);
+	Inventory Ret = none;
+	Inventory Item = EntityEx(Owner).Inventory;
 	while (Item && Item != self)
 	{
 		if (Item.bSpellBar)
 		{
 			Ret = Item;
 		}
-		Item = KRPGInventory(Item.Inventory);
+		// Item = KRPGInventory(Item.Inventory);
+		Item = Item.Inventory;
 	}
-	return Inventory(Ret);
-}
-
-defaultproperties
-{
+	//return Inventory(Ret);
+	return Ret;
 }

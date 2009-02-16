@@ -7,7 +7,7 @@
 //**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
 //**       #    ##    ##    #      ####     ####   ##       ##
 //**
-//**    $Id: PuzzleItem.vc 3379 2008-03-25 21:27:42Z dj_jl $
+//**    $Id: Inventory.Defaults.vc 3974 2009-01-24 20:04:35Z dj_jl $
 //**
 //**    Copyright (C) 1999-2006 Jānis Legzdiņš
 //**
@@ -23,31 +23,50 @@
 //**
 //**************************************************************************
 
-class SpellItem : /* KRPGInventory */ Inventory
-	abstract;
-
-int					Level;
-
-replication
+states
 {
-	reliable if (Role == ROLE_Authority && bNetOwner)
-		Level;
-}
+	//	Hide pickup like in Doom and Strife.
+DormantPickup:
+	TNT1 A 1050
+	TNT1 A -1
+	{
+		EntityEx	A;
 
-//==========================================================================
-//
-//	ActivateSpell
-//
-//==========================================================================
+		bInvisible = false;
+		bSpecial = true;
+		SetState(IdleState);
 
-bool ActivateSpell(bool Pickup, int level)
-{
-	return true;
+		// spawn a teleport fog at the new spot
+		A = Spawn(ItemFog, Origin);
+		A.PlaySound('misc/spawn', CHAN_ITEM);
+	}
+	Stop
+
+	//	Hide for 40 secs
+HideSpecial:
+	ACLO E 1400
+	ACLO A 4 A_RestoreSpecialThing1
+	ACLO BABCBCDC 4
+	ACLO D 4 A_RestoreSpecialThing2
+	Stop
+
+	//	Invisible state for held items
+Held:
+	TNT1 A -1
+	Stop
+
+	//	Will destroy item as soon as possible
+HoldAndDestroy:
+	TNT1 A 1
+	Stop
 }
 
 defaultproperties
 {
+	Amount = 1;
 	MaxAmount = 1;
-	bNoGravity = true;
-	bSpellBar = true;
+	bSpecial = true;
+	PickupMessage = "You got a pickup";
+	PickupSound = 'misc/i_pkup';
+	UseSound = 'misc/invuse';
 }
