@@ -1,0 +1,103 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: Inventory.Head.vc 3974 2009-01-24 20:04:35Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+//**
+//**	Base class for all items that a player can carry.
+//**
+//**************************************************************************
+
+class Inventory : Actor
+	abstract;
+
+const float BONUSADD		= 0.2;
+
+const int DefMaxAmount		= -2;
+
+//	Special values for powerup's blend colour.
+const int INVERSECOLOUR		= 0x00123456;
+const int GOLDCOLOUR		= 0x00123457;
+const int REDCOLOUR			= 0x00123458;
+const int GREENCOLOUR		= 0x00123459;
+
+int					Amount;
+int					MaxAmount;
+string				PickupMessage;
+float				RespawnTime;
+int					GiveQuestNum;
+name				IconName;
+float				DropTime;
+//	Spawn PickuFlash when picked up.
+class<Actor>		PickupFlashType;
+
+name				PickupSound;
+name				UseSound;
+
+//	Originally these didn't respawn in deathmatch
+bool				bBigPowerup;
+//	Play pickup sound at full volume
+bool				bFullVolPickupSound;
+//	Used by HandlePickup.
+bool				bPickupGood;
+//	Can be displayed in the inventory bar
+bool				bInvBar;
+//	Keep item in inventory even if amount is 0
+bool				bKeepDepleted;
+//	This item cannot be tossed out
+bool				bUndroppable;
+//	Ignore skill level when giving this item
+bool				bIgnoreSkill;
+//	Automaticly use when picked up.
+bool				bAutoActivate;
+//	For auto activate items always pick up the item, even if it wasn't used.
+bool				bAlwaysPickup;
+//	Keep powerup while travelingbetween levels in a hub
+bool				bHubPower;
+//	Remove when traveling between different clusters.
+bool				bInterHubStrip;
+//	No feedback when picked up
+bool				bQuiet;
+//	When picked up while it's still active, time is added
+bool				bAdditiveTime;
+//	CreateCopy changed the owner
+bool				bCreateCopyMoved;
+//	Powerup failed to activate.
+bool				bInitEffectFailed;
+
+//--------------------------------------------------------------------------
+//
+//	KoraxRPG
+//
+//--------------------------------------------------------------------------
+//
+// Should be displayed in the spell bar / spell book
+bool				bSpellBar;
+// Should be placed into weapon stash (separate inventory for weapons)
+bool				bWeaponStash;
+
+
+replication
+{
+	reliable if (Role == ROLE_Authority && bNetOwner)
+		Amount, MaxAmount;
+}
