@@ -30,30 +30,48 @@
 //**
 //**************************************************************************
 
-class SpellHealing : SpellItem;
+class SpellItemBerserk : SpellItem;
+
+// [FB] Not actually a spell... but what the hell!! >:P
 
 //==========================================================================
 //
 //	ActivateSpell
 //
-//  [FB] spell effects are level based... and change depending on that...
-//
 //==========================================================================
 
 bool ActivateSpell(bool Pickup, int level)
 {
-	if(Player(Owner.Player).sp_power >= 2)
+	Actor mo;
+	float dist;
+	bool berserk_already = Actor(Owner.Player.MO).GetCondition(ACSpellBerserk) != none;
+
+	if (/* !Actor(Player(Owner.Player).MO).bBerserk */
+		!berserk_already &&
+		Player(Owner.Player).sp_power >= 6)
 	{
 		Owner.PlaySound('UseArtifact', CHAN_ITEM);
-		if (EntityEx(Owner).GiveBody(5 + Player(Owner.Player).exp_level));
-		{
-			Player(Owner.Player).centreprint("HEALING SPELL ACTIVATED");
-		}
-		Player(Owner.Player).sp_power -= 2;
+
+		// Player(Owner.Player).SetBerserk();
+		Actor(Owner.Player.MO).CastCondition(
+			ACSpellBerserk,				// condition class
+			false,						// not accumulative
+			Actor(Owner.Player.MO),		// instigator (caster)
+			1,							// spell level (should be calculated somehow?)
+										// duration
+			(1.0 + itof(Player(Owner.Player).sp_power) * 80.0) / 35.0
+			);
+
+		Player(Owner.Player).sp_power -= 5;
+		Player(Owner.Player).centreprint("BERSERKER ACTIVATED");
 	}
-	else
+	else if (berserk_already /* Actor(Owner.Player.MO).bBerserk */)
 	{
-		Player(Owner.Player).centreprint("NOT ENOUGH FAITH");
+		Player(Owner.Player).centreprint("YOU'RE ALREADY BERSERKING");
+	}
+	else if (Player(Owner.Player).sp_power < 6)
+	{
+		Player(Owner.Player).centreprint("NOT ENOUGH BATTLE RAGE");
 	}
 	
 	return true;
@@ -61,9 +79,8 @@ bool ActivateSpell(bool Pickup, int level)
 
 states
 {
-// [FB] Change this later!
 Spawn:
-	BLST ACBDEFGH 4 Bright
+	TNT1 A 1
 	Loop
 }
 
@@ -71,8 +88,8 @@ defaultproperties
 {
 	MaxAmount = DefMaxAmount;
 	PickupSound = 'PickupArtifact';
-	PickupMessage = "$txt_healing";
-	IconName = 'splc1';
+	PickupMessage = "$txt_berserk";
+	IconName = 'splf1';
 	bFloatBob = true;
 	PickupFlashType = PickupFlash;
 	bSpellBar = true;
