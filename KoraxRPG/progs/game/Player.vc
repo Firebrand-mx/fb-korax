@@ -219,11 +219,11 @@ void ActivateLevel(int to_lvl)
 			break;
 		case 5:
 			centreprint("YOU CAN NOW CAST SPIRITS WITHIN!");
-			EntityEx(MO).GiveInventoryType(SpellSpirits);
+			EntityEx(MO).GiveInventoryType(SpellItemSpirits);
 			break;
 		case 7:
 			centreprint("YOU CAN NOW CAST BANISHMENT!");
-			EntityEx(MO).GiveInventoryType(SpellBanishment);
+			EntityEx(MO).GiveInventoryType(SpellItemBanishment);
 			break;
 		case 8:
 			centreprint("YOU NOW HAVE THE ICE WAND!");
@@ -247,7 +247,7 @@ void ActivateLevel(int to_lvl)
 			break;
 		case 5:
 			centreprint("YOU CAN NOW CAST A DEFENSIVE SPELL!");
-			EntityEx(MO).GiveInventoryType(SpellDefensive);
+			EntityEx(MO).GiveInventoryType(SpellItemDefensive);
 			break;
 		case 6:
 			centreprint("YOU NOW HAVE THE RED WAND!");
@@ -761,7 +761,7 @@ void PlayerImpulse()
 	};
 
 
-	if (impulse <= 4)
+	if (impulse <= 4) // [CW] TODO: change to 10 when possible
 	{
 		ChangeWeapon(impulse);
 	}
@@ -1356,7 +1356,8 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 void Cheat_Gimme()
 {
 	class<Inventory>			Cls;
-	class<WeaponPickup>			WpnCls;
+	//class<WeaponPickup>			WpnCls;
+	class<HexenWeapon>			WpnCls;
 	class<FourthWeaponPiece>	PieceCls;
 	Inventory					Inv;
 
@@ -1370,14 +1371,16 @@ void Cheat_Gimme()
 		{
 			HArmor.Slots[i] = HArmor.SlotsIncrement[i];
 		}
-		foreach AllClasses(WeaponPickup, WpnCls)
+		//foreach AllClasses(WeaponPickup, WpnCls)
+		foreach AllClasses(HexenWeapon, WpnCls)
 		{
 			if (!FindClassState(WpnCls, 'Ready'))
 			{
 				//	Abstract class.
 				continue;
 			}
-			WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
+			//WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
+			HexenWeapon Wpn = HexenWeapon(Level.Spawn(WpnCls,,,, false));
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
 			Wpn.AmmoGive3 = 0;
