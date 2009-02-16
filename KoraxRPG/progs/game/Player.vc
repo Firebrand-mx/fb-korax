@@ -761,9 +761,9 @@ void PlayerImpulse()
 	};
 
 
-	if (impulse <= 4) // [CW] TODO: change to 10 when possible
+	if (impulse <= /*4*/ KRPGDefs::NUMWEAPONSLOTS)
 	{
-		ChangeWeapon(impulse);
+		ChangeWeaponEx(impulse);
 	}
 	else if (impulse == 13)
 	{
@@ -1380,6 +1380,7 @@ void Cheat_Gimme()
 				continue;
 			}
 			//WeaponPickup Wpn = Level.Spawn(WpnCls,,,, false);
+			WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
 			HexenWeapon Wpn = HexenWeapon(Level.Spawn(WpnCls,,,, false));
 			Wpn.AmmoGive1 = 0;
 			Wpn.AmmoGive2 = 0;
@@ -1399,6 +1400,7 @@ void Cheat_Gimme()
 			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
 			if (!AmmoItem)
 			{
+				Cls = class<Inventory>(GetClassReplacement(Cls));
 				AmmoItem = Level.Spawn(Cls,,,, false);
 				if (!AmmoItem.TryPickup(EntityEx(MO)))
 				{
@@ -1446,6 +1448,7 @@ void Cheat_Gimme()
 				//	Abstract class
 				continue;
 			}
+			Cls = class<Inventory>(GetClassReplacement(Cls));
 			EntityEx(MO).GiveInventoryType(Cls);
 		}
 		cprint("ALL KEYS");
@@ -1475,6 +1478,7 @@ void Cheat_Gimme()
 				//	From other game or not available in shareware.
 				continue;
 			}
+			Cls = class<Inventory>(GetClassReplacement(Cls));
 			Inv = Level.Spawn(Cls,,,, false);
 			Inv.Amount = Inv.MaxAmount;
 			if (!Inv.TryPickup(EntityEx(MO)))
@@ -1493,6 +1497,7 @@ void Cheat_Gimme()
 				//	Abstract class
 				continue;
 			}
+			Cls = class<Inventory>(GetClassReplacement(Cls));
 			EntityEx(MO).GiveInventoryType(Cls);
 		}
 		cprint("ALL ARTIFACTS");

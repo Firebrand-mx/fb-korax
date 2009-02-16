@@ -130,6 +130,123 @@ void BuildCharacter(int i_strength, int i_vitality, int i_speed, int i_intellige
 
 //==========================================================================
 //
+//  ChangeWeaponEx
+//
+//  The actual changing of the weapon is done when the weapon psprite can
+// do it (read: not in the middle of an attack).
+//
+//==========================================================================
+
+final void ChangeWeaponEx(int newweapon)
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	Weapon NewWpn = GetSlotChangeWeaponEx(newweapon);
+	if (NewWpn && NewWpn != ReadyWeapon)
+	{
+		PendingWeapon = NewWpn;
+	}
+}
+
+//==========================================================================
+//
+//	GetSlotChangeWeaponEx
+//
+//	[CW] KRPG: LineSpecialGameInfo.Weapons slots now store not final
+//	weapon classes, but abstract weapon category classes.
+//	Hence, for example, expression like
+//	   GI.WeaponSlots[Slot].Weapons[i] == ReadyWeapon.Class
+//	should be changed to
+//	   ClassIsChildOf(ReadyWeapon.Class, GI.WeaponSlots[Slot].Weapons[i])
+//	et cetera
+//
+//==========================================================================
+
+final Weapon GetSlotChangeWeaponEx(int Slot)
+{
+	int			i;
+	int			j;
+	LineSpecialGameInfo GI = LineSpecialGameInfo(Level.Game);
+
+	if (ReadyWeapon)
+	{
+		for (i = 0; i < LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; i++)
+		{
+			if (ClassIsChildOf(ReadyWeapon.Class, GI.WeaponSlots[Slot].Weapons[i]) ||
+				(ReadyWeapon.bPoweredUp && ReadyWeapon.SisterWeapon &&
+				ClassIsChildOf(ReadyWeapon.SisterWeapon.Class, GI.WeaponSlots[Slot].Weapons[i])
+				))
+			{
+				for (j = (i + LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1) %
+					LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; j != i;
+					j = (j + LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1) %
+					LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT)
+				{
+					//Weapon Wpn = Weapon(EntityEx(MO).FindInventory(
+					//	GI.WeaponSlots[Slot].Weapons[j]));
+					// [CW] Temp, CHECKME!
+					HexenWeapon Wpn;
+					class<HexenWeapon> WpnCls;
+					foreach AllClasses(HexenWeapon, WpnCls)
+					{
+						if (!FindClassState(WpnCls, 'Ready'))
+						{
+							//	Abstract class.
+							continue;
+						}
+						if (!ClassIsChildOf(WpnCls, GI.WeaponSlots[Slot].Weapons[j]))
+						{
+							//	Wrong category
+							continue;
+						}
+
+						WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
+						Wpn = HexenWeapon(EntityEx(MO).FindInventory(WpnCls));
+						if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
+						{
+							return ChoosePowered(Wpn);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for (i = LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1; i >= 0; i--)
+	{
+		// [CW] Temp, CHECKME!
+		HexenWeapon Wpn;
+		class<HexenWeapon> WpnCls;
+		foreach AllClasses(HexenWeapon, WpnCls)
+		{
+			if (!FindClassState(WpnCls, 'Ready'))
+			{
+				//	Abstract class.
+				continue;
+			}
+			if (!ClassIsChildOf(WpnCls, GI.WeaponSlots[Slot].Weapons[i]))
+			{
+				//	Wrong category
+				continue;
+			}
+
+			WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
+			Wpn = HexenWeapon(EntityEx(MO).FindInventory(WpnCls));
+			if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
+			{
+				return ChoosePowered(Wpn);
+			}
+		}
+	}
+
+	return ReadyWeapon;
+}
+
+
+//==========================================================================
+//
 //  NextSpell
 //
 //==========================================================================
