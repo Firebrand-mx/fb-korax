@@ -36,6 +36,8 @@ int strength;
 int intelligence;
 int wisdom;
 
+HexenWeapon		WeaponsBelt[KRPGDefs::NUMWEAPONSLOTS];
+
 //
 // [FB] Spell bar stuff
 //
@@ -51,30 +53,6 @@ replication
 		SpellPtr, SpellTime;
 }
 
-/* //==========================================================================
-//
-//	AddInventory
-//
-//==========================================================================
-
-void AddInventory(KRPGInventory Item)*/
-
-//==========================================================================
-//
-//	AddSpellItem
-//
-//==========================================================================
-
-void AddSpellItem(Inventory Item)
-{
-	if (Item.bSpellBar && !SpellPtr)
-	{
-		// SpellPtr = Inventory(Item);
-		// SpellFirst = Inventory(Item);
-		SpellPtr = Item;
-		SpellFirst = Item;
-	}
-}
 
 //==========================================================================
 //
@@ -130,6 +108,32 @@ void BuildCharacter(int i_strength, int i_vitality, int i_speed, int i_intellige
 
 //==========================================================================
 //
+//	AddWeapon
+//
+//==========================================================================
+
+void AddWeapon(HexenWeapon Wpn)
+{
+	int slot;
+	LineSpecialGameInfo GI = LineSpecialGameInfo(Level.Game);
+
+	for (slot = 0; slot < KRPGDefs::NUMWEAPONSLOTS; slot++)
+	{
+		if (ClassIsChildOf(Wpn.Class, GI.WeaponSlots[slot].Weapons[PClass]))
+		{
+			// If there's no weapon assigned for current slot,
+			// assign the new one automatically
+			if (!WeaponsBelt[slot])
+			{
+				WeaponsBelt[slot] = Wpn;
+			}
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
 //  ChangeWeaponEx
 //
 //  The actual changing of the weapon is done when the weapon psprite can
@@ -152,6 +156,92 @@ final void ChangeWeaponEx(int newweapon)
 
 //==========================================================================
 //
+//  PrevWeaponEx
+//
+//==========================================================================
+
+final void PrevWeaponEx()
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	Weapon Wpn = GetPrevWeaponEx(PendingWeapon ? PendingWeapon : ReadyWeapon);
+	if (Wpn && Wpn != ReadyWeapon)
+	{
+		PendingWeapon = Wpn;
+	}
+}
+
+//==========================================================================
+//
+//  NextWeaponEx
+//
+//==========================================================================
+
+final void NextWeaponEx()
+{
+	if (MorphTime)
+	{
+		return;
+	}
+	Weapon Wpn = GetNextWeaponEx(PendingWeapon ? PendingWeapon : ReadyWeapon);
+	if (Wpn && Wpn != ReadyWeapon)
+	{
+		PendingWeapon = Wpn;
+	}
+}
+
+//==========================================================================
+//
+//	BestWeaponEx
+//
+//	Returns best weapon to use
+//
+//==========================================================================
+
+final Weapon BestWeaponEx(optional class<Ammo> AmmoType)
+{
+	int slot;
+	bool Powered = !!EntityEx(MO).FindInventory(PowerWeaponLevel2);
+	Weapon Best = none;
+	Weapon Wpn = none;
+
+	for (slot = 0; slot < KRPGDefs::NUMWEAPONSLOTS; slot++)
+	{
+		Wpn = WeaponsBelt[slot];
+		//	Check if best one is better that this one.
+		if (Best && Wpn.SelectionOrder > Best.SelectionOrder)
+		{
+			continue;
+		}
+		//	Possibly limit to specific ammo type. [CW]<-- CHECKME
+		if (AmmoType && Wpn.AmmoType1 != AmmoType)
+		{
+			continue;
+		}
+		//	Check if it's for the current tome of power state.
+		if (Powered && Wpn.SisterWeapon && Wpn.SisterWeapon.bPoweredUp)
+		{
+			continue;
+		}
+		if (!Powered && Wpn.bPoweredUp)
+		{
+			continue;
+		}
+		//	Make sure it has enough ammo.
+		if (!Wpn.CheckAmmo(Weapon::FIRE_Either, false))
+		{
+			continue;
+		}
+		//	Good one.
+		Best = Wpn;
+	}
+	return Best;
+}
+
+//==========================================================================
+//
 //	GetSlotChangeWeaponEx
 //
 //	[CW] KRPG: LineSpecialGameInfo.Weapons slots now store not final
@@ -170,7 +260,15 @@ final Weapon GetSlotChangeWeaponEx(int Slot)
 	int			j;
 	LineSpecialGameInfo GI = LineSpecialGameInfo(Level.Game);
 
-	if (ReadyWeapon)
+	if (WeaponsBelt[Slot])
+	{
+		if (WeaponsBelt[Slot].CheckAmmo(Weapon::FIRE_Either, false))
+		{
+			return ChoosePowered(WeaponsBelt[Slot]);
+		}
+	}
+
+	/* if (ReadyWeapon)
 	{
 		for (i = 0; i < LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; i++)
 		{
@@ -239,11 +337,85 @@ final Weapon GetSlotChangeWeaponEx(int Slot)
 				return ChoosePowered(Wpn);
 			}
 		}
-	}
+	} */
 
 	return ReadyWeapon;
 }
 
+//==========================================================================
+//
+//	GetPrevWeaponEx
+//
+//==========================================================================
+
+final Weapon GetPrevWeaponEx(Weapon Current)
+{
+	int slot;
+
+	for (slot = 0; slot < KRPGDefs::NUMWEAPONSLOTS; slot++)
+	{
+		if (Current == WeaponsBelt[slot])
+		{
+			if (!slot)
+			{
+				slot = KRPGDefs::NUMWEAPONSLOTS - 1;
+			}
+			else
+			{
+				slot--;
+			}
+
+			return ChoosePowered(WeaponsBelt[slot]);
+		}
+	}
+
+	return Current;
+}
+
+//==========================================================================
+//
+//	GetNextWeaponEx
+//
+//==========================================================================
+
+final Weapon GetNextWeaponEx(Weapon Current)
+{
+	int slot;
+
+	for (slot = 0; slot < KRPGDefs::NUMWEAPONSLOTS; slot++)
+	{
+		if (Current == WeaponsBelt[slot])
+		{
+			if (slot == KRPGDefs::NUMWEAPONSLOTS - 1)
+			{
+				slot = 0;
+			}
+			else
+			{
+				slot++;
+			}
+
+			return ChoosePowered(WeaponsBelt[slot]);
+		}
+	}
+
+	return Current;
+}
+
+//==========================================================================
+//
+//	AddSpellItem
+//
+//==========================================================================
+
+void AddSpellItem(Inventory Item)
+{
+	if (Item.bSpellBar && !SpellPtr)
+	{
+		SpellPtr = Item;
+		SpellFirst = Item;
+	}
+}
 
 //==========================================================================
 //
@@ -264,7 +436,6 @@ final void NextSpell()
 	}
 	if (SpellPtr)
 	{
-		// Inventory Prev = KRPGInventory(SpellPtr).PrevSpl();
 		Inventory Prev = SpellPtr.PrevSpl();
 		if (Prev)
 		{
@@ -293,7 +464,6 @@ final void PreviousSpell()
 	}
 	if (SpellPtr)
 	{
-		// Inventory Next = KRPGInventory(SpellPtr).NextSpl();
 		Inventory Next = SpellPtr.NextSpl();
 		if (Next)
 		{
