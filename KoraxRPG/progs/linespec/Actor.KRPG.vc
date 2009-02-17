@@ -697,9 +697,6 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	if (!specified_maxdist)
 		maxdist = DEFAULT_THREAT_VICINITY;
 
-	if (!specified_ExcludeActor)
-		ExcludeActor = none;
-
 	Actor NewTarget;
 	min_dist = -1.0;
 
@@ -717,8 +714,8 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (mo.Health <= 0)
 			continue;	// dead
 
-		// [CW] Do not allow to target other actors than either monsters or Actors
-		if (!mo.IsA('Actor') && !mo.bMonster)
+		// [CW] Do not allow to target other actors than either monsters or players
+		if (!mo.bIsPlayer && !mo.bMonster)
 			continue;
 
 		if (!bIgnoreTeams && (Team == Actor(mo).Team))
