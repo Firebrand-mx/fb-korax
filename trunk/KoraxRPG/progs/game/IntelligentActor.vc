@@ -633,8 +633,8 @@ void A_CheckThreat()
 			if (!Target || !Threshold)
 			{
 				Actor targ = bFriendly ? Actor(Target) : Actor(Sector->SoundTarget);
-				// [CW] Do not allow to target other actors than monsters
-				if (targ /*&& !targ.IsA(/*'KRPGActor'*//*'Actor')*/ && !targ.bMonster)
+				// [CW] Do not allow to target other actors than monsters and players
+				if (targ && !targ.bIsPlayer && !targ.bMonster)
 					targ = none;
 				if (targ && targ != Target &&
 					targ.bShootable && !targ.bNeverTarget &&
@@ -680,7 +680,7 @@ void A_CheckThreat()
 				else
 					dist = Behavior.ThreatVicinity;
 				
-				if (LookForEnemy(bLookAllAround || (Alertness > 0.0), true, GetCentre(), dist, Actor(Target)))
+				if (LookForEnemy(bLookAllAround || (Alertness > 0.0), true, Origin, dist, Actor(Target)))
 				{
 					Alertness = HIGH_ALERTNESS;
 
