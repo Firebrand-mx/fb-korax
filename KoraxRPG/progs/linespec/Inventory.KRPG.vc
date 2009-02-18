@@ -25,6 +25,47 @@
 
 //==========================================================================
 //
+//	PrevWpn
+//
+//	Return previous item with bWeaponStash flag set.
+//
+//==========================================================================
+
+Inventory PrevWpn()
+{
+	Inventory Item = Inventory;
+	while (Item && !Item.bWeaponStash)
+	{
+		Item = Item.Inventory;
+	}
+	return (Item && Item.bWeaponStash) ? Item : none;
+}
+
+//==========================================================================
+//
+//	NextWpn
+//
+//	Return next item with bWeaponStash flag set.
+//
+//==========================================================================
+
+Inventory NextWpn()
+{
+	Inventory Ret = none;
+	Inventory Item = EntityEx(Owner).Inventory;
+	while (Item && Item != self)
+	{
+		if (Item.bWeaponStash)
+		{
+			Ret = Item;
+		}
+		Item = Item.Inventory;
+	}
+	return Ret;
+}
+
+//==========================================================================
+//
 //	PrevSpl
 //
 //	Return previous item with bSpellBar flag set.
@@ -33,11 +74,9 @@
 
 Inventory PrevSpl()
 {
-	// KRPGInventory Item = KRPGInventory(Inventory);
 	Inventory Item = Inventory;
 	while (Item && !Item.bSpellBar)
 	{
-		// Item = KRPGInventory(Item.Inventory);
 		Item = Item.Inventory;
 	}
 	return (Item && Item.bSpellBar) ? Item : none;
@@ -53,8 +92,6 @@ Inventory PrevSpl()
 
 Inventory NextSpl()
 {
-	// KRPGInventory Ret = none;
-	// KRPGInventory Item = KRPGInventory(EntityEx(Owner).Inventory);
 	Inventory Ret = none;
 	Inventory Item = EntityEx(Owner).Inventory;
 	while (Item && Item != self)
@@ -63,9 +100,7 @@ Inventory NextSpl()
 		{
 			Ret = Item;
 		}
-		// Item = KRPGInventory(Item.Inventory);
 		Item = Item.Inventory;
 	}
-	//return Inventory(Ret);
 	return Ret;
 }

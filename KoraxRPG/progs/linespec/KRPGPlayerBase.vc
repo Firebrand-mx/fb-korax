@@ -36,6 +36,7 @@ int strength;
 int intelligence;
 int wisdom;
 
+Inventory		WeaponFirst;	// first weapon in inventory
 HexenWeapon		WeaponsBelt[KRPGDefs::NUMWEAPONSLOTS];
 
 //
@@ -49,7 +50,7 @@ int				SpellSize;
 replication
 {
 	reliable if (!bIsClient)
-		strength, intelligence, wisdom, SpellFirst,
+		strength, intelligence, wisdom, WeaponFirst, WeaponsBelt, SpellFirst,
 		SpellPtr, SpellTime;
 }
 
@@ -117,6 +118,11 @@ void AddWeapon(HexenWeapon Wpn)
 	int slot;
 	LineSpecialGameInfo GI = LineSpecialGameInfo(Level.Game);
 
+	if (!WeaponFirst)
+	{
+		WeaponFirst = Wpn;
+	}
+
 	for (slot = 0; slot < KRPGDefs::NUMWEAPONSLOTS; slot++)
 	{
 		if (ClassIsChildOf(Wpn.Class, GI.WeaponSlots[slot].Weapons[PClass]))
@@ -129,6 +135,41 @@ void AddWeapon(HexenWeapon Wpn)
 			}
 			break;
 		}
+	}
+}
+
+//==========================================================================
+//
+//  PutWeaponOnBelt
+//
+//	[CW] Puts a WpnIndex-th compatible weapon found in defined Slot
+//
+//==========================================================================
+
+void PutWeaponOnBelt(int Slot, int WpnIndex)
+{
+	int i;
+	Inventory Item = WeaponFirst;
+
+	i = 0;
+	while (Item)
+	{
+		if (HexenWeapon(Item).Slot == Slot)
+		{
+			if (i == WpnIndex)
+			{
+				WeaponsBelt[Slot] = HexenWeapon(Item);
+				if (HexenWeapon(ReadyWeapon).Slot == Slot)
+				{
+					ChangeWeaponEx(Slot);
+				}
+				break;
+			}
+
+			i++;
+		}
+
+		Item = Item.NextWpn();
 	}
 }
 
