@@ -32,6 +32,7 @@
 
 class ArsenalScreenGeneric : ArsenalScreen;
 
+MenuStaticText	StaticText;
 MenuTextButton	SelectedEntry;
 
 //==========================================================================
@@ -43,17 +44,16 @@ MenuTextButton	SelectedEntry;
 void CreateChoices()
 {
 	int i;
-	MenuStaticText		Static;
 	int YPos = ChoicesStartY;
 
 	if (cl)
 	{
-		Static = MenuStaticText(NewChild(MenuStaticText));
-		Static.SetOrigin(ChoicesStartX, YPos);
+		StaticText = MenuStaticText(NewChild(MenuStaticText));
+		StaticText.SetOrigin(ChoicesStartX, YPos);
 		// [CW] TODO: make methods for static to automatically adjust size
-		Static.Text = va("Slots: %i - %i; Current Slot: %i", SlotFirst, SlotLast, SlotCurrent);
-		Static.Height = Static.TextHeight(Static.Text);
-		YPos += Static.Height << 1;
+		StaticText.Text = va("Slots: %i - %i; Current Slot: %i", SlotFirst, SlotLast, SlotCurrent);
+		StaticText.Height = StaticText.TextHeight(StaticText.Text);
+		YPos += StaticText.Height << 1;
 
 		CreateWeaponEntries(YPos);
 	}
@@ -122,16 +122,26 @@ bool OnKeyDown(int Key)
 	{
 	case K_LEFTARROW:
 		PrevPage();
+		LocalSound('menu/change');
 		break;
 	case K_RIGHTARROW:
 		NextPage();
+		LocalSound('menu/change');
 		break;
+	case K_DOWNARROW:
+	case K_UPARROW:
+		if (Selector)
+		{
+			return ::OnKeyDown(Key);
+		}
+		break;
+
 	default:
 		{
-			dprint("Key = %i", Key);
-			if (Key >= 0x30 && Key <= 39)
+			if (Key >= 0x30 && Key <= 0x39)
 			{
 				SetPage(Key == 0x30 ? 10 : Key - 0x30);
+				LocalSound('menu/change');
 			}
 			else
 			{
@@ -207,7 +217,8 @@ void SetPage(int page)
 void UpdatePage()
 {
 	int i;
-	for (i = 1; i < NumItems; i++)
+	StaticText.Destroy();
+	for (i = 0; i < NumItems; i++)
 	{
 		Items[i].Destroy();
 		Items[i] = none;
@@ -215,7 +226,15 @@ void UpdatePage()
 	NumItems = 0;
 	CreateChoices();
 
-	SetDefaultChoice();
+	if (NumItems)
+	{
+		CreateSelector();
+		SetDefaultChoice();
+	}
+	else
+	{
+		Selector.Destroy();		
+	}
 }
 
 //==========================================================================
