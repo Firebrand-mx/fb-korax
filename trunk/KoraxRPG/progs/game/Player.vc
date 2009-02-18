@@ -82,9 +82,9 @@ replication
 		ParticleEffectEx;
 
 	reliable if (!bIsClient)
-		ClientUpgradeScreen, ClientConversation, ConCleanScene, ConSetPersonInfo,
-		ConPlayCue, ConCleanChoices, ConAddChoice, ConSuspend, ConWait,
-		ConCloseScene;
+		ClientUpgradeScreen, ClientArsenalScreen, ClientConversation,
+		ConCleanScene, ConSetPersonInfo, ConPlayCue, ConCleanChoices,
+		ConAddChoice, ConSuspend, ConWait, ConCloseScene;
 
 	reliable if (bIsClient)
 		ConChoice, ConContinue;
@@ -386,6 +386,28 @@ void UpdateStats(int n_strength, int n_vitality, int n_speed, int n_intelligence
 	KRPGPlayerPawn(MO).ForwardMove2 += Value;
 	KRPGPlayerPawn(MO).SideMove1 += Value;
 	KRPGPlayerPawn(MO).SideMove2 += Value;
+}
+
+//==========================================================================
+//
+//  ArsenalScreen
+//
+//==========================================================================
+
+void ArsenalScreen()
+{
+	ClientArsenalScreen();
+}
+
+//==========================================================================
+//
+//  ClientArsenalScreen
+//
+//==========================================================================
+
+void ClientArsenalScreen()
+{
+	KRPGClientGameBase(ClGame).ShowArsenalScreen();
 }
 
 //==========================================================================
@@ -761,19 +783,19 @@ void PlayerImpulse()
 	};
 
 
-	if (impulse <= /*4*/ KRPGDefs::NUMWEAPONSLOTS)
+	if (impulse < /* <= */ /* 4 */ KRPGDefs::NUMWEAPONSLOTS)
 	{
 		ChangeWeaponEx(impulse);
 	}
-	else if (impulse == 13)
+	else if (impulse == KRPGDefs::IMPULSE__INVENTORY_PREV)
 	{
 		InventoryLeft();
 	}
-	else if (impulse == 14)
+	else if (impulse == KRPGDefs::IMPULSE__INVENTORY_NEXT)
 	{
 		InventoryRight();
 	}
-	else if (impulse == 15)
+	else if (impulse == KRPGDefs::IMPULSE__INVENTORY_USE)
 	{
 		InventoryUse();
 	}
@@ -789,25 +811,30 @@ void PlayerImpulse()
 	{
 		SpellUse();
 	}
-	else if (impulse == 16)
+	else if (impulse == KRPGDefs::IMPULSE__SUICIDE)
 	{
 		Actor(MO).Damage(none, none, 10000);
 	}
-	else if (impulse == 17)
+	else if (impulse == KRPGDefs::IMPULSE__WEAPON_PREV)
 	{
 		PrevWeapon();
 	}
-	else if (impulse == 18)
+	else if (impulse == KRPGDefs::IMPULSE__WEAPON_NEXT)
 	{
 		NextWeapon();
-	}
-	else if (impulse >= 200 && impulse <= 205)
-	{
-		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
 	}
 	else if (impulse == KRPGDefs::IMPULSE__UPGRADESCREEN)
 	{
 		UpgradeScreen();
+	}
+	else if (impulse == KRPGDefs::IMPULSE__ARSENAL)
+	{
+		ArsenalScreen();
+	}
+	// [CW] TODO: replace by using KRPG conversation system
+	else if (impulse >= 200 && impulse <= 205)
+	{
+		LineSpecialLevelInfo(Level).ConChoiceImpulse(impulse - 200);
 	}
 
 	// Hexen artifact hot keys

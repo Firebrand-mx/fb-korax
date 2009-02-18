@@ -48,9 +48,14 @@ enum
 TitleScreen			GTitle;
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
-TravelMapScreen		GTravelMap;	// KoraxRPG
-UpgradeScreen		GUpgradeScreen;	// KoraxRPG
-ConScreen			GConScreen; // KoraxRPG
+
+//
+// KoraxRPG
+//
+TravelMapScreen		GTravelMap;
+UpgradeScreen		GUpgradeScreen;
+ArsenalScreen		GArsenalScreen;
+ConScreen			GConScreen;
 
 // KoraxRPG
 int messageResult;
@@ -504,6 +509,80 @@ void DrawViewBorder(int x, int y, int w, int h)
 //
 //**************************************************************************
 
+//--------------------------------------------------------------------------
+//
+//	Upgrade Screen
+//
+//--------------------------------------------------------------------------
+
+//==========================================================================
+//
+//  ShowUpgradeScreen
+//
+//==========================================================================
+
+void ShowUpgradeScreen()
+{
+	if (!GUpgradeScreen)
+	{
+		GUpgradeScreen = UpgradeScreen(SpawnMenu(UpgradeScreen));
+		PushMenuScreen(GUpgradeScreen);
+	}
+}
+
+//==========================================================================
+//
+//  HideUpgradeScreen
+//
+//==========================================================================
+
+void HideUpgradeScreen()
+{
+	GUpgradeScreen = none;
+}
+
+//--------------------------------------------------------------------------
+//
+//	Arsenal Screen
+//
+//--------------------------------------------------------------------------
+
+//==========================================================================
+//
+//  ShowArsenalScreen
+//
+//==========================================================================
+
+void ShowArsenalScreen()
+{
+	if (!GArsenalScreen)
+	{
+		// [CW] TODO: here should be placed a switch between arsenal
+		//		screen types (F/C/M)
+		GArsenalScreen = ArsenalScreen(SpawnMenu(ArsenalScreenGeneric));
+		GArsenalScreen.cl = Player(cl);
+		GArsenalScreen.UpdatePage();
+		PushMenuScreen(GArsenalScreen);
+	}
+}
+
+//==========================================================================
+//
+//  HideArsenalScreen
+//
+//==========================================================================
+
+void HideArsenalScreen()
+{
+	GArsenalScreen = none;
+}
+
+//--------------------------------------------------------------------------
+//
+//	Conversation Screen
+//
+//--------------------------------------------------------------------------
+
 //==========================================================================
 //
 //  ConversationStart
@@ -603,28 +682,6 @@ void ConAddChoice(string Text, string Name, int Index)
 	GConScreen.SetDefaultChoice();
 }
 
-//==========================================================================
-//
-//  ShowUpgradeScreen
-//
-//==========================================================================
-
-void ShowUpgradeScreen()
-{
-	GUpgradeScreen = UpgradeScreen(SpawnMenu(UpgradeScreen));
-	PushMenuScreen(GUpgradeScreen);
-}
-
-//==========================================================================
-//
-//  HideUpgradeScreen
-//
-//==========================================================================
-
-void HideUpgradeScreen()
-{
-	GUpgradeScreen = none;
-}
 
 defaultproperties
 {
