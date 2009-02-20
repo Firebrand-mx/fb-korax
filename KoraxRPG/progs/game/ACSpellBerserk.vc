@@ -49,7 +49,7 @@ void Tick(float deltaTime)
 
 	if (!ARecepient.Player)
 	{
-		ARecepient.StateTime /= 1.5; // [CW] not sure if this will work properly..
+		ARecepient.StateTime /= 1.5;
 	}
 }
 
@@ -71,28 +71,20 @@ void Activate()
 	if (ARecepient.Player)
 	{
 		// [FB] Player actor case
-		// --- put this in SpellItem --->
-		//Actor(MO).berserkTics += 1.0 + itof(sp_power) * 80.0;
-
 		preberserk_strength = Player(ARecepient.Player).strength;
 		preberserk_speed = itof(Player(ARecepient.Player).speed);
 		preberserk_health = ARecepient.Health;
 		
 		Player(ARecepient.Player).strength <<= 1;
 		Player(ARecepient.Player).speed <<= 1;
-		// players only --->
-		//
 		ARecepient.Player.Health <<= 1;
 		ARecepient.Health = ARecepient.Player.Health;
 		Player(ARecepient.Player).sp_power = 0; // <<-- move to spell item?
-		//Actor(MO).bBerserk = true;
 	}
 	else
 	{
 		//PlaySound('UseArtifact', CHAN_VOICE);	<--- should be played by actor when casting
 		//                                           (using spell-item)
-		// --- put this in SpellItem? --->
-		//berserkTics = 1.0 + itof(P_Random() & 7) * 80.0; // FIXME: Should we determine it somehow else??
 		preberserk_strength = ARecepient.MissileDamage;
 		preberserk_speed = ARecepient.Speed;
 		preberserk_health = ARecepient.Health;
@@ -100,7 +92,6 @@ void Activate()
 		ARecepient.MissileDamage <<= 1;
 		ARecepient.Speed *= 2.0;
 		ARecepient.Health <<= 1;
-		//bBerserk = true;
 	}
 }
 
@@ -119,34 +110,34 @@ void Deactivate()
 
 	if (ARecepient.Player)
 	{
-		//Actor(MO).berserkTics = 0.0;
 		Player(ARecepient.Player).strength = preberserk_strength;
 		Player(ARecepient.Player).speed = ftoi(preberserk_speed);
-		ARecepient.Player.Health >>= 1;
-		// -JL- Decrease also mobj's health which is the actual health value
-		ARecepient.Health = ARecepient.Player.Health;
-		Player(ARecepient.Player).DamageFlash += itof(ARecepient.Health) * 0.09;
-		if (Player(ARecepient.Player).DamageFlash > 2.0)
+
+		if (ARecepient.Health > 0)
 		{
-			Player(ARecepient.Player).DamageFlash = 2.0;
+			ARecepient.Player.Health >>= 1;
+			// -JL- Decrease also mobj's health which is the actual health value
+			ARecepient.Health = ARecepient.Player.Health;
+			Player(ARecepient.Player).DamageFlash += itof(ARecepient.Health) * 0.09;
+			if (Player(ARecepient.Player).DamageFlash > 2.0)
+			{
+				Player(ARecepient.Player).DamageFlash = 2.0;
+			}
+			ARecepient.SetState(ARecepient.FindState('Pain'));
+			ARecepient.Player.centreprint("BERSERKER DEACTIVATED");
 		}
-		//Actor(MO).bBerserk = false;
-		ARecepient.SetState(ARecepient.FindState('Pain'));
-		ARecepient.Player.centreprint("BERSERKER DEACTIVATED");
 	}
 	else
 	{
-		// [CW] CHECKME -- will this work correct if monster dies?
-		//      ActorCondition should dispell in case of recepient death,
-		//      but will it work okay?
-		//berserkTics = 0.0;
 		ARecepient.MissileDamage = preberserk_strength;
 		ARecepient.Speed = preberserk_speed;
-		ARecepient.Health = preberserk_health;
-		//bBerserk = false;
 
-		// Go to the pain state
-		ARecepient.SetState(ARecepient.FindState('Pain'));
+		if (ARecepient.Health > 0)
+		{
+			ARecepient.Health = preberserk_health;
+			// Go to the pain state
+			ARecepient.SetState(ARecepient.FindState('Pain'));
+		}
 	}
 }
 
