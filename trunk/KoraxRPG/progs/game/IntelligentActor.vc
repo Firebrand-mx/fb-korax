@@ -247,12 +247,9 @@ void A_KRPGPain()
 	::A_KRPGPain();
 
 	// [FB] Take the chance to get berserk
-	if (bCanBerserk && /* !bBerserk && */ Health < default.Health / 2 &&
+	if (bCanBerserk && Health < (default.Health >> 1) &&
 		(1 + (P_Random() & 7)) > 5 && !GetCondition(ACSpellBerserk))
 	{
-		// A_SetBerserk();
-
-		dprint("A_KRPGPain: cast berserk --");
 		// [CW] TODO: this should be done by monster using spell item instead
 		CastCondition(
 			ACSpellBerserk,				// condition class
@@ -279,12 +276,6 @@ void Died(EntityEx source, EntityEx inflictor)
 		CurrentRoute.Destroy();
 	if (RouteList)
 		RouteList.Destroy();
-	/*if (berserkTics || bBerserk)
-	{
-		// [FB] To avoid bugs when berserk enemies die...
-		bBerserk = false;
-		berserkTics = 0.0;
-	}*/
 
 	Tasks = none;
 	CurrentRoute = none;
@@ -331,57 +322,6 @@ final void A_AIResurrect()
 	::A_Resurrect();
 	AITime = 0.0;
 }
-
-/* //==========================================================================
-//
-//	A_SetBerserk
-//
-//	[FB] As the name suggests, sets the actor's stats to berserk stats, improving some
-//		of them, we can apply this to any actor now! :D
-//
-//==========================================================================
-
-final void A_SetBerserk()
-{
-	if (!bBerserk && !bCorpse)
-	{
-		// [FB] Berserker actors get the double of their actual health
-		//	    Doubling their speed and their strength (MissileDamage for non players)
-		PlaySound('UseArtifact', CHAN_VOICE);	
-		berserkTics = 1.0 + itof(P_Random() & 7) * 80.0; // FIXME: Should we determine it somehow else??
-		preberserk_strength = MissileDamage;
-		preberserk_speed = Speed;
-		preberserk_health = Health;
-
-		MissileDamage *= 2;
-		Speed *= 2.0;
-		Health *= 2;
-		bBerserk = true;
-	}
-}
-
-//==========================================================================
-//
-//	A_UnsetBerserk
-//
-//	[FB] Return actor to it's original stats
-//
-//==========================================================================
-
-final void A_UnsetBerserk()
-{
-	if (!bCorpse)
-	{
-		berserkTics = 0.0;
-		MissileDamage = preberserk_strength;
-		Speed = preberserk_speed;
-		Health = preberserk_health;
-		bBerserk = false;
-
-		// Go to the pain state
-		SetState(FindState('Pain'));
-	}
-} */
 
 //==========================================================================
 //
