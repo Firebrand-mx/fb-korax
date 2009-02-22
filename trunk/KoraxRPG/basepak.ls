@@ -46,6 +46,7 @@ actors/krpg/firedemon.txt		actors/krpg/firedemon.txt
 actors/krpg/iceguy.txt			actors/krpg/iceguy.txt
 actors/krpg/korax.txt			actors/krpg/korax.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
+actors/krpg/mageweapons.txt		actors/krpg/mageweapons.txt
 actors/krpg/mana.txt			actors/krpg/mana.txt
 actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
