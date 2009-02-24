@@ -37,14 +37,19 @@ const int
 	TABLE_STRING_DELTA	= 14;
 
 KRPGPlayerReplicationInfo RepInfo;
+
 bool updated;
+
 int n_strength;
-int n_vitality;
-int n_speed;
+int n_dexterity;
+int n_constitution;
 int n_intelligence;
 int n_wisdom;
+int n_charisma;
+
 int r_points;
 int ir_points; // [FB] Keep a copy of the initial points value in case we don't update or we leave remaining points after updating
+
 string playerclassnames[HexenDefs::NUMCLASSES];
 
 //==========================================================================
@@ -59,54 +64,63 @@ void CreateChoices()
 	MenuTextButton		Btn;
 	int					currentY;
 
-	// [CW] CHECKME: this foreach will redo this menu for all players in game;
-	//		obviously it's not needed, instead it should display menu only
-	//		for player who corresponds to current client.
+	//	[FB]	display menu only for player who corresponds to current client.
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
 	{
-		currentY = ChoicesStartY;
-		ir_points = RepInfo.points; // [FB] This comes directly from the player value...
-		r_points = ir_points;
-		
-		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Strength";
-		Stat.SetInitialValue(RepInfo.strg, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxStrength);
-		Stat.ValueChanging = ChangeStrength;
-		currentY += Stat.Height;
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		{
+			currentY = ChoicesStartY;
+			ir_points = RepInfo.points; // [FB] This comes directly from the player value...
+			r_points = ir_points;
+			
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Strength";
+			Stat.SetInitialValue(RepInfo.strg, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxStrength);
+			Stat.ValueChanging = ChangeStrength;
+			currentY += Stat.Height;
 
-		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Vitality";
-		Stat.SetInitialValue(RepInfo.vtlt, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxVitality);
-		Stat.ValueChanging = ChangeVitality;
-		currentY += Stat.Height;
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Constitution";
+			Stat.SetInitialValue(RepInfo.cons, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxConstitution);
+			Stat.ValueChanging = ChangeConstitution;
+			currentY += Stat.Height;
 
-		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Speed";
-		Stat.SetInitialValue(RepInfo.spd, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxSpeed);
-		Stat.ValueChanging = ChangeSpeed;
-		currentY += Stat.Height;
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Dexterity";
+			Stat.SetInitialValue(RepInfo.dext, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxDexterity);
+			Stat.ValueChanging = ChangeDexterity;
+			currentY += Stat.Height;
 
-		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Intelligence";
-		Stat.SetInitialValue(RepInfo.intln, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxIntelligence);
-		Stat.ValueChanging = ChangeIntelligence;
-		currentY += Stat.Height;
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Intelligence";
+			Stat.SetInitialValue(RepInfo.intln, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxIntelligence);
+			Stat.ValueChanging = ChangeIntelligence;
+			currentY += Stat.Height;
 
-		Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-		Stat.SetOrigin(ChoicesStartX, currentY);
-		Stat.Text = "Wisdom";
-		Stat.SetInitialValue(RepInfo.wsdm, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxWisdom);
-		Stat.ValueChanging = ChangeWisdom;
-		currentY += Stat.Height;
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Wisdom";
+			Stat.SetInitialValue(RepInfo.wsdm, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxWisdom);
+			Stat.ValueChanging = ChangeWisdom;
+			currentY += Stat.Height;
 
-		Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-		Btn.SetOrigin(ChoicesStartX, currentY);
-		Btn.Text = "OK";
-		Btn.Activated = UpdateStats;
+			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
+			Stat.SetOrigin(ChoicesStartX, currentY);
+			Stat.Text = "Charisma";
+			Stat.SetInitialValue(RepInfo.char, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxCharisma);
+			Stat.ValueChanging = ChangeCharisma;
+			currentY += Stat.Height;
+
+			Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+			Btn.SetOrigin(ChoicesStartX, currentY);
+			Btn.Text = "OK";
+			Btn.Activated = UpdateStats;
+			break;
+		}
 	}
 }
 
@@ -179,11 +193,11 @@ bool ChangeStrength(Object Sender, int newValue, int oldValue)
 
 //==========================================================================
 //
-//	ChangeVitality
+//	ChangeConstitution
 //
 //==========================================================================
 
-bool ChangeVitality(Object Sender, int newValue, int oldValue)
+bool ChangeConstitution(Object Sender, int newValue, int oldValue)
 {
 	bool update;
 
@@ -203,17 +217,17 @@ bool ChangeVitality(Object Sender, int newValue, int oldValue)
 	{
 		return false;
 	}
-	n_vitality = newValue;
+	n_constitution = newValue;
 	return true;
 }
 
 //==========================================================================
 //
-//	ChangeSpeed
+//	ChangeDexterity
 //
 //==========================================================================
 
-bool ChangeSpeed(Object Sender, int newValue, int oldValue)
+bool ChangeDexterity(Object Sender, int newValue, int oldValue)
 {
 	bool update;
 
@@ -233,7 +247,7 @@ bool ChangeSpeed(Object Sender, int newValue, int oldValue)
 	{
 		return false;
 	}
-	n_speed = newValue;
+	n_dexterity = newValue;
 	return true;
 }
 
@@ -299,14 +313,44 @@ bool ChangeWisdom(Object Sender, int newValue, int oldValue)
 
 //==========================================================================
 //
+//	ChangeCharisma
+//
+//==========================================================================
+
+bool ChangeCharisma(Object Sender, int newValue, int oldValue)
+{
+	bool update;
+
+	if (oldValue < newValue && r_points > 0)
+	{
+		r_points--;
+		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	else if (oldValue > newValue && r_points < ir_points)
+	{
+		r_points++;
+		Player(ClientGame(ClGame).cl).SetPoints(r_points);
+		update = true;
+	}
+	if (!update)
+	{
+		return false;
+	}
+	n_charisma = newValue;
+	return true;
+}
+
+//==========================================================================
+//
 //	UpdateStats
 //
 //==========================================================================
 
 void UpdateStats(Object Sender)
 {
-	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_vitality, n_speed,
-			n_intelligence, n_wisdom);
+	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_constitution, n_dexterity,
+			n_intelligence, n_wisdom, n_charisma);
 	// [FB] Before destroying the window and only when we really updated the character.
 	//	    Check how many r_points we have...
 	if (r_points > 0)
@@ -326,6 +370,7 @@ defaultproperties
 {
 	ChoicesStartX = 136;
 	ChoicesStartY = 136;
+	Height = 210;
 	playerclassnames[0] = "fighter";
 	playerclassnames[1] = "cleric";
 	playerclassnames[2] = "mage";

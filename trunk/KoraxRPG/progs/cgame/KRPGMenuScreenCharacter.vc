@@ -32,13 +32,14 @@
 
 class KRPGMenuScreenCharacter : MenuScreen;
 
-int i_speed;
-int i_health;
-int i_spiritpower;
 int i_strength;
-int i_vitality;
+int i_dexterity;
+int i_constitution;
 int i_intelligence;
 int i_wisdom;
+int i_charisma;
+int i_health;
+int i_spiritpower;
 
 int Class;
 
@@ -64,20 +65,23 @@ void OnDraw()
 	DrawText(ChoicesStartX, currentY, "HEALTH:");
 	DrawText(ChoicesStartX * 3, currentY, va("%i", i_health));
 	currentY += 17;
-	DrawText(ChoicesStartX, currentY, "SPEED:");
-	DrawText(ChoicesStartX * 3, currentY, va("%i", i_speed));
+	DrawText(ChoicesStartX, currentY, "DEXTERITY:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_dexterity));
 	currentY += 17;
 	DrawText(ChoicesStartX, currentY, "STRENGTH:");
 	DrawText(ChoicesStartX * 3, currentY, va("%i", i_strength));
 	currentY += 17;
-	DrawText(ChoicesStartX, currentY, "VITALITY:");
-	DrawText(ChoicesStartX * 3, currentY, va("%i", i_vitality));
+	DrawText(ChoicesStartX, currentY, "CONSTITUTION:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_constitution));
 	currentY += 17;
 	DrawText(ChoicesStartX, currentY, "INTELLIGENCE:");
 	DrawText(ChoicesStartX * 3, currentY, va("%i", i_intelligence));
 	currentY += 17;
 	DrawText(ChoicesStartX, currentY, "WISDOM:");
 	DrawText(ChoicesStartX * 3, currentY, va("%i", i_wisdom));
+	currentY += 17;
+	DrawText(ChoicesStartX, currentY, "CHARISMA:");
+	DrawText(ChoicesStartX * 3, currentY, va("%i", i_charisma));
 }
 
 //==========================================================================
@@ -100,13 +104,14 @@ void SetClass(int PClass)
 void DefaultRollStats(Object Sender)
 {
 	// [FB] Using a value of 0 will make the stats be built with the default values
-	i_speed = 0;
-	i_health = 0;
-	i_spiritpower = 0;
 	i_strength = 0;
-	i_vitality = 0;
+	i_dexterity = 0;
+	i_constitution = 0;
 	i_intelligence = 0;
 	i_wisdom = 0;
+	i_charisma = 0;
+	i_health = 0;
+	i_spiritpower = 0;
 }
 
 //==========================================================================
@@ -120,31 +125,34 @@ void RerollStats(Object Sender)
 	switch(Class)
 	{
 		case HexenDefs::PCLASS_FIGHTER:
-			i_speed = 6 + (P_Random() & 6);
-			i_health = 100 - i_strength - i_vitality - i_speed;
-			i_spiritpower = 3 + (P_Random() & 2);
 			i_strength = 6 + (P_Random() & 3);
-			i_vitality = 1 + (P_Random() & 2);
+			i_dexterity =  6 + (P_Random() & 6);
+			i_constitution = 1 + (P_Random() & 2);
 			i_intelligence = 1 + (P_Random() & 2);
 			i_wisdom = 1 + (P_Random() & 2);
+			i_charisma = 1 + (P_Random() & 2);
+			i_health = 100 - i_strength - i_constitution - i_dexterity;
+			i_spiritpower = 3 + (P_Random() & 2);
 			break;
 		case HexenDefs::PCLASS_CLERIC:
-			i_speed = 2 + (P_Random() & 6);
-			i_health = 66 - i_strength - i_vitality - i_speed;
-			i_spiritpower = 80 - i_health;
 			i_strength = 2 + (P_Random() & 4);
-			i_vitality = 2 + (P_Random() & 4);
+			i_dexterity = 2 + (P_Random() & 6);
+			i_constitution = 2 + (P_Random() & 4);
 			i_intelligence = 2 + (P_Random() & 4);
 			i_wisdom = 2 + (P_Random() & 4);
+			i_charisma = 2 + (P_Random() & 4);
+			i_health = 66 - i_strength - i_constitution - i_dexterity;
+			i_spiritpower = 80 - i_health;
 			break;
 		case HexenDefs::PCLASS_MAGE:
-			i_speed = 1 + (P_Random() & 5);
-			i_health = 40 - i_strength - i_vitality - i_speed;
-			i_spiritpower = 80 - i_health;
 			i_strength = 1 + (P_Random() & 3);
-			i_vitality = 6 + (P_Random() & 6);
+			i_dexterity = 1 + (P_Random() & 5);
+			i_constitution = 6 + (P_Random() & 6);
 			i_intelligence = 6 + (P_Random() & 6);
 			i_wisdom = 6 + (P_Random() & 6);
+			i_dexterity = 1 + (P_Random() & 5);
+			i_health = 40 - i_strength - i_constitution - i_dexterity;
+			i_spiritpower = 80 - i_health;
 			break;
 	}
 }
@@ -163,13 +171,14 @@ void BuildCharacter(Object Sender)
 	//	but here it goes....
 	if (ClGame.Game)
 	{
-		MainGameInfo(ClGame.Game).i_health = i_health;
-		MainGameInfo(ClGame.Game).i_spiritpower = i_spiritpower;
 		MainGameInfo(ClGame.Game).i_strength = i_strength;
-		MainGameInfo(ClGame.Game).i_vitality = i_vitality;
+		MainGameInfo(ClGame.Game).i_dexterity = i_dexterity;
+		MainGameInfo(ClGame.Game).i_constitution = i_constitution;
 		MainGameInfo(ClGame.Game).i_intelligence = i_intelligence;
 		MainGameInfo(ClGame.Game).i_wisdom = i_wisdom;
-		MainGameInfo(ClGame.Game).i_speed = i_speed;
+		MainGameInfo(ClGame.Game).i_charisma = i_charisma;
+		MainGameInfo(ClGame.Game).i_health = i_health;
+		MainGameInfo(ClGame.Game).i_spiritpower = i_spiritpower;
 	}
 	PClassItemActivate(Sender);
 }
@@ -184,6 +193,7 @@ void CreateChoices()
 {
 	MenuTextButton		Btn;
 	MenuChoiceEnum		Enum;
+	MenuChoice_OnOff	OnOff;
 	int YPos = ChoicesStartY + (17 * 8);
 
 	SetFont('BigFont');
@@ -216,11 +226,29 @@ void CreateChoices()
 	Enum.ValueChanging = UpdateModifier;
 	YPos += Enum.Height;
 
+	OnOff = MenuChoice_OnOffBig(NewChild(MenuChoice_OnOffBig));
+	OnOff.SetOrigin(ChoicesStartX, YPos);
+	OnOff.Text = "Auto Update:";
+	OnOff.ValueChanging = EnableAutoUpdate;
+	YPos += OnOff.Height;
+
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "OK";
 	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = BuildCharacter;
+}
+
+//==========================================================================
+//
+//	EnableAutoUpdate
+//
+//==========================================================================
+
+bool EnableAutoUpdate(Object Sender, int newValue)
+{
+	SetCvar('ExpModifier', newValue);
+	return true;
 }
 
 //==========================================================================
@@ -231,7 +259,7 @@ void CreateChoices()
 
 bool UpdateModifier(Object Sender, int newValue)
 {
-	SetCvar('ExpModifier', newValue);
+	SetCvar('AutoUpdate', newValue);
 	return true;
 }
 
@@ -250,7 +278,7 @@ defaultproperties
 {
 	ChoicesStartX = 66;
 	ChoicesStartY = 30;
-	Height = 260;
+	Height = 310;
 	SelectorType = MenuSelector_Big;
 	Title = "GENERATE YOUR CHARACTER:";
 

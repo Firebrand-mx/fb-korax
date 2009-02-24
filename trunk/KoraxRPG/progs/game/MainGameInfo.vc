@@ -46,22 +46,27 @@ ConParser				GameConParser;
 // TODO: quest parser ref here when ready
 
 // [FB] Base stats for building a character
-int init_speed[HexenDefs::NUMCLASSES];
+int init_dexterity[HexenDefs::NUMCLASSES];
 int init_health[HexenDefs::NUMCLASSES];
 int init_spiritualpower[HexenDefs::NUMCLASSES];
 int player_strength[HexenDefs::NUMCLASSES];
-int player_vitality[HexenDefs::NUMCLASSES];
+int player_constitution[HexenDefs::NUMCLASSES];
 int player_intelligence[HexenDefs::NUMCLASSES];
 int player_wisdom[HexenDefs::NUMCLASSES];
+int player_charisma[HexenDefs::NUMCLASSES];
 
 // [FB] Initial stats for passing to the built player from character creation screen
 int i_health;
 int i_spiritpower;
 int i_strength;
-int i_vitality;
+int i_constitution;
 int i_intelligence;
 int i_wisdom;
-int i_speed;
+int i_dexterity;
+int i_charisma;
+
+// [FB] Experience modifier
+float exp_mod;
 
 //==========================================================================
 //
@@ -408,16 +413,17 @@ void PassInitialStats(Entity PlayerMO)
 	if (PlayerMO && !Player(PlayerMO.Player).inited)
 	{
 		// [FB] Initial values are set...
-		if (i_health && i_spiritpower && i_strength &&
-			i_vitality && i_intelligence && i_wisdom && i_speed)
+		if (i_health && i_spiritpower && i_strength && i_constitution
+			&& i_intelligence && i_wisdom && i_dexterity && i_charisma)
 		{
 			KRPGPlayerPawn(PlayerMO).InitialHealth = i_health;
 			KRPGPlayerPawn(PlayerMO).InitialSpiritPower = i_spiritpower;
 			KRPGPlayerPawn(PlayerMO).InitialStrength = i_strength;
-			KRPGPlayerPawn(PlayerMO).InitialVitality = i_vitality;
+			KRPGPlayerPawn(PlayerMO).InitialConstitution = i_constitution;
 			KRPGPlayerPawn(PlayerMO).InitialIntelligence = i_intelligence;
 			KRPGPlayerPawn(PlayerMO).InitialWisdom = i_wisdom;
-			KRPGPlayerPawn(PlayerMO).InitialSpeed = i_speed;
+			KRPGPlayerPawn(PlayerMO).InitialDexterity = i_dexterity;
+			KRPGPlayerPawn(PlayerMO).InitialCharisma = i_charisma;
 		}
 		else
 		{
@@ -428,28 +434,31 @@ void PassInitialStats(Entity PlayerMO)
 					KRPGPlayerPawn(PlayerMO).InitialHealth = init_health[HexenDefs::PCLASS_FIGHTER];
 					KRPGPlayerPawn(PlayerMO).InitialSpiritPower = init_spiritualpower[HexenDefs::PCLASS_FIGHTER];
 					KRPGPlayerPawn(PlayerMO).InitialStrength = player_strength[HexenDefs::PCLASS_FIGHTER];
-					KRPGPlayerPawn(PlayerMO).InitialVitality = player_vitality[HexenDefs::PCLASS_FIGHTER];
+					KRPGPlayerPawn(PlayerMO).InitialConstitution = player_constitution[HexenDefs::PCLASS_FIGHTER];
 					KRPGPlayerPawn(PlayerMO).InitialIntelligence = player_intelligence[HexenDefs::PCLASS_FIGHTER];
 					KRPGPlayerPawn(PlayerMO).InitialWisdom = player_wisdom[HexenDefs::PCLASS_FIGHTER];
-					KRPGPlayerPawn(PlayerMO).InitialSpeed = init_speed[HexenDefs::PCLASS_FIGHTER];
+					KRPGPlayerPawn(PlayerMO).InitialDexterity = init_dexterity[HexenDefs::PCLASS_FIGHTER];
+					KRPGPlayerPawn(PlayerMO).InitialCharisma = player_charisma[HexenDefs::PCLASS_FIGHTER];
 					break;
 				case HexenDefs::PCLASS_CLERIC:
 					KRPGPlayerPawn(PlayerMO).InitialHealth = init_health[HexenDefs::PCLASS_CLERIC];
 					KRPGPlayerPawn(PlayerMO).InitialSpiritPower = init_spiritualpower[HexenDefs::PCLASS_CLERIC];
 					KRPGPlayerPawn(PlayerMO).InitialStrength = player_strength[HexenDefs::PCLASS_CLERIC];
-					KRPGPlayerPawn(PlayerMO).InitialVitality = player_vitality[HexenDefs::PCLASS_CLERIC];
+					KRPGPlayerPawn(PlayerMO).InitialConstitution = player_constitution[HexenDefs::PCLASS_CLERIC];
 					KRPGPlayerPawn(PlayerMO).InitialIntelligence = player_intelligence[HexenDefs::PCLASS_CLERIC];
 					KRPGPlayerPawn(PlayerMO).InitialWisdom = player_wisdom[HexenDefs::PCLASS_CLERIC];
-					KRPGPlayerPawn(PlayerMO).InitialSpeed = init_speed[HexenDefs::PCLASS_CLERIC];
+					KRPGPlayerPawn(PlayerMO).InitialDexterity = init_dexterity[HexenDefs::PCLASS_CLERIC];
+					KRPGPlayerPawn(PlayerMO).InitialCharisma = player_charisma[HexenDefs::PCLASS_CLERIC];
 					break;
 				case HexenDefs::PCLASS_MAGE:
 					KRPGPlayerPawn(PlayerMO).InitialHealth = init_health[HexenDefs::PCLASS_MAGE];
 					KRPGPlayerPawn(PlayerMO).InitialSpiritPower = init_spiritualpower[HexenDefs::PCLASS_MAGE];
 					KRPGPlayerPawn(PlayerMO).InitialStrength = player_strength[HexenDefs::PCLASS_MAGE];
-					KRPGPlayerPawn(PlayerMO).InitialVitality = player_vitality[HexenDefs::PCLASS_MAGE];
+					KRPGPlayerPawn(PlayerMO).InitialConstitution = player_constitution[HexenDefs::PCLASS_MAGE];
 					KRPGPlayerPawn(PlayerMO).InitialIntelligence = player_intelligence[HexenDefs::PCLASS_MAGE];
 					KRPGPlayerPawn(PlayerMO).InitialWisdom = player_wisdom[HexenDefs::PCLASS_MAGE];
-					KRPGPlayerPawn(PlayerMO).InitialSpeed = init_speed[HexenDefs::PCLASS_MAGE];
+					KRPGPlayerPawn(PlayerMO).InitialDexterity = init_dexterity[HexenDefs::PCLASS_MAGE];
+					KRPGPlayerPawn(PlayerMO).InitialCharisma = player_charisma[HexenDefs::PCLASS_MAGE];
 					break;
 			}
 		}
@@ -514,39 +523,43 @@ defaultproperties
 	WeaponSlots[4].Weapons[2] = WeaponMageBlood;
 
 	// Fighter
-	init_speed[HexenDefs::PCLASS_FIGHTER] = 10;
+	init_dexterity[HexenDefs::PCLASS_FIGHTER] = 10;
 	init_health[HexenDefs::PCLASS_FIGHTER] = 80;
 	init_spiritualpower[HexenDefs::PCLASS_FIGHTER] = 5;
 	player_strength[HexenDefs::PCLASS_FIGHTER] = 0x08;
-	player_vitality[HexenDefs::PCLASS_FIGHTER] = 0x08;
+	player_constitution[HexenDefs::PCLASS_FIGHTER] = 0x08;
 	player_intelligence[HexenDefs::PCLASS_FIGHTER] = 0x02;
 	player_wisdom[HexenDefs::PCLASS_FIGHTER] = 0x02;
+	player_charisma[HexenDefs::PCLASS_FIGHTER] = 0x02;
 
 	// Cleric
-	init_speed[HexenDefs::PCLASS_CLERIC] = 8;
+	init_dexterity[HexenDefs::PCLASS_CLERIC] = 8;
 	init_health[HexenDefs::PCLASS_CLERIC] = 50;
 	init_spiritualpower[HexenDefs::PCLASS_CLERIC] = 70;
 	player_strength[HexenDefs::PCLASS_CLERIC] = 0x05;
-	player_vitality[HexenDefs::PCLASS_CLERIC] = 0x05;
+	player_constitution[HexenDefs::PCLASS_CLERIC] = 0x05;
 	player_intelligence[HexenDefs::PCLASS_CLERIC] = 0x05;
 	player_wisdom[HexenDefs::PCLASS_CLERIC] = 0x05;
+	player_charisma[HexenDefs::PCLASS_CLERIC] = 0x05;
 
 	// Mage
-	init_speed[HexenDefs::PCLASS_MAGE] = 6;
+	init_dexterity[HexenDefs::PCLASS_MAGE] = 6;
 	init_health[HexenDefs::PCLASS_MAGE] = 20;
 	init_spiritualpower[HexenDefs::PCLASS_MAGE] = 70;
 	player_strength[HexenDefs::PCLASS_MAGE] = 0x02;
-	player_vitality[HexenDefs::PCLASS_MAGE] = 0x02;
+	player_constitution[HexenDefs::PCLASS_MAGE] = 0x02;
 	player_intelligence[HexenDefs::PCLASS_MAGE] = 0x08;
 	player_wisdom[HexenDefs::PCLASS_MAGE] = 0x08;
+	player_charisma[HexenDefs::PCLASS_MAGE] = 0x08;
 
 	// Oink, oink!
 	// Easter egg, anyone??
-	init_speed[HexenDefs::PCLASS_PIG] = 7;
+	init_dexterity[HexenDefs::PCLASS_PIG] = 7;
 	init_health[HexenDefs::PCLASS_PIG] = 30;
 	init_spiritualpower[HexenDefs::PCLASS_PIG] = 5;
 	player_strength[HexenDefs::PCLASS_PIG] = 0x06;
-	player_vitality[HexenDefs::PCLASS_PIG] = 0x06;
+	player_constitution[HexenDefs::PCLASS_PIG] = 0x06;
 	player_intelligence[HexenDefs::PCLASS_PIG] = 0x06;
 	player_wisdom[HexenDefs::PCLASS_PIG] = 0x06;
+	player_charisma[HexenDefs::PCLASS_PIG] = 0x06;
 }

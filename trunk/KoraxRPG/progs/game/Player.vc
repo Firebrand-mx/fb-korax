@@ -48,13 +48,6 @@ int next_level;
 int prev_level;
 int possTics;               // FOV effect for possession
 int money;
-int hunger;					// [FB] This one was declared in KMod 3 source code, but it's really going to used??
-int stamina;
-//int strength;
-int vitality;
-//int intelligence;
-//int wisdom;
-int speed;
 
 bool inited;
 
@@ -74,8 +67,7 @@ replication
 {
 	reliable if (!bIsClient)
 		experience, exp_level, next_level, prev_level, money,
-		hunger, stamina, /* strength, */vitality, /* intelligence, wisdom,*/
-		speed, max_health, maxhealth_old, sp_power, maxsp_power,
+		max_health, maxhealth_old, sp_power, maxsp_power,
 		SetFOV;
 
 	unreliable if (!bIsClient)
@@ -129,7 +121,7 @@ void ResetPlayerOnSpawn()
 
 void GiveExperience(int exp)
 {
-	// TODO: Multiply exp by gameexp modifier!!
+	// [FB] Multiply experience by game's exp modifier
 	experience += exp;
 	if(experience > 2100000666)
 	{
@@ -155,36 +147,40 @@ void ActivateLevel(int to_lvl)
 	int i;
 	int skillp_table[5];
 
-	for(i = 0; i < 6; i++)
+	for (i = 0; i < 6; i++)
 	{
-		if (i == 0)
-			skillp_table[i] = 6;
-		else if (i == 1)
-			skillp_table[i] = 6;
+		if (i <= 1)
+		{
+			skillp_table[i] = 12;
+		}
 		else if (i == 2)
-			skillp_table[i] = 5;
-		else if (i == 3)
-			skillp_table[i] = 4;
-		else if (i == 4)
-			skillp_table[i] = 4;
+		{
+			skillp_table[i] = 6;
+		}
+		else
+		{
+			skillp_table[i] = 3;
+		}
 	}
 
 	exp_level++;
 	experience -= next_level;
-	next_level = next_level * 2;
+
+//	next_level = next_level * exp_level; <-- OLD ONE
+	next_level = 1000 * exp_level; // <-- NEW ONE
 //	prev_level = 1000 * exp_level;
 	addhealth = Health  / max_health;
 	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
-	max_health += vitality;
+	max_health += constitution;
 	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
-	if (PClass != HexenDefs::PCLASS_FIGHTER)
-	{
+/*	if (PClass != HexenDefs::PCLASS_FIGHTER)
+	{*/
 		maxsp_power += intelligence;
-	}
+/*	}
 	else
 	{
 		maxsp_power += strength;
-	}
+	}*/
 	sp_power = maxsp_power;
 	Health = max_health + addhealth;
 	MO.Health = Health;
@@ -206,17 +202,13 @@ void ActivateLevel(int to_lvl)
 	case HexenDefs::PCLASS_FIGHTER:
 		switch (exp_level)
 		{
-		case 5:
-			centreprint("YOU CAN NOW USE MANA!");
-			break;
+			default:
+				break;
 		}
 		break;
 	case HexenDefs::PCLASS_CLERIC:
 		switch (exp_level)
 		{
-		case 3:
-			centreprint("YOU CAN NOW USE MANA!");
-			break;
 		case 5:
 			centreprint("YOU CAN NOW CAST SPIRITS WITHIN!");
 			EntityEx(MO).GiveInventoryType(SpellItemSpirits);
@@ -289,6 +281,190 @@ void ActivateLevel(int to_lvl)
 
 	cprint("YOU REACHED LEVEL %d", exp_level);
 	MO.PlaySound('misc/chat', CHAN_AUTO);
+
+	// [FB] AutoUpdate logic comes here
+	if (GetCvar('AutoUpdate'))
+	{
+		int str_val = 0;
+		int dex_val = 0;
+		int con_val = 0;
+		int int_val = 0;
+		int wis_val = 0;
+		int cha_val = 0;
+		bool updated[6];
+		int repeat = 0;
+
+		dprint("Player::AutoUpdate : ");
+		dprint("initial available points = %d", av_points);
+		dprint("skill = %d", Level.World.GameSkill);
+		for (i = 0; i < 7; i++)
+		{
+			updated[i] = false;
+		}
+
+		while(av_points > 0)
+		{
+			if (Level.World.GameSkill < 3)
+			{
+				if (!updated[0] && av_points > 0 && KRPGPlayerPawn(MO).MaxStrength == -1 ? true :
+					strength < KRPGPlayerPawn(MO).MaxStrength)
+				{
+					if (av_points > 0)
+					{
+						str_val++;
+						av_points -= 1;
+					}
+					updated[0] = true;
+				}
+				if (!updated[1] && av_points > 0 && KRPGPlayerPawn(MO).MaxDexterity == -1 ? true :
+					dexterity < KRPGPlayerPawn(MO).MaxDexterity)
+				{
+					if (av_points > 0)
+					{
+						dex_val++;
+						av_points -= 1;
+					}
+					updated[1] = true;
+				}
+				if (!updated[2] && av_points > 0 && KRPGPlayerPawn(MO).MaxConstitution == -1 ? true :
+					constitution < KRPGPlayerPawn(MO).MaxConstitution)
+				{
+					if (av_points > 0)
+					{
+						dex_val++;
+						av_points -= 1;
+					}
+					updated[2] = true;
+				}
+				if (!updated[3] && av_points > 0 && KRPGPlayerPawn(MO).MaxIntelligence == -1 ? true :
+					intelligence < KRPGPlayerPawn(MO).MaxIntelligence)
+				{
+					if (av_points > 0)
+					{
+						int_val++;
+						av_points -= 1;
+					}
+					updated[3] = true;
+				}
+				if (!updated[4] && av_points > 0 && KRPGPlayerPawn(MO).MaxWisdom == -1 ? true :
+					wisdom < KRPGPlayerPawn(MO).MaxWisdom)
+				{
+					if (av_points > 0)
+					{
+						wis_val++;
+						av_points -= 1;
+					}
+					updated[4] = true;
+				}
+				if (!updated[5] && av_points > 0 && KRPGPlayerPawn(MO).MaxCharisma == -1 ? true :
+					charisma < KRPGPlayerPawn(MO).MaxCharisma)
+				{
+					if (av_points > 0)
+					{
+						cha_val++;
+						av_points -= 1;
+					}
+					updated[5] = true;
+				}
+				repeat++;
+			}
+			else
+			{
+				if (exp_level % 2 == 0)
+				{
+					if (!updated[0] && av_points > 0 && KRPGPlayerPawn(MO).MaxStrength == -1 ? true :
+						strength < KRPGPlayerPawn(MO).MaxStrength)
+					{
+						if (av_points > 0)
+						{
+							str_val++;
+							av_points -= 1;
+						}
+						updated[0] = true;
+					}
+					if (!updated[1] && av_points > 0 && KRPGPlayerPawn(MO).MaxDexterity == -1 ? true :
+						dexterity < KRPGPlayerPawn(MO).MaxDexterity)
+					{
+						if (av_points > 0)
+						{
+							dex_val++;
+							av_points -= 1;
+						}
+						updated[1] = true;
+					}
+					if (!updated[2] && av_points > 0 && KRPGPlayerPawn(MO).MaxConstitution == -1 ? true : 
+						constitution < KRPGPlayerPawn(MO).MaxConstitution)
+					{
+						if (av_points > 0)
+						{
+							dex_val++;
+							av_points -= 1;
+						}
+						updated[2] = true;
+					}
+					repeat++;
+				}
+				else
+				{
+					if (!updated[3] && av_points > 0 && KRPGPlayerPawn(MO).MaxIntelligence == -1 ? true : 
+						intelligence < KRPGPlayerPawn(MO).MaxIntelligence)
+					{
+						if (av_points > 0)
+						{
+							int_val++;
+							av_points -= 1;
+						}
+						updated[3] = true;
+					}
+					if (!updated[4] && av_points > 0 && KRPGPlayerPawn(MO).MaxWisdom == -1 ? true : 
+						wisdom < KRPGPlayerPawn(MO).MaxWisdom)
+					{
+						if (av_points > 0)
+						{
+							wis_val++;
+							av_points -= 1;
+						}
+						updated[4] = true;
+					}
+					if (!updated[5] && av_points > 0 && KRPGPlayerPawn(MO).MaxCharisma == -1 ? true : 
+						charisma < KRPGPlayerPawn(MO).MaxCharisma)
+					{
+						if (av_points > 0)
+						{
+							cha_val++;
+							av_points -= 1;
+						}
+						updated[5] = true;
+					}
+					repeat++;
+				}
+			}
+
+			for (i = 0; i < 7; i++)
+			{
+				dprint("updated[%d] = %d", i, updated[i]);
+				if (updated[i] && av_points > 0)
+				{
+					updated[i] = false;					
+				}
+			}
+			dprint("available points = %d", av_points);
+			dprint("str_val = %d", str_val);
+			dprint("dex_val = %d", dex_val);
+			dprint("con_val = %d", con_val);
+			dprint("int_val = %d", int_val);
+			dprint("wis_val = %d", wis_val);
+			dprint("cha_val = %d", cha_val);
+/*			if (repeat > 2)
+			{
+				dprint("repeat = %d", repeat);
+				break;
+			}*/
+		}
+
+		centreprint("'AUTO UPDATE' HAS UPDATED YOUR CHARACTER!");
+		UpdateStats(str_val, dex_val, con_val, int_val,	wis_val, cha_val);
+	}
 }
 
 //============================================================================
@@ -312,11 +488,9 @@ void InitiateLevel()
 	Health = max_health;
 	MO.Health = Health;
 	money = 0;
-//	hunger = KRPGPlayerPawn(MO).InitialHunger;
-//	stamina = KRPGPlayerPawn(MO).InitialStamina;
-	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialVitality,
-			KRPGPlayerPawn(MO).InitialSpeed, KRPGPlayerPawn(MO).InitialIntelligence,
-			KRPGPlayerPawn(MO).InitialWisdom);
+	UpdateStats(KRPGPlayerPawn(MO).InitialStrength, KRPGPlayerPawn(MO).InitialConstitution,
+			KRPGPlayerPawn(MO).InitialDexterity, KRPGPlayerPawn(MO).InitialIntelligence,
+			KRPGPlayerPawn(MO).InitialWisdom, KRPGPlayerPawn(MO).InitialCharisma);
 }
 
 //==========================================================================
@@ -352,35 +526,36 @@ void ClientUpgradeScreen()
 //
 //==========================================================================
 
-void UpdateStats(int n_strength, int n_vitality, int n_speed, int n_intelligence,
-		int n_wisdom)
+void UpdateStats(int n_strength, int n_constitution, int n_dexterity, int n_intelligence,
+		int n_wisdom, int n_charisma)
 {
 	strength += n_strength;
-	vitality += n_vitality;
-	speed += n_speed;
+	constitution += n_constitution;
+	dexterity += n_dexterity;
 	intelligence += n_intelligence;
 	wisdom += n_wisdom;
+	charisma += n_charisma;
 	
 	//	Update armor save percentages.
 	BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
 	if (Armor && Armor.Amount)
 	{
-		Armor.SavePercent = 0.333 + itof(vitality) * 0.4;
+		Armor.SavePercent = 0.335 + itof(constitution) * 0.4;
 		if (Armor.SavePercent > 0.75)
 		{
 			Armor.SavePercent = 0.75;
 		}
 	}
 
-	//	Update player speed.
+	//	Update player's weapon speed.
 	float Value;
 	if (MorphTime)
 	{
-		Value = (itof(speed) * 0.25) / 100.0;
+		Value = (itof(strength) * 0.25) / 100.0;
 	}
 	else
 	{
-		Value = (itof(speed) * 0.5) / 100.0;
+		Value = (itof(strength) * 0.5) / 100.0;
 	}
 	KRPGPlayerPawn(MO).ForwardMove1 += Value;
 	KRPGPlayerPawn(MO).ForwardMove2 += Value;
@@ -497,10 +672,11 @@ void NetGameReborn()
 {
 	int old_experience;
 	int old_strength;
-	int old_vitality;
-	int old_speed;
+	int old_constitution;
+	int old_dexterity;
 	int old_intelligence;
 	int old_wisdom;
+	int old_charisma;
 	int old_max_health;
 	int old_maxhealth_old;
 	int old_exp_level;
@@ -514,10 +690,11 @@ void NetGameReborn()
 	// [FB] Retrieve experience level and attributes we have made...
 	old_experience = Player(OldMo.Player).experience;
 	old_strength = Player(OldMo.Player).strength;
-	old_vitality = Player(OldMo.Player).vitality;
-	old_speed = Player(OldMo.Player).speed;
+	old_constitution = Player(OldMo.Player).constitution;
+	old_dexterity = Player(OldMo.Player).dexterity;
 	old_intelligence = Player(OldMo.Player).intelligence;
 	old_wisdom = Player(OldMo.Player).wisdom;
+	old_charisma = Player(OldMo.Player).charisma;
 	old_exp_level = Player(OldMo.Player).exp_level;
 	old_next_level = Player(OldMo.Player).next_level;
 	old_prev_level = Player(OldMo.Player).prev_level;
@@ -530,10 +707,11 @@ void NetGameReborn()
 	// [FB] ...and update them accordingly
 	experience = old_experience;
 	strength = old_strength;
-	vitality = old_vitality;
-	speed = old_speed;
+	constitution = old_constitution;
+	dexterity = old_dexterity;
 	intelligence = old_intelligence;
 	wisdom = old_wisdom;
+	charisma = old_charisma;
 	exp_level = old_exp_level;
 	next_level = old_next_level;
 	prev_level = old_prev_level;
@@ -556,13 +734,13 @@ void NetGameReborn()
 
 void MovePsprites(float deltaTime)
 {
-	if (speed < 6)
+	if (dexterity < 6)
 		deltaTime *= 0.8;
-	else if (speed > 34)
+	else if (dexterity > 34)
 		deltaTime *= 3.5;
-	else if (speed > 24)
+	else if (dexterity > 24)
 		deltaTime *= 2.5;
-	else if (speed > 14)
+	else if (dexterity > 14)
 		deltaTime *= 1.5;
 	::MovePsprites(deltaTime);
 }
@@ -929,10 +1107,23 @@ void PlayerTick(float deltaTime)
 
 	sp_recharge_tics++;
 	// [FB] Slowly increase spiritual power
-	if (PlayerState == PST_LIVE && (sp_recharge_tics >= 18) && (sp_recharge_tics % (5 * 35) == 0) &&
-		sp_power < maxsp_power)
+	if (PlayerState == PST_LIVE && sp_power < maxsp_power)
 	{
-		sp_power++;
+		if (sp_recharge_tics >= 18)
+		{
+			if (wisdom <= 6 && (sp_recharge_tics % (8 * 35) == 0))
+			{
+				sp_power++;
+			}
+			else if (wisdom <= 12 && (sp_recharge_tics % (6 * 35) == 0))
+			{
+				sp_power++;
+			}
+			else if (wisdom > 24 && (sp_recharge_tics % (4 * 35) == 0))
+			{
+				sp_power++;
+			}
+		}
 	}
 	if (sp_recharge_tics > (10 * 35))
 	{
