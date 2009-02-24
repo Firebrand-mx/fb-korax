@@ -33,7 +33,7 @@
 class ACSpellBerserk : ActorCondition;
 
 int preberserk_health;
-float preberserk_speed;	// [FB] Made this one a float
+float preberserk_dexterity;	// [FB] Made this one a float
 int preberserk_strength;
 
 
@@ -72,11 +72,11 @@ void Activate()
 	{
 		// [FB] Player actor case
 		preberserk_strength = Player(ARecepient.Player).strength;
-		preberserk_speed = itof(Player(ARecepient.Player).speed);
+		preberserk_dexterity = itof(Player(ARecepient.Player).dexterity);
 		preberserk_health = ARecepient.Health;
 		
 		Player(ARecepient.Player).strength <<= 1;
-		Player(ARecepient.Player).speed <<= 1;
+		Player(ARecepient.Player).dexterity <<= 1;
 		ARecepient.Player.Health <<= 1;
 		ARecepient.Health = ARecepient.Player.Health;
 		Player(ARecepient.Player).sp_power = 0; // <<-- move to spell item?
@@ -86,7 +86,7 @@ void Activate()
 		//PlaySound('UseArtifact', CHAN_VOICE);	<--- should be played by actor when casting
 		//                                           (using spell-item)
 		preberserk_strength = ARecepient.MissileDamage;
-		preberserk_speed = ARecepient.Speed;
+		preberserk_dexterity = ARecepient.Speed;
 		preberserk_health = ARecepient.Health;
 
 		ARecepient.MissileDamage <<= 1;
@@ -111,7 +111,7 @@ void Deactivate()
 	if (ARecepient.Player)
 	{
 		Player(ARecepient.Player).strength = preberserk_strength;
-		Player(ARecepient.Player).speed = ftoi(preberserk_speed);
+		Player(ARecepient.Player).dexterity = ftoi(preberserk_dexterity);
 
 		if (ARecepient.Health > 0)
 		{
@@ -130,7 +130,7 @@ void Deactivate()
 	else
 	{
 		ARecepient.MissileDamage = preberserk_strength;
-		ARecepient.Speed = preberserk_speed;
+		ARecepient.Speed = preberserk_dexterity;
 
 		if (ARecepient.Health > 0)
 		{

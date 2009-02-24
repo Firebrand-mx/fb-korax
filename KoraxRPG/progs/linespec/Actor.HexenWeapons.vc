@@ -202,15 +202,15 @@ final void A_FHammerAttack() self(Actor)
 
 	damage = 60 + (P_Random() & 63);
 	// [FB] IMO It's even more cool to separate the ranged and melee damage rates respectively
-	r_damage = damage  * (KRPGPlayerBase(Player).intelligence / 10);
-	m_damage = damage  * (KRPGPlayerBase(Player).strength / 10);
+	r_damage = damage * (KRPGPlayerBase(Player).dexterity / 10);
+	m_damage = damage * (KRPGPlayerBase(Player).strength / 10);
 	// [CW] FIXME!! -- no use of these vars!!
 	power = 10.0;
 	AimTarget = AimEx(vforward, HammerRange, 45.0 / 32.0, 16, HammerRange);
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, HammerRange, m_damage, HammerPuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -225,7 +225,7 @@ final void A_FHammerAttack() self(Actor)
 	{
 		// didn't find any targets in meleerange, so set to throw out a hammer
 		LineSpecialLevelInfo(Level).bPuffSpawned = false;
-		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
+		if (LineAttack(vforward, HammerRange, r_damage, HammerPuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -255,6 +255,7 @@ final void A_FHammerAttack() self(Actor)
 
 final void A_FHammerThrow() self(Actor)
 {
+	EntityEx mo;
 	if (!bIsPlayer)
 	{
 		return;
@@ -266,7 +267,12 @@ final void A_FHammerThrow() self(Actor)
 		return;
 	}
 	
-	SpawnPlayerMissile(HammerMissile);
+	// [FB] Dexterity modifies the damage done by ranged physical attacks
+	mo = SpawnPlayerMissile(HammerMissile);
+	if (mo)
+	{
+		mo.MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
+	}
 	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode, false);
 }
 
@@ -290,31 +296,31 @@ final void A_FSwordAttack() self(Actor)
 		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 4.0));
 	if (mo)
 	{
-		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, -5.0),
 		FSwordMissile, AngleMod360(Angles.yaw + 45.0 / 8.0));
 	if (mo)
 	{
-		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 	mo = SpawnPlayerMissileAngleXYZ(Origin, FSwordMissile,
 		Angles.yaw);
 	if (mo)
 	{
-		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 5.0),
 		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 8.0));
 	if (mo)
 	{
-		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 	mo = SpawnPlayerMissileAngleXYZ(Origin + vector(0.0, 0.0, 10.0),
 		FSwordMissile, AngleMod360(Angles.yaw - 45.0 / 4.0));
 	if (mo)
 	{
-		MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 	PlaySound('FighterSwordFire', CHAN_WEAPON);
 	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
@@ -416,7 +422,7 @@ final void A_CStaffCheck() self(Actor)
 	}
 	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
 
-	damage = 20 + (P_Random() & 15) * (KRPGPlayerBase(Player).wisdom / 10);
+	damage = 20 + (P_Random() & 15) * (KRPGPlayerBase(Player).intelligence / 10);
 	AimTarget = AimEx(vforward, 3.0 * MELEERANGE / 2.0, 45.0 / 16.0, 3);
 	if (AimTarget)
 	{
@@ -489,7 +495,7 @@ final void A_CFlameAttack() self(Actor)
 	if (mo)
 	{
 		Actor(mo).Special1 = 2;
-		mo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		mo.MissileDamage *= (KRPGPlayerBase(Player).intelligence / 10);
 	}
 
 	PlaySound('ClericFlameFire', CHAN_WEAPON);
@@ -517,7 +523,7 @@ final void A_CHolyAttack() self(Actor)
 	if (A)
 	{
 		A.Tracer = AimTarget;
-		A.MissileDamage *= (KRPGPlayerBase(Player).strength / 10);
+		A.MissileDamage *= (KRPGPlayerBase(Player).dexterity / 10);
 	}
 //	CWeapWraithverge(Wpn).CShift = RGBA(255, 255, 255, 66);
 	PlaySound('HolySymbolFire', CHAN_WEAPON);
@@ -542,7 +548,7 @@ final void A_KRPGMWandAttack() self(Actor)
 	mo = MageWandMissile(SpawnPlayerMissile(MageWandMissile));
 	if (mo)
 	{
-		mo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		mo.MissileDamage *= (KRPGPlayerBase(Player).intelligence / 10);
 	}
 	PlaySound('MageWandFire', CHAN_WEAPON);
 }
@@ -571,7 +577,7 @@ final void A_FireConePL1() self(Actor)
 
 	PlaySound('MageShardsFire', CHAN_WEAPON);
 
-	damage = 90 + (P_Random() & 15) * (KRPGPlayerBase(Player).wisdom / 10);
+	damage = 90 + (P_Random() & 15) * (KRPGPlayerBase(Player).intelligence / 10);
 	for (i = 0; i < 16; i++)
 	{
 		ang = Angles;
@@ -640,14 +646,14 @@ final void A_MLightningAttack() self(Actor)
 	cmo = Lightning(SpawnPlayerMissile(LightningCeiling));
 	if (fmo)
 	{
-		fmo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		fmo.MissileDamage *= (KRPGPlayerBase(Player).intelligence / 10);
 		fmo.ZigZagCount = 0;
 		fmo.LightningLink = cmo;
 		fmo.A_LightningZap();
 	}
 	if (cmo)
 	{
-		cmo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		cmo.MissileDamage *= (KRPGPlayerBase(Player).intelligence / 10);
 		cmo.Tracer = none;	// mobj that it will track
 		cmo.LightningLink = fmo;
 		cmo.A_LightningZap();
@@ -670,7 +676,7 @@ final void MStaffSpawn(float angle)
 	if (mo)
 	{
 		mo.Target = EntityEx(Owner);
-		mo.MissileDamage *= (KRPGPlayerBase(Player).wisdom / 10);
+		mo.MissileDamage *= (KRPGPlayerBase(Player).intelligence / 10);
 		MageStaffFX2(mo).FindEnemy();
 	}
 }
@@ -721,7 +727,7 @@ final void A_SnoutAttack()
 	}
 	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
-	damage = 3 + (P_Random() & 3);
+	damage = 3 + (P_Random() & 3) * (KRPGPlayerBase(Player).strength / 10);
 	angles = Angles;
 	AimTarget = AimLineAttack(vforward, angles, MELEERANGE);
 	LineSpecialLevelInfo(Level).bPuffSpawned = false;
