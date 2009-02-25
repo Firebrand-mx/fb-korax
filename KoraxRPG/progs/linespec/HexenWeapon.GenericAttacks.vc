@@ -1,0 +1,319 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: HexenWeapon.GenericAttacks.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//--------------------------------------------------------------------------
+//
+//
+// Generic attack methods for KRPG Weapons
+//
+//
+//--------------------------------------------------------------------------
+
+//==========================================================================
+//
+//  WA_MeleeAttack
+//
+//	Most common melee attack. Uses weapon's MeleeDamage and AmmoUse
+//	properties; random damage calculated by rolling HITDICE.
+//
+//	Hexen examples: Cleric's Mace.
+//
+//==========================================================================
+
+final void WA_MeleeAttack() self(Actor)
+{
+	bool		attack_result;
+	int			damage;
+	TVec		vforward;
+	EntityEx	AimTarget;
+	TAVec		angles;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
+
+	if (Wpn.bMagicMelee)
+	{
+		damage = (Wpn.MeleeDamage + HITDICE(Wpn.MeleeHitDice)) * KRPGPlayerBase(Player).intelligence / 10;
+	}
+	else
+	{
+		damage = (Wpn.MeleeDamage + HITDICE(Wpn.MeleeHitDice)) * KRPGPlayerBase(Player).strength / 10;
+	}
+
+	if (Wpn.MeleeAttackSound)
+	{
+		PlaySound(Wpn.MeleeAttackSound, CHAN_WEAPON);
+	}
+
+	AimTarget = AimEx(vforward, Wpn.MeleeFarRange, Wpn.HitPrecision, 16, Wpn.MeleeCloseRange);
+	if (AimTarget)
+	{
+		VectorAngles(&vforward, &angles);
+		if (Wpn.MeleePuffType)
+		{
+			attack_result = LineAttack(vforward, Wpn.MeleeFarRange, damage, Wpn.MeleePuffType,,,DamageType);
+		}
+		else
+		{
+			attack_result = true;
+			AimTarget.Damage(self, self, damage, DamageType);
+		}
+		if (attack_result)
+		{
+			if (Wpn.MeleeHitSound)
+			{
+				PlaySound(Wpn.MeleeHitSound, CHAN_WEAPON);
+			}
+			if (Wpn.MeleePuffType)
+			{
+				PlaySound(Wpn.MeleePuffType.default.ActiveSound, CHAN_WEAPON);
+			}
+		}
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
+		if (Wpn.HitThrust && (AimTarget.bMonster || AimTarget.bIsPlayer))
+		{
+			AimTarget.Thrust(angles.yaw, Wpn.HitThrust);
+		}
+		HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		if (Wpn.MeleePuffType && LineAttack(vforward, Wpn.MeleeCloseRange, damage, Wpn.MeleePuffType,,,DamageType))
+		{
+			if (Wpn.MeleeHitSound)
+			{
+				PlaySound(Wpn.MeleeHitSound, CHAN_WEAPON);
+			}
+			PlaySound(Wpn.MeleePuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  WA_MeleeAttackSpecialAtk
+//
+//	Melee attack with special hit that happens periodically.
+//	Uses weapon's MeleeDamage and AmmoUse properties; random damage
+//	calculated by rolling HITDICE.
+//
+//	Parameters:
+//		- SpecialAtkTime :		number of special hit in a row (1-based);
+//		- SpecialAtkFactor :	damage multiplier for special atk;
+//		- SpecialAtkState :		state to set for special atk;
+//		- SpecialAtkThrust :	thrust power of special atk;
+//		- SpecialAtkPuffType :	alternate puff type for special atk;
+//		- SpecialAtkSound :		sound to play instead of MeleeAttackSound;
+//		- SpecialAtkHitSound :	sound to play instead of MeleeHitSound;
+//		- SpecialAtkExtraSound :extra sound to play for special atk.
+//
+//	Hexen examples: Fighter's Punch.
+//
+//==========================================================================
+
+final void WA_MeleeAttackSpecialAtk(int SpecialAtkTime,
+								   float SpecialAtkFactor,
+								   name SpecialAtkState,
+								   optional float SpecialAtkThrust,
+								   optional class<Actor> SpecialAtkPuffType,
+								   optional name SpecialAtkSound,
+								   optional name SpecialAtkHitSound,
+								   optional name SpecialAtkExtraSound)
+								   self(Actor)
+{
+	bool			attack_result;
+	int				damage;
+	float			power;
+	TVec			vforward;
+	class<Actor>	PuffType;
+	EntityEx		AimTarget;
+	TAVec			angles;
+	name			matksound;
+	name			mhitsound;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
+
+	if (Wpn.bMagicMelee)
+	{
+		damage = (Wpn.MeleeDamage + HITDICE(Wpn.MeleeHitDice)) * KRPGPlayerBase(Player).intelligence / 10;
+	}
+	else
+	{
+		damage = (Wpn.MeleeDamage + HITDICE(Wpn.MeleeHitDice)) * KRPGPlayerBase(Player).strength / 10;
+	}
+
+	power = Wpn.HitThrust;
+	PuffType = Wpn.MeleePuffType;
+	matksound = Wpn.MeleeAttackSound;
+	mhitsound = Wpn.MeleeHitSound;
+
+	AimTarget = AimEx(vforward, Wpn.MeleeFarRange, Wpn.HitPrecision, 16, Wpn.MeleeCloseRange);
+	if (AimTarget)
+	{
+		
+		VectorAngles(&vforward, &angles);
+		Special1++;
+		if (Special1 == SpecialAtkTime)
+		{
+			damage = ftoi(itof(damage) * SpecialAtkFactor);
+
+			if (specified_SpecialAtkThrust)
+			{
+				power = SpecialAtkThrust;
+			}
+			if (specified_SpecialAtkPuffType)
+			{
+				PuffType = SpecialAtkPuffType;
+			}
+			if (specified_SpecialAtkSound)
+			{
+				matksound = SpecialAtkSound;
+			}
+			if (specified_SpecialAtkHitSound)
+			{
+				mhitsound = SpecialAtkHitSound;
+			}
+		}
+
+		if (matksound)
+		{
+			PlaySound(matksound, CHAN_WEAPON);
+		}
+
+		if (Wpn.MeleePuffType)
+		{
+			attack_result = LineAttack(vforward, Wpn.MeleeFarRange, damage, PuffType,,,DamageType);
+		}
+		else
+		{
+			attack_result = true;
+			AimTarget.Damage(self, self, damage, DamageType);
+		}
+		if (attack_result)
+		{
+			if (mhitsound)
+			{
+				PlaySound(mhitsound, CHAN_WEAPON);
+			}
+			if (PuffType)
+			{
+				PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+			}
+		}
+		KRPGPlayerBase(Player).AdjustPlayerAngle(AimTarget);
+		if (power && (AimTarget.bMonster || AimTarget.bIsPlayer))
+		{
+			AimTarget.Thrust(angles.yaw, power);
+		}
+		HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		Special1 = 0;
+
+		if (matksound)
+		{
+			PlaySound(matksound, CHAN_WEAPON);
+		}
+
+		if (PuffType && LineAttack(vforward, Wpn.MeleeCloseRange, damage, PuffType,,,DamageType))
+		{
+			if (mhitsound)
+			{
+				PlaySound(mhitsound, CHAN_WEAPON);
+			}
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+	}
+
+	if (Special1 == SpecialAtkTime)
+	{
+		Special1 = 0;
+		Player.SetViewState(ps_weapon, Wpn.FindState(SpecialAtkState));
+		if (specified_SpecialAtkExtraSound)
+		{
+			PlaySound(SpecialAtkExtraSound, CHAN_VOICE);
+		}
+	}
+}
+
+//==========================================================================
+//
+//  WA_MissileAttack
+//
+//	Most common missile attack. Uses weapon's MissileDamage if > 0 and
+//	AmmoUse properties; random damage calculated by rolling HITDICE.
+//
+//	Hexen examples: 
+//
+//==========================================================================
+
+final void WA_MissileAttack() self(Actor)
+{
+	Actor mo;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
+
+	mo = Actor(SpawnPlayerMissile(Wpn.MissileType));
+	if (mo)
+	{
+		int factor = Wpn.bMagicMissile ? KRPGPlayerBase(Player).intelligence : KRPGPlayerBase(Player).dexterity;
+		if (Wpn.MissileDamage)
+		{
+			mo.MissileDamage = Wpn.MissileDamage * factor / 10;
+		}
+		else
+		{
+			mo.MissileDamage = mo.MissileDamage * factor / 10;
+		}
+	}
+	if (Wpn.MissileSound)
+	{
+		PlaySound(Wpn.MissileSound, CHAN_WEAPON);
+	}
+}

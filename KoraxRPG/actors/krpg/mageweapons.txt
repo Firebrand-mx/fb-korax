@@ -10,6 +10,9 @@ actor WeaponMageWandBlue : WeaponMageWand replaces MWeapWand
 	Weapon.YAdjust 9
 	Weapon.BotCombatDist 192
 	+Weapon.Explosive
+	+HexenWeapon.MagicMissile
+	HexenWeapon.MissileType "MageWandMissile"
+	
 	states
 	{
 	Ready:
@@ -23,9 +26,227 @@ actor WeaponMageWandBlue : WeaponMageWand replaces MWeapWand
 		Loop
 	Fire:
 		MWND A 6
-		MWND B 6 Bright Offset(0, 48) A_FireCustomMissile("MageWandMissile")
+		// MWND B 6 Bright Offset(0, 48) A_FireCustomMissile("MageWandMissile")
+		MWND B 6 Bright Offset(0, 48) WA_MissileAttack()
 		MWND A 3 Offset(0, 40)
 		MWND A 3 Offset(0, 36) A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageFireshot : WeaponMageFire
+{
+	Weapon.SelectionOrder 3600
+	Weapon.YAdjust 20
+	Weapon.BotCombatDist 256
+	+Weapon.Explosive
+	+HexenWeapon.MagicMissile
+	HexenWeapon.MissileType "FireDemonMissile"
+	HexenWeapon.MissileSound "FireDemonAttack"
+	Inventory.PickupMessage "fireshot"
+	
+	states
+	{
+	Ready:
+		CONE A 1 A_WeaponReady
+		Loop
+	Deselect:
+		CONE A 1 A_Lower
+		Loop
+	Select:
+		CONE A 1 A_Raise
+		Loop
+	Fire:
+		CONE B 3
+		CONE C 4
+	Hold:
+		CONE D 3
+		CONE E 5
+		CONE F 3 WA_MissileAttack()
+		CONE G 3
+		CONE A 9
+		CONE A 10 A_ReFire
+		Goto Ready
+	Spawn:
+		WMCS ABC 8 Bright
+		Loop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageTripleFireshot : WeaponMageFireshot
+{
+	Inventory.PickupMessage "triple fireshot"
+	
+	states
+	{
+	Fire:
+		CONE B 3
+		CONE C 4
+	Hold:
+		CONE D 3
+		CONE E 5
+		CONE F 3 WA_MissileAttack()
+		CONE F 3 WA_MissileAttack()
+		CONE F 3 WA_MissileAttack()
+		CONE G 3
+		CONE A 9
+		CONE A 10 A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageFireball : WeaponMageFireshot
+{
+	HexenWeapon.MissileType "LavaBall"
+	HexenWeapon.MissileSound "Fireball"
+	Inventory.PickupMessage "fireball"
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageRapidFireball : WeaponMageFireball
+{
+	Inventory.PickupMessage "rapid fireball"
+	
+	states
+	{
+	Fire:
+		CONE B 3
+		CONE C 4
+	Hold:
+		CONE D 3
+		CONE E 5
+		CONE F 3 WA_MissileAttack()
+		CONE F 3 WA_MissileAttack()
+		CONE F 3 WA_MissileAttack()
+		CONE G 3
+		CONE A 9
+		CONE A 10 A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageChaosblast : WeaponMageFireshot
+{
+	HexenWeapon.MissileType "Demon1FX1"
+	HexenWeapon.MissileSound "Fireball"
+	Inventory.PickupMessage "chaosblast"
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageToaster : WeaponMageChaosblast
+{
+	Inventory.PickupMessage "toaster"
+	
+	states
+	{
+	Fire:
+		CONE B 3
+		CONE C 4
+		CONE D 3
+		CONE E 5
+	Hold:
+		CONE F 1 WA_MissileAttack()
+		CONE F 1 WA_MissileAttack()
+		CONE F 1 WA_MissileAttack()
+		CONE G 3 A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageChaosblast2 : WeaponMageFireshot
+{
+	HexenWeapon.MissileType "Demon2FX1"
+	HexenWeapon.MissileSound "Fireball"
+	Inventory.PickupMessage "toxic chaosblast"
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageToaster2 : WeaponMageChaosblast2
+{
+	Inventory.PickupMessage "toxic toaster"
+	
+	states
+	{
+	Fire:
+		CONE B 3
+		CONE C 4
+		CONE D 3
+		CONE E 5
+	Hold:
+		CONE F 1 WA_MissileAttack()
+		CONE F 1 WA_MissileAttack()
+		CONE F 1 WA_MissileAttack()
+		CONE G 3 A_ReFire
+		Goto Ready
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageChillingTouch : WeaponMageFrost
+{
+	Inventory.PickupMessage "chilling touch"
+	Weapon.SelectionOrder 1700
+	Weapon.YAdjust 20
+	Weapon.BotCombatDist 256
+	//DamageType "Ice"
+	+HexenWeapon.MagicMelee
+	MeleeDamage 20
+	HexenWeapon.MeleeHitDice 2
+	HexenWeapon.MeleeFarRange 128
+	HexenWeapon.MeleeHitSound "MageShardsFire"
+
+	states
+	{
+	Ready:
+		CONE A 1 A_WeaponReady
+		Loop
+	Deselect:
+		CONE A 1 A_Lower
+		Loop
+	Select:
+		CONE A 1 A_Raise
+		Loop
+	Fire:
+		CONE B 3
+		CONE C 4
+	Hold:
+		CONE D 3
+		CONE E 5 WA_MeleeAttack
+		CONE D 8 A_ReFire
+		CONE F 3
+		CONE G 3
+		CONE A 9
+		Goto Ready
+	Spawn:
+		WMCS ABC 8 Bright
+		Loop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor WeaponMageAbsoluteZero : WeaponMageChillingTouch
+{
+	Inventory.PickupMessage "absolute zero"
+	MeleeDamage 64
+	HexenWeapon.MeleeHitDice 8
+	HexenWeapon.MeleeFarRange 512
+	
+	states
+	{
+	Fire:
+		CONE B 3
+		CONE C 4
+		CONE D 3
+		CONE E 12 WA_MeleeAttack
+		CONE D 12
+		CONE F 3
+		CONE G 3
+		CONE A 9
 		Goto Ready
 	}
 }
@@ -43,8 +264,9 @@ actor WeaponMageFrostCone : WeaponMageFrost replaces MWeapFrost
 	Weapon.YAdjust 20
 	Weapon.BotCombatDist 256
 	+Weapon.Explosive
+	+HexenWeapon.MagicMissile
 
-	action native A_FireConePL1();
+	//action native A_FireConePL1();
 
 	states
 	{
@@ -63,7 +285,7 @@ actor WeaponMageFrostCone : WeaponMageFrost replaces MWeapFrost
 	Hold:
 		CONE D 3
 		CONE E 5
-		CONE F 3 A_FireConePL1
+		CONE F 3 WA_FireConePL1
 		CONE G 3
 		CONE A 9
 		CONE A 10 A_ReFire
@@ -87,9 +309,10 @@ actor WeaponMageArcOfLightning : WeaponMageLightning replaces MWeapLightning
 	Weapon.YAdjust 20
 	Weapon.BotCombatDist 384
 	+Weapon.Explosive
+	+HexenWeapon.MagicMissile
 
 	action native A_LightningReady();
-	action native A_MLightningAttack();
+	//action native A_MLightningAttack();
 
 	states
 	{
@@ -108,7 +331,7 @@ actor WeaponMageArcOfLightning : WeaponMageLightning replaces MWeapLightning
 		Wait
 	Fire:
 		MLNG DE 3 Bright
-		MLNG F 4 Bright A_MLightningAttack
+		MLNG F 4 Bright WA_MLightningAttack
 		MLNG G 4 Bright
 		MLNG H 3 Bright
 		MLNG I 3 Bright
