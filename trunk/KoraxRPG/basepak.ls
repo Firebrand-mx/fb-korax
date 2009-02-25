@@ -51,7 +51,6 @@ actors/krpg/mana.txt			actors/krpg/mana.txt
 actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
 actors/krpg/townfolk.txt		actors/krpg/townfolk.txt
-actors/krpg/weapon_items.txt	actors/krpg/weapon_items.txt
 actors/krpg/wraith.txt			actors/krpg/wraith.txt
 
 //	Language strings
