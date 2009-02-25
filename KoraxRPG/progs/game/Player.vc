@@ -166,99 +166,17 @@ void ActivateLevel(int to_lvl)
 	exp_level++;
 	experience -= next_level;
 
-//	next_level = next_level * exp_level; <-- OLD ONE
-	next_level = 1000 * exp_level; // <-- NEW ONE
-//	prev_level = 1000 * exp_level;
+	next_level = 1000 * exp_level;
 	addhealth = Health  / max_health;
 	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
 	max_health += constitution;
 	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
-/*	if (PClass != HexenDefs::PCLASS_FIGHTER)
-	{*/
-		maxsp_power += intelligence;
-/*	}
-	else
-	{
-		maxsp_power += strength;
-	}*/
+
+	maxsp_power += intelligence;
 	sp_power = maxsp_power;
+
 	Health = max_health + addhealth;
 	MO.Health = Health;
-
-/*	if (PClass == PCLASS_MAGE)
-	{
-		if (exp_level == 8)
-			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_BWAND)] = true;
-		if (exp_level == 6)
-			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND3)] = true;
-		if (exp_level == 4)
-			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND2)] = true;
-		if (exp_level == 2)
-			player->weaponowned[P_GetWeaponNum(player,WP_MAGE_WAND)] = true;	
-	}*/
-
-	switch (PClass) //Messages about new stuff
-	{
-	case HexenDefs::PCLASS_FIGHTER:
-		switch (exp_level)
-		{
-			default:
-				break;
-		}
-		break;
-	case HexenDefs::PCLASS_CLERIC:
-		switch (exp_level)
-		{
-		case 5:
-			centreprint("YOU CAN NOW CAST SPIRITS WITHIN!");
-			EntityEx(MO).GiveInventoryType(SpellItemSpirits);
-			break;
-		case 7:
-			centreprint("YOU CAN NOW CAST BANISHMENT!");
-			EntityEx(MO).GiveInventoryType(SpellItemBanishment);
-			break;
-		case 8:
-			centreprint("YOU NOW HAVE THE ICE WAND!");
-			break;
-		case 9:
-			centreprint("YOU CAN NOW CAST WRATH OF THE GODS");
-			break;
-		}
-		break;
-	case HexenDefs::PCLASS_MAGE:
-		switch (exp_level)
-		{
-		case 2:
-			centreprint("YOU NOW HAVE THE BLUE WAND!");
-			break;
-		case 3:
-			centreprint("YOU CAN NOW CAST MANA CREATION!");
-			break;
-		case 4:
-			centreprint("YOU CAN HAVE THE GREY WAND!");
-			break;
-		case 5:
-			centreprint("YOU CAN NOW CAST A DEFENSIVE SPELL!");
-			EntityEx(MO).GiveInventoryType(SpellItemDefensive);
-			break;
-		case 6:
-			centreprint("YOU NOW HAVE THE RED WAND!");
-			break;
-		case 7:
-			centreprint("YOU CAN NOW CAST SPEED!");
-			break;
-		case 8:
-			centreprint("YOU CAN NOW SUMMON MONSTERS!");
-			break;
-		case 9:
-			centreprint("YOU CAN NOW CAST POSSESSION!");
-			break;
-		case 10:
-			centreprint("YOU CAN NOW CAST HORRIBLE PAIN!");
-			break;
-		}
-		break;
-	}
 
 	av_points += skillp_table[Level.World.GameSkill];
 
@@ -292,11 +210,7 @@ void ActivateLevel(int to_lvl)
 		int wis_val = 0;
 		int cha_val = 0;
 		bool updated[6];
-		int repeat = 0;
 
-		dprint("Player::AutoUpdate : ");
-		dprint("initial available points = %d", av_points);
-		dprint("skill = %d", Level.World.GameSkill);
 		for (i = 0; i < 7; i++)
 		{
 			updated[i] = false;
@@ -366,7 +280,6 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[5] = true;
 				}
-				repeat++;
 			}
 			else
 			{
@@ -402,7 +315,6 @@ void ActivateLevel(int to_lvl)
 						}
 						updated[2] = true;
 					}
-					repeat++;
 				}
 				else
 				{
@@ -436,33 +348,18 @@ void ActivateLevel(int to_lvl)
 						}
 						updated[5] = true;
 					}
-					repeat++;
 				}
 			}
 
 			for (i = 0; i < 7; i++)
 			{
-				dprint("updated[%d] = %d", i, updated[i]);
 				if (updated[i] && av_points > 0)
 				{
 					updated[i] = false;					
 				}
 			}
-			dprint("available points = %d", av_points);
-			dprint("str_val = %d", str_val);
-			dprint("dex_val = %d", dex_val);
-			dprint("con_val = %d", con_val);
-			dprint("int_val = %d", int_val);
-			dprint("wis_val = %d", wis_val);
-			dprint("cha_val = %d", cha_val);
-/*			if (repeat > 2)
-			{
-				dprint("repeat = %d", repeat);
-				break;
-			}*/
 		}
 
-		centreprint("'AUTO UPDATE' HAS UPDATED YOUR CHARACTER!");
 		UpdateStats(str_val, dex_val, con_val, int_val,	wis_val, cha_val);
 	}
 }
@@ -501,8 +398,7 @@ void InitiateLevel()
 
 void UpgradeScreen()
 {
-	// [FB] Only if we are not berserk
-	//if (!Actor(MO).berserkTics)
+	// [FB] Only if we are not berserking
 	if (!Actor(MO).GetCondition(ACSpellBerserk))
 	{
 		ClientUpgradeScreen();
@@ -961,7 +857,7 @@ void PlayerImpulse()
 	};
 
 
-	if (impulse < /* <= */ /* 4 */ KRPGDefs::NUMWEAPONSLOTS)
+	if (impulse < KRPGDefs::NUMWEAPONSLOTS)
 	{
 		ChangeWeaponEx(impulse);
 	}
@@ -1129,16 +1025,6 @@ void PlayerTick(float deltaTime)
 	{
 		sp_recharge_tics = 0; // [FB] Restart counter
 	}
-	/*if (Actor(MO).berserkTics > 0.0)
-	{
-		BonusFlash = 0.3;
-		Actor(MO).berserkTics -= 1.0;
-	}*/
-	/*if (Actor(MO).berserkTics <= 0.0 && Actor(MO).bBerserk)
-	{
-		centreprint("BERSERKER DEACTIVATED");
-		UnsetBerserk();
-	}*/
 	WorldTimer += deltaTime;
 	InventoryTick(deltaTime);
 	SpellTick(deltaTime);
@@ -1999,54 +1885,6 @@ void PlayerMorphed(EntityEx OldMO)
 {
 	PClass = HexenDefs::PCLASS_PIG;
 }
-
-/*//==========================================================================
-//
-//	SetBerserk
-//
-//==========================================================================
-
-final void SetBerserk()
-{
-	// [FB] Berserker actors get the double of their actual health
-	//	    Doubling their speed and their strength (MissileDamage for non players)
-	// [FB] Player actor case
-	Actor(MO).berserkTics += 1.0 + itof(sp_power) * 80.0;
-	Actor(MO).preberserk_strength = strength;
-	Actor(MO).preberserk_speed = itof(speed);
-	Actor(MO).preberserk_health = Health;
-	
-	strength *= 2;
-	speed *= 2;
-	Health *= 2;
-	MO.Health = Health;
-	sp_power = 0;
-	Actor(MO).bBerserk = true;
-}
-
-//==========================================================================
-//
-//	UnsetBerserk
-//
-//	[FB] Return actor to it's original stats
-//
-//==========================================================================
-
-final void UnsetBerserk()
-{
-	Actor(MO).berserkTics = 0.0;
-	strength = Actor(MO).preberserk_strength;
-	speed = ftoi(Actor(MO).preberserk_speed);
-	Health /= 2;
-	MO.Health = Health; // -JL- Decrease also mobj's health which is the actual health value
-	DamageFlash += itof(MO.Health) * 0.09;
-	if (DamageFlash > 2.0)
-	{
-		DamageFlash = 2.0;
-	}
-	Actor(MO).bBerserk = false;
-	MO.SetState(MO.FindState('Pain'));
-}*/
 
 //==========================================================================
 //
