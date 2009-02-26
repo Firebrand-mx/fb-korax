@@ -1,0 +1,243 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ConParser.Objects.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+// Object Tokens
+enum
+{
+	//----------------------------
+	// Object properties
+	//----------------------------
+	//
+	// Actor
+	//
+	Token_Actor_HasInventory,
+	Token_Actor_GiveExperience,
+	Token_Actor_GiveInventory,
+	Token_Actor_RemoveInventory,
+	//
+	// Player
+	//
+	Token_Player_Class,
+	Token_Player_GiveLevels,
+
+	NUM_OBJECTTOKENS
+};
+
+string ObjectTokens[NUM_OBJECTTOKENS];
+
+enum
+{
+	Error_NoSuchMethod,
+	Error_TooManyParameters,
+	Error_NotEnouphParameters,
+	NUM_OBJECTERRORS
+};
+
+string ObjectErrors[NUM_OBJECTERRORS];
+
+int MethodParamsMinimal[NUM_OBJECTTOKENS];
+int MethodParamsMaximal[NUM_OBJECTTOKENS];
+
+
+//==========================================================================
+//
+//	GetObjectToken
+//
+//	Get token index using tokens array
+//
+//==========================================================================
+
+int GetObjectToken(string S)
+{
+	int i;
+	for (i = 0; i < NUM_OBJECTTOKENS; i++)
+	{
+		if (!strcmp(ObjectTokens[i], S))
+			return i;
+	}
+	return -1;
+}
+
+//==========================================================================
+//
+//	ParseObjectReference
+//
+//	[CW] This method should start a handling of various object-referenced
+//	actions. In most simple case this can be a calling of one of the
+//	allowed object methods.
+//
+//	TODO: return value(s)
+//
+//==========================================================================
+
+void ParseObjectReference(int ReferenceClass, optional bool bSkipIfPossible)
+{
+	int				Method;
+	array<string>	Params;
+
+	Expect(Tokens[Token_ObjectAccess]);
+	ExpectString();
+	Method = GetObjectToken(String);
+	if (Method < 0)
+	{
+		ScriptError(Errors[Error_UnknownToken], String);
+		return;
+	}
+	Expect(Tokens[Token_BracketsOpen]);
+	ExpectString();
+
+	while (strcmp(Tokens[Token_BracketsClose], String))
+	{
+		if (bSkipIfPossible)
+		{
+			String;
+		}
+		else
+		{
+			Params.Num = Params.Num + 1;
+			Params[Params.Num - 1] = String;
+		}
+		ExpectString();
+	}
+
+	if (!bSkipIfPossible)
+	{
+		if (Params.Num < MethodParamsMinimal[Method])
+		{
+			ScriptError(ObjectErrors[Error_NotEnouphParameters], Tokens[ReferenceClass], ObjectTokens[Method],
+				MethodParamsMinimal[Method], Params.Num);
+			return;
+		}
+		if (Params.Num > MethodParamsMaximal[Method])
+		{
+			ScriptError(ObjectErrors[Error_TooManyParameters], Tokens[ReferenceClass], ObjectTokens[Method],
+				MethodParamsMaximal[Method], Params.Num);
+			return;
+		}
+	}
+
+	Expect(Tokens[Token_CommandSeparator]);
+
+	if (!bSkipIfPossible)
+	{
+		// First, non-direct references should be routed to particular object
+		switch (ReferenceClass)
+		{
+			// TODO
+		case Token_Everybody:
+			break;
+		case Token_Initiator:
+			if (ConInfo.AInitiator && ConInfo.Player && ConInfo.AInitiator == ConInfo.Player.MO)
+			{
+				ReferenceClass = Token_Player;
+			}
+			break;
+		case Token_Myself:
+			if (ConInfo.APerson && ConInfo.Player && ConInfo.APerson == ConInfo.Player.MO)
+			{
+				ReferenceClass = Token_Player;
+			}
+			break;
+		}
+
+		switch (ReferenceClass)
+		{
+		case Token_Initiator:
+			ParseActorMethod(ConInfo.AInitiator, Token_Initiator, Method, &Params);
+			break;
+		case Token_Myself:
+			ParseActorMethod(ConInfo.APerson, Token_Myself, Method, &Params);
+			break;
+		case Token_Player:
+			ParsePlayerMethod(Method, &Params);
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	ParseActorMethod
+//
+//	TODO: return value
+//
+//==========================================================================
+
+void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_Params)
+{
+	if (!Ref)
+	{
+		dprint("ConParser::ParseActorMethod : WARNING - no actor reference, execution skipped");
+		return;
+	}
+
+	switch (Method)
+	{
+	case Token_Actor_GiveInventory:
+		Ref.GiveInventory(StrToName(strlwr((*p_Params)[0])), (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 1);
+		break;
+	default:
+		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[ObjectClass], ObjectTokens[Method]);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	ParsePlayerMethod
+//
+//	TODO: return value
+//
+//==========================================================================
+
+void ParsePlayerMethod(int Method, array<string> * p_Params)
+{
+	if (!ConInfo.Player)
+	{
+		dprint("ConParser::ParsePlayerMethod : WARNING - no player reference, execution skipped");
+		return;
+	}
+
+	switch (Method)
+	{
+		// GiveExperience is handled differently for Player actors
+	case Token_Actor_GiveExperience:		
+		ConInfo.Player.GiveExperience(atoi((*p_Params)[0]));
+		break;
+	case Token_Player_GiveLevels:
+		ConInfo.Player.GiveLevels(atoi((*p_Params)[0]));
+		break;
+	default:
+		ParseActorMethod(Actor(ConInfo.Player.MO), Token_Player, Method, p_Params);
+		break;
+	}
+}

@@ -1,0 +1,1911 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ConParser.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+/*
+
+	KRPG CONVERSATION PARSER
+
+*/
+
+class ConParser : ScriptsParser;
+
+enum
+{
+	TOKEN_LEVEL_ROOT		= 0,
+	TOKEN_LEVEL_PERSONROOT	= 1,
+	TOKEN_LEVEL_COMMON		= 2
+};
+
+// Tokens
+enum
+{
+	//----------------------------
+	// General tokens
+	//----------------------------
+
+	Token_Boolean,
+	Token_BlockBegin,
+	Token_BlockEnd,
+	Token_BracketsOpen,
+	Token_BracketsClose,
+	Token_Bye,
+	Token_Choice,
+	Token_Choices,
+	Token_Cls,
+	Token_CommandSeparator,
+	Token_Comment,
+	Token_Continue,
+	Token_Else,
+	Token_End,
+	Token_Everybody,
+	Token_ExecuteMS,
+	Token_Game,
+	Token_Global,
+	Token_Hidden,
+	Token_Hello,
+	Token_If,
+	Token_Import,
+	Token_Initiator,
+	Token_Integer,
+	Token_Is,
+	Token_Jump,
+	Token_Level,
+	Token_Music,
+	Token_Myself,
+	Token_NamespaceAccess,
+	Token_None,
+	Token_Not,
+	Token_ObjectAccess,
+	Token_Person,
+	Token_PersonFlat,
+	Token_PersonName,
+	Token_PersonPic,
+	Token_PersonVar,
+	Token_Player,
+	Token_Random,
+	Token_Say,
+	Token_Set,
+	Token_Skip,
+	Token_Speech,
+	Token_Terminate,
+	Token_World,
+	Token_YesNo,
+
+	/*
+	//----------------------------
+	// Object properties
+	//----------------------------
+	//
+	// Actor
+	//
+	Token_Actor_HasInventory,
+	Token_Actor_GiveExperience,
+	Token_Actor_GiveInventory,
+	Token_Actor_RemoveInventory,
+	//
+	// Player
+	//
+	Token_Player_Class,*/
+
+	NUM_TOKENS
+};
+
+string Tokens[NUM_TOKENS];
+
+// Errors
+enum
+{
+	Error_UnexpectedToken,
+	Error_UnknownToken,
+	Error_MissingTokenBeforeToken,
+	Error_TokenHasNoSenseHere,
+	//Error_NoSuchMethod,
+	NUM_ERRORS
+};
+
+string Errors[NUM_ERRORS];
+
+
+// a data structure for a conversation instance
+struct coninfo_t
+{
+	//name	lumpName;		// conversation resource
+	string	Initiator;		// scriptName of person who initiates the conversation (usually Player)
+	string	Person;			// scriptName of person who is adressed
+
+	string	InitiatorName;	// shown person name
+	string	PersonName;		// shown person name
+	name	picName;		// pic resource name
+	name	flatName;		// background texture resouce name
+	int		hPic;			// registered pic handle
+
+	Quest::questvar_t tempVar;
+
+	// references to accessable objects
+	GameInfo	Game;
+	WorldInfo	World;
+	LevelInfo	Level;
+	Actor		AInitiator;
+	Actor		APerson;
+	Player		Player;
+};
+
+struct importinfo_t
+{
+	name	lumpName;
+};
+
+struct choiceheader_t
+{
+	string	Name;
+	string	Text;
+	bool	bHidden;
+};
+
+
+
+delegate Quest::personinfo_t *	AddPersonRegistry();
+delegate Quest::personinfo_t *	GetPersonRegistry(string scriptName, int scriptId);
+
+delegate void					CleanScene();
+delegate void					SetPersonInfo(string Name, name Pic, name Flat);
+delegate void					PlayCue(string Who, string ToWhom, string Cue, name Voice);
+delegate void					CleanChoices();
+delegate void					AddChoice(string Text, string Name, int Index);
+delegate void					Suspend();
+delegate void					Wait();
+delegate void					CloseScene();
+
+bool					bValid;
+coninfo_t				ConInfo;
+//string					PlayerName;
+//array<importinfo_t>		ImportInfos;
+
+
+//
+// Dynamic parsing data
+//
+
+name CurrentLump;
+bool bSpeechCompleted;
+bool bSuspended;
+bool bPendingEnd;
+bool bTermination;
+bool bYesNoPending;
+bool bYesNoResult;
+string				PendingSpeech;
+string				WantedSpeechName;
+choiceheader_t		LastChoice;
+array<string>		MustChoices;
+
+bool flag_LastStatementConditionResult;
+bool flag_LastConditionResult;
+
+
+//==========================================================================
+//
+//	OpenLumpName
+//
+//==========================================================================
+
+void OpenLumpName(name Name)
+{
+	::OpenLumpName(Name);
+	SetCMode(true);
+	CurrentLump = Name;
+}
+
+//==========================================================================
+//
+//	Initialise
+//
+//	Registers conversation infos.
+//
+//==========================================================================
+
+void Initialise()
+{
+	bValid = false;
+
+	//ImportInfos.Num = 0;
+	//PersonInfos.Num = 0;
+
+	OpenLumpName('coninfo');
+	//dprint("ConParser::Initialise : opened CONINFO lump ");
+	if (AtEnd())
+	{
+		//dprint("ConParser::Initialise : CONINFO lump is empty");
+		return;
+	}
+	RegisterContents();
+	bValid = true;
+}
+
+//==========================================================================
+//
+//	Begin
+//
+//==========================================================================
+
+void Begin(string Initiator, string AdressedPerson)
+{
+	//ConInfo.lumpName = LumpName;
+	ConInfo.Initiator = Initiator;
+	ConInfo.Person = AdressedPerson;
+	
+	if (!bValid)
+		Initialise();
+
+	if (!GetPersonRegistry)
+		FatalError("ConParser::ParsePersonInfo : GetPersonRegistry delegate is not valid");
+
+	if (!GetPersonRegistry(AdressedPerson, -1))
+	{
+		Error("ConParser::Begin : person %s not found", AdressedPerson);
+	}
+
+	bSpeechCompleted = false;
+	bSuspended = false;
+	bPendingEnd = false;
+	bTermination = false;
+	PendingSpeech = "";
+	WantedSpeechName = "";
+
+	// Search and run first accessible 'hello' speech block
+	// (usually has something like greeting to player, etc)
+	Hello();
+}
+
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
+void End(bool bBye)
+{
+	bPendingEnd = false;
+	bTermination = true;
+	if (bBye)
+	{
+		// Search and run first accessible 'bye' speech block
+		// (usually has something like farewell to player, etc)
+		Bye();
+	}
+	else
+	{
+		Terminate();
+	}
+}
+
+//==========================================================================
+//
+//	Terminate
+//
+//==========================================================================
+
+void Terminate()
+{
+	bTermination = true;
+	if (!CloseScene)
+		FatalError("ConParser::Terminate : CloseScene delegate is not valid");
+
+	CloseScene();
+}
+
+//==========================================================================
+//
+//	Hello
+//
+//==========================================================================
+
+void Hello()
+{
+	if (!CleanScene)
+		FatalError("ConParser::Hello : CleanScene delegate is not valid");
+
+	CleanScene();
+	UpdatePersonProperties(ConInfo.Person);
+	if (LocatePerson(ConInfo.Person))
+	{
+		while (LocateSpeech(Token_Hello))
+		{
+			ParseStatement(Token_Hello);
+			if (flag_LastStatementConditionResult)
+				break;
+		};
+
+		if (PendingSpeech)
+			Speech(PendingSpeech);
+		else if (bPendingEnd)
+			End(true);
+		else if (!bTermination && /*!bSuspended && */bSpeechCompleted)
+			CreateChoices();
+	}
+}
+
+//==========================================================================
+//
+//	Bye
+//
+//==========================================================================
+
+void Bye()
+{
+	if (!CleanScene)
+		FatalError("ConParser::Bye : CleanScene delegate is not valid");
+
+	CleanScene();
+	UpdatePersonProperties(ConInfo.Person);
+	if (LocatePerson(ConInfo.Person))
+	{
+		while (LocateSpeech(Token_Bye))
+		{
+			ParseStatement(Token_Bye);
+			if (flag_LastStatementConditionResult)
+			{
+				if (!bSuspended)
+				{
+					// Suspend before termination
+					// (player must be able to read the very last cue)
+					if (!Suspend)
+						FatalError("ConParser::Bye : Suspend delegate is not valid");
+					//dprint("ConParser::Bye : suspended");
+					Suspend();
+				}
+				return;
+			}
+		};
+		Terminate();	// no bye found, just terminate
+	}
+}
+
+//==========================================================================
+//
+//	Speech
+//
+//==========================================================================
+
+void Speech(string SpeechName)
+{
+	if (!CleanChoices)
+		FatalError("ConParser::Speech : CleanChoices delegate is not valid");
+
+	PendingSpeech = "";
+
+	CleanChoices();
+	UpdatePersonProperties(ConInfo.Person);
+	if (LocatePerson(ConInfo.Person))
+	{
+		WantedSpeechName = SpeechName;
+		while (LocateSpeech(Token_Speech))
+		{
+			ParseStatement(Token_Speech);
+			if (flag_LastStatementConditionResult)
+			{
+				WantedSpeechName = "";
+				break;
+			}
+		};
+
+		if (PendingSpeech)
+			Speech(PendingSpeech);
+		else if (bPendingEnd)
+			End(true);
+		if (!bTermination && /*!bSuspended && */bSpeechCompleted)
+			CreateChoices();
+	}
+}
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	int i,index;
+	int Must;
+
+	if (!CleanChoices)
+		FatalError("ConParser::CreateChoices : CleanChoices delegate is not valid");
+	if (!AddChoice)
+		FatalError("ConParser::CreateChoices : AddChoice delegate is not valid");
+
+	index = 0;
+	CleanChoices();
+
+	if (bYesNoPending)
+	{
+		// TODO -- use localized strings here
+		AddChoice("Yes", "", 1);
+		AddChoice("No", "", 0);
+		return;
+	}
+
+	UpdatePersonProperties(ConInfo.Person);
+	if (LocatePerson(ConInfo.Person))
+	{
+		while (LocateSpeech(Token_Choice))
+		{
+			ParseSpeech(Token_Choice, false, true);
+			Must = MustChoices.Num ? 0 : -1;
+			for (i = 0; i < MustChoices.Num; i++)
+			{
+				if (!strcmp(MustChoices[i], LastChoice.Name))
+				{
+					Must = 1;
+					break;
+				}
+			}
+			if (Must && (Must == 1 || !LastChoice.bHidden)
+				&& flag_LastStatementConditionResult)
+			{
+				AddChoice(LastChoice.Text, LastChoice.Name, index);
+			}
+			index++;
+		};
+
+		MustChoices.Num = 0;
+	}
+}
+
+//==========================================================================
+//
+//	Continue
+//
+//==========================================================================
+
+void Continue()
+{
+	if (bSuspended)
+	{
+		//dprint("ConParser::Continue : resumed");
+		bSuspended = false;
+		ParseAndExecuteSpeechContents();
+		if (PendingSpeech)
+			Speech(PendingSpeech);
+		else if (bPendingEnd)
+			End(true);
+		if (!bTermination && bSpeechCompleted)
+			CreateChoices();
+	}
+	else if (bTermination)
+	{
+		Terminate();
+	}
+	else
+	{
+		End(true);
+	}
+}
+
+//==========================================================================
+//
+//	ExecuteChoice
+//
+//==========================================================================
+
+void ExecuteChoice(string Name, int Index)
+{
+	int index;
+
+	if (!CleanScene)
+		FatalError("ConParser::ExecuteChoice : CleanScene delegate is not valid");
+	if (!CleanChoices)
+		FatalError("ConParser::ExecuteChoice : CleanChoices delegate is not valid");
+
+	index = 0;
+	CleanScene();
+	CleanChoices();
+	//dprint("ConParser::ExecuteChoice : %s, %i", Name, Index);
+
+	if (bYesNoPending)
+	{
+		bYesNoResult = Index;
+		Continue();
+		return;
+	}
+
+	if (LocatePerson(ConInfo.Person))
+	{
+		while (LocateSpeech(Token_Choice))
+		{
+			if (Name)
+			{
+				WantedSpeechName = Name;
+				ParseSpeech(Token_Choice);
+				if (flag_LastStatementConditionResult)
+				{
+					WantedSpeechName = "";
+					break;
+				}
+			}
+			else if (index == Index)
+			{
+				ParseSpeech(Token_Choice);
+				break;
+			}
+			else
+				ParseSpeech(Token_Choice, true);
+			index++;
+		};
+
+		if (PendingSpeech)
+			Speech(PendingSpeech);
+		else if (bPendingEnd)
+			End(true);
+		if (!bTermination && bSpeechCompleted)
+			CreateChoices();
+	}
+
+}
+
+//==========================================================================
+//
+//	RegisterContents
+//
+//	Reads and store info about imported conversation lumps and
+//  persons available for conversation
+//
+//==========================================================================
+
+void RegisterContents()
+{
+	int Token;
+	int personIndex = 0;
+
+	while (!AtEnd())
+	{
+		ExpectString();
+		Token = GetToken(String);
+		switch (Token)
+		{
+		case Token_Import:
+			ParseImport();
+			break;
+		case Token_Person:
+			ParsePersonInfo(personIndex++);
+			break;
+		default:
+			ScriptError(Token >= 0 ? Errors[Error_UnexpectedToken] : Errors[Error_UnknownToken], String);
+			return;
+		}
+	}
+}
+
+/*//==========================================================================
+//
+//	CopyContents
+//
+//	Copy contents to arrays
+//
+//==========================================================================
+
+void CopyContents(array<importinfo_t> * imports, array<personinfo_t> * persons)
+{
+	int i;
+	for (i = 0; i < ImportInfos.Num; i++)
+	{
+		(*imports).Num = (*imports).Num + 1;
+		(*imports)[(*imports).Num - 1].lumpName = ImportInfos[i].lumpName;
+	}
+	for (i = 0; i < PersonInfos.Num; i++)
+	{
+		(*persons).Num = (*persons).Num + 1;
+		//(*persons)[(*persons).Num - 1].conLump = PersonInfos[i].conLump;
+		//(*persons)[(*persons).Num - 1].picName = PersonInfos[i].picName;
+		(*persons)[(*persons).Num - 1].hPic = PersonInfos[i].hPic;
+		(*persons)[(*persons).Num - 1].Name = PersonInfos[i].Name;
+	}
+}*/
+
+//==========================================================================
+//
+//	GetToken
+//
+//	Get token index using tokens array
+//
+//==========================================================================
+
+int GetToken(string S)
+{
+	int i;
+	for (i = 0; i < NUM_TOKENS; i++)
+	{
+		if (!strcmp(Tokens[i], S))
+			return i;
+	}
+	return -1;
+}
+
+//==========================================================================
+//
+//	ParseImport
+//
+//==========================================================================
+
+void ParseImport()
+{
+	bool InBlock;
+	name lump;
+
+	ExpectString();
+	if (!strcmp(Tokens[Token_BlockBegin], String))
+	{
+		InBlock = true;
+		ExpectString();
+	}
+
+	do
+	{
+		if (InBlock && !strcmp(Tokens[Token_BlockEnd], String))
+			break;
+
+		lump = StrToName(String);
+		//ImportInfos.Num = ImportInfos.Num + 1;
+		//ImportInfos[ImportInfos.Num - 1].lumpName = lump;
+		//dprint("ConParser::ParseImport : registered import %n", lump);
+		ConParser cp = ConParser(SpawnObject(ConParser));
+		//cp.World = World;
+		cp.AddPersonRegistry = AddPersonRegistry;
+		cp.GetPersonRegistry = GetPersonRegistry;
+		cp.OpenLumpName(lump);
+		cp.RegisterContents();
+		//cp.CopyContents(&ImportInfos, &PersonInfos);
+		cp.Destroy();
+
+		if (InBlock)
+			ExpectString();
+		else
+			break;
+	}
+	while(true);
+}
+
+//==========================================================================
+//
+//	ParsePersonInfo
+//
+//==========================================================================
+
+void ParsePersonInfo(int personLumpIndex)
+{
+	int Token;
+	//personinfo_t pinfo;
+	string scriptName;
+	int scriptId;
+	Quest::personinfo_t * p_existingPInfo;
+
+	if (!GetPersonRegistry)
+		FatalError("ConParser::ParsePersonInfo : GetPersonRegistry delegate is not valid");
+	if (!AddPersonRegistry)
+		FatalError("ConParser::ParsePersonInfo : AddPersonRegistry delegate is not valid");
+
+	ExpectString();
+	scriptName = String;
+	ExpectNumber();
+	scriptId = Number;
+	//Expect(Tokens[Token_BlockBegin]);
+
+	p_existingPInfo = GetPersonRegistry(scriptName, scriptId);
+	if (!p_existingPInfo)
+	{
+		//World.PersonInfos.Num = PersonInfos.Num + 1;
+		//p_existingPInfo = &(World.PersonInfos[PersonInfos.Num - 1]);
+		p_existingPInfo = AddPersonRegistry();
+		p_existingPInfo->scriptName = scriptName;
+		p_existingPInfo->scriptId = scriptId;
+	}
+	p_existingPInfo->conLump = CurrentLump;
+	p_existingPInfo->conLumpIndex = personLumpIndex;
+
+	//dprint("ConParser::ParsePersonInfo : registered person name %s, mapid %i, conlump = %n, conlumpindex = %i",
+	//		p_existingPInfo->scriptName, p_existingPInfo->scriptId,
+	//		p_existingPInfo->conLump, p_existingPInfo->conLumpIndex);
+
+	Expect(Tokens[Token_BlockBegin]);
+	//SkipBlock(false);
+	
+	while (true)
+	{
+		ExpectString();
+		Token = GetToken(String);
+
+		if (Token < 0)
+		{
+			ScriptError(Errors[Error_UnknownToken], String);
+			return;
+		}
+
+		if (Token == Token_BlockEnd)
+			break;
+
+		/*if (Token == Token_BlockBegin)
+		{
+			SkipBlock(true);
+			continue;
+		}*/
+
+		if (!ValidateStatementLevel(Token, TOKEN_LEVEL_PERSONROOT))
+		{
+			ScriptError(Errors[Error_UnexpectedToken], Tokens[Token]);
+			return;
+		}
+
+		switch (Token)
+		{
+		/*case Token_PersonName:
+			ParsePersonName(p_existingPInfo);
+			break;
+		case Token_PersonPic:
+			ParsePersonPic(p_existingPInfo);
+			break;*/
+		case Token_PersonVar:
+			{
+				p_existingPInfo->Vars.Num = p_existingPInfo->Vars.Num + 1;
+				ParsePersonVar(&p_existingPInfo->Vars[p_existingPInfo->Vars.Num - 1]);
+			}
+			break;
+		default:
+			ParseStatement(Token, true);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	UpdatePersonProperties
+//
+//==========================================================================
+
+void UpdatePersonProperties(string Person)
+{
+	int Token;
+
+	if (LocatePerson(Person))
+	{
+		ConInfo.PersonName = "";
+		ConInfo.picName = '';
+		ConInfo.flatName = '';
+
+		if (!SetPersonInfo)
+			FatalError("ConParser::UpdatePersonProperties : SetPersonInfo delegate is not valid");
+
+		while (true)
+		{
+			ExpectString();
+			Token = GetToken(String);
+
+			if (Token < 0)
+			{
+				ScriptError(Errors[Error_UnknownToken], String);
+				return;
+			}
+
+			if (Token == Token_BlockEnd)
+				break;
+
+			if (Token == Token_BlockBegin)
+			{
+				SkipBlock(true);
+				continue;
+			}
+
+			if (!ValidateStatementLevel(Token, TOKEN_LEVEL_PERSONROOT))
+			{
+				ScriptError(Errors[Error_UnexpectedToken], Tokens[Token]);
+				return;
+			}
+
+			switch (Token)
+			{
+			case Token_PersonName:
+				if (ConInfo.PersonName)
+					ParsePersonName(NULL);	// skip
+				else
+					ParsePersonName(&ConInfo.PersonName);
+				break;
+			case Token_PersonPic:
+				if (ConInfo.picName)
+					ParsePersonPic(NULL);	// skip
+				else
+					ParsePersonPic(&ConInfo.picName);
+				break;
+			case Token_PersonFlat:
+				if (ConInfo.flatName)
+					ParsePersonPic(NULL);	// skip
+				else
+					ParsePersonPic(&ConInfo.flatName);
+				break;
+			default:
+				ParseStatement(Token, true);
+			}
+		}
+
+		SetPersonInfo(ConInfo.PersonName, ConInfo.picName, ConInfo.flatName);
+	}
+}
+
+//==========================================================================
+//
+//	LocatePerson
+//
+//==========================================================================
+
+bool LocatePerson(string Person)
+{
+	int Token;
+	int index;
+
+	//if (!World)
+	//	FatalError("ConParser::LocatePerson : World reference is not set to an instance of an object");
+	if (!GetPersonRegistry)
+		FatalError("ConParser::ParsePersonInfo : GetPersonRegistry delegate is not valid");
+
+	//personinfo_t * pinfo = World.GetPersonRegistry(Person);
+	Quest::personinfo_t * pinfo = GetPersonRegistry(Person, -1);
+	if (pinfo)
+	{
+		OpenLumpName(pinfo->conLump);
+		index = -1;
+		while (index < pinfo->conLumpIndex)
+		{
+			ExpectString();
+			Token = GetToken(String);
+
+			if (Token < 0)
+			{
+				ScriptError(Errors[Error_UnknownToken], String);
+				return false;
+			}
+
+			if (Token == Token_BlockBegin)
+			{
+				SkipBlock(true);
+				continue;
+			}
+
+			if (!ValidateStatementLevel(Token, TOKEN_LEVEL_ROOT))
+			{
+				ScriptError(Errors[Error_UnexpectedToken], Tokens[Token]);
+				return false;
+			}
+
+			switch (Token)
+			{
+			case Token_Person:
+				index++;
+				if (index < pinfo->conLumpIndex)
+				{
+					ExpectString();
+					ExpectNumber();
+				}
+				break;
+			}
+		}
+		Expect(pinfo->scriptName);
+		Expect(va("%i", pinfo->scriptId));
+		Expect(Tokens[Token_BlockBegin]);
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//	LocateSpeech
+//
+//  Note:
+//	This method assumes parser cursor is at the very beginning
+//	of 'person' block.
+//
+//==========================================================================
+
+bool LocateSpeech(int SpeechToken)
+{
+	if (SpeechToken == Token_Bye ||
+			SpeechToken == Token_Hello ||
+			SpeechToken == Token_Speech ||
+			SpeechToken == Token_Choice);
+	else
+	{
+		Error("ConParser::LocateSpeech : Token '%s' (%i) is not a speech token, parsing denied",
+			Tokens[SpeechToken], SpeechToken);
+		return false;
+	}
+
+	//while (!AtEnd())
+	//{
+		if (LocateStatement(SpeechToken, TOKEN_LEVEL_PERSONROOT))
+			return true;
+	//}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	LocateStatement
+//
+//==========================================================================
+
+bool LocateStatement(int Statement, int Level)
+{
+	int Token;
+
+	if (Statement < 0 || Statement > NUM_TOKENS)
+	{
+		Error("ConParser::LocateStatement : Unknown statement token index %i", Statement);
+		return false;
+	}
+
+	if (!ValidateStatementLevel(Statement, Level))
+	{
+		Error("ConParser::LocateStatement : Statement token '%s' (%i) is not allowed on script level %i",
+			Tokens[Statement], Statement, Level);
+		return false;
+	}
+
+	//dprint("ConParser::LocateStatement : %s, at Level %i", Tokens[Statement], Level);
+
+	while (!AtEnd())
+	{
+		ExpectString();
+		Token = GetToken(String);
+
+		if (Token < 0)
+		{
+			ScriptError(Errors[Error_UnknownToken], String);
+			return false;
+		}
+
+		if (Level != TOKEN_LEVEL_ROOT && Token == Token_BlockEnd)
+			break;
+
+		if (!ValidateStatementLevel(Token, Level))
+		{
+			ScriptError(Errors[Error_UnexpectedToken], Tokens[Token]);
+			return false;
+		}
+
+		if (Token == Statement)
+		{
+			//if (bVerifyCondition && CanCommandHaveCondition(CommandToken))
+			//{
+			//	return CheckCommandCondition(CommandToken);
+			//}
+			//dprint("ConParser::LocateStatement : success");
+			return true;
+		}
+
+		ParseStatement(Token, true);
+	}
+
+	//dprint("ConParser::LocateStatement : failure");
+	return false;
+}
+
+//==========================================================================
+//
+//	ValidateStatementLevel
+//
+//==========================================================================
+
+bool ValidateStatementLevel(int Token, int Level)
+{
+	switch (Level)
+	{
+	case TOKEN_LEVEL_ROOT:
+		switch (Token)
+		{
+		case Token_Import:
+		case Token_Person:
+			break;
+		default:
+			return false;
+		}
+		break;
+	case TOKEN_LEVEL_PERSONROOT:
+		switch (Token)
+		{
+		case Token_Bye:
+		case Token_Choice:
+		case Token_Hello:
+		case Token_PersonFlat:
+		case Token_PersonName:
+		case Token_PersonPic:
+		case Token_PersonVar:
+		case Token_Speech:
+			break;
+		default:
+			return false;
+		}
+		break;
+	case TOKEN_LEVEL_COMMON:
+	default:
+		break;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	ParseStatement
+//
+//	[CW] General parsing switch: determine which token is next
+//	     and call corresponding parsing method.
+//
+//==========================================================================
+
+void ParseStatement(int Statement, optional bool bSkipIfPossible)
+{
+	int Token;
+
+	//dprint("ConParser::ParseStatement : Statement = '%s', skip = %i", Tokens[Statement], bSkipIfPossible);
+
+	flag_LastStatementConditionResult = true;
+	flag_LastConditionResult = true;
+
+	if (bSkipIfPossible && IsSingleTokenStatement(Statement))
+	{
+		return;
+	}
+
+	// Some commands can be both inline and in-block
+	/*if (bSkipIfPossible && !IsInlineOnlyStatement(Statement))
+	{
+		ExpectString();
+		if (!strcmp(String, Tokens[Token_BlockBegin]))
+		{
+			SkipBlock(true);
+			return;
+		}
+		UnGet();
+	}*/
+
+	// Big command switch
+	switch (Statement)
+	{
+	case Token_PersonName:
+		ParsePersonName(bSkipIfPossible ? NULL : &ConInfo.PersonName);
+		break;
+	case Token_PersonPic:
+		ParsePersonPic(bSkipIfPossible ? NULL : &ConInfo.picName);
+		break;
+	case Token_PersonFlat:
+		ParsePersonPic(bSkipIfPossible ? NULL : &ConInfo.flatName);
+		break;
+	case Token_PersonVar:
+		ParsePersonVar(bSkipIfPossible ? NULL : &ConInfo.tempVar);
+		break;
+	case Token_Bye:
+		ParseSpeech(Token_Bye, bSkipIfPossible);
+		break;
+	case Token_Choice:
+		ParseSpeech(Token_Choice, bSkipIfPossible);
+		break;
+	case Token_Choices:
+		ParseChoices(bSkipIfPossible);
+		break;
+	case Token_Cls:
+		ParseCls(bSkipIfPossible);
+		break;
+	case Token_Comment:
+		ParseComment(bSkipIfPossible);
+		break;
+	case Token_Continue:
+		ParseContinue(bSkipIfPossible);
+		break;
+	case Token_End:
+		ParseEnd(bSkipIfPossible);
+		break;
+	case Token_Everybody:
+		ParseObjectReference(Token_Everybody, bSkipIfPossible);
+		break;
+	case Token_Game:
+		ParseObjectReference(Token_Game, bSkipIfPossible);
+		break;
+	case Token_Hello:
+		ParseSpeech(Token_Hello, bSkipIfPossible);
+		break;
+	case Token_If:
+		ParseIf(bSkipIfPossible);
+		break;
+	case Token_Initiator:
+		ParseObjectReference(Token_Initiator, bSkipIfPossible);
+		break;
+	case Token_Jump:
+		ParseJump(bSkipIfPossible);
+		break;
+	case Token_Level:
+		ParseObjectReference(Token_Level, bSkipIfPossible);
+		break;
+	case Token_Myself:
+		ParseObjectReference(Token_Myself, bSkipIfPossible);
+		break;
+	case Token_Player:
+		ParseObjectReference(Token_Player, bSkipIfPossible);
+		break;
+	case Token_Say:
+		ParseSay(bSkipIfPossible);
+		break;
+	case Token_Skip:
+		ParseSkip(bSkipIfPossible);
+		break;
+	case Token_Speech:
+		ParseSpeech(Token_Speech, bSkipIfPossible);
+		break;
+	case Token_Terminate:
+		ParseTerminate(bSkipIfPossible);
+		break;
+	case Token_World:
+		ParseObjectReference(Token_World, bSkipIfPossible);
+		break;
+	case Token_YesNo:
+		ParseYesNo(bSkipIfPossible);
+		break;
+	default:
+	}
+}
+
+//==========================================================================
+//
+//	IsSingleTokenStatement
+//
+//==========================================================================
+
+bool IsSingleTokenStatement(int Token)
+{
+	switch (Token)
+	{
+	case Token_Cls:
+	case Token_End:
+	case Token_Skip:
+	case Token_Terminate:
+		return true;
+	default:
+		return false;
+	}
+}
+
+//==========================================================================
+//
+//	IsInlineOnlyStatement
+//
+//	---------- CHECKME ----------------- UNUSED ----------------------
+//
+//==========================================================================
+
+bool IsInlineOnlyStatement(int Token)
+{
+	switch (Token)
+	{
+	case Token_Bye:
+	case Token_Choice:
+	case Token_Choices:
+	case Token_Else:
+	case Token_Hello:
+	case Token_If:
+	case Token_Import:
+	case Token_Person:
+	case Token_Speech:
+		return false;
+	default:
+		return true;
+	}
+}
+
+//==========================================================================
+//
+//	CanStatementHaveCondition
+//
+//	----------- CHECKME ---- Currently unused -------------------
+//
+//==========================================================================
+
+bool CanStatementHaveCondition(int Token)
+{
+	switch (Token)
+	{
+	case Token_Bye:
+	case Token_Choice:
+	case Token_Hello:
+	case Token_PersonName:
+	case Token_PersonPic:
+	case Token_Speech:
+		return true;
+	default:
+		return false;
+	}
+}
+
+//==========================================================================
+//
+//	SkipBlock
+//
+//==========================================================================
+
+void SkipBlock(bool bIsInside)
+{
+	int Token;
+	int Level;
+
+	if (bIsInside)
+		Level = 0;
+	else
+		Level = -1;
+
+	do
+	{
+		ExpectString();
+		Token = GetToken(String);
+
+		switch (Token)
+		{
+		case Token_BlockBegin:
+			Level++;
+			break;
+		case Token_BlockEnd:
+			Level--;
+			break;
+		default:
+			if (Level < 0)
+			{
+				if (Token < 0)
+					ScriptError(Errors[Error_UnknownToken], String);
+				else
+					ScriptError(Errors[Error_MissingTokenBeforeToken], Tokens[Token_BlockBegin], Tokens[Token]);
+			}
+		}
+	}
+	while (Level >= 0);
+}
+
+//==========================================================================
+//
+//	ParsePersonName
+//
+//==========================================================================
+
+void ParsePersonName(string * p_Name)
+{
+	ExpectString();
+	if (p_Name)
+		*p_Name = String;
+	else
+		String;
+	Expect(Tokens[Token_CommandSeparator]);
+	//if (p_Name)
+	//	dprint("ConParser::ParsePersonName : Person Name parsed: %s", *p_Name);
+}
+
+//==========================================================================
+//
+//	ParsePersonPic
+//
+//==========================================================================
+
+void ParsePersonPic(name * p_Pic)
+{
+	ExpectString();
+	if (p_Pic)
+		*p_Pic = StrToName(String);
+	else
+		String;
+	Expect(Tokens[Token_CommandSeparator]);
+}
+
+//==========================================================================
+//
+//	ParsePersonVar
+//
+//==========================================================================
+
+void ParsePersonVar(Quest::questvar_t * p_info)
+{
+	ExpectString();	// Name
+	if (p_info)
+		;
+	else String;
+	ExpectString();	// Type
+	if (p_info)
+		;
+	else String;
+	ExpectString();	// Initial value
+	if (p_info)
+		;
+	else String;
+	Expect(Tokens[Token_CommandSeparator]);
+}
+
+//==========================================================================
+//
+//	ParseSpeech
+//
+//==========================================================================
+
+void ParseSpeech(int SpeechStatement, optional bool bSkipIfPossible, optional bool bSkipExecution)
+{
+	int Token;
+	bool bNameCheck = false;
+
+	//dprint("ConParser::ParseSpeech : '%s', skip = %i", Tokens[SpeechStatement], bSkipIfPossible);
+
+	switch (SpeechStatement)
+	{
+	case Token_Bye:
+	case Token_Hello:
+		break;
+	case Token_Choice:
+		if (!bSkipIfPossible && WantedSpeechName)
+		{
+			ParseChoiceHeader(WantedSpeechName);
+			if (!flag_LastConditionResult)
+				bSkipExecution = true;
+			bNameCheck = flag_LastConditionResult;
+			//dprint("ConParser::ParseSpeech : set bNameCheck = %i", bNameCheck);
+		}
+		else
+			ParseChoiceHeader();
+		break;
+	case Token_Speech:
+		if (!bSkipIfPossible && WantedSpeechName)
+		{
+			ParseSpeechHeader(WantedSpeechName);
+			if (!flag_LastConditionResult)
+				bSkipExecution = true;
+			bNameCheck = flag_LastConditionResult;
+			//dprint("ConParser::ParseSpeech : set bNameCheck = %i", bNameCheck);
+		}
+		else
+			ParseSpeechHeader();
+		break;
+	}
+
+	do
+	{
+		ExpectString();
+		Token = GetToken(String);
+		switch (Token)
+		{
+		case Token_BlockBegin:
+			break;
+		case Token_If:
+			ParseIf(flag_LastStatementConditionResult, bSkipIfPossible);
+			break;
+		default:
+			ScriptError(Token >= 0 ? Errors[Error_UnexpectedToken] : Errors[Error_UnknownToken], String);
+		}
+	}
+	while (Token != Token_BlockBegin);
+
+	if (!bSkipIfPossible &&
+		(SpeechStatement == Token_Choice || SpeechStatement == Token_Speech) && WantedSpeechName)
+	{
+		flag_LastStatementConditionResult = flag_LastStatementConditionResult && bNameCheck;
+		//dprint("ConParser::ParseSpeech : set flag_LastStatementConditionResult = %i", flag_LastStatementConditionResult);
+	}
+
+	if (bSkipIfPossible || bSkipExecution)
+		SkipBlock(true);
+	else
+		ParseAndExecuteSpeechContents();
+}
+
+//==========================================================================
+//
+//	ParseChoiceHeader
+//
+//==========================================================================
+
+void ParseChoiceHeader(optional string CheckName)
+{
+	ExpectString();
+	if (strcmp(String, Tokens[Token_None]))
+		LastChoice.Name = String;
+	else
+		LastChoice.Name = "";
+	//dprint("ConParser::ParseChoiceHeader : CheckName = '%s', ChoiceName = '%s'",
+	//	CheckName, LastChoice.Name);
+	flag_LastConditionResult = false;
+	if (CheckName)
+		flag_LastConditionResult = !strcmp(LastChoice.Name, CheckName);
+	else
+		flag_LastConditionResult = true;
+	ExpectString();
+	LastChoice.Text = String;
+	ExpectString();
+	if (!strcmp(String, Tokens[Token_Hidden]))
+		LastChoice.bHidden = true;
+	else
+	{
+		LastChoice.bHidden = false;
+		UnGet();
+	}
+}
+
+//==========================================================================
+//
+//	ParseSpeechHeader
+//
+//==========================================================================
+
+void ParseSpeechHeader(optional string CheckName)
+{
+	ExpectString();
+	//dprint("ConParser::ParseSpeechHeader : CheckName = '%s', SpeechName = '%s'",
+	//	CheckName, String);
+	flag_LastConditionResult = false;
+	if (CheckName)
+	{
+		flag_LastConditionResult = !strcmp(String, CheckName);
+	}
+	else
+	{
+		String;
+		flag_LastConditionResult = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseAndExecuteSpeechContents
+//
+//==========================================================================
+
+void ParseAndExecuteSpeechContents()
+{
+	int Token;
+
+	bSpeechCompleted = false;
+
+	//dprint("ConParser::ParseAndExecuteSpeechContents : ");
+
+	while (true)
+	{
+		ExpectString();
+		Token = GetToken(String);
+
+		if(Token == Token_BlockEnd)
+		{
+			bSuspended = false;
+			bSpeechCompleted = true;
+			//dprint("ConParser::ParseAndExecuteSpeechContents : completed");
+			return;
+		}
+
+		if (bSuspended)
+		{
+			switch (Token)
+			{
+			case Token_Choices:
+			case Token_Skip:
+			case Token_YesNo:
+				bSuspended = false;
+			}
+		}
+
+		if (bSuspended)
+		{
+			if (!Suspend)
+				FatalError("ConParser::UpdatePersonProperties : Suspend delegate is not valid");
+			//dprint("ConParser::ParseAndExecuteSpeechContents : suspended");
+			UnGet();
+			Suspend();
+			break;
+		}
+
+		switch (Token)
+		{
+		case Token_Choices:
+		case Token_Cls:
+		case Token_Comment:
+		case Token_End:
+		case Token_Everybody:
+		case Token_Game:
+		case Token_Initiator:
+		case Token_Jump:
+		case Token_Level:
+		case Token_Myself:
+		case Token_Player:
+		case Token_Say:
+		case Token_Skip:
+		case Token_Terminate:
+		case Token_World:
+		case Token_YesNo:
+			ParseStatement(Token);
+			break;
+		case Token_Continue:
+			ScriptError(Errors[Error_TokenHasNoSenseHere], String);
+			break;
+		default:
+			ScriptError(Token >= 0 ? Errors[Error_UnexpectedToken] : Errors[Error_UnknownToken], String);
+		}
+
+		if (bSpeechCompleted)
+		{
+			//dprint("ConParser::ParseAndExecuteSpeechContents : execution terminated");
+			break;
+		}
+	};
+}
+
+//==========================================================================
+//
+//	ParseChoices
+//
+//==========================================================================
+
+void ParseChoices(optional bool bSkipIfPossible)
+{
+	if (!AddChoice)
+		FatalError("ConParser::ParseChoices : AddChoice delegate is not valid");
+
+	MustChoices.Num = 0;
+
+	Expect(Tokens[Token_BlockBegin]);
+	while (true)
+	{
+		ExpectString();
+		if (!strcmp(String, Tokens[Token_BlockEnd]))
+			break;
+		MustChoices.Num = MustChoices.Num + 1;
+		MustChoices[MustChoices.Num - 1] = String;
+	};
+
+	bSpeechCompleted = true;
+}
+
+//==========================================================================
+//
+//	ParseCls
+//
+//==========================================================================
+
+void ParseCls(optional bool bSkipIfPossible)
+{
+	Expect(Tokens[Token_CommandSeparator]);
+	if (!bSkipIfPossible)
+	{
+		if (!CleanScene)
+			FatalError("ConParser::ParseCls : CleanScene delegate is not valid");
+		CleanScene();
+	}
+}
+
+//==========================================================================
+//
+//	ParseComment
+//
+//==========================================================================
+
+void ParseComment(optional bool bSkipIfPossible)
+{
+	string Text;
+
+	ExpectString();
+	Text = String;
+	Expect(Tokens[Token_CommandSeparator]);
+
+	if (!bSkipIfPossible)
+	{
+		if (!PlayCue)
+			FatalError("ParseSay::ParsePersonInfo : PlayCue delegate is not valid");
+		//dprint("CONPARSER : comment: %s : \"%s\"", Text);
+		PlayCue("", "", Text, '');
+		bSuspended = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseContinue
+//
+//==========================================================================
+
+void ParseContinue(optional bool bSkipIfPossible)
+{
+	Expect(Tokens[Token_CommandSeparator]);
+}
+
+//==========================================================================
+//
+//	ParseEnd
+//
+//==========================================================================
+
+void ParseEnd(optional bool bSkipIfPossible)
+{
+	Expect(Tokens[Token_CommandSeparator]);
+	if (!bSkipIfPossible)
+	{
+		//End(true);
+		bPendingEnd = true;
+		bSpeechCompleted = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseIf
+//
+//==========================================================================
+
+void ParseIf(out bool Result, optional bool bSkipIfPossible)
+{
+	Result = false;
+	Result = true;
+}
+
+//==========================================================================
+//
+//	ParseJump
+//
+//==========================================================================
+
+void ParseJump(optional bool bSkipIfPossible, optional bool bIgnoreCommandSeparator)
+{
+	string SpeechName1, SpeechName2;
+
+	flag_LastConditionResult = true;
+	ExpectString();
+	if (!strcmp(String, Tokens[Token_BracketsOpen]))
+	{
+		ParseIf(flag_LastConditionResult, bSkipIfPossible);
+		ExpectString();
+		SpeechName1 = String;
+		ExpectString();
+		SpeechName2 = String;
+	}
+	else
+		SpeechName1 = String;
+	if (!bIgnoreCommandSeparator)
+		Expect(Tokens[Token_CommandSeparator]);
+	if (!bSkipIfPossible)
+	{
+		if (flag_LastConditionResult)
+		{
+			//dprint("ConParser::ParseJump : jump to speech '%s'", SpeechName1);
+			//Speech(SpeechName1);
+			if (!strcmp(SpeechName1, Tokens[Token_None]))
+				return;
+			PendingSpeech = SpeechName1;
+		}
+		else
+		{
+			//dprint("ConParser::ParseJump : jump to speech '%s'", SpeechName2);
+			//Speech(SpeechName2);
+			if (!strcmp(SpeechName2, Tokens[Token_None]))
+				return;
+			PendingSpeech = SpeechName2;
+		}
+		//if (!bSuspended)
+			bSpeechCompleted = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseSay
+//
+//==========================================================================
+
+void ParseSay(optional bool bSkipIfPossible)
+{
+	int Token;
+	string Who;
+	string ToWhom;
+	string Cue;
+	name Voice;
+
+	//dprint("ConParser::ParseSay : skip = %i", bSkipIfPossible);
+
+	ExpectString();
+	//dprint("ConParser::ParseSay : string 1 = '%s'", String);
+	Token = GetToken(String);
+	switch (Token)
+	{
+	case Token_Initiator:
+		Who = ConInfo.InitiatorName;
+		break;
+	case Token_Myself:
+		Who = ConInfo.PersonName;
+		break;
+	case Token_Player:
+		Who = ConInfo.Player /* PlayerName */ ? ConInfo.Player.PlayerName : "Player";
+		break;
+	default:
+		if (Token >= 0)
+			ScriptError(Errors[Error_UnexpectedToken], String);
+		else
+		{
+			
+		// TODO --- check possible other persons here
+		
+		}
+		// both 'Who' and 'ToWhom' skipped
+	}
+
+	if (Who)
+	{
+		ExpectString();
+		//dprint("ConParser::ParseSay : string 2 = '%s'", String);
+		Token = GetToken(String);
+		switch (Token)
+		{
+		case Token_Initiator:
+			ToWhom = ConInfo.InitiatorName;
+			break;
+		case Token_Myself:
+			ToWhom = ConInfo.PersonName;
+			break;
+		case Token_Player:
+			ToWhom = ConInfo.Player /* PlayerName */ ? ConInfo.Player.PlayerName : "Player";
+			break;
+		default:
+			if (Token >= 0)
+				ScriptError(Errors[Error_UnexpectedToken], String);
+			else
+			{
+				
+			// TODO --- check possible other persons here
+			
+			}
+		
+			// 'ToWhom' skipped
+		}
+	}
+	else
+		Who = ConInfo.PersonName;
+
+	if (ToWhom)
+	{
+		ExpectString();
+		//dprint("ConParser::ParseSay : string 3 = '%s'", String);
+	}
+	else
+		ToWhom = ConInfo.InitiatorName;
+	Cue = String;
+	ExpectString();
+	//dprint("ConParser::ParseSay : string 4 = '%s'", String);
+	if (strcmp(String, Tokens[Token_None]))
+		Voice = StrToName(String);
+
+	Expect(Tokens[Token_CommandSeparator]);
+
+	if (!bSkipIfPossible)
+	{
+		if (!PlayCue)
+			FatalError("ParseSay::ParsePersonInfo : PlayCue delegate is not valid");
+		//dprint("CONPARSER : %s sais to %s : \"%s\", play voice '%n'", Who, ToWhom, Cue, Voice);
+		PlayCue(Who, ToWhom, Cue, Voice);
+		bSuspended = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseSkip
+//
+//==========================================================================
+
+void ParseSkip(optional bool bSkipIfPossible, optional bool bIgnoreCommandSeparator)
+{
+	if (!bIgnoreCommandSeparator)
+		Expect(Tokens[Token_CommandSeparator]);
+	if (!bSkipIfPossible)
+	{
+		bSpeechCompleted = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseTerminate
+//
+//==========================================================================
+
+void ParseTerminate(optional bool bSkipIfPossible)
+{
+	Expect(Tokens[Token_CommandSeparator]);
+	if (!bSkipIfPossible)
+	{
+		Terminate();
+		bSpeechCompleted = true;
+	}
+}
+
+//==========================================================================
+//
+//	ParseYesNo
+//
+//==========================================================================
+
+void ParseYesNo(optional bool bSkipIfPossible)
+{
+	if (!bYesNoPending)
+	{
+		UnGet();
+		bYesNoPending = true;
+		bSuspended = true;
+		bSpeechCompleted = true;
+	}
+	else
+	{
+		int Token;
+
+		// Continue parsing
+		bYesNoPending = false;
+		ExpectString();
+		Token = GetToken(String);
+		switch (Token)
+		{
+		case Token_Jump:
+			if (bYesNoResult)
+				ParseJump(false, true);
+			else
+			{
+				ExpectString();
+				String;
+				ParseJump();
+			}
+			break;
+		case Token_Skip:
+		case Token_Continue:
+			if (bYesNoResult && Token == Token_Skip)
+				ParseSkip(false, true);
+			else if (!bYesNoResult)
+			{
+				ExpectString();
+				Token = GetToken(String);
+				switch (Token)
+				{
+				case Token_Skip:
+					ParseSkip(); break;
+				case Token_Continue:
+					ParseContinue(); break;
+				default:
+					ScriptError(Token >= 0 ? Errors[Error_UnexpectedToken] : Errors[Error_UnknownToken], String);
+				}
+			}
+			break;
+		default:
+			if (Token >= 0)
+				ScriptError(Errors[Error_UnexpectedToken], String);
+			else
+			{
+				// Var_name
+			}
+		}
+	}
+}
