@@ -43,6 +43,7 @@ actors/krpg/dragon.txt			actors/krpg/dragon.txt
 actors/krpg/ettin.txt			actors/krpg/ettin.txt
 actors/krpg/fighterweapons.txt	actors/krpg/fighterweapons.txt
 actors/krpg/firedemon.txt		actors/krpg/firedemon.txt
+actors/krpg/gold.txt			actors/krpg/gold.txt
 actors/krpg/iceguy.txt			actors/krpg/iceguy.txt
 actors/krpg/korax.txt			actors/krpg/korax.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
