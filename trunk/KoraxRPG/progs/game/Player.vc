@@ -119,10 +119,10 @@ void ResetPlayerOnSpawn()
 //
 //==========================================================================
 
-void GiveExperience(int exp)
+void GiveExperience(int Exp, optional bool bIgnoreExpModifier)
 {
 	// [FB] Multiply experience by game's exp modifier
-	experience += exp;
+	experience += Exp;
 	if(experience > 2100000666)
 	{
 		experience = 2100000666;
@@ -133,6 +133,26 @@ void GiveExperience(int exp)
 	{
 		ActivateLevel(exp_level + 1);
 	}
+}
+
+//==========================================================================
+//
+//  GiveLevels
+//
+//==========================================================================
+
+void GiveLevels(int levels)
+{
+	// [CW] This should give extra experience enouph to reach next levels
+	// regardless of game experience modifier;
+	// the experience earned since last level should be still kept, otherwise
+	// players may think it is unfair and try to cheat;
+	int exp_bak = experience;
+	while (levels--)
+	{
+		GiveExperience(next_level - experience, true);
+	}
+	experience += exp_bak;
 }
 
 //============================================================================
@@ -1610,7 +1630,7 @@ void Cheat_Gimme()
 	}
 	if (Cmd_CheckParm("exp"))
 	{
-		GiveExperience(next_level - experience);
+		GiveExperience(next_level - experience, true);
 		cprint("LOTS OF EXP");
 	}
 	// [CW] Could not help myself not doing this >8}=}
@@ -1726,7 +1746,11 @@ void ClientConversation(string Speaker, string SpeakingTo)
 	MainGameInfo(Level.Game).GameConParser.Wait = ConWait;
 	MainGameInfo(Level.Game).GameConParser.CloseScene = ConCloseScene;
 
-	MainGameInfo(Level.Game).GameConParser.PlayerName = PlayerName;
+	//MainGameInfo(Level.Game).GameConParser.PlayerName = PlayerName;
+	MainGameInfo(Level.Game).GameConParser.ConInfo.Game = MO.Level.Game;
+	MainGameInfo(Level.Game).GameConParser.ConInfo.World = MO.Level.Game.WorldInfo;
+	MainGameInfo(Level.Game).GameConParser.ConInfo.Level = MO.Level;
+	MainGameInfo(Level.Game).GameConParser.ConInfo.Player = self;
 
 	KRPGClientGameBase(ClGame).ConversationStart();
 
