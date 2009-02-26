@@ -356,6 +356,20 @@ void Thrust3d2(float angle2d, float move2d, float move3)
 	Velocity.z += move3 * 35.0;
 }
 
+//==========================================================================
+//
+//	FaceActorInstant
+//
+//	[CW] Not sure if there's a common method for such simple action..
+//
+//==========================================================================
+
+final void FaceActorInstant(EntityEx target)
+{
+	Angles.yaw = atan2(target.Origin.y - Origin.y,
+		target.Origin.x - Origin.x);
+}
+
 //**************************************************************************
 //
 //
@@ -467,7 +481,9 @@ bool UseThing(EntityEx Thing)
 		Error("Actor.KRPG::UseThing : Thing reference not set to an instance of an object");
 
 	if (Thing == self)
+	{
 		return false;
+	}
 
 	if (Thing.bUseSpecial && Thing.Special && Level.ExecuteActionSpecial(
 		Thing.Special, Thing.Args[0], Thing.Args[1], Thing.Args[2],
@@ -481,7 +497,9 @@ bool UseThing(EntityEx Thing)
 	//
 	//dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
 	if (Thing.ConversationID > 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
+	{
 		return true;
+	}
 	// Possible generic 'use' types
 	if (bCanRide && Actor(Thing).bSaddleHorse && !Actor(Thing).RidePartner)
 	{
