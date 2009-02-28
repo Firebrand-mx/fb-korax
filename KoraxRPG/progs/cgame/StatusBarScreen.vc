@@ -404,31 +404,33 @@ void SB_DrawMainBar()
 	}
 
 //[Korax]
-	SB_DrawNumber9(440, BAR_Y + 5, 0 + cl.sp_power, 1);
-	SB_DrawNumber9(470, BAR_Y + 5, 0 + cl.maxsp_power, 0);
+	SB_DrawNumber9(440, BAR_Y + 4, 0 + cl.sp_power, 1);
+	SB_DrawNumber9(470, BAR_Y + 4, 0 + cl.maxsp_power, 0);
 
 	SB_DrawNumber9(118, BAR_Y + 5, 0 + cl.exp_level, 0);
-//	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
-//	SB_DrawNumber9(580, 20, 0 + cl.next_level, 0);
+	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
+	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);
+	// [FB] WTF!!??
+	int shade = 60 - (cl.next_level ? 60 * (cl.experience / cl.next_level) : 0);
 	// [FB] Draw the 'next level' shaded bar
-	ShadeRect(91, 461, 60 - (60 * (cl.experience / cl.next_level)), 3, 0.99);
+	ShadeRect(91, 460, shade, 3, 0.99);
 
 
 	// Frags / health
 	if (ClGame.deathmatch)
 	{
-		DrawPic(BAR_X + 3, BAR_Y + 1, pic_kills);
-		SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, cl.Frags, 0);
+		DrawPic(BAR_X + 3, BAR_Y, pic_kills);
+		SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, cl.Frags, 0);
 	}
 	else
 	{
 		if (sb_health >= 25)
 		{
-			SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, sb_health, 0);
+			SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, sb_health, 0);
 		}
 		else
 		{
-			SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, sb_health, 1);
+			SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, sb_health, 1);
 		}
 	}
 
@@ -487,36 +489,36 @@ void SB_DrawMainBar()
 		sb_manaVial3 = 0;
 	}
 
-	SB_DrawMNumber(BAR_X + 43, BAR_Y + 20, ManaItem1 ? ManaItem1.Amount : 0);
-	SB_DrawMNumber(BAR_X + 73, BAR_Y + 20, ManaItem2 ? ManaItem2.Amount : 0);
-	SB_DrawMNumber(BAR_X + 103, BAR_Y + 20, ManaItem3 ? ManaItem3.Amount : 0);
-	DrawPic(BAR_X + 41, BAR_Y + 4, pic_manadim1[sb_mana1]);
-	DrawPic(BAR_X + 70, BAR_Y + 4, pic_manadim2[sb_mana2]);
-	DrawPic(BAR_X + 100, BAR_Y + 4, pic_manadim3[sb_mana3]);
-	DrawPic(BAR_X + 57, BAR_Y + 3, pic_manavial1[sb_manaVial1]);
-	DrawPic(BAR_X + 86, BAR_Y + 3, pic_manavial2[sb_manaVial2]);
-	DrawPic(BAR_X + 118, BAR_Y + 3, pic_manavial3[sb_manaVial3]);
-	ShadeRect(BAR_X + 58, BAR_Y + 4, 4, 22 -
+	SB_DrawMNumber(BAR_X + 43, BAR_Y + 19, ManaItem1 ? ManaItem1.Amount : 0);
+	SB_DrawMNumber(BAR_X + 73, BAR_Y + 19, ManaItem2 ? ManaItem2.Amount : 0);
+	SB_DrawMNumber(BAR_X + 103, BAR_Y + 19, ManaItem3 ? ManaItem3.Amount : 0);
+	DrawPic(BAR_X + 41, BAR_Y + 3, pic_manadim1[sb_mana1]);
+	DrawPic(BAR_X + 70, BAR_Y + 3, pic_manadim2[sb_mana2]);
+	DrawPic(BAR_X + 100, BAR_Y + 3, pic_manadim3[sb_mana3]);
+	DrawPic(BAR_X + 57, BAR_Y + 2, pic_manavial1[sb_manaVial1]);
+	DrawPic(BAR_X + 86, BAR_Y + 2, pic_manavial2[sb_manaVial2]);
+	DrawPic(BAR_X + 118, BAR_Y + 2, pic_manavial3[sb_manaVial3]);
+	ShadeRect(BAR_X + 58, BAR_Y + 3, 4, 22 -
 		(ManaItem1 ? 22 * ManaItem1.Amount / ManaItem1.MaxAmount : 0), 0.99);
-	ShadeRect(BAR_X + 87, BAR_Y + 4, 4, 22 -
+	ShadeRect(BAR_X + 87, BAR_Y + 3, 4, 22 -
 		(ManaItem2 ? 22 * ManaItem2.Amount / ManaItem2.MaxAmount : 0), 0.99);
-	ShadeRect(BAR_X + 119, BAR_Y + 4, 4, 22 -
+	ShadeRect(BAR_X + 119, BAR_Y + 3, 4, 22 -
 		(ManaItem3 ? 22 * ManaItem3.Amount / ManaItem3.MaxAmount : 0), 0.99);
 
 	// Ready artifact
 	if (cl.ArtifactFlash)
 	{
-		DrawPic(BAR_X + 148, BAR_Y + 3, pic_artiflash[cl.ArtifactFlash]);
+		DrawPic(BAR_X + 148, BAR_Y + 2, pic_artiflash[cl.ArtifactFlash]);
 	}
 	else if (cl.InvPtr)
 	{
 		DrawPic(BAR_X + 143, BAR_Y + 2, R_RegisterPic(cl.InvPtr.IconName));
-		SB_DrawINumber(BAR_X + 166, BAR_Y + 23, cl.InvPtr.Amount);
+		SB_DrawINumber(BAR_X + 166, BAR_Y + 22, cl.InvPtr.Amount);
 	}
 	// [FB] Active Spell
 	if (cl.SpellPtr)
 	{
-		DrawPic(BAR_X + 363, BAR_Y + 2, R_RegisterPic(cl.SpellPtr.IconName));
+		DrawPic(BAR_X + 363, BAR_Y + 1, R_RegisterPic(cl.SpellPtr.IconName));
 	}
 
 	// Weapon Pieces
@@ -546,7 +548,7 @@ void SB_DrawMainBar()
 
 	// [FB] Money
 	Coin gold = Coin(EntityEx(cl.MO).FindInventory(Coin));
-	SB_DrawNumber9(BAR_X + 210, BAR_Y + 15, gold ? gold.Amount : 0, 0);
+	SB_DrawNumber9(BAR_X + 210, BAR_Y + 14, gold ? gold.Amount : 0, 0);
 	
 	// Armor
 	HexenArmor HArmor = HexenArmor(EntityEx(cl.MO).FindInventory(
@@ -554,7 +556,7 @@ void SB_DrawMainBar()
 	int TotalArmorPoints = !HArmor ? 0 :
 		ftoi((HArmor.Slots[0] + HArmor.Slots[1] + HArmor.Slots[2] +
 		HArmor.Slots[3] + HArmor.Slots[4]) / 5.0);
-	SB_DrawNumber9(BAR_X + 250, BAR_Y + 15, TotalArmorPoints, 0);
+	SB_DrawNumber9(BAR_X + 250, BAR_Y + 14, TotalArmorPoints, 0);
 	
 	if (cl.SpellTime)
 	{
@@ -602,31 +604,31 @@ void SB_DrawKeyBar()
 	DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
 
 //[Korax]
-	SB_DrawNumber9(440, BAR_Y + 5, 0 + cl.sp_power, 1);
-	SB_DrawNumber9(470, BAR_Y + 5, 0 + cl.maxsp_power, 0);
+	SB_DrawNumber9(440, BAR_Y + 4, 0 + cl.sp_power, 1);
+	SB_DrawNumber9(470, BAR_Y + 4, 0 + cl.maxsp_power, 0);
 
-	SB_DrawNumber9(118, BAR_Y + 5, 0 + cl.exp_level, 0);
-//	SB_DrawNumber9(460, 20, 0 + cl.experience, 1);
-//	SB_DrawNumber9(580, 20, 0 + cl.next_level, 0);
+	SB_DrawNumber9(118, BAR_Y + 4, 0 + cl.exp_level, 0);
+//	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
+//	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);
 	// [FB] Draw the 'next level' shaded bar
-	ShadeRect(91, 461, 60 - (60 * (cl.experience / cl.next_level)), 3, 0.99);
+	ShadeRect(91, 460, 60 - (60 * (cl.experience / cl.next_level)), 3, 0.99);
 
 
 	// Frags / health
 	if (ClGame.deathmatch)
 	{
-		DrawPic(BAR_X + 3, BAR_Y + 1, pic_kills);
-		SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, cl.Frags, 0);
+		DrawPic(BAR_X + 3, BAR_Y, pic_kills);
+		SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, cl.Frags, 0);
 	}
 	else
 	{
 		if (sb_health >= 25)
 		{
-			SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, sb_health, 0);
+			SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, sb_health, 0);
 		}
 		else
 		{
-			SB_DrawNumber9(BAR_X + 4, BAR_Y + 15, sb_health, 1);
+			SB_DrawNumber9(BAR_X + 4, BAR_Y + 14, sb_health, 1);
 		}
 	}
 
@@ -670,7 +672,7 @@ void SB_DrawKeyBar()
 	// [FB] Active Spell
 	if (cl.SpellPtr)
 	{
-		DrawPic(BAR_X + 363, BAR_Y + 2, R_RegisterPic(cl.SpellPtr.IconName));
+		DrawPic(BAR_X + 363, BAR_Y + 1, R_RegisterPic(cl.SpellPtr.IconName));
 	}
 
 	if (cl.SpellTime)
