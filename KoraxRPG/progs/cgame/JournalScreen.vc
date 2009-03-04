@@ -1,0 +1,177 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1305 2008-03-01 09:20:29Z dj_jl $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class JournalScreen : KRPGMenuScreen;
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+ void OnDraw()
+{
+	::OnDraw();
+
+	SetFont('smallfont');
+	SetTextAlign(hleft, vtop);
+	DrawText(20, 14, "You're a %s of level: %i", CR_BRICK);
+	DrawPic(0, 0, R_RegisterPic('journal'));
+}
+
+//==========================================================================
+//
+//  OnDestroy
+//
+//==========================================================================
+
+void OnDestroy()
+{
+	::OnDestroy();
+
+	ClientGame(ClGame).HideJournalScreen();
+}
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	MenuTextButton		Btn;
+	int					currentY;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "Character Stats";
+	Btn.Activated = StatsOverview;
+	currentY += Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "Modify Arsenal";
+	Btn.Activated = ModifyArsenal;
+	currentY += Btn.Height;
+
+	// [FB] TODO: Implement these ones
+/*	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "Monster/Item Overview";
+	Btn.Activated = StuffOverview;
+	currentY += Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "Show Map";
+	Btn.Activated = ShowMap;
+	currentY += Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.Text = "Quests";
+	Btn.Activated = ShowQuests;
+	currentY += Btn.Height;*/
+}
+
+//==========================================================================
+//
+//	StatsOverview
+//
+//==========================================================================
+
+void StatsOverview(Object Sender)
+{
+	UpgradeScreen US;
+	
+	US = UpgradeScreen(ClGame.SpawnMenu(UpgradeScreen));
+	US.X = 60;
+	US.Y = 50;
+	ClGame.PushMenuScreen(US);
+}
+
+//==========================================================================
+//
+//	ModifyArsenal
+//
+//==========================================================================
+
+void ModifyArsenal(Object Sender)
+{
+	ArsenalScreen AS;
+	
+	AS = ArsenalScreen(ClGame.SpawnMenu(ArsenalScreen));
+	AS.X = 60;
+	AS.Y = 50;
+	ClGame.PushMenuScreen(AS);
+}
+
+//==========================================================================
+//
+//	OnKeyDown
+//
+//==========================================================================
+
+bool OnKeyDown(int key)
+{
+	::OnKeyDown(key);
+
+	switch (key)
+	{
+	case K_PAGEDOWN:
+		CycleNextChoice();
+		LocalSound('menu/cursor');
+		return true;
+
+	case K_PAGEUP:
+		CyclePrevChoice();
+		LocalSound('menu/cursor');
+		return true;
+
+	case K_ESCAPE:
+	case K_MOUSE2:
+		ClGame.PopMenu();
+		return true;
+	}
+}
+
+defaultproperties
+{
+/*	X = 0;
+	Y = 0;
+	ChoicesStartX = 20;
+	ChoicesStartY = 50;
+	ScaleX = 2.0;
+	ScaleY = 2.4;*/
+	Title = "JOURNAL";
+}
