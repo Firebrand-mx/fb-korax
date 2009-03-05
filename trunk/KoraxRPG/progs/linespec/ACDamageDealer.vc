@@ -40,6 +40,7 @@ float		DamageTime;
 float		DamageDelay;
 int			DamageValue;
 int			AccumulatedDamage;
+float		DamageLevelFactor;
 name		DamageType;
 
 
@@ -70,7 +71,12 @@ void Do(float deltaTime)
 		else
 			RealDamage = DamageValue;
 
-		ARecepient.Damage(none, AInstigator, RealDamage, DamageType);
+		if (DamageLevelFactor > 0.0)
+		{
+			RealDamage = ftoi(itof(RealDamage * Level) * DamageLevelFactor);
+		}
+
+		ARecepient.Damage(none, AInstigator, RealDamage, DamageType, true /* ignore armor */);
 
 		DamageTime = DamageDelay;
 		bDoDamage = false;
@@ -82,9 +88,6 @@ void Do(float deltaTime)
 
 defaultproperties
 {
+	bDontCallDo = false;	// AC default is true
 	bIsNegative = true;
-
-	bConditional = false;
-	bProportionalToTimeDelta = false;
-	DamageDelay = 0.0;	// do each tick (not recommended)
 }

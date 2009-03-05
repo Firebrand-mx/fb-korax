@@ -32,9 +32,21 @@
 
 class ACSpellConfusion : ActorCondition;
 
-bool bAlt;
-float counter;
-float da;
+enum
+{
+	CONFUSION_TYPE__FORWARDMOVE	= 0x0001,
+	CONFUSION_TYPE__SIDEMOVE	= 0x0002,
+	CONFUSION_TYPE__JUMPDUCK	= 0x0004,
+	CONFUSION_TYPE__ANGLESMOVE	= 0x0008,
+	CONFUSION_TYPE__ATTACK		= 0x0010,
+	CONFUSION_TYPE__INVENTORY	= 0x0020,
+	CONFUSION_TYPE__SPELLS		= 0x0040,
+	CONFUSION_TYPE__MASK		= 0x007F
+};
+
+float ConfusionTicker;
+int	ConfusionType;
+TAVec OldAngles;
 
 //==========================================================================
 //
@@ -44,20 +56,81 @@ float da;
 
 void Do(float deltaTime)
 {
-	if (ARecepient.Player)
+	ConfusionTicker -= deltaTime;
+
+	OldAngles = ARecepient.Angles;
+
+	if (ConfusionTicker > 0.0)
 	{
-		float dt = deltaTime * (25.0 * itof(Level));
-		counter += bAlt ? dt : -dt;
-		da = bAlt ? dt : -dt;
-		if (bAlt && counter > 75.0 ||
-				!bAlt && counter < 0.0)
-			bAlt = !bAlt;
-		ARecepient.Angles.yaw += da;
+		if (ARecepient.bIsPlayer)
+		{
+			ARecepient.Player.cprint("conf: %i", ConfusionType);
+			if (ConfusionType & CONFUSION_TYPE__FORWARDMOVE)
+			{
+				ARecepient.Player.ForwardMove = -ARecepient.Player.ForwardMove + ARecepient.Player.SideMove;
+			}
+			if (ConfusionType & CONFUSION_TYPE__SIDEMOVE)
+			{
+				ARecepient.Player.SideMove = -ARecepient.Player.SideMove + ARecepient.Player.ForwardMove;
+			}
+			if (ConfusionType & CONFUSION_TYPE__JUMPDUCK)
+			{
+				switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~BT_JUMP; break;
+				case 1: ARecepient.Player.Buttons |= BT_JUMP; break;
+				}
+				
+				switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~Player::BT_DUCK; break;
+				case 1: ARecepient.Player.Buttons |= Player::BT_DUCK; break;
+				}
+			}
+			if (ConfusionType & CONFUSION_TYPE__ANGLESMOVE)
+			{
+				// CHECKME -- need some fix, causes trouble
+				//ARecepient.Player.ViewAngles = OldAngles - (ARecepient.Player.ViewAngles - OldAngles);
+			}
+			if (ConfusionType & CONFUSION_TYPE__ATTACK)
+			{
+				switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~BT_ATTACK; break;
+				case 1: ARecepient.Player.Buttons |= BT_ATTACK; break;
+				}
+				if ((P_Random() & 7) < 3)
+				{
+					switch (P_Random() & 1)
+					{
+					case 0: ARecepient.Player.Buttons &= ~BT_ALT_ATTACK; break;
+					case 1: ARecepient.Player.Buttons |= BT_ALT_ATTACK; break;
+					}
+				}
+			}
+			if (ConfusionType & CONFUSION_TYPE__INVENTORY)
+			{
+			}
+			if (ConfusionType & CONFUSION_TYPE__SPELLS)
+			{
+			}
+		}
+		else
+		{
+		}
+	}
+	else
+	{
+		ConfusionType = P_Random() & CONFUSION_TYPE__MASK;
+		ConfusionTicker = Random() * 3.0;
 	}
 }
 
 defaultproperties
 {
 	bIsNegative = true;
+
+	bDoFromActorTick = true;
+	bPlayerSpecific = true;
 	CastMessage = "confused";
 }

@@ -178,6 +178,28 @@ void PutWeaponOnBelt(int Slot, int WpnIndex)
 
 //==========================================================================
 //
+//  RemoveWeapon
+//
+//	[CW] Since we may have a duplicate reference from the weapons belt,
+//	we should removed corresponding one if removed weapon was on belt.
+//
+//==========================================================================
+
+void RemoveWeapon(HexenWeapon Weapon)
+{
+	int i;
+	for (i = 0; i < KRPGDefs::NUMWEAPONSLOTS; i++)
+	{
+		if (WeaponsBelt[i] == Weapon)
+		{
+			WeaponsBelt[i] = none;
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
 //  ChangeWeaponEx
 //
 //  The actual changing of the weapon is done when the weapon psprite can
@@ -311,77 +333,6 @@ final Weapon GetSlotChangeWeaponEx(int Slot)
 			return ChoosePowered(WeaponsBelt[Slot]);
 		}
 	}
-
-	/* if (ReadyWeapon)
-	{
-		for (i = 0; i < LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; i++)
-		{
-			if (ClassIsChildOf(ReadyWeapon.Class, GI.WeaponSlots[Slot].Weapons[i]) ||
-				(ReadyWeapon.bPoweredUp && ReadyWeapon.SisterWeapon &&
-				ClassIsChildOf(ReadyWeapon.SisterWeapon.Class, GI.WeaponSlots[Slot].Weapons[i])
-				))
-			{
-				for (j = (i + LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1) %
-					LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT; j != i;
-					j = (j + LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1) %
-					LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT)
-				{
-					//Weapon Wpn = Weapon(EntityEx(MO).FindInventory(
-					//	GI.WeaponSlots[Slot].Weapons[j]));
-					// [CW] Temp, CHECKME!
-					HexenWeapon Wpn;
-					class<HexenWeapon> WpnCls;
-					foreach AllClasses(HexenWeapon, WpnCls)
-					{
-						if (!FindClassState(WpnCls, 'Ready'))
-						{
-							//	Abstract class.
-							continue;
-						}
-						if (!ClassIsChildOf(WpnCls, GI.WeaponSlots[Slot].Weapons[j]))
-						{
-							//	Wrong category
-							continue;
-						}
-
-						WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
-						Wpn = HexenWeapon(EntityEx(MO).FindInventory(WpnCls));
-						if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
-						{
-							return ChoosePowered(Wpn);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	for (i = LineSpecialGameInfo::MAX_WEAPONS_PER_SLOT - 1; i >= 0; i--)
-	{
-		// [CW] Temp, CHECKME!
-		HexenWeapon Wpn;
-		class<HexenWeapon> WpnCls;
-		foreach AllClasses(HexenWeapon, WpnCls)
-		{
-			if (!FindClassState(WpnCls, 'Ready'))
-			{
-				//	Abstract class.
-				continue;
-			}
-			if (!ClassIsChildOf(WpnCls, GI.WeaponSlots[Slot].Weapons[i]))
-			{
-				//	Wrong category
-				continue;
-			}
-
-			WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
-			Wpn = HexenWeapon(EntityEx(MO).FindInventory(WpnCls));
-			if (Wpn && Wpn.CheckAmmo(Weapon::FIRE_Either, false))
-			{
-				return ChoosePowered(Wpn);
-			}
-		}
-	} */
 
 	return ReadyWeapon;
 }

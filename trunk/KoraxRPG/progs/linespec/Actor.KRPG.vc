@@ -79,7 +79,21 @@ int				Team;			// this actor's Team ID
 //
 // [KoraxRPG] Actor Conditions
 //
-array<ActorCondition> Conditions;
+array<ActorCondition>	Conditions;
+
+/*// Some ACs may need to update inside Actor's or Player's Tick method;
+// this refers in the first place to those ACs that use and/or change
+// values that are being initialised just before Actor::Tick or
+// Player::PlayerTick is executed. In order to optimize process flow,
+// Actor/Player calls a delegate DoDelegate method of such AC's directly
+// using elements of this extra array, instead of checking each AC layed
+// on him/her.
+// It is up to Actor to add and remove those ACs into this array, ACs
+// should have bDoFromActorTick flag set for Actor to know which ACs to
+// add in the array.
+// It is up to AC to set DoDelegate to actual method.
+
+array<ActorCondition>	ACsToCallFromTick;*/
 
 //**************************************************************************
 //
@@ -252,6 +266,17 @@ bool Physics(float DeltaTime)
 
 void Tick(float deltaTime)
 {
+	// Process ACs that need it before anything else
+	int i = 0;
+	for (i = 0; i < Conditions.Num; i++)
+	{
+		if (Conditions[i] && Conditions[i].bDoFromActorTick &&
+			!Conditions[i].bPlayerSpecific)
+		{
+			Conditions[i].DoDelegate(deltaTime);
+		}
+	}
+
 	if (bMirrorImage && (!MirrorMaster || MirrorMaster.Health <= 0))
 		Kill();
 	if (Alertness > 0.0)

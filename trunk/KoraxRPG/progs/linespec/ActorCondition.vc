@@ -43,6 +43,14 @@ enum
 
 
 Actor	ARecepient;
+bool	bDoFromActorTick;	// this AC's DoDelegate delegate should be called
+							// by Actor inside Actor::Tick.
+bool	bPlayerSpecific;	// this AC has a specific action over Player actors;
+							// in particular, this means that for players
+							// DoDelegate delegate should be called from
+							// Player::Tick and not from Actor::Tick.
+
+delegate void DoDelegate(float deltaTime);
 
 string  CastMessage;
 
@@ -144,6 +152,23 @@ void Notify(int notification, EntityEx E, int param)
 
 //==========================================================================
 //
+//	Activate
+//
+//==========================================================================
+
+void Activate()
+{
+	::Activate();
+
+	// Set default DoDelegate
+	if (bDoFromActorTick)
+	{
+		DoDelegate = Do;
+	}
+}
+
+//==========================================================================
+//
 //	Dispell
 //
 //==========================================================================
@@ -160,7 +185,8 @@ void Dispell()
 
 defaultproperties
 {
-	CastMessage = "";
+	bDontCallDo = true;	// Each AC should have this flag explicitly set to false if Do calls are needed
 
+	CastMessage = "";
 	MaxAccumulatedLifePerLevel = -1.0;
 }
