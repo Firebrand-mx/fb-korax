@@ -320,10 +320,151 @@ int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage,
 //
 //==========================================================================
 
-void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DamageType)
+void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DmgType,
+		  optional bool bNoInvulnerability)
 {
-	Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
-		specified_DamageType ? DamageType : 'InstantKill');
+	//Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
+	//	specified_DamageType ? DamageType : 'InstantKill', true /* ignore armor */);
+
+	//
+	// Calling Damage() is not an option here, because damage could be
+	// decreased by skill level factor or not applied at all in some cases,
+	// players also may autoheal to prevent death.
+	// This method will ignore invulnerability and other conditions if
+	// needed.
+	//
+
+	if (!specified_DmgType)
+	{
+		DmgType = 'InstantKill';
+	}
+
+	if (!bShootable)
+	{
+		// shouldn't happen...
+		return;
+	}
+
+	if (Health <= 0)
+	{
+		if (DmgType == 'Ice')
+		{
+			return;
+		}
+		else if (bIceCorpse)	// frozen
+		{
+			StateTime = 0.1;
+			Velocity.x = 0.0;
+			Velocity.y = 0.0;
+		}
+		return;
+	}
+
+	if (bInvulnerable && !bNoInvulnerability)
+	{
+		if (bIsPlayer)
+		{
+			// For player, no exceptions
+			return;
+		}
+		else if (!inflictor || !inflictor.bDamageInvulnerable)
+		{
+			return;
+		}
+	}
+
+	// No armor piercing check
+	// No Spectral flag check
+
+	//	Andy Baker's Stealth monsters
+	if (bStealth)
+	{
+		Alpha = 1.0;
+		VisDir = -1;
+	}
+
+	if (bSkullFly)
+	{
+		if (bSkullFlyInvulnerable && !bNoInvulnerability)
+		{
+			// Invulnerable during charge attack
+			return;
+		}
+		Velocity = vector(0.0, 0.0, 0.0);
+		SetState(SeeState);
+	}
+
+	// Ignore dormant state
+	// Ignore skill level factor
+
+	// No special damage appliance
+
+	// No fire resistance
+	// No other possible damage factors
+
+	// No special damage appliance
+
+	// No damage thrust
+
+	int damage = bXDeath ? Health - GibsHealth + 1 : Health + 1;
+
+	// player specific
+	if (bIsPlayer)
+	{
+		// No misc player stuff
+
+		PlayerEx(Player).DamageFlash += itof(damage) / 35.0;
+		if (PlayerEx(Player).DamageFlash > 3.0)
+		{
+			PlayerEx(Player).DamageFlash = 3.0;	// teleport stomp does 10k points...
+		}
+	}
+
+	// do the damage    
+	Health -= damage;
+	if (Health <= 0)
+	{
+		// Death
+		Special1 = damage;
+		// check for special fire damage or ice damage deaths
+		if (DmgType == 'Fire')
+		{
+			if (bIsPlayer && !PlayerEx(Player).MorphTime)
+			{
+				// Check for flame death
+				if (!inflictor || !inflictor.bConditionalFireDamage ||
+					(Health > -50 && damage > 25))
+				{
+					DamageType = 'Fire';
+				}
+			}
+			else
+			{
+				DamageType = 'Fire';
+			}
+		}
+		else
+		{
+			DamageType = DmgType;
+		}
+		if (source && source.IsServant())
+		{
+			// Minotaur's kills go to his master
+			EntityEx master = source.Tracer;
+			// Make sure still alive and not a pointer to fighter head
+			if (master && master.bIsPlayer && (master.Player.MO == master))
+			{
+				source = master;
+			}
+		}
+		Died(source, inflictor);
+		return;
+	}
+	else
+	{
+		// Shouldn't happen
+		dprint("Actor.KRPG::Kill : damage did not kill actor");
+	}
 }
 
 //==========================================================================
@@ -783,6 +924,10 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 //
 //	A_LookEx
 //
+//	[CW] CHECKME!! -- This method currently is not used - at all;
+//  need to analyse its contents and move them somewhere else;
+//  or just delete all this at once
+//
 //	[KoraxRPG] Advanced AI
 //
 //==========================================================================
@@ -883,6 +1028,8 @@ bool A_LookEx(bool autoSetChase)
 //==========================================================================
 //
 //	A_LookExAuto
+//
+//	[CW] CHECKME!! -- This method currently is not used - at all;
 //
 //	[KoraxRPG]
 //
@@ -1716,7 +1863,6 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 											Actor Instigator, int level, float life_duration)
 {
 	ActorCondition AC;
-	//dprint("KRPGActor::CastCondition : in");
 
 	PurgeConditions();
 
@@ -1725,6 +1871,10 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 
 	if (AC)
 	{
+		//
+		// Possibly accumulate existing Condition's lifetime
+		//
+
 		float limit;
 
 		if (AC.MaxAccumulatedLifePerLevel < 0.0)
@@ -1744,26 +1894,28 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 	}
 	else
 	{
-		AC = ActorCondition(Spawn(ConditionClass));
+		//
+		// Spawn new Actor Condition
+		//
 
-		//dprint("KRPGActor::CastCondition : spawned new %i", AC);
+		AC = ActorCondition(Spawn(ConditionClass));
 
 		if (!AC.CanBeCastUpon(self))
 		{
-			//dprint("KRPGActor::CastCondition : cannot be cast upon, failure");
 			AC.Destroy();
 			AC = none;
 		}
 
 		if (AC)
 		{
-			//dprint("KRPGActor::CastCondition : spawned successfully");
 			Conditions.Num = Conditions.Num + 1;
 			Conditions[Conditions.Num - 1] = AC;
+
 			AC.ARecepient = self;
 			AC.AInstigator = Instigator;
 			AC.Level = level;
 			AC.LifeDuration = life_duration;
+
 			AC.Activate();
 		}
 	}
@@ -1775,8 +1927,6 @@ ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumula
 		if (AC.CastSound)
 			PlaySound(AC.CastSound, CHAN_VOICE);
 	}
-
-	//dprint("KRPGActor::CastCondition : out %i", AC);
 
 	return AC;
 }
