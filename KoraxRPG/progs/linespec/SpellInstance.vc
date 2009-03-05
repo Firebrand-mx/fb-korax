@@ -34,6 +34,7 @@ class SpellInstance : Thinker
 	abstract;
 
 Actor	AInstigator;	// the caster object
+bool	bDontCallDo;	// won't call Do method each tick
 
 name	CastSound;
 
@@ -78,7 +79,10 @@ void Tick(float deltaTime)
 		SPDrainTime = SPDrainDelay;
 	}
 
-	Do(deltaTime);
+	if (!bDontCallDo)
+	{
+		Do(deltaTime);
+	}
 }
 
 //==========================================================================
@@ -127,9 +131,5 @@ void Dispell()
 
 defaultproperties
 {
-	bIsNegative = false;
 	bIsMagic = true;
-
-	LifeTime = 0.0;
-	LifeDuration = 0.0;
 }

@@ -1,0 +1,256 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ACSpellTerror.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ACSpellTerror : ActorCondition;
+
+float BlindTicker;
+float ScreamTicker;
+float DropTicker;
+float FreezeTicker;
+float TakeCoverTicker;
+float ClientAmbienceTicker;
+
+bool bFreeze;
+bool bTakeCover;
+bool bClientAmbient;
+
+const int CLIENTAMBIENT_ORIGINID = 1000;
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	BlindTicker -= deltaTime;
+
+	if (BlindTicker <= 0.0)
+	{
+		if (CShiftOperation == CSHIFT_OP_NONE)
+		{
+			CShiftOperation = CSHIFT_OP_OR;
+			CShift = RGBA(0,0,0, Level > 5 ? 255 : Level * 50);
+			BlindTicker = Random() * 3.0 + 1.0;
+			ScreamTicker = 0.0;
+		}
+		else
+		{
+			CShiftOperation = CSHIFT_OP_NONE;
+			BlindTicker = Random() * 8.0;
+		}
+	}
+
+	ScreamTicker -= deltaTime;
+
+	if (ScreamTicker <= 0.0)
+	{
+		switch (P_Random() & 3)
+		{
+		case 0: ARecepient.PlaySound(StrToName("*falling"), CHAN_VOICE); break;
+		case 1: ARecepient.PlaySound(StrToName("*death"), CHAN_VOICE); break;
+		case 2: ARecepient.PlaySound(StrToName("*crazydeath"), CHAN_VOICE); break;
+		case 3: ARecepient.PlaySound(StrToName("*pain100"), CHAN_VOICE); break;
+		}
+
+		ScreamTicker = Random() * 3.0 + 1.0;
+	}
+
+	DropTicker -= deltaTime;
+
+	if (DropTicker <= 0.0)
+	{
+		if (P_Random() < Level * 5)
+		{
+			if (ARecepient.bIsPlayer && Player(ARecepient.Player).ReadyWeapon)
+			{
+				if (HexenWeapon(Player(ARecepient.Player).ReadyWeapon).Slot != 1)
+				{
+					ARecepient.DropInventory(Player(ARecepient.Player).ReadyWeapon);
+					// TODO: make player "select nothing"
+				}
+			}
+			else
+			{
+				// ?
+			}
+		}
+
+		DropTicker = Random() * 10.0;
+	}
+
+	FreezeTicker -= deltaTime;
+
+	if (bFreeze)
+	{
+		if (ARecepient.bIsPlayer)
+		{
+			ARecepient.Player.Buttons &= ~(BT_ATTACK | BT_USE | BT_JUMP | BT_ALT_ATTACK);
+			if (P_Random() < 100)
+			{
+				ARecepient.Player.ForwardMove = 0.0;
+				ARecepient.Player.SideMove = 0.0;
+			}
+			else
+			{
+				ARecepient.Player.ForwardMove /= 4.0;
+				ARecepient.Player.SideMove /= 4.0;
+			}
+		}
+		else
+		{
+			// TODO
+		}
+	}
+
+	if (FreezeTicker <= 0.0)
+	{
+		if (bFreeze)
+		{
+			bFreeze = false;
+			FreezeTicker = Random() * 4.0;
+		}
+		else
+		{
+			if (P_Random() < Level * 25)
+			{
+				bFreeze = true;
+				FreezeTicker = Random() * 3.0 + 1.0;
+			}
+			else
+			{
+				FreezeTicker = Random() * 4.0;
+			}
+		}
+	}
+
+	if (ARecepient.bIsPlayer)
+	{
+		TakeCoverTicker -= deltaTime;
+		ClientAmbienceTicker -= deltaTime;
+
+		if (bTakeCover)
+		{
+			ARecepient.Player.Buttons |= Player::BT_DUCK;
+		}
+
+		if (TakeCoverTicker <= 0.0)
+		{
+			if (bTakeCover)
+			{
+				bTakeCover = false;
+				TakeCoverTicker = Random() * 6.0;
+			}
+			else
+			{
+				if (P_Random() < Level * 15)
+				{
+					bTakeCover = true;
+					TakeCoverTicker = Random() * 3.0 + 0.5;
+				}
+				else
+				{
+					TakeCoverTicker = Random() * 6.0;
+				}
+			}
+		}
+
+		if (ClientAmbienceTicker <= 0.0)
+		{
+			if (bClientAmbient)
+			{
+				bClientAmbient = false;
+				ARecepient.Player.ClientStopSound(CLIENTAMBIENT_ORIGINID, CHAN_VOICE);
+				ClientAmbienceTicker = Random() * 4.0;
+			}
+			else
+			{
+				if (P_Random() < Level * 20)
+				{
+					name sndName;
+					switch (P_Random() & 7)
+					{
+					case 0:
+						sndName = 'KoraxSight'; break;
+					case 1:
+					case 2:
+						sndName = 'DemonSight'; break;
+					case 3:
+					case 4:
+						sndName = 'WraithSight'; break;
+					case 5:
+						sndName = 'CentaurSight'; break;
+					case 6:
+					case 7:
+						sndName = 'BishopSight'; break;
+					}
+					ARecepient.Player.ClientStartSound(GetSoundID(sndName),
+						ARecepient.Origin + vector(Random() * 512.0 - 256.0, Random() * 512.0 - 256.0, 0.0),
+						CLIENTAMBIENT_ORIGINID, CHAN_VOICE,
+						2.0, 1.0, true);
+					bClientAmbient = true;
+					ClientAmbienceTicker = Random() * 3.0 + 1.0;
+				}
+				else
+				{
+					ClientAmbienceTicker = Random() * 4.0;
+				}
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	Deactivate
+//
+//==========================================================================
+
+void Deactivate()
+{
+	if (ARecepient.bIsPlayer && bClientAmbient)
+	{
+		bClientAmbient = false;
+		ARecepient.Player.ClientStopSound(CLIENTAMBIENT_ORIGINID, CHAN_VOICE);
+	}
+}
+
+defaultproperties
+{
+	bIsNegative = true;
+
+	bDoFromActorTick = true;
+	bPlayerSpecific = true;
+	CastMessage = "terror!";
+	bCShiftFadeBeforeDeath = true;
+}
