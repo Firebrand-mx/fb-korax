@@ -74,9 +74,9 @@ replication
 		ParticleEffectEx;
 
 	reliable if (!bIsClient)
-		ClientUpgradeScreen, ClientArsenalScreen, ClientConversation,
-		ConCleanScene, ConSetPersonInfo, ConPlayCue, ConCleanChoices,
-		ConAddChoice, ConSuspend, ConWait, ConCloseScene;
+		ClientUpgradeScreen, ClientArsenalScreen, ClientJournalScreen,
+		ClientConversation, ConCleanScene, ConSetPersonInfo, ConPlayCue,
+		ConCleanChoices, ConAddChoice, ConSuspend, ConWait, ConCloseScene;
 
 	reliable if (bIsClient)
 		ConChoice, ConContinue;
@@ -438,6 +438,32 @@ void ClientUpgradeScreen()
 
 //==========================================================================
 //
+//  JournalScreen
+//
+//==========================================================================
+
+void JournalScreen()
+{
+	// [FB] Only if we are not berserking
+	if (!Actor(MO).GetCondition(ACSpellBerserk))
+	{
+		ClientJournalScreen();
+	}
+}
+
+//==========================================================================
+//
+//  ClientJournalScreen
+//
+//==========================================================================
+
+void ClientJournalScreen()
+{
+	KRPGClientGameBase(ClGame).ShowJournalScreen();
+}
+
+//==========================================================================
+//
 //  UpdateStats
 //
 //==========================================================================
@@ -567,8 +593,10 @@ void OnNetReborn(EntityEx OldMO)
 	}
 	GiveAmmo(Mana1, 0);
 	GiveAmmo(Mana2, 0);
+	GiveAmmo(RedMana, 0);
 	EntityEx(MO).FindInventory(Mana1).Amount = 25;
 	EntityEx(MO).FindInventory(Mana2).Amount = 25;
+	EntityEx(MO).FindInventory(RedMana).Amount = 25;
 	if (bestWeapon)
 	{
 		// Bring up the best weapon
@@ -825,7 +853,7 @@ void PlayerImpulse()
 			{
 				if (KA.bMonster)
 				{
-					KA.CastCondition(ACSpellShrink, true, Actor(MO), 4, 20.0);
+					KA.CastCondition(ACSpellShrink, true, Actor(MO), 4, 5.0);
 				}
 			}
 		}
@@ -934,6 +962,10 @@ void PlayerImpulse()
 	else if (impulse == KRPGDefs::IMPULSE__ARSENAL)
 	{
 		ArsenalScreen();
+	}
+	else if (impulse == KRPGDefs::IMPULSE__JOURNALSCREEN)
+	{
+		JournalScreen();
 	}
 	// [CW] TODO: replace by using KRPG conversation system
 	else if (impulse >= 200 && impulse <= 205)
@@ -1654,6 +1686,20 @@ void Cheat_Gimme()
 		GiveExperience(next_level - experience, true);
 		cprint("LOTS OF EXP");
 	}
+	if (Cmd_CheckParm("spells"))
+	{
+		foreach AllClasses(SpellItem, Cls)
+		{
+			if (!FindClassState(Cls, 'Spawn'))
+			{
+				//	Abstract class
+				continue;
+			}
+			Cls = class<Inventory>(GetClassReplacement(Cls));
+			EntityEx(MO).GiveInventoryType(Cls);
+		}
+		cprint("ALL SPELLS");	
+	}
 	// [CW] Could not help myself not doing this >8}=}
 	if (Cmd_CheckParm("peace"))
 	{
@@ -1939,7 +1985,7 @@ void PlayerMorphed(EntityEx OldMO)
 //
 //==========================================================================
 
-final bool A_SpiritsWithin()
+final bool A_SpiritsWithin(float limit)
 {
 	int i;
 	EntityEx tail;
@@ -1947,7 +1993,6 @@ final bool A_SpiritsWithin()
 	EntityEx mo;
 	EntityEx g;
 	float dist;
-	float limit;
 
 	foreach EntityEx(MO).AllThinkers(EntityEx, mo)
 	{
@@ -1957,7 +2002,7 @@ final bool A_SpiritsWithin()
 			continue;
 		}
 		dist = EntityEx(MO).DistTo(mo);
-		limit = 1000.0 * (itof(exp_level) * 0.1);
+
 		if (dist > limit)
 		{
 			continue;

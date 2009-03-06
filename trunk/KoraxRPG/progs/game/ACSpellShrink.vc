@@ -32,6 +32,11 @@
 
 class ACSpellShrink : ActorCondition;
 
+bool bActive;
+float sx;
+float sy;
+float time;
+
 //
 //	TODO!! --- IMPORTANT!!
 //	How to make it know if ScaleX/Y were changed in some other way meanwhile?
@@ -50,8 +55,10 @@ void Activate()
 	if (!ARecepient)
 		Error("ACSpellShrink::Activate : no reference to Recepient actor, bad algorythm?");
 
-	ARecepient.ScaleX *= 1.0 / itof(Level);
-	ARecepient.ScaleY *= 1.0 / itof(Level);
+	// [FB] Initialize variables
+	sx = ARecepient.default.ScaleX;
+	sy = ARecepient.default.ScaleY;
+	bActive = true;
 }
 
 //==========================================================================
@@ -67,14 +74,65 @@ void Deactivate()
 	if (!ARecepient)
 		Error("ACSpellShrink::Deactivate : no reference to Recepient actor, bad algorythm?");
 
-	ARecepient.ScaleX *= 1.0 * itof(Level);
-	ARecepient.ScaleY *= 1.0 * itof(Level);
+	bActive = false;
+	// [FB] We'll unshrink here, since 'Do' can't be called anymore :(
+	while (sx < ARecepient.default.ScaleX && sy < ARecepient.default.ScaleY)
+	{
+		sx += 0.5 * time;
+		sy += 0.5 * time;
+		
+		ARecepient.ScaleX = sx;
+		ARecepient.ScaleY = sy;		
+	}
 }
 
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
 
+void Do(float deltaTime)
+{
+	// [FB] Let's animate the 'shrinking' of monsters 'a lá Duke Nukem 3d'! :D
+	if (bActive)
+	{
+		if (sx > 1.0 / itof(Level))
+		{
+			sx -= 0.5 * deltaTime;
+		}
+		if (sy > 1.0 / itof(Level))
+		{
+			 sy -= 0.5 * deltaTime;
+		}
+		ARecepient.ScaleX = sx;
+		ARecepient.ScaleY = sy;
+	}
+	// FIXME: Find a way to execute these.... :-s
+	//		 or to pass deltaTime gradually to unshrinking
+	//		 in 'Deactivate' method
+/*	else if (!bActive)
+	{
+		if (sx < ARecepient.default.ScaleX)
+		{
+			sx += 0.5 * deltaTime;
+		}
+		if (sy < ARecepient.default.ScaleY)
+		{
+			sy += 0.5 * deltaTime;
+		}
+
+		ARecepient.ScaleX = sx;
+		ARecepient.ScaleY = sy;
+	}*/
+	
+	// [FB] FIXME: Hackity hack, hackity hack.... :P
+	time = deltaTime;
+}
 
 defaultproperties
 {
+	bDontCallDo = false;
 	bIsNegative = true;
 	CastMessage = "shrinked!!";
 }

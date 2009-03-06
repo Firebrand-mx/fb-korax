@@ -56,6 +56,27 @@ bool ActivateSpell(bool Pickup, int level)
 	{
 		Owner.PlaySound('BlastRadius', CHAN_ITEM);
 		HexenLevelInfo(Owner.Level).NoiseAlert(EntityEx(Owner), EntityEx(Owner));
+		// [FB] Calculate level depending the Wisdom value of the owner (if it's a player)
+		if(Player(Owner.Player).wisdom < 7)
+		{
+			Level = 1;
+		}
+		else if(Player(Owner.Player).wisdom > 7 && Player(Owner.Player).wisdom < 14)
+		{
+			Level = 2;
+		}
+		else if(Player(Owner.Player).wisdom > 14 && Player(Owner.Player).wisdom < 21)
+		{
+			Level = 3;
+		}
+		else if(Player(Owner.Player).wisdom > 21 && Player(Owner.Player).wisdom < 28)
+		{
+			Level = 4;
+		}
+		else if(Player(Owner.Player).wisdom > 28)
+		{
+			Level = 5;
+		}
 
 		foreach AllThinkers(Actor, mo)
 		{
@@ -86,58 +107,12 @@ bool ActivateSpell(bool Pickup, int level)
 				continue;
 			}
 			dist = Owner.DistTo(mo);
-			switch(level)
+			if (dist > BLAST_RADIUS_DIST / (6.0 - itof(Level)))
 			{
-				case 1:
-				case 2:
-				{
-					if (dist > BLAST_RADIUS_DIST / 7.0)
-					{
-						// Out of range
-						continue;
-					}
-					break;
-				}
-				case 3:
-				case 4:
-				{
-					if (dist > BLAST_RADIUS_DIST / 3.5)
-					{
-						// Out of range
-						continue;
-					}
-					break;
-				}
-				case 5:
-				{
-					if (dist > BLAST_RADIUS_DIST)
-					{
-						// Out of range
-						continue;
-					}
-					break;
-				}
+				// Out of range
+				continue;
 			}
-			switch(level)
-			{
-				case 1:
-				case 2:
-				{
-					Blast(mo, Actor(Owner), BLAST_FULLSTRENGTH / 0.5, level);
-					break;
-				}
-				case 3:
-				{
-					Blast(mo, Actor(Owner), BLAST_FULLSTRENGTH / 0.3, level);
-					break;
-				}
-				case 4:
-				case 5:
-				{
-					Blast(mo, Actor(Owner), BLAST_FULLSTRENGTH, level);
-					break;
-				}
-			}
+			Blast(mo, Actor(Owner), BLAST_FULLSTRENGTH, Level);
 		}
 		Player(Owner.Player).cprint("REPULSION SPELL ACTIVATED");
 		Player(Owner.Player).sp_power -= 5;
@@ -205,29 +180,8 @@ final void Blast(Actor victim, Actor source, float strength, int level)
 				victim.Target = source;
 			}
 		}
-		switch(level)
-		{
-			case 1:
-			case 2:
-			{
-				victim.Velocity.x = (ArtiBlastRadius::BLAST_SPEED / 0.45) * cos(angle) * 35.0;
-				victim.Velocity.y = (ArtiBlastRadius::BLAST_SPEED / 0.45) * sin(angle) * 35.0;
-				break;
-			}
-			case 3:
-			case 4:
-			{
-				victim.Velocity.x = (ArtiBlastRadius::BLAST_SPEED / 0.20) * cos(angle) * 35.0;
-				victim.Velocity.y = (ArtiBlastRadius::BLAST_SPEED / 0.20) * sin(angle) * 35.0;
-				break;
-			}
-			case 5:
-			{
-				victim.Velocity.x = ArtiBlastRadius::BLAST_SPEED * cos(angle) * 35.0;
-				victim.Velocity.y = ArtiBlastRadius::BLAST_SPEED * sin(angle) * 35.0;
-				break;
-			}
-		}
+		victim.Velocity.x = (ArtiBlastRadius::BLAST_SPEED / (6.0 - itof(Level))) * cos(angle) * 35.0;
+		victim.Velocity.y = (ArtiBlastRadius::BLAST_SPEED / (6.0 - itof(Level))) * sin(angle) * 35.0;
 
 		// Spawn blast puff
 		ang = atan2(source.Origin.y - victim.Origin.y,
@@ -244,12 +198,12 @@ final void Blast(Actor victim, Actor source, float strength, int level)
 
 		if (victim.bMissile)
 		{
-			victim.Velocity.z = 8.0 * 35.0;
+			victim.Velocity.z = (8.0  / (6.0 - itof(Level))) * 35.0;
 			A.Velocity.z = victim.Velocity.z;
 		}
 		else
 		{
-			victim.Velocity.z = 1000.0 / victim.Mass * 35.0;
+			victim.Velocity.z = ((1000.0 / victim.Mass) / (6.0 - itof(Level))) * 35.0;
 		}
 		if (victim.bIsPlayer)
 		{
