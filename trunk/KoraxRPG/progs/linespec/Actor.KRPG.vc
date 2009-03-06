@@ -81,20 +81,6 @@ int				Team;			// this actor's Team ID
 //
 array<ActorCondition>	Conditions;
 
-/*// Some ACs may need to update inside Actor's or Player's Tick method;
-// this refers in the first place to those ACs that use and/or change
-// values that are being initialised just before Actor::Tick or
-// Player::PlayerTick is executed. In order to optimize process flow,
-// Actor/Player calls a delegate DoDelegate method of such AC's directly
-// using elements of this extra array, instead of checking each AC layed
-// on him/her.
-// It is up to Actor to add and remove those ACs into this array, ACs
-// should have bDoFromActorTick flag set for Actor to know which ACs to
-// add in the array.
-// It is up to AC to set DoDelegate to actual method.
-
-array<ActorCondition>	ACsToCallFromTick;*/
-
 //**************************************************************************
 //
 //
@@ -2019,15 +2005,15 @@ void NotifyConditions(int notification, EntityEx E, int param)
 //
 //==========================================================================
 
-void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, TVec spread,
+void SpawnSphericalEffect(class<Actor> EffectType, TVec origin, int amount, TVec spread,
 							optional float RadialVelocity, optional TVec DirectVelocity)
 {
 	int i,c;
 	TVec v;
 	EntityEx ee;
 
-	c = P_Random() % amount;
-	for (i = 0; i < c; i++)
+	//c = P_Random() % amount;
+	for (i = 0; i < amount; i++)
 	{
 		v = origin + vector((Random() - 0.5) * spread.x,
 									(Random() - 0.5) * spread.y,
@@ -2043,6 +2029,30 @@ void SpawnSphericalEffect(class<EntityEx> EffectType, TVec origin, int amount, T
 	}
 }
 
+//==========================================================================
+//
+//	A_FadeAway
+//
+//==========================================================================
+
+final void A_FadeAway(float FadeAlpha, float FadeScale, optional int FadeHealth)
+{
+	if (FadeAlpha > 0.0)
+	{
+		Alpha -= FadeAlpha;
+	}
+	if (FadeScale > 0.0)
+	{
+		ScaleX -= FadeScale;
+		ScaleY -= FadeScale;
+	}
+	if (FadeHealth > 0)
+	{
+		Health -= FadeHealth;
+	}
+}
+
+// CHECKME -- is this needed here?
 int decorate_default_health
 {
 	get { return default.Health; }

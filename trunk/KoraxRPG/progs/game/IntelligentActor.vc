@@ -30,6 +30,61 @@
 //**
 //**************************************************************************
 
+//==========================================================================
+//
+// [CW] I am writing following remarks mostly because I skipped some time
+// since I last reviewed my monster AI, and also some general changes
+// happened, like many monster classes moved to decorate, and such, so
+// I need a memo for myself.
+// These comments will hopefully be useful also in case someone else wants
+// to edit monster AI for KRPG project, or any other project.
+//
+//
+// So, basically IntelligentActor class contains what we call advanced AI
+// for KRPG monsters. I was also adding some advanced methods to Actor class
+// (they could be found in Actor.KRPG.vc). They are low-level AI methods
+// like peforming a walk.
+//
+// The main difference, introduced by new AI is a A_DoAI procedure run
+// every now and then (frequency determined by AI_ROUTINE_DELAY constant,
+// in seconds). It has a power to override normal actor behavior.
+// A_DoAI processes following:
+//
+// 1) While in 'Chase' state calls A_CheckThreat to detect any possible threat
+//   in the area. This includes hearing some noise or seeing enemy. If
+//   bEvadeMelee flag is set, it also makes actor try evade any
+//   approaching opponents.
+// 2) Calls DoTasks to process any Tasks given to this actor, if any. Task
+//   usually sets new targets for enemy movement and/or attack.
+//
+// Other additions are "AI-actions": A_LookAI, A_ChaseAI, etc.
+//
+// A_LookAI performs functions similar to original A_Look by calling
+// A_CheckThreat.
+//
+// A_ChaseAI is more complex than its predecessor A_Chase. It updates
+// known target position every time called, thus making actor chase
+// target thing in more realistic way; it also calls DoRoute to let
+// actor follow precalculated route to faraway destination (if it is
+// appliable in current situation. Finally, A_ChaseAI sets an immediate
+// "goto" point and calls DoMove method, which does the actual movement.
+// Notice, that DoMove is the delegate, that is a reference to a function;
+// DoMove should be set to particular method either once (in BeginPlay),
+// or each time A_ChaseAI is about to be called, depending on what fits
+// actor implementation more. There are two "default" methods for this
+// purpose: A_NormalDoMove and A_FastDoMove (last is for bosses mainly).
+//
+// All of the "AI-actions" must set StateAction value ahead of anything else.
+// It comes to be very important when Tasks are processed. For example, it
+// prevents Centaurs from stucking in invulnerability mode by delaying any
+// orders he receive until Centaur return to normal chase mode.
+//
+//--------------------------------------------------------------------------
+//
+//
+//
+//
+
 class IntelligentActor : Actor;
 
 //
@@ -289,6 +344,30 @@ void Died(EntityEx source, EntityEx inflictor)
 
 //==========================================================================
 //
+//	A_AISetInvulnerable
+//
+//==========================================================================
+
+final void A_AISetInvulnerable()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	::A_SetInvulnerable();
+}
+
+//==========================================================================
+//
+//	A_AISetInvulnerable
+//
+//==========================================================================
+
+final void A_AIUnSetInvulnerable()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	::A_UnSetInvulnerable();
+}
+
+//==========================================================================
+//
 //	A_AISetReflectiveInvulnerable
 //
 //==========================================================================
@@ -411,14 +490,10 @@ void Tick(float deltaTime)
 		AITime -= deltaTime;
 		if (AITime < 0.0)
 		{
-			/* // [CW] evil coder easter-egg... :))))))))
-			if (P_Random() < 200 && P_Random() < 100 && P_Random() < 10 && P_Random() < 5 && P_Random() <= 1)
+			if (Health <= 0 || bDormant || StateAction == STATE_ACTION__SPECIAL)
 			{
-				FatalError("I am tired of this stupid game... should we play tetris instead?");
-				return;
-			}*/
-			if (Health <= 0 ||	bDormant ||	StateAction == STATE_ACTION__SPECIAL)
 				AITime = 0.0;
+			}
 			else
 			{
 				A_DoAI();
@@ -2494,6 +2569,19 @@ final void A_DragonFlapAI()
 		PlaySound(ActiveSound, CHAN_VOICE);
 	}
 }
+
+//==========================================================================
+//
+//	A_MartyrFlight
+//
+//==========================================================================
+
+final void A_MartyrFlight()
+{
+	A_SpawnItem(FireDemonMartyrFX2);
+	A_JumpIfCloser(128.0, FindState('Explode'));
+}
+
 
 defaultproperties
 {
