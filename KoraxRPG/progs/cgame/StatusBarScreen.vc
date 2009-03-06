@@ -407,13 +407,10 @@ void SB_DrawMainBar()
 	SB_DrawNumber9(440, BAR_Y + 4, 0 + cl.sp_power, 1);
 	SB_DrawNumber9(470, BAR_Y + 4, 0 + cl.maxsp_power, 0);
 
-	SB_DrawNumber9(118, BAR_Y + 5, 0 + cl.exp_level, 0);
-	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
-	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);
-	// [FB] WTF!!??
-	int shade = 60 - (cl.next_level ? 60 * (cl.experience / cl.next_level) : 0);
-	// [FB] Draw the 'next level' shaded bar
-	ShadeRect(91, 460, shade, 3, 0.99);
+	SB_DrawNumber9(118, BAR_Y + 4, 0 + cl.exp_level, 0);
+/*	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
+	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);*/
+	ShadeRect(91, 460, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0), 3, 0.99);
 
 
 	// Frags / health
@@ -547,7 +544,7 @@ void SB_DrawMainBar()
 	}*/
 
 	// [FB] Money
-	Coin gold = Coin(EntityEx(cl.MO).FindInventory(Coin));
+	Inventory gold = EntityEx(cl.MO).FindInventory(Coin);
 	SB_DrawNumber9(BAR_X + 210, BAR_Y + 14, gold ? gold.Amount : 0, 0);
 	
 	// Armor
@@ -610,8 +607,7 @@ void SB_DrawKeyBar()
 	SB_DrawNumber9(118, BAR_Y + 4, 0 + cl.exp_level, 0);
 //	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
 //	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);
-	// [FB] Draw the 'next level' shaded bar
-	ShadeRect(91, 460, 60 - (60 * (cl.experience / cl.next_level)), 3, 0.99);
+	ShadeRect(91, 460, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0), 3, 0.99);
 
 
 	// Frags / health

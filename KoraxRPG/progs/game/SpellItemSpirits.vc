@@ -42,10 +42,34 @@ class SpellItemSpirits : SpellItem;
 
 bool ActivateSpell(bool Pickup, int level)
 {
+	float limit;
 	if(Player(Owner.Player).sp_power >= 5)
 	{
+		// [FB] Calculate level depending the Wisdom value of the owner (if it's a player)
+		if(Player(Owner.Player).intelligence < 7)
+		{
+			Level = 1;
+		}
+		else if(Player(Owner.Player).intelligence > 7 && Player(Owner.Player).intelligence < 14)
+		{
+			Level = 2;
+		}
+		else if(Player(Owner.Player).intelligence > 14 && Player(Owner.Player).intelligence < 21)
+		{
+			Level = 3;
+		}
+		else if(Player(Owner.Player).intelligence > 21 && Player(Owner.Player).intelligence < 28)
+		{
+			Level = 4;
+		}
+		else if(Player(Owner.Player).intelligence > 28)
+		{
+			Level = 5;
+		}
+		limit = 1000.0 * ((itof(Level) + itof(Player(Owner.Player).exp_level)) * 0.1);
+		
 		Owner.PlaySound('UseArtifact', CHAN_ITEM);
-		if (Player(Owner.Player).A_SpiritsWithin())
+		if (Player(Owner.Player).A_SpiritsWithin(limit))
 		{
 			Player(Owner.Player).centreprint("SPIRITS WITHIN ACTIVATED");
 			Player(Owner.Player).sp_power -= 5;
