@@ -3,6 +3,23 @@
 	Generic Attacks for KRPG
 */
 
+
+//============================================================================
+//
+//  A_SimpleMissileAttack
+//
+//============================================================================
+
+final void A_SimpleMissileAttack(class<Actor> MissileType, name SoundName,
+								 optional bool bPlaySoundAlways)
+{
+	EntityEx mo = SpawnMissile(Target, MissileType);
+	if (mo || bPlaySoundAlways)
+	{
+		PlaySound(SoundName, CHAN_WEAPON);
+	}
+}
+
 //==========================================================================
 //
 //	A_AimGrenade
@@ -136,4 +153,22 @@ final bool AimThrowAngle(class<Actor> ItemType, EntityEx AimTarget, float Pitch,
 		return false;
 	}
 	return true;
+}
+
+//==========================================================================
+//
+//  A_MartyrDetonate
+//
+//==========================================================================
+
+final void A_MartyrDetonate(int damage, int distance, class<Actor> EffectType,
+							int EffectAmount, float EffectSpread, optional float EffectRadialVelocity)
+{
+	Velocity = vector(0.0, 0.0, 0.0);
+
+	Damage(none, none, Health - GibsHealth);
+
+	decorate_A_Explode(damage, distance, false, true);
+	SpawnSphericalEffect(EffectType, GetCentre(), EffectAmount, vector(EffectSpread, EffectSpread, EffectSpread),
+							EffectRadialVelocity);
 }
