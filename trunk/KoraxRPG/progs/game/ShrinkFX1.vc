@@ -1,0 +1,167 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: ShrinkFX1.vc 3792 2008-09-19 21:11:15Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ShrinkFX1 : Actor;
+
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (victim.bMonster && !victim.bBoss)
+	{
+		Actor(victim).CastCondition(ACSpellShrink, true, Actor(source), 4, 20.0);
+	}
+	return -1;
+}
+
+//==========================================================================
+//
+//  A_ShrinkSpawnA
+//
+//==========================================================================
+
+final void A_ShrinkSpawnA()
+{
+	Actor A;
+
+	A = Spawn(ShrinkFX2, Origin);
+	if (A)
+	{
+		A.Angles.yaw = Angles.yaw;
+		A.Target = Target;
+		A.Velocity = Velocity / 2.0;
+		A.Special1 = 1;	// Lifetime countdown
+	}
+}
+
+//==========================================================================
+//
+//  A_ShrinkSpawnB
+//
+//==========================================================================
+
+final void A_ShrinkSpawnB()
+{
+	Actor A;
+
+	A = Spawn(ShrinkFX3, Origin);
+	if (A)
+	{
+		A.Angles.yaw = Angles.yaw;
+		A.Target = Target;
+		A.Velocity = Velocity / 2.0;
+		A.Special1 = 1;	// Lifetime countdown
+	}
+}
+
+//==========================================================================
+//
+//  A_ShrinkSpawnC
+//
+//==========================================================================
+
+final void A_ShrinkSpawnC()
+{
+	Actor A;
+
+	A = Spawn(ShrinkFX4, Origin);
+	if (A)
+	{
+		A.Angles.yaw = Angles.yaw;
+		A.Target = Target;
+		A.Velocity = Velocity / 2.0;
+		A.Special1 = 1;	// Lifetime countdown
+	}
+}
+
+//==========================================================================
+//
+//  A_ShrinkSpawnD
+//
+//==========================================================================
+
+final void A_ShrinkSpawnD()
+{
+	Actor A;
+
+	A = Spawn(ShrinkFX5, Origin);
+	if (A)
+	{
+		A.Angles.yaw = Angles.yaw;
+		A.Target = Target;
+		A.Velocity = Velocity / 2.0;
+		A.Special1 = 1;	// Lifetime countdown
+	}
+}
+
+//==========================================================================
+//
+//  A_CheckTeleRing
+//
+//==========================================================================
+
+final void A_CheckTeleRing()
+{
+	if (Special1-- <= 0)
+	{
+		SetState(FindState('Death'));
+	}
+}
+
+states
+{
+Spawn:
+	TRNG E 5 Bright
+	TRNG D 4 Bright
+	TRNG C 3 Bright A_ShrinkSpawnC
+	TRNG B 3 Bright A_ShrinkSpawnB
+	TRNG A 3 Bright A_ShrinkSpawnA
+	TRNG B 3 Bright A_ShrinkSpawnB
+	TRNG C 3 Bright A_ShrinkSpawnC
+	TRNG D 3 Bright A_ShrinkSpawnD
+	Goto Spawn+2
+Death:
+	TRNG E 3 Bright
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 16.0;
+	Speed = 700.0;
+	MissileDamage = 5;
+	RenderStyle = STYLE_Add;
+	bMissile = true;
+	bNoBlockmap = true;
+	bDropOff = true;
+	bNoGravity = true;
+	bNoTeleport = true;
+	bBloodlessImpact = true;
+	bBloodSplatter = true;
+}
