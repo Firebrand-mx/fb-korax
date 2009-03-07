@@ -32,10 +32,11 @@
 
 class ACSpellShrink : ActorCondition;
 
-bool bActive;
+//bool bActive;
+float sxOld, syOld;
 float sx;
 float sy;
-float time;
+//float time;
 
 //
 //	TODO!! --- IMPORTANT!!
@@ -56,11 +57,62 @@ void Activate()
 		Error("ACSpellShrink::Activate : no reference to Recepient actor, bad algorythm?");
 
 	// [FB] Initialize variables
-	sx = ARecepient.default.ScaleX;
-	sy = ARecepient.default.ScaleY;
-	bActive = true;
+	//sx = ARecepient.default.ScaleX;
+	//sy = ARecepient.default.ScaleY;
+	// [CW] We have scale randomization in Actor.KRPG::BeginPlay, so we cannot use default values here
+	sxOld = ARecepient.ScaleX;
+	syOld = ARecepient.ScaleY;
+	sx = sxOld;
+	sy = syOld;
+	//bActive = true;
 }
 
+//==========================================================================
+//
+//	BirthTick
+//
+//==========================================================================
+
+void BirthTick(float deltaTime)
+{
+	// [FB] Let's animate the 'shrinking' of monsters 'a lá Duke Nukem 3d'! :D
+	sx -= 0.5 * deltaTime;
+	sy -= 0.5 * deltaTime;
+
+	if (sx <= sxOld / itof(Level) || sy <= syOld / itof(Level))
+	{
+		sx = sxOld / itof(Level);
+		sy = syOld / itof(Level);
+		FinishActivation();
+	}
+
+	ARecepient.ScaleX = sx;
+	ARecepient.ScaleY = sy;
+}
+
+//==========================================================================
+//
+//	DeathTick
+//
+//==========================================================================
+
+void DeathTick(float deltaTime)
+{
+	sx += 0.5 * deltaTime;
+	sy += 0.5 * deltaTime;
+
+	if (sx >= sxOld || sy >= syOld)
+	{
+		sx = sxOld;
+		sy = syOld;
+		FinishDeactivation();
+	}
+
+	ARecepient.ScaleX = sx;
+	ARecepient.ScaleY = sy;
+}
+
+/*
 //==========================================================================
 //
 //	Deactivate
@@ -85,7 +137,9 @@ void Deactivate()
 		ARecepient.ScaleY = sy;		
 	}
 }
+*/
 
+/*
 //==========================================================================
 //
 //	Do
@@ -124,15 +178,19 @@ void Do(float deltaTime)
 
 		ARecepient.ScaleX = sx;
 		ARecepient.ScaleY = sy;
-	}*/
+	}*//*
 	
 	// [FB] FIXME: Hackity hack, hackity hack.... :P
 	time = deltaTime;
 }
+*/
 
 defaultproperties
 {
-	bDontCallDo = false;
+	bPlayActivation = true;
+	bPlayDeactivation = true;
+	// bDontCallDo = false;
 	bIsNegative = true;
+
 	CastMessage = "shrinked!!";
 }
