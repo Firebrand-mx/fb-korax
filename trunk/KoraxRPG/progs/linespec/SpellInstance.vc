@@ -33,8 +33,10 @@
 class SpellInstance : Thinker
 	abstract;
 
-Actor	AInstigator;	// the caster object
-bool	bDontCallDo;	// won't call Do method each tick
+Actor	AInstigator;		// the caster object
+bool	bPlayActivation;	// call BirthTick until bActive flag is not set
+bool	bPlayDeactivation;	// call DeathTick until bShouldDestroy flag is set or explicitly destroyed
+bool	bDontCallDo;		// do not call Do method each tick
 
 name	CastSound;
 
@@ -50,6 +52,11 @@ int		SpiritPowerDrain;
 float	SPDrainDelay;
 float	SPDrainTime;
 
+bool	bActive;			// spell is active and working
+bool	bInActivation;		// playing activation
+bool	bInDeactivation;	// playing deactivation
+bool	bShouldDestroy;		// spell will be destroyed next tick
+
 //==========================================================================
 //
 //	Tick
@@ -60,39 +67,55 @@ void Tick(float deltaTime)
 {
 	::Tick(deltaTime);
 
-	if (LifeDuration > 0.0)
+	if (bShouldDestroy)
+	{
+		Destroy();
+		return;
+	}
+
+	if (!bActive && !bInActivation && !bInDeactivation)
+	{
+		Activate();
+	}
+
+	if (bActive && LifeDuration > 0.0)
 	{
 		LifeTime -= deltaTime;
 		if (LifeTime <= 0.0)
 		{
-			Dispell();
-			return;
+			Deactivate();
+			//Dispell();
+			//return;
 		}
 	}
 
-	SPDrainTime -= deltaTime;
-	if (SPDrainTime <= 0.0)
+	if (bActive)
 	{
-		// [CW] TODO: how to drain spirit power from caster player/monster?
-		//		TODO: if not enouph SP, should call Dispell and return
-		// use SpiritPowerDrain amount;
-		SPDrainTime = SPDrainDelay;
-	}
+		SPDrainTime -= deltaTime;
+		if (SPDrainTime <= 0.0)
+		{
+			// [CW] TODO: how to drain spirit power from caster player/monster?
+			//		TODO: if not enouph SP, should call Dispell and return
+			// use SpiritPowerDrain amount;
+			SPDrainTime = SPDrainDelay;
+		}
 
-	if (!bDontCallDo)
+		if (!bDontCallDo)
+		{
+			Do(deltaTime);
+		}
+	}
+	else
 	{
-		Do(deltaTime);
+		if (bInActivation)
+		{
+			BirthTick(deltaTime);
+		}
+		else if (bInDeactivation)
+		{
+			DeathTick(deltaTime);
+		}
 	}
-}
-
-//==========================================================================
-//
-//	Do
-//
-//==========================================================================
-
-void Do(float deltaTime)
-{
 }
 
 //==========================================================================
@@ -104,6 +127,15 @@ void Do(float deltaTime)
 void Activate()
 {
 	LifeTime = LifeDuration;
+
+	if (bPlayActivation)
+	{
+		bInActivation = true;
+	}
+	else
+	{
+		bActive = true;
+	}
 }
 
 //==========================================================================
@@ -114,8 +146,81 @@ void Activate()
 
 void Deactivate()
 {
+	bActive = false;
+
+	if (bPlayDeactivation)
+	{
+		bInDeactivation = true;
+	}
+	else
+	{
+		bShouldDestroy = true;
+	}
 }
 
+//==========================================================================
+//
+//	BirthTick
+//
+//==========================================================================
+
+void BirthTick(float deltaTime)
+{
+	// [CW] Just in case someone forget to override this properly,
+	// this will save spell from stucking in pre-activation state.
+	FinishActivation();
+}
+
+//==========================================================================
+//
+//	FinishActivation
+//
+//==========================================================================
+
+void FinishActivation()
+{
+	bInActivation = false;
+	bActive = true;
+}
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	// [CW] Annoying reminder :)
+	dprint("SpellInstance of class %n is doing nothing! Better set bDontCallDo = false", GetClassName(Class));
+}
+
+//==========================================================================
+//
+//	DeathTick
+//
+//==========================================================================
+
+void DeathTick(float deltaTime)
+{
+	// [CW] Just in case someone forget to override this properly,
+	// this will save spell from stucking in post-deactivation state.
+	FinishDeactivation();
+}
+
+//==========================================================================
+//
+//	FinishDeactivation
+//
+//==========================================================================
+
+void FinishDeactivation()
+{
+	bInDeactivation = false;
+	bShouldDestroy = true;
+}
+
+/*
 //==========================================================================
 //
 //	Dispell
@@ -127,7 +232,7 @@ void Dispell()
 	Deactivate();
 	Destroy();
 }
-
+*/
 
 defaultproperties
 {
