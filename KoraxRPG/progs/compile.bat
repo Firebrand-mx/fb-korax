@@ -10,7 +10,10 @@ vcc -P../../../basev/common/progs cgame/classes.vc cgame.dat
 @ECHO OFF
 pause
 cd..
+cd..
+vlumpy d:\korax\vavoom\source\basev\common\basepak.ls
+move basepak.pk3 "D:\Korax\KoraxRPG\basev\common\"
+cd koraxrpg
 vlumpy basepak.ls
-copy basepak.pk3 "D:\Korax\KoraxRPG\koraxrpg\"
-cd progs
+move basepak.pk3 "D:\Korax\KoraxRPG\koraxrpg\"
 pause
