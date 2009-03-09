@@ -1,0 +1,82 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ToxicMist.vc 1722 2008-11-04 19:35:33Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KRPGSerpentFX : Actor;
+
+//==========================================================================
+//
+//  DoSpecialDamage
+//
+//==========================================================================
+
+int DoSpecialDamage(EntityEx victim, EntityEx source, int damage)
+{
+	if (!Actor(victim).GetCondition(ACPoisoned, Actor(source), 2))
+	{
+		Actor(victim).CastCondition(ACPoisoned, true, Actor(source), 2, 5.0);
+		Actor(victim).Damage(/* self */none, Actor(source), 15 + (P_Random() & 15), 'Poison');
+	}
+	return -1;
+}
+
+states
+{
+	Spawn:
+		SSFX A 0
+		SSFX A 3 Bright 
+		SSFX B 3 Bright { A_PlaySoundEx("SerpentFXContinuous", "Body", 1); }
+		SSFX A 3 Bright { A_PlaySoundEx("SerpentFXContinuous", "Body", 1); }
+		SSFX B 3 Bright { A_PlaySoundEx("SerpentFXContinuous", "Body", 1); }
+		Loop
+	Death:
+		SSFX C 4 Bright { A_StopSoundEx("Body"); }
+		SSFX DEFGH 4 Bright
+		Stop
+}
+
+defaultproperties
+{
+	Radius = 8.0;
+	Height = 10.0;
+	Speed = 15.0 * 35.0;
+	MissileDamage = 4;
+	RenderStyle = STYLE_Add;
+	DamageType = 'Poison';
+	DeathSound = 'SerpentFXHit';
+	bMissile = true;
+	bNoBlockmap = true;
+	bDropOff = true;
+	bNoGravity = true;
+	bNoTeleport = true;
+	bActivateImpact = true;
+	bActivatePCross = true;
+}
