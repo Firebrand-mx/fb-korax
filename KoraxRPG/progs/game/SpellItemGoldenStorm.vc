@@ -1,0 +1,89 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: template.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class SpellItemGoldenStorm : SpellItem;
+
+//==========================================================================
+//
+//	ActivateSpell
+//
+//  [FB] spell effects are level based... and change depending on that...
+//
+//==========================================================================
+
+bool ActivateSpell(bool Pickup, int level)
+{
+	EntityEx mo;
+
+	if(Player(Owner.Player).sp_power >= 30)
+	{
+		Owner.PlaySound('UseArtifact', CHAN_ITEM);
+		mo = EntityEx(Owner).SpawnPlayerMissile(GoldenStormFX1);
+		if (mo)
+		{
+			mo.Target = EntityEx(Owner);
+			GoldenStormFX1(mo).Lev = level;
+			Player(Owner.Player).centreprint("GOLDEN STORM SPELL ACTIVATED");
+		}
+		else
+		{
+			Player(Owner.Player).centreprint("GOLDEN STORM SPELL FAILED");
+		}		
+		Player(Owner.Player).sp_power -= 30;
+	}
+	else
+	{
+		Player(Owner.Player).centreprint("NOT ENOUGH SPIRITUAL POWER");
+	}
+	
+	return true;
+}
+
+states
+{
+// [FB] Change this later!
+Spawn:
+	BLST ACBDEFGH 4 Bright
+	Loop
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	PickupSound = 'PickupArtifact';
+	PickupMessage = "$txt_golden";
+	IconName = 'splm9';
+	bFloatBob = true;
+	PickupFlashType = PickupFlash;
+	bSpellBar = true;
+	Level = 1;
+}
