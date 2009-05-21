@@ -167,9 +167,112 @@ actor MagmaSerpent : KRPGSerpentLeader 16003
 {
 	states
 	{
+	Spawn:
+		MSPT H 10 A_LookAI
+		Loop
+	See:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		MSPT HH 1 A_SerpentChaseAI
+		MSPT H 2 A_SerpentHumpDecide
+		Loop
+//	SeeDamaged:
+//		MSPD HH 1 A_SerpentChaseAI
+//		MSPD H 2 A_SerpentHumpDecide
+//		Loop
+	Hump:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "HumpDamaged")
+		MSPT H 3 A_SerpentUnHide
+		MSPT EFGEF 3 A_SerpentRaiseHump
+		MSPT GEF 3
+		MSPT GEFGE 3 A_SerpentLowerHump
+		MSPT F 3 A_SerpentHide
+		Goto See
+//	HumpDamaged:
+//		MSPD H 3 A_SerpentUnHide
+//		MSPD EFGEF 3 A_SerpentRaiseHump
+//		MSPD GEF 3
+//		MSPD GEFGE 3 A_SerpentLowerHump
+//		MSPD F 3 A_SerpentHide
+//		Goto See
+	Melee:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
+		MSPT A 1 A_UnHideThing
+		MSPT A 1 A_PlaySoundEx("SerpentBirth", "Voice")
+		MSPT B 3 A_SetShootable
+		MSPT C 3
+		MSPT D 4 A_SerpentCheckForAttack
+		MSDV ABC 4
+		MSDV D 4 A_UnSetShootable
+		MSDV E 3 A_PlaySoundEx("SerpentActive", "Body")
+		MSDV F 3
+		MSDV GH 4
+		MSDV I 3
+		MSDV J 3 A_SerpentHide
+		Goto See
+//	MeleeDamaged:
+//		MSPD A 1 A_UnHideThing
+//		MSPD A 1 A_PlaySoundEx("SerpentBirth", "Voice")
+//		MSPD B 3 A_SetShootable
+//		MSPD C 3
+//		MSPD D 4 A_SerpentCheckForAttack
+//		MSPD ABC 4
+//		MSPD D 4 A_UnSetShootable
+//		MSDD E 3 A_PlaySoundEx("SerpentActive", "Body")
+//		MSDD F 3
+//		MSDD GH 4
+//		MSDD I 3
+//		MSDD J 3 A_SerpentHide
+//		Goto See
+	Walk:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "WalkDamaged")
+		MSPT IJI 5 A_SerpentWalkAI
+		MSPT J 5 A_SerpentCheckForAttack
+		Goto Melee+6
+//	WalkDamaged:
+//		MSPD IJI 5 A_SerpentWalkAI
+//		MSPD J 5 A_SerpentCheckForAttack
+//		Goto MeleeDamaged+5
+	Pain:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		MSPT L 5
+		MSPT L 5 A_KRPGPain
+		Goto Melee+6
+//	PainDamaged:
+//		MSPD L 5
+//		MSPD L 5 A_KRPGPain
+//		Goto MeleeDamaged+5
+	Attack:
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "AttackDamaged")
+		MSPT K 6 A_FaceTarget
+		MSPT L 5 A_SerpentChooseAttack
+		MSPT N 5 A_SerpentMeleeAttack
+		Goto Melee+6
+//	AttackDamaged:
+//		MSPD K 6 A_FaceTarget
+//		MSPD L 5 A_SerpentChooseAttack
+//		MSPD N 5 A_SerpentMeleeAttack
+//		Goto MeleeDamaged+5
 	Missile:
-		SSPT NNN 5 Bright A_CustomMissile("MagmaSerpentFX", 32, 0)
-		Goto Serpent::Melee+5
+//		MSPT H 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		MSPT N 5 A_CustomMissile("KRPGSerpentFX", 32, 0)
+		Goto Melee+6
+//	MissileDamaged:
+//		MSPD N 5 A_CustomMissile("KRPGSerpentFX", 32, 0)
+//		Goto Melee+6
+	Death:
+		MSPD O 4
+		MSPD P 4 A_Scream
+		MSPD Q 4 A_NoBlocking
+		MSPD RSTUVWXYZ 4
+		Stop
+	XDeath:
+		MSXD A 4
+		MSXD B 4 A_SpawnItemEx("SerpentHead", 0, 0, 45, 0, 0, 0, 0, SXF_TRANSFERTRANSLATION)
+		MSXD C 4 A_NoBlocking
+		MSXD DE 4
+		MSXD FG 3
+		MSXD H 3 A_SerpentSpawnGibs
+		Stop
 	}
 }
 
