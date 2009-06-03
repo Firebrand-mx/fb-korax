@@ -40,32 +40,31 @@
 class BotPlayer : Object;
 
 const float
+	//
+	// Movement constants
 	FORWARDWALK				= 200.0,
 	FORWARDRUN				= 400.0,
 	SIDEWALK				= 192.0,
 	SIDERUN					= 320.0,
 
-	// [CW] CHECKME -- not used!
-	MAX_TRAVERSE_DIST		= 1024.0,		// 10 meters, used within b_func.c
+	//
+	// Distance Constants
+	MAX_TRAVERSE_DIST		= 307.2,		// 1.25 meters, used within b_func.c -> 1 meter = 102.4 units
 	AVOID_DIST				= 512.0,		// Try avoid incoming missiles once they reached this close
 	// [CW] CHECKME -- not used!
 	SAFE_SELF_MISDIST		= 128.0,		// Distance from self to target where it's safe to pull a rocket.
-	// [CW] CHECKME -- not used!
-	FRIEND_DIST				= 1024.0,		// To friend.
 	DARK_DIST				= 256.0,		// Distance that bot can see enemies in the dark from.
-	// [CW] CHECKME -- not used!
-	MAX_MONSTER_TARGET_DIST	= 1024.0,		// Too high can slow down the performance, see P_mobj.c
+	MAX_MONSTER_TARGET_DIST	= 1024.0,		// 10 meters, used within b_func.c -> 1 meter = 102.4 units
 	ENEMY_SCAN_FOV			= 120.0,
-	MAXSTEPHEIGHT			= 24.0,
+	MAXSTEPHEIGHT			= 32.0,
 	MAXJUMPHEIGHT			= 56.0,
-	MAXMOVEHEIGHT			= MAXJUMPHEIGHT,
+	MAXMOVEHEIGHT			= MAXSTEPHEIGHT + MAXJUMPHEIGHT,	// MAXSTEPMOVE but with jumping counted in.
 	MAXDROPHEIGHT			= 384.0,
-	//MAXMOVEHEIGHT			= 32.0,			// MAXSTEPMOVE but with jumping counted in.
-	// [CW] CHECKME -- not used!
 	GETINCOMBAT				= 512.0,		// Max distance to item if it's due to be picked up in a combat situation.
 	SHOOTFOV				= 60.0,
 	// [CW] CHECKME -- not used!
 	MAXROAM					= (5.0 * 35.0);	// When this time is elapsed the bot will roam after something else.
+
 const int
 	WHATS_DARK		= 64,					// light value thats classed as dark.
 	WHATS_VERYDARK	= 24;
@@ -598,8 +597,8 @@ bool CheckPath(float ang, float dist)
 			else
 			{
 				// [FB] No cliff jumping unless we're going after something
-				if ((open->lowfloor - open->bottom) > /*32.0*/MAXMOVEHEIGHT &&
-					(open->lowfloor - open->bottom) < /*384.0*/MAXDROPHEIGHT && !(enemy && enemy == ITarget))
+				if ((open->lowfloor - open->bottom) >= MAXMOVEHEIGHT &&
+					(open->lowfloor - open->bottom) <= MAXDROPHEIGHT && !(enemy && enemy == ITarget))
 				{
 					return false;
 				}
@@ -617,7 +616,7 @@ bool CheckPath(float ang, float dist)
 						}
 						continue;
 					}
-					else if (diffheight > MAXJUMPHEIGHT)
+					else if (diffheight >= MAXJUMPHEIGHT)
 					{
 						// CHECKME!!
 					/*	if (front->SSpecial == ThrustThingZ || front->springpadzone)
@@ -629,11 +628,6 @@ bool CheckPath(float ang, float dist)
 					}
 				}
 			}
-
-			// [CW] Since this method is for short distances only, we should
-			//      break the procedure after certain distance is reached
-			if (distance_passed >= 128.0)
-				break;
 		}
 		else
 		{
@@ -667,6 +661,11 @@ bool CheckPath(float ang, float dist)
 				continue;
 			}
 		}
+		
+		// [CW] Since this method is for short distances only, we should
+		//      break the procedure after certain distance is reached
+		if (distance_passed >= MAX_TRAVERSE_DIST)
+			break;
 	}
 
 	return true;
@@ -734,13 +733,17 @@ void CheckStuff()
 				ITarget = none;
 				return;
 			}
-			else if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
+			else if (!enemy || enemy && Length(botmo.Origin - ITarget.Origin) <= GETINCOMBAT)
 			{
-				if (!player.IsOKToPickupItem(Inventory(ITarget)))
+				// [FB] Item is in range
+				if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
 				{
-					// [FB] We can't actually pick up this
-					ITarget = none;
-					return;
+					if (!player.IsOKToPickupItem(Inventory(ITarget)))
+					{
+						// [FB] We can't actually pick up this
+						ITarget = none;
+						return;
+					}
 				}
 			}
 		}
@@ -1184,16 +1187,6 @@ Actor FindEnemy(optional bool bReachable)
 				continue;
 			}
 
-			// [CW] Check_LOS and CanSee are checked below, no need to call them here
-			/* if (!Check_LOS(actor, vangle))
-			{
-				continue;
-			}
-			if (!botmo.CanSee(actor))
-			{
-				continue;
-			}*/
-
 			if (actor.Health <= 0)
 			{
 				continue;
@@ -1253,9 +1246,6 @@ Actor FindEnemy(optional bool bReachable)
 			 // must be fuckin wierd screded up.
 			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && EntityEx(botmo).CanSee(actor))
 			{
-				// [CW] already calculated above
-				//dist = botmo.DistTo(actor);
-
 				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 				if (actor.Sector->floor.LightSourceSector)
 				{
@@ -1348,7 +1338,8 @@ Actor FindEnemy(optional bool bReachable)
 					//[FB] Add static or dynamic lights?
 					light += player.Level.Game.Players[i].MO.Sector->floor.LightSourceSector;
 				}
-				// [FB] Too dark? // [CW] enhance this a bit, still human players usually CAN see in dark
+				// [FB] Too dark?
+				// [CW] enhance this a bit, still human players usually CAN see in dark
 				if (light <= WHATS_DARK && dist > DARK_DIST && !botmo.FindInventory(PowerTorch))
 				{
 					if (light <= WHATS_VERYDARK)
@@ -1994,7 +1985,7 @@ void Move(float deltaTime)
 			break;
 
 		case bsk_supreme:
-			if (t_anticip <= 0.1) //[CW] CHECKME -- I wonder if BotTick is called often enouph
+			if (t_anticip <= 0.1) //[CW] CHECKME -- I wonder if BotTick is called often enough
 				DoEvade = true;
 			break;
 
@@ -2461,12 +2452,6 @@ void Turn()
 #ifdef DEBUG_BOT_AI_TURN
 	dprint("final d = %f", distance);
 #endif
-
-/*	if (!enemy)
-	{
-		player.ViewAngles.yaw = GetAngle();
-		return;
-	}*/
 
 	// [BC] Don't act crazy while trying to aim
 	switch (info.accuracy)

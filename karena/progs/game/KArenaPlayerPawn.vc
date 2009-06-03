@@ -512,12 +512,12 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	TVec			tracedir;
 	TVec			hit_point;
 
-#ifdef DEBUG_BOT_AI_CANREACH
-	print("try reach");
-	print("at: %f, %f, %f", Origin.x, Origin.y, Origin.z);
-	print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
-							MinPassableOpening);
-#endif
+	#ifdef DEBUG_BOT_AI_CANREACH
+		print("try reach");
+		print("at: %f, %f, %f", Origin.x, Origin.y, Origin.z);
+		print("able: step = %f, drop = %f, fit = %f", MaxPassableStep, MaxPassableDropOff,
+								MinPassableOpening);
+	#endif
 
 	//
 	// [CW] For slope recognition
@@ -571,17 +571,17 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			if (!opening)
 			{
 				//	No openings.
-#ifdef DEBUG_BOT_AI_CANREACH
-				print("failed: no openings");
-#endif
+				#ifdef DEBUG_BOT_AI_CANREACH
+					print("failed: no openings");
+				#endif
 				return false;
 			}
 
-#ifdef DEBUG_BOT_AI_CANREACH
-			print("z = %f, opening = f %f/%f ; ctop = %f; r = %f", traceZ, opening->bottom, opening->lowfloor,
-				opening->top, opening->range);
-			print("hitpoint : %f, %f, %f", hit_point.x, hit_point.y, hit_point.z);
-#endif
+			#ifdef DEBUG_BOT_AI_CANREACH
+				print("z = %f, opening = f %f/%f ; ctop = %f; r = %f", traceZ, opening->bottom, opening->lowfloor,
+					  opening->top, opening->range);
+				print("hitpoint : %f, %f, %f", hit_point.x, hit_point.y, hit_point.z);
+			#endif
 
 			// [CW] Now, when we have the best opening available, we must check
 			//		if the best is actually the passable
@@ -601,6 +601,8 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			if (traceZ != opening->bottom && traceZ != opening->lowfloor)
 			{
 				// There was definitely a slope;
+// [FB] I don't think any of this applies anymore ;-)
+
 				// [CW] CHECKME -- there's a chance this won't work properly
 				// if the height of the floor after slope is not equal to the one
 				// at the end point of a slope; more than that, if height of the
@@ -610,49 +612,59 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				// Examples:
 				//               /|
 				//             /  |
-				//   --------/    |------------
+				//  -------/    |------------
 				//
 				//
 				//   -------\  |---------------
-				//           \ |
-				//            \|
+				//             \ |
+				//              \|
 				//
 
 				// [CW] For now we assume that previous floor plane has seamless
 				//		connection with next one, i.e opening->bottom eq opening->lowfloor
-				
-				slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+////
+				// [FB] Checks for sloped sectors on both sides
+				if (
+					(opening->floor->maxz <= opening->highceilingplane->minz &&
+					opening->highceilingplane->minz >= opening->floor->minz)
+					||
+					(opening->lowfloorplane->maxz <= opening->ceiling->minz &&
+					opening->ceiling->minz >= opening->floor->minz)
+					)
+				{
+					// [FB] This is actually a slope, so calculate angles
+					slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+				}
 
-			#ifdef DEBUG_BOT_AI_CANREACH
-					print("slope angle %f", slope_angle);
-			#endif
+				#ifdef DEBUG_BOT_AI_CANREACH
+						print("slope angle %f", slope_angle);
+				#endif
 
 				// [CW] I am disabling this for a while, because
 				// in current unfinished implementation of 
 				// slope recognition bot may sometimes 'invent'
 				// slopes in places where aren't any.
-#ifdef FIXME_LATER
-				// Check if slope angle is to high to ascend
-				if (slope_angle > 45.0)
+////
+				// Check if slope angle is too high to ascend
+				if (slope_angle >= 70.0)
 				{
-			#ifdef DEBUG_BOT_AI_CANREACH
-					print("failed: steep slope angle %f", slope_angle);
-			#endif
+					#ifdef DEBUG_BOT_AI_CANREACH
+							print("failed: steep slope angle %f", slope_angle);
+					#endif
 					return false;
 				}
-#endif
-
+////
 				// Make our "ghost" player stand at the end of the slope
 				traceZ = opening->bottom;
-			#ifdef DEBUG_BOT_AI_CANREACH
-				print("passed slope, now at Z = %f", traceZ);
-			#endif
+				#ifdef DEBUG_BOT_AI_CANREACH
+					print("passed slope, now at Z = %f", traceZ);
+				#endif
 			}
 
 			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
 				||
-				// If can fit through...
-				// use traceZ to know which height is player's "ghost" previous position
+				// OK, bot fits through...
+				// so use traceZ to know which height is player's "ghost" previous position
 				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
 					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
 					// drop from highest floor to lowest one is too much to accept it
