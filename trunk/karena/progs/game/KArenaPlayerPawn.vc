@@ -600,30 +600,8 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			//
 			if (traceZ != opening->bottom && traceZ != opening->lowfloor)
 			{
-				// There was definitely a slope;
-// [FB] I don't think any of this applies anymore ;-)
-
-				// [CW] CHECKME -- there's a chance this won't work properly
-				// if the height of the floor after slope is not equal to the one
-				// at the end point of a slope; more than that, if height of the
-				// floor after slope is equal to starting height of a slope,
-				// this algorythm will work as if there was no slope at all :?
-
-				// Examples:
-				//               /|
-				//             /  |
-				//  -------/    |------------
-				//
-				//
-				//   -------\  |---------------
-				//             \ |
-				//              \|
-				//
-
-				// [CW] For now we assume that previous floor plane has seamless
-				//		connection with next one, i.e opening->bottom eq opening->lowfloor
-////
-				// [FB] Checks for sloped sectors on both sides
+				// There is definitely a slope;
+				// [FB] Checks for sloped floors on both sides
 				if (
 					(opening->floor->maxz <= opening->highceilingplane->minz &&
 					opening->highceilingplane->minz >= opening->floor->minz)
@@ -634,17 +612,11 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				{
 					// [FB] This is actually a slope, so calculate angles
 					slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+					#ifdef DEBUG_BOT_AI_CANREACH
+							print("slope angle %f", slope_angle);
+					#endif
 				}
 
-				#ifdef DEBUG_BOT_AI_CANREACH
-						print("slope angle %f", slope_angle);
-				#endif
-
-				// [CW] I am disabling this for a while, because
-				// in current unfinished implementation of 
-				// slope recognition bot may sometimes 'invent'
-				// slopes in places where aren't any.
-////
 				// Check if slope angle is too high to ascend
 				if (slope_angle >= 70.0)
 				{
@@ -653,7 +625,7 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 					#endif
 					return false;
 				}
-////
+
 				// Make our "ghost" player stand at the end of the slope
 				traceZ = opening->bottom;
 				#ifdef DEBUG_BOT_AI_CANREACH
@@ -674,14 +646,35 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 					// raise from lowest floor to highest one is too much to step/jump there
 				)
 			{
-#ifdef DEBUG_BOT_AI_CANREACH
-				print("failed");
-#endif
+				#ifdef DEBUG_BOT_AI_CANREACH
+					print("failed");
+				#endif
 				return false;
 			}
-#ifdef DEBUG_BOT_AI_CANREACH
+			
+			// [FB] Check for ceiling slopes on both sides
+			if (
+				(opening->floor->minz <= opening->highceilingplane->maxz &&
+				opening->highceilingplane->minz >= opening->floor->maxz)
+				||
+				(opening->lowfloorplane->minz <= opening->ceiling->maxz &&
+				opening->ceiling->minz >= opening->floor->maxz)
+				)
+			{
+				if (opening->highceilingplane->minz < Height ||
+					opening->ceiling->minz < Height)
+				{
+					// [FB] We'll get stuck on this slope
+					#ifdef DEBUG_BOT_AI_CANREACH
+							print("failed: ceiling slope blocks the move");
+					#endif
+					return false;
+				}
+			}
+
+			#ifdef DEBUG_BOT_AI_CANREACH
 				print("succeed");
-#endif
+			#endif
 			// [FB] This should partially cover it...
 
 			// [CW] Update height position;
@@ -714,9 +707,9 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	pCRTRData->finalPos = TargetPos;
 	pCRTRData->finalPos.z = traceZ;
 
-#ifdef DEBUG_BOT_AI_CANREACH
-	print("finally succeed");
-#endif
+	#ifdef DEBUG_BOT_AI_CANREACH
+		print("finally succeed");
+	#endif
 
 	return true;
 }
