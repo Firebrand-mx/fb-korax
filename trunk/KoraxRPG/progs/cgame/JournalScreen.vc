@@ -43,8 +43,7 @@ class JournalScreen : KRPGMenuScreen;
 	::OnDraw();
 
 	SetFont('smallfont');
-	SetTextAlign(hleft, vtop);
-	DrawText(20, 14, "You're a %s of level: %i", CR_BRICK);
+	SetTextAlign(hcentre, vtop);
 	DrawPic(0, 0, R_RegisterPic('journal'));
 }
 
@@ -71,37 +70,38 @@ void CreateChoices()
 {
 	MenuTextButton		Btn;
 	int					currentY;
-
+	
+	currentY = ChoicesStartY;
+	
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
 	Btn.SetOrigin(ChoicesStartX, currentY);
-	Btn.Text = "Character Stats";
+	Btn.Text = "Stats";
 	Btn.Activated = StatsOverview;
-	currentY += Btn.Height;
+	currentY += 35 + Btn.Height;
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX, currentY);
-	Btn.Text = "Modify Arsenal";
+	Btn.SetOrigin(ChoicesStartX + 8, currentY);
+	Btn.Text = "Arsenal";
 	Btn.Activated = ModifyArsenal;
-	currentY += Btn.Height;
+	currentY += 28 + Btn.Height;
 
 	// [FB] TODO: Implement these ones
-/*	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX, currentY);
-	Btn.Text = "Monster/Item Overview";
-	Btn.Activated = StuffOverview;
-	currentY += Btn.Height;
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX - 1, currentY);
+	Btn.Text ="Log";
+//	Btn.Activated = StuffOverview;
+	currentY += 28 + Btn.Height;
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX, currentY);
-	Btn.Text = "Show Map";
-	Btn.Activated = ShowMap;
-	currentY += Btn.Height;
+	Btn.SetOrigin(ChoicesStartX - 2, currentY);
+	Btn.Text = "Map";
+//	Btn.Activated = ShowMap;
+	currentY += 26 + Btn.Height;
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX, currentY);
+	Btn.SetOrigin(ChoicesStartX + 3, currentY);
 	Btn.Text = "Quests";
-	Btn.Activated = ShowQuests;
-	currentY += Btn.Height;*/
+//	Btn.Activated = ShowQuests;
 }
 
 //==========================================================================
@@ -112,12 +112,7 @@ void CreateChoices()
 
 void StatsOverview(Object Sender)
 {
-	UpgradeScreen US;
-	
-	US = UpgradeScreen(ClGame.SpawnMenu(UpgradeScreen));
-	US.X = 60;
-	US.Y = 50;
-	ClGame.PushMenuScreen(US);
+	ClientGame(ClGame).ShowUpgradeScreen();
 }
 
 //==========================================================================
@@ -128,50 +123,16 @@ void StatsOverview(Object Sender)
 
 void ModifyArsenal(Object Sender)
 {
-	ArsenalScreen AS;
-	
-	AS = ArsenalScreen(ClGame.SpawnMenu(ArsenalScreen));
-	AS.X = 60;
-	AS.Y = 50;
-	ClGame.PushMenuScreen(AS);
-}
-
-//==========================================================================
-//
-//	OnKeyDown
-//
-//==========================================================================
-
-bool OnKeyDown(int key)
-{
-	::OnKeyDown(key);
-
-	switch (key)
-	{
-	case K_PAGEDOWN:
-		CycleNextChoice();
-		LocalSound('menu/cursor');
-		return true;
-
-	case K_PAGEUP:
-		CyclePrevChoice();
-		LocalSound('menu/cursor');
-		return true;
-
-	case K_ESCAPE:
-	case K_MOUSE2:
-		ClGame.PopMenu();
-		return true;
-	}
+	ClientGame(ClGame).ShowArsenalScreen();
 }
 
 defaultproperties
 {
-/*	X = 0;
+	X = 0;
 	Y = 0;
-	ChoicesStartX = 20;
-	ChoicesStartY = 50;
+	ChoicesStartX = 60;
+	ChoicesStartY = 20;
 	ScaleX = 2.0;
-	ScaleY = 2.4;*/
+	ScaleY = 2.4;
 	Title = "JOURNAL";
 }
