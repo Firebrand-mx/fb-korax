@@ -49,7 +49,7 @@ const float
 
 	//
 	// Distance Constants
-	MAX_TRAVERSE_DIST		= 307.2,		// 1.25 meters, used within b_func.c -> 1 meter = 102.4 units
+	MAX_TRAVERSE_DIST		= 307.2,		// 3 meters, used within b_func.c -> 1 meter = 102.4 units
 	AVOID_DIST				= 512.0,		// Try avoid incoming missiles once they reached this close
 	// [CW] CHECKME -- not used!
 	SAFE_SELF_MISDIST		= 128.0,		// Distance from self to target where it's safe to pull a rocket.
@@ -715,8 +715,7 @@ void CheckStuff()
 
 	if (missile)
 	{
-		// [CW] CHECKME - Not sure the first condition had any sense here
-		if (/*!missile.bMissile ||*/missile.IsDestroyed())
+		if (missile.IsDestroyed())
 		{
 			missile = none;
 			t_evade = 0.0;
@@ -728,15 +727,14 @@ void CheckStuff()
 	{
 		if (ITarget.IsA('Inventory'))
 		{
-			if (ITarget.Owner || ITarget.bInvisible)
+			if (!enemy || enemy && botmo.DistTo(ITarget) <= GETINCOMBAT)
 			{
-				ITarget = none;
-				return;
-			}
-			else if (!enemy || enemy && Length(botmo.Origin - ITarget.Origin) <= GETINCOMBAT)
-			{
-				// [FB] Item is in range
-				if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
+				if (ITarget.Owner || ITarget.bInvisible)
+				{
+					ITarget = none;
+					return;
+				}
+				else if (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)
 				{
 					if (!player.IsOKToPickupItem(Inventory(ITarget)))
 					{
@@ -761,9 +759,9 @@ void CheckStuff()
 		if (((ITarget == node_current) && (Length(botmo.Origin - ITarget.Origin) <= EntityEx::MELEERANGE)) ||
 			!CheckTo(ITarget.Origin, ITarget))
 		{
-#ifdef DEBUG_BOT_AI_TARGET
-			print("reset target");
-#endif
+			#ifdef DEBUG_BOT_AI_TARGET
+				print("reset target");
+			#endif
 			ITarget = none;
 			return;
 		}
