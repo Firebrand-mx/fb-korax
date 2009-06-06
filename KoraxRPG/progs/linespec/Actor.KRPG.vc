@@ -1747,13 +1747,24 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 							bool bCanUseLines)
 {
 	intercept_t * in;
+
 	pCRTRData->intercepted_once = false;
 	pCRTRData->prev_sector = Sector;
 
 	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
 		PT_ADDLINES | PT_ADDTHINGS)
 	{
+		//
+		// [CW] For slope recognition
+		float distance_bak;
+		float distance_traced;		// distance traced total
+		float distance_traced_last;	// distance traced last iteration
+
 		pCRTRData->intercepted_once = true;
+
+		distance_bak = distance_traced;
+		distance_traced = Length(Origin - TargetPos) * in->frac;
+		distance_traced_last = distance_traced - distance_bak;
 
 		if (in->bIsALine)
 		{
@@ -1761,6 +1772,15 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			TVec tracedir;
 			TVec hit_point;
 			opening_t* opening;	// [FB] For 3d floors
+			float traceZ = Origin.z; // Z coordinate of the trace
+			//
+			// [CW] For slope recognition
+			float slope_angle;
+
+			// [CW] A unit vector determines the direction of tracing
+			//		Needed to get the hit_point for each 2-sided line found
+			tracedir = Normalise(TargetPos - Origin);
+			tracedir.z = 0.0;
 
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
@@ -1783,7 +1803,8 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			tracedir.x = cos(Angles.yaw);
 			tracedir.y = sin(Angles.yaw);
 			tracedir.z = FloorZ;
-			hit_point = Origin + (Length(Origin - TargetPos) * in->frac) * tracedir;
+			hit_point = Origin + distance_traced * tracedir;
+			hit_point.z = traceZ;
 			opening = LineOpenings(in->line, hit_point);
 			opening = FindOpening(opening, hit_point.z, hit_point.z + Height);
 
@@ -1796,12 +1817,102 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				(opening->lowfloor - opening->bottom > MaxPassableStep) ||
 				(opening->lowfloor - opening->bottom > MaxPassableDropOff))
 				return false;
+
+			// [CW] Now, when we have the best opening available, we must check
+			//		if the best is actually the passable
+			//
+			// [CW]
+			//
+			//		From what I saw in engine code, -
+			//		opening->top is the lowest ceiling between previous and next sector;
+			//		opening->bottom is the highest floor between previous and next sector;
+			//		opening->range is distance between opening->top and opening->bottom;
+			//		opening->lowfloor is the lowest floor between previous and next sector;
+			//
+
+			//
+			// [CW] Check floor planes for slopes
+			//
+			if (traceZ != opening->bottom && traceZ != opening->lowfloor)
+			{
+				// There is definitely a slope;
+				// [FB] Checks for sloped floors on both sides
+				if (
+					(opening->floor->maxz <= opening->highceilingplane->minz &&
+					opening->highceilingplane->minz >= opening->floor->minz)
+					||
+					(opening->lowfloorplane->maxz <= opening->ceiling->minz &&
+					opening->ceiling->minz >= opening->floor->minz)
+					)
+				{
+					// [FB] This is actually a slope, so calculate angles
+					slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+				}
+
+				// Check if slope angle is too high to ascend
+				if (slope_angle >= 70.0)
+				{
+					return false;
+				}
+
+				// Make our "ghost" actor stand at the end of the slope
+				traceZ = opening->bottom;
+			}
+
+			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
+				||
+				// OK, actor fits through...
+				// so use traceZ to know which height is actor's "ghost" previous position
+				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
+					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
+					// drop from highest floor to lowest one is too much to accept it
+				||
+				(traceZ <= opening->lowfloor && ((opening->lowfloor - traceZ) > MaxPassableStep ||
+					((opening->bottom - opening->lowfloor) > MaxPassableStep)))
+					// raise from lowest floor to highest one is too much to step there
+				)
+			{
+				return false;
+			}
+			
+			// [FB] Check for ceiling slopes on both sides
+			if (
+				(opening->floor->minz <= opening->highceilingplane->maxz &&
+				opening->highceilingplane->minz >= opening->floor->maxz)
+				||
+				(opening->lowfloorplane->minz <= opening->ceiling->maxz &&
+				opening->ceiling->minz >= opening->floor->maxz)
+				)
+			{
+				if (opening->highceilingplane->minz < Height ||
+					opening->ceiling->minz < Height)
+				{
+					// [FB] We'll get stuck on this slope
+					return false;
+				}
+			}
 			// [FB] This should partially cover it...
+
+			// [CW] Update height position;
+			if (traceZ == opening->bottom)
+				traceZ = opening->lowfloor;
+			else
+				traceZ = opening->bottom;
 		}
 		else
 		{
 			// TODO: check this precisely...
 			pCRTRData->linetarget = Actor(in->Thing);
+			
+			if (!pCRTRData->linetarget)
+				continue; // something out there
+
+			if (pCRTRData->linetarget.bSolid)
+			{
+				if (pCRTRData->linetarget.Height > MaxPassableStep &&
+						!pCRTRData->linetarget.bShootable)
+					return false;
+			}
 		}
 	}
 
