@@ -33,14 +33,14 @@
 class ClientGame : ClientGameBaseEx;
 
 TitleScreen			GTitle;
-ScoreBoardScreen	GScBoard;	// [CW]
+ScoreBoardScreen	GScBoard;
 IntermissionScreen	GImission;
 FinaleScreen		GFinale;
-LoadingScreen		GLoadingScreen;	// [CW]
+LoadingScreen		GLoadingScreen;
 
-MenuScreenTeamSelect	TeamSelectScreen;	//[CW]
+MenuScreenTeamSelect	TeamSelectScreen;
 
-LocalSoundQueue		Announcer;		// [CW]
+LocalSoundQueue		Announcer;
 
 int MenuPClass;
 class<MenuScreen> SkillMenuType;
@@ -67,40 +67,54 @@ void RootWindowCreated()
 	// [CW]
 	CmdBuf_AddText("MaxPlayers %d\n", 8);
 
-	//[CW]
+	// Gameplay settings
+	CreateCvar('TargetInfo', "1", CVAR_ARCHIVE | CVAR_USERINFO);
+
+	// Server settings
 	CreateCvar('BodyQueSize', "32", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	CreateCvar('CorpseQueSize', "64", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('WeatherAmount', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('FriendlyFire', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('WeaponsStay', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);	// [CW]
+	CreateCvar('InitialInvulnerability', "5.0", CVAR_ARCHIVE | CVAR_SERVERINFO);	// [CW]
+
+	// Game settings
 	CreateCvar('BotsAutoSpawn', "0", CVAR_ARCHIVE);
-	CreateCvar('TargetInfo', "1", CVAR_ARCHIVE | CVAR_USERINFO);
+	CreateCvar('ScoreLimit', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+
+	// Team settings
 	CreateCvar('TeamAutoSelect', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	CreateCvar('KeepTeamsEqual', "1", CVAR_ARCHIVE | CVAR_SERVERINFO);
-	CreateCvar('FriendlyFire', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
-	// [FB] For debugging path nodes
-	CreateCvar('ShowPathNodes', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
-	CreateCvar('NoHUD', "0", CVAR_USERINFO);
-	CreateCvar('ScoreLimit', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	// [CW] From now on teams should be always fixed (option removed
 	// from the menu), so FixedTeams should not be archived;
 	// later we should get rid from the cvar as well, maybe
 	CreateCvar('FixedTeams', "1", /*CVAR_ARCHIVE |*/ CVAR_SERVERINFO);
 	CreateCvar('FixedTeam1', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	CreateCvar('FixedTeam2', "1", CVAR_ARCHIVE | CVAR_SERVERINFO);
-	CreateCvar('AutoPlayerTeam', "-1", CVAR_ARCHIVE | CVAR_SERVERINFO);
-	CreateCvar('WeatherAmount', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+	CreateCvar('AutoPlayerTeam', "-1", CVAR_ARCHIVE | CVAR_SERVERINFO);	
+
+	// Debug & Hack
+	// [FB] For debugging path nodes
+#ifdef DEBUG_PATH_NODES
+	CreateCvar('ShowPathNodes', "1", CVAR_ARCHIVE | CVAR_SERVERINFO);
+#else
+	CreateCvar('ShowPathNodes', "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+#endif
+	CreateCvar('NoHUD', "0", CVAR_USERINFO);
+	
 
 	GTitle = TitleScreen(GRoot.NewChild(TitleScreen));
 	GSBar = StatusBarScreen(GRoot.NewChild(StatusBarScreen));
-	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));		// [CW]
+	GScBoard = ScoreBoardScreen(GRoot.NewChild(ScoreBoardScreen));
 	GImission = IntermissionScreen(GRoot.NewChild(IntermissionScreen));
 	GFinale = FinaleScreen(GRoot.NewChild(FinaleScreen));
-	GLoadingScreen = LoadingScreen(GRoot.NewChild(LoadingScreen));		// [CW]
+	GLoadingScreen = LoadingScreen(GRoot.NewChild(LoadingScreen));
 	GLoadingScreen.Init();
 	Announcer = LocalSoundQueue(SpawnObject(LocalSoundQueue));
 	GTitle.ClGame = self;
 	GSBar.ClGame = self;
 	GSBar.Hide();
 
-	/* scoreboard by [CW]	*/
 	GScBoard.ClGame = self;
 	GScBoard.Hide();
 
@@ -139,7 +153,7 @@ void Disconnected()
 {
 	GTitle.Show();
 	GSBar.Hide();
-	GScBoard.Hide();	// [CW]
+	GScBoard.Hide();
 	GImission.Hide();
 	GFinale.Hide();
 	
@@ -171,7 +185,7 @@ void DemoPlaybackStopped()
 {
 	GTitle.Show();
 	GSBar.Hide();
-	GScBoard.Hide();	// [CW]
+	GScBoard.Hide();
 	GImission.Hide();
 	GFinale.Hide();
 	GLoadingScreen.Hide();
@@ -226,7 +240,7 @@ void StatusBarStartMap()
 	StatusBarScreen(GSBar).cl = Player(cl);
 	GSBar.Show();
 	GSBar.StartMap();
-	GScBoard.StartMap();	// [CW]
+	GScBoard.StartMap();
 	GImission.Hide();
 	GFinale.Hide();
 	GLoadingScreen.Hide();
@@ -266,7 +280,7 @@ void StatusBarUpdateWidgets(float DeltaTime)
 void IintermissionStart()
 {
 	GSBar.Hide();
-	GScBoard.Hide();	// [CW]
+	GScBoard.Hide();
 	GImission.Show();
 	GImission.Start();
 	GFinale.Hide();
@@ -282,7 +296,7 @@ void IintermissionStart()
 void StartFinale(name FinaleType)
 {
 	GSBar.Hide();
-	GScBoard.Hide();	// [CW]
+	GScBoard.Hide();
 	GImission.Hide();
 	GFinale.Show();
 	GFinale.StartFinale(FinaleType);
