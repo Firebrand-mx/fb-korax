@@ -40,9 +40,10 @@ class MenuScreenServerSettings : MenuScreen;
 
 void CreateChoices()
 {
-	int i;
+	// int i;
 	MenuChoiceSlider	Slider;
 	MenuChoiceEnum		Enum;
+	MenuChoiceCounter	Counter;
 	int					currentY;
 
 	currentY = ChoicesStartY;
@@ -60,6 +61,25 @@ void CreateChoices()
 	Enum.SetInitialValue(GetCvar('FriendlyFire'));
 	Enum.ValueChanging = ChangeFriendlyFire;
 	currentY += Enum.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoice_OnOff));
+	Enum.SetOrigin(ChoicesStartX, currentY);
+	Enum.Text = "Weapons Stay";
+	Enum.SetInitialValue(GetCvar('WeaponsStay'));
+	Enum.ValueChanging = ChangeWeaponsStay;
+	currentY += Enum.Height;
+
+	Counter = MenuChoiceCounter(NewChild(MenuChoiceCounter));
+	Counter.SetOrigin(ChoicesStartX, currentY);
+	Counter.Text = "Initial Invulnerability time";
+	Counter.MinValue = 0.0;
+	Counter.MaxValue = 5.0;
+	Counter.ValueDelta = 0.10;
+	Counter.ValueFormat = va("%%f");
+	Counter.PostText = va("seconds");
+	Counter.SetInitialValue(GetCvarF('InitialInvulnerability'));
+	Counter.ValueChanging = ChangeInitialInvulnerability;
+	currentY += Counter.Height;
 
 	Slider = MenuChoiceSlider(NewChild(MenuChoiceSlider));
 	currentY += Slider.Height; // add some extra space
@@ -114,6 +134,30 @@ bool ChangeKeepTeamsEqual(Object Sender, int newValue)
 bool ChangeFriendlyFire(Object Sender, int newValue)
 {
 	SetCvar('FriendlyFire', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeWeaponsStay
+//
+//==========================================================================
+
+bool ChangeWeaponsStay(Object Sender, int newValue)
+{
+	SetCvar('WeaponsStay', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeBodyQueueSize
+//
+//==========================================================================
+
+bool ChangeInitialInvulnerability(Object Sender, float newValue)
+{
+	SetCvarF('InitialInvulnerability', newValue);
 	return true;
 }
 

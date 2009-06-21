@@ -1,0 +1,126 @@
+
+//
+// An extended enum control with ability to wrap long text
+//
+
+class MenuChoiceEnumWrapped : MenuChoiceEnum;
+
+//array<string> WrappedValue;
+string WrappedValue;
+
+//==========================================================================
+//
+//  SetInitialValue
+//
+//==========================================================================
+
+void SetInitialValue(int AValue)
+{
+	::SetInitialValue(AValue);
+	WrapValueString();
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	int xx;
+
+	int Col = IsFocus() ? CR_YELLOW : CR_WHITE;
+	if (bLeftAlign)
+	{
+		SetTextAlign(hleft, vtop);
+		DrawText(0, 0, Text, Col);
+	}
+	else
+	{
+		SetTextAlign(hright, vtop);
+		DrawText(CursorXOffs, 0, Text, Col);
+	}
+
+	if (bLeftAlign)
+	{
+		xx = TextWidth(Text) + 8;
+	}
+	else
+	{
+		xx = CursorXOffs + 10;
+	}
+	SetTextAlign(hleft, vtop);
+	if (EnumNames.Num)
+	{
+		DrawText(xx, 0, /*EnumNames[Value]*/WrappedValue, IsFocus() ? CR_YELLOW : CR_TAN);
+	}
+}
+
+//==========================================================================
+//
+//  OnKeyDown
+//
+//==========================================================================
+
+bool OnKeyDown(int key)
+{
+	if (::OnKeyDown(key))
+	{
+		WrapValueString();
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  OnMouseClick
+//
+//==========================================================================
+
+void OnMouseClick(int X, int Y)
+{
+	::OnMouseClick(X, Y);
+	WrapValueString();
+}
+
+//==========================================================================
+//
+//  OnRMouseClick
+//
+//==========================================================================
+
+void OnRMouseClick(int X, int Y)
+{
+	::OnRMouseClick(X, Y);
+	WrapValueString();
+}
+
+//==========================================================================
+//
+//  WrapValueString
+//
+//==========================================================================
+
+void WrapValueString()
+{
+	int xx;
+	if (bLeftAlign)
+	{
+		xx = TextWidth(Text) + 8;
+	}
+	else
+	{
+		xx = CursorXOffs + 10;
+	}
+
+	WrappedValue = SplitTextWithNewlines(EnumNames[Value], Width - xx);
+	Height = TextHeight(WrappedValue);
+}
+
+
+
+defaultproperties
+{
+}

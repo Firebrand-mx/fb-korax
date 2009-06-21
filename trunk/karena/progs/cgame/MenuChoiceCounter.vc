@@ -1,0 +1,226 @@
+
+//
+// [CW] An alternative to slider control, easier to use than enumerator
+//
+
+class MenuChoiceCounter : MenuChoice;
+
+string		Text;
+string		ValueFormat;
+string		PostText;
+bool		bLeftAlign;
+bool		bAsInt;
+
+float		Value;
+float		ValueDelta;
+float		MinValue;
+float		MaxValue;
+string		ValueText;
+
+delegate bool ValueChanging(Object Sender, float NewValue);
+
+//==========================================================================
+//
+//  SetOrigin
+//
+//==========================================================================
+
+void SetOrigin(int x, int y)
+{
+	if (bLeftAlign)
+	{
+		SetPos(x, y);
+	}
+	else
+	{
+		SetPos(x - CursorXOffs, y);
+	}
+}
+
+//==========================================================================
+//
+//  SetNewValue
+//
+//==========================================================================
+
+bool SetNewValue(float NewValue)
+{
+	if (ValueChanging)
+	{
+		return ValueChanging(self, NewValue);
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//  SetInitialValue
+//
+//==========================================================================
+
+void SetInitialValue(float AValue)
+{
+	Value = AValue;
+	if (Value < MinValue)
+		Value = MinValue;
+	if (Value > MaxValue)
+		Value = MaxValue;
+	UpdateValueText();
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	int xx;
+
+	int Col = IsFocus() ? CR_YELLOW : CR_WHITE;
+	if (bLeftAlign)
+	{
+		SetTextAlign(hleft, vtop);
+		DrawText(0, 0, Text, Col);
+	}
+	else
+	{
+		SetTextAlign(hright, vtop);
+		DrawText(CursorXOffs, 0, Text, Col);
+	}
+
+	if (bLeftAlign)
+	{
+		xx = TextWidth(Text) + 8;
+	}
+	else
+	{
+		xx = CursorXOffs + 10;
+	}
+
+	SetTextAlign(hleft, vtop);
+	DrawText(xx, 0, ValueText, IsFocus() ? CR_YELLOW : CR_TAN);
+}
+
+//==========================================================================
+//
+//  OnKeyDown
+//
+//==========================================================================
+
+bool OnKeyDown(int key)
+{
+	float newValue;
+
+	switch (key)
+	{
+	case K_LEFTARROW:
+		newValue = Value - ValueDelta;
+		if (newValue < MinValue)
+		{
+			newValue = MinValue;
+		}
+		if (SetNewValue(newValue))
+		{
+			Value = newValue;
+			UpdateValueText();
+			LocalSound('menu/change');
+		}
+		return true;
+
+	case K_RIGHTARROW:
+		newValue = Value + ValueDelta;
+		if (newValue > MaxValue)
+		{
+			newValue = MaxValue;
+		}
+		if (SetNewValue(newValue))
+		{
+			Value = newValue;
+			UpdateValueText();
+			LocalSound('menu/change');
+		}
+		return true;
+	}
+	return ::OnKeyDown(key);
+}
+
+//==========================================================================
+//
+//  OnMouseClick
+//
+//==========================================================================
+
+void OnMouseClick(int X, int Y)
+{
+	float newValue;
+
+	newValue = Value + ValueDelta;
+	if (newValue > MaxValue)
+	{
+		newValue = MaxValue;
+	}
+	if (SetNewValue(newValue))
+	{
+		Value = newValue;
+		UpdateValueText();
+		LocalSound('menu/change');
+	}
+}
+
+//==========================================================================
+//
+//  OnRMouseClick
+//
+//==========================================================================
+
+void OnRMouseClick(int X, int Y)
+{
+	float newValue;
+
+	newValue = Value - ValueDelta;
+	if (newValue < MinValue)
+	{
+		newValue = MinValue;
+	}
+	if (SetNewValue(newValue))
+	{
+		Value = newValue;
+		UpdateValueText();
+		LocalSound('menu/change');
+	}
+}
+
+//==========================================================================
+//
+//  UpdateValueText
+//
+//==========================================================================
+
+void UpdateValueText()
+{
+	if (strlen(ValueFormat) > 0)
+	{
+		string format = va("%s %%s", ValueFormat);
+		dprint("ValueFormat = %s", ValueFormat);
+		dprint("format = %s", format);
+		dprint("PostText = %s", PostText);
+		ValueText = bAsInt ? va(format, ftoi(Value), PostText) : va(format, Value, PostText);
+	}
+	else
+	{
+		ValueText = bAsInt ? va("%i %s", ftoi(Value), PostText) : va("%f %s", Value, PostText);
+	}
+}
+
+defaultproperties
+{
+	Width = 360;
+	Height = 20;
+	CursorXOffs = 200;
+	Value = 0.0;
+	ValueDelta = 1.0;
+	MinValue = 0.0;
+	MaxValue = 1.0;
+}
