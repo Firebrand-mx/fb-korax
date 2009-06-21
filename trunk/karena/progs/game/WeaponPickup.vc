@@ -28,23 +28,35 @@ class WeaponPickup : KArenaWeapon
 
 //==========================================================================
 //
+//	GetActualWeaponClass
+//
+//==========================================================================
+
+class<KArenaWeapon> GetActualWeaponClass(KArenaPlayerPawn Toucher)
+{
+	return Toucher.WeaponClasses[Slot - 1];
+}
+
+//==========================================================================
+//
 //	CreateCopy
 //
 //==========================================================================
 
 Inventory CreateCopy(EntityEx Toucher)
 {
-	class<Weapon> WpnClass = KArenaPlayerPawn(Toucher).WeaponClasses[Slot - 1];
+	class<KArenaWeapon> WpnClass = GetActualWeaponClass(KArenaPlayerPawn(Toucher)); // KArenaPlayerPawn(Toucher).WeaponClasses[Slot - 1];
 	if (!WpnClass)
 	{
 		return none;
 	}
 
-	AddAmmo(Toucher, AmmoType1, AmmoGive1);
-	AddAmmo(Toucher, AmmoType2, AmmoGive2);
-	AddAmmo(Toucher, AmmoType3, AmmoGive3);
+	KArenaWeapon Copy = Spawn(WpnClass);
 
-	Weapon Copy = Spawn(WpnClass);
+	AddAmmo(Toucher, Copy.AmmoType1, AmmoGive1);
+	AddAmmo(Toucher, Copy.AmmoType2, AmmoGive2);
+	AddAmmo(Toucher, Copy.AmmoType3, AmmoGive3);
+
 	PickupMessage = Copy.PickupMessage;
 	GoAwayAndDie();
 	return Copy;
@@ -58,7 +70,7 @@ Inventory CreateCopy(EntityEx Toucher)
 
 final bool PickupForMana(EntityEx Toucher)
 {
-	class<Weapon> WpnClass = KArenaPlayerPawn(Toucher).WeaponClasses[Slot - 1];
+	class<KArenaWeapon> WpnClass = GetActualWeaponClass(KArenaPlayerPawn(Toucher)); // KArenaPlayerPawn(Toucher).WeaponClasses[Slot - 1];
 	if (!WpnClass)
 	{
 		return false;
@@ -72,15 +84,15 @@ final bool PickupForMana(EntityEx Toucher)
 	}
 
 	bool gaveMana = false;
-	if (Player(Toucher.Player).GiveAmmo(AmmoType1, AmmoGive1))
+	if (Player(Toucher.Player).GiveAmmo(WpnClass.default.AmmoType1, AmmoGive1))
 	{
 		gaveMana = true;
 	}
-	if (Player(Toucher.Player).GiveAmmo(AmmoType2, AmmoGive2))
+	if (Player(Toucher.Player).GiveAmmo(WpnClass.default.AmmoType2, AmmoGive2))
 	{
 		gaveMana = true;
 	}
-	if (Player(Toucher.Player).GiveAmmo(AmmoType3, AmmoGive3))
+	if (Player(Toucher.Player).GiveAmmo(WpnClass.default.AmmoType3, AmmoGive3))
 	{
 		gaveMana = true;
 	}

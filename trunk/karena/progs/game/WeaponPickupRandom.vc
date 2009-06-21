@@ -1,0 +1,146 @@
+
+class WeaponPickupRandom : WeaponPickup
+		__mobjinfo__(15043);
+
+const int MAX_VARIANTS = HexenDefs::NUMWEAPONSLOTS - 2;
+
+int			RandomMinClass;
+int			RandomMaxClass;
+class<Ammo> RestrictAmmoType;
+name		RestrictDamageType;
+
+
+//===========================================================================
+//
+//  OnMapSpawn
+//
+//===========================================================================
+
+void OnMapSpawn(mthing_t* mthing)
+{
+	Randomize();
+	::OnMapSpawn(mthing);
+}
+
+//==========================================================================
+//
+//  DoRespawn
+//
+//==========================================================================
+
+bool DoRespawn()
+{
+	Randomize();
+	return true;
+}
+
+//==========================================================================
+//
+//	GetActualWeaponClass
+//
+//==========================================================================
+
+class<KArenaWeapon> GetActualWeaponClass(KArenaPlayerPawn Toucher)
+{
+	if (RestrictDamageType == 'none')
+	{
+		return Toucher.WeaponClasses[Slot - 1];
+	}
+	else
+	{
+		bool once = false;
+		int i = Slot - 1;
+		while (true)
+		{
+			if (Toucher.WeaponClasses[i].default.DamageTypeHint == RestrictDamageType)
+			{
+				return Toucher.WeaponClasses[i];
+			}
+
+			i++;
+			if (i == HexenDefs::NUMWEAPONSLOTS)
+			{
+				if (once)
+				{
+					return none;
+				}
+
+				once = true;
+				i = 2;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  Randomize
+//
+//==========================================================================
+
+void Randomize()
+{
+	Slot = 0;
+
+	if (RestrictDamageType == 'none')
+	{
+		if (!RestrictAmmoType)
+		{
+			Slot = RandomMinClass + P_Random() % (RandomMaxClass - RandomMinClass + 1);
+		}
+		else if (RestrictAmmoType == Mana1)
+		{
+			Slot = 5;
+		}
+		else if (RestrictAmmoType == Mana2)
+		{
+			Slot = 3 + (P_Random() % 2) * 3;
+		}
+		else if (RestrictAmmoType == ItemManaRed)
+		{
+			Slot = 4 + (P_Random() % 2) * 3;
+		}
+
+		IdleState = FindState(StrToName(va("Spawn%i", Slot)));
+	}
+	else
+	{
+		Slot = 2 + P_Random() % (MAX_VARIANTS - 2);
+		IdleState = FindState('Fire');
+	}
+
+	print("randomized %n: slot = %i", GetClassName(Class), Slot);
+}
+
+states
+{
+Spawn3:
+	WEAP C -1 Bright
+	Stop
+Spawn4:
+	WEAP D -1 Bright
+	Stop
+Spawn5:
+	WEAP E -1 Bright
+	Stop
+Spawn6:
+	WEAP F -1 Bright
+	Stop
+Spawn7:
+	WEAP G -1 Bright
+	Stop
+Spawn8:
+	WEAP H -1 Bright
+	Stop
+Fire: /* FIXME? */
+	WCFM ABCDEFGH 4 Bright
+	Loop
+}
+
+defaultproperties
+{
+	RandomMinClass = 3;
+	RandomMaxClass = 8;
+	RestrictAmmoType = none;
+	RestrictDamageType = 'none';
+}
