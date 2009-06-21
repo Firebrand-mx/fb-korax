@@ -3251,7 +3251,17 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 
 bool IsOKToPickupItem(Inventory Item)
 {
+	class<Inventory> realClass;
 	name parent_class;
+
+	if (Item.Class == RandomPowerup)
+	{
+		realClass = RandomPowerup(Item).PowerupClass;
+	}
+	else
+	{
+		realClass = class<Inventory>(Item.Class);
+	}
 
 #ifdef DEBUG_BOT_AI_ITEMS
 	print("IsOKToPickupItem : %n?", GetClassName(Item.Class));
@@ -3265,7 +3275,7 @@ bool IsOKToPickupItem(Inventory Item)
 	//		checking. Plus, some items should be tested differently.
 	//
 
-	if (Item.IsA('Health'))
+	if (Item.IsA('Health') || realClass == KArenaSuperHeal)
 	{
 		// [CW] Health is tested differently
 		if (EntityEx(MO).CheckInventory('health') < max_health)
@@ -3274,11 +3284,11 @@ bool IsOKToPickupItem(Inventory Item)
 		}
 		return false;
 	}
-	else if (Item.IsA('Armor'))
+	else if (Item.IsA('Armor') || realClass == KArenaArmor5)
 	{
 		// [CW] Armor is tested differently
 		BasicArmor Armor = BasicArmor(EntityEx(MO).FindInventory(BasicArmor));
-		if (Armor.Amount < ArmorPickup(Item).MaxSaveAmount)
+		if (Armor.Amount < /* ArmorPickup(Item). */class<ArmorPickup>(realClass).default.MaxSaveAmount)
 			return true;
 		return false;
 	}
@@ -3294,7 +3304,7 @@ bool IsOKToPickupItem(Inventory Item)
 	{
 		parent_class = 'ItemManaRed';
 	}
-	else if (Item.IsA('ItemManaCombined') || Item.IsA('ArtifactBoostMana'))
+	else if (Item.IsA('ItemManaCombined') || realClass == ArtiBoostMana)
 	{
 		// [CW] Combined mana and BoostMana are tested differently
 		if (EntityEx(MO).CheckInventory('Mana1') < ItemManaBlue.default.MaxAmount ||
@@ -3363,6 +3373,12 @@ bool IsOKToPickupItem(Inventory Item)
 	}
 	else if (!Item.MaxAmount)
 	{
+		// [CW] May happen because of faster tick rate
+		if (Item.Class == InitialInvulnerability)
+		{
+			return false;
+		}
+
 		// [CW] must be some instant use artifact (?)
 		return true;
 	}

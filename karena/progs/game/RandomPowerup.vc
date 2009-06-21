@@ -1,0 +1,130 @@
+
+class RandomPowerup : Inventory
+		__mobjinfo__(15052);
+
+enum
+{
+	//POWERUP_INVULNERABILITY,
+	POWERUP_INVISIBILITY,
+	POWERUP_SPEEDBOOTS,
+	POWERUP_PIDAMAGE,
+	POWERUP_BOOSTARMOR,
+	POWERUP_BOOSTAMMO,
+	POWERUP_SUPERHEAL,
+	NUM_POWERUPS
+};
+
+class<Inventory>	PowerupClass;
+
+//===========================================================================
+//
+//  OnMapSpawn
+//
+//===========================================================================
+
+void OnMapSpawn(mthing_t* mthing)
+{
+	Randomize();
+	::OnMapSpawn(mthing);
+}
+
+//==========================================================================
+//
+//  DoRespawn
+//
+//==========================================================================
+
+bool DoRespawn()
+{
+	Randomize();
+	return true;
+}
+
+//==========================================================================
+//
+//	TryPickup
+//
+//==========================================================================
+
+bool TryPickup(EntityEx Toucher)
+{
+	Inventory powerup = Spawn(PowerupClass,,,, false);
+	bool result = powerup.TryPickup(Toucher);	
+	if (result)
+	{
+		GoAwayAndDie();
+	}
+	powerup.Destroy();
+	return result;
+}
+
+//==========================================================================
+//
+//	GetPickupMessage
+//
+//==========================================================================
+
+string GetPickupMessage()
+{
+	return PowerupClass.default.PickupMessage;
+}
+
+//==========================================================================
+//
+//  Randomize
+//
+//==========================================================================
+
+void Randomize()
+{
+	switch (P_Random() % NUM_POWERUPS)
+	{
+	/*case POWERUP_INVULNERABILITY:
+		PowerupClass = class<Inventory>(KArenaArtiInvulnerability); IdleState = FindState('ArtiInvulnerability'); break;*/
+	case POWERUP_INVISIBILITY:
+		PowerupClass = class<Inventory>(KArenaArtiInvisibility); IdleState = FindState('ArtiInvisibility'); break;
+	case POWERUP_SPEEDBOOTS:
+		PowerupClass = class<Inventory>(KArenaArtiSpeedBoots); IdleState = FindState('ArtiSpeedBoots'); break;
+	case POWERUP_PIDAMAGE:
+		PowerupClass = class<Inventory>(ArtifactPIDamage); IdleState = FindState('ArtiPIDamage'); break;
+	case POWERUP_BOOSTARMOR:
+		PowerupClass = class<Inventory>(KArenaArmor5); IdleState = FindState('BoostArmor'); break;
+	case POWERUP_BOOSTAMMO:
+		PowerupClass = class<Inventory>(ArtiBoostMana); IdleState = FindState('BoostAmmo'); break;
+	case POWERUP_SUPERHEAL:
+		PowerupClass = class<Inventory>(KArenaSuperHeal); IdleState = FindState('SuperHeal'); break;
+	default:
+		Error("RandomPowerup : Unexpected random index");
+	}
+	print("randomized %n: class = %n", GetClassName(Class), GetClassName(PowerupClass));
+}
+
+states
+{
+/*ArtiInvulnerability:
+	INVU ABCD 3
+	Loop*/
+ArtiInvisibility:
+	INVS A 350 Bright
+	Loop
+ArtiSpeedBoots:
+	SPED ABCDEFGH 3 Bright
+	Loop
+ArtiPIDamage:
+	PIDM ABCDEFGH 4 Bright
+	Loop
+BoostArmor:
+	BRAC ABCDEFGH 4 Bright
+	Loop
+BoostAmmo:
+	BMAN A -1 Bright
+	Stop
+SuperHeal:
+	SPHL A 350
+	Loop
+}
+
+defaultproperties
+{
+	MaxAmount = 0;
+}
