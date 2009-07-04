@@ -58,24 +58,51 @@ void Do(float deltaTime)
 {
 	ConfusionTicker -= deltaTime;
 
-	OldAngles = ARecepient.Angles;
-
 	if (ConfusionTicker > 0.0)
 	{
 		if (ARecepient.bIsPlayer)
 		{
-			ARecepient.Player.cprint("conf: %i", ConfusionType);
 			if (ConfusionType & CONFUSION_TYPE__FORWARDMOVE)
 			{
-				ARecepient.Player.ForwardMove = -ARecepient.Player.ForwardMove + ARecepient.Player.SideMove;
+				if (P_Random() & 1)
+				{
+					ARecepient.Player.ForwardMove = (P_Random() & 1) ?
+						-ARecepient.Player.ForwardMove + ARecepient.Player.SideMove :
+						-ARecepient.Player.SideMove;
+				}
+				else
+				{
+					ARecepient.Player.SideMove = (P_Random() & 1) ? ARecepient.Player.ForwardMove :
+						-ARecepient.Player.ForwardMove;
+				}
 			}
 			if (ConfusionType & CONFUSION_TYPE__SIDEMOVE)
 			{
-				ARecepient.Player.SideMove = -ARecepient.Player.SideMove + ARecepient.Player.ForwardMove;
+				if (P_Random() & 1)
+				{
+					ARecepient.Player.SideMove = (P_Random() & 1) ?
+						-ARecepient.Player.SideMove + ARecepient.Player.ForwardMove :
+						-ARecepient.Player.ForwardMove;
+				}
+				else
+				{
+					ARecepient.Player.ForwardMove = (P_Random() & 1) ? ARecepient.Player.SideMove :
+						-ARecepient.Player.SideMove;
+				}
 			}
 			if (ConfusionType & CONFUSION_TYPE__JUMPDUCK)
 			{
-				switch (P_Random() & 1)
+				if (ARecepient.Player.Buttons & BT_JUMP)
+				{
+					ARecepient.Player.Buttons &= ~BT_JUMP;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= Player::BT_DUCK;
+				}
+				else if (ARecepient.Player.Buttons & Player::BT_DUCK)
+				{
+					ARecepient.Player.Buttons &= ~Player::BT_DUCK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_JUMP;
+				}
+				/*switch (P_Random() & 1)
 				{
 				case 0: ARecepient.Player.Buttons &= ~BT_JUMP; break;
 				case 1: ARecepient.Player.Buttons |= BT_JUMP; break;
@@ -85,16 +112,39 @@ void Do(float deltaTime)
 				{
 				case 0: ARecepient.Player.Buttons &= ~Player::BT_DUCK; break;
 				case 1: ARecepient.Player.Buttons |= Player::BT_DUCK; break;
-				}
+				}*/
 			}
-			if (ConfusionType & CONFUSION_TYPE__ANGLESMOVE)
+			if (true || ConfusionType & CONFUSION_TYPE__ANGLESMOVE)
 			{
 				// CHECKME -- need some fix, causes trouble
 				//ARecepient.Player.ViewAngles = OldAngles - (ARecepient.Player.ViewAngles - OldAngles);
+				ARecepient.Player.ViewAngles = OldAngles + (OldAngles - ARecepient.Player.ViewAngles);
 			}
 			if (ConfusionType & CONFUSION_TYPE__ATTACK)
 			{
-				switch (P_Random() & 1)
+				if (ARecepient.Player.Buttons & BT_ATTACK)
+				{
+					ARecepient.Player.Buttons &= ~BT_ATTACK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_ALT_ATTACK;
+				}
+				else if (ARecepient.Player.Buttons & BT_ALT_ATTACK)
+				{
+					ARecepient.Player.Buttons &= ~BT_ALT_ATTACK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_ATTACK;
+				}
+
+				if (P_Random() < Level * 16)
+				{
+					if (P_Random() & 1)
+					{
+						Player(ARecepient.Player).PrevWeapon();
+					}
+					else
+					{
+						Player(ARecepient.Player).NextWeapon();
+					}
+				}
+				/*switch (P_Random() & 1)
 				{
 				case 0: ARecepient.Player.Buttons &= ~BT_ATTACK; break;
 				case 1: ARecepient.Player.Buttons |= BT_ATTACK; break;
@@ -106,13 +156,39 @@ void Do(float deltaTime)
 					case 0: ARecepient.Player.Buttons &= ~BT_ALT_ATTACK; break;
 					case 1: ARecepient.Player.Buttons |= BT_ALT_ATTACK; break;
 					}
-				}
+				}*/
 			}
 			if (ConfusionType & CONFUSION_TYPE__INVENTORY)
 			{
+				if (P_Random() & 1)
+				{
+					Player(ARecepient.Player).InventoryLeft();
+				}
+				else
+				{
+					Player(ARecepient.Player).InventoryRight();
+				}
+
+				if (P_Random() < Level * 4)
+				{
+					Player(ARecepient.Player).InventoryUse();
+				}
 			}
 			if (ConfusionType & CONFUSION_TYPE__SPELLS)
 			{
+				if (P_Random() & 1)
+				{
+					Player(ARecepient.Player).NextSpell();
+				}
+				else
+				{
+					Player(ARecepient.Player).PreviousSpell();
+				}
+
+				if (P_Random() < Level * 8)
+				{
+					Player(ARecepient.Player).SpellUse();
+				}
 			}
 		}
 		else
@@ -123,7 +199,27 @@ void Do(float deltaTime)
 	{
 		ConfusionType = P_Random() & CONFUSION_TYPE__MASK;
 		ConfusionTicker = Random() * 3.0;
+
+		if (ARecepient.bIsPlayer)
+		{
+			// Send some stupid message
+			string msg;
+			switch (P_Random() & 7)
+			{
+			case 0: msg = "savegame was not saved"; break;
+			case 1: msg = "you lost all the magic power"; break;
+			case 2: msg = "look out!"; break;
+			case 3: msg = "your pants slipped down"; break;
+			case 4: msg = va("one %th of puzzle has been solved", P_Random() + 4); break;
+			case 5: msg = "you have no idea what is going on"; break;
+			case 6: msg = "you think you cannot think"; break;
+			case 7: msg = "rats ate your weapons"; break;
+			}
+			ARecepient.Player.cprint(msg);
+		}
 	}
+
+	OldAngles = ARecepient.Angles;
 }
 
 defaultproperties
