@@ -43,8 +43,6 @@ enum
 };
 
 
-//const int	MAXNODELINKS	= 8;
-
 // [CW] TODO: make nodelink an Object? to save ~2x mem space
 struct nodelink_t
 {
@@ -55,8 +53,6 @@ struct nodelink_t
 	float		maxdropoff;		// maximal dropoff height
 };
 
-
-//nodelink_t		Links[MAXNODELINKS];
 array<nodelink_t>	Links;
 
 
@@ -73,25 +69,10 @@ array<nodelink_t>	Links;
 
 void ApplyLink(nodelink_t * _link, int index, bool dual_connect)
 {
-	//dprint("CWAIEX : Node::ApplyLink : IN");
 	if (index < 0)
 	{
 		index = Links.Num;
 		Links.Num = Links.Num + 1;
-		/*int i;
-		for (i = 0; i < MAXNODELINKS; i++)
-		{
-			if (!Links[i]._Node)
-			{
-				index = i;
-				break;
-			}
-		}
-		if (index < 0)
-		{
-			//dprint("CWAIEX : Node::ApplyLink : OUT SKIP");
-			return;
-		}*/
 	}
 	else if (index >= Links.Num)
 		return;
@@ -108,8 +89,6 @@ void ApplyLink(nodelink_t * _link, int index, bool dual_connect)
 	_link->_Node = self;
 	if (dual_connect)
 		Links[index]._Node.ApplyLink(_link, -1, false);
-
-	//dprint("CWAIEX : Node::ApplyLink : OUT DONE");
 }
 
 //==========================================================================
@@ -120,8 +99,6 @@ void ApplyLink(nodelink_t * _link, int index, bool dual_connect)
 
 void RemoveLinkByIndex(int index, bool dual_removal)
 {
-	//dprint("CWAIEX : Node::RemoveLinkByIndex : IN");
-
 	if (dual_removal && Links[index]._Node)
 		Links[index]._Node.RemoveLinkByNode(self, false);
 
@@ -130,8 +107,6 @@ void RemoveLinkByIndex(int index, bool dual_removal)
 	Links[index].minyspace = 0.0;
 	Links[index].maxstepheight = 0.0;
 	Links[index].maxdropoff = 0.0;
-
-	//dprint("CWAIEX : Node::RemoveLinkByIndex : OUT");
 }
 
 //==========================================================================
@@ -144,8 +119,7 @@ void RemoveLinkByNode(Node _Node, bool dual_removal)
 {
 	int i;
 	int index;
-	//dprint("CWAIEX : Node::RemoveLinkByNode : IN");
-	for (i = 0; i < /*MAXNODELINKS*/Links.Num; i++)
+	for (i = 0; i < Links.Num; i++)
 	{
 		if (Links[i]._Node == _Node)
 		{
@@ -155,7 +129,6 @@ void RemoveLinkByNode(Node _Node, bool dual_removal)
 	}
 	if (index < 0)
 	{
-		//dprint("CWAIEX : Node::RemoveLinkByNode : OUT SKIP");
 		return;
 	}
 
@@ -167,8 +140,6 @@ void RemoveLinkByNode(Node _Node, bool dual_removal)
 	Links[index].minyspace = 0.0;
 	Links[index].maxstepheight = 0.0;
 	Links[index].maxdropoff = 0.0;
-
-	//dprint("CWAIEX : Node::RemoveLinkByNode : OUT DONE");
 }
 
 states
