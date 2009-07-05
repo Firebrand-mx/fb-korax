@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: LineSpecialLevelInfo.vc 3796 2008-09-22 17:19:37Z dj_jl $
+//**    $Id: LineSpecialLevelInfo.vc 4004 2009-03-04 20:56:22Z dj_jl $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -4233,7 +4233,28 @@ final bool DoThingProjectile(int tid, int TypeID, int AAngle, int ASpeed,
 			newA.Gravity = 0.125;
 		}
 		newA.SetTID(newtid);
-		if (newA.CheckMissileSpawn())
+		if (newA.bMissile)
+		{
+			if (newA.CheckMissileSpawn())
+			{
+				success = true;
+			}
+		}
+		else if (!newA.TestLocation())
+		{
+			//	If it counts as kill, adjust total kills count
+			if (newA.CountsAsKill())
+			{
+				TotalKills--;
+			}
+			//	Same for items.
+			if (newA.bCountItem)
+			{
+				TotalItems--;
+			}
+			newA.Destroy();
+		}
+		else
 		{
 			success = true;
 		}
@@ -4287,6 +4308,16 @@ final bool EV_ThingSpawn(int Arg1, int Arg2, int Arg3, int Arg4, int Arg5,
 		if (newAct.TestLocation() == false)
 		{
 			// Didn't fit
+			//	If it counts as kill, adjust total kills count
+			if (newAct.CountsAsKill())
+			{
+				TotalKills--;
+			}
+			//	Same for items.
+			if (newAct.bCountItem)
+			{
+				TotalItems--;
+			}
 			newAct.Destroy();
 		}
 		else
@@ -4340,6 +4371,16 @@ final int AcsSpawnThing(name Name, TVec Org, int Tid, float Angle)
 	if (NewAct.TestLocation() == false)
 	{
 		// Didn't fit
+		//	If it counts as kill, subtract total.
+		if (NewAct.CountsAsKill())
+		{
+			Level.TotalKills--;
+		}
+		//	The same for items.
+		if (NewAct.bCountItem)
+		{
+			Level.TotalItems--;
+		}
 		NewAct.Destroy();
 		return false;
 	}
@@ -4445,6 +4486,15 @@ final bool EV_ThingRemove(int tid)
 	success = false;
 	for (A = FindMobjFromTID(tid, none); A; A = FindMobjFromTID(tid, A))
 	{
+		//	Be friendly to level statistics.
+		if (EntityEx(A).CountsAsKill() && A.Health > 0)
+		{
+			TotalKills--;
+		}
+		if (EntityEx(A).bCountItem)
+		{
+			TotalItems--;
+		}
 		A.RemoveThing();
 		success = true;
 	}
@@ -5629,6 +5679,7 @@ final void RecursiveSound(sector_t* sec, int soundblocks, Entity soundtarget)
 	int			i;
 	line_t*		check;
 	sector_t*	other;
+	Entity		Ent;
 
 	// wake up all monsters in this sector
 	if (sec->validcount == *Game.validcount &&
@@ -5640,6 +5691,14 @@ final void RecursiveSound(sector_t* sec, int soundblocks, Entity soundtarget)
 	sec->validcount = *Game.validcount;
 	sec->soundtraversed = soundblocks + 1;
 	sec->SoundTarget = soundtarget;
+
+	for (Ent = sec->ThingList; Ent; Ent = Ent.SNext)
+	{
+		if (Ent != soundtarget)
+		{
+			EntityEx(Ent).LastHeard = EntityEx(soundtarget);
+		}
+	}
 
 	for (i = 0; i < sec->linecount; i++)
 	{
@@ -6556,7 +6615,7 @@ final void SpawnMapThing(mthing_t* mthing)
 		return;
 	}
 
-	// [CW] Especially for Korax Arena
+	// [CW] Specially for Korax Arena
 	if (SpawnSpecialNetmatchStart(mthing))
 		return;
 
@@ -7045,6 +7104,12 @@ final void ConChoiceImpulse(int ChoiceNum)
 		if (ItemType)
 		{
 			Item = Inventory(Spawn(ItemType,,,, false));
+			//	This shouldn't count for the item statistics
+			if (Item.bCountItem)
+			{
+				Item.bCountItem = false;
+				Level.TotalItems--;
+			}
 			GaveItem = Item.TryPickup(CurrentSpeakingTo);
 			if (!GaveItem)
 			{
@@ -7124,20 +7189,12 @@ final void ConChoiceImpulse(int ChoiceNum)
 
 final void AddPlayerCorpse(EntityEx Corpse)
 {
-	if (!Corpse)
-		Error("AddPlayerCorpse : Corpse is null reference");
-	if (!XLevel)
-		Error("AddPlayerCorpse : XLevel is null reference");
-
 	if (bodyqueslot >= BodyQueSize)
 	{
+		// Too many player corpses - remove an old one
 		if (bodyque[bodyqueslot % BodyQueSize])
-			// Too many player corpses - remove an old one
-			bodyque[bodyqueslot % BodyQueSize].Destroy();
-		else
 		{
-			dprint("AddPlayerCorpse : bodyqueslot is null reference");
-			dprint("AddPlayerCorpse : bodyqueslot %% BodyQueSize = %i", (bodyqueslot % BodyQueSize));
+			bodyque[bodyqueslot % BodyQueSize].Destroy();
 		}
 	}
 	bodyque[bodyqueslot % BodyQueSize] = Corpse;
