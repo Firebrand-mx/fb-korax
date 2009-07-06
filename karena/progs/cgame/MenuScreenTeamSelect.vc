@@ -47,6 +47,8 @@ int				curSelection;
 //
 //	CreateChoices
 //
+//	TODO: some things here are obsolete since teams are now precreated
+//
 //==========================================================================
 
 void CreateChoices()
@@ -154,9 +156,30 @@ void CreateChoices()
 		}
 	}
 
+	// SPECTATOR option
+	MenuSmallTextButton Btn = MenuSmallTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX, y);
+	Btn.Text = "Spectate";
+	Btn.Activated = ActivateSpectate;
+	y += Btn.Height;
+
 	SetHeight(y);
 
 	SetDefaultChoice();
+}
+
+//==========================================================================
+//
+//	ActivateSpectate
+//
+//==========================================================================
+
+void ActivateSpectate(Object Sender)
+{
+	bIsSelected = true;
+	Player(ClGame.cl).ServerSpectate();
+	ClGame.ForceMenuOff();
+	LocalSound('menu/choose');
 }
 
 //==========================================================================
@@ -194,7 +217,10 @@ void OnDestroy()
 			Player(ClGame.cl).ServerJoinTeam(curSelection);
 		else
 		{
-			int i;
+			// probably do nothing, or ->
+			//Player(ClGame.cl).ServerSpectate();
+
+			/*int i;
 			for (i = 0; i < NumItems; i++)
 			{
 				if (Items[i] && Items[i].IsA('MenuChoice_Team')
@@ -203,7 +229,7 @@ void OnDestroy()
 					Player(ClGame.cl).ServerJoinTeam(MenuChoice_Team(Items[i]).Team);
 					break;
 				}
-			}
+			}*/
 		}
 	}
 }
