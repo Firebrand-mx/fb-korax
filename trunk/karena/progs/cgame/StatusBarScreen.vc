@@ -506,12 +506,13 @@ void SB_DrawMainBar()
 		}
 	}
 
-	if (ClGame.deathmatch == HexenDefs::game_sweep ||
+	if (ClGame.deathmatch == HexenDefs::game_survival ||
+		ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		SB_DrawNumber9(62, 20, cl.KillCount, 0);
 		SB_DrawNumber9(158, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
-		if (ClGame.deathmatch == HexenDefs::game_sweep)
+		if (ClGame.deathmatch == HexenDefs::game_sweep || ClGame.deathmatch == HexenDefs::game_survival)
 		{
 			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
 		}
@@ -885,7 +886,8 @@ void SB_DrawFullscreenStats()
 		}
 	}
 
-	if (ClGame.deathmatch == HexenDefs::game_sweep ||
+	if (ClGame.deathmatch == HexenDefs::game_survival ||
+		ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
 		if (cl.KillCount)
@@ -896,7 +898,7 @@ void SB_DrawFullscreenStats()
 		{
 			SB_DrawNumber9(148, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
 		}
-		if (ClGame.deathmatch == HexenDefs::game_sweep)
+		if (ClGame.deathmatch == HexenDefs::game_sweep || ClGame.deathmatch == HexenDefs::game_survival)
 		{
 			if (cl.PlayerPosition + 1)
 			{
@@ -1242,6 +1244,17 @@ void SB_Drawer(int sb_view)
 		{	
 			if (!ClientGame(ClGame).TeamSelectScreen)
 				DrawText(320, 400, "You are spectating. Hit fire to join the game.", CR_LIGHTBLUE);
+		}
+		else if (GetCvar('deathmatch') == HexenDefs::game_survival)
+		{
+			if (cl.level_ender_counter > 0.0)
+			{
+				DrawText(320, 400, "Game over!", CR_RED);
+			}
+			else
+			{
+				DrawText(320, 400, "You were killed. You will respawn after monster wave is defeated.", CR_RED);
+			}
 		}
 		return;
 	}

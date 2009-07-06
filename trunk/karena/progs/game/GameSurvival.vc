@@ -1,0 +1,436 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: GameSurvival.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class GameSurvival : KArenaGameModel;
+
+enum
+{
+	state_preparegame,
+	state_countdownsequence,
+	state_wave
+};
+
+enum
+{
+	event_wavestart		= GameModel::event_custom,
+	event_waveend,
+	event_countdown,
+	event_wavespawn,
+	num_survivalevents	= event_wavespawn - GameModel::event_custom + 1
+};
+
+acsnotifier_t	AcsNotifiersSurvival[num_survivalevents];
+
+// monster classes in the order of growing difficulty
+array< name > MonsterClasses;
+array< name > BossClasses;
+
+int Wave;
+int LoLimit;
+int HiLimit;
+int BoostedLimit;
+int CountToSpawnMonsters;
+int CountToSpawnBosses;
+int CountMonstersAtOnce;
+
+GameSequencer		countdownSequencer;
+int					countDown;
+GameSequencer		waveSequencer;
+
+//==========================================================================
+//
+//	AllowedTeams
+//
+//==========================================================================
+
+int AllowedTeams()
+{
+	return 1;
+}
+
+//==========================================================================
+//
+//	AllowAllies
+//
+//==========================================================================
+
+int AllowAllies()
+{
+	return true;
+}
+
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void BeginState(int newstate)
+{
+	dprint("GameSurvival::BeginState : %i", newstate);
+
+	switch(newstate)
+	{
+	case state_preparegame:
+		Wave = -1;
+		EndCurrentState(state_countdownsequence);
+		return;
+
+	case state_countdownsequence:
+		SetUpWave();
+		//
+		// Setup countdown sequence
+		countDown = 10;
+		countdownSequencer = Level.Spawn(GameSequencer);
+		if (countdownSequencer)
+		{
+			countdownSequencer.time_limit = 1.0;
+			countdownSequencer.event_id = event_countdown;
+		}
+		break;
+
+	case state_wave:
+		waveSequencer = Level.Spawn(GameSequencer);
+		if (waveSequencer)
+		{
+			waveSequencer.time_limit = 1.0;
+			waveSequencer.event_id = event_wavespawn;
+		}
+		HandleEvent(event_wavestart, none, 0,0,0,0);
+		break;
+	};
+
+	State = newstate;
+}
+
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void EndCurrentState(int nextstate)
+{
+	int i;
+
+	switch (State)
+	{
+	case state_wave:
+		waveSequencer.Destroy();
+		waveSequencer = none;
+		//
+		// Kill all existing monsters, just in case
+		Level.P_Massacre();
+		//
+		// Ressurect killed players
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Game.Players[i] && Game.Players[i].MO && Game.Players[i].MO.Class == PlayerSpectator)
+			{
+				Game.Players[i].PlayerState = PST_REBORN;
+				Game.Players[i].NetGameReborn();
+			}
+		}
+		HandleEvent(event_waveend, none, 0,0,0,0);
+		break;
+
+	case state_countdownsequence:
+		countdownSequencer.Destroy();
+		countdownSequencer = none;
+		break;
+	}
+
+	::EndCurrentState(nextstate);
+}
+
+//==========================================================================
+//
+//	IsInPlayableState
+//
+//==========================================================================
+
+bool IsInPlayableState()
+{
+	return State > state_preparegame;
+}
+
+//==========================================================================
+//
+//	TeamFactor
+//
+//==========================================================================
+
+int TeamFactor(EntityEx a1, EntityEx a2)
+{
+	return teamfactor_coop;
+}
+
+//==========================================================================
+//
+//	OnActorDeath
+//
+//==========================================================================
+
+void OnActorDeath(Actor a, EntityEx source)
+{
+	if (!a.bMonster)
+	{
+		return;
+	}
+
+	int mleft = (Level.TotalKills - Level.CurrentKills) + CountToSpawnMonsters + CountToSpawnBosses;
+	if (mleft > 0 && mleft <= 10)
+	{
+		Game.BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+		Game.bcentreprint(va("%i monsters left!", (Level.TotalKills - Level.CurrentKills) + CountToSpawnMonsters + CountToSpawnBosses));
+	}
+
+	if (!mleft)
+	{
+		EndCurrentState(state_countdownsequence);
+	}
+}
+
+//==========================================================================
+//
+//	OnPlayerSpawn
+//
+//==========================================================================
+
+void OnPlayerSpawn(BasePlayer pl)
+{
+	// If the game hasn't been started yet and
+	// if there're at least 1 player in game, begin gameplay
+	if (State < 0)
+	{
+		BeginState(state_preparegame);
+	}
+}
+
+//==========================================================================
+//
+//	OnPlayerDeath
+//
+//==========================================================================
+
+void OnPlayerDeath(BasePlayer pl, EntityEx source)
+{
+	// When player is killed during the monster wave he becomes a
+	// spectator until the end of the wave.
+	if (State == state_wave)
+	{
+		Player(pl).bRespawnAsSpectator = true;
+		Player(pl).bAllowEndSpectate = false;
+
+		int i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Game.Players[i] && Game.Players[i].MO && Game.Players[i].MO.Class != PlayerSpectator && Game.Players[i].MO.Health > 0)
+			{
+				// There are still living players around, so game should continue
+				//
+				return;
+			}
+		}
+
+		// Too bad, all players died, end the game
+		End();
+	}
+}
+
+//==========================================================================
+//
+//	HandleEvent
+//
+//	ACS callable
+//
+//==========================================================================
+
+void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
+{
+	dprint("GameSurvival::HandleEvent : %i", Event);
+
+	switch (Event)
+	{
+	case event_wavestart:
+		Game.BroadcastLocalSoundNamed('BellRing', false, 0.0);
+		Game.bcentreprint(va("wave %i!", Wave + 1));
+		break;
+	case event_waveend:
+		break;
+	case event_countdown:
+		countDown--;
+		if (!countDown)
+		{
+			EndCurrentState(state_wave);
+		}
+		else
+		{
+			Game.BroadcastLocalSoundNamed('BellRing', false, 0.0);
+			Game.bcentreprint(va("next wave in %i seconds", countDown));
+		}
+		break;
+	case event_wavespawn:
+		WaveSpawn();
+		break;
+	default:
+		::HandleEvent(Event, A, arg1, arg2, arg3, arg4);
+		return;
+	}
+
+	NotifyACS(Event, 0, 0, 0);
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	if (event >= GameModel::event_custom && event < event_wavestart + num_survivalevents)
+	{
+		event -= GameModel::event_custom;
+		AcsNotifiersSurvival[event].enabled = true;
+		AcsNotifiersSurvival[event].script = script;
+	}
+	else
+	{
+		::SetACSNotifier(event, script);
+	}
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	dprint("GameSurvival::NotifyACS : Event = %i", Event);
+	if (Event >= GameModel::event_custom && Event < event_wavestart + num_survivalevents)
+	{
+		Event -= GameModel::event_custom;
+		if (AcsNotifiersSurvival[Event].enabled)
+		{
+			Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
+					AcsNotifiersSurvival[Event].script,
+					0,
+					Arg1,
+					Arg2,
+					Arg3,
+					NULL, 0, none);
+		}
+	}
+	else
+		::NotifyACS(Event, Arg1, Arg2, Arg3);
+}
+
+//==========================================================================
+//
+//	SetUpWave
+//
+//==========================================================================
+
+void SetUpWave()
+{
+	Wave++;
+	
+	// TODO!
+	LoLimit = 0;
+	HiLimit = 0;
+	BoostedLimit = -1;
+	CountToSpawnMonsters = 20;
+	CountToSpawnBosses = 0;
+	CountMonstersAtOnce = 10;
+}
+
+//==========================================================================
+//
+//	WaveSpawn
+//
+//==========================================================================
+
+void WaveSpawn()
+{
+	if (CountToSpawnMonsters + CountToSpawnBosses > 0 && (Level.TotalKills - Level.CurrentKills) < CountMonstersAtOnce)
+	{
+		// TODO!
+		int mClass = P_Random() % 2;
+		class<Actor> MClass = class<Actor>(FindClass(MonsterClasses[mClass]));
+		int place = P_Random() % Level.DeathmatchStarts.Num;
+		Level.Spawn(TeleportFog,,, &Level.DeathmatchStarts[place]);
+		Actor monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
+		if (monster)
+		{
+			// FIXME
+			Level.NoiseAlert(Game.Players[0].MO, monster);
+			CountToSpawnMonsters--;
+		}
+	}
+}
+
+defaultproperties
+{
+	/*
+	KArenaHereticImp
+	KArenaHereticImpLeader
+	KArenaFireDemon
+	KArenaIceGuy
+	KArenaBishop
+	KArenaSerpent
+	KArenaSerpentLeader
+	KArenaCentaur
+	KArenaCentaurLeader
+	KArenaCentaurMash
+	KArenaDemon1
+	KArenaDemon2
+	KArenaDemon1Mash
+	KArenaDemon2Mash
+	HereticMummy
+	HereticMummyLeader
+	HereticMummyGhost
+	HereticMummyLeaderGhost
+*/
+
+	MonsterClasses.Num = 10;
+	MonsterClasses[0] = 'KArenaHereticImpLeader';
+	MonsterClasses[1] = 'HereticMummyLeader';
+}
