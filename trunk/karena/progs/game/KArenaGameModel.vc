@@ -7,14 +7,14 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: GameModel.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**    $Id: KArenaGameModel.vc 508 2006-07-10 19:02:43Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -29,12 +29,16 @@
 //**  GNU General Public License for more details.
 //**
 //**************************************************************************
-//
-// Class GameModel, parent class for advanced game models
-//
 
-class GameModel : Object
+class KArenaGameModel : GameModel
 	abstract;
+
+// generic events
+enum
+{
+	event_colourtranslation = num_basegenericevents + 1,
+	num_kagenericevents
+};
 
 // team factors
 enum
@@ -45,28 +49,7 @@ enum
 	teamfactor_enemy
 };
 
-// generic events
-enum
-{
-	event_playablestatebegins,
-	event_colourtranslation,
-	num_genericevents,
-	event_custom				= 150
-};
-
-struct acsnotifier_t
-{
-	bool	enabled;
-	int		script;
-};
-
-acsnotifier_t	AcsNotifiersGeneric[num_genericevents];
-
-
 MainGameInfo		Game;
-HexenLevelInfo		Level;
-
-int		State;		// current game state
 
 
 //==========================================================================
@@ -75,9 +58,10 @@ int		State;		// current game state
 //
 //==========================================================================
 
-void Init(MainGameInfo aGame)
+void Init()
 {
-	Game = aGame;
+	::Init();
+	AcsNotifiersGeneric.Num = num_kagenericevents;
 }
 
 //==========================================================================
@@ -104,59 +88,11 @@ int AllowAllies()
 
 //==========================================================================
 //
-//	BeginState
-//
-//	ACS callable
-//
-//==========================================================================
-
-void BeginState(int newstate)
-{
-	dprint("Game::BeginState : possibly unknown state is set");
-}
-
-//==========================================================================
-//
-//	IsInPlayableState
-//
-//==========================================================================
-
-bool IsInPlayableState()
-{
-	return State >= 0;
-}
-
-//==========================================================================
-//
-//	EndCurrentState
-//
-//	ACS callable
-//
-//==========================================================================
-
-void EndCurrentState(int nextstate)
-{
-	BeginState(nextstate);
-}
-
-//==========================================================================
-//
 //	ConfirmAddTeam
 //
 //==========================================================================
 
 bool ConfirmAddTeam()	//???????? need this?
-{
-	return false;
-}
-
-//==========================================================================
-//
-//	ConfirmAddPlayer
-//
-//==========================================================================
-
-bool ConfirmAddPlayer()	//???????? need this?
 {
 	return false;
 }
@@ -174,31 +110,11 @@ int TeamFactor(EntityEx a1, EntityEx a2)
 
 //==========================================================================
 //
-//	NotifyUpdateTeams
+//	OnUpdateTeams
 //
 //==========================================================================
 
-void NotifyUpdateTeams()
-{
-}
-
-//==========================================================================
-//
-//	NotifySpawnPlayer
-//
-//==========================================================================
-
-void NotifyPlayerSpawn(Player pl)
-{
-}
-
-//==========================================================================
-//
-//	NotifyPlayerDeath
-//
-//==========================================================================
-
-void NotifyPlayerDeath(Player pl, EntityEx source)
+void OnUpdateTeams()
 {
 }
 
@@ -227,81 +143,17 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 
 	switch (Event)
 	{
-	case event_playablestatebegins:
-		break;
-
 	case event_colourtranslation:
 		notifyACSArgs[0] = arg1;	// should be team index
 		notifyACSArgs[1] = arg2;	// should be object tag
 		break;
 		
 	default:
-		dprint("Game::HandleEvent : unknown event %i", Event);
+		::HandleEvent(Event, A, arg1, arg2, arg3, arg4);
+		return;
 	}
 	
 	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
-}
-
-//==========================================================================
-//
-//	SetACSNotifier
-//
-//	ACS callable
-//
-//==========================================================================
-
-void SetACSNotifier(int event, int script)
-{
-	if (event >= 0 && event < num_genericevents)
-	{
-		AcsNotifiersGeneric[event].enabled = true;
-		AcsNotifiersGeneric[event].script = script;
-	}
-}
-
-//==========================================================================
-//
-//	NotifyACS
-//
-//==========================================================================
-
-void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
-{
-	dprint("GameModel::NotifyACS : Event = %i", Event);
-	if (Event >= 0 && Event < num_genericevents &&
-		AcsNotifiersGeneric[Event].enabled)
-	{
-		Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
-				AcsNotifiersGeneric[Event].script,
-				0,
-				Arg1,
-				Arg2,
-				Arg3,
-				NULL, 0, none);
-	}
-}
-
-//==========================================================================
-//
-//	Cleanup
-//
-//==========================================================================
-
-void Cleanup()
-{
-}
-
-//==========================================================================
-//
-//	End
-//
-//==========================================================================
-
-void End()
-{
-	Cleanup();
-	Game.GameModel = none;
-	Destroy();
 }
 
 //==========================================================================
@@ -349,7 +201,26 @@ void PrepareColoredDecorations()
 	dprint("GameModel : processed %i colored decorations total", i_debug);
 }
 
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
+void End()
+{	
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Game.Players[i] && !Game.Players[i].bIsBot)
+		{
+			Player(Game.Players[i]).level_ender_counter = 2.0;
+		}
+	}
+
+	::End();
+}
+
 defaultproperties
 {
-	State = -1;
 }

@@ -1209,11 +1209,11 @@ Actor FindEnemy(optional bool bReachable)
 					{
 						int teamfactor;
 
-						teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(actor.Tracer,
+						teamfactor = KArenaGameModel(MainGameInfo(player.Level.Game).GameModel).TeamFactor(actor.Tracer,
 									Actor(botmo));
 						// [FB] We've got a team factor, just check if it's an ally or not
-						if (teamfactor != GameModel::teamfactor_any &&
-							teamfactor != GameModel::teamfactor_enemy)
+						if (teamfactor != KArenaGameModel::teamfactor_any &&
+							teamfactor != KArenaGameModel::teamfactor_enemy)
 						{
 							continue;
 						}
@@ -1300,11 +1300,11 @@ Actor FindEnemy(optional bool bReachable)
 			{
 				int teamfactor;
 
-				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
+				teamfactor = KArenaGameModel(MainGameInfo(player.Level.Game).GameModel).TeamFactor(Actor(botmo),
 					     Actor(player.Level.Game.Players[i].MO));
 				// [CW] We've got a team factor, check if it can be an enemy
-				if (teamfactor != GameModel::teamfactor_any &&
-				    teamfactor != GameModel::teamfactor_enemy)
+				if (teamfactor != KArenaGameModel::teamfactor_any &&
+				    teamfactor != KArenaGameModel::teamfactor_enemy)
 				{
 					continue;
 				}
@@ -1696,11 +1696,11 @@ Actor SetAlly()
 			{
 				int teamfactor;
 
-				teamfactor = MainGameInfo(player.Level.Game).GameModel.TeamFactor(Actor(botmo),
+				teamfactor = KArenaGameModel(MainGameInfo(player.Level.Game).GameModel).TeamFactor(Actor(botmo),
 							 Actor(player.Level.Game.Players[i].MO));
 				// [FB] We've got a team factor, just check if it's an ally or not
-				if (teamfactor != GameModel::teamfactor_any &&
-					teamfactor != GameModel::teamfactor_enemy)
+				if (teamfactor != KArenaGameModel::teamfactor_any &&
+					teamfactor != KArenaGameModel::teamfactor_enemy)
 				{
 					ally = Actor(player.Level.Game.Players[i].MO);
 				}
@@ -2871,7 +2871,7 @@ void BotTick(float deltaTime)
 		// [FB] Set an ally if we're in a mode that has one
 		// [CW] this may change by time in some game modes
 		if (!ally && (gameInfo.bIsCoopGame[gameInfo.GameType] ||
-			gameInfo.GameModel && gameInfo.GameModel.AllowAllies()))
+			gameInfo.GameModel && KArenaGameModel(gameInfo.GameModel).AllowAllies()))
 		{
 			ally = SetAlly();
 		}

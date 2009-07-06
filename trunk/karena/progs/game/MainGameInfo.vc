@@ -30,12 +30,10 @@
 //**
 //**************************************************************************
 
-class MainGameInfo : LineSpecialGameInfo;
+class MainGameInfo : KAGameInfo;
 
 const int NUMTOTALBOTS		= 24;
 const int NUMBOTTYPES		= 24;
-
-const float TELEFOGHEIGHT	= 32.0;
 
 int		AltWeaponModeCount[HexenDefs::NUM_ALTFIRE];
 
@@ -48,7 +46,8 @@ array<TeamInfoParser::teaminfo_t> TeamInfos;
 //[CW] Prizes
 string TrophyText[HexenDefs::NUMTROPHIES];
 
-int classFlags[3];
+// [CW] Not really needed for multiplayer/multiclass game
+//int classFlags[3];
 
 bool		bFirstLevelInited;
 int			GameType;
@@ -56,8 +55,8 @@ bool		bIsCoopGame[HexenDefs::NUMGAMES];
 int			MaxTeamsInGame[HexenDefs::NUMGAMES];
 
 PlayerTeam	Teams[HexenDefs::MAXTEAMSINGAME];
-HexenLevelInfo	Level;
-GameModel		GameModel;			// [CW] for advanced game modes
+HexenLevelInfo	Level;				// CHECKME needed here?
+//GameModel		GameModel;			// [CW] for advanced game modes
 
 bool		bCompetitionOpened;	// [CW] is set to true when first player gets first score
 int			Highscore;
@@ -188,8 +187,9 @@ void InitNewGame(int skill)
 
 	if (GameModel)
 	{
-		GameModel.Init(self);
-		MaxTeamsInGame[GameType] = GameModel.AllowedTeams();
+		KArenaGameModel(GameModel).Game = self;
+		GameModel.Init();
+		MaxTeamsInGame[GameType] = KArenaGameModel(GameModel).AllowedTeams();
 	}
 
 	//
@@ -261,6 +261,10 @@ void InitLevel(HexenLevelInfo levelinfo)
 	
 	if (bFirstLevelInited)
 	{
+		// Reset Game Model
+		if (GameModel)
+			GameModel.Reset();
+
 		int i;
 		// Reset everyone's score
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -762,7 +766,7 @@ void InsertPlayer(Player pl, int TeamIndex)
 		// if an advanced game mode is running, notify it that
 		// a new team object is created
 		if (GameModel)
-			GameModel.NotifyUpdateTeams();
+			KArenaGameModel(GameModel).OnUpdateTeams();
 			
 		if (GameType >= HexenDefs::NUMGAMESNOTEAM)
 			pl.Level.bprint("team %s enters competition", Teams[teamnum].Name);
@@ -861,7 +865,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X frags left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 5)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i frags left!", scorelimit - Highscore));
 			}
 			break;
@@ -872,7 +876,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X points left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 10)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i points left!", scorelimit - Highscore));
 			}
 			break;
@@ -880,7 +884,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X burned trees left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 25)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i burned trees left!", scorelimit - Highscore));
 			}
 			break;
@@ -888,7 +892,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X points left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 25)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i points left!", scorelimit - Highscore));
 			}
 			break;
@@ -896,7 +900,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X flags left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 3)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i captures left!", scorelimit - Highscore));
 			}
 			break;
@@ -904,7 +908,7 @@ void UpdateHighscore(int score)
 			// [CW] Announce 'X goals left'
 			if (Highscore < scorelimit && Highscore >= scorelimit - 5)
 			{
-				BroadcastLocalSoundNamed('misc/chat', true, 0.0);
+				BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				bcentreprint(va("%i goals left!", scorelimit - Highscore));
 			}
 			break;
@@ -1022,17 +1026,7 @@ void SpawnDynamicLight(int colour, TVec org, int radius, int lifetime, int decay
 defaultproperties
 {
 	LevelInfoClass = HexenLevelInfo;
-	GameFilterFlag = EntityEx::GAME_Hexen;
 	PlayerReplicationInfoClass = KArenaPlayerReplicationInfo;
-	bDefaultBloodSplatter = true;
-	bUseHexenPolyobjTypes = true;
-	bNoDamageThrustInvulnerable = true;
-	bNightmareFastChase = true;
-	bRavenStylePickupRespawn = true;
-	TeleFogHeight = TELEFOGHEIGHT;
-	TeleportFogState = 'Raven';
-	DefaultKickBack = 150.0;
-	NonMonsterAngleIncrements = 1;
 
 	bIsCoopGame[HexenDefs::game_unused] = false;
 	bIsCoopGame[HexenDefs::game_dm] = false;
@@ -1072,9 +1066,10 @@ defaultproperties
 	TrophyText[10] = "%i kills in a row!";
 	TrophyText[11] = "accuracy!";
 
-	classFlags[0] = HexenLevelInfo::MTF2_FIGHTER;
-	classFlags[1] = HexenLevelInfo::MTF2_CLERIC;
-	classFlags[2] = HexenLevelInfo::MTF2_MAGE;
+	// [CW] not needed for KA
+//	classFlags[0] = HexenLevelInfo::MTF2_FIGHTER;
+//	classFlags[1] = HexenLevelInfo::MTF2_CLERIC;
+//	classFlags[2] = HexenLevelInfo::MTF2_MAGE;
 
 	PlayerClasses.Num = HexenDefs::LASTSELECTABLECLASS + 1;
 	PlayerClasses[HexenDefs::PCLASS_FIGHTER] = PlayerFighter;
