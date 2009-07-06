@@ -111,6 +111,15 @@ void OnMapSpawn(mthing_t* mthing)
 		Speed = FastSpeed;
 	}
 
+	if (CountsAsKill())
+	{
+		Level.TotalKills++;
+	}
+	if (bCountItem)
+	{
+		Level.TotalItems++;
+	}
+
 	//	Set the state, but do not use SetState, because action routines can't
 	// be called yet.  If the spawnstate has an action routine, it will not
 	// be called.
@@ -178,14 +187,6 @@ void OnMapSpawn(mthing_t* mthing)
 		if (!bSynchronised && StateTime > 0.0)
 		{
 			StateTime = 0.1 + Random() * StateTime;
-		}
-		if (bCountKill)
-		{
-			Level.TotalKills++;
-		}
-		if (bCountItem)
-		{
-			Level.TotalItems++;
 		}
 
 		Angles.yaw = itof(AngleIncrements() * (mthing->angle /
@@ -515,6 +516,10 @@ void Died(EntityEx source, EntityEx inflictor)
 				125.0 : (Level.World.GameSkill < 3 ? 100.0 : 80.0)) / 100.0));
 		}
 	}
+
+	//[CW] notify advanced game mode
+	if (KAGameInfo(Level.Game).GameModel)
+		KAGameInfo(Level.Game).GameModel.OnActorDeath(self, source);
 }
 
 //==========================================================================

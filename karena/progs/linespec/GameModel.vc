@@ -1,0 +1,250 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: GameModel.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+//
+// Class GameModel, parent class for advanced game models
+//
+
+class GameModel : Object
+	abstract;
+
+// generic events
+enum
+{
+	event_playablestatebegins,
+	num_basegenericevents,
+	event_custom				= 150
+};
+
+struct acsnotifier_t
+{
+	bool	enabled;
+	int		script;
+};
+
+array<acsnotifier_t>	AcsNotifiersGeneric;
+
+int		State;		// current game state
+
+LineSpecialLevelInfo	Level;
+
+//==========================================================================
+//
+//	Init
+//
+//==========================================================================
+
+void Init()
+{
+	AcsNotifiersGeneric.Num = num_basegenericevents;
+}
+
+//==========================================================================
+//
+//	Reset
+//
+//	Called between levels to return GameModel into its initial state.
+//	Override to add game-specific events like data erasing.
+//
+//==========================================================================
+
+void Reset()
+{
+	Cleanup();
+	State = -1;
+}
+
+//==========================================================================
+//
+//	BeginState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void BeginState(int newstate)
+{
+	dprint("Game::BeginState : possibly unknown state is set");
+}
+
+//==========================================================================
+//
+//	EndCurrentState
+//
+//	ACS callable
+//
+//==========================================================================
+
+void EndCurrentState(int nextstate)
+{
+	BeginState(nextstate);
+}
+
+//==========================================================================
+//
+//	IsInPlayableState
+//
+//==========================================================================
+
+bool IsInPlayableState()
+{
+	return State >= 0;
+}
+
+//==========================================================================
+//
+//	ConfirmAddPlayer
+//
+//==========================================================================
+
+bool ConfirmAddPlayer()	//???????? need this?
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	OnActorDeath
+//
+//==========================================================================
+
+void OnActorDeath(Actor a, EntityEx source)
+{
+}
+
+//==========================================================================
+//
+//	OnPlayerSpawn
+//
+//==========================================================================
+
+void OnPlayerSpawn(BasePlayer pl)
+{
+}
+
+//==========================================================================
+//
+//	OnPlayerDeath
+//
+//==========================================================================
+
+void OnPlayerDeath(BasePlayer pl, EntityEx source)
+{
+}
+
+//==========================================================================
+//
+//	HandleEvent
+//
+//	ACS callable
+//
+//==========================================================================
+
+void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
+{
+	int notifyACSArgs[3];
+
+	switch (Event)
+	{
+	case event_playablestatebegins:
+		break;
+		
+	default:
+		dprint("Game::HandleEvent : unknown event %i", Event);
+	}
+	
+	NotifyACS(Event, notifyACSArgs[0], notifyACSArgs[1], notifyACSArgs[2]);
+}
+
+//==========================================================================
+//
+//	SetACSNotifier
+//
+//	ACS callable
+//
+//==========================================================================
+
+void SetACSNotifier(int event, int script)
+{
+	if (event >= 0 && event < AcsNotifiersGeneric.Num)
+	{
+		AcsNotifiersGeneric[event].enabled = true;
+		AcsNotifiersGeneric[event].script = script;
+	}
+}
+
+//==========================================================================
+//
+//	NotifyACS
+//
+//==========================================================================
+
+void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
+{
+	dprint("GameModel::NotifyACS : Event = %i", Event);
+	if (Event >= 0 && Event < AcsNotifiersGeneric.Num &&
+		AcsNotifiersGeneric[Event].enabled)
+	{
+		Level.ExecuteActionSpecial(LNSPEC_ACSExecuteAlways,
+				AcsNotifiersGeneric[Event].script,
+				0,
+				Arg1,
+				Arg2,
+				Arg3,
+				NULL, 0, none);
+	}
+}
+
+//==========================================================================
+//
+//	Cleanup
+//
+//==========================================================================
+
+void Cleanup()
+{
+}
+
+//==========================================================================
+//
+//	End
+//
+//==========================================================================
+
+void End()
+{
+	Cleanup();
+}
+
+defaultproperties
+{
+	State = -1;
+}

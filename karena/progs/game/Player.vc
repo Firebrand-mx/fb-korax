@@ -675,13 +675,15 @@ void KilledActor(EntityEx Victim)
 		UpdateQueuedTrophy(HexenDefs::trophycl_killsatonce, 1);
 		UpdateQueuedTrophy(HexenDefs::trophycl_killsrow, 1);
 		
+		// [CW] CHECKME: think - maybe make a game model for CS/TCS and put all that there
 		// [FB] Check how many monsters there are in castle sweep mode
 		if (MainGameInfo(Level.Game).GameType == HexenDefs::game_sweep ||
 		    MainGameInfo(Level.Game).GameType == HexenDefs::game_sweepteam)
 		{
 			if (Level.CurrentKills < Level.TotalKills && Level.TotalKills - Level.CurrentKills <= 10)
 			{
-				MO.PlaySound('misc/chat', CHAN_AUTO);
+				//MO.PlaySound('misc/chat', CHAN_AUTO);
+				MainGameInfo(Level.Game).BroadcastLocalSoundNamed('misc/chat', false, 0.0);
 				MainGameInfo(Level.Game).bcentreprint(va("%i monsters left!", Level.TotalKills - Level.CurrentKills));
 			}
 			
@@ -737,7 +739,7 @@ void KilledActor(EntityEx Victim)
 			}
 
 			if (MainGameInfo(Level.Game).GameModel)
-				se = MainGameInfo(Level.Game).GameModel.GetFragScoreEvent(self, Player(Victim.Player));
+				se = KArenaGameModel(MainGameInfo(Level.Game).GameModel).GetFragScoreEvent(self, Player(Victim.Player));
 
 			UpdateScore(se);
 
@@ -1219,7 +1221,7 @@ void SpawnPlayer(mthing_t * mthing, bool Voodoo)
 
 		// [CW] if there is advanced game mode initiated, notify it of player spawn
 		if (MainGameInfo(Level.Game).GameModel)
-			MainGameInfo(Level.Game).GameModel.NotifyPlayerSpawn(self);
+			MainGameInfo(Level.Game).GameModel.OnPlayerSpawn(self);
 
 		// [FB] Destroy all things touching players
 		Actor(MO).TeleportMove(MO.Origin);
@@ -1804,10 +1806,10 @@ void UpdateTargetInfo()
 		{
 			if (AimTarget.Player)
 			{
-				int teamfactor = GameModel::teamfactor_any;
+				int teamfactor = KArenaGameModel::teamfactor_any;
 				if (MainGameInfo(Level.Game).GameModel)
-					teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(Actor(MO), AimTarget);
-				if (teamfactor == GameModel::teamfactor_any)
+					teamfactor = KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(Actor(MO), AimTarget);
+				if (teamfactor == KArenaGameModel::teamfactor_any)
 				{
 					if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM &&
 						!MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType])
@@ -1819,7 +1821,7 @@ void UpdateTargetInfo()
 								? targetinfo_noshoot : targetinfo_shoot;
 				}
 				else
-					targetinfo.type = teamfactor == GameModel::teamfactor_coop ? targetinfo_noshoot : targetinfo_shoot;
+					targetinfo.type = teamfactor == KArenaGameModel::teamfactor_coop ? targetinfo_noshoot : targetinfo_shoot;
 
 				targetinfo.sname = AimTarget.Player.PlayerName;
 				targetinfo.level = Player(AimTarget.Player).exp_level;
@@ -3145,9 +3147,9 @@ bool CheckFriendlyFire(EntityEx source, int damage)
 		{
 			if (MainGameInfo(Level.Game).GameModel)
 			{
-				int teamfactor = MainGameInfo(Level.Game).GameModel.TeamFactor(EntityEx(MO),
+				int teamfactor = KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(EntityEx(MO),
 							source.bIsPlayer ? source : source.Target);
-				if (teamfactor == GameModel::teamfactor_coop)
+				if (teamfactor == KArenaGameModel::teamfactor_coop)
 					return true;
 			}
 
@@ -3588,7 +3590,7 @@ void Killed(EntityEx source, EntityEx inflictor)
 
 	//[CW] notify advanced game mode
 	if (MainGameInfo(Level.Game).GameModel)
-		MainGameInfo(Level.Game).GameModel.NotifyPlayerDeath(self, source);
+		MainGameInfo(Level.Game).GameModel.OnPlayerDeath(self, source);
 
 	SetFOV(HexenDefs::DEFAULT_FOV);
 }

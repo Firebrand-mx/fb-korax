@@ -237,6 +237,7 @@ void UpdateSpecials()
 	// [CW] This is temporary solution. I suppose making GameModel
 	//		Thinker's child will be best, but that will require some
 	//		general changes.
+	// ???????????????????????? -- not sure anymore
 
 	// [CW] Since Teams are precreated now, we must force
 	// teams checkup for GameModel
@@ -244,8 +245,8 @@ void UpdateSpecials()
 		&& XLevel.Time > 1.0 /* [CW] We must 'wait' when OPEN scripts are executed
 								and all ACS Notifiers are registered.. stupid, indeed :P */)
 	{
-		dprint("HexenLevelInfo::UpdateSpecials : call GameModel.NotifyUpdateTeams()");
-		MainGameInfo(Game).GameModel.NotifyUpdateTeams();
+		dprint("HexenLevelInfo::UpdateSpecials : call GameModel.OnUpdateTeams()");
+		KArenaGameModel(MainGameInfo(Game).GameModel).OnUpdateTeams();
 	}
 	
 	::UpdateSpecials();
@@ -348,18 +349,18 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 			MainGameInfo(Game).GameModel.HandleEvent(Arg1, A, Arg2, Arg3, Arg4, Arg5);
 		}
 		break;
-	case ACTSPEC_IsConditionTrue:
-		buttonSuccess = EV_IsConditionTrue(Arg1, Arg2);
-		break;
-	case ACTSPEC_RunACSConditional:
-		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
-		break;
 	case ACTSPEC_AdvancedGame_SetACSNotifier:
 		if (MainGameInfo(Game).GameModel)
 		{
 			buttonSuccess = true;
 			MainGameInfo(Game).GameModel.SetACSNotifier(Arg1, Arg2);
 		}
+		break;
+	case ACTSPEC_IsConditionTrue:
+		buttonSuccess = EV_IsConditionTrue(Arg1, Arg2);
+		break;
+	case ACTSPEC_RunACSConditional:
+		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
 		break;
 
 
@@ -751,6 +752,10 @@ bool EV_WeatherSetColour(int Num, int R, int G, int B, int A)
 	return false;
 }
 
+//
+// [CW] Not appliable for KA, at all
+//
+/*
 //==========================================================================
 //
 //  GetClassSpawnFlags
@@ -781,6 +786,7 @@ int GetPClassSpawnFlags()
 #endif
 	return 0;
 }
+*/
 
 //==========================================================================
 //
