@@ -1197,7 +1197,8 @@ Actor FindEnemy(optional bool bReachable)
 					continue;
 				}
 				// [FB] Don't attack a friendly minotaur in all these cases
-				if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep)
+				if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
+					MainGameInfo(player.Level.Game).GameType == HexenDefs::game_survival)
 				{
 					continue;
 				}
@@ -1714,7 +1715,8 @@ Actor SetAlly()
 					ally = Actor(player.Level.Game.Players[i].MO);
 				}
 			}
-			else if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Set an ally if we're in a mode that has one
+			else if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
+				MainGameInfo(player.Level.Game).GameType == HexenDefs::game_survival) // [FB] Set an ally if we're in a mode that has one
 			{
 				ally = Actor(player.Level.Game.Players[i].MO);
 			}
@@ -1753,7 +1755,8 @@ Actor SetAlly()
 					}
 				}
 			}
-			else if(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep) // [FB] Other ally gameplay modes (no player colour checking)
+			else if(MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
+				MainGameInfo(player.Level.Game).GameType == HexenDefs::game_survival) // [FB] Other ally gameplay modes (no player colour checking)
 			{
 				if (player.Level.Game.Players[j].MO.Health <= botmo.Health / 2)
 				{
@@ -2196,7 +2199,8 @@ void Attack()
 	// [FB] Don't attack if the distance is not the right one for this weapon
 	float combatdist = player.ReadyWeapon.BotCombatDist;
 	if ((MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
-		MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweepteam) &&
+		MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweepteam ||
+		MainGameInfo(player.Level.Game).GameType == HexenDefs::game_survival) &&
 		combatdist > Actor::MELEERANGE)
 	{
 		combatdist /= 2.0;
