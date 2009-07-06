@@ -137,6 +137,9 @@ trophies_t	Trophies;
 bool bShowScoreboard; // [CW] True if scoreboard should be visible
 
 bool bUnControllable; //[CW] Ignore user/AI commands (move/attack etc)
+bool bSpectator;
+bool bRespawnAsSpectator;
+bool bAllowEndSpectate;
 
 float	respawn_counter; // [CW] Time player must wait after his death before he may respawn
 bool	bRecalculateLevelOnRespawn; // [CW] Forces to recalc exp level on player respawn
@@ -160,7 +163,7 @@ replication
 		CallLocalSoundNamed;
 
 	reliable if (bIsClient)
-		ServerDisconnectBot, ServerTeamSelect, ServerJoinTeam;
+		ServerDisconnectBot, ServerTeamSelect, ServerJoinTeam, ServerSpectate;
 }
 
 //==========================================================================
@@ -825,7 +828,8 @@ void SelectPlayerTeam()
 		if (TeamSelection != HexenDefs::teamselection_reselect)
 		{
 			TeamSelection = HexenDefs::teamselection_wait;
-			SetControllable(false);
+			// [CW] perhaps not needed, since player starts as a spectator
+			//SetControllable(false);
 		}
 		
 		ClientTeamSelect(maxTeams, MainGameInfo(Level.Game).TeamInfos.Num, i,
@@ -981,6 +985,24 @@ void ServerJoinTeam(int Index)
 
 //==========================================================================
 //
+//  ServerSpectate
+//
+//==========================================================================
+
+void ServerSpectate()
+{
+	if (Team)
+	{
+		Team.DiscardPlayer(self);
+		TeamSelection = HexenDefs::teamselection_spectate;
+		MO.Destroy();
+		MO = none;
+		SpawnClient();
+	}
+}
+
+//==========================================================================
+//
 //  NetGameReborn
 //
 //	Respawn at the start
@@ -1087,7 +1109,7 @@ void DeathMatchSpawnPlayer()
 		if (CheckSpot(&Level.DeathmatchStarts[i]))
 		{
 #ifdef DEBUG_PLAYER_SPAWN
-			print("spawning at random deathmatch location");
+			print("spawning tested at random deathmatch location");
 #endif
 			SpawnPlayer(&Level.DeathmatchStarts[i], false);
 			return;
@@ -1096,9 +1118,10 @@ void DeathMatchSpawnPlayer()
 	
 	// no good spot, so the player will probably get stuck
 #ifdef DEBUG_PLAYER_SPAWN
-	print("spawning at random player location");
+	print("spawning blind at random deathmatch location");
 #endif
-	SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
+	//SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
+	SpawnPlayer(&Level.DeathmatchStarts[P_Random() % Level.DeathmatchStarts.Num], false);
 }
 
 //==========================================================================
@@ -1112,7 +1135,32 @@ void DeathMatchSpawnPlayer()
 
 void SpawnPlayer(mthing_t * mthing, bool Voodoo)
 {
-	::SpawnPlayer(mthing, Voodoo);
+#ifdef DEBUG_PLAYER_SPAWN
+	print("Player::SpawnPlayer :");
+#endif
+
+	// TODO: Checkme - what about Voodoo flag?
+	if (bRespawnAsSpectator || 
+		!bIsBot && MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && !Team)
+	{
+#ifdef DEBUG_PLAYER_SPAWN
+		print("spawn spectator : forced %i, allowend %i", bRespawnAsSpectator, bAllowEndSpectate);
+#endif
+		SpawnSpectator(mthing, bRespawnAsSpectator ? bAllowEndSpectate : true);
+		bRespawnAsSpectator = false;
+	}
+	else
+	{
+#ifdef DEBUG_PLAYER_SPAWN
+	print("spawn normal");
+#endif
+		bSpectator = false;
+		::SpawnPlayer(mthing, Voodoo);
+	}
+
+#ifdef DEBUG_PLAYER_SPAWN
+	print("SpawnPlayer : 2");
+#endif
 
 	//
 	// [CW] if the trophy data should be stored, do it here
@@ -1123,6 +1171,10 @@ void SpawnPlayer(mthing_t * mthing, bool Voodoo)
 	Trophies.fao_timer = 0.0;
 	Trophies.frags_row = 0;
 	Trophies.kills_row = 0;
+
+#ifdef DEBUG_PLAYER_SPAWN
+	print("SpawnPlayer : 3");
+#endif
 
 	// [FB] There's a penalty for dying; you lost some experience
 	if(inited && PlayerState == PST_LIVE)
@@ -1156,15 +1208,93 @@ void SpawnPlayer(mthing_t * mthing, bool Voodoo)
 		}
 	}
 
-	if (bUnControllable)
-		EntityEx(MO).Deactivate(none);
+#ifdef DEBUG_PLAYER_SPAWN
+	print("SpawnPlayer : 4");
+#endif
 
-	// [CW] if there is advanced game mode initiated, notify it of player spawn
-	if (MainGameInfo(Level.Game).GameModel)
-		MainGameInfo(Level.Game).GameModel.NotifyPlayerSpawn(self);
+	if (!bSpectator)
+	{
+		if (bUnControllable)
+			EntityEx(MO).Deactivate(none);
 
-	// [FB] Destroy all things touching players
-	Actor(MO).TeleportMove(MO.Origin);
+		// [CW] if there is advanced game mode initiated, notify it of player spawn
+		if (MainGameInfo(Level.Game).GameModel)
+			MainGameInfo(Level.Game).GameModel.NotifyPlayerSpawn(self);
+
+		// [FB] Destroy all things touching players
+		Actor(MO).TeleportMove(MO.Origin);
+	}
+#ifdef DEBUG_PLAYER_SPAWN
+	print("SpawnPlayer : 5");
+#endif
+}
+
+//==========================================================================
+//
+//  SpawnSpectator
+//
+//	(Re)Spawn player as invisible spectator
+//
+//==========================================================================
+
+void SpawnSpectator(mthing_t * mthing, bool AllowRespawn)
+{
+#ifdef DEBUG_PLAYER_SPAWN
+	print("Player::SpawnSpectator :");
+#endif
+	float				x;
+	float				y;
+	float				z;
+	PlayerPawn			PP;
+
+	if (PlayerState == PST_REBORN)
+	{
+		PlayerReborn();
+	}
+
+	PClass = HexenDefs::PCLASS_SPECTATOR;
+
+	x = mthing->x;
+	y = mthing->y;
+	z = Actor::ONFLOORZ;
+	
+	PP = Level.Spawn(class<PlayerPawn>(PlayerSpectator),
+		vector(x, y, z),,, false);
+	PP.Origin.z += mthing->height;
+	PP.LinkToWorld();
+	PP.FriendPlayer = GetPlayerNum() + 1;	//	Players are their own friends.
+
+	PP.Angles.yaw = itof(45 * (mthing->angle / 45));
+	PP.Player = self;
+	PP.bIsPlayer = true;
+	PP.Health = Health;
+	MO = PP;
+	Camera = PP;
+	ViewHeight = PP.ViewHeight;
+	ViewOrg = MO.Origin;
+	ViewOrg.z += ViewHeight;
+	ViewAngles = PP.Angles;
+	bFixAngle = true;
+
+	ResetPlayerOnSpawn();
+
+	// remove all psprites
+	int i;
+	for (i = 0; i < NUMPSPRITES; i++)
+	{
+		SetViewState(i, none);
+	}
+
+	// wake up the status bar
+	SB_Start();
+
+	// ?? need this here?
+	//SetClientModel();
+
+	UpdateRevealedMap();
+
+	bSpectator = true;
+	bAllowEndSpectate = AllowRespawn;
 }
 
 //===========================================================================
@@ -1726,8 +1856,35 @@ void UpdateTargetInfo()
 
 void PlayerTick(float deltaTime)
 {
+	// FIXME this sucks
 	if (bNoHUD)
 		ViewStates[ps_weapon].SY += 1000.0;
+
+	if (bSpectator && bAllowEndSpectate && (Buttons & BT_ATTACK))
+	{
+		if (Team)
+		{
+			print("from spectator -> respawn normal");
+			PlayerState = PST_REBORN;
+			NetGameReborn();
+		}
+		else
+		{
+			// This will also respawn player
+			// CHECKME: move this to some method?
+			if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM)
+			{
+				TeamSelection = HexenDefs::teamselection_wait;
+				SelectPlayerTeam();
+			}
+
+			if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
+				TeamSelection == HexenDefs::teamselection_done)
+			{
+				MainGameInfo(Level.Game).InsertPlayer(self, curTeamIndex);
+			}
+		}
+	}
 
 	if (bUnControllable)
 	{
@@ -1752,7 +1909,7 @@ void PlayerTick(float deltaTime)
 /*	if (!MO)
 		Error("Player::PlayerTick : MO reference not set to an instance of an object");*/
 
-	if (bIsBot)
+	if (bIsBot && !bSpectator)
 	{
 		BotTick(deltaTime);
 	}
@@ -1922,7 +2079,10 @@ void PlayerTick(float deltaTime)
 	}
 
 	//	Cycle psprites
-	MovePsprites(deltaTime);
+	if (!bSpectator)
+	{
+		MovePsprites(deltaTime);
+	}
 
 	//	Counters
 	// [CW]
@@ -1987,7 +2147,7 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if(!bUnControllable)
+	if(!bSpectator && !bUnControllable)
 	{
 		// [CW] No need for this processing when player has lost all experience
 		if (experience > 0)
@@ -3246,6 +3406,8 @@ bool IsAmmoBelowLevel(int AmountLimit, optional class<KArenaWeapon> WeaponClass,
 //==========================================================================
 //
 // IsOKToPickupItem
+//
+//	[CW] move to bot ai?
 //
 //==========================================================================
 
