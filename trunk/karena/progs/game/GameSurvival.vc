@@ -51,16 +51,16 @@ enum
 acsnotifier_t	AcsNotifiersSurvival[num_survivalevents];
 
 // monster classes in the order of growing difficulty
-array< name > MonsterClasses;
-array< name > BossClasses;
+array< name > MonsterClasses; 		// array of monster class names
+array< name > BossClasses;			// array of monster boss class names
 
 int Wave;
-int LoLimit;
-int HiLimit;
-int BoostedLimit;
-int CountToSpawnMonsters;
-int CountToSpawnBosses;
-int CountMonstersAtOnce;
+int LoLimit;						// lower index in monster array
+int HiLimit;						// higher index in monster array
+int BoostedLimit;					// highest index in monster array that allows spawning of boosted versions of monsters
+int CountToSpawnMonsters;			// how many monsters to spawn
+int CountToSpawnBosses;				// how many bosses to spawn
+int CountMonstersAtOnce;			// how many monsters & bosses can be on the level at the same time
 
 GameSequencer		countdownSequencer;
 int					countDown;
@@ -127,7 +127,7 @@ void BeginState(int newstate)
 			waveSequencer.time_limit = 1.0;
 			waveSequencer.event_id = event_wavespawn;
 		}
-		HandleEvent(event_wavestart, none, 0,0,0,0);
+		HandleEvent(event_wavestart, none, 0, 0, 0, 0);
 		break;
 	};
 
@@ -164,7 +164,7 @@ void EndCurrentState(int nextstate)
 				Game.Players[i].NetGameReborn();
 			}
 		}
-		HandleEvent(event_waveend, none, 0,0,0,0);
+		HandleEvent(event_waveend, none, 0, 0, 0, 0);
 		break;
 
 	case state_countdownsequence:
@@ -299,7 +299,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 		}
 		else
 		{
-			Game.BroadcastLocalSoundNamed('BellRing', false, 0.0);
+			Game.BroadcastLocalSoundNamed('ClockTick', false, 0.0);
 			Game.bcentreprint(va("next wave in %i seconds", countDown));
 		}
 		break;
@@ -372,14 +372,223 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 void SetUpWave()
 {
 	Wave++;
-	
-	// TODO!
-	LoLimit = 0;
-	HiLimit = 0;
-	BoostedLimit = -1;
-	CountToSpawnMonsters = 20;
-	CountToSpawnBosses = 0;
-	CountMonstersAtOnce = 10;
+
+	// We'll divide the setting up in two phases, counts and limits :D
+	// this is done so we can randomize things further depending waves
+
+	//
+	//	MONSTER COUNTS
+	//
+	if (Wave <= 3)
+	{
+		CountToSpawnMonsters = 20;
+		CountToSpawnBosses = 0;
+		CountMonstersAtOnce = P_Random() % 15;
+	}
+	else if (Wave > 3 && Wave <= 6)
+	{
+		CountToSpawnMonsters = 25;
+		CountToSpawnBosses = 0;
+		CountMonstersAtOnce = P_Random() % 15;
+	}
+	else if (Wave > 6 && Wave <= 9)
+	{
+		CountToSpawnMonsters = 25;
+		CountToSpawnBosses = 1;
+		CountMonstersAtOnce = P_Random() % 15;
+	}
+	else if (Wave > 9 && Wave <= 12)
+	{
+		CountToSpawnMonsters = 30;
+		CountToSpawnBosses = 1;
+		CountMonstersAtOnce = P_Random() % 20;
+	}
+	else if (Wave > 12 && Wave <= 15)
+	{
+		CountToSpawnMonsters = 35;
+		if (Wave == 15)
+			CountToSpawnBosses = 2;
+		else
+			CountToSpawnBosses = 1;
+		CountMonstersAtOnce = P_Random() % 25;
+	}
+	else if (Wave > 15 && Wave <= 18)
+	{
+		CountToSpawnMonsters = 40;
+		if (Wave == 18)
+			CountToSpawnBosses = 2;
+		else
+			CountToSpawnBosses = 1;
+		CountMonstersAtOnce = P_Random() % 25;
+	}
+	else if (Wave > 18 && Wave <= 21)
+	{
+		CountToSpawnMonsters = 45;
+		if (Wave == 21)
+			CountToSpawnBosses = 2;
+		else
+			CountToSpawnBosses = 1;
+		CountMonstersAtOnce = P_Random() % 25;
+	}
+	else if (Wave > 21 && Wave <= 24)
+	{
+		CountToSpawnMonsters = 50;
+		if (Wave == 24)
+		{
+			CountToSpawnBosses = 2;
+		}
+		else
+		{
+			CountToSpawnBosses = 1;
+		}
+		CountMonstersAtOnce = 25;
+	}
+	else if (Wave > 21 && Wave <= 24)
+	{
+		CountToSpawnMonsters = 55;
+		if (Wave == 24)
+		{
+			CountToSpawnBosses = 2;
+		}
+		else
+		{
+			CountToSpawnBosses = 1;
+		}
+		CountMonstersAtOnce = 25;
+	}
+	else if (Wave > 24)
+	{
+		// Let's Randomize this even further!!
+		CountToSpawnMonsters = 55 + P_Random() % 15;
+		CountToSpawnBosses = P_Random() % 2;
+		CountMonstersAtOnce = P_Random() % 25;
+	}
+	//
+	//	MONSTER LIMITS
+	//
+	if (Wave <= 3)
+	{
+		LoLimit = 0;
+		HiLimit = 3;
+		if (Wave == 3)
+		{
+			BoostedLimit = 1;
+		}
+		else
+		{
+			BoostedLimit = -1;
+		}
+	}
+	else if (Wave > 3 && Wave <= 6)
+	{
+		LoLimit = 0;
+		HiLimit = 6;
+		if (Wave >= 5)
+		{
+			BoostedLimit = P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 1;
+		}
+	}
+	else if (Wave > 6 && Wave <= 9)
+	{
+		LoLimit = 0;
+		HiLimit = 9;
+		if (Wave >= 7)
+		{
+			BoostedLimit = 2 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 2;
+		}
+	}
+	else if (Wave > 9 && Wave <= 12)
+	{
+		LoLimit = 0;
+		HiLimit = 12;
+		if (Wave >= 10)
+		{
+			BoostedLimit = 4 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 4;
+		}
+	}
+	else if (Wave > 12 && Wave <= 15)
+	{
+		LoLimit = 0;
+		HiLimit = 15;
+		if (Wave >= 13)
+		{
+			BoostedLimit = 6 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 6;
+		}
+	}
+	else if (Wave > 15 && Wave <= 18)
+	{
+		LoLimit = 0;
+		HiLimit = 18;
+		if (Wave >= 17)
+		{
+			BoostedLimit = 8 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 8;
+		}
+	}
+	else if (Wave > 18 && Wave <= 21)
+	{
+		LoLimit = 0;
+		HiLimit = 18;
+		if (Wave >= 19)
+		{
+			BoostedLimit = 10 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 10;
+		}
+	}
+	else if (Wave > 21 && Wave <= 24)
+	{
+		LoLimit = 0;
+		HiLimit = 18;
+		if (Wave >= 22)
+		{
+			BoostedLimit = 12 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 12;
+		}
+	}
+	else if (Wave > 24 && Wave <= 27)
+	{
+		LoLimit = 0;
+		HiLimit = 18;
+		if (Wave >= 19)
+		{
+			BoostedLimit = 14 + P_Random() % 2;
+		}
+		else
+		{
+			BoostedLimit = 14;
+		}
+	}
+	else if (Wave > 27)
+	{
+		LoLimit = 0;
+		HiLimit = 18;
+		BoostedLimit = 18;
+	}
 }
 
 //==========================================================================
@@ -390,47 +599,82 @@ void SetUpWave()
 
 void WaveSpawn()
 {
+	int		mClass;
+	class	<Actor> MClass;
+	bool	bBoosted;
+
+	// If current number of monsters is equal or greater than this, no new monsters are spawned until some of older ones are killed
 	if (CountToSpawnMonsters + CountToSpawnBosses > 0 && (Level.TotalKills - Level.CurrentKills) < CountMonstersAtOnce)
 	{
-		// TODO!
-		int mClass = P_Random() % 2;
-		class<Actor> MClass = class<Actor>(FindClass(MonsterClasses[mClass]));
+		// If we are to spawn bosses, let's spawn them randomly
+		if (CountToSpawnBosses > 0 && Random() < 0.5)
+		{
+			//
+			// Spawn Boss monster
+			//
+			mClass = P_Random() % 6;
+			MClass = class<Actor>(FindClass(BossClasses[mClass]));
+		}
+		else
+		{
+			//
+			// Spawn normal monster
+			//
+			mClass = P_Random() % HiLimit;
+			MClass = class<Actor>(FindClass(MonsterClasses[mClass]));
+
+			// There's a chance to make this a boosted monster
+			if (mClass <= BoostedLimit && Random() > 0.5)
+			{
+				bBoosted = true;
+			}
+		}
 		int place = P_Random() % Level.DeathmatchStarts.Num;
 		Level.Spawn(TeleportFog,,, &Level.DeathmatchStarts[place]);
 		Actor monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
 		if (monster)
 		{
+			if (bBoosted)
+			{
+				// Spawn a boosted monster with enhanced stats
+				float hlth = itof(monster.Health) * 1.5;
+				monster.Health *= ftoi(hlth);
+				monster.Speed *= monster.Speed * 1.5;
+			}
+
 			// FIXME
 			Level.NoiseAlert(Game.Players[0].MO, monster);
-			CountToSpawnMonsters--;
+			CountToSpawnBosses--;
 		}
 	}
 }
 
 defaultproperties
 {
-	/*
-	KArenaHereticImp
-	KArenaHereticImpLeader
-	KArenaFireDemon
-	KArenaIceGuy
-	KArenaBishop
-	KArenaSerpent
-	KArenaSerpentLeader
-	KArenaCentaur
-	KArenaCentaurLeader
-	KArenaCentaurMash
-	KArenaDemon1
-	KArenaDemon2
-	KArenaDemon1Mash
-	KArenaDemon2Mash
-	HereticMummy
-	HereticMummyLeader
-	HereticMummyGhost
-	HereticMummyLeaderGhost
-*/
+	MonsterClasses.Num = 18;
+	MonsterClasses[0] = 'KArenaHereticImp';
+	MonsterClasses[1] = 'HereticMummy';
+	MonsterClasses[2] = 'HereticImpLeader';
+	MonsterClasses[3] = 'HereticMummyLeader';
+	MonsterClasses[4] = 'KArenaFireDemon';
+	MonsterClasses[5] = 'KArenaIceGuy';
+	MonsterClasses[7] = 'KArenaCentaur';
+	MonsterClasses[8] = 'KArenaDemon1';
+	MonsterClasses[9] = 'KArenaDemon2';
+	MonsterClasses[10] = 'KArenaCentaurLeader';
+	MonsterClasses[11] = 'HereticMummyGhost';
+	MonsterClasses[12] = 'HereticMummyLeaderGhost';
+	MonsterClasses[13] = 'KArenaBishop';
+	MonsterClasses[14] = 'Wraith';
+	MonsterClasses[15] = 'KArenaCentaurMash';
+	MonsterClasses[16] = 'KArenaDemon1Mash';
+	MonsterClasses[17] = 'KArenaDemon2Mash';
 
-	MonsterClasses.Num = 10;
-	MonsterClasses[0] = 'KArenaHereticImpLeader';
-	MonsterClasses[1] = 'HereticMummyLeader';
+	BossClasses.Num = 6;
+	BossClasses[0] = 'KArenaDragon';
+	BossClasses[1] = 'MageBoss';
+	BossClasses[2] = 'FighterBoss';
+	BossClasses[3] = 'ClericBoss';
+	BossClasses[4] = 'Heresiarch';
+	BossClasses[5] = 'Korax';
 }
