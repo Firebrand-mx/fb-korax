@@ -602,18 +602,21 @@ void WaveSpawn()
 	int		mClass;
 	class	<Actor> MClass;
 	bool	bBoosted;
+	int		place;
+	Actor	monster;
 
 	// If current number of monsters is equal or greater than this, no new monsters are spawned until some of older ones are killed
 	if (CountToSpawnMonsters + CountToSpawnBosses > 0 && (Level.TotalKills - Level.CurrentKills) < CountMonstersAtOnce)
 	{
 		// If we are to spawn bosses, let's spawn them randomly
-		if (CountToSpawnBosses > 0 && Random() < 0.5)
+		if (CountToSpawnBosses > 0 && (!CountToSpawnMonsters || Random() < 0.25))
 		{
 			//
 			// Spawn Boss monster
 			//
 			mClass = P_Random() % 6;
 			MClass = class<Actor>(FindClass(BossClasses[mClass]));
+			CountToSpawnBosses--;
 		}
 		else
 		{
@@ -628,12 +631,13 @@ void WaveSpawn()
 			{
 				bBoosted = true;
 			}
+			CountToSpawnMonsters--;
 		}
-		int place = P_Random() % Level.DeathmatchStarts.Num;
-		Level.Spawn(TeleportFog,,, &Level.DeathmatchStarts[place]);
-		Actor monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
+		place = P_Random() % Level.DeathmatchStarts.Num;
+		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
 		if (monster)
 		{
+			Level.Spawn(TeleportFog, monster.Origin);
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
@@ -642,9 +646,7 @@ void WaveSpawn()
 				monster.Speed *= monster.Speed * 1.5;
 			}
 
-			// FIXME
 			Level.NoiseAlert(Game.Players[0].MO, monster);
-			CountToSpawnBosses--;
 		}
 	}
 }
