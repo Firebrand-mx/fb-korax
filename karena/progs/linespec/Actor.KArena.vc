@@ -263,12 +263,7 @@ void BeginPlay()
 
 bool Physics(float DeltaTime)
 {
-	EntityEx		onmo;
-	SectorThinker	SecThink;
-	float			scrollx;
-	float			scrolly;
-	float			height;
-	float			waterheight;	// killough 4/4/98: add waterheight
+	Prev_Org = Origin;
 
 	float CummX = 0.0;
 	float CummY = 0.0;
@@ -284,6 +279,7 @@ bool Physics(float DeltaTime)
 
 		int CountX = 0;
 		int CountY = 0;
+		SectorThinker SecThink;
 		for (SecThink = SectorThinker(Sector->AffectorData); SecThink;
 			SecThink = SecThink.NextAffector)
 		{
@@ -291,8 +287,8 @@ bool Physics(float DeltaTime)
 			{
 				continue;
 			}
-			scrollx = Scroller(SecThink).CarryScrollX;
-			scrolly = Scroller(SecThink).CarryScrollY;
+			float scrollx = Scroller(SecThink).CarryScrollX;
+			float scrolly = Scroller(SecThink).CarryScrollY;
 			if (!scrollx && !scrolly)
 			{
 				continue;
@@ -302,7 +298,7 @@ bool Physics(float DeltaTime)
 			{
 				continue;
 			}
-			height = GetPlanePointZ(&Sector->floor, Origin);
+			float height = GetPlanePointZ(&Sector->floor, Origin);
 			if (Origin.z > height)
 			{
 				if (!Sector->heightsec || (Sector->heightsec->bIgnoreHeightSec))
@@ -310,7 +306,7 @@ bool Physics(float DeltaTime)
 					continue;
 				}
 
-				waterheight = GetPlanePointZ(&Sector->heightsec->floor, Origin);
+				float waterheight = GetPlanePointZ(&Sector->heightsec->floor, Origin);
 				if (waterheight > height && Origin.z >= waterheight)
 				{
 					continue;
@@ -343,9 +339,6 @@ bool Physics(float DeltaTime)
 				CummY /= itof(CountY);
 			}
 		}
-
-		Velocity.x += CummX;
-		Velocity.y += CummY;
 	}
 
 	CheckWater();
@@ -395,7 +388,7 @@ bool Physics(float DeltaTime)
 		if (bPassMobj && !bMissile && !Level.CompatNoPassOver)
 		{
 			// Handle Z momentum and gravity
-			onmo = EntityEx(CheckOnmobj());
+			EntityEx onmo = EntityEx(CheckOnmobj());
 			if (onmo)
 			{
 				if (bIsPlayer)
