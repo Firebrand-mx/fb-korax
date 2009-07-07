@@ -41,6 +41,7 @@ gm_swp.txt				scripts/gm_swp.txt
 gm_tdm.txt				scripts/gm_tdm.txt
 gm_tswp.txt				scripts/gm_tswp.txt
 gm_xmas.txt				scripts/gm_xmas.txt
+gm_srv.txt				scripts/gm_srv.txt
 
 //	DECORATE definition file
 vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
