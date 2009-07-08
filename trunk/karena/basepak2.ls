@@ -50,15 +50,22 @@ vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
 decorate.txt						decorate.txt
 actors/karena/armor.txt				actors/karena/armor.txt
 actors/karena/artifacts.txt			actors/karena/artifacts.txt
+actors/karena/beast.txt				actors/karena/beast.txt
 actors/karena/centaur.txt			actors/karena/centaur.txt
+actors/karena/clinker.txt			actors/karena/clinker.txt
 actors/karena/demons.txt			actors/karena/demons.txt
 actors/karena/dragon.txt			actors/karena/dragon.txt
+actors/karena/dsparil.txt			actors/karena/dsparil.txt
 actors/karena/health.txt			actors/karena/health.txt
+actors/karena/ironlich.txt			actors/karena/ironlich.txt
+actors/karena/knight.txt			actors/karena/knight.txt
 actors/karena/mana.txt				actors/karena/mana.txt
 actors/karena/misc.txt				actors/karena/misc.txt
 actors/karena/mummy.txt				actors/karena/mummy.txt
+actors/karena/snake.txt				actors/karena/snake.txt
 actors/karena/weapons.txt			actors/karena/weapons.txt
 actors/karena/weapons_heretic.txt	actors/karena/weapons_heretic.txt
+actors/karena/wizard.txt			actors/karena/wizard.txt
 
 //	Language strings
 language.en				language.en
