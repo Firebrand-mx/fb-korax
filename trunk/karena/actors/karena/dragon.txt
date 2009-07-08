@@ -1,6 +1,36 @@
 //------------------------------------------------------------------------------
 actor KArenaDragon : Dragon replaces Dragon
 {
+	states
+	{
+	Spawn:
+		DRAG D 10 A_Look
+		Loop
+	See:
+		DRAG CB 5 A_FastChase
+		DRAG A 5 A_FastChase
+		DRAG B 2 A_FastChase
+		DRAG B 1 A_DragonFlap
+		DRAG BCCDDCCBBAA 3 A_FastChase
+		Loop
+	Missile:
+		DRAG E 8 A_CustomMissile("DragonFireball", 32, 0)
+		Goto See
+	Pain:
+		DRAG F 10 A_DragonPain
+		Goto See
+	Death:
+		DRAG G 5 A_Scream
+		DRAG H 4 A_NoBlocking
+		DRAG I 4
+		DRAG J 4 A_CheckFloor("Crash")
+		Wait
+	Crash:
+		DRAG KL 5
+		DRAG M -1
+		Stop
+	}
+
 	+NoRadiusDmg
 	HitObituary "$ob_dragonhit"
 }
