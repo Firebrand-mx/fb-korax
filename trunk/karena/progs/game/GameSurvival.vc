@@ -381,10 +381,10 @@ void SetUpWave()
 	CountToSpawnMonsters = (8 + P_Random() % 8) * PlayerCount +
 							(P_Random() % (PlayerCount << 2) + 1) * Wave;
 
-	CountToSpawnBosses = Wave / (8 - PlayerCount);
+	CountToSpawnBosses = Wave / (8 - PlayerCount - 1);
 
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
-	CountMonstersAtOnce = P_Random() % ((SpawnStarts << 1) + 1);
+	CountMonstersAtOnce = PlayerCount + P_Random() % ((SpawnStarts << 1) + 1);
 
 	HiLimit = 1 + Wave;
 	if (HiLimit > MonsterClasses.Num)
@@ -450,6 +450,8 @@ void WaveSpawn()
 		if (monster)
 		{
 			Level.Spawn(TeleportFog, monster.GetCentre());
+			// Maybe telefrag anything?
+			monster.TeleportMove(monster.Origin, true);
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
@@ -465,30 +467,39 @@ void WaveSpawn()
 
 defaultproperties
 {
-	MonsterClasses.Num = 18;
+	MonsterClasses.Num = 23;
 	MonsterClasses[0] = 'KArenaHereticImp';
 	MonsterClasses[1] = 'HereticMummy';
-	MonsterClasses[2] = 'HereticImpLeader';
-	MonsterClasses[3] = 'HereticMummyLeader';
-	MonsterClasses[4] = 'KArenaFireDemon';
-	MonsterClasses[5] = 'KArenaIceGuy';
-	MonsterClasses[7] = 'KArenaCentaur';
-	MonsterClasses[8] = 'KArenaDemon1';
-	MonsterClasses[9] = 'KArenaDemon2';
-	MonsterClasses[10] = 'KArenaCentaurLeader';
-	MonsterClasses[11] = 'HereticMummyGhost';
-	MonsterClasses[12] = 'HereticMummyLeaderGhost';
-	MonsterClasses[13] = 'KArenaBishop';
-	MonsterClasses[14] = 'Wraith';
-	MonsterClasses[15] = 'KArenaCentaurMash';
-	MonsterClasses[16] = 'KArenaDemon1Mash';
-	MonsterClasses[17] = 'KArenaDemon2Mash';
+	MonsterClasses[2] = 'KArenaKnight';
+	MonsterClasses[3] = 'HereticImpLeader';
+	MonsterClasses[4] = 'HereticMummyLeader';
+	MonsterClasses[5] = 'KArenaFireDemon';
+	MonsterClasses[6] = 'KArenaWizard';
+	MonsterClasses[7] = 'HereticMummyGhost';
+	MonsterClasses[8] = 'KArenaKnightGhost';
+	MonsterClasses[9] = 'HereticMummyLeaderGhost';
+	MonsterClasses[10] = 'KArenaClink';
+	MonsterClasses[11] = 'KArenaCentaur';
+	MonsterClasses[12] = 'KArenaBeast';
+	MonsterClasses[13] = 'KArenaSnake';
+	MonsterClasses[14] = 'KArenaDemon1';
+	MonsterClasses[15] = 'KArenaDemon2';
+	MonsterClasses[16] = 'KArenaIceGuy';
+	MonsterClasses[17] = 'KArenaCentaurLeader';
+	MonsterClasses[18] = 'KArenaBishop';
+	MonsterClasses[19] = 'Wraith';
+	MonsterClasses[20] = 'KArenaCentaurMash';
+	MonsterClasses[21] = 'KArenaDemon1Mash';
+	MonsterClasses[22] = 'KArenaDemon2Mash';
 
-	BossClasses.Num = 6;
+	BossClasses.Num = 9;
 	BossClasses[0] = 'KArenaDragon';
-	BossClasses[1] = 'MageBoss';
-	BossClasses[2] = 'FighterBoss';
-	BossClasses[3] = 'ClericBoss';
-	BossClasses[4] = 'Heresiarch';
-	BossClasses[5] = 'Korax';
+	BossClasses[1] = 'KArenaIronlich';
+	BossClasses[2] = 'Minotaur';
+	BossClasses[3] = 'MageBoss';
+	BossClasses[4] = 'FighterBoss';
+	BossClasses[5] = 'ClericBoss';
+	BossClasses[6] = 'KArenaSorcerer1';
+	BossClasses[7] = 'Heresiarch';
+	BossClasses[8] = 'Korax';
 }
