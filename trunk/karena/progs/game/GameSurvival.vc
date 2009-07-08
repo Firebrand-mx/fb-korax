@@ -52,6 +52,7 @@ acsnotifier_t	AcsNotifiersSurvival[num_survivalevents];
 
 // monster classes in the order of growing difficulty
 array< name > MonsterClasses; 		// array of monster class names
+array< int > MonsterCosts;			// monster cost to be spawned (in monster counts)
 array< name > BossClasses;			// array of monster boss class names
 
 int Wave;
@@ -103,7 +104,7 @@ void BeginState(int newstate)
 	switch(newstate)
 	{
 	case state_preparegame:
-		Wave = -1;
+		Wave = 0;
 		EndCurrentState(state_countdownsequence);
 		return;
 
@@ -287,7 +288,7 @@ void HandleEvent(int Event, EntityEx A, int arg1, int arg2, int arg3, int arg4)
 	{
 	case event_wavestart:
 		Game.BroadcastLocalSoundNamed('BellRing', false, 0.0);
-		Game.bcentreprint(va("wave %i!", Wave + 1));
+		Game.bcentreprint(va("wave %i!", Wave));
 		break;
 	case event_waveend:
 		break;
@@ -371,32 +372,19 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 
 void SetUpWave()
 {
-	int PlayerCount, i;
-	// PARANOIA
-	CountToSpawnMonsters = 0;
-	CountToSpawnBosses = 0;
-	CountMonstersAtOnce = 0;
-	PlayerCount = 0;
 	Wave++;
 
-	// Determine the player count here
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		// Just check if this player is spawned, if he is, then increase the player count by 1
-		if (Game.Players[i] && Game.Players[i].MO)
-		{
-			PlayerCount++;
-		}
-	}
+	int PlayerCount = Game.GetPlayerCount();
+	int SpawnStarts = Level.DeathmatchStarts.Num;
 
 	// (8 + (0 to 7)) monsters per player + (1 to 4) monsters per player per wave index
 	CountToSpawnMonsters = (8 + P_Random() % 8) * PlayerCount +
 							(P_Random() % (PlayerCount << 2) + 1) * Wave;
-	// Avoid division by 0
-	CountToSpawnBosses = Wave / (8 - PlayerCount - 1);
+
+	CountToSpawnBosses = Wave / (8 - PlayerCount);
 
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
-	CountMonstersAtOnce = PlayerCount + P_Random() % ((Level.DeathmatchStarts.Num << 2) + 1);
+	CountMonstersAtOnce = P_Random() % ((SpawnStarts << 1) + 1);
 
 	HiLimit = 1 + Wave;
 	if (HiLimit > MonsterClasses.Num)
@@ -404,7 +392,7 @@ void SetUpWave()
 		HiLimit = MonsterClasses.Num;
 	}
 	LoLimit = HiLimit >= 8 ? HiLimit - 8 : 0;
-	BoostedLimit = -1 + (Wave - 1) / 2;
+	BoostedLimit = -2 + (Wave - 1) / 2; // Note, BoostedLimit may go above monster classes num
 }
 
 //==========================================================================
@@ -430,30 +418,38 @@ void WaveSpawn()
 			//
 			// Spawn Boss monster
 			//
-			mClass = P_Random() % 6;
+			mClass = P_Random() % BossClasses.Num;
 			MClass = class<Actor>(FindClass(BossClasses[mClass]));
 			CountToSpawnBosses--;
 		}
 		else
 		{
-			//
-			// Spawn normal monster
-			//
-			mClass = P_Random() % HiLimit;
-			MClass = class<Actor>(FindClass(MonsterClasses[mClass]));
-
-			// There's a chance to make this a boosted monster
-			if (mClass <= BoostedLimit && Random() > 0.3)
+			if (BoostedLimit >= 0 && Random() < 0.15)
 			{
+				//
+				// Spawn boosted monster of weaker monster class
+				//
+				mClass = P_Random() % (BoostedLimit < MonsterClasses.Num ? BoostedLimit + 1 : MonsterClasses.Num);
 				bBoosted = true;
 			}
+			else
+			{
+				//
+				// Spawn normal monster
+				//
+				mClass = P_Random() % HiLimit + LoLimit;
+			}
+
+			MClass = class<Actor>(FindClass(MonsterClasses[mClass]));			
+
 			CountToSpawnMonsters--;
 		}
+
 		place = P_Random() % Level.DeathmatchStarts.Num;
 		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
 		if (monster)
 		{
-			Level.Spawn(TeleportFog, monster.Origin);
+			Level.Spawn(TeleportFog, monster.GetCentre());
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
