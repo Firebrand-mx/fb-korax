@@ -104,7 +104,7 @@ void BeginState(int newstate)
 	switch(newstate)
 	{
 	case state_preparegame:
-		Wave = 0;
+		Wave = 26;
 		EndCurrentState(state_countdownsequence);
 		return;
 
@@ -381,7 +381,7 @@ void SetUpWave()
 	CountToSpawnMonsters = (8 + P_Random() % 8) * PlayerCount +
 							(P_Random() % (PlayerCount << 2) + 1) * Wave;
 
-	CountToSpawnBosses = Wave / (8 - PlayerCount + 1);
+	CountToSpawnBosses = Wave / (16 - PlayerCount);
 
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
 	CountMonstersAtOnce = PlayerCount + P_Random() % ((SpawnStarts << 1) + 1);
@@ -413,7 +413,7 @@ void WaveSpawn()
 	if (CountToSpawnMonsters + CountToSpawnBosses > 0 && (Level.TotalKills - Level.CurrentKills) < CountMonstersAtOnce)
 	{
 		// If we are to spawn bosses, let's spawn them randomly
-		if (CountToSpawnBosses > 0 && (!CountToSpawnMonsters || Random() < 0.25))
+		if (CountToSpawnBosses > 0 && (!CountToSpawnMonsters || Random() < 0.35))
 		{
 			//
 			// Spawn Boss monster
@@ -450,8 +450,6 @@ void WaveSpawn()
 		if (monster)
 		{
 			Level.Spawn(TeleportFog, monster.GetCentre());
-			// Maybe telefrag anything?
-			monster.TeleportMove(monster.Origin, true);
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
@@ -467,30 +465,32 @@ void WaveSpawn()
 
 defaultproperties
 {
-	MonsterClasses.Num = 23;
-	MonsterClasses[0] = 'KArenaHereticImp';
+	MonsterClasses.Num = 25;
+	MonsterClasses[0] = 'Ettin';
 	MonsterClasses[1] = 'HereticMummy';
-	MonsterClasses[2] = 'KArenaKnight';
-	MonsterClasses[3] = 'HereticImpLeader';
-	MonsterClasses[4] = 'HereticMummyLeader';
-	MonsterClasses[5] = 'KArenaFireDemon';
-	MonsterClasses[6] = 'KArenaWizard';
-	MonsterClasses[7] = 'HereticMummyGhost';
-	MonsterClasses[8] = 'KArenaKnightGhost';
-	MonsterClasses[9] = 'HereticMummyLeaderGhost';
-	MonsterClasses[10] = 'KArenaClink';
-	MonsterClasses[11] = 'KArenaCentaur';
-	MonsterClasses[12] = 'KArenaBeast';
-	MonsterClasses[13] = 'KArenaSnake';
-	MonsterClasses[14] = 'KArenaDemon1';
-	MonsterClasses[15] = 'KArenaDemon2';
-	MonsterClasses[16] = 'KArenaIceGuy';
-	MonsterClasses[17] = 'KArenaCentaurLeader';
-	MonsterClasses[18] = 'KArenaBishop';
-	MonsterClasses[19] = 'Wraith';
-	MonsterClasses[20] = 'KArenaCentaurMash';
-	MonsterClasses[21] = 'KArenaDemon1Mash';
-	MonsterClasses[22] = 'KArenaDemon2Mash';
+	MonsterClasses[2] = 'HereticMummyLeader';
+	MonsterClasses[3] = 'HereticMummyGhost';
+	MonsterClasses[4] = 'HereticMummyLeaderGhost';
+	MonsterClasses[5] = 'EttinMash';
+	MonsterClasses[6] = 'KArenaHereticImp';
+	MonsterClasses[7] = 'HereticImpLeader';
+	MonsterClasses[8] = 'KArenaCentaur';
+	MonsterClasses[9] = 'KArenaClink';
+	MonsterClasses[10] = 'KArenaKnight';
+	MonsterClasses[11] = 'KArenaSnake';
+	MonsterClasses[12] = 'KArenaDemon1';
+	MonsterClasses[13] = 'KArenaDemon2';
+	MonsterClasses[14] = 'KArenaCentaurMash';
+	MonsterClasses[15] = 'KArenaDemon1Mash';
+	MonsterClasses[16] = 'KArenaDemon2Mash';
+	MonsterClasses[17] = 'KArenaIceGuy';
+	MonsterClasses[18] = 'KArenaCentaurLeader';
+	MonsterClasses[19] = 'KArenaKnightGhost';
+	MonsterClasses[20] = 'KArenaBeast';
+	MonsterClasses[21] = 'KArenaFireDemon';
+	MonsterClasses[22] = 'KArenaWizard';
+	MonsterClasses[23] = 'KArenaBishop';
+	MonsterClasses[24] = 'Wraith';
 
 	BossClasses.Num = 9;
 	BossClasses[0] = 'KArenaDragon';
