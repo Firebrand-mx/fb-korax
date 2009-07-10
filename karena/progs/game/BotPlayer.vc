@@ -2172,6 +2172,27 @@ void Move(float deltaTime)
 
 void Attack()
 {
+	// Intelligent bots don't attack if the enemy is invulnerable
+	if (enemy.bInvulnerable)
+	{
+		if (info.intelect == bsk_medium && Random() < 0.15)
+		{
+			return;
+		}
+		else if (info.intelect == bsk_high && Random() < 0.3)
+		{
+			return;
+		}
+		else if (info.intelect == bsk_excellent && Random() < 0.45)
+		{
+			return;
+		}
+		else if (info.intelect == bsk_supreme && Random() < 0.5)
+		{
+			return;
+		}
+	}
+
 	// Still reacting to something or we don't have an enemy to fight
 	if (t_react > 2.0 || !enemy)
 	{
@@ -2539,14 +2560,28 @@ void Pitch()
 	{
 		if (enemy)
 		{
-			botmo.Angles.pitch = -PitchTo(enemy.Origin);
+			if (enemy.Origin.z > botmo.Origin.z)
+			{
+				botmo.Angles.pitch = -PitchTo(enemy.Origin);
+			}
+			else if (enemy.Origin.z < botmo.Origin.z)
+			{
+				botmo.Angles.pitch = PitchTo(enemy.Origin);
+			}
 			return;
 		}
 
 		// [FB] Follow our buddy if we're tagging along
 		if (ally || (ally && !enemy))
 		{
-			botmo.Angles.pitch = -PitchTo(ally.Origin);
+			if (ally.Origin.z > botmo.Origin.z)
+			{
+				botmo.Angles.pitch = -PitchTo(ally.Origin);
+			}
+			else if (ally.Origin.z < botmo.Origin.z)
+			{
+				botmo.Angles.pitch = PitchTo(ally.Origin);
+			}
 			return;
 		}
 	}
@@ -2554,7 +2589,14 @@ void Pitch()
 	{
 		if (enemy)
 		{
-			botmo.Angles.pitch = PitchTo(enemy.Origin);
+			if (enemy.Origin.z > botmo.Origin.z)
+			{
+				botmo.Angles.pitch = -PitchTo(enemy.Origin);
+			}
+			else if (enemy.Origin.z < botmo.Origin.z)
+			{
+				botmo.Angles.pitch = PitchTo(enemy.Origin);
+			}
 			return;
 		}
 	}
