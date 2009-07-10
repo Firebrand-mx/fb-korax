@@ -368,12 +368,18 @@ bool Physics(float DeltaTime)
 				LinkToWorld();
 			}
 			FloatBobPhase += DeltaTime;
-			Origin.z = FloorZ + Special1f +
+			Origin.z = GetPlanePointZ(&Sector->floor, Origin) + Special1f +
 				Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63];
 		}
 		else
 		{
 			//	Floating bobbing motion for monsters.
+			if (Sector->bHasExtrafloors)
+			{
+				//	Make sure FloorZ is from bottom region.
+				Origin.z = ONFLOORZ;
+				LinkToWorld();
+			}
 			Origin.z -= Level.Game.FloatBobOffsets[
 				ftoi(FloatBobPhase * 35.0) & 63];
 			FloatBobPhase += DeltaTime;
