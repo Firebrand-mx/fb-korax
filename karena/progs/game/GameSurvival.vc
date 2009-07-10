@@ -104,12 +104,11 @@ void BeginState(int newstate)
 	switch(newstate)
 	{
 	case state_preparegame:
-		Wave = 26;
+		Wave = 0;
 		EndCurrentState(state_countdownsequence);
 		return;
 
 	case state_countdownsequence:
-		SetUpWave();
 		//
 		// Setup countdown sequence
 		countDown = 10;
@@ -122,6 +121,7 @@ void BeginState(int newstate)
 		break;
 
 	case state_wave:
+		SetUpWave();
 		waveSequencer = Level.Spawn(GameSequencer);
 		if (waveSequencer)
 		{
@@ -386,7 +386,7 @@ void SetUpWave()
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
 	CountMonstersAtOnce = PlayerCount + P_Random() % ((SpawnStarts << 1) + 1);
 
-	HiLimit = 1 + Wave;
+	HiLimit = 3 + Wave;
 	if (HiLimit > MonsterClasses.Num)
 	{
 		HiLimit = MonsterClasses.Num;
@@ -424,12 +424,12 @@ void WaveSpawn()
 		}
 		else
 		{
-			if (BoostedLimit >= 0 && Random() < 0.15)
+			if (BoostedLimit > 0 && Random() < 0.15)
 			{
 				//
 				// Spawn boosted monster of weaker monster class
 				//
-				mClass = P_Random() % (BoostedLimit < MonsterClasses.Num ? BoostedLimit + 1 : MonsterClasses.Num);
+				mClass = P_Random() % (BoostedLimit < MonsterClasses.Num ? BoostedLimit : MonsterClasses.Num);
 				bBoosted = true;
 			}
 			else
@@ -492,14 +492,11 @@ defaultproperties
 	MonsterClasses[23] = 'KArenaBishop';
 	MonsterClasses[24] = 'Wraith';
 
-	BossClasses.Num = 9;
+	BossClasses.Num = 6;
 	BossClasses[0] = 'KArenaDragon';
 	BossClasses[1] = 'KArenaIronlich';
 	BossClasses[2] = 'Minotaur';
-	BossClasses[3] = 'MageBoss';
-	BossClasses[4] = 'FighterBoss';
-	BossClasses[5] = 'ClericBoss';
-	BossClasses[6] = 'KArenaSorcerer1';
-	BossClasses[7] = 'Heresiarch';
-	BossClasses[8] = 'Korax';
+	BossClasses[3] = 'KArenaSorcerer1';
+	BossClasses[4] = 'Heresiarch';
+	BossClasses[5] = 'Korax';
 }
