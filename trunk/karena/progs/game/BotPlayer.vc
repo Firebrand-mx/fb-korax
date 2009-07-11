@@ -1190,15 +1190,15 @@ Actor FindEnemy(optional bool bReachable)
 				continue;
 			}
 			// [FB] We spawned the minotaur? we shouldn't attack him then!
-			if (actor.Class == MinotaurFriend)
+			// [CW] Actual class can be child of MinotaurFriend
+			if (actor.IsA('MinotaurFriend'))
 			{
 				if (actor.Tracer == botmo)
 				{
 					continue;
 				}
 				// [FB] Don't attack a friendly minotaur in all these cases
-				if (MainGameInfo(player.Level.Game).GameType == HexenDefs::game_sweep ||
-					MainGameInfo(player.Level.Game).GameType == HexenDefs::game_survival)
+				if (MainGameInfo(player.Level.Game).bIsCoopGame[MainGameInfo(player.Level.Game).GameType])
 				{
 					continue;
 				}
