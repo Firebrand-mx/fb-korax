@@ -62,6 +62,7 @@ int BoostedLimit;					// highest index in monster array that allows spawning of 
 int CountToSpawnMonsters;			// how many monsters to spawn
 int CountToSpawnBosses;				// how many bosses to spawn
 int CountMonstersAtOnce;			// how many monsters & bosses can be on the level at the same time
+int PlaceCounter;					// counter to avoid spawning two monsters on the same spot
 
 GameSequencer		countdownSequencer;
 int					countDown;
@@ -207,7 +208,8 @@ int TeamFactor(EntityEx a1, EntityEx a2)
 
 void OnActorDeath(Actor a, EntityEx source)
 {
-	if (!a.bMonster)
+	// Friendly minotaur doesn't has a meaning here or the actor is invalid
+	if (!a.bMonster || a.Class == MinotaurFriend)
 	{
 		return;
 	}
@@ -440,16 +442,24 @@ void WaveSpawn()
 				mClass = P_Random() % (HiLimit - LoLimit) + LoLimit;
 			}
 
-			MClass = class<Actor>(FindClass(MonsterClasses[mClass]));			
-
+			MClass = class<Actor>(FindClass(MonsterClasses[mClass]));
 			CountToSpawnMonsters--;
 		}
 
 		place = P_Random() % Level.DeathmatchStarts.Num;
+
+		if (place == PlaceCounter)
+		{
+			place = place++;
+			if (place > Level.DeathmatchStarts.Num)
+			{
+				place = 0;
+			}
+		}		
 		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
+
 		if (monster)
 		{
-			Level.Spawn(TeleportFog, monster.GetCentre());
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
@@ -458,6 +468,9 @@ void WaveSpawn()
 				monster.Speed *= (monster.Speed * 2.5) + (Random() * (itof(Wave) / 100.0));
 			}
 
+			monster.TeleportMove(monster.Origin, false);
+			Level.Spawn(TeleportFog, monster.GetCentre());
+			PlaceCounter = place;
 			Level.NoiseAlert(Game.Players[0].MO, monster);
 		}
 	}
@@ -466,37 +479,35 @@ void WaveSpawn()
 defaultproperties
 {
 	MonsterClasses.Num = 25;
-	MonsterClasses[0] = 'Ettin';
-	MonsterClasses[1] = 'HereticMummy';
-	MonsterClasses[2] = 'HereticMummyLeader';
+	MonsterClasses[0] = 'HereticMummy';
+	MonsterClasses[1] = 'Ettin';
+	MonsterClasses[2] = 'KArenaHereticImp';
 	MonsterClasses[3] = 'HereticMummyGhost';
-	MonsterClasses[4] = 'HereticMummyLeaderGhost';
-	MonsterClasses[5] = 'EttinMash';
-	MonsterClasses[6] = 'KArenaHereticImp';
-	MonsterClasses[7] = 'HereticImpLeader';
-	MonsterClasses[8] = 'KArenaCentaur';
-	MonsterClasses[9] = 'KArenaClink';
+	MonsterClasses[4] = 'EttinMash';	
+	MonsterClasses[5] = 'KArenaClink';
+	MonsterClasses[6] = 'KArenaCentaur';
+	MonsterClasses[7] = 'CentaurMash';
+	MonsterClasses[8] = 'KArenaBeast';
+	MonsterClasses[9] = 'KArenaDemon1';
 	MonsterClasses[10] = 'KArenaKnight';
-	MonsterClasses[11] = 'KArenaSnake';
-	MonsterClasses[12] = 'KArenaDemon1';
+	MonsterClasses[11] = 'HereticMummyLeader';
+	MonsterClasses[12] = 'KArenaSnake';
 	MonsterClasses[13] = 'KArenaDemon2';
-	MonsterClasses[14] = 'KArenaCentaurMash';
-	MonsterClasses[15] = 'KArenaDemon1Mash';
-	MonsterClasses[16] = 'KArenaDemon2Mash';
-	MonsterClasses[17] = 'KArenaIceGuy';
-	MonsterClasses[18] = 'KArenaCentaurLeader';
-	MonsterClasses[19] = 'KArenaKnightGhost';
-	MonsterClasses[20] = 'KArenaBeast';
-	MonsterClasses[21] = 'KArenaFireDemon';
+	MonsterClasses[14] = 'KArenaFireDemon';
+	MonsterClasses[15] = 'HereticImpLeader';
+	MonsterClasses[16] = 'KArenaDemon1Mash';
+	MonsterClasses[17] = 'KArenaKnightGhost';
+	MonsterClasses[18] = 'HereticMummyLeaderGhost';
+	MonsterClasses[19] = 'KArenaDemon2Mash';
+	MonsterClasses[20] = 'KArenaIceGuy';
+	MonsterClasses[21] = 'KArenaCentaurLeader';
 	MonsterClasses[22] = 'KArenaWizard';
 	MonsterClasses[23] = 'KArenaBishop';
 	MonsterClasses[24] = 'Wraith';
 
-	BossClasses.Num = 6;
-	BossClasses[0] = 'KArenaDragon';
-	BossClasses[1] = 'KArenaIronlich';
-	BossClasses[2] = 'Minotaur';
-	BossClasses[3] = 'KArenaSorcerer1';
-	BossClasses[4] = 'Heresiarch';
-	BossClasses[5] = 'Korax';
+	BossClasses.Num = 4;
+	BossClasses[0] = 'KArenaIronlich';
+	BossClasses[1] = 'Minotaur';
+	BossClasses[2] = 'Heresiarch';
+	BossClasses[3] = 'KArenaDragon';
 }
