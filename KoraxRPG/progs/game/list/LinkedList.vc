@@ -1,0 +1,268 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: LinkedList.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class LinkedList : Object;
+
+
+LinkedObject	refHead;
+LinkedObject	refTail;
+
+
+LinkedObject DestroyingObject;
+
+
+//==========================================================================
+//
+//	Add
+//
+//==========================================================================
+
+void Add(LinkedObject LO)
+{
+	if (refTail)
+	{
+		refTail.LinkNext(LO);
+	}
+	else
+	{
+		if (LO.List)
+			LO.UnlinkFromList();
+		refHead = LO;
+	}
+	refTail = LO;
+
+	LO.List = self;
+}
+
+//==========================================================================
+//
+//	AddFront
+//
+//==========================================================================
+
+void AddFront(LinkedObject LO)
+{
+	if (refHead)
+	{
+		refHead.LinkPrev(LO);
+	}
+	else
+	{
+		if (LO.List)
+			LO.UnlinkFromList();
+		refTail = LO;
+	}
+	refHead = LO;
+
+	LO.List = self;
+}
+
+//==========================================================================
+//
+//	Concatenate
+//
+//==========================================================================
+
+//==========================================================================
+//
+//	Destroy
+//
+//==========================================================================
+
+void Destroy()
+{
+	DestroyAll();
+	::Destroy();
+}
+
+//==========================================================================
+//
+//	DestroyAll
+//
+//==========================================================================
+
+void DestroyAll()
+{
+	while (refHead)
+	{
+		LinkedObject LO = refHead;
+		refHead = refHead.refNext;
+		DestroyingObject = LO;
+		LO.Destroy();
+	};
+
+	DestroyingObject = none;
+	refHead = none;
+	refTail = none;
+}
+
+//==========================================================================
+//
+//	DestroyObject
+//
+//==========================================================================
+
+void DestroyObject(LinkedObject LO)
+{
+	if (LO.List != self)
+		Error ("LinkedList::DestroyObject : LinkedObject does not belong to this List!");
+
+	LO.UnlinkFromList();
+	LO.Destroy();
+}
+
+//==========================================================================
+//
+//	GetByIndex
+//
+//==========================================================================
+
+//==========================================================================
+//
+//	GetCount
+//
+//==========================================================================
+
+int GetCount()
+{
+	int count = 0;
+	LinkedObject LO = refHead;
+	while (LO)
+	{
+		count++;
+		LO = LO.refNext;
+	}
+	return count;
+}
+
+//==========================================================================
+//
+//	IsBeingRemoved
+//
+//==========================================================================
+
+void IsBeingRemoved(LinkedObject LO)
+{
+	if (LO.List != self)
+		Error ("LinkedList::IsBeingRemoved : LinkedObject does not belong to this List!");
+
+	if (LO == refHead)
+	{
+		refHead = LO.refNext;
+	}
+	if (LO == refTail)
+	{
+		refTail = LO.refPrev;
+	}
+}
+
+//==========================================================================
+//
+//	MoveContentsBack
+//
+//==========================================================================
+
+void MoveContentsBack(LinkedList LL)
+{
+	if (LL.refHead)
+	{
+		if (refTail)
+		{
+			refTail.refNext = LL.refHead;
+			LL.refHead.refPrev = refTail;
+		}
+		else
+		{
+			refHead = LL.refHead;
+		}
+		refTail = LL.refTail;
+
+		LL.UnlinkAll(self);
+	}
+}
+
+//==========================================================================
+//
+//	MoveContentsFront
+//
+//==========================================================================
+
+void MoveContentsFront(LinkedList LL)
+{
+	if (LL.refTail)
+	{
+		if (refHead)
+		{
+			refHead.refPrev = LL.refTail;
+			LL.refTail.refNext = refHead;
+		}
+		else
+		{
+			refTail = LL.refTail;
+		}
+		refHead = LL.refHead;
+
+		LL.UnlinkAll(self);
+	}
+}
+
+//==========================================================================
+//
+//	UnlinkAll
+//
+//==========================================================================
+
+LinkedObject UnlinkAll(optional LinkedList Host)
+{
+	if (!specified_Host)
+	{
+		Host = none;
+	}
+
+	LinkedObject LO = refHead;
+	do
+	{
+		LO.List = Host;
+		LO = LO.refNext;
+	}
+	while (LO);
+
+	LO = refHead;
+	refHead = none;
+	refTail = none;
+
+	return LO;
+}
+
+defaultproperties
+{
+}

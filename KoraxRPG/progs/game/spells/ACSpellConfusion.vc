@@ -1,0 +1,232 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ACSpellConfusion.vc 1982 2009-07-04 00:49:43Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ACSpellConfusion : ActorCondition;
+
+enum
+{
+	CONFUSION_TYPE__FORWARDMOVE	= 0x0001,
+	CONFUSION_TYPE__SIDEMOVE	= 0x0002,
+	CONFUSION_TYPE__JUMPDUCK	= 0x0004,
+	CONFUSION_TYPE__ANGLESMOVE	= 0x0008,
+	CONFUSION_TYPE__ATTACK		= 0x0010,
+	CONFUSION_TYPE__INVENTORY	= 0x0020,
+	CONFUSION_TYPE__SPELLS		= 0x0040,
+	CONFUSION_TYPE__MASK		= 0x007F
+};
+
+float ConfusionTicker;
+int	ConfusionType;
+TAVec OldAngles;
+
+//==========================================================================
+//
+//	Do
+//
+//==========================================================================
+
+void Do(float deltaTime)
+{
+	ConfusionTicker -= deltaTime;
+
+	if (ConfusionTicker > 0.0)
+	{
+		if (ARecepient.bIsPlayer)
+		{
+			if (ConfusionType & CONFUSION_TYPE__FORWARDMOVE)
+			{
+				if (P_Random() & 1)
+				{
+					ARecepient.Player.ForwardMove = (P_Random() & 1) ?
+						-ARecepient.Player.ForwardMove + ARecepient.Player.SideMove :
+						-ARecepient.Player.SideMove;
+				}
+				else
+				{
+					ARecepient.Player.SideMove = (P_Random() & 1) ? ARecepient.Player.ForwardMove :
+						-ARecepient.Player.ForwardMove;
+				}
+			}
+			if (ConfusionType & CONFUSION_TYPE__SIDEMOVE)
+			{
+				if (P_Random() & 1)
+				{
+					ARecepient.Player.SideMove = (P_Random() & 1) ?
+						-ARecepient.Player.SideMove + ARecepient.Player.ForwardMove :
+						-ARecepient.Player.ForwardMove;
+				}
+				else
+				{
+					ARecepient.Player.ForwardMove = (P_Random() & 1) ? ARecepient.Player.SideMove :
+						-ARecepient.Player.SideMove;
+				}
+			}
+			if (ConfusionType & CONFUSION_TYPE__JUMPDUCK)
+			{
+				if (ARecepient.Player.Buttons & BT_JUMP)
+				{
+					ARecepient.Player.Buttons &= ~BT_JUMP;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= Player::BT_DUCK;
+				}
+				else if (ARecepient.Player.Buttons & Player::BT_DUCK)
+				{
+					ARecepient.Player.Buttons &= ~Player::BT_DUCK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_JUMP;
+				}
+				/*switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~BT_JUMP; break;
+				case 1: ARecepient.Player.Buttons |= BT_JUMP; break;
+				}
+				
+				switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~Player::BT_DUCK; break;
+				case 1: ARecepient.Player.Buttons |= Player::BT_DUCK; break;
+				}*/
+			}
+			if (true || ConfusionType & CONFUSION_TYPE__ANGLESMOVE)
+			{
+				// CHECKME -- need some fix, causes trouble
+				//ARecepient.Player.ViewAngles = OldAngles - (ARecepient.Player.ViewAngles - OldAngles);
+				ARecepient.Player.ViewAngles = OldAngles + (OldAngles - ARecepient.Player.ViewAngles);
+			}
+			if (ConfusionType & CONFUSION_TYPE__ATTACK)
+			{
+				if (ARecepient.Player.Buttons & BT_ATTACK)
+				{
+					ARecepient.Player.Buttons &= ~BT_ATTACK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_ALT_ATTACK;
+				}
+				else if (ARecepient.Player.Buttons & BT_ALT_ATTACK)
+				{
+					ARecepient.Player.Buttons &= ~BT_ALT_ATTACK;
+					if (P_Random() & 1)	ARecepient.Player.Buttons |= BT_ATTACK;
+				}
+
+				if (P_Random() < Level * 16)
+				{
+					if (P_Random() & 1)
+					{
+						Player(ARecepient.Player).PrevWeapon();
+					}
+					else
+					{
+						Player(ARecepient.Player).NextWeapon();
+					}
+				}
+				/*switch (P_Random() & 1)
+				{
+				case 0: ARecepient.Player.Buttons &= ~BT_ATTACK; break;
+				case 1: ARecepient.Player.Buttons |= BT_ATTACK; break;
+				}
+				if ((P_Random() & 7) < 3)
+				{
+					switch (P_Random() & 1)
+					{
+					case 0: ARecepient.Player.Buttons &= ~BT_ALT_ATTACK; break;
+					case 1: ARecepient.Player.Buttons |= BT_ALT_ATTACK; break;
+					}
+				}*/
+			}
+			if (ConfusionType & CONFUSION_TYPE__INVENTORY)
+			{
+				if (P_Random() & 1)
+				{
+					Player(ARecepient.Player).InventoryLeft();
+				}
+				else
+				{
+					Player(ARecepient.Player).InventoryRight();
+				}
+
+				if (P_Random() < Level * 4)
+				{
+					Player(ARecepient.Player).InventoryUse();
+				}
+			}
+			if (ConfusionType & CONFUSION_TYPE__SPELLS)
+			{
+				if (P_Random() & 1)
+				{
+					Player(ARecepient.Player).NextSpell();
+				}
+				else
+				{
+					Player(ARecepient.Player).PreviousSpell();
+				}
+
+				if (P_Random() < Level * 8)
+				{
+					Player(ARecepient.Player).SpellUse();
+				}
+			}
+		}
+		else
+		{
+		}
+	}
+	else
+	{
+		ConfusionType = P_Random() & CONFUSION_TYPE__MASK;
+		ConfusionTicker = Random() * 3.0;
+
+		if (ARecepient.bIsPlayer)
+		{
+			// Send some stupid message
+			string msg;
+			switch (P_Random() & 7)
+			{
+			case 0: msg = "savegame was not saved"; break;
+			case 1: msg = "you lost all the magic power"; break;
+			case 2: msg = "look out!"; break;
+			case 3: msg = "your pants slipped down"; break;
+			case 4: msg = va("one %th of puzzle has been solved", P_Random() + 4); break;
+			case 5: msg = "you have no idea what is going on"; break;
+			case 6: msg = "you think you cannot think"; break;
+			case 7: msg = "rats ate your weapons"; break;
+			}
+			ARecepient.Player.cprint(msg);
+		}
+	}
+
+	OldAngles = ARecepient.Angles;
+}
+
+defaultproperties
+{
+	bIsNegative = true;
+
+	bDoFromActorTick = true;
+	bPlayerSpecific = true;
+	CastMessage = "confused";
+}

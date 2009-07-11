@@ -36,7 +36,7 @@ class KRPGLevelInfo : HexenLevelInfo;
 //
 // [KoraxRPG] Node Graph
 //
-const float	MAXNODELINKLENGTH		= 512.0;
+const float	MAXNODELINKLENGTH		= 1024.0;
 bool bNodeGraphBuild;
 
 //
@@ -55,6 +55,8 @@ enum
 	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
 	ACTSPEC_Thing_SetTeam,
 	ACTSPEC_Thing_SetPersonId,
+
+	LNSPEC_TravelMap				= 500,	// calls travel map
 
 	//--------------------- NOT USED --------------------------------------------------------
 //	//
@@ -309,6 +311,14 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		{
 			Actor(E).ConversationID = Arg2;
 			buttonSuccess = true;
+		}
+		break;
+
+
+	case LNSPEC_TravelMap:
+		{
+			buttonSuccess = true;
+			Completed(-1,0,0);
 		}
 		break;
 
@@ -982,32 +992,32 @@ void UpdateParticle(particle_t * p, float DeltaTime)
 
 void BuildNodeGraph()
 {
-	//dprint("CWAIEX : DLI::BuildNodeGraph : IN");
-	BuildLinks();
-	BuildPaths();
-	//BuildPathIntersections();	// ?? TODO
-	//dprint("CWAIEX : DLI::BuildNodeGraph : OUT");
+	BuildNodeLinks();
+
+	if (bNodeGraphBuild)
+	{
+		BuildPriorityPaths();
+	}
 }
 
 //===========================================================================
 //
-//  BuildLinks
+//  BuildNodeLinks
 //
 //	Builds common links between all nodes.
 //
 //===========================================================================
 
-void BuildLinks()
+void BuildNodeLinks()
 {
 	int i;
 	Node		N_Base;
 	Node		N_LinkCandidate;
 	int			linked_count;
 	bool		candidate_is_linked_to_base;
-	//int		candidate_linked_count;
 	float		dest;
-	//float		dest_linked_max;
 
+	// #ifdef DEBUG_PATH_NODES
 	//
 	// Debug statistics
 	//------------------------
@@ -1021,8 +1031,7 @@ void BuildLinks()
 	// etc etc etc.....
 	//------------------------
 	//
-
-	//dprint("CWAIEX : DLI::BuildLinks : IN");
+	// #endif
 
 	foreach AllThinkers(Node, N_Base)
 	{
@@ -1031,120 +1040,50 @@ void BuildLinks()
 		N_LinkCandidate = none;
 		linked_count = 0;
 		dest = -1.0;
-		//dest_linked_max = -1.0;
-
-		//dprint(" -- take N_Base");
-
-		for (i = 0; i < /*Node::MAXNODELINKS*/N_Base.Links.Num; i++)
+		
+		for (i = 0; i < N_Base.Links.Num; i++)
 		{
-			if (N_Base.Links[i]._Node)
+			if (N_Base.Links[i].node)
 				linked_count++;
 		}
-
-		//dprint(" -- N_Base Tag = %i", N_Base.TID);
-		//dprint(" -- linked count = %i", linked_count);
-		
-		//-------------
-		/*if (linked_count >= Node::MAXNODELINKS)
-		{
-			stats_TotalLinkedNodes++;
-			continue;
-		}*/
 		
 		foreach AllThinkers(Node, N_LinkCandidate)
 		{
-			//dprint(" -- take N_LinkCandidate");
-			//dprint(" -- N_LinkCandidate Tag = %i", N_LinkCandidate.TID);
 			candidate_is_linked_to_base = false;
-			//candidate_linked_count = 0;
 			if (N_LinkCandidate == N_Base)
 			{
-				//dprint(" -- self as candidate, rejected");
 				continue;
 			}
-			for (i = 0; i < /*Node::MAXNODELINKS*/N_LinkCandidate.Links.Num; i++)
+			for (i = 0; i < N_LinkCandidate.Links.Num; i++)
 			{
-				if (N_LinkCandidate.Links[i]._Node)
+				if (N_LinkCandidate.Links[i].node)
 				{
-					if (N_LinkCandidate.Links[i]._Node == N_Base)
+					if (N_LinkCandidate.Links[i].node == N_Base)
 					{
 						candidate_is_linked_to_base = true;
 						break;
-					}						
-					//candidate_linked_count++;
+					}
 				}
 			}
 			if (candidate_is_linked_to_base)
 			{
-				//dprint(" -- candidate already linked to base, rejected");
 				continue;
 			}
-			//-----------------------------
-			/*if (candidate_linked_count == Node::MAXNODELINKS)
-			{
-				//dprint(" -- all candidate link slots used, rejected");
-				continue;
-			}*/
-
-			//dprint(" -- candidate linked count = %i", candidate_linked_count);
 
 			dest = Length(N_Base.Origin - N_LinkCandidate.Origin);
-			//dprint(" -- candidate dest = %f", dest);
-			if (dest <= MAXNODELINKLENGTH /*&&
-				(dest_linked_max < 0.0 || dest < dest_linked_max)*/ )
+			if (dest <= MAXNODELINKLENGTH)
 			{
 				Node::nodelink_t _link;
 
-				//dprint(" -- dest accepted");
-
 				if (BuildNodeLink(N_Base, N_LinkCandidate, &_link))
 				{
-					//--------------------------------
-					//if (dest_linked_max < 0.0)
-					//{
-						//dprint(" -- free link for the base");
-						N_Base.ApplyLink(&_link, /*linked_count*/-1, true);
-						//dprint(" -- candidate accepted as no %i", linked_count);
-					//}
-					//-----------------------------
-					/*if (dest < dest_linked_max)
-					{
-						//dprint(" -- link replacement");
-						// Get linked node with maximal dest and replace it by a new one
-						for (i = 0; i < Node::MAXNODELINKS; i++)
-						{
-							if (N_Base.Links[i].length == dest_linked_max)
-							{
-								linked_count--;
-								stats_TotalLinks--;
-								N_Base.ApplyLink(&_link, i, true);
-								break;
-							}
-						}
-						//dprint(" -- candidate accepted as no %i", i);
-					}*/
+					N_Base.ApplyLink(&_link, -1, true);
 
 					linked_count++;
 					stats_TotalLinks++;
-					/*if (linked_count == Node::MAXNODELINKS)
-					{
-						// Store maximal link length
-						dest_linked_max = -1.0;
-						for (i = 0; i < Node::MAXNODELINKS; i++)
-						{
-							if (dest_linked_max < 0.0 || N_Base.Links[i].length > dest_linked_max)
-								dest_linked_max = N_Base.Links[i].length;
-						}
-						//dprint(" -- new max_dest = %f", dest_linked_max);
-					}*/
 				}
-				//else
-				//	dprint(" -- candidate rejected");
 			}
-			//else
-			//	dprint(" -- dest rejected");
 		}
-		//dprint(" -- no more candidates");
 
 
 		if (linked_count)
@@ -1162,18 +1101,18 @@ void BuildLinks()
 		}
 
 	}
-	//dprint(" -- no more bases");
 
 	if (stats_TotalBaseNodes)
 		stats_AverageLinksPerNode /= stats_TotalBaseNodes;
 
+	#ifdef DEBUG_PATH_NODES
 	//
 	// Debug info output
 	//------------------------
 	print("");
 	print(" ============= Node Graph Info =============");
 	print("   Total Nodes found:               %i      ", stats_TotalBaseNodes);
-	print("   Total Bidirect Links build:      %i      ", stats_TotalLinks);
+	print("   Total Bidirect Links built:      %i      ", stats_TotalLinks);
 	print("   Total Linked Nodes:              %i      ", stats_TotalLinkedNodes);
 	print("   Total Unlinked Nodes:            %i      ", stats_TotalUnlinkedNodes);
 	print("   Average Links per Node:          %i      ", stats_AverageLinksPerNode);
@@ -1183,10 +1122,9 @@ void BuildLinks()
 	print("");
 	//------------------------
 	//
+	#endif
 
 	bNodeGraphBuild = (stats_TotalBaseNodes > 0);
-
-	//dprint("CWAIEX : DLI::BuildLinks : OUT");
 }
 
 //===========================================================================
@@ -1201,35 +1139,31 @@ bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
 {
 	bool canreach;
 	ReachTraverse::linkreach_traverse_data LRTRData;
-	//dprint("CWAIEX : DLI::BuildNodeLink : IN");
-	//dprint(" --- N_From tag = %i", N_From.TID);
-	//dprint(" --- N_To tag = %i", N_To.TID);
 
 	canreach = BuildNodeLinkTraverse(N_From, N_To, &LRTRData);
 
 	if (!canreach)
 	{
-		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE");
 		return false;
 	}
 	if (!LRTRData.intercepted_once && N_From.Sector != N_To.Sector)
 	{
-		//dprint("CWAIEX : DLI::BuildNodeLink : OUT FALSE EX");
 		return false;
 	}
 	
-	_link->_Node = N_To;
+	_link->node = N_To;
 	_link->length = Length(N_From.Origin - N_To.Origin);
 	_link->minyspace = LRTRData.minyspace;
 	_link->maxstepheight = LRTRData.maxstepheight;
 	_link->maxdropoff = LRTRData.maxdropoff;
-	
-	//dprint(" --- Link length = %f", _link->length);
-	//dprint(" --- Link minyspace = %f", _link->minyspace);
-	//dprint(" --- Link maxstepheight = %f", _link->maxstepheight);
-	//dprint(" --- Link maxdropoff = %f", _link->maxdropoff);
 
-	//dprint("CWAIEX : DLI::BuildNodeLink : OUT TRUE");
+#ifdef DEBUG_NODE_LINKS
+		print("Link from %v to %v : l = %f, minspace = %f, maxstep = %f, maxdrop = %f",
+			N_From.Origin.x,N_From.Origin.y,N_From.Origin.z,
+			N_To.Origin.x,N_To.Origin.y,N_To.Origin.z,
+			_link->length, _link->minyspace, _link->maxstepheight, _link->maxdropoff);
+#endif
+
 	return true;
 }
 
@@ -1242,8 +1176,6 @@ bool BuildNodeLink(Node N_From, Node N_To, Node::nodelink_t * _link)
 bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 							ReachTraverse::linkreach_traverse_data * pLRTRData)
 {
-	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : IN");
-
 	intercept_t * in;
 	pLRTRData->intercepted_once = false;
 	pLRTRData->prev_sector = N_From.Sector;
@@ -1251,6 +1183,12 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 	pLRTRData->maxstepheight = 0.0;
 	pLRTRData->maxdropoff = 0.0;
 
+#ifdef EXTRASILLYVERTEXTRAVERSECHECK
+	if (!CheckSolidVertexTraverse(N_From.Sector, N_From.Origin, N_To.Origin))
+	{
+		return false;
+	}
+#endif
 
 	foreach PathTraverse(in, N_From.Origin.x, N_From.Origin.y, N_To.Origin.x, N_To.Origin.y,
 		PT_ADDLINES | PT_ADDTHINGS)
@@ -1267,9 +1205,9 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+				(in->line->flags & ML_BLOCKEVERYTHING) ||
 					!in->line->backsector)
 			{
-				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE");
 				return false;
 			}
 
@@ -1282,9 +1220,15 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 			else
 			{
 				// something was really messed up
-				//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT FALSE EX");
 				return false;
 			}
+
+#ifdef EXTRASILLYVERTEXTRAVERSECHECK
+			if (!CheckSolidVertexTraverse(p_sector, N_From.Origin, N_To.Origin))
+			{
+				return false;
+			}
+#endif
 
 			if (p_sector->ceiling.TexZ < pLRTRData->prev_sector->ceiling.TexZ)
 				ceiling = p_sector->ceiling.TexZ;
@@ -1318,10 +1262,858 @@ bool BuildNodeLinkTraverse(Node N_From, Node N_To,
 		}
 	}
 
-	//dprint("CWAIEX : DLI::PTR_BuildNodeLinkTraverse : OUT TRUE");
+#ifdef EXTRASILLYVERTEXTRAVERSECHECK
+	if (N_To.Sector != pLRTRData->prev_sector &&
+		!CheckSolidVertexTraverse(N_To.Sector, N_From.Origin, N_To.Origin))
+	{
+		return false;
+	}
+#endif
+
 	return true;
 }
 
+#ifdef EXTRASILLYVERTEXTRAVERSECHECK
+
+//===========================================================================
+//
+//  CheckSolidVertexTraverse
+//
+//	Checks all solid vertices (that is vertices in the joints of solid
+//  lines) and returns false if a traverse direction passes through any
+//  of them.
+//
+//===========================================================================
+
+bool CheckSolidVertexTraverse(sector_t * sec, TVec from, TVec to)
+{
+	int i;
+	line_t * line;
+	TVec * lastv1;
+	TVec * lastv2;
+
+	for (i = 0; i < sec->linecount; i++)
+	{
+		line = sec->lines[i];
+		// single-sided line
+		if (!(line->flags & ML_TWOSIDED) || (line->flags & ML_BLOCKING) ||
+			(line->flags & ML_BLOCKEVERYTHING) ||
+				!line->backsector)
+		{
+			if (line->v1 != lastv1 && line->v1 != lastv2)
+			{
+				if (to.x == from.x)
+				{
+					if (to.x == line->v1->x && to.y - from.y >= to.y - line->v1->y)
+					{
+						return false;
+					}
+				}
+				else if (to.y == from.y)
+				{
+					if (to.y == line->v1->y && to.x - from.x >= to.x - line->v1->x)
+					{
+						return false;
+					}
+				}
+				else if ( (to.x - from.x)/(to.y - from.y) == (to.x - line->v1->x)/(to.y - line->v1->y) )
+				{
+					return false;
+				}
+			}
+			if (line->v2 != lastv1 && line->v2 != lastv2)
+			{
+				if (to.x == from.x)
+				{
+					if (to.x == line->v2->x && to.y - from.y >= to.y - line->v2->y)
+					{
+						return false;
+					}
+				}
+				else if (to.y == from.y)
+				{
+					if (to.x == line->v2->y && to.x - from.x >= to.x - line->v2->x)
+					{
+						return false;
+					}
+				}
+				else if ( (to.x - from.x)/(to.y - from.y) == (to.x - line->v2->x)/(to.y - line->v2->y) )
+				{
+					return false;
+				}
+			}
+			lastv1 = line->v1;
+			lastv2 = line->v2;
+		}
+	}
+
+	return true;
+}
+
+#endif
+
+//===========================================================================
+//
+//  BuildPriorityPaths
+//
+//	Build paths between Priority Nodes.
+//
+//===========================================================================
+
+void BuildPriorityPaths()
+{
+	int i, j, k;
+	bool found;
+	PriorityNode PNFrom;
+	PriorityNode PNTo;
+	Route _Route;
+
+	// #ifdef DEBUG_PATH_NODES
+	//
+	// Debug statistics
+	//------------------------
+	int			stats_TotalPriorityNodes = 0;
+	int			stats_TotalPaths = 0;
+	int			stats_TotalLinkedPNodes = 0;
+	int			stats_TotalUnlinkedPNodes = 0;
+	int			stats_AveragePathsPerNode = 0;
+	int			stats_MaximalPathNodeLength = 0;
+	int			stats_MinimalPathNodeLength = -1;
+	// etc etc etc.....
+	//------------------------
+	//
+	// #endif
+
+	foreach AllThinkers(PriorityNode, PNFrom)
+	{
+		stats_TotalPriorityNodes++;
+
+		foreach AllThinkers(PriorityNode, PNTo)
+		{
+			if (PNTo == PNFrom)
+			{
+				continue;
+			}
+
+			found = false;
+			for (i = 0; i < PNFrom.Paths.Num; i++)
+			{
+				if (PNFrom.Paths[i].Nodes[0] == PNTo ||
+					PNFrom.Paths[i].Nodes[PNFrom.Paths[i].Nodes.Num - 1] == PNTo)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
+			if (BuildWaypoints(PNFrom, PNTo, _Route))
+			{
+				if (!PNFrom.Paths.Num)
+					stats_TotalLinkedPNodes++;
+				if (!PNTo.Paths.Num)
+					stats_TotalLinkedPNodes++;
+
+				stats_TotalPaths++;
+
+				PNFrom.Paths.Num = PNFrom.Paths.Num + 1;
+				PNFrom.Paths[PNFrom.Paths.Num - 1] = _Route;
+				PNTo.Paths.Num = PNTo.Paths.Num + 1;
+				PNTo.Paths[PNTo.Paths.Num - 1] = _Route;
+			}
+		}
+
+		//-------------------------------------------------------------------------
+
+		if (PNFrom.Paths.Num)
+		{
+			// Search all routes incoming from PNode and remove the ones that
+			// include other PNodes between start and end points
+			for (i = 0; i < PNFrom.Paths.Num; i++)
+			{
+				Route R = PNFrom.Paths[i];
+
+				if (R.Nodes.Num == 2)
+					continue;
+
+				found = false;
+				for (j = 1; j < R.Nodes.Num - 1; j++)
+				{
+					if (R.Nodes[j].Class == PriorityNode || ClassIsChildOf(R.Nodes[j].Class, PriorityNode))
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (found)
+				{
+					// Remove excessive route from both PNodes' lists
+					for (j = i + 1; j < PNFrom.Paths.Num; j++)
+					{
+						PNFrom.Paths[j - 1] = PNFrom.Paths[j];
+					}
+					PNFrom.Paths.Num = PNFrom.Paths.Num - 1;
+					i--;
+
+					PNTo = PriorityNode(R.Nodes[R.Nodes.Num - 1]);
+					for (j = 0; j < PNTo.Paths.Num; j++)
+					{
+						if (PNTo.Paths[j] == R)
+						{
+							for (k = j + 1; k < PNTo.Paths.Num; k++)
+							{
+								PNTo.Paths[k - 1] = PNTo.Paths[k];
+							}
+							PNTo.Paths.Num = PNTo.Paths.Num - 1;
+							break;
+						}
+					}
+
+					R.Destroy();
+
+					stats_TotalPaths--;
+
+					if (!PNFrom.Paths.Num)
+					{
+						stats_TotalLinkedPNodes--;
+						stats_TotalUnlinkedPNodes++;
+					}
+					if (!PNTo.Paths.Num)
+					{
+						stats_TotalLinkedPNodes--;
+						stats_TotalUnlinkedPNodes++;
+					}
+				}
+#ifdef DEBUG_PRIORITY_PATHS
+				else
+				{
+					PNTo = PriorityNode(R.Nodes[R.Nodes.Num - 1]);
+					print("PPath: %v -> %v",
+						PNFrom.Origin.x, PNFrom.Origin.y, PNFrom.Origin.z,
+						PNTo.Origin.x, PNTo.Origin.y, PNTo.Origin.z);
+				}
+#endif
+			}
+		}
+		else
+		{
+			stats_TotalUnlinkedPNodes++;
+		}
+	}
+
+	if (stats_TotalPriorityNodes)
+		stats_AveragePathsPerNode = stats_TotalPaths / (stats_TotalPriorityNodes / 2);
+
+	#ifdef DEBUG_PATH_NODES
+	//
+	// Debug info output
+	//------------------------
+	print("");
+	print(" ========== Priority Paths Info ===========");
+	print("   Total Priority Nodes found:      %i      ", stats_TotalPriorityNodes);
+	print("   Total Bidirect Paths built:     %i      ", stats_TotalPaths);
+	print("   Total PNodes with Paths:        %i      ", stats_TotalLinkedPNodes);
+	print("   Total PNodes without Paths      %i      ", stats_TotalUnlinkedPNodes);
+	print("   Average Paths per PNode:        %i      ", stats_AveragePathsPerNode);
+	print("   Maximal Path Length in Nodes:   %i      ", stats_MaximalPathNodeLength);
+	print("   Minimal Path Length in Modes:   %i      ", stats_MinimalPathNodeLength);
+	print(" ===========================================");
+	print("");
+	//------------------------
+	//
+	#endif
+}
+
+//
+// Extra settings for BuildWaypoints procedure
+//
+struct routebuild_t
+{
+	bool bBuilding;
+	int ContinuesCount;
+	int ContinuesLimit;
+	int IterationsCount;
+	int IterationsLimit;
+
+	IntelligentActor IA;
+	float Height;
+	float MaxStepHeight;
+	float MaxJumpHeight;
+	float MaxDropoffHeight;
+};
+
+//==========================================================================
+//
+//	BuildWaypoints
+//
+//	There are two Route types: common route and priority route.
+//	Common route is defined by a sequence of basic Nodes connected by basic
+//	node links. Priority route uses Priority Nodes connected by
+//	precalculated Paths between them.
+//
+//	Since both route types are being built using same algorythm, actual
+//	route type is determined by RouteClass parameter.
+//
+//==========================================================================
+
+bool BuildWaypoints(Node N_From, Node N_To, out Route _Route, optional class<Node> RouteClass,
+					optional routebuild_t * routebuild)
+{	
+	//
+	// Algorythm for optimal route build, as written in AI Tutorial :)
+	//
+	//	 create a list P
+	//	 add the start node S, to P giving it one element
+	//	 Until first path of P ends with G, or P is empty
+	//		extract the first path from P
+    //		extend first path one step to all neighbors creating X new paths
+    //		reject all paths with loops
+    //			for all paths that end at the same node,
+	//								keep only the shortest one.
+	//		add each remaining new path to of P
+    //		Sort all paths by total underestimate, shortest first.
+	//	 If G found -> success. Else -> failure.
+	//
+	//	total underestimate is:
+	//		distance of partial path travelled + straight-line distance
+	//										from last node in path to goal
+	//
+	//
+
+	bool						failed;
+	LinkedList					RouteList;
+	LinkedList					route_list;
+	Route						R;
+	routebuild_t				_routebuild;
+
+	if (!specified_routebuild)
+	{
+		_routebuild.Height = 0.0;
+		_routebuild.MaxStepHeight = EntityEx::FLOATRANDZ;
+		_routebuild.MaxJumpHeight = EntityEx::FLOATRANDZ;
+		_routebuild.MaxDropoffHeight = EntityEx::FLOATRANDZ;
+		routebuild = &_routebuild;
+	}
+
+	if (!specified_RouteClass)
+		RouteClass = Node;
+
+	failed = false;
+
+	if (routebuild->bBuilding)
+	{
+		routebuild->ContinuesCount++;
+		routebuild->IterationsCount = 0;
+	}
+	else
+	{
+		R = Route(SpawnObject(Route));
+		R.RouteClass = RouteClass;
+		R.Nodes.Num = 1;
+		R.Nodes[0] = N_From;
+
+		if (N_From == N_To)
+		{
+			_Route = R;
+			return true;
+		}
+
+		routebuild->bBuilding = true;
+		routebuild->ContinuesCount = 0;
+		routebuild->IterationsCount = 0;
+
+		RouteList = LinkedList(SpawnObject(LinkedList));
+		RouteList.Add(R);
+	}
+
+	route_list = LinkedList(SpawnObject(LinkedList));
+	while (!IsNodeInRoute(Route(RouteList.refHead), N_To))
+	{
+		if (routebuild->IterationsLimit && routebuild->IterationsCount == routebuild->IterationsLimit)
+		{
+			if (routebuild->ContinuesLimit && routebuild->ContinuesCount == routebuild->ContinuesLimit)
+			{
+				failed = true;
+				break;
+			}
+
+			route_list.Destroy();
+			return false;
+		}
+
+		R = Route(RouteList.refHead);
+		route_list.Add(R);
+
+		ExtendRoute(route_list, N_To, routebuild);
+
+		if (route_list.refHead != none)
+			AddExtendedRoutes(route_list, RouteList);
+		ExcludeExcessRoutes(RouteList);
+		if (RouteList.refHead == none)
+		{
+			failed = true;
+			break;
+		}
+		routebuild->IterationsCount++;
+	};
+	routebuild->bBuilding = false;
+
+	if (!failed)
+	{
+		// Store successful route, destroy others
+		_Route = Route(RouteList.refHead);
+		RouteList.refHead.UnlinkFromList();
+	}
+	route_list.Destroy();
+	RouteList.Destroy();
+	RouteList = none;
+
+	return !failed;
+}
+
+//==========================================================================
+//
+//	IsNodeInRoute
+//
+//==========================================================================
+
+bool IsNodeInRoute(Route R, Node N)
+{
+	int i;
+	
+	for (i = 0; i < R.Nodes.Num; i++)
+	{
+		if (R.Nodes[i] == N)
+			return true;
+	}
+	
+	return false;
+}
+
+//==========================================================================
+//
+//	ExtendRoute
+//
+//	It is assumed that route list passed to this method contains
+//	only one route that need to be extended.
+//
+//==========================================================================
+
+void ExtendRoute(LinkedList route_list, Node NDest, routebuild_t * routebuild)
+{
+	if (route_list.refHead == none)
+		return;
+
+	int i, j;
+	bool found;
+	float PreviousMeasure;
+	float LinkMeasureFactor;
+	Route R;
+	Route ExtendableRoute;
+	Node NExtendable;
+	Node N;
+	
+	ExtendableRoute = Route(route_list.refHead);
+	
+	PreviousMeasure = ExtendableRoute.Measure;
+	NExtendable = ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1]; 
+	
+	// Do extension
+	for (i = 0; i < NExtendable.Links.Num; i++)
+	{
+		if (ExtendableRoute.RouteClass == PriorityNode)
+		{
+			// We are interested only in either the first or the last node from the route
+			// (since it should be PNode)
+			if (NExtendable == PriorityNode(NExtendable).Paths[i].Nodes[0])
+			{
+				N = PriorityNode(NExtendable).Paths[i].Nodes[PriorityNode(NExtendable).Paths[i].Nodes.Num - 1];
+			}
+			else
+			{
+				N = PriorityNode(NExtendable).Paths[i].Nodes[0];
+			}
+		}
+		else
+			N = NExtendable.Links[i].node;
+		
+		found = false;
+		// Check if this node isn't already in route
+		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
+		{
+			if (Route(route_list.refHead).Nodes[j] == N)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found)
+			continue;
+	
+		// Test current link for pawn's reachability
+		if (ExtendableRoute.RouteClass == PriorityNode)
+		{
+			if (routebuild->IA)
+			{
+				// TODO!!
+				//LinkMeasureFactor = routebuild->IA.GetNodeLinkMeasureFactor(NExtendable, i);
+			}
+			else
+			{
+				LinkMeasureFactor = PriorityNode(NExtendable).Paths[i].Measure;
+			}
+		}
+		else
+		{
+			if (routebuild->IA)
+			{
+				LinkMeasureFactor = routebuild->IA.GetNodeLinkMeasureFactor(NExtendable, i);
+			}
+			else
+			{
+				LinkMeasureFactor = GetNodeLinkFormalMeasureFactor(NExtendable, i, routebuild);
+			}
+		}
+		
+		if (LinkMeasureFactor <= 0.0)
+		{
+			continue;
+		}
+		
+		R = Route(SpawnObject(Route));
+		R.RouteClass = ExtendableRoute.RouteClass;
+		route_list.Add(R);
+		ExtendableRoute = R;
+
+		// Calculate underestimate
+		if (PreviousMeasure > 0.0)
+			ExtendableRoute.Measure = PreviousMeasure - Length(NDest.Origin - NExtendable.Origin);
+		else
+			ExtendableRoute.Measure = 0.0;
+
+		if (ExtendableRoute.RouteClass == PriorityNode)
+			ExtendableRoute.Measure += LinkMeasureFactor;
+		else
+			ExtendableRoute.Measure += NExtendable.Links[i].length * LinkMeasureFactor;
+
+		ExtendableRoute.Measure += Length(NDest.Origin - N.Origin);
+		
+		// Copy head route original nodes to the new one
+		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
+			ExtendableRoute.Nodes[j] = Route(route_list.refHead).Nodes[j];
+			
+		// Add new node
+		ExtendableRoute.Nodes.Num = ExtendableRoute.Nodes.Num + 1;
+		ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1] = N;
+	}
+	
+	// Remove original head route
+	route_list.DestroyObject(route_list.refHead);
+}
+
+#ifdef OBSOLETE
+//==========================================================================
+//
+//	ExtendPriorityRoute
+//
+//	It is assumed that proute list passed to this method contains
+//	only one proute that need to be extended.
+//
+//	TODO: think of merging Node and PNode functions
+//
+//==========================================================================
+
+void ExtendPriorityRoute(LinkedList route_list, PriorityNode NDest, routebuild_t * routebuild)
+{
+	if (route_list.refHead == none)
+		return;
+
+	int i, j;
+	bool found;
+	float PreviousMeasure;
+	float LinkMeasureFactor;
+	Route R;
+	Route ExtendableRoute;
+	PriorityNode NExtendable;
+	PriorityNode PN;
+	
+	ExtendableRoute = Route(route_list.refHead);
+
+	PreviousMeasure = ExtendableRoute.Measure;
+	NExtendable = PriorityNode(ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1]);
+
+	// Do extension
+	for (i = 0; i < NExtendable.Paths.Num; i++)
+	{
+		// We are interested only in either the first or the last node from the route
+		// (since it should be PNode)
+		if (NExtendable == NExtendable.Paths[i].Nodes[0])
+		{
+			PN = PriorityNode(NExtendable.Paths[i].Nodes[NExtendable.Paths[i].Nodes.Num - 1]);
+		}
+		else
+		{
+			PN = PriorityNode(NExtendable.Paths[i].Nodes[0]);
+		}
+
+		found = false;
+		// Check if this node isn't already in route
+		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
+		{
+			if (Route(route_list.refHead).Nodes[j] == PN)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (found)
+			continue;
+
+		// Test current link for reachability
+		if (routebuild->IA)
+		{
+			// TODO!!
+			//LinkMeasureFactor = routebuild->IA.GetNodeLinkMeasureFactor(NExtendable, i);
+		}
+		else
+		{
+			LinkMeasureFactor = NExtendable.Paths[i].Measure;
+		}
+		
+		if (LinkMeasureFactor <= 0.0)
+		{
+			continue;
+		}
+		
+		R = Route(SpawnObject(Route));
+		R.RouteClass = ExtendableRoute.RouteClass;
+		route_list.Add(R);
+		ExtendableRoute = R;
+
+		// Calculate underestimate
+		if (PreviousMeasure > 0.0)
+			ExtendableRoute.Measure = PreviousMeasure - Length(NDest.Origin - NExtendable.Origin);
+		else
+			ExtendableRoute.Measure = 0.0;
+		ExtendableRoute.Measure += LinkMeasureFactor;//NExtendable.Links[i].length * LinkMeasureFactor;
+		ExtendableRoute.Measure += Length(NDest.Origin - PN.Origin);
+		
+		// Copy head route original nodes to the new one
+		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
+			ExtendableRoute.Nodes[j] = Route(route_list.refHead).Nodes[j];
+			
+		// Add new node
+		ExtendableRoute.Nodes.Num = ExtendableRoute.Nodes.Num + 1;
+		ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1] = PN;
+	}
+	
+	// Remove original head route
+	route_list.DestroyObject(route_list.refHead);
+}
+#endif	// OBSOLETE
+
+//==========================================================================
+//
+//	GetNodeLinkFormalMeasureFactor
+//
+//==========================================================================
+
+float GetNodeLinkFormalMeasureFactor(Node NOrigin, int iLink, routebuild_t * routebuild)
+{
+	// Default test is made to know if player has physical chance
+	// to pass by the link
+
+	// Minimal vertical space
+	if (NOrigin.Links[iLink].minyspace < routebuild->Height)
+		return -1.0;
+
+	// Maximal step
+	if (NOrigin.Links[iLink].maxstepheight >
+			(routebuild->MaxJumpHeight > routebuild->MaxStepHeight ? routebuild->MaxJumpHeight : routebuild->MaxStepHeight))
+		return -1.0;
+
+	// Maximal dropoff
+	if (NOrigin.Links[iLink].maxdropoff > routebuild->MaxDropoffHeight)
+		return -1.0;
+
+	return 1.0;
+}
+
+//==========================================================================
+//
+//	ExcludeExcessRoutes
+//
+//==========================================================================
+
+void ExcludeExcessRoutes(LinkedList route_list)
+{
+	if (route_list.refHead == none)
+		return;
+	
+	int i;
+	bool found, lightest_saved, rpass_excluded;
+	Route RPass;
+	Route RSeek;
+	Route RSeekEnd;
+	Route RExclude;
+	Node NEnding;
+	float LighterMeasure;
+	
+	RPass = Route(route_list.refHead);
+	while (RPass != none)
+	{
+		// Remember RPass'es last Node and route Measure
+		NEnding = RPass.Nodes[RPass.Nodes.Num - 1];
+		LighterMeasure = RPass.Measure;
+		
+		// Pass through the left of the route list, seeking for routes with same ending
+		found = false;
+		RSeek = Route(RPass.refNext);
+		while (RSeek != none)
+		{
+			if (RSeek.Nodes[RSeek.Nodes.Num - 1] == NEnding)
+			{
+				found = true;
+				if (RSeek.Measure < LighterMeasure)
+					LighterMeasure = RSeek.Measure;
+			}
+			
+			RSeekEnd = RSeek;
+			RSeek = Route(RSeek.refNext);
+		};
+		
+		// If any route with same ending was found, remove each of them, that have
+		// heavier measure than stored in LighterMeasure
+		if (found)
+		{
+			found = false;				// [CW] used here for detecting last check candidate
+			rpass_excluded = false;
+			lightest_saved = false;
+			
+			RSeek = RPass;
+			while (RSeek != none)
+			{
+				RExclude = none;
+				if (RSeek.Nodes[RSeek.Nodes.Num - 1] == NEnding)
+				{
+					if (RSeek.Measure > LighterMeasure)
+						RExclude = RSeek;
+					else if (RSeek.Measure == LighterMeasure)
+					{
+						if (lightest_saved)
+							RExclude = RSeek;
+						else
+							lightest_saved = true;
+					}
+				}
+			
+				if (RSeek == RSeekEnd)
+					found = true;			// [CW] no need to search any more
+				else
+					RSeek = Route(RSeek.refNext);
+					
+				if (RExclude != none)
+				{
+					if (RPass == RExclude)
+					{
+						rpass_excluded = true;
+						RPass = Route(RPass.refNext);
+					}
+					route_list.DestroyObject(RExclude);
+				}
+					
+				if (found)
+					break;
+			};
+		}
+		
+		if (rpass_excluded)
+			rpass_excluded = false;
+		else
+			RPass = Route(RPass.refNext);
+	};
+}
+
+//==========================================================================
+//
+//	AddExtendedRoutes
+//
+//==========================================================================
+
+void AddExtendedRoutes(LinkedList extended_route_list, LinkedList route_list)
+{
+	if (extended_route_list.refHead == none)
+		return;
+
+	float HeaviestExtendedMeasure;
+	Route R;
+	Route HeaviestRoute;
+	LinkedList sort_extended_route_list = LinkedList(SpawnObject(LinkedList));
+	
+	// Find largest measure in extended routes
+	HeaviestExtendedMeasure = -1.0;
+	R = Route(extended_route_list.refHead);
+	while (R != none)
+	{
+		if (HeaviestExtendedMeasure < 0.0 || R.Measure > HeaviestExtendedMeasure)
+		{
+			HeaviestExtendedMeasure = R.Measure;
+			HeaviestRoute = R;
+		}
+			
+		R = Route(R.refNext);
+	};
+
+	// Find all previously existed routes from the list that
+	// have lighter measures and move them to extended routes list
+	R = Route(route_list.refHead);
+	while (R != none)
+	{
+		if (R.Measure < HeaviestExtendedMeasure)
+		{
+			extended_route_list.Add(R);
+		}
+		R = Route(R.refNext);
+	};
+	
+	//
+	// Sort extended routes list
+	//
+	sort_extended_route_list.Add(HeaviestRoute);
+	
+	while (extended_route_list.refHead != none)
+	{
+		HeaviestExtendedMeasure = -1.0;
+		R = Route(extended_route_list.refHead);
+		while (R != none)
+		{
+			if (HeaviestExtendedMeasure < 0.0 || R.Measure > HeaviestExtendedMeasure)
+			{
+				HeaviestExtendedMeasure = R.Measure;
+				HeaviestRoute = R;
+			}			
+			R = Route(R.refNext);
+		};
+		
+		sort_extended_route_list.AddFront(HeaviestRoute);
+	};
+	
+	//
+	// Add sorted routes list at the beginning of the remaining old routes list
+	//
+	route_list.MoveContentsFront(sort_extended_route_list);
+	
+	
+	sort_extended_route_list.Destroy();
+}
+
+
+
+#ifdef OBSOLETE
 
 //===========================================================================
 //
@@ -1415,6 +2207,8 @@ void BuildPaths()
 	//------------------------
 	//
 }
+
+#endif
 
 defaultproperties
 {
