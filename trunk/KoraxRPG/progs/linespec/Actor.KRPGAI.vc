@@ -1,0 +1,1102 @@
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Advanced AI
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	SetTeam
+//
+//==========================================================================
+
+void SetTeam(int team)
+{
+	Team = team;
+
+	//
+	// TODO: special code needed for Intelligent Actors
+	//
+
+	if (bCombatant && Target && Actor(Target).Team == Team)
+	{
+		Target = none;
+		SetState(IdleState);
+	}
+
+	Actor A;
+	foreach AllThinkers(Actor, A)
+	{
+		if (A.bCombatant && A.Target == self && A.Team == Team)
+		{
+			A.Target = none;
+			A.SetState(IdleState);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	CanSense
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool CanSense(Entity Other)
+{
+	return bSenseAlways || CanSee(Other);
+}
+
+const float	DEFAULT_THREAT_VICINITY			= MISSILERANGE;
+
+//==========================================================================
+//
+//	LookForEnemy
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+bool LookForEnemy(bool allaround, optional bool nearest,
+					optional TVec At, optional float maxdist, optional Actor ExcludeActor)
+{
+	Actor		mo;
+	float		an;
+	float		dist;
+	float		min_dist;
+
+	if (!specified_nearest)
+		nearest = true;
+
+	if (!specified_At)
+		At = Origin;
+
+	if (!specified_maxdist)
+		maxdist = DEFAULT_THREAT_VICINITY;
+
+	Actor NewTarget;
+	min_dist = -1.0;
+
+	foreach AllThinkers(Actor, mo)
+	{
+		if (mo == self)
+			continue;	// self
+
+		if (mo == ExcludeActor)
+			continue;
+
+		if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
+			continue;
+
+		if (mo.Health <= 0)
+			continue;	// dead
+
+		// [CW] Do not allow to target other actors than either monsters or players
+		if (!mo.bIsPlayer && !mo.bMonster)
+			continue;
+
+		if (!bIgnoreTeams && (Team == Actor(mo).Team))
+			continue;	// friendly
+
+		// TODO: extra parameter to ignore this
+		if (!CanSense(mo))
+			continue;	// out of senses
+
+		if (Length(mo.GetCentre() - At) > maxdist)
+			continue;
+
+		if (P_Random() > 200)
+			continue;	// sometimes skip
+
+		if (!bSenseAlways && !allaround && At == Origin)
+		{
+			dist = DistTo(mo);
+			an = AngleMod360(atan2(mo.Origin.y - Origin.y,
+				mo.Origin.x - Origin.x) - Angles.yaw);
+
+			if (an > 90.0 && an < 270.0)
+			{
+				//dist = DistTo(mo);
+				// if real close, react anyway
+				if (dist > MELEERANGE)
+					continue;	// behind back
+			}
+		}
+
+		dist = Length(mo.GetCentre() - At);
+
+		if (nearest)
+		{
+			if (min_dist < 0.0 || min_dist > dist)
+			{
+				min_dist = dist;
+				NewTarget = mo;
+			}
+
+			continue;
+		}
+		else
+		{
+			NewTarget = mo;
+		}
+
+		break;
+	}
+
+	if (NewTarget)
+		Target = NewTarget;
+	return NewTarget != none;
+}
+
+//==========================================================================
+//
+//	A_LookEx
+//
+//	[CW] CHECKME!! -- This method currently is not used - at all;
+//  need to analyse its contents and move them somewhere else;
+//  or just delete all this at once
+//
+//	[KoraxRPG] Advanced AI
+//
+//==========================================================================
+
+#ifdef OBSOLETE
+
+bool A_LookEx(bool autoSetChase)
+{
+	EntityEx	targ;
+	Entity		Ent;
+
+	//	Set goal now if appropriate.
+	if (Special == LNSPEC_ThingSetGoal && Args[0] == 0)
+	{
+		Goal = none;
+		for (Ent = Level.FindMobjFromTID(Args[1], none); Ent;
+			Ent = Level.FindMobjFromTID(Args[1], Ent))
+		{
+			if (!Ent.IsA('PatrolPoint'))
+			{
+				continue;
+			}
+			Goal = EntityEx(Ent);
+			break;
+		}
+		ReactionTime = itof(Args[2]) + XLevel.Time;
+		bChaseGoal = !!Args[3];
+	}
+
+	Threshold = 0;	// any shot will wake up
+	pTargetVec = NULL;
+
+	if (TIDToHate)
+	{
+		targ = Target;
+	}
+	else
+	{
+		targ = EntityEx(Sector->SoundTarget);
+	}
+
+	//	Andy Baker's stealth monsters
+	if (bStealth)
+	{
+		VisDir = -1;
+	}
+
+	// [CW] Do not allow to target other actors than monsters
+	if (targ && !targ.bMonster)
+		targ = none;
+
+	if (targ && targ.bShootable && (bIgnoreTeams || Team != Actor(targ).Team))
+	{
+		Target = targ;
+
+		if (bAmbush)
+		{
+			if (!CanSense(Target))
+			{
+				if (!LookForEnemy(false || (Alertness > 0.0)))
+					return false;
+			}
+		}
+	}
+	else
+	{
+		if (!LookForEnemy(bLookAllAround || (Alertness > 0.0)))
+			return false;
+	}
+
+	Alertness = HIGH_ALERTNESS;
+
+	// go into chase state
+	// Don't start chasing after a goal if it isn't time yet.
+	if (Target == Goal)
+	{
+		if (ReactionTime > XLevel.Time)
+		{
+			Target = none;
+		}
+	}
+	else if (SightSound)
+	{
+		if (bBoss)
+		{
+			// Full volume
+			PlaySound(SightSound, CHAN_VOICE, 1.0, ATTN_NONE);
+		}
+		else
+		{
+			PlaySound(SightSound, CHAN_VOICE);
+		}
+	}
+
+	if (Target && autoSetChase)
+		SetState(SeeState);
+	return true;
+}
+
+//==========================================================================
+//
+//	A_LookExAuto
+//
+//	[CW] CHECKME!! -- This method currently is not used - at all;
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_LookExAuto()
+{
+	A_LookEx(true);
+}
+
+#endif	// OBSOLETE
+
+//==========================================================================
+//
+//	A_DoMove
+//
+//	[KoraxRPG] Advanced AI
+//
+//	[CW] Currently an extended variant of Actor::DoChase
+//
+//==========================================================================
+
+bool A_DoMove(bool Evade, bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+				bool NightmareFast, bool PlayActive)
+{
+	float		delta;
+	float		dist;
+	float		ang;
+	float		oldX;
+	float		oldY;
+	int			oldFloor;
+
+	//	Andy Baker's stealth monsters
+	if (bStealth)
+	{
+		VisDir = -1;
+	}
+
+	if (ReactionCount)
+	{
+		ReactionCount--;
+	}
+
+	if (!pTargetVec)
+	{
+		Error("KRPGActor::A_DoMove: called with pTargetVec = NULL");
+		return false;
+	}
+
+	//bInCombat = true;	// CHECKME!
+	//	Modify target threshold.
+	if (Threshold)
+	{
+		if (!Target || Target.Health <= 0)
+		{
+			Threshold = 0;
+		}
+		else
+		{
+			Threshold--;
+		}
+	}
+
+	if (NightmareFast && Level.Game.fastparm)
+	{
+		//	Monsters move faster in nightmare mode.
+		StateTime *= 0.5;
+		if (StateTime < 0.1)
+		{
+			StateTime = 0.1;
+		}
+	}
+
+	//	Turn towards movement direction if not there yet.
+	// killough 9/7/98: keep facing towards target if strafing or backing out
+	if (Target && strafecount)
+	{
+		A_FaceTarget();
+	}
+
+	//	If the target is dead and not a goal, stop chasing it.
+	if (Target && Target != Goal && Target.Health <= 0)
+	{
+		Target = none;
+	}
+
+	if (!Evade && (Target && !Target.bShootable))
+	{
+		Target = none;
+		if (AIdleState)
+		{
+			SetState(AIdleState);
+			//bInCombat = false;// CHECKME!!
+		}
+		return false;
+	}
+
+	//	Do not attack twice in a row.
+	if (bJustAttacked)
+	{
+		bJustAttacked = false;
+		if (!Level.Game.fastparm && !DoSpecialMove(Evade))
+		{
+			NewChaseDirEx(Evade);
+		}
+		return true;
+	}
+
+	if (FastChase && Target)
+	{
+		//	Strafe
+		if (FastChaseStrafeCount > 0)
+		{
+			FastChaseStrafeCount--;
+		}
+		else
+		{
+			FastChaseStrafeCount = 0;
+			Velocity.x = 0.0;
+			Velocity.y = 0.0;
+			dist = DistTo(Target);
+			if (dist < 640.0)
+			{
+				if (P_Random() < 100)
+				{
+					ang = atan2(Target.Origin.y - Origin.y,
+						Target.Origin.x - Origin.x);
+					if (P_Random() < 128)
+						ang = AngleMod360(ang + 90.0);
+					else
+						ang = AngleMod360(ang - 90.0);
+					Velocity.x = 13.0 * cos(ang) * 35.0;
+					Velocity.y = 13.0 * sin(ang) * 35.0;
+					FastChaseStrafeCount = 3;	// strafe time
+				}
+			}
+		}
+	}
+
+	//	Check for melee attack.
+	if (!Evade && Target && AMeleeState && CheckMeleeRange())
+	{
+		if (AttackSound)
+		{
+			PlaySound(AttackSound, CHAN_WEAPON);
+		}
+		SetState(AMeleeState);
+		return true;
+	}
+
+	//	Check for missile attack.
+	if (AMissileState && Target)
+	{
+		if (Level.Game.fastparm || !MoveCount)
+		{
+			if (CheckMissileRange())
+			{
+				SetState(AMissileState);
+				bJustAttacked = true;
+				return true;
+			}
+		}
+	}
+
+	if (strafecount)
+	{
+		strafecount--;
+	}
+
+	//	Chase towards enemy.
+	if (!DoSpecialMove(Evade) && (!FastChase || !FastChaseStrafeCount))
+	{
+		oldX = Origin.x;
+		oldY = Origin.y;
+		oldFloor = Sector->floor.pic;
+		if (--MoveCount < 0 || !StepMoveEx())
+		{
+			NewChaseDirEx(Evade);
+		}
+		if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
+		{
+			TryMove(vector(oldX, oldY, Origin.z), false);
+			NewChaseDirEx(Evade);
+		}
+	}
+
+	//	Make active sound.
+	if (PlayActive && P_Random() < 3)
+	{
+		PlayActiveSound();
+	}
+
+	return true;
+}
+
+//==========================================================================
+//
+//	DoSpecialMove
+//
+//	[KoraxRPG]
+//
+//	Returns TRUE if actor should skip normal movement
+//
+//==========================================================================
+
+bool DoSpecialMove(bool Evade)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	A_DoMoveAuto
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_DoMoveAuto()
+{
+	A_DoMove(false, false, IdleState, MeleeState, MissileState,
+		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
+}
+
+//==========================================================================
+//
+//	A_EvadeAuto
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final void A_EvadeAuto()
+{
+	A_DoMove(true, false, IdleState, MeleeState, MissileState,
+		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
+}
+
+//==========================================================================
+//
+//  StepMoveEx
+//
+//  Move in the current direction, returns false if the move is blocked.
+//
+//  [CW] Contents used mostly from original StepMove;
+//       Difference is in making MoveDir unused, use free movement angle
+//       instead.
+//
+//==========================================================================
+
+final bool StepMoveEx()
+{
+	float tryx, deltax, origx;
+	float tryy, deltay, origy;
+	float maxmove;
+	int steps;
+	float xspeed;
+	float yspeed;
+	int i;
+	bool try_ok;
+
+	line_t *ld;
+	int good;
+
+	if (bBlasted)
+		return true;
+
+	// Instead of yanking non-floating monsters to the ground,
+	// let gravity drop them down, unless they're moving down a step.
+	if (!bNoGravity && Origin.z > FloorZ && !bOnMobj)
+	{
+		if (Origin.z > FloorZ + MaxStepHeight)
+		{
+			return false;
+		}
+		else
+		{
+			Origin.z = FloorZ;
+		}
+	}
+
+	origx = Origin.x;
+	origy = Origin.y;
+	deltax = Speed / 35.0 * cos(Angles.yaw);
+	deltay = Speed / 35.0 * sin(Angles.yaw);
+	tryx = origx + deltax;
+	tryy = origy + deltay;
+
+	// Like P_XYMovement this should do multiple moves if the step size is too large
+	maxmove = Radius;
+	steps = 1;
+
+	if (maxmove > 0.0)
+	{ 
+		xspeed = fabs(deltax);
+		yspeed = fabs(deltay);
+
+		if (xspeed > yspeed)
+		{
+			if (xspeed > maxmove)
+			{
+				steps = 1 + ftoi(xspeed / maxmove);
+			}
+		}
+		else
+		{
+			if (yspeed > maxmove)
+			{
+				steps = 1 + ftoi(yspeed / maxmove);
+			}
+		}
+	}
+
+	try_ok = true;
+	tmtrace_t tmtrace;
+	for (i = 1; i < steps; i++)
+	{
+		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
+					(deltay / itof(steps * i)), Origin.z), false);
+		if (!try_ok)
+		{
+			break;
+		}
+	}
+
+	// killough 3/15/98: don't jump over dropoffs:
+	if (try_ok)
+	{
+		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), false);
+	}
+
+	if (!try_ok)
+	{
+		// open any specials
+		if (bFloat && tmtrace.bFloatOk)
+		{
+			// must adjust height
+			if (Origin.z < tmtrace.FloorZ)
+				Origin.z += FloatSpeed * Level.Game.frametime;
+			else
+				Origin.z -= FloatSpeed * Level.Game.frametime;
+
+			// Check to make sure there's nothing in the way of the float
+			if (TestMobjZ())
+			{
+				bInFloat = true;
+				return true;
+			}
+		}
+
+		if (!tmtrace.SpecHit.Num)
+			return false;
+
+		//MoveDir = DI_NODIR;
+
+		// if the special is not a door that can be opened, return false
+		//
+		// killough 8/9/98: this is what caused monsters to get stuck in
+		// doortracks, because it thought that the monster freed itself
+		// by opening a door, even if it was moving towards the doortrack,
+		// and not the door itself.
+		//
+		// killough 9/9/98: If a line blocking the monster is activated,
+		// return true 90% of the time. If a line blocking the monster is
+		// not activated, but some other line is, return false 90% of the
+		// time. A bit of randomness is needed to ensure it's free from
+		// lockups, but for most cases, it returns the correct result.
+		//
+		// Do NOT simply return false 1/4th of the time (causes monsters to
+		// back out when they shouldn't, and creates secondary stickiness).
+
+		good = 0;
+		while (tmtrace.SpecHit.Num)
+		{
+			ld = tmtrace.SpecHit[tmtrace.SpecHit.Num - 1];
+			tmtrace.SpecHit.Num = tmtrace.SpecHit.Num - 1;
+			// if the special is not a door
+			// that can be opened,
+			// return false
+			if (LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Use) ||
+			    (bActivatePushWall && LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Push)))
+			{
+				good |= ld == tmtrace.BlockingLine ? 1 : 2;//true;
+			}
+		}
+		return good && ((Random() >= 203.0) ^ (good & 1));
+	}
+	else
+	{
+		bInFloat = false;
+	}
+
+	if (!bFloat && !bNoGravity)
+	{
+		if (Origin.z > FloorZ)
+		{
+			HitFloorType();
+		}
+		Origin.z = FloorZ;
+	}
+	return true;
+}
+
+//=============================================================================
+//
+// NewChaseDirEx
+//
+//	[KoraxRPG] Advanced AI
+//
+//=============================================================================
+
+final void NewChaseDirEx(optional bool bEvade)
+{
+	float deltax;
+	float deltay;
+
+	if (!pTargetVec)
+	{
+		Error("KRPGActor::NewChaseDirEx: called with pTargetVec = NULL");
+		return;
+	}
+
+	if (!specified_bEvade)
+		bEvade = false;
+
+	if (bEvade)
+	{
+		deltax = Origin.x - pTargetVec->x;
+		deltay = Origin.y - pTargetVec->y;
+	}
+	else
+	{
+		deltax = pTargetVec->x - Origin.x;
+		deltay = pTargetVec->y - Origin.y;
+	}
+
+	// killough 8/8/98: sometimes move away from target, keeping distance
+	// Take advantage over an enemy without missiles, by keeping distance
+	strafecount = 0;
+
+	tmtrace_t tmtrace;
+	//CheckRelPosition(&tmtrace, Origin);	//???CHECKME
+
+	// Try to move away from a dropoff
+	if (FloorZ - tmtrace.DropOffZ > MaxDropoffHeight &&
+		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat)
+	{
+		float AvoidDeltaX;
+		float AvoidDeltaY;
+		// We call CheckDropoff here to determine if the
+		// bounding box actually needs to be used below
+		CheckDropOff(AvoidDeltaX, AvoidDeltaY);
+
+		if (AvoidDeltaX || AvoidDeltaY)
+		{
+			// [Graf Zahl] I have changed TryMove to only apply this logic when
+			// being called from here. bAavoidingDropoff activates the code that
+			// allows monsters to move away from a dropoff. This is different from
+			// MBF which requires unconditional use of the altered logic and therefore
+			// forcing a massive change in the monster behavior to use this.
+
+			// use different dropoff movement logic in TryMove
+			bAvoidingDropoff = true;
+			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY);
+			bAvoidingDropoff = false;
+		
+			// If moving away from dropoff, set movecount to 1 so that
+			// small steps are taken to get monster away from dropoff.
+			MoveCount = 1;
+			return;
+		}
+	}
+	else
+	{
+		/*
+		---------------------------- TODO -----------------------------
+		float dist;
+		
+		dist = DistTo(Target);
+
+		if (Target.Health > 0)
+	    {   // Live enemy target
+			if (GetCvar('monster_backing') && MissileState &&
+				/*actor->type != MT_SKULL &&*//*
+				((!Target.MissileState && dist < MELEERANGE * 2.0) ||
+				(Target.Player && PlayerEx(Target.Player).ReadyWeapon.bBotMelee &&
+				dist < MELEERANGE * 3.0)))
+			{       // Back away from melee attacker
+					strafecount = P_Random() & 15;
+					deltax = -deltax;
+					deltay = -deltay;
+			}
+		}
+		---------------------------- TODO -----------------------------
+		*/
+	}
+	DO_NewChaseDirEx(deltax, deltay);
+
+	// If strafing, set movecount to strafecount so that old Doom
+	// logic still works the same, except in the strafing part
+	if (strafecount)
+		MoveCount = strafecount;
+}
+
+//==========================================================================
+//
+//  DO_NewChaseDirEx
+//
+//	[CW] an attempt to make movement free of MoveDir presets (any angle)
+//
+//==========================================================================
+
+final void DO_NewChaseDirEx(float deltax, float deltay)
+{
+	float oldang = Angles.yaw;
+	Angles.yaw = atan2(deltay, deltax);
+	if (!TryWalkEx())
+	{
+		if (P_Random() & 1)
+		{
+			Angles.yaw += 45.0 + Random() * 90.0;
+		}
+		else
+		{
+			Angles.yaw -= 45.0 + Random() * 90.0;
+		}
+
+		if (!TryWalkEx())
+		{
+			Angles.yaw = -oldang;
+			TryWalkEx();
+		}
+	}
+}
+
+//==========================================================================
+//
+//  TryWalkEx
+//
+//  Attempts to move actor in its current (ob->moveangle) direction.
+//  If blocked by either a wall or an actor returns FALSE.
+//  If move is either clear of block only by a door, returns TRUE and sets.
+//  If a door is in the way, an OpenDoor call is made to start it opening.
+//
+//==========================================================================
+
+final bool TryWalkEx()
+{
+	if (!StepMoveEx())
+	{
+		return false;
+	}
+	MoveCount = P_Random() & 15;
+	return true;
+}
+
+//==========================================================================
+//
+//	CanReach
+//
+//  Checks whether this Actor can pass to target directly
+//	(along the straight line).
+//	TargetEntity is optional.
+//
+//==========================================================================
+
+bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
+			  // [CW] use these three to override default passability calculations
+			  optional float MaxPassableStep,
+			  optional float MaxPassableDropOff,
+			  optional float MinPassableOpening,
+			  optional bool bCanUseLines)
+{
+	bool canreach;
+	ReachTraverse::reach_traverse_data_t CRTRData;
+
+	if (!specified_TargetEntity)
+		TargetEntity = none;
+
+	if (!specified_MaxPassableStep)
+		MaxPassableStep = MaxStepHeight;
+	if (!specified_MaxPassableDropOff)
+		MaxPassableDropOff = MaxDropoffHeight;
+	if (!specified_MinPassableOpening)
+		MinPassableOpening = Height;
+	
+	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData,
+		MaxPassableStep, MaxPassableDropOff, MinPassableOpening, bCanUseLines);
+	
+	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
+		return false;
+	
+	if (canreach && TargetEntity)
+	{
+	//
+		// [CW] CHECKME ---
+		//
+		//if (CRTRData.linetarget != TargetEntity)
+		//	return false;
+
+		// [FB]  3d Floor checks...
+		float dist;
+		if (TargetEntity.Origin.z > Origin.z)
+		{
+			dist = Origin.z + Height;
+
+			if (TargetEntity.Origin.z > dist)
+				return false;
+		}
+		if (TargetEntity.Origin.z <= Origin.z)
+		{
+			dist = Origin.z - (TargetEntity.Origin.z + TargetEntity.Height);
+			// [FB] Always evaluate a positive distance
+			dist = dist < 0.0 ? -dist : dist;
+
+			if (dist > MaxPassableDropOff)
+				return false;
+		}
+	}
+
+	return canreach;
+}
+
+//==========================================================================
+//
+//	PTR_CanReachTraverse
+//
+// [FB] Added partial 3d floor support, needs to be checked and corrected...
+//
+//==========================================================================
+
+bool DoCanReachPathTraverse(TVec TargetPos,
+							ReachTraverse::reach_traverse_data_t * pCRTRData,
+							float MaxPassableStep,
+							float MaxPassableDropOff,
+							float MinPassableOpening,
+							bool bCanUseLines)
+{
+	intercept_t * in;
+
+	pCRTRData->intercepted_once = false;
+	pCRTRData->prev_sector = Sector;
+
+	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
+		PT_ADDLINES | PT_ADDTHINGS)
+	{
+		//
+		// [CW] For slope recognition
+		float distance_bak;
+		float distance_traced;		// distance traced total
+		float distance_traced_last;	// distance traced last iteration
+
+		pCRTRData->intercepted_once = true;
+
+		distance_bak = distance_traced;
+		distance_traced = Length(Origin - TargetPos) * in->frac;
+		distance_traced_last = distance_traced - distance_bak;
+
+		if (in->bIsALine)
+		{
+			sector_t * p_sector;
+			TVec tracedir;
+			TVec hit_point;
+			opening_t* opening;	// [FB] For 3d floors
+			float traceZ = Origin.z; // Z coordinate of the trace
+			//
+			// [CW] For slope recognition
+			float slope_angle;
+
+			// [CW] A unit vector determines the direction of tracing
+			//		Needed to get the hit_point for each 2-sided line found
+			tracedir = Normalise(TargetPos - Origin);
+			tracedir.z = 0.0;
+
+			// single-sided lines abort traverse
+			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
+					(in->line->flags & ML_BLOCKEVERYTHING) ||
+					!in->line->backsector)
+				return false;
+
+			// in case of two-sided lines a passability check is made
+			if (in->line->frontsector == pCRTRData->prev_sector)
+				p_sector = in->line->backsector;
+			else if (in->line->backsector == pCRTRData->prev_sector)
+				p_sector = in->line->frontsector;
+			else
+				// something was really messed up		
+				return false;
+
+			pCRTRData->prev_sector = p_sector;
+
+			// [FB] partial 3d floor support...
+			tracedir.x = cos(Angles.yaw);
+			tracedir.y = sin(Angles.yaw);
+			tracedir.z = FloorZ;
+			hit_point = Origin + distance_traced * tracedir;
+			hit_point.z = traceZ;
+			opening = LineOpenings(in->line, hit_point);
+			opening = FindOpening(opening, hit_point.z, hit_point.z + Height);
+
+			// only valid openings
+			if (!opening)
+			{
+				return false;
+			}
+			if ((opening->range <= MinPassableOpening) ||
+				(opening->lowfloor - opening->bottom > MaxPassableStep) ||
+				(opening->lowfloor - opening->bottom > MaxPassableDropOff))
+				return false;
+
+			// [CW] Now, when we have the best opening available, we must check
+			//		if the best is actually the passable
+			//
+			// [CW]
+			//
+			//		From what I saw in engine code, -
+			//		opening->top is the lowest ceiling between previous and next sector;
+			//		opening->bottom is the highest floor between previous and next sector;
+			//		opening->range is distance between opening->top and opening->bottom;
+			//		opening->lowfloor is the lowest floor between previous and next sector;
+			//
+
+			//
+			// [CW] Check floor planes for slopes
+			//
+			if (traceZ != opening->bottom && traceZ != opening->lowfloor)
+			{
+				// There is definitely a slope;
+				// [FB] Checks for sloped floors on both sides
+				if (
+					(opening->floor->maxz <= opening->highceilingplane->minz &&
+					opening->highceilingplane->minz >= opening->floor->minz)
+					||
+					(opening->lowfloorplane->maxz <= opening->ceiling->minz &&
+					opening->ceiling->minz >= opening->floor->minz)
+					)
+				{
+					// [FB] This is actually a slope, so calculate angles
+					slope_angle = atan2(opening->bottom - traceZ, distance_traced_last);
+				}
+
+				// Check if slope angle is too high to ascend
+				if (slope_angle >= 70.0)
+				{
+					return false;
+				}
+
+				// Make our "ghost" actor stand at the end of the slope
+				traceZ = opening->bottom;
+			}
+
+			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
+				||
+				// OK, actor fits through...
+				// so use traceZ to know which height is actor's "ghost" previous position
+				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
+					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
+					// drop from highest floor to lowest one is too much to accept it
+				||
+				(traceZ <= opening->lowfloor && ((opening->lowfloor - traceZ) > MaxPassableStep ||
+					((opening->bottom - opening->lowfloor) > MaxPassableStep)))
+					// raise from lowest floor to highest one is too much to step there
+				)
+			{
+				return false;
+			}
+			
+			// [FB] Check for ceiling slopes on both sides
+			if (
+				(opening->floor->minz <= opening->highceilingplane->maxz &&
+				opening->highceilingplane->minz >= opening->floor->maxz)
+				||
+				(opening->lowfloorplane->minz <= opening->ceiling->maxz &&
+				opening->ceiling->minz >= opening->floor->maxz)
+				)
+			{
+				if (opening->highceilingplane->minz < Height ||
+					opening->ceiling->minz < Height)
+				{
+					// [FB] We'll get stuck on this slope
+					return false;
+				}
+			}
+			// [FB] This should partially cover it...
+
+			// [CW] Update height position;
+			if (traceZ == opening->bottom)
+				traceZ = opening->lowfloor;
+			else
+				traceZ = opening->bottom;
+		}
+		else
+		{
+			// TODO: check this precisely...
+			pCRTRData->linetarget = Actor(in->Thing);
+			
+			if (!pCRTRData->linetarget)
+				continue; // something out there
+
+			if (pCRTRData->linetarget.bSolid)
+			{
+				if (pCRTRData->linetarget.Height > MaxPassableStep &&
+						!pCRTRData->linetarget.bShootable)
+					return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+//==========================================================================
+//
+//	GetNearestEntity
+//
+//==========================================================================
+
+final EntityEx GetNearestEntity(class<EntityEx> EClass, optional bool bReachable)
+{
+	EntityEx EE;
+	EntityEx ee;
+	float dist = -1.0;
+
+	foreach AllThinkers(EClass, ee)
+	{
+		if (dist < 0.0 || Length(ee.Origin - Origin) < dist)
+		{
+			if (bReachable && !CanReach(ee.Origin))
+				continue;
+			EE = ee;
+			dist = Length(ee.Origin - Origin);
+		}
+	}
+
+	return EE;
+}

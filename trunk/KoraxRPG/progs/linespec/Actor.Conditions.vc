@@ -1,0 +1,187 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: Actor.Conditions.vc 1976 2009-06-06 15:07:33Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Actor Conditions
+//
+//
+//**************************************************************************
+
+array<ActorCondition>	Conditions;
+
+
+//==========================================================================
+//
+//	PurgeConditions
+//
+//	[CW] Condenses Conditions array by removing null-references
+//
+//==========================================================================
+
+final void PurgeConditions()
+{
+	int i;
+	for (i = 0; i < Conditions.Num;)
+	{
+		if (!Conditions[i])
+		{
+			Conditions.Remove(i);
+		}
+		else
+			i++;
+	}
+}
+
+//==========================================================================
+//
+//	CastCondition
+//
+//==========================================================================
+
+ActorCondition CastCondition(class<ActorCondition> ConditionClass, bool accumulative,
+											Actor Instigator, int level, float life_duration)
+{
+	ActorCondition AC;
+
+	PurgeConditions();
+
+	if (accumulative)
+		AC = GetCondition(ConditionClass, Instigator, level);
+
+	if (AC)
+	{
+		//
+		// Possibly accumulate existing Condition's lifetime
+		//
+
+		float limit;
+
+		if (AC.MaxAccumulatedLifePerLevel < 0.0)
+			AC.LifeTime += life_duration;
+		else
+		{
+			limit = AC.MaxAccumulatedLifePerLevel * itof(AC.Level);
+			if (AC.LifeTime >= limit)
+				AC = none;	// [CW] to mark that no condition is added
+			else
+			{
+				AC.LifeTime += life_duration;
+				if (AC.LifeTime > limit)
+					AC.LifeTime = limit;
+			}
+		}
+	}
+	else
+	{
+		//
+		// Spawn new Actor Condition
+		//
+
+		AC = ActorCondition(Spawn(ConditionClass));
+
+		if (!AC.CanBeCastUpon(self))
+		{
+			AC.Destroy();
+			AC = none;
+		}
+
+		if (AC)
+		{
+			Conditions.Num = Conditions.Num + 1;
+			Conditions[Conditions.Num - 1] = AC;
+
+			AC.ARecepient = self;
+			AC.AInstigator = Instigator;
+			AC.Level = level;
+			AC.LifeDuration = life_duration;
+
+			AC.Activate();
+		}
+	}
+
+	if (AC)
+	{
+		if (Player && AC.CastMessage)
+			Player.cprint(AC.CastMessage);
+		if (AC.CastSound)
+			PlaySound(AC.CastSound, CHAN_VOICE);
+	}
+
+	return AC;
+}
+
+//==========================================================================
+//
+//	GetCondition
+//
+//==========================================================================
+
+ActorCondition GetCondition(class<ActorCondition> ConditionClass, optional Actor Instigator, optional int level)
+{
+	if (Conditions.Num)
+	{
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			ActorCondition ac = Conditions[i];
+			if (ac && ac.Class == ConditionClass &&
+					(!specified_Instigator || ac.AInstigator == Instigator) &&
+					(!specified_level || ac.Level == level))
+			{
+				return ac;
+			}
+		}
+	}
+
+	return none;
+}
+
+//==========================================================================
+//
+//	NotifyConditions
+//
+//==========================================================================
+
+void NotifyConditions(int notification, EntityEx E, int param)
+{
+	if (Conditions.Num)
+	{
+		int i;
+		for (i = 0; i < Conditions.Num; i++)
+		{
+			if (Conditions[i])
+				Conditions[i].Notify(notification, E, param);
+		};
+	}
+}

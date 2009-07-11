@@ -1,0 +1,344 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: KRPGPawn.vc 1976 2009-06-06 15:07:33Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KRPGPawn : Actor
+	abstract;
+
+const float HIGH_ALERTNESS				= 10.0;
+
+bool			bFireDemonSpecialMove;
+
+bool			bSaddleHorse;	// actor can be ridden by pawns
+bool			bIsMountedOn;	// actor is currently a 'rider'
+bool			bCanRide;		// actor is allowed to ride saddlehorses
+bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
+KRPGPawn		RidePartner;	// either 'rider' or 'horse', depending on flags
+
+// [CW] TODO: this should be changed to using Berserk spell from monster's
+//            inventory instead...
+bool			bCanBerserk;	// actor is able to berserk when it's hit
+
+float			Alertness;		// while alert, creature will look for enemies all around
+
+//==========================================================================
+//
+//  OkayToSwitchTarget
+//
+//==========================================================================
+
+bool OkayToSwitchTarget(EntityEx source)
+{
+	Alertness = HIGH_ALERTNESS;
+
+	if (!bIgnoreTeams && Team == Actor(source).Team)
+	{
+		return false;
+	}
+
+	return ::OkayToSwitchTarget(source);
+}
+
+//==========================================================================
+//
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	if (RidePartner)
+	{
+		if (bIsMountedOn) Dismount();
+		else RidePartner.Dismount();
+	}
+
+	::Died(source, inflictor);
+}
+
+//==========================================================================
+//
+//	ApplySpecialPhysics
+//
+//==========================================================================
+
+bool ApplySpecialPhysics(float DeltaTime)
+{
+	if (RidePartner)
+	{
+		if (bIsMountedOn)
+		{
+			TVec saddle = RidePartner.Origin;
+			saddle.z += RidePartner.Height;
+
+			Velocity = RidePartner.Velocity + ((saddle - Origin) * 5.0);
+
+			float lx = Origin.x - saddle.x;
+			float ly = Origin.y - saddle.y;
+			float limit = (RidePartner.Radius + Radius) * 2.0;
+
+			if (fabs(lx) > limit || fabs(ly) > limit)
+				Dismount();
+		}
+	}
+
+	return ::ApplySpecialPhysics(DeltaTime);
+}
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	if (Alertness > 0.0)
+		Alertness -= deltaTime;
+	
+	::Tick(deltaTime);
+}
+
+//==========================================================================
+//
+//  TryUse
+//
+//	[CW] Override or modify to add more 'use' possibilities
+//
+//==========================================================================
+
+bool TryUse(optional float fUseRange, optional float fUseThingRange, optional name FailSound)
+{
+	if (UseLines(fUseRange, fUseThingRange, FailSound))
+		return true;
+	else
+	{
+		if (RidePartner && (bIsMountedOn || bRideControl))
+		{
+			Dismount();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	UseThingSpecial
+//
+//==========================================================================
+
+bool UseThingSpecial(EntityEx Thing)
+{
+	if (bCanRide && KRPGPawn(Thing) && KRPGPawn(Thing).bSaddleHorse && !KRPGPawn(Thing).RidePartner)
+	{
+		MountOn(KRPGPawn(Thing), true);
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	MountOn
+//
+//==========================================================================
+
+void MountOn(KRPGPawn Horse, bool bGainControl)
+{
+	if (Health <= 0 || Horse.Health <= 0)
+		return;
+
+	RidePartner = Horse;
+	bIsMountedOn = true;
+	bRideControl = bGainControl;
+	bXYAnchored = true;
+	bZAnchored = true;
+	Horse.IsBeingMountedOn(self, !bGainControl);
+}
+
+//==========================================================================
+//
+//	IsBeingMountedOn
+//
+//	[CW] Override for extra effects
+//
+//==========================================================================
+
+void IsBeingMountedOn(KRPGPawn Rider, bool bGainControl)
+{
+	RidePartner = Rider;
+	bIsMountedOn = false;
+	bRideControl = bGainControl;
+}
+
+//==========================================================================
+//
+//	Dismount
+//
+//==========================================================================
+
+void Dismount()
+{
+	bIsMountedOn = false;
+	bRideControl = false;
+	bXYAnchored = default.bXYAnchored;
+	bZAnchored = default.bZAnchored;
+	RidePartner.IsBeingDismountedFrom();
+	RidePartner = none;
+}
+
+//==========================================================================
+//
+//	IsBeingDismountedFrom
+//
+//	[CW] Override for extra effects
+//
+//==========================================================================
+
+void IsBeingDismountedFrom()
+{
+	RidePartner = none;
+	bRideControl = false;
+}
+
+//==========================================================================
+//
+//	RideCommand
+//
+//	[CW] override for different behavior
+//
+//==========================================================================
+
+void RideCommand(float forward, float side, optional float vertical)
+{
+	if (forward)
+	{
+		Velocity.x += forward * cos(Angles.yaw);
+		Velocity.y += forward * sin(Angles.yaw);
+	}
+	if (side)
+	{
+		float angle = AngleMod360(Angles.yaw - 90.0);
+		Velocity.x += side * cos(angle);
+		Velocity.y += side * sin(angle);
+	}
+}
+
+//==========================================================================
+//
+//	DoSpecialMove
+//
+//	[KoraxRPG]
+//
+//	Returns TRUE if actor should skip normal movement
+//
+//==========================================================================
+
+bool DoSpecialMove(bool Evade)
+{
+	if (bFireDemonSpecialMove)
+	{
+		return FireDemonSpecialMove(Evade);
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//	FireDemonSpecialMove
+//
+//	[KoraxRPG]
+//
+//==========================================================================
+
+final bool FireDemonSpecialMove(bool Evade)
+{
+	float dist;
+	float ang;
+
+	// Float up and down
+	Origin.z += Level.Game.FloatBobOffsets[Special1];
+	Special1 = (Special1 + 2) & 63;
+
+
+	// Insure it stays above certain height
+	if (Origin.z < FloorZ + 64.0)
+	{
+		Origin.z += 2.0;
+	}
+
+	if (!Evade)
+	{
+		if (Origin.z - pTargetVec->z > Height * 8.0)
+		{
+			Velocity.z -= 2.5;
+		}
+	}
+
+	// Strafe
+	if (Special2 > 0)
+	{
+		Special2--;
+	}
+	else if (Target)
+	{
+		Special2 = 0;
+		Velocity.x = 0.0;
+		Velocity.y = 0.0;
+		dist = DistTo(Target);
+		if (dist < FIREDEMON_ATTACK_RANGE)
+		{
+			if (P_Random() < 30)
+			{
+				ang = atan2(Target.Origin.y - Origin.y,
+					Target.Origin.x - Origin.x);
+				if (P_Random() < 128)
+					ang = AngleMod360(ang + 90.0);
+				else
+					ang = AngleMod360(ang - 90.0);
+				Velocity.x = 8.0 * cos(ang) * 35.0;
+				Velocity.y = 8.0 * sin(ang) * 35.0;
+				Special2 = 3;	// strafe time
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+defaultproperties
+{
+}

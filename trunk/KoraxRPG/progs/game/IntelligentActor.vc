@@ -32,6 +32,43 @@
 
 //==========================================================================
 //
+//	[CW]
+//
+// IntelligentActor class contains what we call advanced AI for KRPG
+// monsters. Basically the main benefit from is achieved through
+// extensive use of four advanced AI features: dynamic update, tasks,
+// navigation and action technique.
+//
+// -------------------------------------------------------------------------
+// Dynamic update.
+// Actors now possess an ability to dynamically update their knowledge of
+// current situation along with reacting to occured events. An A_DoAI
+// procedure run periodically (frequency determined by AI_ROUTINE_DELAY
+// constant, in seconds). It has a power to override normal actor behavior.
+// An A_CheckThreat is called every time to detect any possible threat
+// in the area; this includes hearing some noise or seeing enemy. Using
+// A_CheckThreat results an actor may effectively switch targets during
+// combat and plan evasive actions, if needed.
+//
+// -------------------------------------------------------------------------
+// Tasks.
+// Intelligent Actor's high-level behavior is controlled by ActorTask
+// objects. Multiple Tasks can be stored in the stack, sorted by their
+// priority, but only top one is performed at any given moment.
+//
+//
+// -------------------------------------------------------------------------
+// Navigation.
+//
+//
+// -------------------------------------------------------------------------
+// Action Technique.
+//
+//
+//==========================================================================
+
+//==========================================================================
+//
 // [CW] I am writing following remarks mostly because I skipped some time
 // since I last reviewed my monster AI, and also some general changes
 // happened, like many monster classes moved to decorate, and such, so
@@ -85,7 +122,7 @@
 //
 //
 
-class IntelligentActor : Actor;
+class IntelligentActor : KRPGPawn;
 
 //
 // [KoraxRPG] Advanced AI
@@ -127,9 +164,11 @@ struct pawn_behavior_t
 	int				LostFTargetTime;		// how much strokes left until route build/retarget
 
 	bool			bNeverUseRoutes;		// obvious..
+#ifdef OBSOLETE
 	bool			bBuildingRoute;				// 
 	int				RouteBuildContinuesCount;	//
 	int				RouteBuildIterationsCount;	//
+#endif
 	bool			bUsingRoute;			// if TRUE, pawn walks along the route
 	int				RouteRebuildRate;		// how often this pawn rebuilds its
 											// route from scratch
@@ -158,6 +197,7 @@ struct generic_target_t
 	TVec		Pos;
 	EntityEx	Thing;
 	Node		Node;
+	int			Action;
 };
 
 generic_target_t	FGnTarget;			// final aim
@@ -167,6 +207,8 @@ TVec				LastKnownPosition;	// for moving targets
 EntityEx			LastAttacker;	// the one attacked this IA last time
 
 IntelligentActor	TaskLeader;
+
+KRPGLevelInfo::routebuild_t	RouteBuild;
 
 //
 // [KoraxRPG] Actor Tasks
@@ -200,7 +242,6 @@ const float		AI_ROUTINE_DELAY = 1.0;
 float			AITime;
 int				StateAction;
 
-// [CW] Heh, my first delegate in VavoomC =)))
 delegate bool DoMove(bool Evade, state AIdleState, state AMeleeState,
 				  state AMissileState, bool PlayActive);
 
@@ -1100,6 +1141,7 @@ void A_OrderPatrol2Pt(bool situative, int priority, float duration, TVec positio
 void A_OrderWalkPath(bool situative, bool Patrol, bool Looped,
 					 int priority, float duration, int PathIndex, int NodeIndex, optional bool BackDir)
 {
+#ifdef FIXME
 	if (!Node)
 	{
 		Error("IntelligentActor::A_OrderWalkPath : FirstNode reference not set to an instance of an object");
@@ -1135,6 +1177,7 @@ void A_OrderWalkPath(bool situative, bool Patrol, bool Looped,
 		AT.GnTarget.Pos = FirstNode.Origin;
 		AT.Direction = BackDir;
 	}
+#endif
 }
 
 //==========================================================================
@@ -1190,6 +1233,7 @@ void DoTasks()
 			case ActorTask::ORDER__PATROLPATH:
 			case ActorTask::ORDER__PATROLLOOP:
 				{
+#ifdef FIXME
 					PathNode PN;
 					if (CurrentTask.Direction)
 						PN = PathNode(CurrentTask.GnTarget.Node).BW;
@@ -1225,6 +1269,7 @@ void DoTasks()
 						CurrentTask.GnTarget.Node = PN;
 						CurrentTask.GnTarget.Pos = PN.Origin;
 					}
+#endif
 				}
 				break;
 			case ActorTask::ORDER__ATTACKALL:
@@ -1450,11 +1495,14 @@ int					RouteWayIndex;	// Index of the waypoint pawn currently goes to
 
 void A_CleanRoutes()
 {
-	Behavior.bBuildingRoute = false;
+	//Behavior.bBuildingRoute = false;
+	RouteBuild.bBuilding = false;
 	Behavior.bUsingRoute = false;
 
-	Behavior.RouteBuildContinuesCount = 0;
-	Behavior.RouteBuildIterationsCount = 0;
+	//Behavior.RouteBuildContinuesCount = 0;
+	//Behavior.RouteBuildIterationsCount = 0;
+	RouteBuild.ContinuesCount = 0;
+	RouteBuild.IterationsCount = 0;
 	Behavior.RouteRebuildTime = 0;
 
 	if (RouteList)
@@ -1663,7 +1711,8 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 		print("Try build route");*/
 
 	Behavior.bUsingRoute = false;
-	if (!Behavior.bBuildingRoute)
+	//if (!Behavior.bBuildingRoute)
+	if (!RouteBuild.bBuilding)
 	{
 		CurrentNode = FindNearestReachableNode();
 		if (CurrentNode == none)
@@ -1682,7 +1731,7 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 		//print("Final Target node = %i", FGnTarget.Node.TID);
 	}
 
-	if (BuildWaypoints(CurrentNode, FGnTarget.Node))
+	if (KRPGLevelInfo(Level).BuildWaypoints(CurrentNode, FGnTarget.Node, CurrentRoute))
 	{
 		// succeeded, route was build, so set next path node to go to
 		if (CurrentRoute)
@@ -1710,7 +1759,8 @@ void BuildRoute(TVec AimPos, EntityEx AimEntity)
 	}
 	else
 	{
-		if (Behavior.bBuildingRoute)
+		//if (Behavior.bBuildingRoute)
+		if (!RouteBuild.bBuilding)
 		{
 			//print("delayed build route, TID = %i", TID);
 		}
@@ -1738,7 +1788,7 @@ void SetNextTargetNode()
 	if (IGnTarget.Node)
 	{
 		RouteWayIndex++;
-		if (RouteWayIndex >= Route::WAYLISTSIZE ||
+		if (RouteWayIndex >= CurrentRoute.Nodes.Num ||
 				CurrentRoute.Nodes[RouteWayIndex] == none)
 		{
 			//print("route finished");
@@ -1795,23 +1845,23 @@ Node FindNearestReachableNode()
 {
 	float		distance;
 	float		compdist;
-	Node		_Node;
+	Node		node;
 	Node		NodeSelected;
 	
 	NodeSelected = none;
 	distance = -1.0;
-	foreach AllThinkers(Node, _Node)
+	foreach AllThinkers(Node, node)
 	{
-		//dprint("Actor::FindNearestReachableNode : _Node = %i", _Node.TID);
-		compdist = Length(_Node.Origin - Origin);
+		//dprint("Actor::FindNearestReachableNode : node = %i", node.TID);
+		compdist = Length(node.Origin - Origin);
 		if (distance < 0.0 || compdist < distance)
 		{
 			//dprint("Actor::FindNearestReachableNode : check canreach");
-			if (CanReach(_Node.Origin, none))
+			if (CanReach(node.Origin, none))
 			{
 				//dprint("Actor::FindNearestReachableNode : remember this one");
 				distance = compdist;
-				NodeSelected = _Node;
+				NodeSelected = node;
 			}
 		}
 	}
@@ -1840,7 +1890,7 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFro
 {
 	float		distance;
 	float		compdist;
-	Node		_Node;
+	Node		node;
 	Node		NodeSelectedCanReach;
 	Node		NodeSelectedCanSee;
 	TVec		OriginalOrigin;		// [CW] I like how it sounds :)
@@ -1851,19 +1901,19 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFro
 	OriginalOrigin = Origin;
 	OriginalAngles = Angles;
 	
-	foreach AllThinkers(Node, _Node)
+	foreach AllThinkers(Node, node)
 	{
 		if (bReachableFromHere)
 		{
-			if (!CanReach(_Node.Origin, none))
+			if (!CanReach(node.Origin, none))
 				continue;
 		}
 
-		compdist = Length(_Node.Origin - VTarget);
+		compdist = Length(node.Origin - VTarget);
 		if (distance < 0.0 || compdist < distance)
 		{
 			UnlinkFromWorld();
-			Origin = _Node.Origin;
+			Origin = node.Origin;
 			LinkToWorld();
 			VectorToTarget = (VTarget - Origin);
 			VectorAngles(&VectorToTarget, &Angles);
@@ -1871,12 +1921,12 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFro
 			if (CanReach(VTarget, ETarget))
 			{
 				distance = compdist;
-				NodeSelectedCanReach = _Node;
+				NodeSelectedCanReach = node;
 			}
 			else if (MissileState && ETarget && CanSee(ETarget))
 			{
 				distance = compdist;
-				NodeSelectedCanSee = _Node;
+				NodeSelectedCanSee = node;
 			}
 
 			if (bReachableFromHere)
@@ -1900,6 +1950,8 @@ Node FindAcceptableTargetNode(TVec VTarget, EntityEx ETarget, bool bReachableFro
 							  Length(NodeSelectedCanReach.Origin - VTarget)))
 							  ? NodeSelectedCanSee : NodeSelectedCanReach;
 }
+
+#ifdef OBSOLETE	// obsolete since route building moved to KRPGLevelInfo
 
 //**************************************************************************
 //
@@ -1945,6 +1997,7 @@ bool BuildWaypoints(Node N_From, Node N_To)
 	Route						R;
 
 	failed = false;
+
 	if (Behavior.bBuildingRoute)
 	{
 		//print("continue %i", Behavior.RouteBuildContinuesCount);
@@ -1995,8 +2048,6 @@ bool BuildWaypoints(Node N_From, Node N_To)
 			route_list.Destroy();
 			return false;
 		}
-		//else
-		//	print("iteration %i", Behavior.RouteBuildIterationsCount);
 
 		if (route_list.refHead)
 			Error ("Actor::BuildWaypoints : temporary route list is not empty at the beginning of iteration");
@@ -2038,11 +2089,9 @@ bool BuildWaypoints(Node N_From, Node N_To)
 bool IsNodeInRoute(Route R, Node N)
 {
 	int i;
-	
-	//dprint("IsNodeInRoute : nodes currently in list:");
+
 	for (i = 0; i < R.Size; i++)
 	{
-		//dprint("    ---- %i", R.Nodes[i].TID);
 		if (R.Nodes[i] == N)
 			return true;
 	}
@@ -2074,26 +2123,19 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 	
 	ExtendableRoute = Route(route_list.refHead);
 	
-	//dprint("ExtendRoute : ExtendableRoute.Measure = %f", ExtendableRoute.Measure);
-	//dprint("ExtendRoute : ExtendableRoute.Size = %i", ExtendableRoute.Size);
-	
 	PreviousMeasure = ExtendableRoute.Measure;
 	NExtendable = ExtendableRoute.Nodes[ExtendableRoute.Size - 1];
 	
-	//dprint("ExtendRoute : NExtendable.TID = %i", NExtendable.TID);
-	
 	// Do extension
-	for (i = 0; i < /*Node::MAXNODELINKS*/NExtendable.Links.Num; i++)
+	for (i = 0; i < NExtendable.Links.Num; i++)
 	{
-		if (NExtendable.Links[i]._Node)
+		if (NExtendable.Links[i].node)
 		{
-			//dprint("ExtendRoute : try link to %i", NExtendable.Links[i]._Node.TID);
 			found = false;
 			// Check if this node isn't already in route
 			for (j = 0; j < Route(route_list.refHead).Size; j++)
 			{
-				//dprint("ExtendRoute : compare w old %i", Route(route_list.refHead).Nodes[j].TID);
-				if (Route(route_list.refHead).Nodes[j] == NExtendable.Links[i]._Node)
+				if (Route(route_list.refHead).Nodes[j] == NExtendable.Links[i].node)
 				{
 					found = true;
 					break;
@@ -2104,7 +2146,6 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 		
 			// Test current link for pawn's reachability
 			LinkMeasureFactor = GetNodeLinkMeasureFactor(NExtendable, i);
-			//dprint("ExtendRoute : LinkMeasureFactor = %f", LinkMeasureFactor);
 			
 			if (LinkMeasureFactor <= 0.0)
 			{
@@ -2121,15 +2162,14 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 			else
 				ExtendableRoute.Measure = 0.0;
 			ExtendableRoute.Measure += NExtendable.Links[i].length * LinkMeasureFactor;
-			ExtendableRoute.Measure += Length(NDest.Origin - NExtendable.Links[i]._Node.Origin);
-			//dprint("ExtendRoute : total measure for this extension = %f", ExtendableRoute.Measure);
+			ExtendableRoute.Measure += Length(NDest.Origin - NExtendable.Links[i].node.Origin);
 			
 			// Copy head route original nodes to the new one
 			for (j = 0; j < Route(route_list.refHead).Size; j++)
 				ExtendableRoute.Nodes[j] = Route(route_list.refHead).Nodes[j];
 				
 			// Add new node
-			ExtendableRoute.Nodes[j] = NExtendable.Links[i]._Node;
+			ExtendableRoute.Nodes[j] = NExtendable.Links[i].node;
 			ExtendableRoute.Size = j + 1;
 		}
 	}
@@ -2137,6 +2177,8 @@ void ExtendRoute(LinkedList route_list, Node NDest)
 	// Remove original head route
 	route_list.DestroyObject(route_list.refHead);
 }
+
+#endif // OBSOLETE
 
 //==========================================================================
 //
@@ -2166,6 +2208,8 @@ float GetNodeLinkMeasureFactor(Node NOrigin, int iLink)
 
 	return 1.0;
 }
+
+#ifdef OBSOLETE
 
 //==========================================================================
 //
@@ -2361,6 +2405,8 @@ void AddExtendedRoutes(LinkedList extended_route_list, LinkedList route_list)
 
 	//dprint("AddExtendedRoutes : lightest (head) route measure = %f", Route(route_list.refHead).Measure);
 }
+
+#endif	// OBSOLETE
 
 //==========================================================================
 //

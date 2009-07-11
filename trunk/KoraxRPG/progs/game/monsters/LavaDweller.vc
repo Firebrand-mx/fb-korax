@@ -1,0 +1,273 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: LavaDweller.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class LavaDweller : IntelligentActor
+	__mobjinfo__(16004);
+
+int regen_count;
+
+//==========================================================================
+//
+//	A_LavaDwellerDecide
+//
+//==========================================================================
+
+final void A_LavaDwellerDecide()
+{
+	bool idle = !Target;
+
+	if (!idle)
+	{
+		if (!Target || Target.Health <= 0 || !CanSee(Target))
+		{
+			SetState(IdleState);
+			return;
+		}
+	}
+
+	if (bInvisible)
+	{
+		if (Health < default.Health)
+		{
+			Health += 50;
+			if (Health > default.Health)
+				Health = default.Health;
+		}
+
+		regen_count--;
+
+		if (!idle && regen_count <= 0 && ((Health > (default.Health >> 1)) || P_Random() > 150))
+		{
+			SetState(FindState('Raise'));
+			return;
+		}
+	}
+	else
+	{
+		if (idle || Health < (default.Health >> 1))
+		{
+			if (P_Random() < 50)
+			{
+				SetState(FindState('Lower'));
+				return;
+			}
+		}
+		
+		if (!idle && P_Random() < 200)
+		{
+			SetState(MissileState);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerHide
+//
+//==========================================================================
+
+final void A_LavaDwellerHide()
+{
+	regen_count = Target ? 2 + (P_Random() % 11) : 4;
+	bInvisible = true;
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerUnHide
+//
+//==========================================================================
+
+final void A_LavaDwellerUnHide()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	bInvisible = false;
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerRaise
+//
+//==========================================================================
+
+final void A_LavaDwellerRaise()
+{
+	FloorClip -= 4.0;
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerLower
+// 
+//==========================================================================
+
+final void A_LavaDwellerLower()
+{
+	StateAction = STATE_ACTION__SPECIAL;
+	FloorClip += 4.0;
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerAfterMovement
+//
+//==========================================================================
+
+final void A_LavaDwellerAfterMovement()
+{
+	if (Target)
+		SetState(SeeState);
+	else
+		SetState(IdleState);
+}
+
+//==========================================================================
+//
+//	A_LavaDwellerMissileAttack
+//
+//==========================================================================
+
+final void A_LavaDwellerMissileAttack()
+{
+	if (!Target)
+	{
+		return;
+	}
+	SpawnMissile(Target, LavaBall);
+	PlaySound('Fireball', CHAN_WEAPON);
+}
+
+states
+{
+Spawn:
+	FBUL H 10 A_LookAI
+	FBUL H 10 A_LavaDwellerDecide
+	Loop
+See:
+	See:
+	FBUL H 6 A_FaceTarget
+	FBUL H 8 A_LavaDwellerDecide
+	Loop
+Raise:
+	FBUL H 5 A_LavaDwellerUnHide
+	FBUL HHHHHHHHHHHH 2 A_LavaDwellerRaise
+	FBUL H 2 A_SetShootable
+	FBUL HHHH 2 A_LavaDwellerRaise
+	FBUL H 25
+	FBUL H -1 A_LavaDwellerAfterMovement
+	Stop
+Lower:
+	FBUL H 25
+	FBUL HHHH 2 A_LavaDwellerLower
+	FBUL H 2 A_UnSetShootable
+	FBUL HHHHHHHHHHHH 2 A_LavaDwellerLower
+	FBUL H 5 A_LavaDwellerHide
+	FBUL H -1 A_LavaDwellerAfterMovement
+	Stop
+Missile:
+	FBUL H 6 A_FaceTarget
+	FBUL I 5 Bright
+	FBUL J 5 Bright A_LavaDwellerMissileAttack
+	FBUL I 5 Bright
+	FBUL H 6 A_FaceTarget
+	FBUL I 5 Bright
+	FBUL J 5 Bright A_LavaDwellerMissileAttack
+	FBUL I 5 Bright
+	FBUL H 6 A_FaceTarget
+	FBUL I 5 Bright
+	FBUL J 5 Bright A_LavaDwellerMissileAttack
+	FBUL I 5 Bright
+	FBUL H 27
+	Goto See
+Pain:
+	FBUL H 6
+	FBUL I 5 Bright
+	FBUL J 5 Bright
+	Goto Missile
+Death:
+	ETTN IJ 4
+	ETTN K 4 A_Scream
+	ETTN L 4 A_NoBlocking
+	ETTN M 4 A_QueueCorpse
+	ETTN NOP 4
+	ETTN Q -1
+	Stop
+XDeath:
+	ETTB A 4
+	ETTB B 4 A_NoBlocking
+	ETTB C 4 
+	ETTB D 4 A_Scream
+	ETTB E 4 A_QueueCorpse
+	ETTB FGHIJK 4
+	ETTB L -1
+	Stop
+}
+
+defaultproperties
+{
+	bSolid = true;
+	bShootable = true;
+	bCountKill = true;
+	bMonster = true;
+	bActivatePushWall = true;
+	bActivateMCross = true;
+	bPassMobj = true;
+	bCanUseWalls = true;
+
+	bFloorClip = true;
+	bTelestomp = true;
+
+	bNoTeleport = true;
+	bStanding = true;
+	bPushable = false;
+	bNoMorph = true;
+	//bNoPassMobj = true;
+	bLookAllAround = true;
+
+	Radius = 65.0;
+	Height = 115.0;
+	Mass = 99999.0;
+	Speed = 0.0;
+
+	PainChance = 0.0;
+
+	Health = 3000;
+	GibsHealth = -250;
+
+	bXYAnchored = true;
+	bZAnchored = true;
+
+	Behavior.bNoWanderDuringAttack = true;
+	Behavior.bCanGroup = false;
+	Behavior.bCanBeTaskLeader = false;
+	Behavior.bNeverUseRoutes = true;
+}
