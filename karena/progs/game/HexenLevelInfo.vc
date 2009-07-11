@@ -241,7 +241,8 @@ void UpdateSpecials()
 
 	// [CW] Since Teams are precreated now, we must force
 	// teams checkup for GameModel
-	if (MainGameInfo(Game).GameModel && !MainGameInfo(Game).GameModel.IsInPlayableState()
+	if (MainGameInfo(Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
+		MainGameInfo(Game).GameModel && !MainGameInfo(Game).GameModel.IsInPlayableState()
 		&& XLevel.Time > 1.0 /* [CW] We must 'wait' when OPEN scripts are executed
 								and all ACS Notifiers are registered.. stupid, indeed :P */)
 	{
@@ -261,6 +262,8 @@ void UpdateSpecials()
 void Purge()
 {
 	EntityEx ee;
+	class<Actor> zxmastreeclass = class<Actor>(FindClass('ZXmasTree'));
+
 	foreach AllThinkers(EntityEx, ee)
 	{
 		if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
@@ -274,6 +277,14 @@ void Purge()
 		{
 			dprint("HexenLevelInfo::Purge : destroyed %n", GetClassName(ee.Class));
 			ee.Destroy();
+		}
+		else if (MainGameInfo(Game).GameType != HexenDefs::game_xmas &&
+			ee.IsA('ZXmasHavocTree'))
+		{
+			dprint("HexenLevelInfo::Purge : subst %n to ZXmasTree", GetClassName(ee.Class));
+			TVec org = ee.Origin;
+			ee.Destroy();
+			Spawn(zxmastreeclass, org);
 		}
 	}
 }
