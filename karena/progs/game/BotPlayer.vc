@@ -3915,9 +3915,15 @@ void ProcessImmediate()
 		}
 		else
 		{
-			bMeleeUrge = (!KArenaWeapon(player.ReadyWeapon).bBotProjectile &&
+			bMeleeUrge =
+						// bot has a melee weapon, and...
+						(!KArenaWeapon(player.ReadyWeapon).bBotProjectile &&
 						  !KArenaWeapon(player.ReadyWeapon).bBotProjectileMedium) &&
+						// there's no ITarget, or...
 						  (!ITarget ||
+					    // ITarget is enemy and enemy is a monster, or...
+							(ITarget == enemy && enemy.bMonster) ||
+						// enemy is a player who is armed by missile weapon
 							enemy.Player &&
 						 (((KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectileMedium ||
 							KArenaWeapon(Player(enemy.Player).ReadyWeapon).bBotProjectile) &&
