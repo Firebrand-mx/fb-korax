@@ -573,7 +573,7 @@ void Cheat_Gimme()
 	}
 	if (Cmd_CheckParm("exp"))
 	{
-		GiveExperience(10000);
+		GiveExperience(10000, true);
 		cprint("LOTS OF EXP");
 	}
 }
@@ -735,7 +735,7 @@ void KilledActor(EntityEx Victim)
 			else
 			{
 				Frags++;
-				GiveExperience(500 * Player(Victim.Player).exp_level / exp_level);
+				GiveExperience(500 * Player(Victim.Player).exp_level /* / exp_level */);
 			}
 
 			if (MainGameInfo(Level.Game).GameModel)
@@ -1461,8 +1461,13 @@ void GotAmmo(Ammo NewAmmo)
 //
 //==========================================================================
 
-void GiveExperience(int exp)
+void GiveExperience(int exp, optional bool Absolute)
 {
+	if (!Absolute)
+	{
+		exp = exp / exp_level;
+	}
+
 	experience += exp;
 	if(experience > 9999)
 	{
