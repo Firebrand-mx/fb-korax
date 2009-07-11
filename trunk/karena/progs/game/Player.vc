@@ -2519,7 +2519,7 @@ void CallLocalSoundNamed(name sound, bool put_in_queue, float delay)
 //  UpdateScore
 //
 //  [CW] Updates current player's score.
-//	 Scoring event list is defined in 'hexndefs.vc'.
+//	 Scoring event list is defined in 'HexenDefs.vc'.
 //
 //==========================================================================
 
@@ -2550,12 +2550,6 @@ void UpdateScore(int event)
 			if (MainGameInfo(Level.Game).GameType != HexenDefs::game_xmas)
 				mod = 1;
 			break;
-		case HexenDefs::scoreevent_FtbGoal:
-			mod = 5;
-			break;
-		case HexenDefs::scoreevent_FtbSelfGoal:
-			mod = -5;
-			break;
 		case HexenDefs::scoreevent_SelfFrag:
 		case HexenDefs::scoreevent_TeamFrag:
 			mod = -1;
@@ -2572,6 +2566,10 @@ void UpdateScore(int event)
 					plH.UpdateScore(HexenDefs::scoreevent_KthHeresiarchFrag);
 			}
 			break;
+		case HexenDefs::scoreevent_Survived:
+			// Survived the monster wave in Survival game mode
+			mod = 5 * GameSurvival(MainGameInfo(Level.Game).GameModel).Wave;
+			break;
 		case HexenDefs::scoreevent_CtfCapture:
 			mod = 5;
 			break;
@@ -2580,6 +2578,12 @@ void UpdateScore(int event)
 			break;
 		case HexenDefs::scoreevent_DomSigilCapture:
 			mod = 1;
+			break;
+		case HexenDefs::scoreevent_FtbGoal:
+			mod = 5;
+			break;
+		case HexenDefs::scoreevent_FtbSelfGoal:
+			mod = -5;
 			break;
 		case HexenDefs::scoreevent_XmasTree:
 			mod = 1;
