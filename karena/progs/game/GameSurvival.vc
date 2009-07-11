@@ -160,10 +160,17 @@ void EndCurrentState(int nextstate)
 		// Ressurect killed players
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (Game.Players[i] && Game.Players[i].MO && Game.Players[i].MO.Class == PlayerSpectator)
+			if (Game.Players[i] && Game.Players[i].MO)
 			{
-				Game.Players[i].PlayerState = PST_REBORN;
-				Game.Players[i].NetGameReborn();
+				if (Game.Players[i].MO.Class == PlayerSpectator)
+				{
+					Game.Players[i].PlayerState = PST_REBORN;
+					Game.Players[i].NetGameReborn();
+				}
+				else
+				{
+					Player(Game.Players[i]).UpdateScore(HexenDefs::scoreevent_Survived);
+				}
 			}
 		}
 		HandleEvent(event_waveend, none, 0, 0, 0, 0);
