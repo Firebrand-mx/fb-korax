@@ -105,6 +105,7 @@ void BeginState(int newstate)
 	switch(newstate)
 	{
 	case state_preparegame:
+		Level.bAllowMonsterTelefrags = false; // Safety issue
 		Wave = 0;
 		EndCurrentState(state_countdownsequence);
 		return;
@@ -216,7 +217,7 @@ int TeamFactor(EntityEx a1, EntityEx a2)
 void OnActorDeath(Actor a, EntityEx source)
 {
 	// Friendly minotaur doesn't has a meaning here or the actor is invalid
-	if (!a.bMonster || a.Class == MinotaurFriend)
+	if (!a.bMonster || a.IsA('MinotaurFriend'))
 	{
 		return;
 	}
@@ -393,7 +394,7 @@ void SetUpWave()
 	CountToSpawnBosses = Wave / (16 - PlayerCount);
 
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
-	CountMonstersAtOnce = PlayerCount + P_Random() % ((SpawnStarts << 1) + 1);
+	CountMonstersAtOnce = PlayerCount + SpawnStarts + P_Random() % (SpawnStarts + 1);
 
 	HiLimit = 3 + Wave;
 	if (HiLimit > MonsterClasses.Num)
@@ -415,7 +416,7 @@ void WaveSpawn()
 	int		mClass;
 	class	<Actor> MClass;
 	bool	bBoosted;
-	int		place;
+	// int		place;
 	Actor	monster;
 
 	// If current number of monsters is equal or greater than this, no new monsters are spawned until some of older ones are killed
@@ -453,6 +454,7 @@ void WaveSpawn()
 			CountToSpawnMonsters--;
 		}
 
+		/*
 		place = P_Random() % Level.DeathmatchStarts.Num;
 
 		if (place == PlaceCounter)
@@ -462,8 +464,12 @@ void WaveSpawn()
 			{
 				place = 0;
 			}
-		}		
-		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[place]);
+		}
+		*/
+		if (PlaceCounter >= Level.DeathmatchStarts.Num)
+			PlaceCounter = 0;
+
+		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[PlaceCounter++]);
 
 		if (monster)
 		{
@@ -475,9 +481,9 @@ void WaveSpawn()
 				monster.Speed *= (monster.Speed * 2.5) + (Random() * (itof(Wave) / 100.0));
 			}
 
-			monster.TeleportMove(monster.Origin, false);
+			// monster.TeleportMove(monster.Origin, false);
 			Level.Spawn(TeleportFog, monster.GetCentre());
-			PlaceCounter = place;
+			// PlaceCounter = place;
 			Level.NoiseAlert(Game.Players[0].MO, monster);
 		}
 	}
