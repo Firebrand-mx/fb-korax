@@ -152,29 +152,48 @@ void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool b
 
 bool IsTeammate(EntityEx Other)
 {
-	if (bOverrideCoop || !Other)
+	if (bOverrideCoop)
 		return false;
 
-	if (bIsPlayer && Other.bIsPlayer)
+	// [CW] I know only one practical case when this may happen: it's when
+	// Minotaur Friend's master died and Minotaur is looking for enemies.
+	if (!Other)
 	{
-		if (MainGameInfo(Level.Game).GameModel &&
-			KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(self, Other) ==
-			KArenaGameModel::teamfactor_coop)
-		{
-			return true;
-		}
-		if ((MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM ||
-			MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType]) &&
+		return false;
+	}
+
+	if (Other.bIsPlayer)
+	{
+		if (MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
+			MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
 			Player(Player).Team == Player(Other.Player).Team)
 		{
 			return true;
 		}
 	}
-	if (::IsTeammate(Other))
+	else
+	{
+		// Special cases for monsters
+		if (Other.IsA('FriendlyMinotaur'))
+		{
+			if (MainGameInfo(Level.Game).bIsCoopGame[MainGameInfo(Level.Game).GameType] ||
+				MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM && Other.Tracer && Other.Tracer.Player &&
+				Player(Player).Team == Player(Other.Tracer.Player).Team)
+			{
+				return true;
+			}
+		}
+	}
+
+	// For both players and monsters, there's last chance to be friends...
+	if (MainGameInfo(Level.Game).GameModel &&
+		KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(self, Other) ==
+		KArenaGameModel::teamfactor_coop)
 	{
 		return true;
 	}
-	return false;
+
+	return ::IsTeammate(Other);
 }
 
 //==========================================================================
