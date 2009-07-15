@@ -35,7 +35,7 @@
 1. Passing uninitialized string to GetTextWidth crashes game with "Segmentation violation" error.
 2. Lowering down Music volume lowers sound volume as well.
 
-3. Occasional crash in Entity.SlideMove:
+3. Occasional crash in Entity::SlideMove:
 - (engine.Entity.SlideMove)
 - VEntity::TryMove
 - VEntity::SlideMove
@@ -48,7 +48,7 @@
 - Host_Frame
 ERROR: Segmentation Violation
 
-4. Occasional crash in Entity.CanSee:
+4. Occasional crash in Entity::CanSee:
 - (engine.Entity.CanSee)
 - VEntity::CanSee
 - VObject::ExecuteFunction
@@ -58,6 +58,20 @@ ERROR: Segmentation Violation
 - ServerFrame
 - Host_Frame
 ERROR: Segmentation Violation
+
+5. Occasional crash in Entity::PlaySound, when monster attacked by lightning:
+- (engine.Entity.PlaySound)
+- VObject::ExecuteFunction
+- (linespec.Lightning.Touch)
+- VEntity::CheckRelPosition
+- VEntity::TryMove
+- VObject::ExecuteFunction
+- (linespec.EntityEx.Tick)
+- VThinker::Tick
+- VLevel::TickWorld
+- SV_Ticker
+- ServerFrame
+- Host_Frame
 
 --------------------- CLASSES ISSUES  --------------------
 
@@ -84,7 +98,7 @@ ERROR: Segmentation Violation
 1. CTF: there are random cases when bringing flag to your base produce several sequent "captures" instead of one (usually 5-7)
 2. Domination Sigil is being sunk in the raising floor (again!)
 4. Heavy damage kills allies in coop game even when friendly fire is off.
-5. Cleric's Poison Breath poisons allies in coop game.
+5. Cleric's Poison Breath makes "poisoning" sound when allied player in in damage range (no real poisoning though).
 6. Hexen things of types 5 - 8 seem to appear not as actual things but as players in game (easily seen on 'Seminary');
 probably because they are not inserted in game, or incorrectly substituted by player start types (?).
 
