@@ -1,0 +1,1028 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**		    ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: KArenaLevelInfo.vc 2016 2009-07-11 16:21:37Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class HexenLevelInfo : LineSpecialLevelInfo;
+
+// [KORAX]
+// [CW] Action specials, recommended to use only through map ACS
+//	(in order not to mix these with common line specials,
+//	their ids should be greater than 255)
+enum
+{
+	ACTSPEC_Thing_Thrust3d			= LNSPEC_Max + 1,
+
+	ACTSPEC_AdvancedGame_BeginState = 750,
+	ACTSPEC_AdvancedGame_EndState,
+	ACTSPEC_AdvancedGame_HandleEvent,
+	ACTSPEC_AdvancedGame_SetACSNotifier,
+	ACTSPEC_IsConditionTrue,
+	ACTSPEC_RunACSConditional,
+
+	//
+	// Sector Properties
+	//
+	LNSPEC_KA_SectorSetBounce		= 1000,
+	// Arg1 - Sector Tag
+	// Arg2 - X force
+	// Arg3 - Y force
+	// Arg4 - Z force
+
+	LNSPEC_KA_SectorSetFunnel,
+	// Arg1 - Sector Tag
+	// Arg2 - Z force
+	// Arg3 - Z base
+	// Arg4 - Z height limit (absolute units), can be higher or lower than base
+
+	//
+	// Enviroment
+	//
+	ACTSPEC_Env_WeatherSnow			= 1200,
+	ACTSPEC_Env_WeatherRain,
+	ACTSPEC_Env_WeatherTerminate,
+	ACTSPEC_Env_WeatherTerminateAll,
+	ACTSPEC_Env_WeatherSetParams,
+	ACTSPEC_Env_WeatherSetPattern,
+	ACTSPEC_Env_WeatherSetColour,
+
+	ACTSPEC_Last
+};
+
+// [CW] Conditions for ACTSPEC_RunACSConditional
+enum
+{
+	CNDT_AdvancedGame_StateIs		// Is current Game State equal to ...
+};
+
+enum
+{
+	pt_weather_snow = pt_spark + 1,
+	// General difference between snow and rain types is that rain spawns some splash when dies
+	pt_weather_rain
+};
+
+enum
+{
+	pt_pattern_none,
+	// rain patterns: create a vertical chunk of particles instead of single one
+	pt_pattern_rainlight,
+	pt_pattern_rainmoderate,
+	pt_pattern_rainheavy
+};
+
+array<Thinker>	WeatherThinkers;
+
+int skyflatnum;	// copied from Game, needed for client-side calculations when Game is not accessible
+
+replication
+{
+	reliable if (Role == ROLE_Authority)
+		skyflatnum;
+}
+
+//==========================================================================
+//
+//	IsBeneathSky
+//
+//==========================================================================
+
+bool IsBeneathSky(TVec v)
+{
+	sector_t * p_sector = XLevel.PointInSector(v);
+	return p_sector && p_sector->ceiling.pic == skyflatnum;
+}
+
+//==========================================================================
+//
+//	FindHighestFloorZAtPoint
+//
+//	[CW] Find the highest floor Z for given (x,y) coordinates.
+//	(Not completely sure, but it seems there's no common method for this)
+//
+//==========================================================================
+
+float FindHighestFloorZAtPoint(TVec v, optional sector_t * in_sector)
+{
+	sector_t * pt_sector;
+	sec_region_t * pt_region;
+	float pt_floorz;
+
+	if (in_sector)
+		pt_sector = in_sector;
+	else
+		pt_sector = XLevel.PointInSector(v);
+
+	if (pt_sector)
+	{
+		// [CW] Hope this will work
+		if (pt_sector->bHasExtrafloors)
+		{
+			pt_region = PointInRegion(pt_sector, v);
+			while(pt_region->next)
+				pt_region = pt_region->next;
+			pt_floorz = GetPlanePointZ(pt_region->floor, v);
+		}
+		else
+		{
+			pt_floorz = GetPlanePointZ(&pt_sector->floor, v);
+		}
+
+		return pt_floorz;
+	}
+	else
+		return EntityEx::ONFLOORZ;	// Failed
+}
+
+//============================================================================
+//
+//  SpawnSpecialNetmatchStart
+//
+//============================================================================
+
+bool SpawnSpecialNetmatchStart(mthing_t * mthing)
+{
+	// At the moment CTF and Football has special player starts
+	if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
+			MainGameInfo(Game).GameType != HexenDefs::game_football)
+		return false;
+
+	if (mthing->type == 15040 || mthing->type == 15041)
+	{
+		DeathmatchStarts.Num = DeathmatchStarts.Num + 1;
+		CopyMThing(mthing, &DeathmatchStarts[DeathmatchStarts.Num - 1]);
+		dprint("KArenaLevelInfo::AddSpecialNetmatchStarts : added of type %i", mthing->type);
+		return true;
+	}
+
+	return false;
+}
+
+//============================================================================
+//
+//  SpawnSpecials
+//
+//============================================================================
+
+void SpawnSpecials()
+{
+	int			i, s;
+	line_t * l;
+
+	::SpawnSpecials();
+
+	for (i = 0; i < XLevel.NumLines; i++)
+	{
+		l = &XLevel.Lines[i];
+		switch (l->special)
+		{
+		case LNSPEC_KA_SectorSetBounce:
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				BouncePad B = Spawn(BouncePad);
+				B.Init(l->arg2, l->arg3, l->arg4, s);
+			}
+			break;
+		case LNSPEC_KA_SectorSetFunnel:
+			for (s = XLevel.FindSectorFromTag(l->arg1, -1); s >= 0;
+				s = XLevel.FindSectorFromTag(l->arg1, s))
+			{
+				Funnel F = Spawn(Funnel);
+				F.Init(l->arg2, l->arg3, l->arg4, s);
+			}
+			break;
+		}
+	}
+
+	MainGameInfo(Game).InitLevel(self);
+	Purge();
+}
+
+//==========================================================================
+//
+//  UpdateSpecials
+//
+//==========================================================================
+
+void UpdateSpecials()
+{
+	// [CW] This is temporary solution. I suppose making GameModel
+	//		Thinker's child will be best, but that will require some
+	//		general changes.
+	// ???????????????????????? -- not sure anymore
+
+	// [CW] Since Teams are precreated now, we must force
+	// teams checkup for GameModel
+	if (MainGameInfo(Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
+		MainGameInfo(Game).GameModel && !MainGameInfo(Game).GameModel.IsInPlayableState()
+		&& XLevel.Time > 1.0 /* [CW] We must 'wait' when OPEN scripts are executed
+								and all ACS Notifiers are registered.. stupid, indeed :P */)
+	{
+		dprint("KArenaLevelInfo::UpdateSpecials : call GameModel.OnUpdateTeams()");
+		KArenaGameModel(MainGameInfo(Game).GameModel).OnUpdateTeams();
+	}
+	
+	::UpdateSpecials();
+}
+
+//============================================================================
+//
+//  Purge
+//
+//============================================================================
+
+void Purge()
+{
+	EntityEx ee;
+	class<Actor> zxmastreeclass = class<Actor>(FindClass('ZXmasTree'));
+
+	foreach AllThinkers(EntityEx, ee)
+	{
+		if (MainGameInfo(Game).GameType != HexenDefs::game_ctf &&
+					(ee.IsA('CTFBanner') || ee.IsA('BlueNode') || ee.IsA('BlueGuardSpot') ||
+					ee.IsA('BlueGoalSpot') || ee.IsA('RedNode') || ee.IsA('RedGuardSpot') ||
+					ee.IsA('RedGoalSpot') || ee.IsA('BlueNetmatchStart') || ee.IsA('RedNetmatchStart')) ||
+				MainGameInfo(Game).GameType != HexenDefs::game_domination &&
+					ee.IsA('DominationSigil') ||
+				MainGameInfo(Game).GameType != HexenDefs::game_football &&
+					(ee.IsA('SoccerBall') || ee.IsA('SoccerBallSpot') || ee.IsA('KickOffSpot')))
+		{
+			dprint("KArenaLevelInfo::Purge : destroyed %n", GetClassName(ee.Class));
+			ee.Destroy();
+		}
+		else if (MainGameInfo(Game).GameType != HexenDefs::game_xmas &&
+			ee.IsA('ZXmasHavocTree'))
+		{
+			dprint("KArenaLevelInfo::Purge : subst %n to ZXmasTree", GetClassName(ee.Class));
+			TVec org = ee.Origin;
+			ee.Destroy();
+			Spawn(zxmastreeclass, org);
+		}
+	}
+}
+
+/* //============================================================================
+//
+//  AddSpecialNetmatchStarts
+//
+//============================================================================
+
+void AddSpecialNetmatchStarts()
+{
+	// At the moment only CTF has special player starts
+	if (MainGameInfo(Game).GameType != HexenDefs::game_ctf)
+		return;
+
+	EntityEx ee;
+	foreach AllThinkers(EntityEx, ee)
+	{
+		if (ee.IsA('BlueNetmatchStart') || ee.IsA('RedNetmatchStart'))
+		{
+			DeathmatchStarts.Num = DeathmatchStarts.Num + 1;
+			CopyMThing(mthing, &DeathmatchStarts[DeathmatchStarts.Num - 1]);
+			dprint("KArenaLevelInfo::AddSpecialNetmatchStarts : added %n", GetClassName(ee.Class));
+		}	
+	}
+} */
+
+//==========================================================================
+//
+//  ExecuteActionSpecial
+//
+//==========================================================================
+
+int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
+	int Arg4, int Arg5, line_t* Line, int Side, Entity E)
+{
+	bool buttonSuccess;
+	EntityEx A;
+
+	A = EntityEx(E);
+	buttonSuccess = false;
+	switch (Special)
+	{
+	case ACTSPEC_Thing_Thrust3d:
+		if(Arg1 > 0)
+		{
+			buttonSuccess = EV_Thing3dThrust(Arg1, Arg2, Arg3, Arg4, Arg5, none);
+		}
+		else if(A)
+		{
+			buttonSuccess = EV_Thing3dThrust(0, Arg2, Arg3, Arg4, Arg5, A);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_BeginState:
+		if (MainGameInfo(Game).GameModel)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameModel.BeginState(Arg1);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_EndState:
+		if (MainGameInfo(Game).GameModel)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameModel.EndCurrentState(Arg1);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_HandleEvent:
+		if (MainGameInfo(Game).GameModel)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameModel.HandleEvent(Arg1, A, Arg2, Arg3, Arg4, Arg5);
+		}
+		break;
+	case ACTSPEC_AdvancedGame_SetACSNotifier:
+		if (MainGameInfo(Game).GameModel)
+		{
+			buttonSuccess = true;
+			MainGameInfo(Game).GameModel.SetACSNotifier(Arg1, Arg2);
+		}
+		break;
+	case ACTSPEC_IsConditionTrue:
+		buttonSuccess = EV_IsConditionTrue(Arg1, Arg2);
+		break;
+	case ACTSPEC_RunACSConditional:
+		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+
+
+	//
+	// Sector properties
+	//
+	case LNSPEC_KA_SectorSetBounce:
+		buttonSuccess = EV_SectorSetBounce(Arg1, Arg2, Arg3, Arg4);
+		break;
+	case LNSPEC_KA_SectorSetFunnel:
+		buttonSuccess = EV_SectorSetFunnel(Arg1, Arg2, Arg3, Arg4);
+		break;
+
+
+	//
+	// Enviroment
+	//
+	case ACTSPEC_Env_WeatherSnow:
+		buttonSuccess = EV_WeatherSnow(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherRain:
+		buttonSuccess = EV_WeatherRain(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherTerminate:
+		buttonSuccess = EV_WeatherTerminate(Arg1);
+		break;
+	case ACTSPEC_Env_WeatherTerminateAll:
+		buttonSuccess = EV_WeatherTerminate(-1);
+		break;
+	case ACTSPEC_Env_WeatherSetParams:
+		buttonSuccess = EV_WeatherSetParams(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Env_WeatherSetPattern:
+		buttonSuccess = EV_WeatherSetPattern(Arg1, Arg2);
+		break;
+	case ACTSPEC_Env_WeatherSetColour:
+		buttonSuccess = EV_WeatherSetColour(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+
+	// Inert Line specials
+	default:
+		buttonSuccess = ::ExecuteActionSpecial(Special, Arg1, Arg2, Arg3,
+			Arg4, Arg5, Line, Side, E);
+		break;
+	}
+	return buttonSuccess;
+}
+
+//==========================================================================
+//
+//  EV_Thing3dThrust
+//
+//  [CW] A three-dimensional vector variant of ThingThrust action special
+//
+//==========================================================================
+
+bool EV_Thing3dThrust(int tid, int angle2d, int angle3, int move, int move2, EntityEx a)
+{
+	if (tid)
+	{
+		EntityEx A;
+
+		for (A = EntityEx(FindMobjFromTID(tid, none)); A;
+			A = EntityEx(FindMobjFromTID(tid, A)))
+		{
+			if (A)
+			{
+				if (angle3)
+				{
+					A.Thrust(itof(angle2d), itof(move) * cos(itof(angle3)));
+					A.Velocity.z += itof(move) * sin(itof(angle3)) * 35.0;
+				}
+				else
+				{
+					A.Thrust(itof(angle2d), itof(move));
+					A.Velocity.z += itof(move2) * 35.0;
+				}
+				return true;
+			}
+		}
+	}
+	else if (a)
+	{
+		if (angle3)
+		{
+			a.Thrust(itof(angle2d), itof(move) * cos(itof(angle3)));
+			a.Velocity.z += itof(move) * sin(itof(angle3)) * 35.0;
+		}
+		else
+		{
+			a.Thrust(itof(angle2d), itof(move));
+			a.Velocity.z += itof(move2) * 35.0;
+		}
+		return true;
+	}
+	return false;
+}
+
+//**************************************************************************
+//
+//  Advanced game model specials
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_IsConditionTrue
+//
+//==========================================================================
+
+bool EV_IsConditionTrue(int Condition, int cParam)
+{
+	switch (Condition)
+	{
+
+	case CNDT_AdvancedGame_StateIs:
+		if (MainGameInfo(Game).GameModel && MainGameInfo(Game).GameModel.State == cParam)
+			return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_RunACSConditional
+//
+//	[CW]
+//
+//	Runs determined ACS if defined condition is true.
+//	(this is currently unused but I suggest keep it for a while just in case)
+//
+//==========================================================================
+
+bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int Arg)
+{
+	bool runACS;
+
+	if (EV_IsConditionTrue(Condition, cParam))
+		runACS = XLevel.StartACS(numACS, mapACS, Arg, 0, 0, none, NULL, 0, false, false);
+	else
+		runACS = false;
+
+	return runACS;
+}
+
+//**************************************************************************
+//
+//  Sector properties
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_SectorSetBounce
+//
+//==========================================================================
+
+bool EV_SectorSetBounce(int tag, int xforce, int yforce, int zforce)
+{
+	BouncePad B;
+	BouncePad Collection;
+	int		secnum;
+
+	// First, find which sectors already have a bounce pads and adjust these
+	foreach AllThinkers(BouncePad, B)
+	{
+		if (B.CheckForSectorMatch(tag) >= 0)
+		{
+			B.ChangeValues(xforce, yforce, zforce);
+			B.AdjustLink = Collection;
+			Collection = B;
+		}
+	}
+
+	// Now create bounce pads for any sectors that don't already have them.
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		for (B = Collection; B; B = B.AdjustLink)
+		{
+			if (B.Affectee == secnum)
+				break;
+		}
+		if (!B)
+		{
+			print("CREATING BOUNCEPAD: tag %i, data %i,%i,%i", tag, xforce, yforce, zforce);
+			B = Spawn(BouncePad);
+			B.Init(xforce, yforce, zforce, secnum);
+		}
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	EV_SectorSetFunnel
+//
+//==========================================================================
+
+bool EV_SectorSetFunnel(int tag, int zforce, int zbase, int zlimit)
+{
+	Funnel F;
+	Funnel Collection;
+	int		secnum;
+
+	// First, find which sectors already have a funnels and adjust these
+	foreach AllThinkers(Funnel, F)
+	{
+		if (F.CheckForSectorMatch(tag) >= 0)
+		{
+			F.ChangeValues(zforce, zbase, zlimit);
+			F.AdjustLink = Collection;
+			Collection = F;
+		}
+	}
+
+	// Now create funnels for any sectors that don't already have them.
+	for (secnum = XLevel.FindSectorFromTag(tag, -1); secnum >= 0;
+		secnum = XLevel.FindSectorFromTag(tag, secnum))
+	{
+		for (F = Collection; F; F = F.AdjustLink)
+		{
+			if (F.Affectee == secnum)
+				break;
+		}
+		if (!F)
+		{
+			print("CREATING FUNNEL: tag %i, data %i,%i,%i", tag, zforce, zbase, zlimit);
+			F = Spawn(Funnel);
+			F.Init(zforce, zbase, zlimit, secnum);
+		}
+	}
+	return true;
+}
+
+//**************************************************************************
+//
+//  Enviroment
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//  EV_WeatherSnow
+//
+//==========================================================================
+
+bool EV_WeatherSnow(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherSnow WS = WeatherSnow(Spawn(WeatherSnow));
+	if (WS)
+	{
+		WS.Amount = Density ? Density : WS.default.Amount;
+		WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+		float fang = itof(Angle);
+		WS.InitialVelocity = (HorSpeed || VertSpeed) ?
+			vector(itof(HorSpeed) * 8.0 * cos(fang), itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0) :
+			WS.default.InitialVelocity;
+		WS.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WS;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherRain
+//
+//==========================================================================
+
+bool EV_WeatherRain(int Density, int Angle, int HorSpeed, int VertSpeed, int Pattern)
+{
+	WeatherRain WR = WeatherRain(Spawn(WeatherRain));
+	if (WR)
+	{
+		WR.Amount = Density ? Density : WR.default.Amount;
+		WR.Spread.z = WR.default.Spread.z * itof(WR.Amount) / itof(WR.default.Amount);
+		float fang = itof(Angle);
+		WR.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+			itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+		WR.Pattern = Pattern;
+
+		WeatherThinkers.Num = WeatherThinkers.Num + 1;
+		WeatherThinkers[WeatherThinkers.Num - 1] = WR;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherTerminate
+//
+//==========================================================================
+
+bool EV_WeatherTerminate(int Num)
+{
+	if (Num < 0)
+	{
+		int i;
+		for (i = 0; i < WeatherThinkers.Num; i++)
+		{
+			WeatherThinkers[i].Destroy();
+			WeatherThinkers[i] = none;
+		}
+		WeatherThinkers.Num = 0;
+		return true;
+	}
+	else if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			WeatherThinkers[Num].Destroy();
+			WeatherThinkers[Num] = none;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetParams
+//
+//==========================================================================
+
+bool EV_WeatherSetParams(int Num, int Density, int Angle, int HorSpeed, int VertSpeed)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Amount = Density ? Density : WS.default.Amount;
+			WS.Spread.z = WS.default.Spread.z * itof(WS.Amount) / itof(WS.default.Amount);
+			float fang = itof(Angle);
+			WS.InitialVelocity = vector(itof(HorSpeed) * 8.0 * cos(fang),
+						itof(HorSpeed) * 8.0 * sin(fang), itof(VertSpeed) * 8.0);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetPattern
+//
+//==========================================================================
+
+bool EV_WeatherSetPattern(int Num, int Pattern)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Pattern = Pattern;
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  EV_WeatherSetColour
+//
+//==========================================================================
+
+bool EV_WeatherSetColour(int Num, int R, int G, int B, int A)
+{
+	if (WeatherThinkers.Num > Num)
+	{
+		if (WeatherThinkers[Num])
+		{
+			// FIXME!!
+			WeatherSnow WS = WeatherSnow(WeatherThinkers[Num]);
+			WS.Colour = RGBA(R,G,B,A);
+			return true;
+		}
+	}
+	return false;
+}
+
+//==========================================================================
+//
+//  ParticleEffectEx
+//
+//==========================================================================
+
+void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd, TVec camera,
+	float zcameradome, float zoffset, TVec velocity, TVec vrnd, TVec acceleration, float grav,
+	int colour, float duration, float ramp,	int Pattern)
+{
+	int i, j;
+	particle_t *p, *p2;
+
+	float max_dist;
+	float real_duration;
+	sector_t * pt_sector;
+	TVec p_org_dummy;
+	TVec camera_no_z;
+	float dome_radius;			// distance from camera to top of the particle-spawning "dome";
+	float dome_radius_squared;
+	float l;
+	float pt_ceilz;
+	float pt_ceilz2;
+	float pt_floorz;
+	float time;
+
+	if (!XLevel)
+		Error("KArenaLevelInfo::ParticleEffectEx : XLevel reference not set to an instance of an object");
+
+	//camera.z = 0.0;
+	camera_no_z = camera;
+	camera_no_z.z = 0.0;
+	dome_radius = zcameradome - camera.z;	// [CW] CHECKME: what if zcameradome is lower than camera.z?
+	dome_radius_squared = dome_radius * dome_radius;
+
+	for (i = 0; i < count; i++)
+	{
+		p = NewParticle();
+		if (!p)
+			return;
+
+		max_dist = -1.0;
+		real_duration = 0.0;
+		pt_sector = NULL;
+
+		// [CW] Type and origin are very important in our implementation,
+		// so they should go first
+		//
+		if(type2)
+		{
+			// Choose between the two types
+			if (i & 1)
+			{
+				p->type = type1;
+			}
+			else
+			{
+				p->type = type2;
+			}
+		}
+		else
+		{
+			p->type = type1;
+		}
+
+		// No random origin
+		if(ornd == vector(0.0,0.0,0.0))
+		{
+			p->org = origin;
+		}
+		else
+		{
+			p->org.x = origin.x + ((Random() * ornd.x) - ornd.x / 2.0);
+			p->org.y = origin.y + ((Random() * ornd.y) - ornd.y / 2.0);
+			p->org.z = origin.z + ((Random() * ornd.z) - ornd.z / 2.0);
+		}
+
+		if (p->type == pt_weather_snow || p->type == pt_weather_rain)
+		{
+			max_dist = 0.0;
+			pt_sector = XLevel.PointInSector(p->org);
+			if (pt_sector && pt_sector->ceiling.pic == skyflatnum)
+			{
+				pt_ceilz = GetPlanePointZ(&pt_sector->ceiling, p->org);
+				pt_ceilz2 = pt_ceilz + zoffset;
+				if (pt_ceilz2 < zcameradome)
+				{
+					if (pt_ceilz < zcameradome)
+						pt_ceilz2 = pt_ceilz;
+					else
+						pt_ceilz2 = zcameradome;
+				}
+
+				p_org_dummy.x = p->org.x;
+				p_org_dummy.y = p->org.y;
+				l = Length(p_org_dummy - camera_no_z);
+
+				// [CW] Initially we have a p->org.z value in the range of
+				// randomization; now we add general position, which is,
+				// technically, an absolute center of randomization;
+				//
+				// pt_ceilz2 is a point somewhere between sky (ceiling) and
+				// top of the "dome" (usually closest to the last one);
+				//
+				p->org.z += pt_ceilz2 - (dome_radius - sqrt(dome_radius_squared - l * l));
+
+				// [CW] TODO: we need to adjust initial velocity as if particle
+				// fell all the way from the sky (assuming gravity as applied all the time)
+				// however... won't all these calculations lower game speed?
+				// need to make more tests; maybe add console variables to toggle these
+				// accurate calculations on/off?
+
+				pt_floorz = FindHighestFloorZAtPoint(p->org, pt_sector);
+				if (pt_floorz != EntityEx::ONFLOORZ)
+				{
+					max_dist = p->org.z - pt_floorz;
+					if (max_dist < 0.0)
+						max_dist = 0.0;
+				}
+			}
+		}
+
+		p->colour = colour;
+		p->Size = 1.0;
+		if(ramp)
+			p->ramp = Random() * ramp;
+
+		// [CW] Notice p->vel should add velocity at this point,
+		//		because it could have been already changed above
+		// No random velocity
+		if(vrnd == vector(0.0,0.0,0.0))
+		{
+			p->vel += velocity;
+		}
+		else
+		{
+			p->vel.x += velocity.x * (Random() - vrnd.x);
+			p->vel.y += velocity.y * (Random() - vrnd.y);
+			p->vel.z += velocity.z * (Random() - vrnd.z);
+		}
+		p->accel.x = acceleration.x;
+		p->accel.y = acceleration.y;
+		p->accel.z = acceleration.z;
+		p->gravity = grav;
+
+		if (duration && max_dist)
+			real_duration = duration * Random();
+		// [CW] TODO: fix lifetime for weather particles according to accel & velocity
+		// currently does not care about accel since there's no sqrt func :(
+		// so using simplest formula this time
+		// [CW] <-- FIXME, now there's SQRT func
+		if (max_dist >= 0.0)
+		{
+			if (p->vel.z != 0.0)
+				time = -(max_dist / p->vel.z);
+			else
+				time = 0.0;
+			if (!real_duration || real_duration > time)
+				real_duration = time;
+		}
+		p->die = XLevel.Time + real_duration;
+
+		if (real_duration && Pattern)
+		{
+			switch (Pattern)
+			{
+				case pt_pattern_rainlight:
+				case pt_pattern_rainmoderate:
+				case pt_pattern_rainheavy:
+				{
+					int q;
+					switch (Pattern)
+					{
+					case pt_pattern_rainlight: q = P_Random() % 3 + 3; break;
+					case pt_pattern_rainmoderate: q = P_Random() % 7 + 4; break;
+					case pt_pattern_rainheavy: q = P_Random() % 10 + 10; break;
+					}
+					for (j = 0; j < q; j++)
+					{
+						p2 = NewParticle();
+						if (!p2)
+							break;
+						p2->org = vector(p->org.x, p->org.y, p->org.z + itof(j));
+						p2->colour = p->colour;
+						p2->Size = p->Size;
+						p2->vel = p->vel;
+						p2->accel = p->accel;
+						p2->die = p->die;
+						p2->type = p->type;
+						p2->ramp = p->ramp;
+						p2->gravity = p->gravity;
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  UpdateParticle
+//
+//==========================================================================
+
+void UpdateParticle(particle_t * p, float DeltaTime)
+{
+	float grav;
+	float pt_floorz;
+
+	grav = DeltaTime * p->gravity;
+	p->accel.z -= grav;
+	
+	switch (p->type)
+	{
+		case pt_weather_snow:
+		case pt_weather_rain:
+			p->vel += p->accel * DeltaTime;
+		{
+			// spawn a splash just before particle death
+			if (p->type == pt_weather_rain && (p->die <= XLevel.Time + DeltaTime))
+			{
+				// [CW] Hope this won't slow things down significantly
+				//
+				pt_floorz = FindHighestFloorZAtPoint(p->org);
+				if (pt_floorz != EntityEx::ONFLOORZ && (p->org.z - pt_floorz < 8.0))
+				{
+					ParticleEffect(P_Random() % 6 + 2, pt_static, 0, p->org, 0.0, vector(16.0, 16.0, 16.0),
+						0.5, 0.0, 40.0,
+						RGB(((p->colour >> 16) & 0xff) >> 1, (((p->colour >> 8) & 0xff) >> 1), (p->colour & 0xff) >> 1),
+						0.4, 0.0);
+				}
+			}
+		}
+		return;
+	}
+	::UpdateParticle(p, DeltaTime);
+}
+
+/* //==========================================================================
+//
+//  SetTeamTranslation
+//
+//	[CW] The translation is chosen accoding to TeamIndex and is set to
+//		all things with chosen TID.
+//		Currently this works by calling proper ACS function, and I
+//		hope we would be able to change this in future.
+//
+//==========================================================================
+
+void SetTeamTranslation(int TeamIndex, int TID)
+{
+	// [CW] This supposes that original untranslated color is blue,
+	// so Blue Team (index 0) must not set any translation.
+	if (TeamIndex)
+		XLevel.StartACS(TeamIndex, 0, TID, 0, 0, none, NULL, 0, false, false);
+}*/
+
+defaultproperties
+{
+	ExtPlayersBase = 9100;
+	bDefaultStopOnCrush = true;
+}
