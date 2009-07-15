@@ -32,6 +32,7 @@
 
 class KArenaPlayerReplicationInfo : PlayerReplicationInfo;
 
+int		bclass;
 int		plclass;
 int		level;
 bool	IsBot;		// true if player is bot, false if is human
@@ -48,7 +49,7 @@ int		translation;
 replication
 {
 	reliable if (Role == ROLE_Authority)
-		plclass, level, IsBot, /*team*/teamname, teamcolour, teamfont,
+		bclass, plclass, level, IsBot, /*team*/teamname, teamcolour, teamfont,
 		score, deaths, teampos, playerpos, translation;
 }
 
@@ -66,6 +67,7 @@ void Tick(float DeltaTime)
 	::Tick(DeltaTime);
 
 	P = Player(Player);
+	bclass = P.BaseClass;
 	plclass = P.PClass;
 	level = P.exp_level;
 	IsBot = P.bIsBot;

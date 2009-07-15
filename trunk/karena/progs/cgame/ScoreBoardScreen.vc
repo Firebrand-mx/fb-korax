@@ -107,6 +107,7 @@ void OnDraw()
 	bool team_player_skipped;
 	string tmp;
 	KArenaPlayerReplicationInfo RepInfo;
+	int pclass;
 	// [FB] For calculating current time and time limit
 	int timer;
 	int c_hours;
@@ -207,9 +208,11 @@ void OnDraw()
 				}
 			}*/
 
+			pclass = RepInfo.plclass == HexenDefs::PCLASS_SPECTATOR ? RepInfo.bclass : RepInfo.plclass;
+
 			// Player's class portrait
-			DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[RepInfo.plclass]) >> 1),
-					pic_portraits[RepInfo.plclass], , RepInfo.translation);
+			DrawPic(TABLE_LEFT_X + 20, y + PORTRAIT_HEIGHT - ((PORTRAIT_HEIGHT - pic_portraits_heights[pclass]) >> 1),
+					pic_portraits[pclass], , RepInfo.translation);
 			y += 6;
 			// Player's name
 			DrawText(TABLE_DATA_LEFT_X, y, RepInfo.PlayerName, ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : RepInfo.teamfont/*GetTeamFontColour(RepInfo.teamcolour)*/);
@@ -223,7 +226,7 @@ void OnDraw()
 				default: tmp = "th";
 			}
 			DrawText(TABLE_DATA_LEFT_X, y + TABLE_STRING_DELTA, va("%d%s %s",
-					 RepInfo.level, tmp, playerclassnames[RepInfo.plclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : GetClassFontColour(RepInfo.plclass));
+					 RepInfo.level, tmp, playerclassnames[pclass]), ClGame.cl.ClientNum == RepInfo.PlayerNum ? CR_YELLOW : GetClassFontColour(pclass));
 
 			y += TABLE_STRING_DELTA >> 1;
 
