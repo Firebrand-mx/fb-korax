@@ -55,6 +55,8 @@ array< name > MonsterClasses; 		// array of monster class names
 array< int > MonsterCosts;			// monster cost to be spawned (in monster counts)
 array< name > BossClasses;			// array of monster boss class names
 
+array<mthing_t> SpawnStarts;
+
 int Wave;
 int LoLimit;						// lower index in monster array
 int HiLimit;						// higher index in monster array
@@ -106,6 +108,7 @@ void BeginState(int newstate)
 	{
 	case state_preparegame:
 		Level.bAllowMonsterTelefrags = false; // Safety issue
+		RegisterSpawnStarts();
 		Wave = 0;
 		EndCurrentState(state_countdownsequence);
 		return;
@@ -376,6 +379,47 @@ void NotifyACS(int Event, int Arg1, int Arg2, int Arg3)
 
 //==========================================================================
 //
+//	RegisterSpawnStarts
+//
+//==========================================================================
+
+void RegisterSpawnStarts()
+{
+	bool bSpawnSpotOnly;
+	Actor SpawnSpot;
+
+	SpawnStarts.Num = 0;
+
+	foreach Level.AllThinkers(SurvivalSpawnSpot, SpawnSpot)
+	{
+		if (SpawnSpot.IsA('SurvivalSpawnSpotOnly'))
+		{
+			bSpawnSpotOnly = true;
+		}
+
+		SpawnStarts.Num = SpawnStarts.Num + 1;
+		SpawnStarts[SpawnStarts.Num - 1].x = SpawnSpot.Origin.x;
+		SpawnStarts[SpawnStarts.Num - 1].y = SpawnSpot.Origin.y;
+		SpawnStarts[SpawnStarts.Num - 1].height = SpawnSpot.Origin.z - GetPlanePointZ(&SpawnSpot.Sector->floor, SpawnSpot.Origin);
+		SpawnStarts[SpawnStarts.Num - 1].angle = SpawnSpot.AngleIncrements() * ftoi(SpawnSpot.Angles.yaw / itof(SpawnSpot.AngleIncrements()));
+	}
+
+	if (!bSpawnSpotOnly)
+	{
+		int i = 0;
+		for (i = 0; i < Level.DeathmatchStarts.Num; i++)
+		{
+			SpawnStarts.Num = SpawnStarts.Num + 1;
+			SpawnStarts[SpawnStarts.Num - 1].x = Level.DeathmatchStarts[i].x;
+			SpawnStarts[SpawnStarts.Num - 1].y = Level.DeathmatchStarts[i].y;
+			SpawnStarts[SpawnStarts.Num - 1].height = Level.DeathmatchStarts[i].height;
+			SpawnStarts[SpawnStarts.Num - 1].angle = Level.DeathmatchStarts[i].angle;
+		}
+	}
+}
+
+//==========================================================================
+//
 //	SetUpWave
 //
 //==========================================================================
@@ -385,7 +429,7 @@ void SetUpWave()
 	Wave++;
 
 	int PlayerCount = Game.GetPlayerCount();
-	int SpawnStarts = Level.DeathmatchStarts.Num;
+	int SpawnStarts = SpawnStarts.Num;
 
 	// (8 + (0 to 7)) monsters per player + (1 to 4) monsters per player per wave index
 	CountToSpawnMonsters = (8 + P_Random() % 8) * PlayerCount +
@@ -416,7 +460,6 @@ void WaveSpawn()
 	int		mClass;
 	class	<Actor> MClass;
 	bool	bBoosted;
-	// int		place;
 	Actor	monster;
 
 	// If current number of monsters is equal or greater than this, no new monsters are spawned until some of older ones are killed
@@ -454,22 +497,10 @@ void WaveSpawn()
 			CountToSpawnMonsters--;
 		}
 
-		/*
-		place = P_Random() % Level.DeathmatchStarts.Num;
-
-		if (place == PlaceCounter)
-		{
-			place = place++;
-			if (place > Level.DeathmatchStarts.Num)
-			{
-				place = 0;
-			}
-		}
-		*/
-		if (PlaceCounter >= Level.DeathmatchStarts.Num)
+		if (PlaceCounter >= SpawnStarts.Num)
 			PlaceCounter = 0;
 
-		monster = Level.Spawn(MClass,,, &Level.DeathmatchStarts[PlaceCounter++]);
+		monster = Level.Spawn(MClass,,, &SpawnStarts[PlaceCounter++]);
 
 		if (monster)
 		{
@@ -483,7 +514,6 @@ void WaveSpawn()
 
 			// monster.TeleportMove(monster.Origin, false);
 			Level.Spawn(TeleportFog, monster.GetCentre());
-			// PlaceCounter = place;
 			Level.NoiseAlert(Game.Players[0].MO, monster);
 		}
 	}
