@@ -507,9 +507,11 @@ void WaveSpawn()
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
-				float hlth = itof(monster.Health) * 2.5 + itof(P_Random() % Wave);
-				monster.Health = ftoi(hlth);
-				monster.Speed *= (monster.Speed * 2.5) + (Random() * (itof(Wave) / 100.0));
+				monster.Health = ftoi(itof(monster.Health) * 2.5 + itof(P_Random() % Wave));
+				monster.Speed = (monster.Speed * 2.5) + (Random() * (itof(Wave) / 100.0));
+				// Recalculate experience based on new starting Health value
+				monster.experience = monster.Health;
+				monster.RenderStyle = Entity::STYLE_Add;
 			}
 
 			// monster.TeleportMove(monster.Origin, false);
