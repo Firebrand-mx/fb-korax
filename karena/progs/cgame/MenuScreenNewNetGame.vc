@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**		    ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -42,6 +42,9 @@ MenuChoiceEnum		Monsters;
 MenuChoiceEnum		ScoreLimit;
 MenuChoiceEnum		TimeLimit;
 MenuChoiceEnum		Level;
+
+// Extra options
+MenuChoiceEnum		SurvivalStartingWave;
 
 
 int					LevelPic;		// level shot thumbnail
@@ -180,12 +183,33 @@ void CreateChoices()
 	TimeLimit.ValueChanging = ChangeTimeLimit;
 	currentY += TimeLimit.Height;
 
-	Level = MenuChoiceEnum(NewChild(/* MenuChoiceEnum */ MenuChoiceEnumWrapped));
+	Level = MenuChoiceEnum(NewChild(MenuChoiceEnumWrapped));
 	Level.SetOrigin(ChoicesStartX, currentY);
 	Level.Text = "Level";
+	Level.Width = Level.Width - 16;
 	Level.ValueChanging = ChangeLevel;
 	currentY += (Level.Height << 1); // [CW] two lines height (can be increased later if needed)
 
+	int topExtraChoices = currentY + 12;
+	int maxExtraY = 0;
+
+	//
+	// Survival extra choices:
+	currentY = topExtraChoices;
+
+	SurvivalStartingWave = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	SurvivalStartingWave.SetOrigin(ChoicesStartX, currentY);
+	SurvivalStartingWave.Text = "Starting Wave";
+	for (i = 0; i < GameSurvival.default.MonsterClasses.Num; i++)
+	{
+		SurvivalStartingWave.AddItem(va("%i", i + 1));
+	}
+	SurvivalStartingWave.SetInitialValue(GetCvar('StartingWave'));
+	SurvivalStartingWave.ValueChanging = ChangeSurvivalStartingWave;
+	currentY += SurvivalStartingWave.Height;
+
+	if (currentY > maxExtraY)
+		maxExtraY = currentY;
 
 	ChangeMaxPlayers(none, 7);
 	ChangeSkill(none, 2);
@@ -193,7 +217,7 @@ void CreateChoices()
 	ChangeBots(none, 0);
 	ChangeTimeLimit(none, TimeLimit.Value);
 
-	ChoicesHeight = currentY - ChoicesStartY;
+	ChoicesHeight = maxExtraY - ChoicesStartY;
 }
 
 //==========================================================================
@@ -317,6 +341,17 @@ bool ChangeDeathmatch(Object Sender, int newValue)
 	InitMapList(GameTypes[newValue]);
 	InitScoreLimit(GameTypes[newValue]);
 	InitMonsters(GameTypes[newValue]);
+
+	if (GameTypes[newValue] == HexenDefs::game_survival)
+	{
+		SurvivalStartingWave.Visible = true;
+		SurvivalStartingWave.Focusable = true;
+	}
+	else
+	{
+		SurvivalStartingWave.Visible = false;
+		SurvivalStartingWave.Focusable = false;
+	}
 	return true;
 }
 
@@ -363,6 +398,18 @@ bool ChangeLevel(Object Sender, int newValue)
 	lvlname = strlwr(StrReplace(lvlname, "?", ""));
 	LevelInfo = GetLangString(StrToName(va("%s_info", lvlname)));
 	LevelInfo = SplitTextWithNewlines(LevelInfo, 320);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeSurvivalStartingWave
+//
+//==========================================================================
+
+bool ChangeSurvivalStartingWave(Object Sender, int newValue)
+{
+	SetCvar('StartingWave', newValue);
 	return true;
 }
 

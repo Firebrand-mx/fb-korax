@@ -109,7 +109,7 @@ void BeginState(int newstate)
 	case state_preparegame:
 		Level.bAllowMonsterTelefrags = false; // Safety issue
 		RegisterSpawnStarts();
-		Wave = 0;
+		Wave = GetCvar('StartingWave');
 		EndCurrentState(state_countdownsequence);
 		return;
 
@@ -151,6 +151,8 @@ void BeginState(int newstate)
 void EndCurrentState(int nextstate)
 {
 	int i;
+
+	dprint("GameSurvival::EndCurrentState : from %i to %i", State, nextstate);
 
 	switch (State)
 	{
@@ -477,7 +479,7 @@ void WaveSpawn()
 		}
 		else
 		{
-			if (BoostedLimit > 0 && Random() < 0.15)
+			if (BoostedLimit > 0 && Random() < 0.1)
 			{
 				//
 				// Spawn boosted monster of weaker monster class
@@ -507,11 +509,35 @@ void WaveSpawn()
 			if (bBoosted)
 			{
 				// Spawn a boosted monster with enhanced stats
-				monster.Health = ftoi(itof(monster.Health) * 2.5 + itof(P_Random() % Wave));
-				monster.Speed = (monster.Speed * 2.5) + (Random() * (itof(Wave) / 100.0));
+				if ((P_Random() < (BoostedLimit - mClass)) && Random() < 0.25)
+				{
+					// Spawn really huge monster :P
+					monster.Health *= ftoi(25.0 + Random() * itof(BoostedLimit - mClass) / 100.0);
+					monster.Speed *= 2.5;
+					monster.ScaleX *= 5.0;
+					monster.ScaleY *= 5.0;
+					monster.Height *= 3.0;
+					monster.Radius *= 3.0;
+					monster.bBoss = true;
+				}
+				else
+				{
+					monster.Health *= ftoi(1.5 + Random() * itof(BoostedLimit - mClass) / 100.0);
+					monster.Speed *= 1.5 + Random() * itof(BoostedLimit - mClass) / 100.0;
+
+					if (Random() < 0.15)
+						monster.RenderStyle = Entity::STYLE_Fuzzy;
+					else if (Random() < 0.75)
+						monster.RenderStyle = Entity::STYLE_Add;
+					else
+					{
+						monster.ScaleX *= 1.5;
+						monster.ScaleY *= 1.5;
+					}
+				}
+
 				// Recalculate experience based on new starting Health value
 				monster.experience = monster.Health;
-				monster.RenderStyle = Entity::STYLE_Add;
 			}
 
 			// monster.TeleportMove(monster.Origin, false);
@@ -523,15 +549,15 @@ void WaveSpawn()
 
 defaultproperties
 {
-	MonsterClasses.Num = 25;
+	MonsterClasses.Num = 26;
 	MonsterClasses[0] = 'HereticMummy';
 	MonsterClasses[1] = 'Ettin';
 	MonsterClasses[2] = 'KArenaHereticImp';
 	MonsterClasses[3] = 'HereticMummyGhost';
-	MonsterClasses[4] = 'EttinMash';	
+	MonsterClasses[4] = 'KArenaEttinGhost';	
 	MonsterClasses[5] = 'KArenaClink';
 	MonsterClasses[6] = 'KArenaCentaur';
-	MonsterClasses[7] = 'CentaurMash';
+	MonsterClasses[7] = 'KArenaCentaurGhost';
 	MonsterClasses[8] = 'KArenaBeast';
 	MonsterClasses[9] = 'KArenaDemon1';
 	MonsterClasses[10] = 'KArenaKnight';
@@ -540,15 +566,16 @@ defaultproperties
 	MonsterClasses[13] = 'KArenaDemon2';
 	MonsterClasses[14] = 'KArenaFireDemon';
 	MonsterClasses[15] = 'HereticImpLeader';
-	MonsterClasses[16] = 'KArenaDemon1Mash';
-	MonsterClasses[17] = 'KArenaKnightGhost';
-	MonsterClasses[18] = 'HereticMummyLeaderGhost';
-	MonsterClasses[19] = 'KArenaDemon2Mash';
-	MonsterClasses[20] = 'KArenaIceGuy';
-	MonsterClasses[21] = 'KArenaCentaurLeader';
-	MonsterClasses[22] = 'KArenaWizard';
-	MonsterClasses[23] = 'KArenaBishop';
-	MonsterClasses[24] = 'Wraith';
+	MonsterClasses[16] = 'KArenaBeastGhost';
+	MonsterClasses[17] = 'KArenaDemon1Ghost';
+	MonsterClasses[18] = 'KArenaKnightGhost';
+	MonsterClasses[19] = 'HereticMummyLeaderGhost';
+	MonsterClasses[20] = 'KArenaDemon2Ghost';
+	MonsterClasses[21] = 'KArenaIceGuy';
+	MonsterClasses[22] = 'KArenaCentaurLeader';
+	MonsterClasses[23] = 'KArenaWizard';
+	MonsterClasses[24] = 'KArenaBishop';
+	MonsterClasses[25] = 'Wraith';
 
 	BossClasses.Num = 4;
 	BossClasses[0] = 'KArenaIronlich';
