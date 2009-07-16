@@ -128,3 +128,109 @@ actor WeaponPickupFire : WeaponPickupRandom 15050
 {
 	WeaponPickupRandom.RestrictDamageType "Fire"
 }
+
+//------------------------------------------------------------------------------
+actor KArenaHolyMissile : HolyMissile replaces HolyMissile
+{
+	Damage 16
+	//Obituary "$ob_holy"
+	+NoAccuracy
+
+	action native A_KArenaCHolyAttack2();
+
+	states
+	{
+	Death:
+		SPIR P 1 Bright A_KArenaCHolyAttack2
+		Stop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor KArenaMageWandMissile : MageWandMissile replaces MageWandMissile
+{
+	DamageType "Ice"
+	//Obituary "$ob_mwand"
+}
+
+//------------------------------------------------------------------------------
+actor KArenaLightningCeiling : LightningMissile replaces LightningCeiling
+{
+	Health 144
+	Radius 16
+	Height 40
+	Speed 25
+	Damage 32
+	RenderStyle Add
+	Projectile
+	+CeilingHugger
+	//Obituary "$ob_lightning"
+
+	action native A_KArenaLightningZap();
+	action native A_LightningClip();
+	action native A_LightningRemove();
+
+	states
+	{
+	Spawn:
+		MLFX A 2 Bright A_KArenaLightningZap
+		MLFX BCD 2 Bright A_LightningClip
+		Loop
+	Death:
+		MLF2 A 2 Bright A_LightningRemove
+		MLF2 BCDEKLM 3 Bright
+		ACLO E 35
+		MLF2 NO 3 Bright
+		MLF2 P 4 Bright
+		MLF2 QP 3 Bright
+		MLF2 Q 4 Bright
+		MLF2 POP 3 Bright
+		MLF2 P 1 Bright A_HideThing
+		Goto Actor::FreeTargMobj
+	}
+}
+
+//------------------------------------------------------------------------------
+actor KArenaLightningFloor : KArenaLightningCeiling replaces LightningFloor
+{
+	-CeilingHugger
+	+FloorHugger
+
+	action native A_KArenaLightningZap();
+	action native A_LightningClip();
+	action native A_LightningRemove();
+	action native A_LastZap();
+
+	states
+	{
+	Spawn:
+		MLFX E 2 Bright A_KArenaLightningZap
+		MLFX FGH 2 Bright A_LightningClip
+		Loop
+	Death:
+		MLF2 F 2 Bright A_LightningRemove
+		MLF2 GHIJKLM 3 Bright
+		ACLO E 20
+		MLF2 NO 3 Bright
+		MLF2 P 4 Bright
+		MLF2 QP 3 Bright
+		MLF2 Q 4 Bright A_LastZap
+		MLF2 POP 3 Bright
+		MLF2 P 1 Bright A_HideThing
+		Goto Actor::FreeTargMobj
+	}
+}
+
+//------------------------------------------------------------------------------
+actor KArenaLightningZap : LightningZap replaces LightningZap
+{
+	Obituary "$ob_lightning"
+}
+
+//------------------------------------------------------------------------------
+actor KArenaMageStaffFX2 : MageStaffFX2 replaces MageStaffFX2
+{
+	Damage 8
+//	Obituary "$ob_mstaff"
+	+NoAccuracy
+}
