@@ -57,7 +57,7 @@ actors/karena/demons.txt			actors/karena/demons.txt
 actors/karena/dragon.txt			actors/karena/dragon.txt
 actors/karena/dsparil.txt			actors/karena/dsparil.txt
 actors/karena/health.txt			actors/karena/health.txt
-actors/karena/ironlich.txt			actors/karena/ironlich.txt
+actors/karena/heretic_ironlich.txt	actors/karena/heretic_ironlich.txt
 actors/karena/knight.txt			actors/karena/knight.txt
 actors/karena/mana.txt				actors/karena/mana.txt
 actors/karena/misc.txt				actors/karena/misc.txt
