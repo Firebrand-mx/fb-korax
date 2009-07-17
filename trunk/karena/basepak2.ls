@@ -61,7 +61,9 @@ actors/karena/ironlich.txt			actors/karena/ironlich.txt
 actors/karena/knight.txt			actors/karena/knight.txt
 actors/karena/mana.txt				actors/karena/mana.txt
 actors/karena/misc.txt				actors/karena/misc.txt
+actors/karena/monsters.txt			actors/karena/monsters.txt
 actors/karena/mummy.txt				actors/karena/mummy.txt
+actors/karena/netmatch.txt			actors/karena/netmatch.txt
 actors/karena/snake.txt				actors/karena/snake.txt
 actors/karena/weapons.txt			actors/karena/weapons.txt
 actors/karena/weapons_heretic.txt	actors/karena/weapons_heretic.txt
