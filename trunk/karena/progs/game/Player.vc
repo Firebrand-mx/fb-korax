@@ -98,7 +98,6 @@ int exp_level;
 int next_level;
 int old_level; // [FB] If we are going backwards we need this
 int strength;
-//int intelligence;
 int wisdom;
 int dexterity;
 int constitution;
@@ -151,9 +150,9 @@ replication
 	reliable if (!bIsClient)
 		Score, TeamFrags, TeamKills, TeamPosition, PlayerPosition,
 		experience, exp_level, next_level, old_level, strength,
-		/* intelligence, */wisdom, dexterity, constitution, max_health,
-		old_maxhealth, bak_health, use_power, use_power_rangefrac, altWeapon, teamscores,
-		altWeaponMode, targetinfo, Banner, BannerStatus;
+		wisdom, dexterity, constitution, max_health, old_maxhealth,
+		bak_health, use_power, use_power_rangefrac, altWeapon,
+		teamscores,	altWeaponMode, targetinfo, Banner, BannerStatus;
 
 	unreliable if (!bIsClient)
 		ClientDynamicLightEx, ParticleEffectEx;
@@ -691,7 +690,6 @@ void KilledActor(EntityEx Victim)
 			if (Level.TotalKills == Level.CurrentKills)
 			{
 				// [FB] Exit map
-				//Level.ExitLevel(0);
 				int i;
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
@@ -1029,9 +1027,6 @@ void NetGameReborn()
 	MO.Player = none;
 	MO.bIsPlayer = false;
 
-	// spawn at random spot if in death match
-	//if (Level.Game.deathmatch)
-	//{
 	OldMO.DestroyAllInventory();
 
 	if (MainGameInfo(Level.Game).GameType < HexenDefs::NUMGAMESNOTEAM ||
@@ -1041,8 +1036,6 @@ void NetGameReborn()
 	}
 
 	DeathMatchSpawnPlayer();
-	//	return;
-	//}
 }
 
 //==========================================================================
@@ -1122,7 +1115,6 @@ void DeathMatchSpawnPlayer()
 #ifdef DEBUG_PLAYER_SPAWN
 	print("spawning blind at random deathmatch location");
 #endif
-	//SpawnPlayer(Level.GetPlayerStart(GetPlayerNum(), 0), false);
 	SpawnPlayer(&Level.DeathmatchStarts[P_Random() % Level.DeathmatchStarts.Num], false);
 }
 
@@ -1374,15 +1366,6 @@ void PlayerReborn()
 	::PlayerReborn();
 
 	Scoreboard(false); // [CW]
-
-
-//	if (TeamSelection != HexenDefs::teamselection_none)
-//		TeamSelection == HexenDefs::teamselection_done;
-	/* if (TeamSelection != HexenDefs::teamselection_none &&
-		TeamSelection != HexenDefs::teamselection_done)
-	{
-		TeamSelection = HexenDefs::teamselection_autoselect;
-	}*/
 }
 
 //==========================================================================
@@ -1398,13 +1381,6 @@ void PlayerExitMap(bool clusterChange)
 	::PlayerExitMap(clusterChange);
 
 	BlindCount = 0; // [FB] Reset the blind count too!
-
-	// [FB] This is now done in ::PlayerExitMap, it seems...
-/*	if (MorphTime && MO.Class == PlayerHeresiarch)
-	{
-		SetWeapon(Weapon(Actor(MO).Tracer));	// Restore weapon
-		MorphTime = 0.0;
-	}*/
 }
 
 //==========================================================================
@@ -1509,30 +1485,10 @@ void ActivateLevel(int to_lvl, bool message)
 		old_maxhealth = max_health;
 		bak_health = old_maxhealth - old_maxhealth * 9 / 100; // Save a previous level's health
 
-		/* if (old_maxhealth == 212)
-		{
-			//	Don't do anything
-			addhealth = 0;
-		}
-		else
-		{*/
-		/*	if ((max_health + max_health * 9 / 100) >= 212)
-			{
-				addhealth = 212 - max_health;
-			}
-			else
-			{*/
-				addhealth = max_health * 9 / 100;
-			//}
-		//}
-
-		//if (addhealth > 0)
-		//{
-			max_health += addhealth;
-			Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
-			MO.Health = Health;
-		//}
-
+		addhealth = max_health * 9 / 100;
+		max_health += addhealth;
+		Health = ftoi(itof(Health) / itof(old_maxhealth) * itof(max_health));
+		MO.Health = Health;
 	}
 
 	LevelChanged();
@@ -1571,27 +1527,12 @@ void DeactivateLevel(int to_lvl, bool message)
 		intelligence -= intelligence * 25 / 100;
 		wisdom -= wisdom * 25 / 100;
 
-		// [FB] We already calculated the bak_health value
-		/* if (old_maxhealth < 100)
-		{
-			// Don't do anything
-			addhealth = 0;
-		}
-		else
-		{*/
-			addhealth = old_maxhealth * 9 / 100;
-		//}
+		addhealth = old_maxhealth * 9 / 100;
+		max_health -= addhealth;
 
-		//if (addhealth > 0)
-		//{
-			max_health -= addhealth;
-			// [CW] not logical to increase health to max_health when level in lowered
-			//
-			if (Health > max_health)
-				Health = max_health;
-			//Health = max_health; // [FB] Just make it the same as the max_health value
-			MO.Health = Health;
-		//}
+		if (Health > max_health)
+			Health = max_health;
+		MO.Health = Health;
 	}
 
 	LevelChanged();
@@ -2418,7 +2359,7 @@ void UseArtiPoisonBag()
 		}
 		break;
 
-	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:	
+	case HexenDefs::ALTFIRE_POISONBAG_CLOUD:
 		bomb = KArenaPlayerPawn(MO).Spawn_2(none, PoisonBag, MO.Origin +
 			vector(16.0 * cos(angle), 24.0 * sin(angle), 8.0 - MO.FloorClip));
 		if (bomb)
