@@ -48,9 +48,12 @@ enum
 	ORDER__FOLLOW,				// follow actor
 	ORDER__ATTACKALL,			// havoc! attack everyone on map
 	ORDER__ATTACKTHING,			// attack single target until its death
-	ORDER__EVADETHING,
-	ORDER__EVADEPOS,
-	ORDER__WANDER
+	ORDER__EVADETHING,			// evade thing while it is alive
+	ORDER__EVADEPOS,			// stay away from some position
+	ORDER__EVADEDIR,			// stay away from something in defined direction
+	ORDER__WANDER,				// just wander around
+	ORDER__USELINE,				// come closer and 'use' line
+	ORDER__USETHING				// come closer and 'use' thing
 };
 
 bool						bSituative;
@@ -61,7 +64,7 @@ int							Priority;	// 0 is highest (unquestioned order)
 float						Duration;	// 0.0 means unlimited duration
 float						Time;
 
-IntelligentActor::generic_target_t		GnTarget;
+IntelligentActor::generic_target_t		Target;
 
 bool									bTargetMustBeAlive;
 
@@ -74,33 +77,52 @@ IntelligentActor			Owner;
 
 //==========================================================================
 //
-//	CheckCompleted
+//	ConsiderCompleted
 //
 //==========================================================================
 
-bool CheckCompleted()
+bool ConsiderCompleted()
 {
 	if (Duration > 0.0 && Time <= 0.0)
 		return true;
 
+	bool bCompleted = false;
+
 	switch (Order)
 	{
 	case ORDER__NONE:
-		return true;
+		bCompleted = true;
 	case ORDER__ATTACKTHING:
 	case ORDER__ATTACKALL:
 	case ORDER__FOLLOW:
 	case ORDER__EVADETHING:
-		return !GnTarget.Thing || GnTarget.Thing.IsDestroyed() || (bTargetMustBeAlive && GnTarget.Thing.Health <= 0);
+		bCompleted = !Target.Thing || Target.Thing.IsDestroyed() || (bTargetMustBeAlive && Target.Thing.Health <= 0);
+		break;
 	case ORDER__WALKTO:
 	case ORDER__WALKPATH:
+	case ORDER__PATROL2PT:
 	case ORDER__PATROLPATH:
 	case ORDER__PATROLLOOP:
-		return (Length(Owner.Origin - GnTarget.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
+		bCompleted = (Length(Owner.Origin - Target.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
 	case ORDER__WANDER:
-		return (Length(Owner.Origin - NextPos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
+		bCompleted = (Length(Owner.Origin - NextPos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY );
 	}
-	return false;
+
+	switch (Order)
+	{
+	case ORDER__ATTACKALL:
+		Owner.bIgnoreTeams = Owner.default.bIgnoreTeams;
+		break;
+	case ORDER__PATROL2PT:
+		{
+			TVec v = Target.Pos;
+			Target.Pos = NextPos;
+			NextPos = v;
+		}
+		break;
+	}
+
+	return bCompleted;
 }
 
 //==========================================================================

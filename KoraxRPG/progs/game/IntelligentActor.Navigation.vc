@@ -1,0 +1,803 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: IntelligentActor.Navigation.vc 1963 2009-03-06 23:26:20Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Route Management
+//
+//
+//**************************************************************************
+
+const int			RouteBuildContinuesLimit = 16;
+const int			RouteBuildIterationsLimit = 16;
+
+KRPGLevelInfo::routebuild_t	RouteBuild;
+
+Route				NRoute;		// common route, a list of nodes
+Route				NPostRoute;	// an optional route to switch on after PRoute is completed
+int					NRouteNodeIndex;
+// since NRoute can sometime be a reference to precreated route between
+// Priority Nodes, in these cases actor will need to know which direction
+// to move along
+bool				bWalkNRouteBackward;
+Route				PRoute;		// priority route, a list of checkpoints
+int					PRouteNodeIndex;
+
+// Dynamic data for route building that allows continues building
+// with multiple iterations
+struct multiroutebuild_t
+{
+	bool bBuilding;
+	Node NFrom;
+	Node NTo;
+	PriorityNode PNFrom;
+	PriorityNode PNTo;
+};
+
+multiroutebuild_t MultiRouteBuild;
+
+//==========================================================================
+//
+//	CleanRoutes
+//
+//==========================================================================
+
+void CleanRoutes()
+{
+	RouteBuild.bBuilding = false;
+
+	MultiRouteBuild.bBuilding = false;
+	MultiRouteBuild.NFrom = none;
+	MultiRouteBuild.NTo = none;
+	MultiRouteBuild.PNFrom = none;
+	MultiRouteBuild.PNTo = none;
+
+	RouteBuild.ContinuesCount = 0;
+	RouteBuild.IterationsCount = 0;
+	Behavior.RouteRebuildTime = 0;
+
+	if (NRoute)
+	{
+		NRoute.Destroy();
+		NRoute = none;
+	}
+
+	if (PRoute)
+	{
+		PRoute.Destroy();
+		PRoute = none;
+	}
+}
+
+//==========================================================================
+//
+//	DoRoute
+//
+//==========================================================================
+
+void DoRoute()
+{
+	if (!KRPGLevelInfo(Level).bNodeGraphBuild)
+		return;
+
+	// update timers
+	if (Behavior.RouteRebuildTime > 0)
+		Behavior.RouteRebuildTime--;
+	//if (Behavior.bUsingRoute && Behavior.CheckFTargetPosTime > 0)
+	//	Behavior.CheckFTargetPosTime--;
+	if (Behavior.bLostFTarget && Behavior.LostFTargetTime > 0)
+		Behavior.LostFTargetTime--;
+
+	// CHECKME -- maybe move to more general routine
+	if (TaskLeader)
+	{
+		// CHECKME -- what else can be important here?
+		if (TaskLeader.Health <= 0 || TaskLeader.Team != Team)
+		{
+			TaskLeader = none;
+		}
+		else
+		{
+			if (TaskLeader.FTarget.Thing)
+			{
+				if (TaskLeader.FTarget.Thing != FTarget.Thing)
+					TaskLeader = none;
+			}
+			else if (TaskLeader.FTarget.Action)
+			{
+				if (TaskLeader.FTarget.Pos != FTarget.Pos)
+					TaskLeader = none;
+			}
+			else
+				TaskLeader = none;
+		}
+	}
+
+	//
+	// [CW]
+	//
+	// Now, here's the task: IA may use route method to reach not only
+	// things (entity objects), but custom map positions as well.
+	// We must remember this all the way 'round here.
+	// Also, important - FTarget should be used here as a final target,
+	// ITarget is to set up next node, Entity::Target is no use here at all.
+	//
+	// If FTarget.Thing is set, FTarget.Pos is used to store the target
+	// thing position at certain moments of time only, this is needed to
+	// check if target has moved far away from it's previous position.
+	//
+	//
+	if (FTarget.Thing ?
+		(Behavior.bKnowFTargetPos && CanReach(FTarget.Thing.Origin, FTarget.Thing)) :
+		CanReach(FTarget.Pos, none))
+	{
+		if (FTarget.Thing && (Behavior.bLostFTarget || NRoute))
+		{
+			// CHECKME, why does this need all these conditions?
+			Behavior.bLostFTarget = false;
+		}
+		TaskLeader = none;
+		CleanRoutes();
+		// Set immediate target
+		SetImmediateTarget(FTarget.Thing, FTarget.Pos, FTarget.Action);
+		return;
+	}
+	else if (TaskLeader)
+	{
+		if (CanReach(TaskLeader.Origin, none))
+		{
+			return;
+		}
+
+		// Try to find a reachable node from which TaskLeader is also reachable
+		// (this usually works if TaskLeader is just beyond the corner)
+		Node N = FindAcceptableTargetNode(Node, TaskLeader.Origin, none, true);
+		if (N)
+		{
+			ITarget.Thing = N;
+			return;
+		}
+	}
+	else if (NRoute)
+	{
+		///////// If check target pos timer run out, pawn should reconsider its target position
+		//////////if (FTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
+		{
+			// If enemy moved away too far from his previous stored position,
+			// update that position and force rebuild route
+			if (Length(LastKnownPosition - FTarget.Pos) > Behavior.FTargetPosChangeLimit)
+			{
+				Behavior.RouteRebuildTime = 0;
+				FTarget.Pos = LastKnownPosition;
+			}
+			//else
+			//	Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+
+			//FTarget.Pos = LastKnownPosition;
+		}
+
+		if (Behavior.RouteRebuildTime > 0)
+		{
+			// check target route waypoint vicinity
+			AcceptTargetNode();
+			return;
+		}
+	}
+	else /* if (FTarget.Thing)*/
+	{
+		if (Behavior.bLostFTarget)
+		{
+			if (Behavior.LostFTargetTime > 0 || Behavior.RouteRebuildTime > 0)
+				return;
+		}
+		else
+		{
+			Behavior.bLostFTarget = true;
+			Behavior.LostFTargetTime = Behavior.LostFTargetTolerance;
+			return;
+		}
+	}
+
+	// Try get a task leader and follow him
+	if (bCanJoinTaskGroup)
+	{
+		if (TaskLeader || JoinTaskLeader())
+		{
+			CleanRoutes();
+			return;
+		}
+	}
+
+	// Well, it looks like it is right time for pawn to build a route
+	if (FTarget.Thing)
+	{
+		if (Behavior.bKnowFTargetPos)
+			BuildRoute(FTarget.Thing.Origin, FTarget.Thing);
+		else
+			BuildRoute(LastKnownPosition, none);
+	}
+	else
+		BuildRoute(FTarget.Pos, none);
+}
+
+//==========================================================================
+//
+//	JoinTaskLeader
+//
+//==========================================================================
+
+bool JoinTaskLeader()
+{
+	IntelligentActor IA;
+	float dist;
+	float min_dist = -1.0;
+	bool accept;
+
+	TaskLeader = none;
+	//
+	// FIXME: Use NEAR Search here
+	//
+	foreach AllThinkers(IntelligentActor, IA)
+	{
+		if (IA != self && IA != FTarget.Thing &&
+			IA.bCanBeTaskLeader && /*!IA.TaskLeader &&*/
+			IA.Health > 0 && IA.Team == Team)
+		{
+			accept = false;
+
+			if (FTarget.Thing)
+			{
+				if (IA.FTarget.Thing == FTarget.Thing) accept = true;
+			}
+			else if (FTarget.Action)
+			{
+				if (IA.FTarget.Pos == FTarget.Pos) accept = true;
+			}
+
+			if (accept)
+			{
+				dist = DistTo(IA);
+				if (dist <= ACCEPTABLE_TASKLEADER_VICINITY && (min_dist < 0.0 || dist < min_dist))
+				{
+					if (CanSee(IA) /*&& CanReach(IA.Origin)*/)
+					{
+						min_dist = dist;
+						TaskLeader = IA;
+					}
+				}
+			}
+		}
+	}
+
+	return TaskLeader != none;
+}
+
+//==========================================================================
+//
+//	BuildRoute
+//
+//	Tries to build a route using nodes.
+//	AimActor is optional.
+//
+//==========================================================================
+
+void BuildRoute(TVec AimPos, Actor AimActor)
+{
+	//-----------------------------------------------------------------
+	//
+	// Set up route anchors
+	//
+	//-----------------------------------------------------------------
+
+	if (!MultiRouteBuild.bBuilding)
+	{
+		CleanRoutes();
+
+		MultiRouteBuild.PNFrom = PriorityNode(FindNearestNode(PriorityNode, Origin, true));
+		
+		if (!MultiRouteBuild.PNFrom)
+		{
+			MultiRouteBuild.NFrom = FindNearestNode(Node, Origin, true);
+			MultiRouteBuild.PNFrom = PriorityNode(FindNearestNode(PriorityNode, Origin, false));
+		}
+
+		if (!MultiRouteBuild.PNFrom && !MultiRouteBuild.NFrom)
+		{
+			return;			// no luck
+		}
+
+		MultiRouteBuild.PNTo = PriorityNode(FindAcceptableTargetNode(PriorityNode, AimPos, AimActor, false));
+
+		// TODO: PNFrom == PNTo case
+
+		if (!MultiRouteBuild.PNTo)
+		{
+			MultiRouteBuild.NTo = FindAcceptableTargetNode(Node, AimPos, AimActor, false);
+			MultiRouteBuild.PNTo = PriorityNode(FindNearestNode(PriorityNode, AimPos, false));
+		}
+
+		if (!MultiRouteBuild.PNTo && !MultiRouteBuild.NTo)
+		{
+			return;			// no luck
+		}
+
+		MultiRouteBuild.bBuilding = true;
+
+		RouteBuild.IA = self;
+		RouteBuild.ContinuesLimit = RouteBuildContinuesLimit;
+		RouteBuild.IterationsLimit = RouteBuildIterationsLimit;
+	}
+
+
+
+	//-----------------------------------------------------------------
+	//
+	// Commence / continue building
+	//
+	//-----------------------------------------------------------------
+
+	if (MultiRouteBuild.PNFrom && MultiRouteBuild.PNTo)
+	{
+		if (KRPGLevelInfo(Level).BuildWaypoints(MultiRouteBuild.PNFrom, MultiRouteBuild.PNTo,
+			PRoute, PriorityNode, &RouteBuild))
+		{
+			if (MultiRouteBuild.NFrom || MultiRouteBuild.NTo)
+			{
+				// still have to build one or two nroutes
+				MultiRouteBuild.PNFrom = none;
+				MultiRouteBuild.PNTo = none;
+				return;
+			}
+			
+			// that should do it; set up the movement along the proute
+		}
+		else
+		{
+			if (RouteBuild.bBuilding)
+			{
+				// delayed proute build; shall continue next time
+				return;
+			}
+			else if (MultiRouteBuild.NFrom && MultiRouteBuild.NTo)
+			{
+				// build proute failed, but there's still chance to build 'heavy' nroute
+				MultiRouteBuild.PNFrom = none;
+				MultiRouteBuild.PNTo = none;
+				return;
+			}
+		}
+	}
+	else
+	{
+		if (MultiRouteBuild.NFrom)
+		{
+			if (PRoute)
+			{
+				// build a nroute from NFrom to the first pnode in proute
+				if (!KRPGLevelInfo(Level).BuildWaypoints(MultiRouteBuild.NFrom, PRoute.Nodes[0],
+					NRoute, Node, &RouteBuild))
+				{
+					if (RouteBuild.bBuilding)
+					{
+						// delayed nroute build; shall continue next time
+						return;
+					}
+				}
+			}
+			else if (MultiRouteBuild.NTo)
+			{
+				// this means there is no priority route, so have to build 'heavy'
+				// normal route from NFrom to NTo
+				if (!KRPGLevelInfo(Level).BuildWaypoints(MultiRouteBuild.NFrom, MultiRouteBuild.NTo,
+					NRoute, Node, &RouteBuild))
+				{
+					if (RouteBuild.bBuilding)
+					{
+						// delayed nroute build; shall continue next time
+						return;
+					}
+				}
+
+				// NTo node already used, no more route building needed
+				MultiRouteBuild.NTo = none;
+			}
+
+			MultiRouteBuild.NFrom = none;
+
+			if (MultiRouteBuild.NTo)
+			{
+				// There's still a need to build NPostRoute
+				return;
+			}
+			
+			// We've did everything we could
+		}
+		else if (MultiRouteBuild.NTo && PRoute)
+		{
+			// build a nroute from last pnode in proute to NTo
+			if (!KRPGLevelInfo(Level).BuildWaypoints(PRoute.Nodes[PRoute.Nodes.Num - 1], MultiRouteBuild.NTo,
+				NPostRoute, Node, &RouteBuild))
+			{
+				if (RouteBuild.bBuilding)
+				{
+					// delayed nroute build; shall continue next time
+					return;
+				}
+			}
+
+			MultiRouteBuild.NTo = none;
+
+			// We've did everything we could
+		}
+	}
+
+
+
+	//-----------------------------------------------------------------
+	//
+	// Run along the new route
+	//
+	//-----------------------------------------------------------------
+
+	MultiRouteBuild.bBuilding = false;
+
+	if (NRoute)
+	{
+		// The NRoute which was built explicitly is always forward-directed
+		bWalkNRouteBackward = false;
+		NRouteNodeIndex = -1;//CHECKME!!
+	}
+
+	if (PRoute)
+	{
+		PRouteNodeIndex = -1;
+	}
+
+	if (!NRoute && !PRoute)
+	{
+		// Bad news, looks like we've got nothing
+		Behavior.RouteRebuildTime = Behavior.RouteRebuildRateLow;
+	}
+	else
+	{
+		Behavior.bLostFTarget = false;
+		Behavior.RouteRebuildTime = Behavior.RouteRebuildRate;
+
+		SetNextTargetNode();
+	}
+}
+
+//==========================================================================
+//
+//	SetNextTargetNode
+//
+//==========================================================================
+
+void SetNextTargetNode()
+{
+	if (!NRoute && !PRoute)
+		return;
+
+	if (!NextWaypoint() && !NextCheckpoint())
+	{
+		// Route should be finished now
+		CleanRoutes();
+	}
+}
+
+//==========================================================================
+//
+//	NextWaypoint
+//
+//	Select next node from NRoute and assign it as immediate target
+//
+//==========================================================================
+
+bool NextWaypoint()
+{
+	Node N;
+
+	print("NextWaypoint");
+
+	if (!NRoute)
+	{
+		return false;
+	}
+	
+	if (bWalkNRouteBackward)
+	{
+		NRouteNodeIndex--;
+		print("walk bw, index = %i", NRouteNodeIndex);
+		if (NRouteNodeIndex < 0)
+		{
+			return false;
+		}
+
+		while (NRouteNodeIndex >= 1 && CanReach(NRoute.Nodes[NRouteNodeIndex - 1].Origin))
+		{
+			NRouteNodeIndex--;
+			print("can reach %i", NRouteNodeIndex);
+		}
+		print("target node index %i", NRouteNodeIndex);
+		N = NRoute.Nodes[NRouteNodeIndex];
+	}
+	else
+	{
+		NRouteNodeIndex++;
+		print("walk fw, index = %i", NRouteNodeIndex);
+		if (NRouteNodeIndex >= NRoute.Nodes.Num)
+		{
+			return false;
+		}
+
+		while (NRouteNodeIndex < NRoute.Nodes.Num - 1 && CanReach(NRoute.Nodes[NRouteNodeIndex + 1].Origin))
+		{
+			NRouteNodeIndex++;
+			print("can reach %i", NRouteNodeIndex);
+		}
+		print("target node index %i", NRouteNodeIndex);
+		N = NRoute.Nodes[NRouteNodeIndex];
+	}
+	
+	SetImmediateTarget(N);
+	return true;
+}
+
+
+//==========================================================================
+//
+//	NextCheckpoint
+//
+//	Select next priority path from current PRoute and assign it as NRoute
+//
+//==========================================================================
+
+bool NextCheckpoint()
+{
+	int i;
+	PriorityNode PNFrom;
+	PriorityNode PNTo;
+	Route NR;
+
+	if (!PRoute)
+	{
+		return false;
+	}
+
+	NRoute = none;
+
+	if (PRouteNodeIndex < 0 && PRoute.Nodes.Num == 1)
+	{
+		// Single pnode in reach
+		SetImmediateTarget(PRoute.Nodes[0]);
+		return true;
+	}
+
+	if (++PRouteNodeIndex < PRoute.Nodes.Num - 1)
+	{
+		PNFrom = PriorityNode(PRoute.Nodes[PRouteNodeIndex]);
+		PNTo = PriorityNode(PRoute.Nodes[PRouteNodeIndex + 1]);
+
+		for (i = 0; i < PNFrom.Paths.Num; i++)
+		{
+			NR = PNFrom.Paths[i];
+			if (NR.Nodes[0] == PNTo)
+			{
+				NRoute = NR;
+				bWalkNRouteBackward = true;
+				NRouteNodeIndex = NRoute.Nodes.Num;
+			}
+			else if (NR.Nodes[NR.Nodes.Num - 1] == PNTo)
+			{
+				NRoute = NR;
+				bWalkNRouteBackward = false;
+				NRouteNodeIndex = -1;
+			}
+
+			if (NRoute)
+			{
+				return NextWaypoint();
+			}
+		}
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	AcceptTargetNode
+//
+//	Checks whether actor is in vicinity of target node
+//
+//==========================================================================
+
+void AcceptTargetNode()
+{
+	if (!NRoute)
+		return;
+
+	if (!ITarget.Thing)
+		return;
+
+	if (Length(Origin - ITarget.Thing.Origin) <= ACCEPTABLE_WAYPOINT_VICINITY)
+	{
+		// TODO: any action specials here, related to the node!
+		SetNextTargetNode();
+	}
+}
+
+//==========================================================================
+//
+//	FindNearestNode
+//
+//	Method seeks for a nearest node which is reachable directly from
+//	this actor's current position.
+//
+//==========================================================================
+
+Node FindNearestNode(class<Node> NodeClass, TVec Org, bool bReachable)
+{
+	float		distance;
+	float		compdist;
+	Node		node;
+	Node		NodeSelected;
+	
+	NodeSelected = none;
+	distance = -1.0;
+	foreach AllThinkers(NodeClass, node)
+	{
+		compdist = Length(node.Origin - Org);
+		if (distance < 0.0 || compdist < distance)
+		{
+			if (!bReachable || CanReach(node.Origin, none))
+			{
+				distance = compdist;
+				NodeSelected = node;
+			}
+		}
+	}
+	return NodeSelected;
+}
+
+//==========================================================================
+//
+//	FindAcceptableTargetNode
+//
+//	Method seeks for a node, FROM WHICH this actor can reach its designated
+//	target directly, or, at least, shoot it using missile attack.
+//
+//	VTarget - exact target location;
+//	ATarget - a target actor (optional);
+//	bReachableFromHere - when set this flag makes the method try only nodes
+//          that are reachable directly from this actor's current position.
+//
+//	If no ATarget is given, method tries only nodes that have direct route
+//	to VTarget, otherwise it also checks which nodes could be possible
+//	positions for missile attack.
+//
+//==========================================================================
+
+Node FindAcceptableTargetNode(class<Node> NodeClass, TVec VTarget, Actor ATarget, bool bReachableFromHere)
+{
+	float		distance;
+	float		compdist;
+	Node		node;
+	Node		NodeSelectedCanReach;
+	Node		NodeSelectedCanSee;
+	TVec		OriginalOrigin;		// [CW] I like how it sounds :)
+	TAVec		OriginalAngles;
+	TVec		VectorToTarget;
+	
+	distance = -1.0;
+	OriginalOrigin = Origin;
+	OriginalAngles = Angles;
+	
+	foreach AllThinkers(NodeClass, node)
+	{
+		if (bReachableFromHere)
+		{
+			if (!CanReach(node.Origin, none))
+				continue;
+		}
+
+		compdist = Length(node.Origin - VTarget);
+		if (distance < 0.0 || compdist < distance)
+		{
+			UnlinkFromWorld();
+			Origin = node.Origin;
+			LinkToWorld();
+			VectorToTarget = (VTarget - Origin);
+			VectorAngles(&VectorToTarget, &Angles);
+			
+			if (CanReach(VTarget, ATarget))
+			{
+				distance = compdist;
+				NodeSelectedCanReach = node;
+			}
+			else if (MissileState && ATarget && CanSee(ATarget))
+			{
+				distance = compdist;
+				NodeSelectedCanSee = node;
+			}
+
+			if (bReachableFromHere)
+			{
+				UnlinkFromWorld();
+				Origin = OriginalOrigin;
+				LinkToWorld();
+			}
+		}
+	}
+	
+	if (!bReachableFromHere)
+	{
+		UnlinkFromWorld();
+		Origin = OriginalOrigin;
+		LinkToWorld();
+	}
+	Angles = OriginalAngles;
+
+	return (MissileState && (!NodeSelectedCanReach || NodeSelectedCanSee && Length(NodeSelectedCanSee.Origin - VTarget) < 
+							  Length(NodeSelectedCanReach.Origin - VTarget)))
+							  ? NodeSelectedCanSee : NodeSelectedCanReach;
+}
+
+//==========================================================================
+//
+//	GetNodeLinkMeasureFactor
+//
+//	Actors with special movement restrictions or extra abilities should
+//	override this function to reflect their peculiarities.
+//
+//==========================================================================
+
+float GetNodeLinkMeasureFactor(Node NOrigin, int iLink)
+{
+	// Default test is made to know if pawn has physical chance
+	// to pass by the link
+
+	// Minimal vertical space
+	if (NOrigin.Links[iLink].minyspace < Height)
+		return -1.0;
+
+	// Maximal step
+	if (NOrigin.Links[iLink].maxstepheight > MaxStepHeight)
+		return -1.0;
+
+	// Maximal dropoff
+	if (NOrigin.Links[iLink].maxdropoff > MaxDropoffHeight)
+		return -1.0;
+
+	return 1.0;
+}

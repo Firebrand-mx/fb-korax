@@ -284,6 +284,10 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	switch (Special)
 	{
 	//
+	// Overriding common specials
+	//case LNSPEC_ThingSetGoal: // <--- TODO!!
+
+	//
 	// Advanced thing manipulation
 	case ACTSPEC_Thing_Thrust3d:
 		if (E && E.IsA('Actor'))
@@ -330,7 +334,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_SetThreatReaction:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_SetThreatReaction(Arg2, itof(Arg3));
+			IntelligentActor(E).SetThreatReaction(Arg2, itof(Arg3));
 			buttonSuccess = true;
 		}
 		break;
@@ -339,35 +343,35 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_CancelAll:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderCancelAll();
+			IntelligentActor(E).CancelAllOrders();
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_CancelCurrent:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderCancelCurrent();
+			IntelligentActor(E).CancelCurrentOrder();
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_StandStill:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			IntelligentActor(E).OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_StandLook180:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			IntelligentActor(E).OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_StandLook360:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
+			IntelligentActor(E).OrderStandStill(false, Arg2, itof(Arg3) / 1000.0);
 			buttonSuccess = true;
 		}
 		break;
@@ -375,7 +379,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			Entity target = FindMobjFromTID(Arg4, none);
-			IntelligentActor(E).A_OrderWalkTo(false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderWalkTo(false, Arg2, itof(Arg3) / 1000.0,
 										target ? target.Origin : E.Origin);
 			buttonSuccess = true;
 		}
@@ -383,7 +387,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_WalkPath:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
 				Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
 				(Arg5 & KRPGDefs::PATH_DIRECTION_BACK) != 0);
 			buttonSuccess = true;
@@ -394,7 +398,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		{
 			Entity target1 = FindMobjFromTID(Arg4, none);
 			Entity target2 = FindMobjFromTID(Arg5, none);
-			IntelligentActor(E).A_OrderPatrol2Pt(false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderPatrol2Pt(false, Arg2, itof(Arg3) / 1000.0,
 							target1 ? target1.Origin : E.Origin,
 							target2 ? target2.Origin : E.Origin);
 			buttonSuccess = true;
@@ -403,7 +407,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_PatrolPath:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
 									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
 									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
 			buttonSuccess = true;
@@ -412,7 +416,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_PatrolLoop:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
 									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
 									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
 			buttonSuccess = true;
@@ -421,8 +425,8 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_Follow:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderFollowThing(false, Arg2, itof(Arg3) / 1000.0,
-										EntityEx(FindMobjFromTID(Arg4, none)));
+			IntelligentActor(E).OrderFollowThing(false, Arg2, itof(Arg3) / 1000.0,
+										Actor(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;
@@ -430,7 +434,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			Entity target = FindMobjFromTID(Arg4, none);
-			IntelligentActor(E).A_OrderEvadePos(false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderEvadePosition(false, Arg2, itof(Arg3) / 1000.0,
 										target ? target.Origin : E.Origin);
 			buttonSuccess = true;
 		}
@@ -438,22 +442,22 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_IA_Order_EvadeThing:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderEvadeThing(false, Arg2, itof(Arg3) / 1000.0,
-										EntityEx(FindMobjFromTID(Arg4, none)));
+			IntelligentActor(E).OrderEvadeThing(false, Arg2, itof(Arg3) / 1000.0,
+										Actor(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_AttackAll:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderAttackAll(false, Arg2, itof(Arg3) / 1000.0);
+			IntelligentActor(E).OrderAttackAll(false, Arg2, itof(Arg3) / 1000.0);
 			buttonSuccess = true;
 		}
 		break;
 	case ACTSPEC_IA_Order_AttackThing:
 		if (E && E.IsA('IntelligentActor'))
 		{
-			IntelligentActor(E).A_OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, EntityEx(FindMobjFromTID(Arg4, none)));
+			IntelligentActor(E).OrderAttackThing(false, Arg2, itof(Arg3) / 1000.0, Actor(FindMobjFromTID(Arg4, none)));
 			buttonSuccess = true;
 		}
 		break;
@@ -461,7 +465,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			Entity target = FindMobjFromTID(Arg4, none);
-			IntelligentActor(E).A_OrderWander(false, Arg2, itof(Arg3) / 1000.0,
+			IntelligentActor(E).OrderWander(false, Arg2, itof(Arg3) / 1000.0,
 										target ? target.Origin : E.Origin, itof(Arg5));
 			buttonSuccess = true;
 		}
@@ -1537,6 +1541,7 @@ struct routebuild_t
 	int ContinuesLimit;
 	int IterationsCount;
 	int IterationsLimit;
+	LinkedList RouteList;
 
 	IntelligentActor IA;
 	float Height;
@@ -1607,6 +1612,7 @@ bool BuildWaypoints(Node N_From, Node N_To, out Route _Route, optional class<Nod
 	{
 		routebuild->ContinuesCount++;
 		routebuild->IterationsCount = 0;
+		RouteList = routebuild->RouteList;
 	}
 	else
 	{
@@ -1626,6 +1632,7 @@ bool BuildWaypoints(Node N_From, Node N_To, out Route _Route, optional class<Nod
 		routebuild->IterationsCount = 0;
 
 		RouteList = LinkedList(SpawnObject(LinkedList));
+		routebuild->RouteList = RouteList;
 		RouteList.Add(R);
 	}
 
@@ -1758,6 +1765,7 @@ void ExtendRoute(LinkedList route_list, Node NDest, routebuild_t * routebuild)
 		{
 			if (routebuild->IA)
 			{
+				// FIXME!!!!!
 				// TODO!!
 				//LinkMeasureFactor = routebuild->IA.GetNodeLinkMeasureFactor(NExtendable, i);
 			}
@@ -1813,108 +1821,6 @@ void ExtendRoute(LinkedList route_list, Node NDest, routebuild_t * routebuild)
 	// Remove original head route
 	route_list.DestroyObject(route_list.refHead);
 }
-
-#ifdef OBSOLETE
-//==========================================================================
-//
-//	ExtendPriorityRoute
-//
-//	It is assumed that proute list passed to this method contains
-//	only one proute that need to be extended.
-//
-//	TODO: think of merging Node and PNode functions
-//
-//==========================================================================
-
-void ExtendPriorityRoute(LinkedList route_list, PriorityNode NDest, routebuild_t * routebuild)
-{
-	if (route_list.refHead == none)
-		return;
-
-	int i, j;
-	bool found;
-	float PreviousMeasure;
-	float LinkMeasureFactor;
-	Route R;
-	Route ExtendableRoute;
-	PriorityNode NExtendable;
-	PriorityNode PN;
-	
-	ExtendableRoute = Route(route_list.refHead);
-
-	PreviousMeasure = ExtendableRoute.Measure;
-	NExtendable = PriorityNode(ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1]);
-
-	// Do extension
-	for (i = 0; i < NExtendable.Paths.Num; i++)
-	{
-		// We are interested only in either the first or the last node from the route
-		// (since it should be PNode)
-		if (NExtendable == NExtendable.Paths[i].Nodes[0])
-		{
-			PN = PriorityNode(NExtendable.Paths[i].Nodes[NExtendable.Paths[i].Nodes.Num - 1]);
-		}
-		else
-		{
-			PN = PriorityNode(NExtendable.Paths[i].Nodes[0]);
-		}
-
-		found = false;
-		// Check if this node isn't already in route
-		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
-		{
-			if (Route(route_list.refHead).Nodes[j] == PN)
-			{
-				found = true;
-				break;
-			}
-		}
-
-		if (found)
-			continue;
-
-		// Test current link for reachability
-		if (routebuild->IA)
-		{
-			// TODO!!
-			//LinkMeasureFactor = routebuild->IA.GetNodeLinkMeasureFactor(NExtendable, i);
-		}
-		else
-		{
-			LinkMeasureFactor = NExtendable.Paths[i].Measure;
-		}
-		
-		if (LinkMeasureFactor <= 0.0)
-		{
-			continue;
-		}
-		
-		R = Route(SpawnObject(Route));
-		R.RouteClass = ExtendableRoute.RouteClass;
-		route_list.Add(R);
-		ExtendableRoute = R;
-
-		// Calculate underestimate
-		if (PreviousMeasure > 0.0)
-			ExtendableRoute.Measure = PreviousMeasure - Length(NDest.Origin - NExtendable.Origin);
-		else
-			ExtendableRoute.Measure = 0.0;
-		ExtendableRoute.Measure += LinkMeasureFactor;//NExtendable.Links[i].length * LinkMeasureFactor;
-		ExtendableRoute.Measure += Length(NDest.Origin - PN.Origin);
-		
-		// Copy head route original nodes to the new one
-		for (j = 0; j < Route(route_list.refHead).Nodes.Num; j++)
-			ExtendableRoute.Nodes[j] = Route(route_list.refHead).Nodes[j];
-			
-		// Add new node
-		ExtendableRoute.Nodes.Num = ExtendableRoute.Nodes.Num + 1;
-		ExtendableRoute.Nodes[ExtendableRoute.Nodes.Num - 1] = PN;
-	}
-	
-	// Remove original head route
-	route_list.DestroyObject(route_list.refHead);
-}
-#endif	// OBSOLETE
 
 //==========================================================================
 //

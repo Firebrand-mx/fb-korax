@@ -1,0 +1,386 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: IntelligentActor.DoAI.vc 1963 2009-03-06 23:26:20Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+const float		AI_ROUTINE_DELAY_IDLE = 10.0 / 35.0;
+const float		AI_ROUTINE_DELAY_ACTIVE = 35.0 / 35.0;
+
+float			AITime;
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	::Tick(deltaTime);
+
+	if (Health > 0)
+	{
+		if (CurrentTask)
+			CurrentTask.Tick(deltaTime);
+
+		AITime -= deltaTime;
+		if (AITime <= 0.0)
+		{
+			if (bDormant)
+			{
+				AITime = 0.0;
+			}
+			else
+			{
+				DoAI();
+				AITime = StateIsInSequence(State, IdleState) ? AI_ROUTINE_DELAY_IDLE :
+					AI_ROUTINE_DELAY_ACTIVE;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SetFinalTarget
+//
+//==========================================================================
+
+void SetFinalTarget(Actor Thing, optional TVec Pos, optional int Action)
+{
+	Behavior.bKnowFTargetPos = true;
+	FTarget.Thing = Thing;
+
+	if (specified_Pos)
+	{
+		FTarget.Pos = Pos;
+	}
+	else if (Thing)
+	{
+		FTarget.Pos = Thing.Origin;
+	}
+
+	FTarget.Action = Action;
+	LastKnownPosition = FTarget.Thing ? FTarget.Thing.Origin : FTarget.Pos;
+}
+
+//==========================================================================
+//
+//	SetImmediateTarget
+//
+//==========================================================================
+
+void SetImmediateTarget(Actor Thing, optional TVec Pos, optional int Action)
+{
+	ITarget.Thing = Thing;
+
+	if (specified_Pos)
+	{
+		ITarget.Pos = Pos;
+	}
+	else if (Thing)
+	{
+		ITarget.Pos = Thing.Origin;
+	}
+
+	ITarget.Action = Action;
+}
+
+//==========================================================================
+//
+//	SetDangerSource
+//
+//==========================================================================
+
+void SetDangerSource(Actor Thing, optional TVec Pos, optional float Angle)
+{
+	if (Thing)
+	{
+		DangerSource.Thing = Thing;
+		DangerSource.Action = ActorTask::ORDER__EVADETHING;
+	}
+	else if (specified_Pos)
+	{
+		DangerSource.Pos = Pos;
+		DangerSource.Action = ActorTask::ORDER__EVADEPOS;
+	}
+	else if (specified_Angle)
+	{
+		DangerSource.Angle = Angle;
+		DangerSource.Action = ActorTask::ORDER__EVADEDIR;
+	}	
+}
+
+//==========================================================================
+//
+//	DoAI
+//
+//==========================================================================
+
+void DoAI()
+{
+	UpdateTarget();
+	CheckThreat();
+	DoTasks();
+}
+
+//==========================================================================
+//
+//	CheckThreat
+//
+//==========================================================================
+
+void CheckThreat()
+{
+	bool bThreatened = false;
+
+	if (Behavior.ThreatReaction >= THREATREACTION__DETECT)
+	{
+		if (!Target || !Threshold)
+		{
+			Actor targ = Actor(Sector->SoundTarget);
+			if (targ && targ != Target && IsOkayToTarget(targ))
+			{
+				//if (Behavior.ThreatReaction == THREATREACTION__AMBUSH)
+				if (bAmbush)
+				{
+					// Do not target enemy yet, only become alerted by his presence
+					Alertness = HIGH_ALERTNESS;
+				}
+				else
+				{
+					float dist;
+					if (Target)
+					{
+						float dt = DistTo(Target);
+						dist = dt > Behavior.ThreatVicinity ? Behavior.ThreatVicinity : dt;
+					}
+					else
+						dist = Behavior.ThreatVicinity;
+
+					if (DistTo(targ) <= dist)
+					{
+						bThreatened = true;
+						Target = targ;
+						Threshold = BASETHRESHOLD;
+						Alertness = HIGH_ALERTNESS;
+
+						OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE +
+							CanSee(Target) ? THREATREACTION__SEE : THREATREACTION__DETECT, 0.0, Actor(Target));
+					}
+				}
+			}
+		}
+	}
+
+	if (Behavior.ThreatReaction >= THREATREACTION__SEE)
+	{
+		if (!Target || !Threshold)
+		{
+			float dist;
+			if (Target)
+			{
+				float dt = DistTo(Target);
+				dist = dt > Behavior.ThreatVicinity ? Behavior.ThreatVicinity : dt;
+			}
+			else
+				dist = Behavior.ThreatVicinity;
+			
+			if (LookForEnemy(bLookAllAround || (Alertness > 0.0), true, Origin, dist, Actor(Target)))
+			{
+				Alertness = HIGH_ALERTNESS;
+				Threshold = BASETHRESHOLD;
+
+				bThreatened = true;
+				OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE + THREATREACTION__SEE, 0.0, Actor(Target));
+			}
+		}
+	}
+
+	if (bThreatened && !bKeepSilent)
+	{
+		if (SightSound && StateIsInSequence(State, IdleState))
+		{
+			if (bBoss)
+			{
+				// Full volume
+				PlaySound(SightSound, CHAN_VOICE, 1.0, ATTN_NONE);
+			}
+			else
+			{
+				PlaySound(SightSound, CHAN_VOICE);
+			}
+		}
+		else
+		{
+			PlayActiveSound();
+		}
+	}
+
+	//
+	// Plan an evasive action, if needed
+	//
+	if (Behavior.ThreatReaction != THREATREACTION__NONE)
+	{
+		// TODO!!
+		if (DangerSource.Thing || DangerSource.Action)
+		{
+
+		}
+
+		if (bEvadeMelee)
+		{
+		}
+	}
+}
+
+//==========================================================================
+//
+//	ConsiderChangeState
+//
+//==========================================================================
+
+void ConsiderChangeState()
+{
+	// Common state changing
+	if (StateIsInSequence(State, IdleState))
+	{
+		// Actor is in Idle State, check if he needs to start the move
+		if (CurrentTask && CurrentTask.Order >= ActorTask::ORDER__WALKTO)
+		{
+			SetState(SeeState);
+		}
+	}
+}
+
+//==========================================================================
+//
+//	A_LookAI
+//
+//==========================================================================
+
+final void A_LookAI()
+{
+	ConsiderChangeState();
+}
+
+//==========================================================================
+//
+//	A_ChaseAI
+//
+//==========================================================================
+
+final void A_ChaseAI()
+{
+	//UpdateTarget();//CHECKME: maybe move to DoAI?
+
+	if (!bNeverUseRoutes)
+		DoRoute();
+
+	if (ITarget.Thing)
+		pDestination = &ITarget.Thing.Origin;
+	else if (ITarget.Action)
+		pDestination = &ITarget.Pos;
+	else if (NRoute)
+		pDestination = &NRoute.Nodes[NRouteNodeIndex].Origin;
+	else if (TaskLeader)
+		pDestination = &TaskLeader.Origin;
+	else
+		pDestination = NULL;
+
+					// CHECKME!!
+	if (DoMoveR && DoMoveR(false, none, MeleeState, MissileState, false, true, false))
+	{
+		// [CW] Still has Target to attack
+	}
+	else	// ???
+	{
+		//
+		// [CW] No current Target, think out what to do next
+		//
+
+		if (!CurrentTask /* ??? need this condition >>> *//*&& (ITarget.Thing == FTarget.Thing || ITarget.Pos == FTarget.Pos)*/)
+			// we have to check Thing and Pos in case Thing is 'none' in both I & F
+		{
+			// Final target gone, kill the route if any, prepare for new task
+			CleanRoutes();
+			SetFinalTarget(none);
+			SetImmediateTarget(none);
+			bInCombat = false;
+			SetState(IdleState);
+		}
+		else
+		{
+			// Final target is still there, go for it
+			if (/*Behavior.bUsingRoute*/NRoute)
+			{
+				/*if (!CurrentRoute)
+				{
+					Error("InteligentActor::A_ChaseAI: CurrentRoute reference is not set to an object while bUsingRoute flag is TRUE");
+					return;
+				}
+				*/
+				//ITarget.Thing = none;
+				//ITarget.Node = CurrentRoute.Nodes[RouteWayIndex];
+				//ITarget.Pos = ITarget.Node.Origin;
+				ITarget.Thing = NRoute.Nodes[NRouteNodeIndex];
+			}
+			else
+			{
+				SetImmediateTarget(FTarget.Thing, FTarget.Pos, FTarget.Action);
+			}
+		}
+	}
+
+	ConsiderChangeState();// CHECKME
+}
+
+//==========================================================================
+//
+//	UpdateTarget
+//
+//==========================================================================
+
+void UpdateTarget()
+{
+	// Update known info about target position, if this is a moving target
+	if (FTarget.Thing && FTarget.Thing.bCombatant)
+	{
+		if (Sector->SoundTarget == FTarget.Thing || CanSense(FTarget.Thing))
+		{
+			Behavior.bKnowFTargetPos = true;
+			LastKnownPosition = FTarget.Thing.Origin;
+		}
+		else
+		{
+			Behavior.bKnowFTargetPos = false;
+		}
+	}
+}
