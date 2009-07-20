@@ -57,7 +57,6 @@ int pic_smallinnum[10];
 int pic_bignum[10];
 int bignumwidth[10];
 int pic_minus;
-//int pic_arti[HexenDefs::NUMARTIFACTS];
 
 int pic_statbar;
 int pic_kills;
@@ -65,18 +64,6 @@ int pic_manadim[18];
 int pic_manavial[10];
 int pic_manavial6;
 int pic_manavial7;
-/* int pic_artiflash[5];
-int pic_wpslot;
-int pic_wpfull;
-int pic_wppiece[3];
-int wppiecex[3];
-int pic_keybar;
-int pic_armor[4];*/
-
-/* int pic_invbar;
-int pic_selectbox;
-int pic_invgeml[2];
-int pic_invgemr[2];*/
 
 int pic_fly[16];
 int pic_mino[16];
@@ -205,7 +192,6 @@ void StartMap()
 		bignumwidth[i] = info.width;
 	}
 	pic_minus = R_RegisterPic('negnum');
-//	pic_artibox = R_RegisterPic('artibox');
 
 	//
 	//  MAIN BAR
@@ -242,68 +228,7 @@ void StartMap()
 	pic_manavial[9] = R_RegisterPic('manavl5');
 	pic_manavial6 = R_RegisterPic('manavl6');
 	pic_manavial7 = R_RegisterPic('manavl7');
-/*	pic_artiflash[0] = R_RegisterPic('useartia');
-	pic_artiflash[1] = R_RegisterPic('useartib');
-	pic_artiflash[2] = R_RegisterPic('useartic');
-	pic_artiflash[3] = R_RegisterPic('useartid');
-	pic_artiflash[4] = R_RegisterPic('useartie');
-	switch (sb_pclass)
-	{
-	case HexenDefs::PCLASS_FIGHTER:
-		pic_wpslot = R_RegisterPic('wpslot0');
-		pic_wppiece[0] = R_RegisterPic('wpiecef1');
-		pic_wppiece[1] = R_RegisterPic('wpiecef2');
-		pic_wppiece[2] = R_RegisterPic('wpiecef3');
-		pic_wpfull = R_RegisterPic('wpfull0');
-		wppiecex[0] = 190;
-		wppiecex[1] = 225;
-		wppiecex[2] = 234;
-		break;
-	case HexenDefs::PCLASS_CLERIC:
-		pic_wpslot = R_RegisterPic('wpslot1');
-		pic_wppiece[0] = R_RegisterPic('wpiecec1');
-		pic_wppiece[1] = R_RegisterPic('wpiecec2');
-		pic_wppiece[2] = R_RegisterPic('wpiecec3');
-		pic_wpfull = R_RegisterPic('wpfull1');
-		wppiecex[0] = 190;
-		wppiecex[1] = 212;
-		wppiecex[2] = 225;
-		break;
-	case HexenDefs::PCLASS_MAGE:
-		pic_wpslot = R_RegisterPic('wpslot2');
-		pic_wppiece[0] = R_RegisterPic('wpiecem1');
-		pic_wppiece[1] = R_RegisterPic('wpiecem2');
-		pic_wppiece[2] = R_RegisterPic('wpiecem3');
-		pic_wpfull = R_RegisterPic('wpfull2');
-		wppiecex[0] = 190;
-		wppiecex[1] = 205;
-		wppiecex[2] = 224;
-		break;
-	}
 
-	//
-	//  KEY BAR
-	//
-	pic_keybar = R_RegisterPic('keybar');
-	for (i = 0; i < HexenDefs::NUMKEYS; i++)
-	{
-		pic_key[i] = R_RegisterPic(StrToName(va("keyslot%x", i + 1)));
-	}
-	for (i = 0; i < HexenDefs::NUMARMOR; i++)
-	{
-		pic_armor[i] = R_RegisterPic(StrToName(va("armslot%d", i + 1)));
-	}
-
-	//
-	//  INVENTORY
-	//
-	pic_invbar = R_RegisterPic('invbar');
-	pic_selectbox = R_RegisterPic('selectbo');
-	pic_invgeml[0] = R_RegisterPic('invgeml1');
-	pic_invgeml[1] = R_RegisterPic('invgeml2');
-	pic_invgemr[0] = R_RegisterPic('invgemr1');
-	pic_invgemr[1] = R_RegisterPic('invgemr2');
-*/
 	//
 	//  ANIMATED ICONS
 	//
@@ -484,25 +409,26 @@ void SB_DrawMainBar()
 	SB_DrawNumber9(460, 20, cl.experience, 1);
 	SB_DrawNumber9(580, 20, cl.next_level, 1);*/
 
-	// Frags
+	// Game mode information
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam ||
 		ClGame.deathmatch == HexenDefs::game_kth)
 	{
-/*		DrawPic(38, 162, pic_kills);
-		SB_DrawNumber9(40, 176, cl.Frags, 0);
-		*/
 		if (ClGame.deathmatch == HexenDefs::game_dm ||
 			ClGame.deathmatch == HexenDefs::game_kth)
 		{
-			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+			DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
 		}
-		SB_DrawNumber9(62, 20, cl.Frags, 0);
+		DrawText(72, 20, "frags:", CR_UNTRANSLATED);
+		SB_DrawNumber9(77, 30, cl.Frags, 0);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
-			SB_DrawNumber9(105, 20, cl.TeamFrags, 0);
-			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
+			DrawText(145, 20, "t. pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(150, 30, cl.TeamPosition + 1, 1);
+			DrawText(215, 20, "t. frags:", CR_UNTRANSLATED);
+			SB_DrawNumber9(220, 30, cl.TeamFrags, 0);
 		}
 	}
 
@@ -510,43 +436,73 @@ void SB_DrawMainBar()
 		ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
-		SB_DrawNumber9(62, 20, cl.KillCount, 0);
-		SB_DrawNumber9(158, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
+		DrawText(72, 20, "kills:", CR_UNTRANSLATED);
+		SB_DrawNumber9(77, 30, cl.KillCount, 0);
+		DrawText(258, 20, "remaining:", CR_UNTRANSLATED);
+		SB_DrawNumber9(273, 30, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
 		if (ClGame.deathmatch == HexenDefs::game_sweep || ClGame.deathmatch == HexenDefs::game_survival)
 		{
-			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+			DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
 		}
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
-			SB_DrawNumber9(105, 20, cl.TeamKills, 0);
-			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
+			DrawText(135, 20, "t. pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(140, 30, cl.TeamPosition + 1, 1);
+			DrawText(195, 20, "t. kills:", CR_UNTRANSLATED);
+			SB_DrawNumber9(200, 30, cl.TeamKills, 0);
+		}
+		if (ClGame.deathmatch == HexenDefs::game_survival)
+		{
+			if (GameSurvival(KArenaGameModel(MainGameInfo(cl.Level.Game).GameModel)).Wave)
+			{
+				DrawText(288, 20, "wave:", CR_UNTRANSLATED);
+				SB_DrawNumber9(293, 30, GameSurvival(KArenaGameModel(MainGameInfo(cl.Level.Game).GameModel)).Wave, 0);
+			}
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_football)
 	{
-		SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
 		if (cl.Team)
 		{
-			SB_DrawNumber9(62, 20, cl.Team.Goals, 0);
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.Goals, 0);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_ctf)
 	{
-		SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
 		if (cl.Team)
 		{
-			SB_DrawNumber9(62, 20, cl.Team.FlagCaptures, 0);
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.FlagCaptures, 0);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_xmas)
 	{
-		SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
-		SB_DrawNumber9(92, 20, cl.Score, 0);
+		DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
+		DrawText(102, 20, "score:", CR_UNTRANSLATED);		
+		SB_DrawNumber9(107, 30, cl.Score, 0);
 	}
-	
+
+	if (ClGame.deathmatch == HexenDefs::game_domination)
+	{
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
+		if (cl.Team)
+		{
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.Score, 0);
+		}
+	}
+
 	if (cl.Health >= 25)
 	{
 		SB_DrawNumber9(BAR_X + 40, BAR_Y + 15, sb_health, 0);
@@ -565,6 +521,7 @@ void SB_DrawMainBar()
 	sb_manaVial1 = 0;
 	sb_manaVial2 = 0;
 	sb_manaVial3 = 0;
+
 	// Update mana graphics based upon mana count/weapon type
 	if (cl.ReadyWeapon &&
 		(cl.ReadyWeapon.AmmoType1 == Mana1 ||
@@ -660,41 +617,6 @@ void SB_DrawMainBar()
 	}
 	ShadeRect(BAR_X + 239, BAR_Y + 5, 3, 22 - (22 * cl.exp_level) / 10, 0.99);
 
-	// Ready artifact
-/*	if (cl.ArtifactFlash)
-	{
-		DrawPic(148, 164, pic_artiflash[cl.ArtifactFlash]);
-	}
-	else if (cl.readyArtifact > 0)
-	{
-		DrawPic(143, 163, pic_arti[cl.readyArtifact]);
-		SB_DrawINumber(166, 184, cl.inventory[cl.inv_ptr].count);
-	}
-*/
-	// Weapon Pieces
-	//[Korax]
-/*	if ((cl.stats.flags & SBF_PIECES_MASK) != SBF_PIECES_MASK)
-	{
-		DrawPic(190, 162, pic_wpslot);
-		if (cl.stats.flags & SBF_PIECE1)
-		{
-			DrawPic(wppiecex[0], 162, pic_wppiece[0]);
-		}
-		if (cl.stats.flags & SBF_PIECE2)
-		{
-			DrawPic(wppiecex[1], 162, pic_wppiece[1]);
-		}
-		if (cl.stats.flags & SBF_PIECE3)
-		{
-			DrawPic(wppiecex[2], 162, pic_wppiece[2]);
-		}
-	}
-	else
-	{
-		DrawPic(190, 162, pic_wpfull);
-	}
-*/
-
 	// Armor
 	BasicArmor Armor = BasicArmor(EntityEx(cl.MO).FindInventory(BasicArmor));
 	SB_DrawNumber9(BAR_X + 253, BAR_Y + 15, Armor ? Armor.Amount : 0, 0);
@@ -739,95 +661,6 @@ void DrawMana(class<Ammo> Type, int X, int manaVial, int DimBase,
 
 //==========================================================================
 //
-//	SB_DrawKeyBar
-//
-//==========================================================================
-
-/* void SB_DrawKeyBar()
-{
-	int i;
-	int num;
-	Inventory Item;
-
-	SB_DrawBackground();
-	DrawPic(BAR_X + 38, BAR_Y + 1, pic_keybar);
-
-	//  Keys
-	Item = EntityEx(cl.MO).Inventory;
-	for (num = 0; Item && num < 5; Item = Item.Inventory)
-	{
-		if (Key(Item))
-		{
-			DrawPic(BAR_X + 46 + num * 20, BAR_Y + 3,
-				R_RegisterPic(Item.IconName));
-			num++;
-		}
-	}
-
-	//  Armor
-	for (i = 0; i < NUMARMOR; i++)
-	{
-		if (!cl.armorpoints[i])
-		{
-			num = 100;
-		}
-		else if (cl.armorpoints[i] <=
-			(ArmorIncrement[sb_pclass * NUMARMOR + i] / 4.0))
-		{
-			num = 66;
-		}
-		else if (cl.armorpoints[i] <=
-			(ArmorIncrement[sb_pclass * NUMARMOR + i] / 2.0))
-		{
-			num = 33;
-		}
-		else
-		{
-			num = 0;
-		}
-		DrawPic(150 + 31 * i, 164, pic_armor[i], num);
-	}
-}*/
-
-//==========================================================================
-//
-//	SB_DrawInventoryBar
-//
-//==========================================================================
-
-/* void SB_DrawInventoryBar()
-{
-	int i;
-
-	SB_DrawBackground();
-	DrawPic(BAR_X + 38, BAR_Y + 1, pic_invbar);
-
-	//  Inventory
-	Inventory Item = cl.InvFirst;
-	for (i = 0; Item && i < 7; i++)
-	{
-		DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2,
-			R_RegisterPic(Item.IconName));
-		SB_DrawINumber(BAR_X + 71 + i * 31, BAR_Y + 24, Item.Amount);
-		if (Item == cl.InvPtr)
-		{
-			DrawPic(BAR_X + 50 + i * 31, BAR_Y + 2, pic_selectbox);
-		}
-		Item = Item.NextInv();
-	}
-
-	if (cl.InvFirst && cl.InvFirst.PrevInv())
-	{
-		DrawPic(BAR_X + 42, BAR_Y + 2, pic_invgeml[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
-	}
-	if (Item)
-	{
-		DrawPic(BAR_X + 269, BAR_Y + 2, pic_invgemr[!(ClGame.GLevel.TicTime & 4) ? 0 : 1]);
-	}
-}*/
-
-//==========================================================================
-//
 //	SB_DrawFullscreenStats
 //
 //==========================================================================
@@ -867,7 +700,7 @@ void SB_DrawFullscreenStats()
 	SB_DrawNumber9(460, 20, 0+cl.experience, 1);
 	SB_DrawNumber9(580, 20, 0+cl.next_level, 1);*/
 
-	// Frags
+	// Game mode information
 	if (ClGame.deathmatch == HexenDefs::game_dm ||
 	    ClGame.deathmatch == HexenDefs::game_dmteam ||
 		ClGame.deathmatch == HexenDefs::game_kth)
@@ -875,14 +708,18 @@ void SB_DrawFullscreenStats()
 		if (ClGame.deathmatch == HexenDefs::game_dm ||
 			ClGame.deathmatch == HexenDefs::game_kth)
 		{
-			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
+			DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
 		}
-		SB_DrawNumber9(62, 20, cl.Frags, 0);
+		DrawText(72, 20, "frags:", CR_UNTRANSLATED);
+		SB_DrawNumber9(77, 30, cl.Frags, 0);
 
 		if (ClGame.deathmatch == HexenDefs::game_dmteam)
 		{
-			SB_DrawNumber9(105, 20, cl.TeamFrags, 0);
-			SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
+			DrawText(145, 20, "t. pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(150, 30, cl.TeamPosition + 1, 1);
+			DrawText(215, 20, "t. frags:", CR_UNTRANSLATED);
+			SB_DrawNumber9(220, 30, cl.TeamFrags, 0);
 		}
 	}
 
@@ -890,88 +727,70 @@ void SB_DrawFullscreenStats()
 		ClGame.deathmatch == HexenDefs::game_sweep ||
 	    ClGame.deathmatch == HexenDefs::game_sweepteam)
 	{
-		if (cl.KillCount)
-		{
-			SB_DrawNumber9(62, 20, cl.KillCount, 0);
-		}
-		if (cl.Level.TotalKills - cl.Level.CurrentKills)
-		{
-			SB_DrawNumber9(148, 20, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
-		}
+		DrawText(72, 20, "kills:", CR_UNTRANSLATED);
+		SB_DrawNumber9(77, 30, cl.KillCount, 0);
+		DrawText(258, 20, "remaining:", CR_UNTRANSLATED);
+		SB_DrawNumber9(273, 30, cl.Level.TotalKills - cl.Level.CurrentKills, 0);
 		if (ClGame.deathmatch == HexenDefs::game_sweep || ClGame.deathmatch == HexenDefs::game_survival)
 		{
-			if (cl.PlayerPosition + 1)
-			{
-				SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
-			}
+			DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
 		}
 		if (ClGame.deathmatch == HexenDefs::game_sweepteam)
 		{
-			if (cl.TeamKills)
+			DrawText(135, 20, "t. pos.:", CR_UNTRANSLATED);
+			SB_DrawNumber9(140, 30, cl.TeamPosition + 1, 1);
+			DrawText(195, 20, "t. kills:", CR_UNTRANSLATED);
+			SB_DrawNumber9(200, 30, cl.TeamKills, 0);
+		}
+		if (ClGame.deathmatch == HexenDefs::game_survival)
+		{
+			if (GameSurvival(KArenaGameModel(MainGameInfo(cl.Level.Game).GameModel)).Wave)
 			{
-				SB_DrawNumber9(105, 20, cl.TeamKills, 0);
-			}
-			if (cl.TeamPosition + 1)
-			{
-				SB_DrawNumber9(75, 20, cl.TeamPosition + 1, 1);
+				DrawText(288, 20, "wave:", CR_UNTRANSLATED);
+				SB_DrawNumber9(293, 30, GameSurvival(KArenaGameModel(MainGameInfo(cl.Level.Game).GameModel)).Wave, 0);
 			}
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_football)
 	{
-		if (cl.TeamPosition + 1)
-		{
-			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
-		}
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
 		if (cl.Team)
 		{
-			if (cl.Team.Goals)
-			{
-				SB_DrawNumber9(62, 20, cl.Team.Goals, 0);
-			}
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.Goals, 0);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_ctf)
 	{
-		if (cl.TeamPosition + 1)
-		{
-			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
-		}
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
 		if (cl.Team)
 		{
-			if (cl.Team.FlagCaptures)
-			{
-				SB_DrawNumber9(62, 20, cl.Team.FlagCaptures, 0);
-			}
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.FlagCaptures, 0);
 		}
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_xmas)
 	{
-		if (cl.PlayerPosition + 1)
-		{
-			SB_DrawNumber9(32, 20, cl.PlayerPosition + 1, 1);
-		}
-		if (cl.Score)
-		{
-			SB_DrawNumber9(92, 20, cl.Score, 0);
-		}
+		DrawText(22, 20, "pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.PlayerPosition + 1, 1);
+		DrawText(102, 20, "score:", CR_UNTRANSLATED);		
+		SB_DrawNumber9(107, 30, cl.Score, 0);
 	}
 
 	if (ClGame.deathmatch == HexenDefs::game_domination)
 	{
-		if (cl.TeamPosition + 1)
-		{
-			SB_DrawNumber9(32, 20, cl.TeamPosition + 1, 1);
-		}
+		DrawText(22, 20, "t. pos.:", CR_UNTRANSLATED);
+		SB_DrawNumber9(27, 30, cl.TeamPosition + 1, 1);
 		if (cl.Team)
 		{
-			if (cl.Team.Score)
-			{
-				SB_DrawNumber9(92, 20, cl.Team.Score, 0);
-			}
+			DrawText(102, 20, "t. score:", CR_UNTRANSLATED);
+			SB_DrawNumber9(107, 30, cl.Team.Score, 0);
 		}
 	}
 
