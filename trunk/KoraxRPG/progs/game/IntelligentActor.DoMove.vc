@@ -1,0 +1,699 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: IntelligentActor.DoMove.vc 1963 2009-03-06 23:26:20Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//==========================================================================
+//
+//	[CW]
+//
+// IntelligentActor movement is controlled by DoMove method, which acts
+// as a fully substitute for common Actor::DoChase. DoMove performs not only
+// direct movement towards destination, but also various advanced techniques
+// like evasive actions: strafing, backing etc.
+//
+// In DoMove following "anchors" are used:
+// - EntityEx::Target is used as a thing which should be attacked when possible;
+//   Target is set by CheckThreat method or, in traditional way, by calling
+//   IsOkayToSwitchTarget from EntityEx::Damage; as the additional option, Target
+//   will be set by issuing corresponding Attack order either from other parts of
+//   the code or from the map script.
+// - IntelligenceActor::Destination is used as a place the actor is trying to
+//   reach; it may or may not point to EntityEx::Target's origin; Destination is
+//   updated in A_ChaseAI every time it is called.
+// - IntelligenceActor::DangerSource is used to make actor evade some particular
+//   place or thing; DangerSource is set in CheckThreat method.
+//
+// IntelligentActor shall usually try to move towards Destination. Destination may
+// be Target's origin or some other point on map (a path node, or else). If
+// Destination is not defined, actor shall call common A_Wander method to simply
+// roam around aimlessly. If actor has Target set, Destination is always set (in
+// other words, if Destination is not set, we may be sure that there's no Target
+// as well).
+// Regardless of what Destination is, actor's movement may be affected by
+// current situation; usually a presence of Target and/or DangerSource may change
+// actor's behavior is particular way, like forcing him to perform an evasive
+// action or other special move of tactical nature. Thus, some actors will try
+// to keep distance with Target even though Target may be their Destination.
+//
+// NOTE: EntityEx::strafecount variable is used as a counter for most evasive
+// actions (not only backing).
+//
+//==========================================================================
+
+float MoveDirFree;
+
+//============================================================================
+//
+//  A_NormalDoMove
+//
+//============================================================================
+
+bool A_NormalDoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+				bool NightmareFast, bool PlayActive, bool DontMove)
+{
+	return DoMove(false /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+		LineSpecialGameInfo(Level.Game).bNightmareFastChase /* NightmareFast*/, PlayActive, DontMove);
+}
+
+//============================================================================
+//
+//  A_FastDoMove
+//
+//============================================================================
+
+bool A_FastDoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+				bool NightmareFast, bool PlayActive, bool DontMove)
+{
+	return DoMove(true /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+		true /* NightmareFast*/, PlayActive, DontMove);
+}
+
+//==========================================================================
+//
+//	DoMove
+//
+//==========================================================================
+
+bool DoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+				bool NightmareFast, bool PlayActive, bool DontMove)
+{
+	float		delta;
+	float		dist;
+	float		ang;
+	float		oldX;
+	float		oldY;
+	int			oldFloor;
+
+	if (bInChase)
+	{
+		return false;
+	}
+	bInChase = true;
+
+	//	Andy Baker's stealth monsters
+	if (bStealth)
+	{
+		VisDir = -1;
+	}
+
+	if (ReactionCount)
+	{
+		ReactionCount--;
+	}
+
+	//	If the target is dead stop chasing it.
+	//if (!Actor(Target).CanBeAttacked())
+	if (!IsOkayToTarget(Actor(Target)))
+	{
+		Target = none;
+	}
+
+	//bInCombat = true;	// CHECKME!
+	//	Modify target threshold.
+	if (Threshold)
+	{
+		if (!Target)
+		{
+			Threshold = 0;
+		}
+		else
+		{
+			Threshold--;
+		}
+	}
+
+	if (NightmareFast && Level.Game.fastparm)
+	{
+		//	Monsters move faster in nightmare mode.
+		StateTime *= 0.5;
+		if (StateTime < 0.1)
+		{
+			StateTime = 0.1;
+		}
+	}
+
+	//	Turn towards movement direction if not there yet.
+	// killough 9/7/98: keep facing towards target if strafing or backing out
+	// [CW] FIXME -- not all evasive moves require/allow facing target
+	if (Target && strafecount)
+	{
+		A_FaceTarget();
+	}
+
+	if (!pDestination)
+	{
+		if (AIdleState)
+		{
+			SetState(AIdleState);
+			//bInCombat = false;// CHECKME!!
+		}
+		else
+		{
+			if (!DontMove)
+			{
+				A_Wander();
+			}
+		}
+		bInChase = false;
+		return false;
+	}
+
+	//	Do not attack twice in a row.
+	if (bJustAttacked)
+	{
+		bJustAttacked = false;
+		if (!IsFast() && !DontMove && !DoSpecialMove())
+		{
+			NewChaseDirEx(*pDestination, false);
+		}
+		bInChase = false;
+		return true;
+	}
+
+
+#ifdef CHECKME_AND_MAYBE_MOVE_TO_AI_ROUTINE
+	//	Don't attack if just moving toward goal
+	if (Target == Goal || (bChaseGoal && Goal))
+	{
+		EntityEx SavedTarget = Target;
+		Target = Goal;
+		bool Result = CheckMeleeRange();
+		Target = SavedTarget;
+
+		if (Result)
+		{
+			// reached the goal
+
+			// Execute the specials of any PatrolSpecials with the same TID
+			// as the goal.
+			Entity Ent;
+			for (Ent = Level.FindMobjFromTID(Goal.TID, none); Ent;
+				Ent = Level.FindMobjFromTID(Goal.TID, Ent))
+			{
+				if (Ent.Class != PatrolSpecial)
+				{
+					continue;
+				}
+				Level.ExecuteActionSpecial(Ent.Special, Ent.Args[0],
+					Ent.Args[1], Ent.Args[2], Ent.Args[3], Ent.Args[4],
+					NULL, 0, self);
+			}
+
+			float LastGoalAng = Goal.Angles.yaw;
+			int Delay;
+			EntityEx NewGoal = none;
+			for (Ent = Level.FindMobjFromTID(Goal.Args[0], none); Ent;
+				Ent = Level.FindMobjFromTID(Goal.Args[0], Ent))
+			{
+				if (!Ent.IsA('PatrolPoint'))
+				{
+					continue;
+				}
+				NewGoal = EntityEx(Ent);
+				break;
+			}
+			if (NewGoal && Goal == Target)
+			{
+				Delay = NewGoal.Args[1];
+				ReactionTime = itof(Delay) + XLevel.Time;
+			}
+			else
+			{
+				Delay = 0;
+				ReactionTime = default.ReactionTime;
+				Angles.yaw = LastGoalAng;		// Look in direction of last goal
+			}
+			if (Target == Goal)
+			{
+				Target = none;
+			}
+			bJustAttacked = true;
+			if (NewGoal && Delay != 0)
+			{
+				bInCombat = true;
+				SetState(IdleState);
+			}
+			Goal = NewGoal;
+			bInChase = false;
+			return true;
+		}
+	}
+#endif // CHECKME_AND_MAYBE_MOVE_TO_AI_ROUTINE
+
+	//
+	// Perform attack
+	//
+	// [CW] For IA: Goal never == Target
+	//if (Goal != Target)
+	if (Target)
+	{
+		if (FastChase && !DontMove)
+		{
+			//	Strafe
+			if (FastChaseStrafeCount > 0)
+			{
+				FastChaseStrafeCount--;
+			}
+			else
+			{
+				FastChaseStrafeCount = 0;
+				Velocity.x = 0.0;
+				Velocity.y = 0.0;
+				dist = DistTo(Target);
+				if (dist < 640.0)
+				{
+					if (P_Random() < 100)
+					{
+						ang = atan2(Target.Origin.y - Origin.y,
+							Target.Origin.x - Origin.x);
+						if (P_Random() < 128)
+							ang = AngleMod360(ang + 90.0);
+						else
+							ang = AngleMod360(ang - 90.0);
+						Velocity.x = 13.0 * cos(ang) * 35.0;
+						Velocity.y = 13.0 * sin(ang) * 35.0;
+						FastChaseStrafeCount = 3;	// strafe time
+					}
+				}
+			}
+		}
+
+		//	Check for melee attack.
+		if (AMeleeState && CheckMeleeRange())
+		{
+			if (AttackSound)
+			{
+				PlaySound(AttackSound, CHAN_WEAPON);
+			}
+			SetState(AMeleeState);
+			bInChase = false;
+			return true;
+		}
+
+		//	Check for missile attack.
+		if (AMissileState)
+		{
+			if (IsFast() || !MoveCount)
+			{
+				if (CheckMissileRange())
+				{
+					SetState(AMissileState);
+					bJustAttacked = true;
+					bInChase = false;
+					return true;
+				}
+			}
+		}
+	}
+
+	if (strafecount)
+	{
+		strafecount--;
+	}
+
+	//	Chase towards enemy.
+	if (!DontMove && !DoSpecialMove() && (!FastChase || !FastChaseStrafeCount))
+	{
+		oldX = Origin.x;
+		oldY = Origin.y;
+		oldFloor = Sector->floor.pic;
+		if (--MoveCount < 0 || !StepMoveEx())
+		{
+			NewChaseDirEx(*pDestination, false);
+		}
+		if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
+		{
+			TryMove(vector(oldX, oldY, Origin.z), false);
+			NewChaseDirEx(*pDestination, false);
+		}
+	}
+
+	//	Make active sound.
+	if (PlayActive && P_Random() < 3)
+	{
+		PlayActiveSound();
+	}
+
+	bInChase = false;
+	return true;
+}
+
+//=============================================================================
+//
+// NewChaseDirEx
+//
+//=============================================================================
+
+final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
+{
+	float deltax;
+	float deltay;
+
+	if (bOpDir)
+	{
+		deltax = Origin.x - Destination.x;
+		deltay = Origin.y - Destination.y;
+	}
+	else
+	{
+		deltax = Destination.x - Origin.x;
+		deltay = Destination.y - Origin.y;
+	}
+
+	// killough 8/8/98: sometimes move away from target, keeping distance
+	// Take advantage over an enemy without missiles, by keeping distance
+	strafecount = 0;
+
+	// Try to move away from a dropoff
+	if (FloorZ - DropOffZ > MaxDropoffHeight &&
+		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat &&
+		!Level.CompatDropOff)
+	{
+		float AvoidDeltaX;
+		float AvoidDeltaY;
+		// We call CheckDropoff here to determine if the
+		// bounding box actually needs to be used below
+		CheckDropOff(AvoidDeltaX, AvoidDeltaY);
+
+		if (AvoidDeltaX || AvoidDeltaY)
+		{
+			// [Graf Zahl] I have changed TryMove to only apply this logic when
+			// being called from here. bAavoidingDropoff activates the code that
+			// allows monsters to move away from a dropoff. This is different from
+			// MBF which requires unconditional use of the altered logic and therefore
+			// forcing a massive change in the monster behavior to use this.
+
+			// use different dropoff movement logic in TryMove
+			bAvoidingDropoff = true;
+			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY);
+			bAvoidingDropoff = false;
+		
+			// If moving away from dropoff, set movecount to 1 so that
+			// small steps are taken to get monster away from dropoff.
+			MoveCount = 1;
+			return;
+		}
+	}
+	else
+	{
+#ifdef FIXME
+		---------------------------- TODO -----------------------------
+		float dist;
+
+		dist = DistTo(Target);
+
+		if (Target.Health > 0)
+	    {   // Live enemy target
+			if (GetCvar('monster_backing') && MissileState &&
+				/*actor->type != MT_SKULL &&*/
+				((!Target.MissileState && dist < MELEERANGE * 2.0) ||
+				(Target.Player && PlayerEx(Target.Player).ReadyWeapon.bBotMelee &&
+				dist < MELEERANGE * 3.0)))
+			{       // Back away from melee attacker
+					strafecount = P_Random() & 15;
+					deltax = -deltax;
+					deltay = -deltay;
+			}
+		}
+		---------------------------- TODO -----------------------------
+#endif
+	}
+	DO_NewChaseDirEx(deltax, deltay);
+
+	// If strafing, set movecount to strafecount so that old Doom
+	// logic still works the same, except in the strafing part
+	if (strafecount)
+	{
+		MoveCount = strafecount;
+	}
+}
+
+//==========================================================================
+//
+//  DO_NewChaseDirEx
+//
+//	[CW] an attempt to make movement free of MoveDir presets (any angle)
+//
+//==========================================================================
+
+final void DO_NewChaseDirEx(float deltax, float deltay)
+{
+	float oldang = MoveDirFree; //Angles.yaw;
+	MoveDirFree /*Angles.yaw*/ = atan2(deltay, deltax);
+	if (!TryWalkEx())
+	{
+		//
+		// TODO: CHECKME, work this out!
+		//
+		if (P_Random() & 1)
+		{
+			/*Angles.yaw*/ MoveDirFree += 45.0 + Random() * 90.0;
+		}
+		else
+		{
+			/*Angles.yaw*/ MoveDirFree -= 45.0 + Random() * 90.0;
+		}
+
+		if (!TryWalkEx())
+		{
+			/*Angles.yaw*/ MoveDirFree = -oldang;
+			TryWalkEx();
+		}
+	}
+
+	Angles.yaw = MoveDirFree;	// FIXME, this is not always needed
+}
+
+//==========================================================================
+//
+//  TryWalkEx
+//
+//  Attempts to move actor in its current (ob->moveangle) direction.
+//  If blocked by either a wall or an actor returns FALSE.
+//  If move is either clear of block only by a door, returns TRUE and sets.
+//  If a door is in the way, an OpenDoor call is made to start it opening.
+//
+//==========================================================================
+
+final bool TryWalkEx()
+{
+	if (!StepMoveEx())
+	{
+		return false;
+	}
+	MoveCount = P_Random() & 15;
+	return true;
+}
+
+//==========================================================================
+//
+//  StepMoveEx
+//
+//  Move in the current direction, returns false if the move is blocked.
+//
+//  [CW] Contents used mostly from original StepMove;
+//       Difference is in making MoveDir unused, use free movement angle
+//       instead.
+//
+//==========================================================================
+
+final bool StepMoveEx()
+{
+	float tryx, deltax, origx;
+	float tryy, deltay, origy;
+	float maxmove;
+	int steps;
+	float xspeed;
+	float yspeed;
+	int i;
+	bool try_ok;
+
+	line_t *ld;
+	int good;
+
+	if (bBlasted)
+	{
+		return true;
+	}
+
+	// Instead of yanking non-floating monsters to the ground,
+	// let gravity drop them down, unless they're moving down a step.
+	if (!bNoGravity && Origin.z > FloorZ && !bOnMobj)
+	{
+		if (Origin.z > FloorZ + MaxStepHeight)
+		{
+			return false;
+		}
+		else
+		{
+			Origin.z = FloorZ;
+		}
+	}
+
+	origx = Origin.x;
+	origy = Origin.y;
+	deltax = Speed / 35.0 * cos( /*Angles.yaw*/ MoveDirFree);
+	deltay = Speed / 35.0 * sin( /*Angles.yaw*/ MoveDirFree);
+	tryx = origx + deltax;
+	tryy = origy + deltay;
+
+	// Like P_XYMovement this should do multiple moves if the step size is too large
+	maxmove = Radius;
+	steps = 1;
+
+	if (maxmove > 0.0)
+	{ 
+		xspeed = fabs(deltax);
+		yspeed = fabs(deltay);
+
+		if (xspeed > yspeed)
+		{
+			if (xspeed > maxmove)
+			{
+				steps = 1 + ftoi(xspeed / maxmove);
+			}
+		}
+		else
+		{
+			if (yspeed > maxmove)
+			{
+				steps = 1 + ftoi(yspeed / maxmove);
+			}
+		}
+	}
+
+	try_ok = true;
+	tmtrace_t tmtrace;
+	for (i = 1; i < steps; i++)
+	{
+		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
+					(deltay / itof(steps * i)), Origin.z), false);
+		if (!try_ok)
+		{
+			break;
+		}
+	}
+
+	// killough 3/15/98: don't jump over dropoffs:
+	if (try_ok)
+	{
+		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), false);
+	}
+
+	if (!try_ok)
+	{
+		// open any specials
+		if (bFloat && tmtrace.bFloatOk)
+		{
+			// must adjust height
+			if (Origin.z < tmtrace.FloorZ)
+			{
+				Origin.z += FloatSpeed * Level.Game.frametime;
+			}
+			else
+			{
+				Origin.z -= FloatSpeed * Level.Game.frametime;
+			}
+			bInFloat = true;
+			return true;
+		}
+
+		if (!tmtrace.SpecHit.Num)
+		{
+			return false;
+		}
+
+		//MoveDir = DI_NODIR;
+
+		// if the special is not a door that can be opened, return false
+		//
+		// killough 8/9/98: this is what caused monsters to get stuck in
+		// doortracks, because it thought that the monster freed itself
+		// by opening a door, even if it was moving towards the doortrack,
+		// and not the door itself.
+		//
+		// killough 9/9/98: If a line blocking the monster is activated,
+		// return true 90% of the time. If a line blocking the monster is
+		// not activated, but some other line is, return false 90% of the
+		// time. A bit of randomness is needed to ensure it's free from
+		// lockups, but for most cases, it returns the correct result.
+		//
+		// Do NOT simply return false 1/4th of the time (causes monsters to
+		// back out when they shouldn't, and creates secondary stickiness).
+
+		good = 0;
+		while (tmtrace.SpecHit.Num)
+		{
+			ld = tmtrace.SpecHit[tmtrace.SpecHit.Num - 1];
+			tmtrace.SpecHit.Num = tmtrace.SpecHit.Num - 1;
+			// if the special is not a door
+			// that can be opened,
+			// return false
+			if ((bCanUseWalls && LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Use)) ||
+			    (bActivatePushWall && LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Push)))
+			{
+				good |= ld == tmtrace.BlockingLine ? 1 : 2;//true;
+			}
+		}
+		return good && ((P_Random() >= 203) ^ (good & 1));
+	}
+	else
+	{
+		bInFloat = false;
+	}
+
+	if (!bFloat && !bNoGravity)
+	{
+		if (Origin.z > FloorZ)
+		{
+			HitFloorType();
+		}
+		Origin.z = FloorZ;
+	}
+	return true;
+}
+
+//==========================================================================
+//
+//	DoSpecialMove
+//
+//	Returns TRUE if actor should skip normal movement
+//
+//==========================================================================
+
+bool DoSpecialMove()
+{
+	if (bFireDemonSpecialMove)
+	{
+		return FireDemonSpecialMove();
+	}
+	return false;
+}

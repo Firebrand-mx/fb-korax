@@ -1,0 +1,689 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: IntelligentActor.Tasks.vc 1963 2009-03-06 23:26:20Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//**************************************************************************
+//
+//
+//	[KoraxRPG] Actor Tasks
+//
+//
+//**************************************************************************
+
+enum
+{
+	TASK_PRIORITY_ABSOLUTE		= 0,
+
+	TASK_PRIORITY_THREAT_BASE	= 0,
+	TASK_PRIORITY_THREAT_GRADE1	= 1,
+	TASK_PRIORITY_THREAT_GRADE2	= 2,
+	TASK_PRIORITY_THREAT_GRADE3	= 3,
+	TASK_PRIORITY_THREAT_GRADE4	= 4
+};
+
+LinkedList		Tasks;
+ActorTask		CurrentTask;
+
+//==========================================================================
+//
+//  SetThreatReaction
+//
+//==========================================================================
+
+void SetThreatReaction(int Reaction, float Vicinity)
+{
+	Behavior.ThreatReaction = Reaction;
+	Behavior.ThreatVicinity = Vicinity;
+}
+
+//==========================================================================
+//
+//  CancelAllOrders
+//
+//==========================================================================
+
+void CancelAllOrders()
+{
+	if (Tasks)
+	{
+		Tasks.DestroyAll();
+		CurrentTask = none;
+
+		AITime = 0.0;
+
+		//if (StateAction != STATE_ACTION__LOOK)
+		//	SetState(IdleState);
+	}
+}
+
+//==========================================================================
+//
+//  CancelCurrentOrder
+//
+//==========================================================================
+
+void CancelCurrentOrder()
+{
+	if (Tasks && Tasks.refHead)
+	{
+		Tasks.refHead.Destroy();
+		CurrentTask = none;
+
+		AITime = 0.0;
+
+		//if (StateAction != STATE_ACTION__LOOK)
+		//	SetState(IdleState);
+	}
+}
+
+//==========================================================================
+//
+//  IssueOrder
+//
+//==========================================================================
+
+ActorTask IssueOrder(bool situative, int order, int priority, float duration)
+{
+	if (Health <= 0)
+		return none;
+
+	if (!Tasks)
+	{
+		Tasks = LinkedList(SpawnObject(LinkedList));
+		if (!Tasks)
+			return none;
+	}
+	else if (situative && CurrentTask)
+	{
+		if (CurrentTask.Priority < priority)
+			return none;
+		if (CurrentTask.bSituative && CurrentTask.Priority >= priority)
+			CurrentTask.Destroy();
+	}
+
+	ActorTask AT = ActorTask(SpawnObject(ActorTask));
+
+	if (AT)
+	{
+		AT.bSituative = situative;
+		AT.Order = order;
+		AT.Priority = priority;
+		AT.Duration = duration;
+		AT.Time = duration;
+
+		Tasks.Add(AT);
+
+		AITime = 0.0;
+	}
+
+	return AT;
+}
+
+//==========================================================================
+//
+//  OrderAttackAll
+//
+//==========================================================================
+
+void OrderAttackAll(bool situative, int priority, float duration)
+{
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__ATTACKALL, priority, duration);
+	
+	if (AT)
+		AT.bTargetMustBeAlive = true;
+}
+
+//==========================================================================
+//
+//  OrderAttackThing
+//
+//==========================================================================
+
+void OrderAttackThing(bool situative, int priority, float duration, Actor Thing)
+{
+	if (!Thing || !Thing.CanBeAttacked())
+	{
+		return;
+	}
+
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__ATTACKTHING, priority, duration);
+	
+	if (AT)
+	{
+		AT.bTargetMustBeAlive = true;
+		AT.Target.Thing = Thing;
+	}
+}
+
+//==========================================================================
+//
+//  OrderStandStill
+//
+//==========================================================================
+
+void OrderStandStill(bool situative, int priority, float duration)
+{
+	IssueOrder(situative, ActorTask::ORDER__STANDSTILL, priority, duration);
+}
+
+//==========================================================================
+//
+//  OrderStandStillLook180
+//
+//==========================================================================
+
+void OrderStandStillLook180(bool situative, int priority, float duration)
+{
+	IssueOrder(situative, ActorTask::ORDER__STANDLOOK180, priority, duration);
+}
+
+//==========================================================================
+//
+//  OrderStandStillLook360
+//
+//==========================================================================
+
+void OrderStandStillLook360(bool situative, int priority, float duration)
+{
+	IssueOrder(situative, ActorTask::ORDER__STANDLOOK360, priority, duration);
+}
+
+//==========================================================================
+//
+//  OrderFollowThing
+//
+//==========================================================================
+
+void OrderFollowThing(bool situative, int priority, float duration, Actor Thing)
+{
+	if (!Thing || Thing.Health <= 0)
+	{
+		return;
+	}
+
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__FOLLOW, priority, duration);
+	
+	if (AT)
+	{
+		AT.bTargetMustBeAlive = true;
+		AT.Target.Thing = Thing;
+	}
+}
+
+//==========================================================================
+//
+//  OrderEvadeThing
+//
+//==========================================================================
+
+void OrderEvadeThing(bool situative, int priority, float duration, Actor Thing)
+{
+	if (!Thing || Thing.Health <= 0)
+	{
+		return;
+	}
+
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__EVADETHING, priority, duration);
+	
+	if (AT)
+	{
+		AT.bTargetMustBeAlive = true;
+		AT.Target.Thing = Thing;
+	}
+}
+
+//==========================================================================
+//
+//  OrderEvadePosition
+//
+//==========================================================================
+
+void OrderEvadePosition(bool situative, int priority, float duration, TVec position)
+{
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__EVADEPOS, priority, duration);
+
+	if (AT)
+		AT.Target.Pos = position;
+}
+
+//==========================================================================
+//
+//  OrderWalkTo
+//
+//==========================================================================
+
+void OrderWalkTo(bool situative, int priority, float duration, TVec position)
+{
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__WALKTO, priority, duration);
+	
+	if (AT)
+		AT.Target.Pos = position;
+}
+
+//==========================================================================
+//
+//  OrderPatrol2Pt
+//
+//==========================================================================
+
+void OrderPatrol2Pt(bool situative, int priority, float duration, TVec position1, optional TVec position2)
+{
+	if (!specified_position2)
+		position2 = Origin;
+
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__PATROL2PT, priority, duration);
+	
+	if (AT)
+	{
+		AT.Target.Pos = position1;
+		AT.NextPos = position2;
+	}
+}
+
+//==========================================================================
+//
+//  OrderWalkPath
+//
+//==========================================================================
+
+void OrderWalkPath(bool situative, bool Patrol, bool Looped,
+					 int priority, float duration, int PathIndex, int NodeIndex, optional bool BackDir)
+{
+#ifdef FIXME
+	if (!Node)
+	{
+		Error("IntelligentActor::A_OrderWalkPath : FirstNode reference not set to an instance of an object");
+		return;
+	}
+
+	bool bFound = false;
+	PathNode FirstNode = none;
+
+	foreach AllThinkers(PathNode, FirstNode)
+	{
+		if (FirstNode.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
+			FirstNode.Args[PathNode::ARG__NODEINDEX] == NodeIndex)
+		{
+			bFound = true;
+			break;
+		}
+	}
+
+	if (!bFound)
+		return;
+
+	if (!specified_BackDir)
+		BackDir = false;
+
+	ActorTask AT = A_IssueOrder(situative,
+								Patrol ? (Looped ? ActorTask::ORDER__PATROLLOOP : ActorTask::ORDER__PATROLPATH)
+								: ActorTask::ORDER__WALKPATH,
+								priority, duration);
+	if (AT)
+	{
+		AT.GnTarget.Node = FirstNode;
+		AT.GnTarget.Pos = FirstNode.Origin;
+		AT.Direction = BackDir;
+	}
+#endif
+}
+
+//==========================================================================
+//
+//  OrderWander
+//
+//==========================================================================
+
+void OrderWander(bool situative, int priority, float duration, optional TVec position, optional float radius)
+{
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__WANDER, priority, duration);
+
+	if (AT)
+	{
+		if (!specified_position)
+			position = Origin;
+		if (!specified_radius)
+			radius = 0.0;
+
+		AT.Target.Pos = position;
+		AT.Radius = radius;
+	}
+}
+
+//==========================================================================
+//
+//	OrderUseLine
+//
+//==========================================================================
+
+void OrderUseLine(bool situative, int priority, float duration, TVec position, float Angle)
+{
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__USELINE, priority, duration);
+	
+	if (AT)
+	{
+		AT.Target.Pos = position;
+		AT.Target.Angle = Angle;
+	}
+}
+
+//==========================================================================
+//
+//	Order_UseThing
+//
+//==========================================================================
+
+void OrderUseThing(bool situative, int priority, float duration, Actor Thing)
+{
+	if (!Thing || !Thing.CanBeUsed())
+	{
+		return;
+	}
+
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__USETHING, priority, duration);
+	
+	if (AT)
+		AT.Target.Thing = Thing;
+}
+
+//==========================================================================
+//
+//	DoTasks
+//
+//==========================================================================
+
+void DoTasks()
+{
+	if (Tasks)
+	{
+		bool taskCompleted = false;
+
+		if (CurrentTask && CurrentTask.ConsiderCompleted())
+		{
+#ifdef OBSOLETE
+			if (CurrentTask.Duration > 0.0 && CurrentTask.Time <= 0.0)
+				CurrentTask.Order = ActorTask::ORDER__NONE;
+#endif
+
+			taskCompleted = true;
+#ifdef OBSOLETE
+			switch (CurrentTask.Order)
+			{
+			case ActorTask::ORDER__PATROL2PT:
+				{
+					TVec v = CurrentTask.GnTarget.Pos;
+					CurrentTask.GnTarget.Pos = CurrentTask.NextPos;
+					CurrentTask.NextPos = v;
+				}
+				break;
+			case ActorTask::ORDER__WALKPATH:
+			case ActorTask::ORDER__PATROLPATH:
+			case ActorTask::ORDER__PATROLLOOP:
+				{
+#ifdef FIXME
+					PathNode PN;
+					if (CurrentTask.Direction)
+						PN = PathNode(CurrentTask.GnTarget.Node).BW;
+					else
+						PN = PathNode(CurrentTask.GnTarget.Node).FW;
+
+					if (!PN)
+					{
+						if (CurrentTask.Order == ActorTask::ORDER__WALKPATH)
+							CurrentTask.Destroy();
+						else
+						{
+							if (CurrentTask.Order == ActorTask::ORDER__PATROLPATH)
+							{
+								CurrentTask.Direction = !CurrentTask.Direction;
+								if (CurrentTask.Direction)
+									PN = PathNode(CurrentTask.GnTarget.Node).BW;
+								else
+									PN = PathNode(CurrentTask.GnTarget.Node).FW;
+							}
+							else
+							{
+								if (CurrentTask.Direction)
+									PN = PathNode(CurrentTask.GnTarget.Node).GetPathTail();
+								else
+									PN = PathNode(CurrentTask.GnTarget.Node).GetPathHead();
+							}
+						}
+					}
+
+					if (PN)
+					{
+						CurrentTask.GnTarget.Node = PN;
+						CurrentTask.GnTarget.Pos = PN.Origin;
+					}
+#endif	// FIXME
+				}
+				break;
+			case ActorTask::ORDER__ATTACKALL:
+				bIgnoreTeams = default.bIgnoreTeams;
+				CurrentTask.GnTarget.Thing = none;
+				break;
+			default:
+				CurrentTask.Destroy();
+				break;
+			};
+#endif	// OBSOLETE
+
+			CurrentTask = none;
+		}
+
+		if (Tasks.refHead)
+		{
+			//
+			// TODO: Handle priorities
+			//
+			ActorTask AT = ActorTask(Tasks.refHead);
+			ActorTask at = ActorTask(Tasks.refHead);
+			while (at.refNext)
+			{
+				at = ActorTask(at.refNext);
+				if (at.Priority < AT.Priority)
+					AT = at;
+			};
+
+			AT.MoveInFront();			
+			//
+			// Perform first-priority task
+			//
+			PerformTask(ActorTask(Tasks.refHead));
+		}
+		else if (taskCompleted)
+		{
+			//if (StateAction != STATE_ACTION__LOOK)
+			//{
+			//	SetState(IdleState);
+			//}
+		}
+	}
+}
+
+//==========================================================================
+//
+//	PerformTask
+//
+//==========================================================================
+
+void PerformTask(ActorTask AT)
+{
+	ActorTask OldTask = CurrentTask;
+	CurrentTask = AT;
+
+	AT.Owner = self;
+	switch (AT.Order)
+	{
+	case ActorTask::ORDER__STANDSTILL:
+		{
+			if (AT != OldTask)
+			{
+				//if (StateAction != STATE_ACTION__LOOK)
+				//	SetState(IdleState);
+			}
+		}
+		break;
+	case ActorTask::ORDER__ATTACKTHING:
+	case ActorTask::ORDER__ATTACKALL:
+		{
+			if (AT != OldTask)
+			{
+				if (AT.Target.Thing)
+				{
+					Target = AT.Target.Thing; // FIXME
+				}
+				else
+				{
+					bIgnoreTeams = true;
+					LookForEnemy(true, true);
+				}
+
+				if (Target)
+				{
+					Threshold = BASETHRESHOLD;
+					AT.Target.Thing = Actor(Target);
+					SetFinalTarget(AT.Target.Thing);
+					SetImmediateTarget(AT.Target.Thing);
+					//if (StateAction != STATE_ACTION__CHASE)
+					//	SetState(SeeState);
+				}
+				else
+				{
+					//if (StateAction != STATE_ACTION__LOOK)
+					//	SetState(IdleState);
+				}
+			}
+		}
+		break;
+	case ActorTask::ORDER__FOLLOW:
+		if (AT != OldTask)
+		{
+			SetFinalTarget(AT.Target.Thing);
+			SetImmediateTarget(AT.Target.Thing);
+			//if (StateAction != STATE_ACTION__CHASE)
+			//	SetState(SeeState);
+		}
+		break;
+
+	case ActorTask::ORDER__EVADEPOS:
+	case ActorTask::ORDER__EVADETHING:
+#ifdef FIXME
+		if (.GnTarget.Thing)
+			pTargetVec = &AT.Target.Thing.Origin;
+		else
+			pTargetVec = &AT.Target.Pos;
+
+		if (AT != OldTask)
+		{
+			if (StateAction != STATE_ACTION__EVADE)
+			{
+			//	state EvState = FindState('Evade');
+
+			//	if (EvState && StateAction != STATE_ACTION__EVADE)
+			//		SetState(EvState);
+			//	else if (StateAction != STATE_ACTION__CHASE)
+			//		SetState(SeeState);
+			/* {
+				if (Behavior.bRunOnEvade)
+					StepSpeed *= 2.0;
+				A_MoveEx(false, true);
+				if (Behavior.bRunOnEvade)
+					StepSpeed /= 2.0;
+			}*/
+			}
+		}
+#endif
+		break;
+
+	case ActorTask::ORDER__WALKTO:
+	case ActorTask::ORDER__WALKPATH:
+	case ActorTask::ORDER__PATROL2PT:
+	case ActorTask::ORDER__PATROLPATH:
+	case ActorTask::ORDER__PATROLLOOP:
+		{
+			if (AT != OldTask)
+			{
+				SetFinalTarget(none, AT.Target.Pos, AT.Target.Action);
+				SetImmediateTarget(none, AT.Target.Pos, AT.Target.Action);
+			}
+		}
+		break;
+	case ActorTask::ORDER__WANDER:
+		{
+#ifdef FIXME
+			if (AT != OldTask)
+			{
+				generic_target_t gt;
+				// Set next random point
+				if ((!CurrentTask.Radius ||
+					Length(Origin - CurrentTask.GnTarget.Pos) < CurrentTask.Radius) &&
+					P_Random() < 64)
+				{
+					A_OrderStandStill(false, CurrentTask.Priority, 1.5 + Random() * 8.0);
+					if (StateAction != STATE_ACTION__LOOK)
+						SetState(IdleState);
+					break;
+				}
+				else
+				{
+					if (CurrentTask.Radius)
+					{
+						gt.Pos.x = CurrentTask.GnTarget.Pos.x + (Random() - 0.5) * CurrentTask.Radius;
+						gt.Pos.y = CurrentTask.GnTarget.Pos.y + (Random() - 0.5) * CurrentTask.Radius;
+						gt.Pos.z = CurrentTask.GnTarget.Pos.z;
+					}
+					else
+					{
+						do
+						{
+							gt.Pos.x = Origin.x + (Random() - 0.5) * 256.0;
+							gt.Pos.y = Origin.y + (Random() - 0.5) * 256.0;
+							gt.Pos.z = Origin.z;
+						}
+						while (!CanReach(gt.Pos, none));
+					}
+				}
+				
+				CurrentTask.NextPos = gt.Pos;
+				A_SetFinalTarget(&gt);
+				A_SetImmediateTarget(&gt);
+				if (StateAction != STATE_ACTION__CHASE)
+					SetState(SeeState);
+			}
+#endif	// FIXME
+		}
+		break;
+	}
+
+	return;
+}

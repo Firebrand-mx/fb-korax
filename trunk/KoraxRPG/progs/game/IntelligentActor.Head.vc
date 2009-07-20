@@ -1,0 +1,340 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: IntelligentActor.Head.vc 1963 2009-03-06 23:26:20Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//==========================================================================
+//
+//	[CW]
+//
+// IntelligentActor class contains what we call advanced AI for KRPG
+// monsters. Basically the main benefit from is achieved through
+// extensive use of four advanced AI features: dynamic update, tasks,
+// navigation and action technique.
+//
+// -------------------------------------------------------------------------
+// Dynamic update.
+// Actors now possess an ability to dynamically update their knowledge of
+// current situation along with reacting to occured events. An A_DoAI
+// procedure run periodically. It has a power to override normal actor behavior.
+// A CheckThreat is called every time to detect any possible threat
+// in the area; this includes hearing some noise or seeing enemy. Using
+// CheckThreat results an actor may effectively switch targets during
+// combat and plan evasive actions, if needed.
+//
+// -------------------------------------------------------------------------
+// Tasks.
+// Intelligent Actor's high-level behavior is controlled by ActorTask
+// objects. Multiple Tasks can be stored in the stack, sorted by their
+// priority, but only top one is performed at any given moment.
+//
+//
+// -------------------------------------------------------------------------
+// Navigation.
+//
+//
+// -------------------------------------------------------------------------
+// Action Technique.
+//
+//
+//==========================================================================
+
+//
+// FOLLOWING COMMENT CAN BE OBSOLETE IN SOME WAYS
+//
+//
+//==========================================================================
+//
+// [CW] I am writing following remarks mostly because I skipped some time
+// since I last reviewed my monster AI, and also some general changes
+// happened, like many monster classes moved to decorate, and such, so
+// I need a memo for myself.
+// These comments will hopefully be useful also in case someone else wants
+// to edit monster AI for KRPG project, or any other project.
+//
+//
+// So, basically IntelligentActor class contains what we call advanced AI
+// for KRPG monsters. I was also adding some advanced methods to Actor class
+// (they could be found in Actor.KRPG.vc). They are low-level AI methods
+// like peforming a walk.
+//
+// The main difference, introduced by new AI is a A_DoAI procedure run
+// every now and then (frequency determined by AI_ROUTINE_DELAY constant,
+// in seconds). It has a power to override normal actor behavior.
+// A_DoAI processes following:
+//
+// 1) While in 'Chase' state calls A_CheckThreat to detect any possible threat
+//   in the area. This includes hearing some noise or seeing enemy. If
+//   bEvadeMelee flag is set, it also makes actor try evade any
+//   approaching opponents.
+// 2) Calls DoTasks to process any Tasks given to this actor, if any. Task
+//   usually sets new targets for enemy movement and/or attack.
+//
+// Other additions are "AI-actions": A_LookAI, A_ChaseAI, etc.
+//
+// A_LookAI performs functions similar to original A_Look by calling
+// A_CheckThreat.
+//
+// A_ChaseAI is more complex than its predecessor A_Chase. It updates
+// known target position every time called, thus making actor chase
+// target thing in more realistic way; it also calls DoRoute to let
+// actor follow precalculated route to faraway destination (if it is
+// appliable in current situation. Finally, A_ChaseAI sets an immediate
+// "goto" point and calls DoMove method, which does the actual movement.
+// Notice, that DoMove is the delegate, that is a reference to a function;
+// DoMove should be set to particular method either once (in BeginPlay),
+// or each time A_ChaseAI is about to be called, depending on what fits
+// actor implementation more. There are two "default" methods for this
+// purpose: A_NormalDoMove and A_FastDoMove (last is for bosses mainly).
+//
+// All of the "AI-actions" must set StateAction value ahead of anything else.
+// It comes to be very important when Tasks are processed. For example, it
+// prevents Centaurs from stucking in invulnerability mode by delaying any
+// orders he receive until Centaur return to normal chase mode.
+//
+//--------------------------------------------------------------------------
+//
+//
+//
+//
+
+class IntelligentActor : KRPGPawn;
+
+//
+// [KoraxRPG] Advanced AI
+//
+
+const float ACCEPTABLE_WAYPOINT_VICINITY	= 64.0;
+const float ACCEPTABLE_TASKLEADER_VICINITY	= 512.0;
+
+const float LOHEALTH_FRACTION				= 2.0;
+
+enum
+{
+	THREATREACTION__NONE,			// do not react on any threat at all
+	THREATREACTION__LOHEALTH,		// react only if damaged by thread source and health dropped below 1/3
+	THREATREACTION__DAMAGE,			// react only if damaged by threat source (at any health)
+	THREATREACTION__SEE,			// react on any seen threat in preset range (see Behavior.ThreatVicinity)
+	// THREATREACTION__AMBUSH,			// same as SEE, but will raise its alertness when hearing enemy
+	THREATREACTION__DETECT			// react on any threat detected by any means in preset range
+};
+
+struct pawn_behavior_t
+{
+	int				ThreatReaction;
+	float			ThreatVicinity;			// maximal distance of threat source to react on
+
+	bool			bKnowFTargetPos;		// if TRUE, pawn knows current FTarget position.
+
+	bool			bLostFTarget;			// if TRUE, pawn has just lost an FTarget,
+											// i.e. he can not see it and/or reach him;
+											// if both bKnowEnemyPos and bLostEnemy flags
+											// are TRUE, this means that pawn can SEE FTarget,
+											// but cannot REACH it
+	int				LostFTargetTolerance;	// how long a pawn will try to find lost FTarget
+											// until he finally decides to build new route
+											// or retarget
+											// (in times ChaseAI is called)
+	int				LostFTargetTime;		// how much strokes left until route build/retarget
+
+	//bool			bUsingRoute;			// if TRUE, pawn walks along the route
+	int				RouteRebuildRate;		// how often this pawn rebuilds its
+											// route from scratch
+											// (lower value mean higher rate)
+											// (in times ChaseAI is called)
+	int				RouteRebuildRateLow;	// special rate used in case when pawn failed
+											// to build a route; it should be at least a bit
+											// lower than RouteRebuildRate (use higher value)
+	int				RouteRebuildTime;		// how much strokes left until route rebuild
+	float			FTargetPosChangeLimit;	// when target is beyond this range relative
+											// to its previous known position, pawn should
+											// rebuild the route;
+											// (pawns with ranged attack may perhaps have higher values)
+};
+
+bool			bCanJoinTaskGroup;		// can join task leader
+bool			bCanBeTaskLeader;
+bool			bNeverUseRoutes;		// obvious..
+
+bool			bNoWanderDuringAttack;	// shoot enemy if possible without wandering around
+// Tactical abilities
+bool			bCanJump;				// can perform standart jump
+bool			bCanLeap;				// leaping is jumping on a long distance almost horizontally
+bool			bCanEvade;				// has ability to make evasive actions
+bool			bEvadeMelee;			// evade close contact with enemy
+bool			bRunOnEvade;			// speed up when making an evasive action
+bool			bCanBackpedal;			// can face target and probably attack while backing off
+bool			bCanSidemove;			// can face target and probably attack while sidemoving
+bool			bCanDodge;				// can quickly leap-move to evade something
+bool			bCanShield;				// has an ability to defend itself with a shield or similar way
+
+bool			bFastMove;
+bool			bFireDemonSpecialMove;
+
+// [CW] TODO: this should be changed to using Berserk spell from monster's
+//            inventory instead...
+bool			bCanBerserk;	// actor is able to berserk when it's hit
+
+
+pawn_behavior_t		Behavior;
+
+struct generic_target_t
+{
+	Actor		Thing;
+	TVec		Pos;
+	float		Angle;
+	int			Action;
+};
+
+generic_target_t	FTarget;			// final aim
+generic_target_t	ITarget;			// immediate aim
+generic_target_t	DangerSource;		// for evasion
+TVec				LastKnownPosition;	// for moving targets
+
+IntelligentActor	TaskLeader;
+
+transient TVec *	pDestination;	// next move destination (is updated almost every tick)
+
+
+delegate bool DoMoveR(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+				bool NightmareFast, bool PlayActive, bool DontMove);
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	::BeginPlay();
+
+	MoveDirFree = Angles.yaw;
+
+	// [CW] Assign a delegate to default method
+	if (bFastMove)
+	{
+		DoMoveR = A_FastDoMove;
+	}
+	else
+	{
+		DoMoveR = A_NormalDoMove;
+	}
+
+	//if (bAmbush)
+	//{
+	//	ThreatReaction = THREATREACTION__AMBUSH;
+	//	bAmbush = false;
+	//}
+}
+
+//==========================================================================
+//
+//	Destroy
+//
+//==========================================================================
+
+void Destroy()
+{
+	CancelAllOrders();
+	CleanRoutes();
+
+	::Destroy();
+}
+
+//==========================================================================
+//
+//  OkayToSwitchTarget
+//
+//==========================================================================
+
+bool OkayToSwitchTarget(EntityEx source)
+{
+	bool okaytoswitch = true;
+
+	switch (Behavior.ThreatReaction)
+	{
+	case THREATREACTION__NONE:
+		okaytoswitch = false;
+		break;
+	case THREATREACTION__LOHEALTH:
+		if (Health > ftoi(itof(default.Health) / LOHEALTH_FRACTION))
+			okaytoswitch = false;
+		break;
+	case THREATREACTION__DAMAGE:
+		if (!source)
+			okaytoswitch = false;
+		break;
+	}
+
+	okaytoswitch = okaytoswitch && ::OkayToSwitchTarget(source);
+	//
+	// [CW] We know that Damage method will set new Target itself,
+	// so we have to set F & I generic target datas
+	if (okaytoswitch)
+	{
+		OrderAttackThing(true,
+			TASK_PRIORITY_THREAT_BASE +
+					((Health <= ftoi(itof(default.Health) / LOHEALTH_FRACTION)) ? THREATREACTION__LOHEALTH :
+					THREATREACTION__DAMAGE),
+					0.0, Actor(source));
+	}
+
+	return okaytoswitch;
+}
+
+//==========================================================================
+//
+//	Died
+//
+//==========================================================================
+
+void Died(EntityEx source, EntityEx inflictor)
+{
+	CancelAllOrders();
+	CleanRoutes();
+
+	SetFinalTarget(none,, 0);
+	SetImmediateTarget(none,, 0);
+
+	::Died(source, inflictor);
+}
+
+//==========================================================================
+//
+//	A_AIResurrect
+//
+//==========================================================================
+
+final void A_AIResurrect()
+{
+	::A_Resurrect();
+	AITime = 0.0;
+}
