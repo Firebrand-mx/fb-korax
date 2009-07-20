@@ -333,10 +333,12 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			{
 				return false;
 			}
-			if ((opening->range <= MinPassableOpening) ||
+			if ((opening->range < MinPassableOpening) ||
 				(opening->lowfloor - opening->bottom > MaxPassableStep) ||
 				(opening->lowfloor - opening->bottom > MaxPassableDropOff))
+			{
 				return false;
+			}
 
 			// [CW] Now, when we have the best opening available, we must check
 			//		if the best is actually the passable
@@ -349,6 +351,28 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			//		opening->range is distance between opening->top and opening->bottom;
 			//		opening->lowfloor is the lowest floor between previous and next sector;
 			//
+
+			//
+			// [FB] We need to check for ceiling slopes FIRST
+			// 	    Check for ceiling slopes on both sides
+			if (traceZ != opening->top)
+			{
+				if (
+					(opening->floor->minz <= opening->highceilingplane->maxz &&
+					opening->highceilingplane->minz >= opening->floor->maxz)
+					||
+					(opening->lowfloorplane->minz <= opening->ceiling->maxz &&
+					opening->ceiling->minz >= opening->floor->maxz)
+				   )
+				{
+					if (opening->highceilingplane->minz < MinPassableOpening ||
+						opening->ceiling->minz < MinPassableOpening)
+					{
+						// [FB] We'll get stuck on this slope
+						return false;
+					}
+				}
+			}
 
 			//
 			// [CW] Check floor planes for slopes
@@ -379,10 +403,7 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				traceZ = opening->bottom;
 			}
 
-			if ((opening->range < MinPassableOpening) // cannot fit through, do not bother
-				||
-				// OK, actor fits through...
-				// so use traceZ to know which height is actor's "ghost" previous position
+			if (// use traceZ to know which height is actor's "ghost" previous position
 				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
 					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
 					// drop from highest floor to lowest one is too much to accept it
@@ -393,23 +414,6 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 				)
 			{
 				return false;
-			}
-			
-			// [FB] Check for ceiling slopes on both sides
-			if (
-				(opening->floor->minz <= opening->highceilingplane->maxz &&
-				opening->highceilingplane->minz >= opening->floor->maxz)
-				||
-				(opening->lowfloorplane->minz <= opening->ceiling->maxz &&
-				opening->ceiling->minz >= opening->floor->maxz)
-				)
-			{
-				if (opening->highceilingplane->minz < Height ||
-					opening->ceiling->minz < Height)
-				{
-					// [FB] We'll get stuck on this slope
-					return false;
-				}
 			}
 			// [FB] This should partially cover it...
 
