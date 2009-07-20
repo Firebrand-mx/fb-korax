@@ -33,7 +33,7 @@ void SetTeam(int team)
 		if (A.bCombatant && A.Target == self && A.Team == Team)
 		{
 			A.Target = none;
-			A.SetState(IdleState);
+			// A.SetState(IdleState);
 		}
 	}
 }
@@ -42,22 +42,51 @@ void SetTeam(int team)
 //
 //	CanSense
 //
-//	[KoraxRPG] Advanced AI
-//
 //==========================================================================
 
-bool CanSense(Entity Other)
+bool CanSense(EntityEx Other)
 {
 	return bSenseAlways || CanSee(Other);
 }
+
+//==========================================================================
+//
+//	CanBeAttacked
+//
+//	Returns TRUE if Actor can be attacked by any other actor. Method
+//	does not check if attack can have any success, so Invulnerable actors
+//	still count as attackable.
+//
+//==========================================================================
+
+bool CanBeAttacked()
+{
+	return bShootable && !bNonShootable &&
+		bCombatant /* [CW] may be ignored in some cases? */ &&
+		Health > 0;
+}
+
+//==========================================================================
+//
+//	IsOkayToTarget
+//
+//==========================================================================
+
+bool IsOkayToTarget(Actor Other)
+{
+	return Other && Other.bShootable && !Other.bNonShootable && !Other.bDormant && !Other.bNeverTarget &&
+		!Other.bInvulnerable /* [CW] questionable */ &&
+		Other.bCombatant /* [CW] may be ignored in some cases? */ &&
+		Other.Health > 0 &&
+		(bIgnoreTeams || Team != Actor(Other).Team);
+}
+
 
 const float	DEFAULT_THREAT_VICINITY			= MISSILERANGE;
 
 //==========================================================================
 //
 //	LookForEnemy
-//
-//	[KoraxRPG] Advanced AI
 //
 //==========================================================================
 
@@ -89,7 +118,7 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (mo == ExcludeActor)
 			continue;
 
-		if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
+		/* if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
 			continue;
 
 		if (mo.Health <= 0)
@@ -101,6 +130,9 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 
 		if (!bIgnoreTeams && (Team == Actor(mo).Team))
 			continue;	// friendly
+		*/
+		if (!IsOkayToTarget(mo))
+			continue;
 
 		// TODO: extra parameter to ignore this
 		if (!CanSense(mo))
@@ -150,674 +182,6 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	if (NewTarget)
 		Target = NewTarget;
 	return NewTarget != none;
-}
-
-//==========================================================================
-//
-//	A_LookEx
-//
-//	[CW] CHECKME!! -- This method currently is not used - at all;
-//  need to analyse its contents and move them somewhere else;
-//  or just delete all this at once
-//
-//	[KoraxRPG] Advanced AI
-//
-//==========================================================================
-
-#ifdef OBSOLETE
-
-bool A_LookEx(bool autoSetChase)
-{
-	EntityEx	targ;
-	Entity		Ent;
-
-	//	Set goal now if appropriate.
-	if (Special == LNSPEC_ThingSetGoal && Args[0] == 0)
-	{
-		Goal = none;
-		for (Ent = Level.FindMobjFromTID(Args[1], none); Ent;
-			Ent = Level.FindMobjFromTID(Args[1], Ent))
-		{
-			if (!Ent.IsA('PatrolPoint'))
-			{
-				continue;
-			}
-			Goal = EntityEx(Ent);
-			break;
-		}
-		ReactionTime = itof(Args[2]) + XLevel.Time;
-		bChaseGoal = !!Args[3];
-	}
-
-	Threshold = 0;	// any shot will wake up
-	pTargetVec = NULL;
-
-	if (TIDToHate)
-	{
-		targ = Target;
-	}
-	else
-	{
-		targ = EntityEx(Sector->SoundTarget);
-	}
-
-	//	Andy Baker's stealth monsters
-	if (bStealth)
-	{
-		VisDir = -1;
-	}
-
-	// [CW] Do not allow to target other actors than monsters
-	if (targ && !targ.bMonster)
-		targ = none;
-
-	if (targ && targ.bShootable && (bIgnoreTeams || Team != Actor(targ).Team))
-	{
-		Target = targ;
-
-		if (bAmbush)
-		{
-			if (!CanSense(Target))
-			{
-				if (!LookForEnemy(false || (Alertness > 0.0)))
-					return false;
-			}
-		}
-	}
-	else
-	{
-		if (!LookForEnemy(bLookAllAround || (Alertness > 0.0)))
-			return false;
-	}
-
-	Alertness = HIGH_ALERTNESS;
-
-	// go into chase state
-	// Don't start chasing after a goal if it isn't time yet.
-	if (Target == Goal)
-	{
-		if (ReactionTime > XLevel.Time)
-		{
-			Target = none;
-		}
-	}
-	else if (SightSound)
-	{
-		if (bBoss)
-		{
-			// Full volume
-			PlaySound(SightSound, CHAN_VOICE, 1.0, ATTN_NONE);
-		}
-		else
-		{
-			PlaySound(SightSound, CHAN_VOICE);
-		}
-	}
-
-	if (Target && autoSetChase)
-		SetState(SeeState);
-	return true;
-}
-
-//==========================================================================
-//
-//	A_LookExAuto
-//
-//	[CW] CHECKME!! -- This method currently is not used - at all;
-//
-//	[KoraxRPG]
-//
-//==========================================================================
-
-final void A_LookExAuto()
-{
-	A_LookEx(true);
-}
-
-#endif	// OBSOLETE
-
-//==========================================================================
-//
-//	A_DoMove
-//
-//	[KoraxRPG] Advanced AI
-//
-//	[CW] Currently an extended variant of Actor::DoChase
-//
-//==========================================================================
-
-bool A_DoMove(bool Evade, bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
-				bool NightmareFast, bool PlayActive)
-{
-	float		delta;
-	float		dist;
-	float		ang;
-	float		oldX;
-	float		oldY;
-	int			oldFloor;
-
-	//	Andy Baker's stealth monsters
-	if (bStealth)
-	{
-		VisDir = -1;
-	}
-
-	if (ReactionCount)
-	{
-		ReactionCount--;
-	}
-
-	if (!pTargetVec)
-	{
-		Error("KRPGActor::A_DoMove: called with pTargetVec = NULL");
-		return false;
-	}
-
-	//bInCombat = true;	// CHECKME!
-	//	Modify target threshold.
-	if (Threshold)
-	{
-		if (!Target || Target.Health <= 0)
-		{
-			Threshold = 0;
-		}
-		else
-		{
-			Threshold--;
-		}
-	}
-
-	if (NightmareFast && Level.Game.fastparm)
-	{
-		//	Monsters move faster in nightmare mode.
-		StateTime *= 0.5;
-		if (StateTime < 0.1)
-		{
-			StateTime = 0.1;
-		}
-	}
-
-	//	Turn towards movement direction if not there yet.
-	// killough 9/7/98: keep facing towards target if strafing or backing out
-	if (Target && strafecount)
-	{
-		A_FaceTarget();
-	}
-
-	//	If the target is dead and not a goal, stop chasing it.
-	if (Target && Target != Goal && Target.Health <= 0)
-	{
-		Target = none;
-	}
-
-	if (!Evade && (Target && !Target.bShootable))
-	{
-		Target = none;
-		if (AIdleState)
-		{
-			SetState(AIdleState);
-			//bInCombat = false;// CHECKME!!
-		}
-		return false;
-	}
-
-	//	Do not attack twice in a row.
-	if (bJustAttacked)
-	{
-		bJustAttacked = false;
-		if (!Level.Game.fastparm && !DoSpecialMove(Evade))
-		{
-			NewChaseDirEx(Evade);
-		}
-		return true;
-	}
-
-	if (FastChase && Target)
-	{
-		//	Strafe
-		if (FastChaseStrafeCount > 0)
-		{
-			FastChaseStrafeCount--;
-		}
-		else
-		{
-			FastChaseStrafeCount = 0;
-			Velocity.x = 0.0;
-			Velocity.y = 0.0;
-			dist = DistTo(Target);
-			if (dist < 640.0)
-			{
-				if (P_Random() < 100)
-				{
-					ang = atan2(Target.Origin.y - Origin.y,
-						Target.Origin.x - Origin.x);
-					if (P_Random() < 128)
-						ang = AngleMod360(ang + 90.0);
-					else
-						ang = AngleMod360(ang - 90.0);
-					Velocity.x = 13.0 * cos(ang) * 35.0;
-					Velocity.y = 13.0 * sin(ang) * 35.0;
-					FastChaseStrafeCount = 3;	// strafe time
-				}
-			}
-		}
-	}
-
-	//	Check for melee attack.
-	if (!Evade && Target && AMeleeState && CheckMeleeRange())
-	{
-		if (AttackSound)
-		{
-			PlaySound(AttackSound, CHAN_WEAPON);
-		}
-		SetState(AMeleeState);
-		return true;
-	}
-
-	//	Check for missile attack.
-	if (AMissileState && Target)
-	{
-		if (Level.Game.fastparm || !MoveCount)
-		{
-			if (CheckMissileRange())
-			{
-				SetState(AMissileState);
-				bJustAttacked = true;
-				return true;
-			}
-		}
-	}
-
-	if (strafecount)
-	{
-		strafecount--;
-	}
-
-	//	Chase towards enemy.
-	if (!DoSpecialMove(Evade) && (!FastChase || !FastChaseStrafeCount))
-	{
-		oldX = Origin.x;
-		oldY = Origin.y;
-		oldFloor = Sector->floor.pic;
-		if (--MoveCount < 0 || !StepMoveEx())
-		{
-			NewChaseDirEx(Evade);
-		}
-		if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
-		{
-			TryMove(vector(oldX, oldY, Origin.z), false);
-			NewChaseDirEx(Evade);
-		}
-	}
-
-	//	Make active sound.
-	if (PlayActive && P_Random() < 3)
-	{
-		PlayActiveSound();
-	}
-
-	return true;
-}
-
-//==========================================================================
-//
-//	DoSpecialMove
-//
-//	[KoraxRPG]
-//
-//	Returns TRUE if actor should skip normal movement
-//
-//==========================================================================
-
-bool DoSpecialMove(bool Evade)
-{
-	return false;
-}
-
-//==========================================================================
-//
-//	A_DoMoveAuto
-//
-//	[KoraxRPG]
-//
-//==========================================================================
-
-final void A_DoMoveAuto()
-{
-	A_DoMove(false, false, IdleState, MeleeState, MissileState,
-		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
-}
-
-//==========================================================================
-//
-//	A_EvadeAuto
-//
-//	[KoraxRPG]
-//
-//==========================================================================
-
-final void A_EvadeAuto()
-{
-	A_DoMove(true, false, IdleState, MeleeState, MissileState,
-		LineSpecialGameInfo(Level.Game).bNightmareFastChase, true);
-}
-
-//==========================================================================
-//
-//  StepMoveEx
-//
-//  Move in the current direction, returns false if the move is blocked.
-//
-//  [CW] Contents used mostly from original StepMove;
-//       Difference is in making MoveDir unused, use free movement angle
-//       instead.
-//
-//==========================================================================
-
-final bool StepMoveEx()
-{
-	float tryx, deltax, origx;
-	float tryy, deltay, origy;
-	float maxmove;
-	int steps;
-	float xspeed;
-	float yspeed;
-	int i;
-	bool try_ok;
-
-	line_t *ld;
-	int good;
-
-	if (bBlasted)
-		return true;
-
-	// Instead of yanking non-floating monsters to the ground,
-	// let gravity drop them down, unless they're moving down a step.
-	if (!bNoGravity && Origin.z > FloorZ && !bOnMobj)
-	{
-		if (Origin.z > FloorZ + MaxStepHeight)
-		{
-			return false;
-		}
-		else
-		{
-			Origin.z = FloorZ;
-		}
-	}
-
-	origx = Origin.x;
-	origy = Origin.y;
-	deltax = Speed / 35.0 * cos(Angles.yaw);
-	deltay = Speed / 35.0 * sin(Angles.yaw);
-	tryx = origx + deltax;
-	tryy = origy + deltay;
-
-	// Like P_XYMovement this should do multiple moves if the step size is too large
-	maxmove = Radius;
-	steps = 1;
-
-	if (maxmove > 0.0)
-	{ 
-		xspeed = fabs(deltax);
-		yspeed = fabs(deltay);
-
-		if (xspeed > yspeed)
-		{
-			if (xspeed > maxmove)
-			{
-				steps = 1 + ftoi(xspeed / maxmove);
-			}
-		}
-		else
-		{
-			if (yspeed > maxmove)
-			{
-				steps = 1 + ftoi(yspeed / maxmove);
-			}
-		}
-	}
-
-	try_ok = true;
-	tmtrace_t tmtrace;
-	for (i = 1; i < steps; i++)
-	{
-		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
-					(deltay / itof(steps * i)), Origin.z), false);
-		if (!try_ok)
-		{
-			break;
-		}
-	}
-
-	// killough 3/15/98: don't jump over dropoffs:
-	if (try_ok)
-	{
-		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), false);
-	}
-
-	if (!try_ok)
-	{
-		// open any specials
-		if (bFloat && tmtrace.bFloatOk)
-		{
-			// must adjust height
-			if (Origin.z < tmtrace.FloorZ)
-				Origin.z += FloatSpeed * Level.Game.frametime;
-			else
-				Origin.z -= FloatSpeed * Level.Game.frametime;
-
-			// Check to make sure there's nothing in the way of the float
-			if (TestMobjZ())
-			{
-				bInFloat = true;
-				return true;
-			}
-		}
-
-		if (!tmtrace.SpecHit.Num)
-			return false;
-
-		//MoveDir = DI_NODIR;
-
-		// if the special is not a door that can be opened, return false
-		//
-		// killough 8/9/98: this is what caused monsters to get stuck in
-		// doortracks, because it thought that the monster freed itself
-		// by opening a door, even if it was moving towards the doortrack,
-		// and not the door itself.
-		//
-		// killough 9/9/98: If a line blocking the monster is activated,
-		// return true 90% of the time. If a line blocking the monster is
-		// not activated, but some other line is, return false 90% of the
-		// time. A bit of randomness is needed to ensure it's free from
-		// lockups, but for most cases, it returns the correct result.
-		//
-		// Do NOT simply return false 1/4th of the time (causes monsters to
-		// back out when they shouldn't, and creates secondary stickiness).
-
-		good = 0;
-		while (tmtrace.SpecHit.Num)
-		{
-			ld = tmtrace.SpecHit[tmtrace.SpecHit.Num - 1];
-			tmtrace.SpecHit.Num = tmtrace.SpecHit.Num - 1;
-			// if the special is not a door
-			// that can be opened,
-			// return false
-			if (LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Use) ||
-			    (bActivatePushWall && LineSpecialLevelInfo(Level).ActivateLine(ld, self, 0, SPAC_Push)))
-			{
-				good |= ld == tmtrace.BlockingLine ? 1 : 2;//true;
-			}
-		}
-		return good && ((Random() >= 203.0) ^ (good & 1));
-	}
-	else
-	{
-		bInFloat = false;
-	}
-
-	if (!bFloat && !bNoGravity)
-	{
-		if (Origin.z > FloorZ)
-		{
-			HitFloorType();
-		}
-		Origin.z = FloorZ;
-	}
-	return true;
-}
-
-//=============================================================================
-//
-// NewChaseDirEx
-//
-//	[KoraxRPG] Advanced AI
-//
-//=============================================================================
-
-final void NewChaseDirEx(optional bool bEvade)
-{
-	float deltax;
-	float deltay;
-
-	if (!pTargetVec)
-	{
-		Error("KRPGActor::NewChaseDirEx: called with pTargetVec = NULL");
-		return;
-	}
-
-	if (!specified_bEvade)
-		bEvade = false;
-
-	if (bEvade)
-	{
-		deltax = Origin.x - pTargetVec->x;
-		deltay = Origin.y - pTargetVec->y;
-	}
-	else
-	{
-		deltax = pTargetVec->x - Origin.x;
-		deltay = pTargetVec->y - Origin.y;
-	}
-
-	// killough 8/8/98: sometimes move away from target, keeping distance
-	// Take advantage over an enemy without missiles, by keeping distance
-	strafecount = 0;
-
-	tmtrace_t tmtrace;
-	//CheckRelPosition(&tmtrace, Origin);	//???CHECKME
-
-	// Try to move away from a dropoff
-	if (FloorZ - tmtrace.DropOffZ > MaxDropoffHeight &&
-		Origin.z <= FloorZ && !bDropOff && !bOnMobj && !bFloat)
-	{
-		float AvoidDeltaX;
-		float AvoidDeltaY;
-		// We call CheckDropoff here to determine if the
-		// bounding box actually needs to be used below
-		CheckDropOff(AvoidDeltaX, AvoidDeltaY);
-
-		if (AvoidDeltaX || AvoidDeltaY)
-		{
-			// [Graf Zahl] I have changed TryMove to only apply this logic when
-			// being called from here. bAavoidingDropoff activates the code that
-			// allows monsters to move away from a dropoff. This is different from
-			// MBF which requires unconditional use of the altered logic and therefore
-			// forcing a massive change in the monster behavior to use this.
-
-			// use different dropoff movement logic in TryMove
-			bAvoidingDropoff = true;
-			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY);
-			bAvoidingDropoff = false;
-		
-			// If moving away from dropoff, set movecount to 1 so that
-			// small steps are taken to get monster away from dropoff.
-			MoveCount = 1;
-			return;
-		}
-	}
-	else
-	{
-		/*
-		---------------------------- TODO -----------------------------
-		float dist;
-		
-		dist = DistTo(Target);
-
-		if (Target.Health > 0)
-	    {   // Live enemy target
-			if (GetCvar('monster_backing') && MissileState &&
-				/*actor->type != MT_SKULL &&*//*
-				((!Target.MissileState && dist < MELEERANGE * 2.0) ||
-				(Target.Player && PlayerEx(Target.Player).ReadyWeapon.bBotMelee &&
-				dist < MELEERANGE * 3.0)))
-			{       // Back away from melee attacker
-					strafecount = P_Random() & 15;
-					deltax = -deltax;
-					deltay = -deltay;
-			}
-		}
-		---------------------------- TODO -----------------------------
-		*/
-	}
-	DO_NewChaseDirEx(deltax, deltay);
-
-	// If strafing, set movecount to strafecount so that old Doom
-	// logic still works the same, except in the strafing part
-	if (strafecount)
-		MoveCount = strafecount;
-}
-
-//==========================================================================
-//
-//  DO_NewChaseDirEx
-//
-//	[CW] an attempt to make movement free of MoveDir presets (any angle)
-//
-//==========================================================================
-
-final void DO_NewChaseDirEx(float deltax, float deltay)
-{
-	float oldang = Angles.yaw;
-	Angles.yaw = atan2(deltay, deltax);
-	if (!TryWalkEx())
-	{
-		if (P_Random() & 1)
-		{
-			Angles.yaw += 45.0 + Random() * 90.0;
-		}
-		else
-		{
-			Angles.yaw -= 45.0 + Random() * 90.0;
-		}
-
-		if (!TryWalkEx())
-		{
-			Angles.yaw = -oldang;
-			TryWalkEx();
-		}
-	}
-}
-
-//==========================================================================
-//
-//  TryWalkEx
-//
-//  Attempts to move actor in its current (ob->moveangle) direction.
-//  If blocked by either a wall or an actor returns FALSE.
-//  If move is either clear of block only by a door, returns TRUE and sets.
-//  If a door is in the way, an OpenDoor call is made to start it opening.
-//
-//==========================================================================
-
-final bool TryWalkEx()
-{
-	if (!StepMoveEx())
-	{
-		return false;
-	}
-	MoveCount = P_Random() & 15;
-	return true;
 }
 
 //==========================================================================

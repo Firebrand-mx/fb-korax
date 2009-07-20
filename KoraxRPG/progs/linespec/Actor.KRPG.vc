@@ -43,10 +43,8 @@ bool			bZAnchored;		// Stuck in floor/ceiling (won't move freely along Z axis)
 
 bool			bCombatant;		// fighting actor
 
+bool			bKeepSilent;	// do not play See, Active and Pain sounds
 bool			bSenseAlways;	// detects target without seeing it
-
-bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
-Actor			MirrorMaster;	// mirror image's "original copy"
 
 bool			bLiving;		// has a chance to spawn "dying spirit" on death
 								// [CW] currently just for fun, though it may get some sense later
@@ -54,8 +52,6 @@ bool			bLiving;		// has a chance to spawn "dying spirit" on death
 //
 // [KoraxRPG] Advanced AI
 //
-
-TVec *			pTargetVec;		// next move designation (is updated almost every tick)
 
 bool			bIgnoreTeams;	// ignore Team factor (attack everyone)
 int				Team;			// this actor's Team ID
@@ -172,11 +168,6 @@ void Died(EntityEx source, EntityEx inflictor)
 	}
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);
-
-	if (!bMirrorImage && bLiving && P_Random() < 33)
-	{
-		Spawn(DyingSpirit, Origin);
-	}
 }
 
 //==========================================================================
@@ -233,9 +224,6 @@ void Tick(float deltaTime)
 			Conditions[i].DoDelegate(deltaTime);
 		}
 	}
-
-	if (bMirrorImage && (!MirrorMaster || MirrorMaster.Health <= 0))
-		Kill();
 	
 	::Tick(deltaTime);
 }
@@ -273,14 +261,6 @@ int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage,
 	if (bReflectMissileDamage &&
 			inflictor.bMissile && !FastProjectile(inflictor) && !inflictor.bRip)
 		return -1;
-	if (bMirrorImage)
-	{
-		Health = 0;
-		if (SetState(FindState('MirrorDeath')))
-			return -1;
-		else
-			return 0;	// [CW] process death normally
-	}
 	return damage;
 }
 
@@ -303,9 +283,6 @@ int TakeSpecialDamage(EntityEx inflictor, EntityEx source, int damage,
 void Kill(optional EntityEx inflictor, optional EntityEx source, optional bool bXDeath, optional name DmgType,
 		  optional bool bNoInvulnerability)
 {
-	//Damage(inflictor, source, bXDeath ? Health - GibsHealth + 1 : Health + 1,
-	//	specified_DamageType ? DamageType : 'InstantKill', true /* ignore armor */);
-
 	//
 	// Calling Damage() is not an option here, because damage could be
 	// decreased by skill level factor or not applied at all in some cases,

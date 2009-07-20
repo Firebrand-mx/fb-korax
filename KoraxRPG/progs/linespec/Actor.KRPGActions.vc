@@ -68,6 +68,76 @@ final bool UseSpell(Inventory Item)
 
 //==========================================================================
 //
+//	A_SpiritsWithin
+//
+//	[FB] Make fallen foes spirits help monster out
+//
+//==========================================================================
+
+final bool A_SpiritsWithin()
+{
+	int i;
+	EntityEx tail;
+	EntityEx next;
+	EntityEx mo;
+	EntityEx g;
+	float dist;
+	float limit;
+
+	foreach AllThinkers(EntityEx, mo)
+	{
+		// Not a corpse
+		if (!mo.bCorpse)
+		{
+			continue;
+		}
+		dist = DistTo(mo);
+		limit = 500.0;
+		if (dist > limit)
+		{
+			continue;
+		}
+		g = Spawn(HolySpirit, mo.Origin + vector(0.0, 0.0, 32.0));
+		if (!g)
+		{
+			continue;
+		}
+		g.Angles.yaw = AngleMod360(mo.Angles.yaw +
+			(45.0 + 45.0 / 2.0));
+		g.Thrust(g.Angles.yaw, g.Speed * Level.Game.frametime);
+		g.Target = self;
+		g.Args[0] = 10;	// initial turn value
+		g.Args[1] = 0;	// initial look angle
+		if (Level.Game.deathmatch)
+		{
+			// Ghosts last slightly less longer in DeathMatch
+			g.Health = 85;
+		}
+		if (Tracer)
+		{
+			g.Tracer = Tracer;
+			//	Don't colide with world but colide with things, i.e explode
+			g.bColideWithWorld = false;
+			g.bSkullFly = true;
+			g.bMissile = false;
+		}
+		tail = Spawn(HolyTail, g.Origin);
+		tail.Target = g;	// parent
+		for (i = 1; i < 3; i++)
+		{
+			next = Spawn(HolyTailTrail, g.Origin);
+			tail.Tracer = next;
+			tail = next;
+		}
+		g.PlaySound(g.ActiveSound, CHAN_VOICE);
+		mo.SetState(mo.FindState('FreeTargMobj'));
+	}
+
+	return true;
+}
+
+//==========================================================================
+//
 //	FaceActorInstant
 //
 //	[CW] Not sure if there's a common method for such simple action..
@@ -87,6 +157,19 @@ final void FaceActorInstant(EntityEx target)
 //
 //
 //**************************************************************************
+
+//==========================================================================
+//
+//	CanBeUsed
+//
+//	TODO
+//
+//==========================================================================
+
+bool CanBeUsed()
+{
+	return true;
+}
 
 //==========================================================================
 //
