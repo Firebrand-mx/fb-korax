@@ -43,7 +43,6 @@ bool			dex_mod;
 bool			str_mod;
 bool			int_mod;
 bool			wis_mod;
-// bool			active_damage; 	// [FB] TRUE if PI Damage is active
 
 bool			bInstantRanged;	// [CW] Can be used for BotAI too
 TVec			ShotPosition;	// [CW]
@@ -53,21 +52,270 @@ TVec			ShotPosition;	// [CW]
 // --------------------
 
 // Bot AI flags
-//bool			bBotChooseMelee;		// [CW] use Weapon::bBotMelee instead
 bool			bBotProjectileMedium;	// [CW] renamed from bBotChooseMedium to correspond to other 2 flag names
-//bool			bBotChooseRanged;		// [CW] use Weapon::bBotProjectile instead
-//bool			bFireDamage;			// [CW] use DamageTypeHint instead*/
 name			DamageTypeHint;			// [CW]
 
 										// TODO!!
 float			BotSafeDist;			// [CW] Weapon.BotCombatDist determines effective range
 										//      while BotSafeDist stands for minimal safe range
+
 // Fire & Refire tics
 float			fire_tics;
 float			refire_tics;
 
 //	We need this for weapon pickups, leave for other weapons for now.
 int				Slot;
+
+//	Amount the damage will be modified by balance factor
+int				factor;
+//-------------------------------------------------------------------------------------------------------
+//					BALANCING MATRIX DATA
+//	      These flags are all informative, just to know which feature a weapon has
+//-------------------------------------------------------------------------------------------------------
+
+int				Shots;					//	Purely informative; number of projectiles/shots/strikes
+										//	(this should be used as a constant)
+int				damage;					//	Purely informative; damage amount this weapon does
+										//	(this should be used as a constant, verified by projectiles shot)
+bool			bExplosive;				//	This weapon is explosive
+bool			bDelayedExplosion;		//	This weapon produces delayed explosions
+bool			bPersistent;			//	This weapon drops persistent projectiles (poison clouds)
+bool			bMeleeLong;				//	This weapon has long melee range
+bool			bProjectileShort;		//	It has shor projectile range (flamethrower)
+bool			bProjectileSlow;		//	Shots slow projectiles (darkness)
+bool			bProjectileFast;		//	Shots fast projectiles (wands, blasters)
+bool			bProjectileSeeker;		//	Shots seeker missiles
+bool			bProjectileRipper;		//	Shots ripper projectiles
+bool			bHitScan;				//	Hitscan weapon
+bool			bHighPrecision;			//	Shots precise hitscans
+bool			bLowPrecision;			//	Shots unprecise hitscans
+bool			bSpread;				//	This weapons spreads projectiles
+										//	(or shots more projectiles when fired missile explodes)
+bool			bMassSpread;			//	This weapons massively spreads projectiles
+bool			bIncrementShots;		//	Weapon has small increment in shots with player's leveling
+bool			bBigIncrementShots;		//	Weapon has big increment in shots with player's leveling
+
+//-------------------------------------------------------------------------------------------------------
+//					BALANCING MATRIX METHODS
+//-------------------------------------------------------------------------------------------------------
+
+//==========================================================================
+//
+//	WeaponLevel
+//
+//==========================================================================
+
+int WeaponLevel(int slot)
+{
+	return	slot * 20;
+}
+
+//==========================================================================
+//
+//	FireRate
+//
+//==========================================================================
+
+int FireRate()
+{
+	if (refire_tics <= 5.0)
+	{
+		// Repeating
+		return 5;
+	}
+	else if (refire_tics > 5.0 && refire_tics <= 15.0)
+	{
+		// Fast
+		return 3;
+	}
+	else if (refire_tics > 15.0 && refire_tics <= 30.0)
+	{
+		// Slow
+		return 2;
+	}
+	else if (refire_tics > 30.0)
+	{
+		// Charging Power (or something :P)
+		return 1;
+	}
+}
+
+//==========================================================================
+//
+//	NumberOfShots
+//
+//==========================================================================
+
+int NumberOfShots(int number)
+{
+	if (Shots <= 1)
+	{
+		return 1;
+	}
+	else if (Shots == 2)
+	{
+		return 2;
+	}
+	else if (Shots == 3)
+	{
+		return 5;
+	}
+	else if (Shots == 4 || bIncrementShots)
+	{
+		return 4;
+	}
+	else if (Shots >= 5 || bBigIncrementShots)
+	{
+		return 8;
+	}
+}
+
+//==========================================================================
+//
+//	WeaponType
+//
+//==========================================================================
+
+int WeaponType()
+{
+	int sum;
+
+	if (bBotMelee)
+	{
+		// Weapon is melee type, check which specific type we have
+		if (bMeleeLong)
+		{
+			sum += 2;
+		}
+		sum += 1;
+	}
+	if (bBotProjectileMedium || bBotProjectile)
+	{
+		if (bProjectileShort || bProjectileSlow)
+		{
+			sum += 3;
+		}
+		if (bProjectileSeeker || bProjectileRipper)
+		{
+			sum += 8;
+		}
+		if (bProjectileFast)
+		{
+			sum += 9;
+		}
+		sum += 6;
+	}
+	if (bHitScan)
+	{
+		// OK, this weapon is hitscan, now check which type of hitscan weapon we have
+		if (bHighPrecision)
+		{
+			sum += 12;
+		}
+		if (bLowPrecision)
+		{
+			sum += 5;
+		}
+		sum += 10;
+	}
+	
+	return sum;
+}
+
+//==========================================================================
+//
+//	SpreadingType
+//
+//==========================================================================
+
+int SpreadingType()
+{
+	if (bSpread)
+	{
+		return 2;
+	}
+	else if (bMassSpread)
+	{
+		return 3;
+	}
+
+	// No spreading
+	return 1;
+}
+
+//==========================================================================
+//
+//	ExplosiveType
+//
+//==========================================================================
+
+int ExplosiveType()
+{
+	if (bExplosive)
+	{
+		return 3;
+	}
+	if (bDelayedExplosion)
+	{
+		return 6;
+	}
+	if (bPersistent)
+	{
+		return 10;
+	}
+	
+	return 0;
+}
+
+//==========================================================================
+//
+//	DamageType
+//
+//==========================================================================
+
+int DamageType()
+{
+	if (DamageTypeHint == 'Fire')
+	{
+		return 2;
+	}
+	else if (DamageTypeHint == 'Poison')
+	{
+		return 4;
+	}
+	else if (DamageTypeHint == 'Darkness')
+	{
+		return 6;
+	}
+	
+	return 1;
+}
+
+//==========================================================================
+//
+//	CalculateFactors
+//
+//==========================================================================
+
+void CalculateFactors()
+{
+	// First, check weapon level (slot)
+	factor += WeaponLevel(Slot);
+	// Add factor given from weapon's fire rate
+	factor += FireRate();
+	// Calculate factor from number of shots done by this weapon
+	factor += NumberOfShots(Shots);
+	// Calculate factor from weapon type
+	factor += WeaponType();
+	// Calculate factor from spreading type
+	factor += SpreadingType();
+	// Calculate factor from explosion type
+	factor += ExplosiveType();
+	// Calculate factor from damage type
+	factor += DamageType();
+	
+	print("weapon's balance factor: %d", factor);
+}
 
 //==========================================================================
 //
@@ -117,6 +365,7 @@ void AttachToOwner(EntityEx NewOwner)
 	::AttachToOwner(NewOwner);
 
 	Ammo3 = AddAmmo(NewOwner, AmmoType3, AmmoGive3);
+	CalculateFactors();
 }
 
 //==========================================================================
@@ -131,11 +380,16 @@ final int GetManaUse(int manause)
 	{
 		manause = manause * 10 / Player(Owner.Player).wisdom;
 	}
+
+	// affect manause by balance factor
+	manause = manause - (manause * (factor / manause ? manause : 1) / 80);
+
 	// [FB] Always use mana, no matter what
 	if(manause < 1)
 	{
 		manause = 1;
 	}
+
 	return manause;
 }
 
@@ -243,7 +497,7 @@ final void GunShot1(EntityEx A, int accurate, TVec dir)
 	// [CW] CHECKME!! -- this method is used by 2 Marine weapons
 	// - Pistol and Shotgun; is this damage value should be
 	// determined as a local constant here?
-	damage = 10; //5 * (P_Random() % 3 + 1);
+	damage = 13; //5 * (P_Random() % 3 + 1);
 	ApplyDamageModifiers(damage);
 
 	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
@@ -271,7 +525,7 @@ final void GunShot2(EntityEx A, int accurate, TVec dir)
 		AngleVector(&angles, &dir);
 	}
 
-	damage = 14; //7 * (P_Random() % 3 + 1);
+	damage = 17; //7 * (P_Random() % 3 + 1);
 
 	ApplyDamageModifiers(damage);
 
@@ -292,8 +546,16 @@ final void ApplyDamageModifiers(out int damage)
 	if (int_mod)
 		damage = damage * Player(Owner.Player).intelligence / 10;
 
+	// affect damage by balance factor
+	damage = damage - (damage * (factor / damage ? damage : 1) / 80);
+	
+	if (damage < 1)
+	{
+		damage = 1;
+	}
+
 	// PI Damage
-	if(/*active_damage */Player(Owner.Player).pi_damage)
+	if(Player(Owner.Player).pi_damage)
 		damage *= ftoi(3.1415);
 }
 

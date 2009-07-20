@@ -32,8 +32,6 @@
 
 class WeaponFighterAxe : KArenaWeapon;
 
-//[KORAX]
-//int NoMoreManaState;
 const float AxeRange = 9.0 * MELEERANGE / 4.0;
 
 //==========================================================================
@@ -58,23 +56,13 @@ final void A_KArenaFAxeAttack() self(KArenaPlayerPawn)
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	damage = 50; //40 + (P_Random() & 15) + (P_Random() & 7);
+	damage = 27; //40 + (P_Random() & 15) + (P_Random() & 7);
 	Wpn.ApplyDamageModifiers(damage);
 	power = 0.0;
-	//[KORAX]
-/*	if (IsWeaponManaUsable())
-	{*/
-		damage <<= 1;
-		power = 6.0;
-		PuffType = AxePuffGlow;
-		useMana = 1;
-	//[KORAX]
-/*	}
-	else
-	{
-		PuffType = AxePuff;
-		useMana = 0;
-	}*/
+//	damage <<= 1;
+	power = 6.0;
+	PuffType = AxePuffGlow;
+	useMana = 1;
 
 	AimTarget = AimEx(vforward, WeaponFighterAxe::AxeRange, 45.0 / 16.0, 16, MELEERANGE);
 	if (AimTarget)
@@ -100,15 +88,9 @@ final void A_KArenaFAxeAttack() self(KArenaPlayerPawn)
 		}
 	}
 
-	//[KORAX]
 	if (useMana == 2)
 	{
 		Wpn.UseWeaponMana();
-	//[KORAX]
-/*		if (!IsWeaponManaUsable())
-		{
-			SetState(NoMoreManaState);
-		}*/
 	}
 }
 
@@ -140,15 +122,13 @@ Fire:
 	Goto Ready
 }
 
-/*SECOND*/
+/*SECOND */
 defaultproperties
 {
 	Slot = 2;
 	SelectionOrder = 6100;
 	AmmoType1 = Mana1;
 	AmmoUse1 = 5;
-	//needsnomana = true;
-//	NoMoreManaState = S_FAXEATK_5;
 	PSpriteSY = -12.0;
 	BotCombatDist = 9.0 * MELEERANGE / 4.0;
 	bAxeBlood = true;
@@ -159,9 +139,9 @@ defaultproperties
 	bBotMelee = true;
 	bBotProjectileMedium = false;
 	bBotProjectile = false;
-	//bFireDamage = false;
 	PickupMessage = "TIMON'S AXE";
 	refire_tics = 23.0;
 	fire_tics = 10.0;
+	Shots = 1;
 	HitObituary = "$ob_faxe";
 }

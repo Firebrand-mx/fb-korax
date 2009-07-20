@@ -66,7 +66,7 @@ final void A_KArenaFireShotgun2() self(KArenaPlayerPawn)
 		rot.yaw = (Random() - Random()) * 45.0 / 4.0;
 		rot.roll = 0.0;
 		dir = RotateDirectionVector(aimDir, rot);
-		damage = 7; //5 * (P_Random() % 3 + 1);
+		damage = 17; //5 * (P_Random() % 3 + 1);
 		Wpn.ApplyDamageModifiers(damage);
 		Wpn.ShotPosition = Origin;	// [CW]
 		LineAttack(dir, MISSILERANGE, damage, BulletPuff);
@@ -88,7 +88,8 @@ final void A_SSCheckAmmo() self(KArenaPlayerPawn)
 	}
 	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
 
-	Wpn.CheckAmmo(Wpn.FireMode, true, true);
+	if (!Wpn.CheckAmmo(Wpn.FireMode, true, true))
+		Player.SetViewState(ps_weapon, Wpn.GetReadyState());
 }
 
 //===========================================================================
@@ -169,9 +170,12 @@ defaultproperties
 	bBotProjectileMedium = true;
 	bBotProjectile = true;
 	bInstantRanged = true;
-	//bFireDamage = false;
+	bHitScan = true;
+	bLowPrecision = true;
+	bSpread = true;
 	PickupMessage = "SUPER SHOTGUN";
 	Obituary = "$ob_supershotgun";
 	fire_tics = 7.0;
 	refire_tics = 60.0;
+	Shots = 20;
 }

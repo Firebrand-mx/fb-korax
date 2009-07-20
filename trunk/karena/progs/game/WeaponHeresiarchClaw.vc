@@ -34,9 +34,6 @@ class WeaponHeresiarchClaw : KArenaWeapon;
 
 state HoldAttackState;
 
-////////state Attack2State;
-////////int PunchCount;
-
 //==========================================================================
 //
 //	GetAttackState
@@ -81,13 +78,10 @@ final void A_HClawAttack() self(KArenaPlayerPawn)
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		//PunchCount++;
-		//if (PunchCount == 3)
-		//{
-			damage <<= 1;
-			power = 6.0;
-			PuffType = HammerPuff;
-		//}
+		damage <<= 1;
+		power = 6.0;
+		PuffType = HammerPuff;
+
 		if (LineAttack(vforward, 2.0 * MELEERANGE, damage, PuffType))
 		{
 			if (PuffType == HammerPuff)
@@ -108,20 +102,11 @@ final void A_HClawAttack() self(KArenaPlayerPawn)
 	else
 	{
 		// didn't find any creatures, so try to strike any walls
-		//PunchCount = 0;
-
 		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
 		{
 			PlaySound('FighterPunchMiss', CHAN_WEAPON);
 		}
 	}
-
-	//if (PunchCount == 3)
-	//{
-	//	PunchCount = 0;
-	//	SetState(Attack2State);
-	//	pmo.PlaySound('*fistgrunt', CHAN_VOICE);
-	//}
 }
 
 states
@@ -168,8 +153,8 @@ defaultproperties
 	bBotProjectileMedium = false;
 	bBotProjectile = false;
 	bWimpyWeapon = true;
-	//bFireDamage = false;
 	refire_tics = 22.0;
 	fire_tics = 13.0;
+	Shots = 1;
 	HitObituary = "$ob_heresiarchclaw";
 }
