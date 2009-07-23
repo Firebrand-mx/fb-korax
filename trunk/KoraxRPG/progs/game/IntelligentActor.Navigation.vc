@@ -134,7 +134,14 @@ void DoRoute()
 					TaskLeader = none;
 			}
 			else
+			{
 				TaskLeader = none;
+			}
+
+			if (!TaskLeader.NRoute && !TaskLeader.PRoute && !!TaskLeader.NPostRoute)
+			{
+				TaskLeader = none;
+			}
 		}
 	}
 
@@ -167,9 +174,34 @@ void DoRoute()
 		SetImmediateTarget(FTarget.Thing, FTarget.Pos, FTarget.Action);
 		return;
 	}
+	else if (NRoute)
+	{
+		///////// If check target pos timer run out, pawn should reconsider its target position
+		//////////if (FTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
+		{
+			// If enemy moved away too far from his previous stored position,
+			// update that position and force rebuild route
+			if (Length(LastKnownPosition - FTarget.Pos) > Behavior.FTargetPosChangeLimit)
+			{
+				Behavior.RouteRebuildTime = 0;
+				FTarget.Pos = LastKnownPosition;
+			}
+			//else
+			//	Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
+
+			//FTarget.Pos = LastKnownPosition;
+		}
+
+		if (Behavior.RouteRebuildTime > 0)
+		{
+			// check target route waypoint vicinity
+			AcceptTargetNode();
+			return;
+		}
+	}
 	else if (TaskLeader)
 	{
-		if (ITarget.Thing != TaskLeader)
+		if (ITarget.Thing && ITarget.Thing != TaskLeader)
 		{
 			// possibly a help-node
 			if (Length(Origin - ITarget.Thing.Origin) <= ACCEPTABLE_WAYPOINT_VICINITY)
@@ -196,31 +228,6 @@ void DoRoute()
 			return;
 		}
 	}
-	else if (NRoute)
-	{
-		///////// If check target pos timer run out, pawn should reconsider its target position
-		//////////if (FTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
-		{
-			// If enemy moved away too far from his previous stored position,
-			// update that position and force rebuild route
-			if (Length(LastKnownPosition - FTarget.Pos) > Behavior.FTargetPosChangeLimit)
-			{
-				Behavior.RouteRebuildTime = 0;
-				FTarget.Pos = LastKnownPosition;
-			}
-			//else
-			//	Behavior.CheckFTargetPosTime = Behavior.CheckFTargetPosRate;
-
-			//FTarget.Pos = LastKnownPosition;
-		}
-
-		if (Behavior.RouteRebuildTime > 0)
-		{
-			// check target route waypoint vicinity
-			AcceptTargetNode();
-			return;
-		}
-	}
 	else /* if (FTarget.Thing)*/
 	{
 		if (Behavior.bLostFTarget)
@@ -239,7 +246,7 @@ void DoRoute()
 	// Try get a task leader and follow him
 	if (bCanJoinTaskGroup)
 	{
-		if (TaskLeader || JoinTaskLeader())
+		if (JoinTaskLeader())
 		{
 			CleanRoutes();
 			return;
@@ -292,12 +299,12 @@ bool JoinTaskLeader()
 				if (IA.FTarget.Pos == FTarget.Pos) accept = true;
 			}
 
-			if (accept)
+			if (accept && (IA.NRoute || IA.PRoute || IA.NPostRoute))
 			{
 				dist = DistTo(IA);
 				if (dist <= ACCEPTABLE_TASKLEADER_VICINITY && (min_dist < 0.0 || dist < min_dist))
 				{
-					if (CanSee(IA) /*&& CanReach(IA.Origin)*/)
+					if (CanSee(IA) && CanReach(IA.Origin))
 					{
 						min_dist = dist;
 						TaskLeader = IA;
