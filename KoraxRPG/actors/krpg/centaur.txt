@@ -136,7 +136,7 @@ actor KRPGCentaurMash : KRPGCentaur replaces CentaurMash
 }
 
 //------------------------------------------------------------------------------
-actor FlameCentaur : CentaurLeader 16045
+actor FlameCentaur : KRPGCentaurLeader 16045
 {
 //
 // TODO: new floor-fire missile class that does less damage
@@ -147,7 +147,7 @@ actor FlameCentaur : CentaurLeader 16045
 		CENT E 5 A_FaceTarget
 		CENT E 5 A_Jump(100, "Missile2")
 		CENT F 8 Bright A_FaceTarget
-		CENT F 8 Bright A_CustomMissile("MinotaurFX2", 0, 0, 0, 0)
+		CENT F 8 Bright A_CustomMissile("FlameCentaurFF1", 0, 0, 0, 0)
 		CENT E 5 Bright
 		Goto See
 	Missile2:
@@ -175,4 +175,24 @@ actor FlameCentaur : CentaurLeader 16045
 		CENT E 1 A_UnSetReflectiveInvulnerable
 		Goto Missile
 	}
+}
+
+//------------------------------------------------------------------------------
+actor FlameCentaurFF1 : MinotaurFX2
+{
+	Damage 1
+	ExplosionDamage 16
+	
+	states
+	{
+	Spawn:
+		FX13 A 2 A_GenericFloorFire("FlameCentaurFF2")
+		Loop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor FlameCentaurFF2 : MinotaurFX3
+{
+	ExplosionDamage 8
 }
