@@ -86,17 +86,12 @@ void CleanRoutes()
 	RouteBuild.IterationsCount = 0;
 	Behavior.RouteRebuildTime = 0;
 
-	if (NRoute)
-	{
-		NRoute.Destroy();
-		NRoute = none;
-	}
+	NRoute = none;
+	NPostRoute = none;
+	PRoute = none;
 
-	if (PRoute)
-	{
-		PRoute.Destroy();
-		PRoute = none;
-	}
+	PRouteNodeIndex = -1;
+	NRouteNodeIndex = -1;
 }
 
 //==========================================================================
@@ -174,6 +169,19 @@ void DoRoute()
 	}
 	else if (TaskLeader)
 	{
+		if (ITarget.Thing != TaskLeader)
+		{
+			// possibly a help-node
+			if (Length(Origin - ITarget.Thing.Origin) <= ACCEPTABLE_WAYPOINT_VICINITY))
+			{
+				SetImmediateTarget(none);
+			}
+			else
+			{
+				return;
+			}
+		}
+
 		if (CanReach(TaskLeader.Origin, none))
 		{
 			return;
@@ -184,7 +192,7 @@ void DoRoute()
 		Node N = FindAcceptableTargetNode(Node, TaskLeader.Origin, none, true);
 		if (N)
 		{
-			ITarget.Thing = N;
+			SetImmediateTarget(N);
 			return;
 		}
 	}
@@ -527,8 +535,6 @@ bool NextWaypoint()
 {
 	Node N;
 
-	print("NextWaypoint");
-
 	if (!NRoute)
 	{
 		return false;
@@ -537,7 +543,6 @@ bool NextWaypoint()
 	if (bWalkNRouteBackward)
 	{
 		NRouteNodeIndex--;
-		print("walk bw, index = %i", NRouteNodeIndex);
 		if (NRouteNodeIndex < 0)
 		{
 			return false;
@@ -546,15 +551,12 @@ bool NextWaypoint()
 		while (NRouteNodeIndex >= 1 && CanReach(NRoute.Nodes[NRouteNodeIndex - 1].Origin))
 		{
 			NRouteNodeIndex--;
-			print("can reach %i", NRouteNodeIndex);
 		}
-		print("target node index %i", NRouteNodeIndex);
 		N = NRoute.Nodes[NRouteNodeIndex];
 	}
 	else
 	{
 		NRouteNodeIndex++;
-		print("walk fw, index = %i", NRouteNodeIndex);
 		if (NRouteNodeIndex >= NRoute.Nodes.Num)
 		{
 			return false;
@@ -563,9 +565,7 @@ bool NextWaypoint()
 		while (NRouteNodeIndex < NRoute.Nodes.Num - 1 && CanReach(NRoute.Nodes[NRouteNodeIndex + 1].Origin))
 		{
 			NRouteNodeIndex++;
-			print("can reach %i", NRouteNodeIndex);
 		}
-		print("target node index %i", NRouteNodeIndex);
 		N = NRoute.Nodes[NRouteNodeIndex];
 	}
 	
@@ -629,6 +629,13 @@ bool NextCheckpoint()
 				return NextWaypoint();
 			}
 		}
+	}
+
+	if (NPostRoute)
+	{
+		NRoute = NPostRoute;
+		NPostRoute = none;
+		return NextWaypoint();
 	}
 
 	return false;
