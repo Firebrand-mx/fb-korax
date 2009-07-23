@@ -150,84 +150,50 @@ final void FaceActorInstant(EntityEx target)
 		target.Origin.x - Origin.x);
 }
 
-//**************************************************************************
-//
-//
-//	[KoraxRPG] Advanced interaction
-//
-//
-//**************************************************************************
-
 //==========================================================================
 //
-//	CanBeUsed
-//
-//	TODO
+//  A_GenericDoBlur
 //
 //==========================================================================
 
-bool CanBeUsed()
+final void A_GenericDoBlur(int CountMask, int CountAdd, float ThrustForce, name SoundName)
 {
-	return true;
+	Special1 = (P_Random() & CountMask) + CountAdd;	// P_Random number of blurs
+	if (P_Random() < 120)
+	{
+		Thrust(AngleMod360(Angles.yaw + 90.0), ThrustForce);
+	}
+	else if (P_Random() > 125)
+	{
+		Thrust(AngleMod360(Angles.yaw - 90.0), ThrustForce);
+	}
+	else
+	{
+		// Thrust forward
+		Thrust(Angles.yaw, ThrustForce);
+	}
+	PlaySound(SoundName, CHAN_VOICE);
 }
 
 //==========================================================================
 //
-//	UseThing
+//	A_GenericSpawnBlur
 //
 //==========================================================================
 
-bool UseThing(EntityEx Thing)
+final void A_GenericSpawnBlur(class<Actor> BlurClass, state AfterState)
 {
-	if (Thing == self)
+	Actor blur;
+
+	if (!--Special1)
 	{
-		return false;
+		Velocity.x = 0.0;
+		Velocity.y = 0.0;
+		SetState(AfterState);
 	}
-
-	if (Thing.bUseSpecial && Thing.Special && Level.ExecuteActionSpecial(
-		Thing.Special, Thing.Args[0], Thing.Args[1], Thing.Args[2],
-		Thing.Args[3], Thing.Args[4], NULL, 0, self))
+	blur = Spawn(BlurClass, Origin);
+	if (blur)
 	{
-		return true;
+		blur.Angles = Angles;
 	}
-
-	// [CW] TODO: thinkout what conversation style do we need;
-	//			  also, should other persons have ability to talk with each other?
-	//
-	//dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
-	if (Thing.ConversationID > 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
-	{
-		return true;
-	}
-
-	if (UseThingSpecial(Thing))
-	{
-		return true;
-	}
-
-	return Actor(Thing).IsBeingUsed(self);
-}
-
-//==========================================================================
-//
-//	UseThingSpecial
-//
-//==========================================================================
-
-bool UseThingSpecial(EntityEx Thing)
-{
-	return false;
-}
-
-//==========================================================================
-//
-//	IsBeingUsed
-//
-//	[CW] Override for actors that could be 'used'
-//
-//==========================================================================
-
-bool IsBeingUsed(Actor User)
-{
-	return false;
 }

@@ -456,6 +456,88 @@ void Thrust3d2(float angle2d, float move2d, float move3)
 //**************************************************************************
 //
 //
+//	[KoraxRPG] Advanced interaction
+//
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	CanBeUsed
+//
+//	TODO
+//
+//==========================================================================
+
+bool CanBeUsed()
+{
+	return true;
+}
+
+//==========================================================================
+//
+//	UseThing
+//
+//==========================================================================
+
+bool UseThing(EntityEx Thing)
+{
+	if (Thing == self)
+	{
+		return false;
+	}
+
+	if (Thing.bUseSpecial && Thing.Special && Level.ExecuteActionSpecial(
+		Thing.Special, Thing.Args[0], Thing.Args[1], Thing.Args[2],
+		Thing.Args[3], Thing.Args[4], NULL, 0, self))
+	{
+		return true;
+	}
+
+	// [CW] TODO: thinkout what conversation style do we need;
+	//			  also, should other persons have ability to talk with each other?
+	//
+	//dprint("UseThing: Thing Class = %n, ConID = %i", GetClassName(Thing.Class), Thing.ConversationID);
+	if (Thing.ConversationID > 0 && LineSpecialLevelInfo(Level).StartConversation(self, Thing))
+	{
+		return true;
+	}
+
+	if (UseThingSpecial(Thing))
+	{
+		return true;
+	}
+
+	return Actor(Thing).IsBeingUsed(self);
+}
+
+//==========================================================================
+//
+//	UseThingSpecial
+//
+//==========================================================================
+
+bool UseThingSpecial(EntityEx Thing)
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	IsBeingUsed
+//
+//	[CW] Override for actors that could be 'used'
+//
+//==========================================================================
+
+bool IsBeingUsed(Actor User)
+{
+	return false;
+}
+
+//**************************************************************************
+//
+//
 //	[KoraxRPG] Extra effects
 //
 //
