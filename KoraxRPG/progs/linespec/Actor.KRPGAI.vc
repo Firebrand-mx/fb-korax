@@ -16,26 +16,6 @@
 void SetTeam(int team)
 {
 	Team = team;
-
-	//
-	// TODO: special code needed for Intelligent Actors
-	//
-
-	if (bCombatant && Target && Actor(Target).Team == Team)
-	{
-		Target = none;
-		SetState(IdleState);
-	}
-
-	Actor A;
-	foreach AllThinkers(Actor, A)
-	{
-		if (A.bCombatant && A.Target == self && A.Team == Team)
-		{
-			A.Target = none;
-			// A.SetState(IdleState);
-		}
-	}
 }
 
 //==========================================================================
@@ -62,7 +42,6 @@ bool CanSense(EntityEx Other)
 bool CanBeAttacked()
 {
 	return bShootable && !bNonShootable &&
-		bCombatant /* [CW] may be ignored in some cases? */ &&
 		Health > 0;
 }
 
@@ -74,11 +53,11 @@ bool CanBeAttacked()
 
 bool IsOkayToTarget(Actor Other)
 {
-	return Other && Other.bShootable && !Other.bNonShootable && !Other.bDormant && !Other.bNeverTarget &&
+	return Other && Other.CanBeAttacked() && !Other.bDormant &&
+		(!Other.bNeverTarget || (Other == Target && bHateTarget)) &&
 		!Other.bInvulnerable /* [CW] questionable */ &&
-		Other.bCombatant /* [CW] may be ignored in some cases? */ &&
-		Other.Health > 0 &&
-		(bIgnoreTeams || Team != Actor(Other).Team);
+		bCombatant /* [CW] may be ignored in some cases? */ &&
+		(bIgnoreTeams || (Other == Target && bHateTarget) || Team != Actor(Other).Team);
 }
 
 
@@ -180,7 +159,10 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	}
 
 	if (NewTarget)
+	{
 		Target = NewTarget;
+		bHateTarget = false;
+	}
 	return NewTarget != none;
 }
 
