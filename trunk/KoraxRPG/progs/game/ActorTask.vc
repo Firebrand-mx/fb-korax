@@ -72,6 +72,9 @@ TVec									NextPos;
 bool									Direction;	// 0 = fw; 1 = bw
 float									Radius;
 
+bool									bTurnCW;
+float									OriginalAngle;
+
 IntelligentActor			Owner;
 
 
@@ -83,15 +86,30 @@ IntelligentActor			Owner;
 
 bool ConsiderCompleted()
 {
+	//
+	// Completion by duration exceeded
+	//
 	if (Duration > 0.0 && Time <= 0.0)
+	{
+		switch (Order)
+		{
+		case ORDER__ATTACKALL:
+			Owner.bIgnoreTeams = Owner.default.bIgnoreTeams;
+			break;
+		}
 		return true;
+	}
 
 	bool bCompleted = false;
 
+	//
+	// Completion by reaching an aim
+	//
 	switch (Order)
 	{
 	case ORDER__NONE:
 		bCompleted = true;
+		break;
 	case ORDER__ATTACKTHING:
 	case ORDER__ATTACKALL:
 	case ORDER__FOLLOW:
@@ -103,23 +121,36 @@ bool ConsiderCompleted()
 	case ORDER__PATROL2PT:
 	case ORDER__PATROLPATH:
 	case ORDER__PATROLLOOP:
-		bCompleted = (Length(Owner.Origin - Target.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY ); 
+		bCompleted = (Length(Owner.Origin - Target.Pos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY );
+		break;
 	case ORDER__WANDER:
 		bCompleted = (Length(Owner.Origin - NextPos) < IntelligentActor::ACCEPTABLE_WAYPOINT_VICINITY );
+		break;
 	}
 
-	switch (Order)
+	//
+	// Some tasks could not be completed in common meaning,
+	// but they need to update objective, if previous one was completed
+	//
+	if (bCompleted)
 	{
-	case ORDER__ATTACKALL:
-		Owner.bIgnoreTeams = Owner.default.bIgnoreTeams;
-		break;
-	case ORDER__PATROL2PT:
+		switch (Order)
 		{
-			TVec v = Target.Pos;
-			Target.Pos = NextPos;
-			NextPos = v;
+		case ORDER__ATTACKALL:
+			Target.Thing = none;
+			bCompleted = false;
+			break;
+		case ORDER__PATROL2PT:
+			{
+				TVec v = Target.Pos;
+				Target.Pos = NextPos;
+				NextPos = v;
+				bCompleted = false;
+				Owner.SetFinalTarget(none, Target.Pos, Target.Action);
+				Owner.SetImmediateTarget(none, Target.Pos, Target.Action);
+			}
+			break;
 		}
-		break;
 	}
 
 	return bCompleted;

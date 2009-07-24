@@ -189,6 +189,7 @@ void CheckThreat()
 					{
 						bThreatened = true;
 						Target = targ;
+						bHateTarget = false;
 						Threshold = BASETHRESHOLD;
 						Alertness = HIGH_ALERTNESS;
 
@@ -278,6 +279,13 @@ void ConsiderChangeState()
 			SetState(SeeState);
 		}
 	}
+	else if (StateIsInSequence(State, SeeState))
+	{
+		if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
+		{
+			SetState(IdleState);
+		}
+	}
 }
 
 //==========================================================================
@@ -299,7 +307,7 @@ final void A_LookAI()
 
 final void A_ChaseAI()
 {
-	//UpdateTarget();//CHECKME: maybe move to DoAI?
+	ConsiderChangeState();
 
 	if (!bNeverUseRoutes)
 		DoRoute();
@@ -315,51 +323,10 @@ final void A_ChaseAI()
 	else
 		pDestination = NULL;
 
-					// CHECKME!!
-	if (DoMoveR && DoMoveR(false, none, MeleeState, MissileState, false, true, false))
+	if (DoMoveR)
 	{
-		// [CW] Still has Target to attack
+		DoMoveR(false, none, MeleeState, MissileState, false, true, false);
 	}
-	else	// ???
-	{
-		//
-		// [CW] No current Target, think out what to do next
-		//
-
-		if (!CurrentTask /* ??? need this condition >>> *//*&& (ITarget.Thing == FTarget.Thing || ITarget.Pos == FTarget.Pos)*/)
-			// we have to check Thing and Pos in case Thing is 'none' in both I & F
-		{
-			// Final target gone, kill the route if any, prepare for new task
-			CleanRoutes();
-			SetFinalTarget(none);
-			SetImmediateTarget(none);
-			bInCombat = false;
-			SetState(IdleState);
-		}
-		else
-		{
-			// Final target is still there, go for it
-			if (/*Behavior.bUsingRoute*/NRoute)
-			{
-				/*if (!CurrentRoute)
-				{
-					Error("InteligentActor::A_ChaseAI: CurrentRoute reference is not set to an object while bUsingRoute flag is TRUE");
-					return;
-				}
-				*/
-				//ITarget.Thing = none;
-				//ITarget.Node = CurrentRoute.Nodes[RouteWayIndex];
-				//ITarget.Pos = ITarget.Node.Origin;
-				ITarget.Thing = NRoute.Nodes[NRouteNodeIndex];
-			}
-			else
-			{
-				SetImmediateTarget(FTarget.Thing, FTarget.Pos, FTarget.Action);
-			}
-		}
-	}
-
-	ConsiderChangeState();// CHECKME
 }
 
 //==========================================================================
