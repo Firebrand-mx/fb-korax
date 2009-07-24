@@ -127,11 +127,13 @@ ActorTask IssueOrder(bool situative, int order, int priority, float duration)
 
 	if (AT)
 	{
+		AT.Owner = self;
 		AT.bSituative = situative;
 		AT.Order = order;
 		AT.Priority = priority;
 		AT.Duration = duration;
 		AT.Time = duration;
+		AT.Target.Action = AT.Order;
 
 		Tasks.Add(AT);
 
@@ -196,7 +198,13 @@ void OrderStandStill(bool situative, int priority, float duration)
 
 void OrderStandStillLook180(bool situative, int priority, float duration)
 {
-	IssueOrder(situative, ActorTask::ORDER__STANDLOOK180, priority, duration);
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__STANDLOOK180, priority, duration);
+
+	if (AT)
+	{
+		AT.OriginalAngle = Angles.yaw;
+		AT.Target.Angle = 90.0;
+	}
 }
 
 //==========================================================================
@@ -207,7 +215,13 @@ void OrderStandStillLook180(bool situative, int priority, float duration)
 
 void OrderStandStillLook360(bool situative, int priority, float duration)
 {
-	IssueOrder(situative, ActorTask::ORDER__STANDLOOK360, priority, duration);
+	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__STANDLOOK360, priority, duration);
+
+	if (AT)
+	{
+		AT.OriginalAngle = Angles.yaw;
+		AT.Target.Angle = 180.0;
+	}
 }
 
 //==========================================================================
@@ -405,7 +419,9 @@ void OrderUseThing(bool situative, int priority, float duration, Actor Thing)
 	ActorTask AT = IssueOrder(situative, ActorTask::ORDER__USETHING, priority, duration);
 	
 	if (AT)
+	{
 		AT.Target.Thing = Thing;
+	}
 }
 
 //==========================================================================
@@ -418,79 +434,9 @@ void DoTasks()
 {
 	if (Tasks)
 	{
-		bool taskCompleted = false;
-
 		if (CurrentTask && CurrentTask.ConsiderCompleted())
 		{
-#ifdef OBSOLETE
-			if (CurrentTask.Duration > 0.0 && CurrentTask.Time <= 0.0)
-				CurrentTask.Order = ActorTask::ORDER__NONE;
-#endif
-
-			taskCompleted = true;
-#ifdef OBSOLETE
-			switch (CurrentTask.Order)
-			{
-			case ActorTask::ORDER__PATROL2PT:
-				{
-					TVec v = CurrentTask.GnTarget.Pos;
-					CurrentTask.GnTarget.Pos = CurrentTask.NextPos;
-					CurrentTask.NextPos = v;
-				}
-				break;
-			case ActorTask::ORDER__WALKPATH:
-			case ActorTask::ORDER__PATROLPATH:
-			case ActorTask::ORDER__PATROLLOOP:
-				{
-#ifdef FIXME
-					PathNode PN;
-					if (CurrentTask.Direction)
-						PN = PathNode(CurrentTask.GnTarget.Node).BW;
-					else
-						PN = PathNode(CurrentTask.GnTarget.Node).FW;
-
-					if (!PN)
-					{
-						if (CurrentTask.Order == ActorTask::ORDER__WALKPATH)
-							CurrentTask.Destroy();
-						else
-						{
-							if (CurrentTask.Order == ActorTask::ORDER__PATROLPATH)
-							{
-								CurrentTask.Direction = !CurrentTask.Direction;
-								if (CurrentTask.Direction)
-									PN = PathNode(CurrentTask.GnTarget.Node).BW;
-								else
-									PN = PathNode(CurrentTask.GnTarget.Node).FW;
-							}
-							else
-							{
-								if (CurrentTask.Direction)
-									PN = PathNode(CurrentTask.GnTarget.Node).GetPathTail();
-								else
-									PN = PathNode(CurrentTask.GnTarget.Node).GetPathHead();
-							}
-						}
-					}
-
-					if (PN)
-					{
-						CurrentTask.GnTarget.Node = PN;
-						CurrentTask.GnTarget.Pos = PN.Origin;
-					}
-#endif	// FIXME
-				}
-				break;
-			case ActorTask::ORDER__ATTACKALL:
-				bIgnoreTeams = default.bIgnoreTeams;
-				CurrentTask.GnTarget.Thing = none;
-				break;
-			default:
-				CurrentTask.Destroy();
-				break;
-			};
-#endif	// OBSOLETE
-
+			CurrentTask.Destroy();
 			CurrentTask = none;
 		}
 
@@ -514,12 +460,12 @@ void DoTasks()
 			//
 			PerformTask(ActorTask(Tasks.refHead));
 		}
-		else if (taskCompleted)
+		else
 		{
-			//if (StateAction != STATE_ACTION__LOOK)
-			//{
-			//	SetState(IdleState);
-			//}
+			Target = none;
+			bHateTarget = false;
+			SetFinalTarget(none);
+			SetImmediateTarget(none);
 		}
 	}
 }
@@ -535,15 +481,36 @@ void PerformTask(ActorTask AT)
 	ActorTask OldTask = CurrentTask;
 	CurrentTask = AT;
 
-	AT.Owner = self;
 	switch (AT.Order)
 	{
 	case ActorTask::ORDER__STANDSTILL:
+	case ActorTask::ORDER__STANDLOOK180:
+	case ActorTask::ORDER__STANDLOOK360:
 		{
-			if (AT != OldTask)
+			if (AT == OldTask)
 			{
-				//if (StateAction != STATE_ACTION__LOOK)
-				//	SetState(IdleState);
+				if (AT.Order != ActorTask::ORDER__STANDSTILL)
+				{
+					if (AT.Target.Angle <= 0.0)
+					{
+						if (AT.Order == ActorTask::ORDER__STANDLOOK180 || Random() < 0.5)
+						{
+							AT.bTurnCW = !AT.bTurnCW;
+						}
+						// 360 deg look will have 180 deg here too to make more random turning
+						AT.Target.Angle = 180.0;
+					}
+
+					AT.Target.Angle -= 10.0;
+					Angles.yaw = AngleMod360(Angles.yaw + (AT.bTurnCW ? -10.0 : 10.0));
+				}
+			}
+			else
+			{
+				Target = none;
+				bHateTarget = false;
+				SetFinalTarget(none);
+				SetImmediateTarget(none);
 			}
 		}
 		break;
@@ -554,11 +521,13 @@ void PerformTask(ActorTask AT)
 			{
 				if (AT.Target.Thing)
 				{
-					Target = AT.Target.Thing; // FIXME
+					Target = AT.Target.Thing; // CHECKME
+					bHateTarget = !AT.bSituative; // Force attack target, ingoring team factor
 				}
 				else
 				{
 					bIgnoreTeams = true;
+					bHateTarget = !AT.bSituative;
 					LookForEnemy(true, true);
 				}
 
