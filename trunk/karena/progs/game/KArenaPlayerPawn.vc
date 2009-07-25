@@ -496,14 +496,15 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 			if (TargetEntity.Origin.z > dist)
 				return false;
 		}
-		if (TargetEntity.Origin.z <= CRTRData.finalPos.z)
+		else if (TargetEntity.Origin.z < CRTRData.finalPos.z)
 		{
-			dist = CRTRData.finalPos.z - (TargetEntity.Origin.z + TargetEntity.Height);
-			// [FB] Always evaluate a positive distance
-			dist = dist < 0.0 ? -dist : dist;
+			dist = CRTRData.finalPos.z - TargetEntity.Origin.z + TargetEntity.Height;
 
-			if (dist > MaxPassableDropOff)
+			// [FB] Always evaluate a positive distance
+			if (fabs(dist) > MaxPassableDropOff)
+			{
 				return false;
+			}
 		}
 	}
 
