@@ -54,7 +54,6 @@ void IsBeingMountedOn(KRPGPawn Rider, bool bGainControl)
 {
 	::IsBeingMountedOn(Rider, bGainControl);
 	PlaySound(SightSound, CHAN_VOICE);
-	SetState(SeeState);
 }
 
 //==========================================================================
@@ -77,10 +76,17 @@ void IsBeingDismountedFrom()
 
 void RideCommand(float forward, float side, optional float vertical)
 {
-	if (!StateIsInSequence(State, SeeState))
-		SetState(SeeState);
+	if (!RidePartner.bIsMountedOn)
+	{
+		return;
+	}
 
-	Speed = default.Speed;
+	if (!StateIsInSequence(State, SeeState))
+	{
+		SetState(SeeState);
+	}
+
+	Speed = default.Speed / 35.0;
 	if (forward)
 	{
 		MoveCount = 15;

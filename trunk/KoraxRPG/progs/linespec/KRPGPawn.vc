@@ -40,11 +40,28 @@ bool			bIsMountedOn;	// actor is currently a 'rider'
 bool			bCanRide;		// actor is allowed to ride saddlehorses
 bool			bRideControl;	// actor controls the ride (can be both 'rider' and 'horse')
 KRPGPawn		RidePartner;	// either 'rider' or 'horse', depending on flags
+bool			bIsBeingMountingOn;
+bool			bIsBeingDismounting;
 
 bool			bMirrorImage;	// actor is a magic clone that dies from a single hit
 Actor			MirrorMaster;	// mirror image's "original copy"
 
 float			Alertness;		// while alert, creature will look for enemies all around
+
+state			WalkState;
+
+//==========================================================================
+//
+//	BeginPlay
+//
+//==========================================================================
+
+void BeginPlay()
+{
+	WalkState = FindState('Walk');
+
+	::BeginPlay();
+}
 
 //==========================================================================
 //
@@ -74,7 +91,7 @@ void Died(EntityEx source, EntityEx inflictor)
 {
 	if (RidePartner)
 	{
-		if (bIsMountedOn) Dismount();
+		if (bIsMountedOn || bIsBeingMountingOn) Dismount();
 		else RidePartner.Dismount();
 	}
 
@@ -94,21 +111,37 @@ void Died(EntityEx source, EntityEx inflictor)
 
 bool ApplySpecialPhysics(float DeltaTime)
 {
+	if (bIsBeingDismounting)
+	{
+		bIsBeingDismounting = false;
+	}
+
 	if (RidePartner)
 	{
-		if (bIsMountedOn)
+		if (bIsMountedOn || bIsBeingMountingOn)
 		{
 			TVec saddle = RidePartner.Origin;
 			saddle.z += RidePartner.Height;
 
-			Velocity = RidePartner.Velocity + ((saddle - Origin) * 5.0);
+			if (bIsBeingMountingOn || !TryMove(saddle, true))
+			{
+				Velocity = RidePartner.Velocity + ((saddle - Origin) * 3.0);
+			}
 
 			float lx = Origin.x - saddle.x;
 			float ly = Origin.y - saddle.y;
-			float limit = (RidePartner.Radius + Radius) * 2.0;
+			float lz = Origin.z - saddle.z;
+			float limitxy = (RidePartner.Radius + Radius) * 2.0;
 
-			if (fabs(lx) > limit || fabs(ly) > limit)
+			if (fabs(lx) > limitxy || fabs(ly) > limitxy || bIsMountedOn && fabs(lz) > Radius)
+			{
 				Dismount();
+			}
+			else if (bIsBeingMountingOn && fabs(lz) < Radius && fabs(lx) < Radius && fabs(ly) < Radius)
+			{
+				bIsBeingMountingOn = false;
+				bIsMountedOn = true;
+			}
 		}
 	}
 
@@ -207,7 +240,7 @@ void MountOn(KRPGPawn Horse, bool bGainControl)
 		return;
 
 	RidePartner = Horse;
-	bIsMountedOn = true;
+	bIsBeingMountingOn = true;
 	bRideControl = bGainControl;
 	bXYAnchored = true;
 	bZAnchored = true;
@@ -224,8 +257,10 @@ void MountOn(KRPGPawn Horse, bool bGainControl)
 
 void IsBeingMountedOn(KRPGPawn Rider, bool bGainControl)
 {
-	RidePartner = Rider;
 	bIsMountedOn = false;
+	bIsBeingMountingOn = false;
+	bIsBeingDismounting = false;
+	RidePartner = Rider;
 	bRideControl = bGainControl;
 }
 
@@ -238,9 +273,11 @@ void IsBeingMountedOn(KRPGPawn Rider, bool bGainControl)
 void Dismount()
 {
 	bIsMountedOn = false;
+	bIsBeingMountingOn = false;
 	bRideControl = false;
 	bXYAnchored = default.bXYAnchored;
 	bZAnchored = default.bZAnchored;
+	bIsBeingDismounting = true;
 	RidePartner.IsBeingDismountedFrom();
 	RidePartner = none;
 }
@@ -269,6 +306,11 @@ void IsBeingDismountedFrom()
 
 void RideCommand(float forward, float side, optional float vertical)
 {
+	if (!RidePartner.bIsMountedOn)
+	{
+		return;
+	}
+
 	if (forward)
 	{
 		Velocity.x += forward * cos(Angles.yaw);
