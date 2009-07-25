@@ -76,10 +76,10 @@ float MoveDirFree;
 //
 //============================================================================
 
-bool A_NormalDoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+bool A_NormalDoMove(bool FastChase, state AMeleeState, state AMissileState,
 				bool NightmareFast, bool PlayActive, bool DontMove)
 {
-	return DoMove(false /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+	return DoMove(false /* FastChase*/, AMeleeState, AMissileState,
 		LineSpecialGameInfo(Level.Game).bNightmareFastChase /* NightmareFast*/, PlayActive, DontMove);
 }
 
@@ -89,10 +89,10 @@ bool A_NormalDoMove(bool FastChase, state AIdleState, state AMeleeState, state A
 //
 //============================================================================
 
-bool A_FastDoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+bool A_FastDoMove(bool FastChase, state AMeleeState, state AMissileState,
 				bool NightmareFast, bool PlayActive, bool DontMove)
 {
-	return DoMove(true /* FastChase*/, AIdleState, AMeleeState, AMissileState,
+	return DoMove(true /* FastChase*/, AMeleeState, AMissileState,
 		true /* NightmareFast*/, PlayActive, DontMove);
 }
 
@@ -102,7 +102,7 @@ bool A_FastDoMove(bool FastChase, state AIdleState, state AMeleeState, state AMi
 //
 //==========================================================================
 
-bool DoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileState,
+bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 				bool NightmareFast, bool PlayActive, bool DontMove)
 {
 	float		delta;
@@ -135,9 +135,9 @@ bool DoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileS
 	{
 		Target = none;
 		bHateTarget = false;
+		bInCombat = false;
 	}
 
-	//bInCombat = true;	// CHECKME!
 	//	Modify target threshold.
 	if (Threshold)
 	{
@@ -169,31 +169,20 @@ bool DoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileS
 		A_FaceTarget();
 	}
 
-	if (!pDestination)
-	{
-		if (AIdleState)
-		{
-			SetState(AIdleState);
-			//bInCombat = false;// CHECKME!!
-		}
-		else
-		{
-			if (!DontMove)
-			{
-				A_Wander();
-			}
-		}
-		bInChase = false;
-		return false;
-	}
-
 	//	Do not attack twice in a row.
 	if (bJustAttacked)
 	{
 		bJustAttacked = false;
 		if (!IsFast() && !DontMove && !DoSpecialMove())
 		{
-			NewChaseDirEx(*pDestination, false);
+			if (pDestination)
+			{
+				NewChaseDirEx(*pDestination, false);
+			}
+			else
+			{
+				A_Wander();
+			}
 		}
 		bInChase = false;
 		return true;
@@ -343,17 +332,24 @@ bool DoMove(bool FastChase, state AIdleState, state AMeleeState, state AMissileS
 	//	Chase towards enemy.
 	if (!DontMove && !DoSpecialMove() && (!FastChase || !FastChaseStrafeCount))
 	{
-		oldX = Origin.x;
-		oldY = Origin.y;
-		oldFloor = Sector->floor.pic;
-		if (--MoveCount < 0 || !StepMoveEx())
+		if (pDestination)
 		{
-			NewChaseDirEx(*pDestination, false);
+			oldX = Origin.x;
+			oldY = Origin.y;
+			oldFloor = Sector->floor.pic;
+			if (--MoveCount < 0 || !StepMoveEx())
+			{
+				NewChaseDirEx(*pDestination, false);
+			}
+			if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
+			{
+				TryMove(vector(oldX, oldY, Origin.z), false);
+				NewChaseDirEx(*pDestination, false);
+			}
 		}
-		if (bCantLeaveFloorpic && Sector->floor.pic != oldFloor)
+		else
 		{
-			TryMove(vector(oldX, oldY, Origin.z), false);
-			NewChaseDirEx(*pDestination, false);
+			A_Wander();
 		}
 	}
 
