@@ -464,6 +464,7 @@ void DoTasks()
 		{
 			Target = none;
 			bHateTarget = false;
+			bInCombat = false;
 			SetFinalTarget(none);
 			SetImmediateTarget(none);
 		}
@@ -509,6 +510,7 @@ void PerformTask(ActorTask AT)
 			{
 				Target = none;
 				bHateTarget = false;
+				bInCombat = false;
 				SetFinalTarget(none);
 				SetImmediateTarget(none);
 			}
@@ -522,13 +524,14 @@ void PerformTask(ActorTask AT)
 				if (AT.Target.Thing)
 				{
 					Target = AT.Target.Thing; // CHECKME
+					bInCombat = true;
 					bHateTarget = !AT.bSituative; // Force attack target, ingoring team factor
 				}
 				else
 				{
 					bIgnoreTeams = true;
-					bHateTarget = !AT.bSituative;
 					LookForEnemy(true, true);
+					bHateTarget = !AT.bSituative;
 				}
 
 				if (Target)

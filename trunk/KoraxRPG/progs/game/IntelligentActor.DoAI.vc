@@ -190,6 +190,7 @@ void CheckThreat()
 						bThreatened = true;
 						Target = targ;
 						bHateTarget = false;
+						bInCombat = true;
 						Threshold = BASETHRESHOLD;
 						Alertness = HIGH_ALERTNESS;
 
@@ -276,7 +277,14 @@ void ConsiderChangeState()
 		// Actor is in Idle State, check if he needs to start the move
 		if (CurrentTask && CurrentTask.Order >= ActorTask::ORDER__WALKTO)
 		{
-			SetState(SeeState);
+			if (bInCombat || !WalkState)
+			{
+				SetState(SeeState);
+			}
+			else
+			{
+				SetState(WalkState);
+			}
 		}
 	}
 	else if (StateIsInSequence(State, SeeState))
@@ -284,6 +292,21 @@ void ConsiderChangeState()
 		if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
 		{
 			SetState(IdleState);
+		}
+		else if (!bInCombat && WalkState)
+		{
+			SetState(WalkState);
+		}
+	}
+	else if (WalkState && StateIsInSequence(State, WalkState))
+	{
+		if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
+		{
+			SetState(IdleState);
+		}
+		else if (bInCombat)
+		{
+			SetState(SeeState);
 		}
 	}
 }
@@ -323,9 +346,9 @@ final void A_ChaseAI()
 	else
 		pDestination = NULL;
 
-	if (DoMoveR)
+	if ((pDestination || Target) && DoMoveR)
 	{
-		DoMoveR(false, none, MeleeState, MissileState, false, true, false);
+		DoMoveR(false, MeleeState, MissileState, false, true, false);
 	}
 }
 
