@@ -55,7 +55,7 @@ bool IsOkayToTarget(Actor Other)
 {
 	return Other && Other.CanBeAttacked() && !Other.bDormant &&
 		(!Other.bNeverTarget || (Other == Target && bHateTarget)) &&
-		!Other.bInvulnerable /* [CW] questionable */ &&
+		(!Other.bInvulnerable || !Other.default.bInvulnerable) &&
 		bCombatant /* [CW] may be ignored in some cases? */ &&
 		(bIgnoreTeams || (Other == Target && bHateTarget) || Team != Actor(Other).Team);
 }
@@ -162,6 +162,7 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	{
 		Target = NewTarget;
 		bHateTarget = false;
+		bInCombat = true;
 	}
 	return NewTarget != none;
 }
@@ -196,15 +197,17 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	if (!specified_MinPassableOpening)
 		MinPassableOpening = Height;
 	
-	canreach = DoCanReachPathTraverse(TargetPos, &CRTRData,
+	canreach = DoCanReachPathTraverse(TargetPos, TargetEntity, &CRTRData,
 		MaxPassableStep, MaxPassableDropOff, MinPassableOpening, bCanUseLines);
 	
 	if (!CRTRData.intercepted_once && XLevel.PointInSector(Origin) != XLevel.PointInSector(TargetPos))
+	{
 		return false;
+	}
 	
 	if (canreach && TargetEntity)
 	{
-	//
+		//
 		// [CW] CHECKME ---
 		//
 		//if (CRTRData.linetarget != TargetEntity)
@@ -212,21 +215,23 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 
 		// [FB]  3d Floor checks...
 		float dist;
-		if (TargetEntity.Origin.z > Origin.z)
+		if (TargetEntity.Origin.z > CRTRData.finalPos.z)
 		{
-			dist = Origin.z + Height;
+			dist = CRTRData.finalPos.z + Height / 2.0 + MaxPassableStep;
 
 			if (TargetEntity.Origin.z > dist)
+			{
 				return false;
+			}
 		}
-		if (TargetEntity.Origin.z <= Origin.z)
+		else if (TargetEntity.Origin.z < CRTRData.finalPos.z)
 		{
-			dist = Origin.z - (TargetEntity.Origin.z + TargetEntity.Height);
-			// [FB] Always evaluate a positive distance
-			dist = dist < 0.0 ? -dist : dist;
+			dist = CRTRData.finalPos.z - TargetEntity.Origin.z + TargetEntity.Height;
 
-			if (dist > MaxPassableDropOff)
+			if (fabs(dist) > MaxPassableDropOff)
+			{
 				return false;
+			}
 		}
 	}
 
@@ -235,33 +240,45 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 
 //==========================================================================
 //
-//	PTR_CanReachTraverse
+//	DoCanReachPathTraverse
 //
 // [FB] Added partial 3d floor support, needs to be checked and corrected...
 //
 //==========================================================================
 
 bool DoCanReachPathTraverse(TVec TargetPos,
+							EntityEx TargetThing,
 							ReachTraverse::reach_traverse_data_t * pCRTRData,
 							float MaxPassableStep,
 							float MaxPassableDropOff,
 							float MinPassableOpening,
 							bool bCanUseLines)
 {
-	intercept_t * in;
+	intercept_t *	in;
+	opening_t *		opening;					// [FB] For 3d floors
+	TVec			tracedir;
+	TVec			hit_point;
+
+	//
+	// [CW] For slope recognition
+	float			distance_bak;
+	float			distance_traced;		// distance traced total
+	float			distance_traced_last;	// distance traced last iteration
+	float			slope_angle;
 
 	pCRTRData->intercepted_once = false;
 	pCRTRData->prev_sector = Sector;
 
+	float traceZ = Origin.z; // Z coordinate of the trace
+
+	// [CW] A unit vector determines the direction of tracing
+	//		Needed to get the hit_point for each 2-sided line found
+	tracedir = Normalise(TargetPos - Origin);
+	tracedir.z = 0.0;
+
 	foreach PathTraverse(in, Origin.x, Origin.y, TargetPos.x, TargetPos.y,
 		PT_ADDLINES | PT_ADDTHINGS)
 	{
-		//
-		// [CW] For slope recognition
-		float distance_bak;
-		float distance_traced;		// distance traced total
-		float distance_traced_last;	// distance traced last iteration
-
 		pCRTRData->intercepted_once = true;
 
 		distance_bak = distance_traced;
@@ -270,54 +287,36 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 
 		if (in->bIsALine)
 		{
-			sector_t * p_sector;
-			TVec tracedir;
-			TVec hit_point;
-			opening_t* opening;	// [FB] For 3d floors
-			float traceZ = Origin.z; // Z coordinate of the trace
-			//
-			// [CW] For slope recognition
-			float slope_angle;
-
-			// [CW] A unit vector determines the direction of tracing
-			//		Needed to get the hit_point for each 2-sided line found
-			tracedir = Normalise(TargetPos - Origin);
-			tracedir.z = 0.0;
-
 			// single-sided lines abort traverse
 			if (!(in->line->flags & ML_TWOSIDED) || (in->line->flags & ML_BLOCKING) ||
 					(in->line->flags & ML_BLOCKEVERYTHING) ||
 					!in->line->backsector)
+			{
 				return false;
+			}
 
-			// in case of two-sided lines a passability check is made
-			if (in->line->frontsector == pCRTRData->prev_sector)
-				p_sector = in->line->backsector;
-			else if (in->line->backsector == pCRTRData->prev_sector)
-				p_sector = in->line->frontsector;
-			else
-				// something was really messed up		
-				return false;
-
-			pCRTRData->prev_sector = p_sector;
-
+			//
 			// [FB] partial 3d floor support...
-			tracedir.x = cos(Angles.yaw);
-			tracedir.y = sin(Angles.yaw);
-			tracedir.z = FloorZ;
+			//
+
 			hit_point = Origin + distance_traced * tracedir;
 			hit_point.z = traceZ;
+			// (c) JL: LineOpenings: sets opentop and openbottom to the window through a two sided line.
 			opening = LineOpenings(in->line, hit_point);
-			opening = FindOpening(opening, hit_point.z, hit_point.z + Height);
+			// (c) JL: FindOpening: Find the best gap that the thing could fit in, given a certain Z
+			// position (z1 is foot, z2 is head)
+			opening = FindOpening(opening, hit_point.z, hit_point.z + MinPassableOpening);
 
 			// only valid openings
 			if (!opening)
 			{
+				//	No openings.
 				return false;
 			}
-			if ((opening->range < MinPassableOpening) ||
+
+			if (opening->range < MinPassableOpening ||
 				(opening->lowfloor - opening->bottom > MaxPassableStep) ||
-				(opening->lowfloor - opening->bottom > MaxPassableDropOff))
+				(opening->lowfloor - opening->bottom > MaxPassableDropOff)) // cannot fit through, do not bother
 			{
 				return false;
 			}
@@ -381,22 +380,23 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 					return false;
 				}
 
-				// Make our "ghost" actor stand at the end of the slope
+				// Make our "ghost" player stand at the end of the slope
 				traceZ = opening->bottom;
 			}
 
-			if (// use traceZ to know which height is actor's "ghost" previous position
+			if (// use traceZ to know which height is player's "ghost" previous position
 				(traceZ >= opening->bottom && ((traceZ - opening->bottom) > MaxPassableDropOff ||
 					((opening->bottom - opening->lowfloor) > MaxPassableDropOff)))
 					// drop from highest floor to lowest one is too much to accept it
 				||
 				(traceZ <= opening->lowfloor && ((opening->lowfloor - traceZ) > MaxPassableStep ||
 					((opening->bottom - opening->lowfloor) > MaxPassableStep)))
-					// raise from lowest floor to highest one is too much to step there
+					// raise from lowest floor to highest one is too much to step/jump there
 				)
 			{
 				return false;
 			}
+
 			// [FB] This should partially cover it...
 
 			// [CW] Update height position;
@@ -407,11 +407,15 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 		}
 		else
 		{
+			// [CW] Frankly speaking, this is no use in most situations... :(
 			// TODO: check this precisely...
-			pCRTRData->linetarget = Actor(in->Thing);
-			
+			pCRTRData->linetarget = EntityEx(in->Thing);
+
 			if (!pCRTRData->linetarget)
 				continue; // something out there
+
+			if (pCRTRData->linetarget == TargetThing)
+				break; // it is the target
 
 			if (pCRTRData->linetarget.bSolid)
 			{
@@ -421,6 +425,9 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 			}
 		}
 	}
+
+	pCRTRData->finalPos = TargetPos;
+	pCRTRData->finalPos.z = traceZ;
 
 	return true;
 }

@@ -103,15 +103,21 @@ void CleanRoutes()
 void DoRoute()
 {
 	if (!KRPGLevelInfo(Level).bNodeGraphBuild)
+	{
 		return;
+	}
 
 	// update timers
 	if (Behavior.RouteRebuildTime > 0)
+	{
 		Behavior.RouteRebuildTime--;
+	}
 	//if (Behavior.bUsingRoute && Behavior.CheckFTargetPosTime > 0)
 	//	Behavior.CheckFTargetPosTime--;
 	if (Behavior.bLostFTarget && Behavior.LostFTargetTime > 0)
+	{
 		Behavior.LostFTargetTime--;
+	}
 
 	// CHECKME -- maybe move to more general routine
 	if (TaskLeader)
@@ -159,6 +165,7 @@ void DoRoute()
 	// check if target has moved far away from it's previous position.
 	//
 	//
+
 	if (FTarget.Thing ?
 		(Behavior.bKnowFTargetPos && CanReach(FTarget.Thing.Origin, FTarget.Thing)) :
 		CanReach(FTarget.Pos, none))
@@ -228,12 +235,14 @@ void DoRoute()
 			return;
 		}
 	}
-	else /* if (FTarget.Thing)*/
+	else if (FTarget.Thing)
 	{
 		if (Behavior.bLostFTarget)
 		{
 			if (Behavior.LostFTargetTime > 0 || Behavior.RouteRebuildTime > 0)
+			{
 				return;
+			}
 		}
 		else
 		{
@@ -257,12 +266,24 @@ void DoRoute()
 	if (FTarget.Thing)
 	{
 		if (Behavior.bKnowFTargetPos)
+		{
 			BuildRoute(FTarget.Thing.Origin, FTarget.Thing);
+		}
 		else
+		{
 			BuildRoute(LastKnownPosition, none);
+		}
 	}
 	else
+	{
 		BuildRoute(FTarget.Pos, none);
+	}
+
+	// While building the route simply wander some more
+	if (MultiRouteBuild.bBuilding)
+	{
+		SetImmediateTarget(FTarget.Thing, FTarget.Pos, FTarget.Action);
+	}
 }
 
 //==========================================================================
