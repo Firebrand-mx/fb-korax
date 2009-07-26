@@ -46,7 +46,9 @@ enum
 	TASK_PRIORITY_THREAT_GRADE1	= 1,
 	TASK_PRIORITY_THREAT_GRADE2	= 2,
 	TASK_PRIORITY_THREAT_GRADE3	= 3,
-	TASK_PRIORITY_THREAT_GRADE4	= 4
+	TASK_PRIORITY_THREAT_GRADE4	= 4,
+
+	TASK_PRIORITY_THREATSENSITIVE = TASK_PRIORITY_THREAT_GRADE4 + 1
 };
 
 LinkedList		Tasks;
@@ -323,45 +325,18 @@ void OrderPatrol2Pt(bool situative, int priority, float duration, TVec position1
 //==========================================================================
 
 void OrderWalkPath(bool situative, bool Patrol, bool Looped,
-					 int priority, float duration, int PathIndex, int NodeIndex, optional bool BackDir)
+					 int priority, float duration, PathNode PN, optional bool BackDir)
 {
-#ifdef FIXME
-	if (!Node)
-	{
-		Error("IntelligentActor::A_OrderWalkPath : FirstNode reference not set to an instance of an object");
-		return;
-	}
-
-	bool bFound = false;
-	PathNode FirstNode = none;
-
-	foreach AllThinkers(PathNode, FirstNode)
-	{
-		if (FirstNode.Args[PathNode::ARG__PATHINDEX] == PathIndex &&
-			FirstNode.Args[PathNode::ARG__NODEINDEX] == NodeIndex)
-		{
-			bFound = true;
-			break;
-		}
-	}
-
-	if (!bFound)
-		return;
-
-	if (!specified_BackDir)
-		BackDir = false;
-
-	ActorTask AT = A_IssueOrder(situative,
+	ActorTask AT = IssueOrder(situative,
 								Patrol ? (Looped ? ActorTask::ORDER__PATROLLOOP : ActorTask::ORDER__PATROLPATH)
 								: ActorTask::ORDER__WALKPATH,
 								priority, duration);
 	if (AT)
 	{
-		AT.GnTarget.Node = FirstNode;
-		AT.GnTarget.Pos = FirstNode.Origin;
+		AT.Target.Thing = PN;
+		AT.Target.Pos = PN.Origin;
 		AT.Direction = BackDir;
 	}
-#endif
 }
 
 //==========================================================================
@@ -540,13 +515,6 @@ void PerformTask(ActorTask AT)
 					AT.Target.Thing = Actor(Target);
 					SetFinalTarget(AT.Target.Thing);
 					SetImmediateTarget(AT.Target.Thing);
-					//if (StateAction != STATE_ACTION__CHASE)
-					//	SetState(SeeState);
-				}
-				else
-				{
-					//if (StateAction != STATE_ACTION__LOOK)
-					//	SetState(IdleState);
 				}
 			}
 		}
@@ -556,8 +524,6 @@ void PerformTask(ActorTask AT)
 		{
 			SetFinalTarget(AT.Target.Thing);
 			SetImmediateTarget(AT.Target.Thing);
-			//if (StateAction != STATE_ACTION__CHASE)
-			//	SetState(SeeState);
 		}
 		break;
 
@@ -599,8 +565,8 @@ void PerformTask(ActorTask AT)
 		{
 			if (AT != OldTask)
 			{
-				SetFinalTarget(none, AT.Target.Pos, AT.Target.Action);
-				SetImmediateTarget(none, AT.Target.Pos, AT.Target.Action);
+				SetFinalTarget(AT.Target.Thing, AT.Target.Pos, AT.Target.Action);
+				SetImmediateTarget(AT.Target.Thing, AT.Target.Pos, AT.Target.Action);
 			}
 		}
 		break;

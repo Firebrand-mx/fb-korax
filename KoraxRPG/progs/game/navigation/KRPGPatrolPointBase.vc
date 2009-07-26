@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: CommonNode.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
+//**    $Id: KRPGPatrolPointBase.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,46 +30,52 @@
 //**
 //**************************************************************************
 
-//
-// CommonNode is a base class for things that serve the sole purpose
-// of ai navigation. Being a child of Node, it makes its instances
-// be included into navigational node graph.
-//
+class KRPGPatrolPointBase : PathNode
+	abstract;
 
-class CommonNode : Node
-	__mobjinfo__(15004);
-
-//==========================================================================
-//
-//	OnMapSpawn
-//
-//==========================================================================
-
-void OnMapSpawn(mthing_t* mthing)
+enum
 {
-	// [FB] Show path nodes if the CVar is active
-	if (GetCvar('ShowPathNodes') != 0)
+	ARG_NEXTNODETAG		= 0,
+	ARG_DELAY			= 1
+};
+
+//==========================================================================
+//
+//	BuildLinks
+//
+//	This implmenentation of BuildLinks provides compatibility with
+//	ZDoom-style Patrol Points linking.
+//
+//==========================================================================
+
+void BuildLinks()
+{
+	// Seek for FW and BW nodes
+	if (!BW || !FW && Args[ARG_NEXTNODETAG])
 	{
-		bInvisible = false;
-	}
-	::OnMapSpawn(mthing);
-}
+		KRPGPatrolPointBase PP;
+		foreach AllThinkers(KRPGPatrolPointBase, PP)
+		{
+			if (!FW && PP.TID == Args[ARG_NEXTNODETAG])
+			{
+				FW = PP;
+				PP.BW = self;
+			}
 
-states
-{
-Spawn:
-	NODE A -1
-	Stop
+			if (!BW && PP.Args[ARG_NEXTNODETAG] == TID)
+			{
+				BW = PP;
+				PP.FW = self;
+			}
+
+			if (FW && BW)
+			{
+				break;
+			}
+		}
+	}
 }
 
 defaultproperties
 {
-#ifdef DEBUG_PATH_NODES
-	bInvisible = false;
-	RenderStyle = STYLE_Normal;
-#endif
-	bNoGravity = false;
-
-	Radius = 20.0;
-	Height = 16.0;
 }

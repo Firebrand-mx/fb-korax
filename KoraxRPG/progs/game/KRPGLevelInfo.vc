@@ -58,15 +58,6 @@ enum
 
 	LNSPEC_TravelMap				= 500,	// calls travel map
 
-	//--------------------- NOT USED --------------------------------------------------------
-//	//
-//	// Miscellaneous, that could be useful
-//
-//	ACTSPEC_IsConditionTrue			= 755,	/* this id is taken equal to same actspec in Korax Arena*/
-//	ACTSPEC_RunACSConditional,
-//
-	//--------------------- NOT USED --------------------------------------------------------
-
 	//
 	// Intelligent Actors
 	//
@@ -271,7 +262,9 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 
 	buttonSuccess = false;
 
-	if ( ( Special >= ACTSPEC_Thing_Thrust3d
+	if ( ( 
+		Special == LNSPEC_ThingSetGoal ||
+		Special >= ACTSPEC_Thing_Thrust3d
 		&& Special < ACTSPEC_Env_WeatherSnow
 		&& Special != ACTSPEC_Thing_SetPlayerMOTag)
 
@@ -285,7 +278,21 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	{
 	//
 	// Overriding common specials
-	//case LNSPEC_ThingSetGoal: // <--- TODO!!
+	case LNSPEC_ThingSetGoal:
+		// Arg1 : actor TID
+		// Arg2 : goal TID
+		// Arg3 : delay
+		// Arg4 : don't chase target
+		//
+		if (E && E.IsA('IntelligentActor'))
+		{
+			IntelligentActor(E).OrderWalkPath(false, false, false,
+				Arg4 ? IntelligentActor::TASK_PRIORITY_ABSOLUTE : IntelligentActor::TASK_PRIORITY_THREATSENSITIVE,
+				0.0, PathNode(FindMobjFromTID(Arg2, none)));
+			IntelligentActor(E).ReactionTime = itof(Arg3);
+			buttonSuccess = true;
+		}
+		break;
 
 	//
 	// Advanced thing manipulation
@@ -388,8 +395,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).OrderWalkPath(false, false, false, Arg2, itof(Arg3) / 1000.0,
-				Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
-				(Arg5 & KRPGDefs::PATH_DIRECTION_BACK) != 0);
+				PathNode(FindMobjFromTID(Arg4, none)), Arg5);
 			buttonSuccess = true;
 		}
 		break;
@@ -408,8 +414,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).OrderWalkPath(false, true, false, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
-									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
+									PathNode(FindMobjFromTID(Arg4, none)), Arg5);
 			buttonSuccess = true;
 		}
 		break;
@@ -417,8 +422,7 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('IntelligentActor'))
 		{
 			IntelligentActor(E).OrderWalkPath(false, true, true, Arg2, itof(Arg3) / 1000.0,
-									Arg4, Arg5 & KRPGDefs::PATH_NODE_TID_MASK,
-									Arg5 & KRPGDefs::PATH_DIRECTION_BACK != 0);
+									PathNode(FindMobjFromTID(Arg4, none)), Arg5);
 			buttonSuccess = true;
 		}
 		break;
@@ -1001,6 +1005,7 @@ void BuildNodeGraph()
 	if (bNodeGraphBuild)
 	{
 		BuildPriorityPaths();
+		BuildScriptedPaths();
 	}
 }
 
@@ -1518,17 +1523,37 @@ void BuildPriorityPaths()
 	print("");
 	print(" ========== Priority Paths Info ===========");
 	print("   Total Priority Nodes found:      %i      ", stats_TotalPriorityNodes);
-	print("   Total Bidirect Paths built:     %i      ", stats_TotalPaths);
-	print("   Total PNodes with Paths:        %i      ", stats_TotalLinkedPNodes);
-	print("   Total PNodes without Paths      %i      ", stats_TotalUnlinkedPNodes);
-	print("   Average Paths per PNode:        %i      ", stats_AveragePathsPerNode);
-	print("   Maximal Path Length in Nodes:   %i      ", stats_MaximalPathNodeLength);
-	print("   Minimal Path Length in Modes:   %i      ", stats_MinimalPathNodeLength);
+	print("   Total Bidirect Paths built:      %i      ", stats_TotalPaths);
+	print("   Total PNodes with Paths:         %i      ", stats_TotalLinkedPNodes);
+	print("   Total PNodes without Paths       %i      ", stats_TotalUnlinkedPNodes);
+	print("   Average Paths per PNode:         %i      ", stats_AveragePathsPerNode);
+	print("   Maximal Path Length in Nodes:    %i      ", stats_MaximalPathNodeLength);
+	print("   Minimal Path Length in Modes:    %i      ", stats_MinimalPathNodeLength);
 	print(" ===========================================");
 	print("");
 	//------------------------
 	//
 	#endif
+}
+
+//===========================================================================
+//
+//  BuildScriptedPaths
+//
+//	Builds extra links between PathNodes.
+//
+//===========================================================================
+
+void BuildScriptedPaths()
+{
+	PathNode PN;
+
+	foreach AllThinkers(PathNode, PN)
+	{
+		PN.BuildLinks();
+	}
+
+	// Yeah, that's it :)
 }
 
 //

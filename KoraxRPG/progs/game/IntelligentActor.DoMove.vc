@@ -188,81 +188,9 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 		return true;
 	}
 
-
-#ifdef CHECKME_AND_MAYBE_MOVE_TO_AI_ROUTINE
-	//	Don't attack if just moving toward goal
-	if (Target == Goal || (bChaseGoal && Goal))
-	{
-		EntityEx SavedTarget = Target;
-		Target = Goal;
-		bool Result = CheckMeleeRange();
-		Target = SavedTarget;
-
-		if (Result)
-		{
-			// reached the goal
-
-			// Execute the specials of any PatrolSpecials with the same TID
-			// as the goal.
-			Entity Ent;
-			for (Ent = Level.FindMobjFromTID(Goal.TID, none); Ent;
-				Ent = Level.FindMobjFromTID(Goal.TID, Ent))
-			{
-				if (Ent.Class != PatrolSpecial)
-				{
-					continue;
-				}
-				Level.ExecuteActionSpecial(Ent.Special, Ent.Args[0],
-					Ent.Args[1], Ent.Args[2], Ent.Args[3], Ent.Args[4],
-					NULL, 0, self);
-			}
-
-			float LastGoalAng = Goal.Angles.yaw;
-			int Delay;
-			EntityEx NewGoal = none;
-			for (Ent = Level.FindMobjFromTID(Goal.Args[0], none); Ent;
-				Ent = Level.FindMobjFromTID(Goal.Args[0], Ent))
-			{
-				if (!Ent.IsA('PatrolPoint'))
-				{
-					continue;
-				}
-				NewGoal = EntityEx(Ent);
-				break;
-			}
-			if (NewGoal && Goal == Target)
-			{
-				Delay = NewGoal.Args[1];
-				ReactionTime = itof(Delay) + XLevel.Time;
-			}
-			else
-			{
-				Delay = 0;
-				ReactionTime = default.ReactionTime;
-				Angles.yaw = LastGoalAng;		// Look in direction of last goal
-			}
-			if (Target == Goal)
-			{
-				Target = none;
-			}
-			bJustAttacked = true;
-			if (NewGoal && Delay != 0)
-			{
-				bInCombat = true;
-				SetState(IdleState);
-			}
-			Goal = NewGoal;
-			bInChase = false;
-			return true;
-		}
-	}
-#endif // CHECKME_AND_MAYBE_MOVE_TO_AI_ROUTINE
-
 	//
 	// Perform attack
 	//
-	// [CW] For IA: Goal never == Target
-	//if (Goal != Target)
 	if (Target)
 	{
 		if (FastChase && !DontMove)
