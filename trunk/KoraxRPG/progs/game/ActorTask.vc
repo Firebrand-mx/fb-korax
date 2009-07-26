@@ -129,8 +129,50 @@ bool ConsiderCompleted()
 	}
 
 	//
-	// Some tasks could not be completed in common meaning,
-	// but they need to update objective, if previous one was completed
+	// Perform any actions necessary for completion on an objective
+	//
+	if (bCompleted)
+	{
+		switch (Order)
+		{
+		case ORDER__WALKPATH:
+		case ORDER__PATROLPATH:
+		case ORDER__PATROLLOOP:
+			{
+				// Execute the specials of any PatrolSpecials with the same TID
+				// as the goal.
+				Entity Ent;
+				for (Ent = Owner.Level.FindMobjFromTID(Target.Thing.TID, none); Ent;
+					Ent = Owner.Level.FindMobjFromTID(Target.Thing.TID, Ent))
+				{
+					if (Ent.Class != PatrolSpecial)
+					{
+						continue;
+					}
+					Owner.Level.ExecuteActionSpecial(Ent.Special, Ent.Args[0],
+						Ent.Args[1], Ent.Args[2], Ent.Args[3], Ent.Args[4],
+						NULL, 0, Owner);
+				}
+
+				//
+				// Make actor wait some time at this point
+				if (Target.Thing.IsA('KRPGPatrolPointBase'))
+				{
+					Owner.ReactionTime = 
+						itof(Target.Thing.Args[KRPGPatrolPointBase::ARG_DELAY]) + Owner.XLevel.Time;
+				}
+				else if (Target.Thing.IsA('ScriptedPathNode'))
+				{
+					Owner.ReactionTime = 
+						itof(Target.Thing.Args[ScriptedPathNode::ARG_DELAY]) + Owner.XLevel.Time;
+				}
+			}
+			break;
+		}
+	}
+
+	//
+	// Some tasks need to update objective, if previous one was completed
 	//
 	if (bCompleted)
 	{
@@ -148,6 +190,45 @@ bool ConsiderCompleted()
 				bCompleted = false;
 				Owner.SetFinalTarget(none, Target.Pos, Target.Action);
 				Owner.SetImmediateTarget(none, Target.Pos, Target.Action);
+			}
+			break;
+		case ORDER__WALKPATH:
+		case ORDER__PATROLPATH:
+		case ORDER__PATROLLOOP:
+			{
+				PathNode PN;
+				if (Direction)
+					PN = PathNode(Target.Thing).BW;
+				else
+					PN = PathNode(Target.Thing).FW;
+
+				if (!PN)
+				{
+					if (Order == ORDER__PATROLPATH)
+					{
+						Direction = !Direction;
+						if (Direction)
+							PN = PathNode(Target.Thing).BW;
+						else
+							PN = PathNode(Target.Thing).FW;
+					}
+					else if (Order == ORDER__PATROLLOOP)
+					{
+						if (Direction)
+							PN = PathNode(Target.Thing).GetPathTail();
+						else
+							PN = PathNode(Target.Thing).GetPathHead();
+					}
+				}
+
+				if (PN)
+				{
+					Target.Thing = PN;
+					Target.Pos = PN.Origin;
+					bCompleted = false;
+					Owner.SetFinalTarget(Target.Thing,, Target.Action);
+					Owner.SetImmediateTarget(Target.Thing,, Target.Action);
+				}
 			}
 			break;
 		}

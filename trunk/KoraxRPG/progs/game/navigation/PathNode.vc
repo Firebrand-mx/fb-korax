@@ -1,0 +1,140 @@
+﻿//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: PathNode.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class PathNode : CommonNode
+	abstract;
+
+//
+// PathNode is an extended version of CommonNode which can be connected
+// with other PathNodes using extra Forward and Backward Path links to support
+// easier handling of Patrol Paths.
+//
+
+//
+//	It is not oligatory that Path Node is linked with previous and next path nodes
+//	by common node links; thus we should use explicit links for that connections;
+//
+
+PathNode		FW;
+PathNode		BW;
+
+//==========================================================================
+//
+//	BuildLinks
+//
+//==========================================================================
+
+void BuildLinks()
+{
+}
+
+//==========================================================================
+//
+//	GetPathNodeByLocalIndex
+//
+//==========================================================================
+
+PathNode GetPathNodeByLocalIndex(int Index)
+{
+
+}
+
+//==========================================================================
+//
+//	GetPathNodeByOrdinalNumber
+//
+//==========================================================================
+
+PathNode GetPathNodeByOrdinalNumber(int Number)
+{
+
+}
+
+//==========================================================================
+//
+//	GetPathHead
+//
+//==========================================================================
+
+PathNode GetPathHead()
+{
+	PathNode PN = self;
+
+	while (PN.BW)
+	{
+		PN = PN.BW;
+
+		if (PN == self)
+		{
+			// looped path: no head, no tail
+			return self;
+		}
+	}
+
+	return PN;
+}
+
+//==========================================================================
+//
+//	GetPathTail
+//
+//==========================================================================
+
+PathNode GetPathTail()
+{
+	PathNode PN = self;
+
+	while (PN.FW)
+	{
+		PN = PN.FW;
+
+		if (PN == self)
+		{
+			// looped path: no head, no tail
+			return self;
+		}
+	}
+
+	return PN;
+}
+
+states
+{
+Spawn:
+	NODE D -1
+	Stop
+}
+
+defaultproperties
+{
+	bNoGravity = true;
+}

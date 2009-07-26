@@ -165,7 +165,9 @@ void CheckThreat()
 	{
 		if (!Target || !Threshold)
 		{
-			Actor targ = Actor(Sector->SoundTarget);
+			Actor targ = (Level.CompatSoundTarget || bNoSector) ?
+							Actor(Sector->SoundTarget) : Actor(LastHeard);
+
 			if (targ && targ != Target && IsOkayToTarget(targ))
 			{
 				//if (Behavior.ThreatReaction == THREATREACTION__AMBUSH)
@@ -319,6 +321,27 @@ void ConsiderChangeState()
 
 final void A_LookAI()
 {
+	// ZDoom-style patrol
+	// Set goal now if appropriate.
+	if (Special == LNSPEC_ThingSetGoal && Args[0] == 0)
+	{
+		Entity Ent;
+		for (Ent = Level.FindMobjFromTID(Args[1], none); Ent;
+			Ent = Level.FindMobjFromTID(Args[1], Ent))
+		{
+			if (!Ent.IsA('PathNode'))
+			{
+				continue;
+			}
+			OrderWalkPath(false, false, false,
+				Args[3] ? IntelligentActor::TASK_PRIORITY_ABSOLUTE : IntelligentActor::TASK_PRIORITY_THREATSENSITIVE,
+				0.0, PathNode(Ent));
+			ReactionTime = itof(Args[2]) + XLevel.Time;
+			break;
+		}
+		Special = 0;
+	}
+
 	ConsiderChangeState();
 }
 
@@ -348,7 +371,7 @@ final void A_ChaseAI()
 
 	if ((pDestination || Target) && DoMoveR)
 	{
-		DoMoveR(false, MeleeState, MissileState, false, true, false);
+		DoMoveR(false, MeleeState, MissileState, false, true, ReactionTime > XLevel.Time);
 	}
 }
 

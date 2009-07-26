@@ -1,4 +1,4 @@
-//**************************************************************************
+﻿//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: CommonNode.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
+//**    $Id: ScriptedPathNode.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,46 +30,59 @@
 //**
 //**************************************************************************
 
-//
-// CommonNode is a base class for things that serve the sole purpose
-// of ai navigation. Being a child of Node, it makes its instances
-// be included into navigational node graph.
-//
+class ScriptedPathNode : PathNode
+	__mobjinfo__(14990);
 
-class CommonNode : Node
-	__mobjinfo__(15004);
-
-//==========================================================================
-//
-//	OnMapSpawn
-//
-//==========================================================================
-
-void OnMapSpawn(mthing_t* mthing)
+enum
 {
-	// [FB] Show path nodes if the CVar is active
-	if (GetCvar('ShowPathNodes') != 0)
+	ARG_PATHINDEX	= 0,	// global path index on map
+	ARG_NODEINDEX	= 1,	// index of the node in path
+	ARG_DELAY		= 2
+};
+
+//==========================================================================
+//
+//	BuildLinks
+//
+//	Unlike ZDoom PatrolPoint, ScriptedPathNode links by defining Scripted
+//	Path Index (Args[0]) and Path Node Index (Args[1]); thus one may have
+//  255 * 255 ScriptedPathNode things on map.
+//
+//==========================================================================
+
+void BuildLinks()
+{
+	// Seek for FW and BW nodes
+	if (!FW || !BW && Args[ARG_NODEINDEX] > 0)
 	{
-		bInvisible = false;
-	}
-	::OnMapSpawn(mthing);
-}
+		ScriptedPathNode SPN;
+		foreach AllThinkers(PathNode, SPN)
+		{
+			if (SPN.Args[ARG_PATHINDEX] != SPN.Args[ARG_PATHINDEX])
+			{
+				continue;
+			}
+			
+			if (!FW && SPN.Args[ARG_NODEINDEX] == Args[ARG_NODEINDEX] + 1)
+			{
+				FW = SPN;
+				SPN.BW = self;
+			}
 
-states
-{
-Spawn:
-	NODE A -1
-	Stop
+			if (!BW && SPN.Args[ARG_NODEINDEX] == Args[ARG_NODEINDEX] - 1)
+			{
+				BW = SPN;
+				SPN.FW = self;
+			}
+
+			if (FW && BW)
+			{
+				break;
+			}
+		}
+	}
 }
 
 defaultproperties
 {
-#ifdef DEBUG_PATH_NODES
-	bInvisible = false;
-	RenderStyle = STYLE_Normal;
-#endif
-	bNoGravity = false;
-
-	Radius = 20.0;
-	Height = 16.0;
 }
