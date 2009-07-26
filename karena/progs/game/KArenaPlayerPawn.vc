@@ -476,11 +476,6 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	
 	if (canreach && TargetEntity)
 	{
-		//
-		// [CW] CHECKME ---
-		//
-		//if (CRTRData.linetarget != TargetEntity)
-		//	return false;
 
 	#ifdef DEBUG_BOT_AI_CANREACH
 		print("TargetEntity.Origin.z = %f; CRTRData.finalPos.z = %f", TargetEntity.Origin.z, CRTRData.finalPos.z);
@@ -488,21 +483,41 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 
 		
 		// [FB]  3d Floor checks...
+		// [CW]  checks for things that are above or below final floor
 		float dist;
 		if (TargetEntity.Origin.z > CRTRData.finalPos.z)
 		{
-			dist = CRTRData.finalPos.z + Height/2.0 + MaxPassableStep;
+			// TargetEntity is above final position; this can be an item,
+			// floating in the air on normal height, or some object raised
+			// above ground; this also can mean that there's solid 3dfloor
+			// between final position and TargetEntity.
+			//
 
-			if (TargetEntity.Origin.z > dist)
+			// TODO: need extra check for a 3dfloor above?
+
+			dist = CRTRData.finalPos.z + Height / 2.0  + MaxPassableStep;
+
+			if (TargetEntity.Origin.z - TargetEntity.Height / 2.0 > dist)
+			{
 				return false;
+			}
 		}
 		else if (TargetEntity.Origin.z < CRTRData.finalPos.z)
 		{
+			// TargetEntity is below final position; either object is
+			// below a 3dfloor, which usually means player won't be
+			// able to access it, either stuck in the floor for some
+			// wicked reason. In the last case it will be only accessible
+			// if it "sticks out" enough to make contact with player.
+			//
+
+			// TODO: need check for liquid surface here (i.e. for items in water)?
+
 			dist = CRTRData.finalPos.z - TargetEntity.Origin.z + TargetEntity.Height;
 
-			// [FB] Always evaluate a positive distance
-			if (fabs(dist) > MaxPassableDropOff)
+			if (dist < CRTRData.finalPos.z)
 			{
+				// Nothing "sticks out"
 				return false;
 			}
 		}
