@@ -73,7 +73,7 @@ struct tm_graphic_object_t : tm_object_t
 	int	picId;
 };
 
-const int ENTRY_BLINK_TIME = 20;
+const int ENTRY_BLINK_TIME = 20 * 35;
 
 struct tm_mapentry_t : tm_graphic_object_t
 {
@@ -181,7 +181,7 @@ void Tick(float DeltaTime)
 	{
 		if (traveller.p_mapentry && !traveller.p_mapentry->blink)
 		{
-			traveller.p_mapentry->blinktime = 20;
+			traveller.p_mapentry->blinktime = 20 * 35;
 			traveller.p_mapentry->blink = true;
 		}		
 	}
@@ -210,13 +210,13 @@ void TM_UpdateMapEntries()
 			{
 				tmMapEntries[i].blinktime--;
 				if (!tmMapEntries[i].blinktime)
-					tmMapEntries[i].blinktime = -20;
+					tmMapEntries[i].blinktime = -20 * 35;
 			}
 			else if (tmMapEntries[i].blinktime < 0)
 			{
 				tmMapEntries[i].blinktime++;
 				if (!tmMapEntries[i].blinktime)
-					tmMapEntries[i].blinktime = 20;
+					tmMapEntries[i].blinktime = 20 * 35;
 			}
 		}
 	}
@@ -269,7 +269,7 @@ void TM_UpdateTraveller()
 
 				if (traveller.flashdir)
 				{
-					traveller.flashtime = 20;
+					traveller.flashtime = 20 * 35;
 					traveller.flashdir = playerCmds;
 					TMState = TM_OptionConfirm;
 				}
@@ -281,7 +281,7 @@ void TM_UpdateTraveller()
 	else if (TMState == TM_MoveOnPath)
 	{
 		int data = traveller.p_road->route[1 + (traveller.roadpt / 4)];
-		int dir = (data >> ((traveller.roadpt % 4) << /*2*/3)) & 0xF;// CHECKME
+		int dir = (data >> ((traveller.roadpt % 4) << /* 2 */3)) & 0xF; // CHECKME
 
 		if (traveller.roaddiropposite)
 			dir = TM_DirectionOpposite(dir);
@@ -529,7 +529,7 @@ void OnDraw()
 		for (PtIndex = 0; PtIndex < (pRoad->route.Num - 1) * 4; PtIndex++)
 		{
 			data = pRoad->route[1 + (PtIndex / 4)];
-			dir = (data >> ((PtIndex % 4) << /*2*/3)) & 0xF;
+			dir = (data >> ((PtIndex % 4) << /* 2 */3)) & 0xF;
 
 			if (!dir)
 			{
@@ -836,7 +836,7 @@ void TM_InitData()
 		for (PtIndex = 0; PtIndex < (pRoad->route.Num - 1) * 4; PtIndex++)
 		{
 			data = pRoad->route[1 + (PtIndex / 4)];
-			dir = (data >> ((PtIndex % 4) << /*2*/3)) & 0xF;
+			dir = (data >> ((PtIndex % 4) << /* 2 */3)) & 0xF;
 
 			if (!dir)
 				break;	// road end
@@ -868,7 +868,7 @@ void TM_InitData()
 		}
 		else
 			tmMapEntries[i].colour = RGBA(0,0,0,0xFF);//CHECKME
-		//tmMapEntries[i].spawnpos = 0;// CHECKME
+		//tmMapEntries[i].spawnpos = 0; // CHECKME
 		tmMapEntries[i].picname = '';
 		
 
@@ -893,7 +893,7 @@ void TM_InitData()
 	for (i = 0; i < tmMapEntries.Num; i++)
 	{
 		if (tmMapEntries[i].mapname == ClGame.im.LeaveMap
-			/*&& tmMapEntries[i].spawnpos == 0*/)// CHECKME
+			/* && tmMapEntries[i].spawnpos == 0 */) // CHECKME
 		{
 			traveller.x = tmMapEntries[i].x;
 			traveller.y = tmMapEntries[i].y;
@@ -1072,7 +1072,7 @@ void TM_GetPathData(tm_mapentry_t * pEntry, tm_road_t * pRoad, out int dir, out 
 
 			// seek for the very last route directive
 			dir = (data >> 24) & 0xF;
-			ptindex = (pRoad->route.Num - i) * 4 - 1/*CHECKME!*/;
+			ptindex = (pRoad->route.Num - i) * 4 - 1 /* CHECKME! */;
 
 			if (!dir)
 			{
