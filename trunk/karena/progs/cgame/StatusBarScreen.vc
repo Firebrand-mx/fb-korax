@@ -79,8 +79,8 @@ int pic_paused;
 int pic_health;
 int pic_armor2;
 
-const float IMPORTANT_MESSAGE_SHOWTIME = 1.0;
-const float IMPORTANT_MESSAGE_HIDETIME = 0.5;
+const float IMPORTANT_MESSAGE_SHOWTIME = 1.0 * 35.0;
+const float IMPORTANT_MESSAGE_HIDETIME = 0.5 * 35.0;
 
 float important_message_ticker;
 
@@ -961,7 +961,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		frame = (ClGame.GLevel.TicTime / 3) & 15;
+		frame = (ClGame.GLevel.TicTime / 18) & 15;
 		if (cl.MO.bFly)
 		{
 			if (hitCentreFrame && frame != 15 && frame != 0)
@@ -989,7 +989,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
+		DrawPic(60, 19, pic_boot[(ClGame.GLevel.TicTime / 18) & 15], 0.6);
 	}
 
 	// Defensive power
@@ -998,7 +998,7 @@ void SB_DrawIcons()
 		(Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
+		DrawPic(580, 19, pic_shld[(ClGame.GLevel.TicTime / 18) & 15], 0.6);
 	}
 
 	// Minotaur Active
@@ -1006,7 +1006,7 @@ void SB_DrawIcons()
 	if (Pw && (Pw.EffectTime > Player::BLINKTHRESHOLD ||
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
-		DrawPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 3) & 15], 0.6);
+		DrawPic(620, 19, pic_mino[(ClGame.GLevel.TicTime / 18) & 15], 0.6);
 	}
 
 	// [FB] PI Damage Active
@@ -1015,7 +1015,7 @@ void SB_DrawIcons()
 		!(ftoi(Pw.EffectTime * 35.0) & 16)))
 	{
 		// [FB] This one should appear where the wings of wrath are supposed to
-		DrawPic(/*20*/Width - pic_pidm_width - 20, 19, pic_pidm[(ClGame.GLevel.TicTime / 3) & 7], 0.6);
+		DrawPic(/* 20 */Width - pic_pidm_width - 20, 19, pic_pidm[(ClGame.GLevel.TicTime / 18) & 7], 0.6);
 	}
 
 	// [FB] Invisibility power
@@ -1072,7 +1072,7 @@ void SB_Drawer(int sb_view)
 			}
 			else
 			{
-				DrawText(320, 400, "You were killed. You will respawn after monster wave is defeated.", CR_RED);
+				DrawText(320, 400, "You were killed. You will respawn after this monster wave is defeated.", CR_RED);
 			}
 		}
 		return;
@@ -1109,7 +1109,7 @@ void SB_Drawer(int sb_view)
 	{
 		SetTextAlign(hcentre, vcentre);
 		SetFont('smallfont');
-		DrawText(320, 320, "You have enemy flag!", CR_LIGHTBLUE);
+		DrawText(320, 320, "You have the enemy flag!", CR_LIGHTBLUE);
 	}
 
 	if (cl.BannerStatus != CTFBanner::BANNER_STATUS__BASE && important_message_ticker > 0.0)
@@ -1117,9 +1117,9 @@ void SB_Drawer(int sb_view)
 		SetTextAlign(hcentre, vcentre);
 		SetFont('smallfont');
 		if (cl.BannerStatus == CTFBanner::BANNER_STATUS__CARRIED)
-			DrawText(320, 180, "Enemy has your flag!", CR_RED);
+			DrawText(320, 180, "The enemy has your flag!", CR_RED);
 		else if (cl.BannerStatus == CTFBanner::BANNER_STATUS__LOST)
-			DrawText(320, 180, "Your flag is dropped on ground!", CR_RED);
+			DrawText(320, 180, "Your flag is dropped on the ground!", CR_RED);
 	}
 
 	// [CW] Targeted enemy info
@@ -1154,9 +1154,6 @@ void SB_Drawer(int sb_view)
 	// [CW] Use power
 	if (GetCvar('deathmatch') == HexenDefs::game_football && cl.use_power)
 	{
-		//R_FillRect(320 - cl.use_power * 5 , 256, cl.use_power * 10, 16,
-		//                 cl.bUsePowerRange ? 0xff00ff00 : 0xffffff00
-		//                 0xff00ff00 + 0x00020000 * (100 - cl.use_power_rangefrac));
 		R_FillRect(320 - cl.use_power * 5 , 256, cl.use_power * 10, 12, 0xff0000ff);
 		R_FillRect(320 - 64, 280, 128, 12, 0xffffff00);
 		R_FillRect(320 - 64, 280, 128 * cl.use_power_rangefrac / 100, 12, 0xff00ff00);
