@@ -36,7 +36,7 @@ decorate.txt					decorate.txt
 
 actors/krpg/bishop.txt			actors/krpg/bishop.txt
 actors/krpg/centaur.txt			actors/krpg/centaur.txt
-//actors/krpg/classboss.txt		actors/krpg/classboss.txt
+actors/krpg/classboss.txt		actors/krpg/classboss.txt
 actors/krpg/clericweapons.txt	actors/krpg/clericweapons.txt
 actors/krpg/demons.txt			actors/krpg/demons.txt
 actors/krpg/dragon.txt			actors/krpg/dragon.txt
@@ -49,6 +49,7 @@ actors/krpg/korax.txt			actors/krpg/korax.txt
 actors/krpg/krpgdecorations.txt	actors/krpg/krpgdecorations.txt
 actors/krpg/mageweapons.txt		actors/krpg/mageweapons.txt
 actors/krpg/mana.txt			actors/krpg/mana.txt
+actors/krpg/navigation.txt		actors/krpg/navigation.txt
 actors/krpg/npcs.txt			actors/krpg/npcs.txt
 actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
