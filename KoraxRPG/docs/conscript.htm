@@ -11,7 +11,7 @@
         Brief contents:<br />
         <br />
     <span style="font-size: 14pt">Root-level statements<br />
-        Person block root statements<br />
+        Conversation block root statements<br />
         General conditions syntax<br />
         Speech block statements and keywords<br />
         Game object references<br />
@@ -19,8 +19,9 @@
         Appendix A: Game object functions<br />
         Appendix B: World object functions<br />
         Appendix C: Level object functions<br />
-        Appendix D: Character object functions<br />
-        Appendix E: Player-specific object functions</span><br />
+        Appendix D: Actor object functions<br />
+        Appendix E: Player-specific object functions<br />
+        Appendix F: Person-specific object functions</span><br />
             <br />
             <br />
             <br />
@@ -28,7 +29,7 @@
             <br />
     <span style="font-size: 12pt">
         import<br />
-        person<br />
+        conitem<br />
         <br />
         <br />
         <br /></span>
@@ -52,25 +53,32 @@
                         }</em><br />
                     <br />
                     <br />
-                 </span>
-    <strong>person</strong><br />
+                 </span><strong>conitem</strong><br />
     <br />
-    <span style="font-size: 12pt">Begins a person-specific block, which contains conversation
+    <span style="font-size: 12pt">Begins a person-specific conversation block, which contains conversation
                 data.<br />
                 <br />
                 Syntax:<br />
                 <br />
-                <em>person script_name script_id<br />
+                <em>conitem [person_name] person_id [, con_name con_id]<br />
                     {<br />
                     &nbsp; &nbsp; &nbsp; &nbsp; ...<br />
-                    }<br />
+                    }</em><br />
                     <br />
-                    Script_name</em></span> <span style="font-size: 12pt">is a name under which this person
-                        can be adressed in conversation scripts. <em>Script_id</em> is this person's numeric
-                        id to use in map scripts.</span></span><br />
+                    <em>Person_name</em>is an optional convenient name of the person entry, under
+                    this the character can be adressed in conversation scripts. <em>Person_id</em> is the corresponding
+                        person's numeric id to use in DECORATE and map scripts. <em>Con_name</em>is an optional name under
+                                which this conversation item can be adressed in conversation scripts.
+                        <em>Con_id</em> is an
+                        optional id of this conversation; it allows to specify numerous
+                        "conitems" attached to one
+                        person. If there are more than one "conitem" with same <em>person_id</em>, conversation
+                        with lesser <em>con_id</em> is counted as active, unless this is explicitly changed
+                        from either conversation script or map script.</span><br />
+    </span>
     <br />
     <br />
-    Person block root statements<br />
+        Conversation block root statements<br />
             <br />
     <span style="font-size: 12pt">bye<br />
                 choice<br />
@@ -136,7 +144,7 @@
             <br />
             <em>flat [if (condition)] flat_name;<br />
                 <br />
-                Flat_name </em>is a name of an flat patch lump in WAD or file in PK3 (without
+                Flat_name </em>is a name (case insensitive) of an flat patch lump in WAD or file in PK3 (without
             extension).<br />
             <em>Condition</em> part is optional; it makes the picture active or inactive depending
             on check result. First active flat found is used during the conversation.</span><br />
@@ -199,7 +207,7 @@
                     <em>pic [if (condition)] pic_name;<br />
                     </em>
                         <br />
-                        <em>Pic_name </em>is a name of an image lump in WAD or file in PK3 (without extension).<br />
+                        <em>Pic_name </em>is a name (case insensitive) of an image lump in WAD or file in PK3 (without extension).<br />
                         <em>Condition</em> part is optional; it makes the picture active or inactive depending
                         on check result. First active picture found is used during the conversation.<br />
                     </span>
@@ -227,7 +235,7 @@
                     </span>
                     <br />
                        <br />
-    <strong>var <span style="color: #ff0000">(not yet supported)</span></strong><br />
+    <strong>var</strong><br />
                         <br />
                     <span style="font-size: 12pt">Registers a local person's variable, that could
                         store some value and be used in conditions all around the conversation script. They
@@ -258,7 +266,8 @@
     <br />
     <br />
     <br />
-    <span style="font-size: 14pt"><strong>if / else <span style="color: #ff0000">(not yet supported)</span><br />
+    <span style="font-size: 14pt"><strong>if / else <span style="color: #ff0000">(limited
+        support)</span><br />
         <br /></strong>
     <span style="font-size: 12pt"><em><strong>If</strong></em> statement orders
         script to make a check of some condition. Depending on condition check result script
@@ -390,15 +399,16 @@
                         <br />
                         Syntax:<br />
                         <br />
-        <em>
-                        choices<br />
+        <em>choices [strict]<br />
                         {<br />
                         &nbsp; &nbsp; &nbsp;&nbsp; choice_name<br />
                         &nbsp; &nbsp; &nbsp;&nbsp; choice_name2<br />
                         &nbsp; &nbsp; &nbsp;&nbsp; ...<br />
                         }<br />
             <br />
-        </em>
+            <strong>Strict</strong></em> flag makes choices be listed strictly in the order
+        of their definition in <em><strong>choices</strong></em> block. Otherwise an order
+        of 'choice' blocks appearance in the conversation script is used.<br />
         Only 'choice' blocks can be selected this way, other block types will be ignored.</span><br />
         <br />
         <br />
@@ -440,15 +450,15 @@
             a person and to execute their common member functions.</span><br />
         <br />
         <br />
-        <strong>executems <span style="color: #ff0000">(not yet supported)</span></strong><br />
+        <strong>executems</strong><br />
         <br />
         <span style="font-size: 12pt">Executes map script.<br />
             <br />
             Syntax:<br />
             <br />
-            <em>executems map_index script_index[ (arg1[, arg2[, arg3[, arg4[, arg5]]]])];</em><br />
+            <em>executems map_index script_index[ (arg1[, arg2[, arg3]])];</em><br />
             <br />
-            All parameters a similar to ACS_Execute map script function.</span><br />
+            All parameters a similar to ACS_Execute action special.</span><br />
         <br />
         <br />
         <strong>Game</strong><br />
@@ -544,17 +554,44 @@
                 <br />
                 Syntax:<br />
                 <br />
-                <em>say [who [to_whom]] cue_text &lt;cue_voice | none&gt;;</em><br />
+                <em>say [who [to_whom]] cue_text [&lt;cue_voice | none&gt;];</em><br />
                 <br />
                 <em>Who</em> is a reference to person who is saying, <em>to_whom</em> is a reference
-                to person who is being adressed. <em>Cue_voice</em> is a name of a sound
+                to person who is being adressed. <em>Cue_voice</em> is an optional name
+        (case insensitive) of a sound
         entry in SNDINFO or file in PK3 (without extension) to be played.<br />
                 If <em>who</em> is not explicitly defined, <strong><em>myself</em></strong> reference
                 is used by default; if <em>to_whom</em> is not defined <strong><em>initiator</em></strong>
-                reference is used.&nbsp;</span><br />
+                reference is used.&nbsp;<br />
+        <br />
+        <em>Cue_text</em> should be represented by a quoted line or a number of quoted lines
+        of text. Numerous lines can be separated either by '+' (plus), ',' (comma) or a
+        number of commas. A plus character makes two lines be concatenated and a single
+        space inserted between last symbol in first line and first symbol in second line.
+        Comma character concatenates text lines and inserts linebreak between. Multiple
+        commas make corresponding number of linebreaks inserted.<br />
+        <br />
+        Examples:<br />
+        <br />
+        <em>"This cue displays only this short line of text"<br />
+            <br />
+            "My name is Victor"+<br />
+            "and I am your friend."<br />
+            <br />
+            "A text before two linebreaks.",,<br />
+            "A text after two linebreaks."<br />
+            <br />
+            "First part of the phrase"+<br />
+            "second part of the phrase",<br />
+            "Second phrase after a linebreak."</em><br />
+        <br />
+        A notice should be made, that in game cue text may be wrapped according to user-interface
+        settings (and the screen width), so there's no need to plan manual text wrapping
+        when writing cue texts.<br />
+    </span>
     <br />
     <br />
-    <strong>set <span style="color: #ff0000">(not yet supported)</span></strong><br />
+    <strong>set</strong><br />
     <br />
     <span style="font-size: 12pt">Applies new value to variable. This person's local variables,
                 other person's local variables and and global variables could be changed this way.<br />
@@ -569,7 +606,7 @@
                 a new variable value.</span><br />
         <br />
         <br />
-        <strong>skip<br />
+        <strong>skip <span style="color: #ff0000">(limited support)</span><br />
         </strong>
         <br />
         <span style="font-size: 12pt">Skips the rest of the speech block or sub-block (a number
@@ -632,14 +669,15 @@
                     <br />
                     yesno jump yes_speech_name no_speech_name;<br />
                     <br />
-                    yesno &lt;skip | continue&gt; &lt;skip | continue&gt;;</em><br />
+                    yesno &lt;continue | end | skip | terminate&gt; &lt;continue | end | skip | terminate&gt;;</em><br />
                 <br />
                 First syntax style applies a value to variable with name <em>variable_name</em>
                 depending on player choice; if player selected "yes" <em>yes_expression</em> result
                 is applied, otherwise <em>no_expression</em> result is applied.<br />
                 Second syntax style executes <strong><em>jump</em></strong> command either with
                 <em>yes_speech_name</em> or <em>no_speech_name</em> as parameter correspondingly.<br />
-        Third syntax executes either <em><strong>skip</strong></em> or nothing correspondingly
+        Third syntax executes <strong><em>end</em></strong>, <em><strong>skip</strong></em>,
+        <em><strong>terminate</strong></em> or nothing 
         (first command defined for "yes" selection, second for "no").&nbsp;</span><br />
         </span>
     <br />
@@ -691,10 +729,49 @@
     <br />
     Appendix C: Level object functions<br />
     <br />
+    <span style="font-size: 12pt">MapNumber<br />
+        NoiseAlert<br />
+        <br />
+        <br />
+        <br />
+        <br />
+    </span>
+    <span style="font-size: 14pt">
+        <strong>Map Number</strong><br />
+                <br />
+        <span style="font-size: 12pt">Returns the current map's number, as defined in MAPINFO script. This function can be used in expressions.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>Level.MapNumber();</em><br />
+        </span>
+        <br />
+        <br />
+        <strong>NoiseAlert</strong><br />
+                <br />
+        <span style="font-size: 12pt">Alerts all actors in the sound range of a target's presence, same as NoiseAlert action special.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>Level.NoiseAlert( [ target_reference | target_TID, [ emitter_reference
+                    | emitter_TID ] ] );</em><br />
+                <br />
+            <em>Target</em> is an actor who is being alerted to. <em>Emitter</em> is an actor
+            which is a centre of alert sound spreading. Both may be defined either by passing
+            a reference, including <em><strong>everybody</strong></em>, <em><strong>initiator</strong></em>,
+            <em><strong>myself</strong></em> or <em><strong>Player</strong></em>, or by passing
+            a thing's TID. If emitter is not specified, target is used as emitter. If neither
+            target nor emitter are specified, a <em><strong>Player</strong></em> reference is
+            used as both target and emitter.<br />
+        </span>
+        <br />
+        <br />
+    </span>
     <br />
     <br />
     <br />
-    Appendix D: Character object functions<br />
+    <br />
+    Appendix D: Actor object functions<br />
     <br />
     <span style="font-size: 12pt">HasInventory<br />
             GiveExperience<br />
@@ -704,7 +781,8 @@
         <br />
         <br />
     </span>
-    <span style="font-size: 14pt"><strong>HasInventory <span style="color: #ff0000">(not yet supported)</span></strong><br />
+    <span style="font-size: 14pt">
+        <strong>HasInventory<span style="color: #ff0000"></span></strong><br />
                 <br />
         <span style="font-size: 12pt">If referred character has got an inventory item or a
                 quantity of items, this function will result in TRUE, otherwise it will
@@ -712,12 +790,12 @@
                 <br />
                 Syntax:<br />
                 <br />
-                <em>&lt;character&gt;.HasInventory(&lt;item name&gt[, &lt;amount&gt ]);</em><br />
+                <em>&lt;character&gt;.HasInventory( item_name[, amount ] );</em><br />
                 <br />
-                <em>Item name</em> should be a name of inventory item: weapon, ammo, artifact or spell-item 
-                without quotation marks; this parameter is case insensitive. <em>Amount</em> is an optional
+                <em>Item name</em> should be a name of inventory item: weapon, ammo, artifact
+            and similar, without quotation marks; this parameter is case insensitive. <em>Amount</em> is an optional
                 numeric value, which should be greater than zero.<br />
-                This function can be used in conditions.<br />
+                This function can be used in expressions.<br />
         </span>
         <br />
         <br />
@@ -727,7 +805,7 @@
                 <br />
                 Syntax:<br />
                 <br />
-                <em>&lt;character&gt;.GiveExperience(&lt;amount&gt);</em>
+                <em>&lt;character&gt;.GiveExperience( amount );</em>
                 <br />
         </span>
         <br />
@@ -738,19 +816,19 @@
                 <br />
                 Syntax:<br />
                 <br />
-                <em>&lt;character&gt;.GiveInventory(&lt;item name&gt[, &lt;amount&gt ]);</em><br />
+                <em>&lt;character&gt;.GiveInventory( item_name [, amount ] );</em><br />
                 <br />
         </span>
         <br />
         <br />
-        <strong>RemoveInventory <span style="color: #ff0000">(not yet supported)</span></strong><br />
+        <strong>RemoveInventory</strong><br />
                 <br />
         <span style="font-size: 12pt">Removes an inventory item or a quantity of items from referred character.
                 Those items are destroyed forever.<br />
                 <br />
                 Syntax:<br />
                 <br />
-                <em>&lt;character&gt;.RemoveInventory(&lt;item name&gt[, &lt;amount&gt ]);</em>
+                <em>&lt;character&gt;.RemoveInventory( item_name [, amount ]);</em>
                 <br />
         </span>
     </span>
@@ -761,6 +839,7 @@
     Appendix E: Player-specific object functions<br />
     <br />
     <span style="font-size: 12pt">GiveLevels<br />
+        TeleportToMap<br />
         <br />
         <br />
         <br />
@@ -772,7 +851,7 @@
                 <br />
                 Syntax:<br />
                 <br />
-                <em>Player.GiveLevels(&lt;amount&gt);</em><br />
+                <em>Player.GiveLevels( amount );</em><br />
                 <br />
                 A note should be made that if player already have experience earned on current
                 level, it will be kept. For example, player is on level 2 with 1000 exps
@@ -782,7 +861,46 @@
                 his previously earned 1000 exps extra; finally he will be 4th level with
                 1000 exps kept to reach for 5th.<br />
         </span>
+        <br />
+        <br />
+        <strong>TeleportToMap</strong><br />
+                <br />
+        <span style="font-size: 12pt">Teleports player to another map, same as Teleport_NewMap action special.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>Player.TeleportToMap( map_id [, position_id [, keep_orientation]] );</em><br />
+                <br />
+            <br />
+        </span>
+        <br />
+        <br />
     </span>    
+    <br />
+    <br />
+    <br />
+    <br />
+    Appendix F: Person-specific object functions<br />
+    <br />
+    <span style="font-size: 12pt">SetActiveConItem<br />
+        <br />
+        <br />
+        <br />
+    </span>
+    <span style="font-size: 14pt">
+        <strong>SetActiveConItem</strong><br />
+                <br />
+        <span style="font-size: 12pt">Sets an active conversation item for given person.<br />
+                <br />
+                Syntax:<br />
+                <br />
+                <em>&lt;character&gt;.SetActiveConItem( conitem_name | conitem_index );</em><br />
+                    <br />
+            Conversation item can be specified either by its script name, or by script index.<br />
+        </span>
+        <br />
+        <br />
+    </span>
     <br />
     <br />
     <br />

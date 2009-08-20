@@ -37,17 +37,28 @@ enum
 	// Object properties
 	//----------------------------
 	//
+	// Level
+	//
+	Token_Level_MapNumber,
+	Token_Level_NoiseAlert,
+	//
 	// Actor
 	//
 	Token_Actor_HasInventory,
 	Token_Actor_GiveExperience,
 	Token_Actor_GiveInventory,
 	Token_Actor_RemoveInventory,
+	LAST_ACTOR_METHOD = Token_Actor_RemoveInventory,
 	//
 	// Player
 	//
 	Token_Player_Class,
 	Token_Player_GiveLevels,
+	Token_Player_TeleportToMap,
+	//
+	// Person
+	//
+	Token_Person_SetActiveConItem,
 
 	NUM_OBJECTTOKENS
 };
@@ -99,7 +110,8 @@ int GetObjectToken(string S)
 //
 //==========================================================================
 
-void ParseObjectReference(int ReferenceClass, optional bool bSkipIfPossible)
+void ParseObjectReference(int ReferenceClass, optional expression_t * p_Result,
+						  optional bool bSkipIfPossible, optional bool bIgnoreCommandSeparator)
 {
 	int				Method;
 	array<string>	Params;
@@ -149,7 +161,10 @@ void ParseObjectReference(int ReferenceClass, optional bool bSkipIfPossible)
 		}
 	}
 
-	Expect(Tokens[Token_CommandSeparator]);
+	if (!bIgnoreCommandSeparator)
+	{
+		Expect(Tokens[Token_CommandSeparator]);
+	}
 
 	if (!bSkipIfPossible)
 	{
@@ -173,16 +188,31 @@ void ParseObjectReference(int ReferenceClass, optional bool bSkipIfPossible)
 			break;
 		}
 
+		if (p_Result)
+		{
+			p_Result->type = exp_type_unknown;
+		}
+
+		// Now, we have an exact class to deal with
 		switch (ReferenceClass)
 		{
 		case Token_Initiator:
-			ParseActorMethod(ConInfo.AInitiator, Token_Initiator, Method, &Params);
+			if (Method > LAST_ACTOR_METHOD)
+				ParsePersonMethod(ConInfo.pInitiatorInfo, Token_Initiator, Method, &Params, p_Result);
+			else
+				ParseActorMethod(ConInfo.AInitiator, Token_Initiator, Method, &Params, p_Result);
+			break;
+		case Token_Level:
+			ParseLevelMethod(Method, &Params, p_Result);
 			break;
 		case Token_Myself:
-			ParseActorMethod(ConInfo.APerson, Token_Myself, Method, &Params);
+			if (Method > LAST_ACTOR_METHOD)
+				ParsePersonMethod(ConInfo.pPersonInfo, Token_Myself, Method, &Params, p_Result);
+			else
+				ParseActorMethod(ConInfo.APerson, Token_Myself, Method, &Params, p_Result);
 			break;
 		case Token_Player:
-			ParsePlayerMethod(Method, &Params);
+			ParsePlayerMethod(Method, &Params, p_Result);
 			break;
 		}
 	}
@@ -196,21 +226,86 @@ void ParseObjectReference(int ReferenceClass, optional bool bSkipIfPossible)
 //
 //==========================================================================
 
-void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_Params)
+void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_Params, optional expression_t * p_Result)
 {
 	if (!Ref)
 	{
-		dprint("ConParser::ParseActorMethod : WARNING - no actor reference, execution skipped");
+		dprint("ConParser::ParseActorMethod : WARNING - no actor reference of class '%s', execution skipped", Tokens[ObjectClass]);
 		return;
 	}
 
 	switch (Method)
 	{
+	case Token_Actor_HasInventory:
+		if (p_Result)
+		{
+			p_Result->type = exp_type_boolean;
+			class<Inventory> ItemType = class<Inventory>(FindClassLowerCase(StrToName(strlwr((*p_Params)[0]))));
+			Inventory Item = Ref.FindInventory(ItemType);
+			//dprint("Token_Actor_HasInventory, Item = %i", Item);
+			if ((*p_Params).Num > 1)
+			{
+				//if (Item)
+				//	dprint("Amount = %i, required = %i", Item.Amount, atoi((*p_Params)[1]));
+				p_Result->ivalue = (Item != none) && (Item.Amount >= atoi((*p_Params)[1]));
+			}
+			else
+			{
+				p_Result->ivalue = Item != none;
+			}
+			//dprint("p_Result->ivalue = %i", p_Result->ivalue);
+		}
+		break;
 	case Token_Actor_GiveInventory:
-		Ref.GiveInventory(StrToName(strlwr((*p_Params)[0])), (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 1);
+		{
+			class<Inventory> ItemType = class<Inventory>(FindClassLowerCase(StrToName(strlwr((*p_Params)[0]))));
+			Ref.DoGiveInventory(ItemType, (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 1, Ref);
+		}
+		break;
+	case Token_Actor_RemoveInventory:
+		{
+			class<Inventory> ItemType = class<Inventory>(FindClassLowerCase(StrToName(strlwr((*p_Params)[0]))));
+			//print("ItemType = %i", ItemType);
+			Ref.DoTakeInventory(ItemType, (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 1, Ref);
+		}
 		break;
 	default:
 		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[ObjectClass], ObjectTokens[Method]);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	ParseLevelMethod
+//
+//	TODO: return value
+//
+//==========================================================================
+
+void ParseLevelMethod(int Method, array<string> * p_Params, optional expression_t * p_Result)
+{
+	if (!ConInfo.Level)
+	{
+		dprint("ConParser::ParseLevelMethod : WARNING - no level reference, execution skipped");
+		return;
+	}
+
+	switch (Method)
+	{
+	case Token_Level_MapNumber:
+		if (p_Result)
+		{
+			p_Result->type = exp_type_integer;
+			p_Result->ivalue = ConInfo.Level.LevelNum;
+		}
+		break;
+	case Token_Level_NoiseAlert:
+		// TODO -- parse param values!
+		LineSpecialLevelInfo(ConInfo.Level).NoiseAlert(ConInfo.Player.MO, ConInfo.Player.MO);
+		break;
+	default:
+		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[Token_Level], ObjectTokens[Method]);
 		break;
 	}
 }
@@ -223,7 +318,7 @@ void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_
 //
 //==========================================================================
 
-void ParsePlayerMethod(int Method, array<string> * p_Params)
+void ParsePlayerMethod(int Method, array<string> * p_Params, optional expression_t * p_Result)
 {
 	if (!ConInfo.Player)
 	{
@@ -240,8 +335,73 @@ void ParsePlayerMethod(int Method, array<string> * p_Params)
 	case Token_Player_GiveLevels:
 		ConInfo.Player.GiveLevels(atoi((*p_Params)[0]));
 		break;
+	case Token_Player_TeleportToMap:
+		ConInfo.Level.Completed(atoi((*p_Params)[0]), (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 0,
+			(*p_Params).Num > 2 ? atoi((*p_Params)[2]) : 0);
+		break;
 	default:
-		ParseActorMethod(Actor(ConInfo.Player.MO), Token_Player, Method, p_Params);
+		ParseActorMethod(Actor(ConInfo.Player.MO), Token_Player, Method, p_Params, p_Result);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	ParsePersonMethod
+//
+//	TODO: return value
+//
+//==========================================================================
+
+void ParsePersonMethod(/*string Ref*/Quest::personinfo_t * p_PInfo, int ObjectClass, int Method, array<string> * p_Params,
+					   optional expression_t * p_Result)
+{
+	//Quest::personinfo_t * p_PInfo;
+
+	if (!GetPersonRegistry)
+		FatalError("ConParser::ParsePersonInfo : GetPersonRegistry delegate is not valid");
+
+	//p_PInfo = GetPersonRegistry(Ref, -1);
+
+	//if (!p_PInfo)
+	//{
+	//	dprint("ConParser::ParsePersonMethod : WARNING - person '%s' not registered, execution skipped", Ref);
+	//	return;
+	//}
+
+	switch (Method)
+	{
+	case Token_Person_SetActiveConItem:
+		{
+			int i;
+			bool foundByName;
+			int foundById = -1;
+			int tryid = atoi((*p_Params)[0]);
+
+			for (i = 0; i < p_PInfo->cons.Num; i++)
+			{
+				if (!strcmp(p_PInfo->cons[i].scriptName, (*p_Params)[0]))
+				{
+					p_PInfo->conId = p_PInfo->cons[i].scriptId;
+					foundByName = true;
+					break;
+				}
+
+				if (p_PInfo->cons[i].scriptId == tryid)
+				{
+					foundById = p_PInfo->cons[i].scriptId;
+				}
+			}
+
+			if (!foundByName && foundById >= 0)
+			{
+				//p_PInfo->conId = atoi((*p_Params)[0]);
+				p_PInfo->conId = foundById;
+			}
+		}
+		break;
+	default:
+		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[ObjectClass], ObjectTokens[Method]);
 		break;
 	}
 }

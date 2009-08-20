@@ -1,0 +1,498 @@
+
+enum
+{
+	exp_type_unknown,
+	exp_type_boolean,
+	exp_type_integer,
+	exp_type_float,
+	exp_type_reference,
+	exp_type_string
+};
+
+struct expression_t
+{
+	int type;
+	int ivalue;			// also used for boolean and reference tokens
+	float fvalue;
+	string svalue;
+
+	int pendingOp;
+};
+
+//==========================================================================
+//
+//	ParseAndEvaluateExpression
+//
+//	Recursive function.
+//
+//==========================================================================
+
+void ParseAndEvaluateExpression(expression_t * p_Exp)
+{
+	expression_t exp;
+
+	if (p_Exp)
+	{
+		p_Exp->type = exp_type_unknown;
+		p_Exp->pendingOp = Token_NoToken;
+		exp.type = exp_type_unknown;
+		exp.pendingOp = Token_NoToken;
+	}
+
+	while (!Check(Tokens[Token_BracketsClose]))
+	{
+		// for skipping only
+		if (!p_Exp && Check(Tokens[Token_BracketsOpen]))
+		{
+			ParseAndEvaluateExpression(NULL);
+			Expect(Tokens[Token_BracketsClose]);
+		}
+		else
+		{
+			if (p_Exp)
+			{
+				ParseOperation(&exp);
+			}
+			else
+			{
+				// Skip it token by token
+				ExpectString();
+				String;
+			}
+		}
+	};
+
+	if (p_Exp)
+	{
+		p_Exp->type = exp.type;
+		p_Exp->ivalue = exp.ivalue;
+		p_Exp->fvalue = exp.fvalue;
+	}
+
+	UnGet();
+}
+
+//==========================================================================
+//
+//	ParseOperation
+//
+//==========================================================================
+
+void ParseOperation(expression_t * p_Exp)
+{
+	expression_t exp;
+	exp.pendingOp = Token_NoToken;
+
+	if (p_Exp->type == exp_type_unknown)
+	{
+		if (p_Exp->pendingOp == Token_NoToken)
+		{
+			// Try to get unary op first
+			ParseUnaryOperation(&exp);
+			p_Exp->pendingOp = exp.pendingOp;
+		}
+		else
+		{
+			// First (or only) operand
+			ParseOperand(&exp);
+			EvaluateOperation(p_Exp, &exp, p_Exp);
+		}
+	}
+	else
+	{
+		// We have the first operand...
+		if (p_Exp->pendingOp == Token_NoToken)
+		{
+			// Get the binary op
+			ParseBinaryOperation(&exp);
+			p_Exp->pendingOp = exp.pendingOp;
+		}
+		else
+		{
+			// Get the second operand and this completes this basic expression
+			ParseOperand(&exp);
+			EvaluateOperation(p_Exp, &exp, p_Exp);
+		}
+	}
+}
+
+/*
+//==========================================================================
+//
+//	ConcatenateExpressions
+//
+//==========================================================================
+
+void ConcatenateExpressions(expression_t * p_Exp, expression_t * p_Add)
+{
+	
+}
+*/
+
+//==========================================================================
+//
+//	ParseOperand
+//
+//==========================================================================
+
+void ParseOperand(expression_t * p_Exp)
+{
+	int Token;
+	p_Exp->type = exp_type_unknown;
+
+	if (CheckNumber())
+	{
+		//dprint("ParseOperand : Number = %i", Number);
+		p_Exp->type = exp_type_integer;
+		p_Exp->ivalue = Number;
+	}
+	else if (CheckFloat())
+	{
+		//dprint("ParseOperand : Float = %i", Float);
+		p_Exp->type = exp_type_float;
+		p_Exp->fvalue = Float;
+	}
+	else
+	{
+		ExpectString();
+		Token = GetToken(String);
+		//dprint("ParseOperand : String = %s, Token = %i", String, Token);
+
+		switch (Token)
+		{
+		case Token_NoToken:
+			// In this case only person's variable may be expected
+			{
+				string namespace;
+				string varname;
+
+				namespace = String;
+				if (Check(Tokens[Token_NamespaceAccess]))
+				{
+					ExpectString();
+					varname = String;
+				}
+				else
+				{
+					varname = namespace;
+					namespace = ConInfo.pPersonInfo->scriptName;
+				}
+
+				EvaluateVariable(namespace, varname, p_Exp);
+			}
+			break;
+		//
+		// Bracketed expression
+		case Token_BracketsOpen:
+			{
+				expression_t exp;
+				ParseAndEvaluateExpression(&exp);
+				Expect(Tokens[Token_BracketsClose]);
+				p_Exp->type = exp.type;
+				p_Exp->ivalue = exp.ivalue;
+				p_Exp->fvalue = exp.fvalue;
+			}
+			break;
+		//
+		// Quick-result tokens
+		case Token_False:
+			p_Exp->type = exp_type_boolean;
+			p_Exp->ivalue = 0;
+			break;
+		case Token_None:
+			p_Exp->type = exp_type_reference;
+			p_Exp->ivalue = Token_None;
+			break;
+		case Token_True:
+			p_Exp->type = exp_type_boolean;
+			p_Exp->ivalue = 1;
+			break;
+		//
+		// Special case, a global namespace mentioned, probably a variable name follows
+		case Token_Global:
+			Expect(Tokens[Token_NamespaceAccess]);
+			ExpectString();
+			EvaluateVariable("", String, p_Exp);
+			break;
+		//
+		// References
+		case Token_Everybody:
+		case Token_Game:
+		case Token_Initiator:
+		case Token_Level:
+		case Token_Myself:
+		case Token_Player:
+		case Token_World:
+			if (Check(Tokens[Token_ObjectAccess]))
+			{
+				UnGet();
+				ParseObjectReference(Token, p_Exp, false, true);
+				//dprint("method w result: type = %i, result = %i", p_Exp->type, p_Exp->ivalue);
+			}
+			else
+			{
+				p_Exp->type = exp_type_reference;
+				p_Exp->ivalue = Token;
+			}
+			break;
+		default:
+			ScriptError(Errors[Error_UnexpectedToken], String);
+			break;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	ParseUnaryOperation
+//
+//==========================================================================
+
+void ParseUnaryOperation(expression_t * p_Exp)
+{
+	int Token;
+	ExpectString();
+	Token = GetToken(String);
+
+	switch (Token)
+	{
+	case Token_Is:
+	case Token_Minus:
+	case Token_Not:
+		p_Exp->pendingOp = Token;
+		break;
+	case Token_And:
+	case Token_Divide:
+	case Token_Multiply:
+	case Token_Or:
+	case Token_Plus:
+		ScriptError(Errors[Error_TokenHasNoSenseHere], String);
+		break;
+	default:
+		// This can be yet an operand
+		UnGet();
+		p_Exp->pendingOp = Token_SpecialToken;
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	ParseBinaryOperation
+//
+//==========================================================================
+
+void ParseBinaryOperation(expression_t * p_Exp)
+{
+	int Token;
+	ExpectString();
+	Token = GetToken(String);
+
+	switch (Token)
+	{
+	case Token_And:
+	case Token_Divide:
+	case Token_Is:
+	case Token_Minus:
+	case Token_Multiply:
+	case Token_Not:
+	case Token_Or:
+	case Token_Plus:
+		p_Exp->pendingOp = Token;
+		break;
+	default:
+		ScriptError(Token >= 0 ? Errors[Error_UnexpectedToken] : Errors[Error_UnknownToken], String);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	EvaluateOperation
+//
+//==========================================================================
+
+void EvaluateOperation(expression_t * p_First, expression_t * p_Second, expression_t * p_ExpOut)
+{
+	//dprint("EvaluateOperation : p_First->type = %i, p_First->pendingOp = %i, p_Second->type = %i",
+	//	p_First->type, p_First->pendingOp, p_Second->type);
+	//dprint("EvaluateOperation : p_First->ivalue = %i, p_First->fvalue = %f, p_Second->ivalue = %i, p_Second->fvalue = %f",
+	//	p_First->ivalue, p_First->fvalue, p_Second->ivalue, p_Second->fvalue);
+
+	if (p_First->type == exp_type_unknown)
+	{
+		// Unary op
+
+		switch (p_First->pendingOp)
+		{
+		case Token_SpecialToken:
+			// Simply copy the var
+			p_ExpOut->type = p_Second->type;
+			p_ExpOut->ivalue = p_Second->ivalue;
+			p_ExpOut->fvalue = p_Second->fvalue;
+			break;
+		case Token_Is:
+			p_ExpOut->type = exp_type_boolean;
+			if (p_Second->type == exp_type_float)
+				p_ExpOut->ivalue = p_Second->fvalue == 0.0 ? 0 : 1;
+			else
+				p_ExpOut->ivalue = p_Second->ivalue == 0 ? 0 : 1;
+			break;
+		case Token_Minus:
+			p_ExpOut->type = p_Second->type;
+			if (p_Second->type == exp_type_float)
+				p_ExpOut->fvalue = -p_Second->fvalue;
+			else
+				p_ExpOut->ivalue = -p_Second->ivalue;			
+			break;
+		case Token_Not:
+			p_ExpOut->type = exp_type_boolean;
+			if (p_Second->type == exp_type_float)
+				p_ExpOut->ivalue = p_Second->fvalue == 0.0 ? 1 : 0;
+			else
+				p_ExpOut->ivalue = p_Second->ivalue == 0 ? 1 : 0;
+			break;
+		}
+	}
+	else
+	{
+		// Binary op
+
+		// Bring both operands to same type
+		if (p_First->type != p_Second->type)
+		{
+			if (p_First->type == exp_type_float || p_Second->type == exp_type_float)
+			{
+				if (p_First->type != exp_type_float)
+				{
+					p_First->type = exp_type_float;
+					p_First->fvalue = itof(p_First->ivalue);
+				}
+				if (p_Second->type != exp_type_float)
+				{
+					p_Second->type = exp_type_float;
+					p_Second->fvalue = itof(p_Second->ivalue);
+				}
+			}
+			else	// Bring to integer
+			{
+				p_First->type = exp_type_integer;
+				p_Second->type = exp_type_integer;
+			}
+		}
+
+		// Now keep in mind that both operands have same type
+		switch (p_First->pendingOp)
+		{
+		case Token_And:
+			p_ExpOut->type = exp_type_boolean;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->ivalue = (p_First->fvalue && p_Second->fvalue) ? 1 : 0;
+			else
+				p_ExpOut->ivalue = (p_First->ivalue && p_Second->ivalue) ? 1 : 0;
+			break;
+		case Token_Divide:
+			p_ExpOut->type = p_First->type;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->fvalue = p_First->fvalue / p_Second->fvalue;
+			else
+				p_ExpOut->ivalue = p_First->ivalue / p_Second->ivalue;
+			break;
+		case Token_Is:
+			p_ExpOut->type = exp_type_boolean;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->ivalue = (p_First->fvalue == p_Second->fvalue) ? 1 : 0;
+			else
+				p_ExpOut->ivalue = (p_First->ivalue == p_Second->ivalue) ? 1 : 0;
+			break;
+		case Token_Minus:
+			p_ExpOut->type = p_First->type;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->fvalue = p_First->fvalue - p_Second->fvalue;
+			else
+				p_ExpOut->ivalue = p_First->ivalue - p_Second->ivalue;
+			break;
+		case Token_Multiply:
+			p_ExpOut->type = p_First->type;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->fvalue = p_First->fvalue * p_Second->fvalue;
+			else
+				p_ExpOut->ivalue = p_First->ivalue * p_Second->ivalue;
+			break;
+		case Token_Not:
+			p_ExpOut->type = exp_type_boolean;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->ivalue = (p_First->fvalue != p_Second->fvalue) ? 1 : 0;
+			else
+				p_ExpOut->ivalue = (p_First->ivalue != p_Second->ivalue) ? 1 : 0;
+			break;
+		case Token_Or:
+			if (p_First->type == exp_type_float)
+				p_ExpOut->ivalue = (p_First->fvalue || p_Second->fvalue) ? 1 : 0;
+			else
+				p_ExpOut->ivalue = (p_First->ivalue || p_Second->ivalue) ? 1 : 0;
+			break;
+		case Token_Plus:
+			p_ExpOut->type = p_First->type;
+			if (p_First->type == exp_type_float)
+				p_ExpOut->fvalue = p_First->fvalue + p_Second->fvalue;
+			else
+				p_ExpOut->ivalue = p_First->ivalue + p_Second->ivalue;
+			break;
+		}
+	}
+
+	p_ExpOut->pendingOp = Token_NoToken;
+}
+
+//==========================================================================
+//
+//	EvaluateVariable
+//
+//==========================================================================
+
+void EvaluateVariable(string namespace, string varname, expression_t * p_Exp)
+{
+	if (namespace)
+	{
+		Quest::personinfo_t * p_info = GetPersonRegistry(namespace, -1);
+
+		if (p_info)
+		{
+			int i;
+			bool found;
+			for (i = 0; i < p_info->vars.Num; i++)
+			{
+				if (!strcmp(p_info->vars[i].sname, varname))
+				{
+					found = true;
+					if (p_info->vars[i].type == Quest::qvar_type_boolean)
+					{
+						p_Exp->type = exp_type_boolean;
+						p_Exp->ivalue = p_info->vars[i].value;
+					}
+					else
+					{
+						p_Exp->type = exp_type_integer;
+						p_Exp->ivalue = p_info->vars[i].value;
+					}
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				Error("ConParser::ParseSet : person '%s' does not have such variable '%s'", namespace, varname);
+			}
+		}
+		else
+		{
+			Error("ConParser::ParseSet : person '%s' not found", namespace);
+		}
+	}
+	else
+	{
+		// TODO:
+		// Must be global var
+	}
+}
