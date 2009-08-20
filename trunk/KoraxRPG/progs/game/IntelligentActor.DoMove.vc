@@ -68,7 +68,17 @@
 //
 //==========================================================================
 
+enum
+{
+	STRAFE_WALKSTRAIGHT,
+	STRAFE_BACKPEDAL,
+	STRAFE_SIDEMOVE,
+	STRAFE_DODGE			// ?
+};
+
 float MoveDirFree;
+float MoveDirZ;
+int StrafeType;
 
 //============================================================================
 //
@@ -129,11 +139,10 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 		ReactionCount--;
 	}
 
-	//	If the target is dead stop chasing it.
-	//if (!Actor(Target).CanBeAttacked())
 	if (!IsOkayToTarget(Actor(Target)))
 	{
 		Target = none;
+		SetDangerSource(none);
 		bHateTarget = false;
 		bInCombat = false;
 	}
@@ -163,10 +172,12 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 
 	//	Turn towards movement direction if not there yet.
 	// killough 9/7/98: keep facing towards target if strafing or backing out
-	// [CW] FIXME -- not all evasive moves require/allow facing target
 	if (Target && strafecount)
 	{
-		A_FaceTarget();
+		if (StrafeType != STRAFE_WALKSTRAIGHT)
+		{
+			A_FaceTarget();
+		}
 	}
 
 	//	Do not attack twice in a row.
@@ -301,17 +312,7 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 {
 	float deltax;
 	float deltay;
-
-	if (bOpDir)
-	{
-		deltax = Origin.x - Destination.x;
-		deltay = Origin.y - Destination.y;
-	}
-	else
-	{
-		deltax = Destination.x - Origin.x;
-		deltay = Destination.y - Origin.y;
-	}
+	float deltaz;
 
 	// killough 8/8/98: sometimes move away from target, keeping distance
 	// Take advantage over an enemy without missiles, by keeping distance
@@ -338,7 +339,7 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 
 			// use different dropoff movement logic in TryMove
 			bAvoidingDropoff = true;
-			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY);
+			DO_NewChaseDirEx(AvoidDeltaX, AvoidDeltaY, 0.0);
 			bAvoidingDropoff = false;
 		
 			// If moving away from dropoff, set movecount to 1 so that
@@ -347,31 +348,60 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 			return;
 		}
 	}
+
+	if (bOpDir)
+	{
+		deltax = Origin.x - Destination.x;
+		deltay = Origin.y - Destination.y;
+		deltaz = Origin.z - Destination.z;
+	}
 	else
 	{
-#ifdef FIXME
-		---------------------------- TODO -----------------------------
-		float dist;
-
-		dist = DistTo(Target);
-
-		if (Target.Health > 0)
-	    {   // Live enemy target
-			if (GetCvar('monster_backing') && MissileState &&
-				/*actor->type != MT_SKULL &&*/
-				((!Target.MissileState && dist < MELEERANGE * 2.0) ||
-				(Target.Player && PlayerEx(Target.Player).ReadyWeapon.bBotMelee &&
-				dist < MELEERANGE * 3.0)))
-			{       // Back away from melee attacker
-					strafecount = P_Random() & 15;
-					deltax = -deltax;
-					deltay = -deltay;
-			}
-		}
-		---------------------------- TODO -----------------------------
-#endif
+		deltax = Destination.x - Origin.x;
+		deltay = Destination.y - Origin.y;
+		deltaz = Destination.z - Origin.z;
 	}
-	DO_NewChaseDirEx(deltax, deltay);
+	
+	//
+	// Perform a tactical move, if needed
+	//
+	if (DangerSource.Action && bCanEvade)
+	{
+		float distToDanger = DistTo2(DangerSource.Thing);
+		if (bEvadeMelee && distToDanger <= ACCEPTABLE_DANGERMELEE_VICINITY)
+		{
+			// Actor should evade enemy who is closing in ASAP; decide how
+			if (bCanBackpedal && MainGameInfo(Level.Game).bMonsterBacking &&
+				(MissileState || P_Random() < 128))
+			{
+				StrafeType = STRAFE_BACKPEDAL;
+			}
+			else
+			{
+				StrafeType = STRAFE_WALKSTRAIGHT;
+			}
+			strafecount = P_Random() & 12 + 3;
+			deltax = Origin.x - DangerSource.Thing.Origin.x;
+			deltay = Origin.y - DangerSource.Thing.Origin.y;
+			if (bFloat && DangerSource.Thing.Origin.z - Origin.z <= MELEERANGE)
+			{
+				deltaz = Origin.z + Height * 0.5 - FloorClip -
+					(DangerSource.Thing.Origin.z + DangerSource.Thing.Height * 0.5 -
+					DangerSource.Thing.FloorClip);
+			}
+			else
+			{
+				deltaz = 0.0;
+			}
+			print("strafecount = %i", strafecount);
+			print("StrafeType = %i", StrafeType);
+			print("deltax = %f", deltax);
+			print("deltay = %f", deltay);
+			print("deltaz = %f", deltaz);
+		}
+	}
+
+	DO_NewChaseDirEx(deltax, deltay, deltaz);
 
 	// If strafing, set movecount to strafecount so that old Doom
 	// logic still works the same, except in the strafing part
@@ -389,32 +419,39 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 //
 //==========================================================================
 
-final void DO_NewChaseDirEx(float deltax, float deltay)
+final void DO_NewChaseDirEx(float deltax, float deltay, float deltaz)
 {
-	float oldang = MoveDirFree; //Angles.yaw;
-	MoveDirFree /*Angles.yaw*/ = atan2(deltay, deltax);
+	float oldang = MoveDirFree;
+	float oldangz = MoveDirZ;
+	MoveDirFree = atan2(deltay, deltax);
+	MoveDirZ = bFloat ? atan(deltaz) : 0.0;
+
 	if (!TryWalkEx())
 	{
 		//
 		// TODO: CHECKME, work this out!
+		// also check Z movement
 		//
 		if (P_Random() & 1)
 		{
-			/*Angles.yaw*/ MoveDirFree += 45.0 + Random() * 90.0;
+			MoveDirFree += 45.0 + Random() * 90.0;
 		}
 		else
 		{
-			/*Angles.yaw*/ MoveDirFree -= 45.0 + Random() * 90.0;
+			MoveDirFree -= 45.0 + Random() * 90.0;
 		}
 
 		if (!TryWalkEx())
 		{
-			/*Angles.yaw*/ MoveDirFree = -oldang;
+			MoveDirFree = -oldang;
 			TryWalkEx();
 		}
 	}
 
-	Angles.yaw = MoveDirFree;	// FIXME, this is not always needed
+	if (!strafecount || StrafeType == STRAFE_WALKSTRAIGHT)
+	{
+		Angles.yaw = MoveDirFree;
+	}
 }
 
 //==========================================================================
@@ -454,6 +491,7 @@ final bool StepMoveEx()
 {
 	float tryx, deltax, origx;
 	float tryy, deltay, origy;
+	float tryz, deltaz, origz;
 	float maxmove;
 	int steps;
 	float xspeed;
@@ -485,10 +523,13 @@ final bool StepMoveEx()
 
 	origx = Origin.x;
 	origy = Origin.y;
-	deltax = Speed / 35.0 * cos( /*Angles.yaw*/ MoveDirFree);
-	deltay = Speed / 35.0 * sin( /*Angles.yaw*/ MoveDirFree);
+	origz = Origin.z;
+	deltax = Speed / 35.0 * cos(MoveDirFree);
+	deltay = Speed / 35.0 * sin(MoveDirFree);
+	deltaz = bFloat ? FloatSpeed / 35.0 * sin(MoveDirZ) : 0.0;
 	tryx = origx + deltax;
 	tryy = origy + deltay;
+	tryz = origz + deltaz;
 
 	// Like P_XYMovement this should do multiple moves if the step size is too large
 	maxmove = Radius;
@@ -530,7 +571,7 @@ final bool StepMoveEx()
 	// killough 3/15/98: don't jump over dropoffs:
 	if (try_ok)
 	{
-		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), false);
+		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, /*Origin.z*/ tryz), false);
 	}
 
 	if (!try_ok)

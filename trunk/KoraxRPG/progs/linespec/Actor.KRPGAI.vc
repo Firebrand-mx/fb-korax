@@ -7,6 +7,8 @@
 //
 //**************************************************************************
 
+const float	DEFAULT_THREAT_VICINITY			= MISSILERANGE;
+
 //==========================================================================
 //
 //	SetTeam
@@ -60,9 +62,6 @@ bool IsOkayToTarget(Actor Other)
 		(bIgnoreTeams || (Other == Target && bHateTarget) || Team != Actor(Other).Team);
 }
 
-
-const float	DEFAULT_THREAT_VICINITY			= MISSILERANGE;
-
 //==========================================================================
 //
 //	LookForEnemy
@@ -97,23 +96,9 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 		if (mo == ExcludeActor)
 			continue;
 
-		/* if (!mo.bShootable || mo.bNonShootable || mo.bDormant || mo.bInvulnerable || mo.bNeverTarget)
-			continue;
-
-		if (mo.Health <= 0)
-			continue;	// dead
-
-		// [CW] Do not allow to target other actors than either monsters or players
-		if (!mo.bIsPlayer && !mo.bMonster)
-			continue;
-
-		if (!bIgnoreTeams && (Team == Actor(mo).Team))
-			continue;	// friendly
-		*/
 		if (!IsOkayToTarget(mo))
 			continue;
 
-		// TODO: extra parameter to ignore this
 		if (!CanSense(mo))
 			continue;	// out of senses
 
@@ -131,7 +116,6 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 
 			if (an > 90.0 && an < 270.0)
 			{
-				//dist = DistTo(mo);
 				// if real close, react anyway
 				if (dist > MELEERANGE)
 					continue;	// behind back
@@ -160,6 +144,13 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 
 	if (NewTarget)
 	{
+		//	Need to be sure the reactiontime is 0 if the monster is leaving
+		// its goal to go after an enemy.
+		if (Goal && Target == Goal)
+		{
+			ReactionTime = 0.0;
+		}
+
 		Target = NewTarget;
 		bHateTarget = false;
 		bInCombat = true;
@@ -207,12 +198,6 @@ bool CanReach(TVec TargetPos, optional EntityEx TargetEntity,
 	
 	if (canreach && TargetEntity)
 	{
-		//
-		// [CW] CHECKME ---
-		//
-		//if (CRTRData.linetarget != TargetEntity)
-		//	return false;
-
 		// [FB]  3d Floor checks...
 		// [CW]  checks for things that are above or below final floor
 		float dist;
