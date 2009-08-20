@@ -73,7 +73,92 @@ Quest::personinfo_t * GetPersonRegistry(string scriptName, int scriptId)
 	return NULL;
 }
 
+//==========================================================================
+//
+//	SetActiveConItem
+//
+//==========================================================================
 
+Quest::coniteminfo_t * SetActiveConItem(string personScriptName, int personScriptId, string conItemScriptName, int conItemScriptId)
+{
+	int i;
+	bool foundByName;
+
+	Quest::personinfo_t * p_PInfo = GetPersonRegistry(personScriptName, personScriptId);
+
+	if (!p_PInfo)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < p_PInfo->cons.Num; i++)
+	{
+		if (conItemScriptName && !strcmp(p_PInfo->cons[i].scriptName, conItemScriptName))
+		{
+			p_PInfo->conId = p_PInfo->cons[i].scriptId;
+			return &p_PInfo->cons[i];
+		}
+
+		if (p_PInfo->cons[i].scriptId == conItemScriptId)
+		{
+			p_PInfo->conId = p_PInfo->cons[i].scriptId;
+			return &p_PInfo->cons[i];
+		}
+	}
+
+	return NULL;
+}
+
+//==========================================================================
+//
+//	SetPersonVar
+//
+//==========================================================================
+
+Quest::questvar_t * SetPersonVar(string personScriptName, int personScriptId, string varScriptName, int varScriptId,
+									int Value)
+{
+	int i;
+	Quest::questvar_t * p_var;
+
+	Quest::personinfo_t * p_PInfo = GetPersonRegistry(personScriptName, personScriptId);
+
+	if (!p_PInfo)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < p_PInfo->vars.Num; i++)
+	{
+		if (varScriptName && !strcmp(p_PInfo->vars[i].sname, varScriptName))
+		{
+			p_var = &p_PInfo->vars[i];
+			break;
+		}
+
+		if (p_PInfo->vars[i].id == varScriptId)
+		{
+			p_var = &p_PInfo->vars[i];
+			break;
+		}
+	}
+
+	if (p_var)
+	{
+		switch (p_var->type)
+		{
+		case Quest::qvar_type_boolean:
+			p_var->value = Value == 0 ? 0 : 1;
+			break;
+		case Quest::qvar_type_integer:
+			p_var->value = Value;
+			break;
+		}
+		return p_var;
+	}
+
+	return NULL;
+}
 
 defaultproperties
 {
