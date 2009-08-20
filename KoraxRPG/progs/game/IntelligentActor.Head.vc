@@ -66,65 +66,6 @@
 //
 //==========================================================================
 
-//
-// FOLLOWING COMMENT CAN BE OBSOLETE IN SOME WAYS
-//
-//
-//==========================================================================
-//
-// [CW] I am writing following remarks mostly because I skipped some time
-// since I last reviewed my monster AI, and also some general changes
-// happened, like many monster classes moved to decorate, and such, so
-// I need a memo for myself.
-// These comments will hopefully be useful also in case someone else wants
-// to edit monster AI for KRPG project, or any other project.
-//
-//
-// So, basically IntelligentActor class contains what we call advanced AI
-// for KRPG monsters. I was also adding some advanced methods to Actor class
-// (they could be found in Actor.KRPG.vc). They are low-level AI methods
-// like peforming a walk.
-//
-// The main difference, introduced by new AI is a A_DoAI procedure run
-// every now and then (frequency determined by AI_ROUTINE_DELAY constant,
-// in seconds). It has a power to override normal actor behavior.
-// A_DoAI processes following:
-//
-// 1) While in 'Chase' state calls A_CheckThreat to detect any possible threat
-//   in the area. This includes hearing some noise or seeing enemy. If
-//   bEvadeMelee flag is set, it also makes actor try evade any
-//   approaching opponents.
-// 2) Calls DoTasks to process any Tasks given to this actor, if any. Task
-//   usually sets new targets for enemy movement and/or attack.
-//
-// Other additions are "AI-actions": A_LookAI, A_ChaseAI, etc.
-//
-// A_LookAI performs functions similar to original A_Look by calling
-// A_CheckThreat.
-//
-// A_ChaseAI is more complex than its predecessor A_Chase. It updates
-// known target position every time called, thus making actor chase
-// target thing in more realistic way; it also calls DoRoute to let
-// actor follow precalculated route to faraway destination (if it is
-// appliable in current situation. Finally, A_ChaseAI sets an immediate
-// "goto" point and calls DoMove method, which does the actual movement.
-// Notice, that DoMove is the delegate, that is a reference to a function;
-// DoMove should be set to particular method either once (in BeginPlay),
-// or each time A_ChaseAI is about to be called, depending on what fits
-// actor implementation more. There are two "default" methods for this
-// purpose: A_NormalDoMove and A_FastDoMove (last is for bosses mainly).
-//
-// All of the "AI-actions" must set StateAction value ahead of anything else.
-// It comes to be very important when Tasks are processed. For example, it
-// prevents Centaurs from stucking in invulnerability mode by delaying any
-// orders he receive until Centaur return to normal chase mode.
-//
-//--------------------------------------------------------------------------
-//
-//
-//
-//
-
 class IntelligentActor : KRPGPawn;
 
 //
@@ -135,6 +76,8 @@ const float ACCEPTABLE_WAYPOINT_VICINITY	= 64.0;
 const float ACCEPTABLE_TASKLEADER_VICINITY	= 512.0;
 
 const float LOHEALTH_FRACTION				= 2.0;
+
+const float ACCEPTABLE_DANGERMELEE_VICINITY	= MELEERANGE * 3.0;
 
 enum
 {
@@ -237,6 +180,7 @@ void BeginPlay()
 	::BeginPlay();
 
 	MoveDirFree = Angles.yaw;
+	MoveDirZ = 0.0;
 
 	// [CW] Assign a delegate to default method
 	if (bFastMove)
@@ -321,6 +265,7 @@ void Died(EntityEx source, EntityEx inflictor)
 	CancelAllOrders();
 	CleanRoutes();
 
+	SetDangerSource(none);
 	SetFinalTarget(none);
 	SetImmediateTarget(none);
 

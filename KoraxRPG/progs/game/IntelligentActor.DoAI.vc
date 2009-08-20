@@ -135,7 +135,11 @@ void SetDangerSource(Actor Thing, optional TVec Pos, optional float Angle)
 	{
 		DangerSource.Angle = Angle;
 		DangerSource.Action = ActorTask::ORDER__EVADEDIR;
-	}	
+	}
+	else
+	{
+		DangerSource.Action = ActorTask::ORDER__NONE;
+	}
 }
 
 //==========================================================================
@@ -192,6 +196,7 @@ void CheckThreat()
 						bThreatened = true;
 						Target = targ;
 						bHateTarget = false;
+						SetDangerSource(Actor(Target));
 						bInCombat = true;
 						Threshold = BASETHRESHOLD;
 						Alertness = HIGH_ALERTNESS;
@@ -221,6 +226,7 @@ void CheckThreat()
 			{
 				Alertness = HIGH_ALERTNESS;
 				Threshold = BASETHRESHOLD;
+				SetDangerSource(Actor(Target));
 
 				bThreatened = true;
 				OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE + THREATREACTION__SEE, 0.0, Actor(Target));
@@ -247,22 +253,6 @@ void CheckThreat()
 			PlayActiveSound();
 		}
 	}
-
-	//
-	// Plan an evasive action, if needed
-	//
-	if (Behavior.ThreatReaction != THREATREACTION__NONE)
-	{
-		// TODO!!
-		if (DangerSource.Thing || DangerSource.Action)
-		{
-
-		}
-
-		if (bEvadeMelee)
-		{
-		}
-	}
 }
 
 //==========================================================================
@@ -273,6 +263,23 @@ void CheckThreat()
 
 void ConsiderChangeState()
 {
+	if (DangerSource.Action && P_Random() < 128)
+	{
+		if (bCanEvade && bEvadeMelee &&
+			(StateIsInSequence(State, IdleState) ||
+			StateIsInSequence(State, SeeState) || WalkState && StateIsInSequence(State, WalkState)))
+		{
+			if (DistTo(DangerSource.Thing) <= ACCEPTABLE_DANGERMELEE_VICINITY)
+			{
+				state S = FindState('Evade');
+				if (S && SetState(S))
+				{
+					return;
+				}
+			}
+		}
+	}
+
 	// Common state changing
 	if (StateIsInSequence(State, IdleState))
 	{
