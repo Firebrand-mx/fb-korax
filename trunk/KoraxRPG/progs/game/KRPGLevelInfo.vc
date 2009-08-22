@@ -46,17 +46,51 @@ bool bNodeGraphBuild;
 //	their ids should be greater than 255;
 //  "Doom Builder" supports >255 linespecial IDs;
 //  if mapper is using different editor, he may still run these using scripts
+// free action special numbers (according to Vavoom 1.30):
+	// 48
+	// 50
+	// 51
+	// 55
+	// 56
+	// 57
+	// 58
+	// 59
+	// 79
+	// 86
+	// 87
+	// 88
+	// 89
+	// 97
+	// 98
+	// 99
+	// 104
+	// 105
+	// 106
+	// 107
+	// 108
+	// 118
+	// 122
+	// 123
+	// 124
+	// 126
+	// 141 <--> 158
+	// 161 <--> 168
 enum
 {
+	ACTSPEC_SetActiveConItem		= 166,	// Sets active conversation item for certain person
+	ACTSPEC_SetPersonVar			= 167,
+	LNSPEC_TravelMap				= 168,	// calls travel map
+
+	
 	//
 	// Advanced thing manipulation
 
 	ACTSPEC_Thing_Thrust3d			= 256,	// calls combo of Thing_Thrust and Thing_ThrustZ
+	// FIXME: not needed
 	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
+	// TODO: make more generic, like SetActorPropertyEx, for these two -
 	ACTSPEC_Thing_SetTeam,
 	ACTSPEC_Thing_SetPersonId,
-
-	LNSPEC_TravelMap				= 500,	// calls travel map
 
 	//
 	// Intelligent Actors
@@ -135,6 +169,7 @@ enum
 array<Thinker>	WeatherThinkers;
 
 int skyflatnum;	// copied from Game, needed for client-side calculations when Game is not accessible
+float OldSpeakerAngle2;
 
 replication
 {
@@ -294,6 +329,19 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		}
 		break;
 
+	case LNSPEC_TravelMap:
+		{
+			buttonSuccess = true;
+			Completed(-1,0,0);
+		}
+		break;
+	case ACTSPEC_SetActiveConItem:
+		buttonSuccess = EV_SetActiveConItem(Arg1, Arg2);
+		break;
+	case ACTSPEC_SetPersonVar:
+		buttonSuccess = EV_SetPersonVar(Arg1, Arg2, Arg3);
+		break;
+
 	//
 	// Advanced thing manipulation
 	case ACTSPEC_Thing_Thrust3d:
@@ -322,14 +370,6 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		{
 			Actor(E).ConversationID = Arg2;
 			buttonSuccess = true;
-		}
-		break;
-
-
-	case LNSPEC_TravelMap:
-		{
-			buttonSuccess = true;
-			Completed(-1,0,0);
 		}
 		break;
 
@@ -543,12 +583,28 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 	Quest::personinfo_t * p_infoSpeaker, * p_infoSpeakingTo;
 
 	if (!Actor(Speaker))
+	{
 		Error("KRPGLevelInfo::StartConversation : Speaker reference not set to an instance of an Actor");
+	}
 	if (!Actor(SpeakingTo))
+	{
 		Error("KRPGLevelInfo::StartConversation : SpeakingTo reference not set to an instance of an Actor");
+	}
+
+	if (Speaker == SpeakingTo)
+	{
+		// Speaking with yourself is a sign of madness (c)
+		return false;
+	}
 
 	if (Speaker.Health <= 0 || SpeakingTo.Health <= 0)
 		return false;
+
+	if (Speaker.bInCombat || SpeakingTo.bInCombat /* ||
+		Actor(Speaker).IsHostile2(Actor(SpeakingTo), false, false) || Actor(SpeakingTo).IsHostile2(Actor(Speaker), false, false) */)
+	{
+		return false;
+	}
 
 	if (!Speaker.bIsPlayer)
 	{
@@ -556,10 +612,14 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 		{
 			p_infoSpeaker = KRPGWorldInfo(World).GetPersonRegistry("", Speaker.ConversationID);
 			if (!p_infoSpeaker)
+			{
 				return false;
+			}
 		}
 		else
+		{
 			return false;
+		}
 	}
 	if (!SpeakingTo.bIsPlayer)
 	{
@@ -567,30 +627,63 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 		{
 			p_infoSpeakingTo = KRPGWorldInfo(World).GetPersonRegistry("", SpeakingTo.ConversationID);
 			if (!p_infoSpeakingTo)
+			{
 				return false;
+			}
 		}
 		else
+		{
 			return false;
+		}
 	}
 
-	// checkme
-	if (!p_infoSpeakingTo)
+	if (!p_infoSpeakingTo && !p_infoSpeaker)
+	{
+		// Possibly player speaking with player
 		return false;
+	}
 
 	// Make sure both characters are facing each other
-	Actor(Speaker).FaceActorInstant(SpeakingTo);
-	Actor(SpeakingTo).FaceActorInstant(Speaker);
+	// Actor(Speaker).FaceActorInstant(SpeakingTo);
+	// Actor(SpeakingTo).FaceActorInstant(Speaker);
+	CurrentSpeaker = Speaker;
+	CurrentSpeakingTo = SpeakingTo;
+	OldSpeakerAngle = Speaker.Angles.yaw;
+	OldSpeakerAngle2 = SpeakingTo.Angles.yaw;
+	Speaker.Angles.yaw = atan2(SpeakingTo.Origin.y - Speaker.Origin.y,
+								SpeakingTo.Origin.x - Speaker.Origin.x);
+	SpeakingTo.Angles.yaw = atan2(Speaker.Origin.y - SpeakingTo.Origin.y,
+								Speaker.Origin.x - SpeakingTo.Origin.x);
 
 	if (Speaker.bIsPlayer)
 	{
+		Speaker.PlaySound('misc/chat', CHAN_VOICE);
 		Player(Speaker.Player).ClientConversation("", p_infoSpeakingTo->scriptName);
 	}
 	else if (SpeakingTo.bIsPlayer)
 	{
-		Player(SpeakingTo.Player).ClientConversation(p_infoSpeakingTo->scriptName, "");
+		// CHECKME, work this out
+		//Player(SpeakingTo.Player).ClientConversation(/*p_infoSpeakingTo???*/p_infoSpeaker->scriptName, "");
+		SpeakingTo.PlaySound('misc/chat', CHAN_VOICE);
+		Player(SpeakingTo.Player).ClientConversation("", p_infoSpeaker->scriptName);
 	}
 
 	return true;
+}
+
+//==========================================================================
+//
+//	StopSpeech2
+//
+//==========================================================================
+
+final void StopSpeech2()
+{
+	CurrentSpeaker.Angles.yaw = OldSpeakerAngle;
+	CurrentSpeakingTo.Angles.yaw = OldSpeakerAngle2;
+	CurrentSpeaker = none;
+	CurrentSpeakingTo = none;
+	CurrentSpeechIndex = 0;
 }
 
 //**************************************************************************
@@ -598,6 +691,28 @@ bool StartConversation(EntityEx Speaker, EntityEx SpeakingTo)
 //	[KoraxRPG] New Action Specials
 //
 //**************************************************************************
+
+//==========================================================================
+//
+//	EV_SetActiveConItem
+//
+//==========================================================================
+
+bool EV_SetActiveConItem(int PersonID, int ConItemID)
+{
+	return (KRPGWorldInfo(World).SetActiveConItem("", PersonID, "", ConItemID) != NULL);
+}
+
+//==========================================================================
+//
+//	EV_SetPersonVar
+//
+//==========================================================================
+
+bool EV_SetPersonVar(int PersonID, int VarID, int Value)
+{
+	return (KRPGWorldInfo(World).SetPersonVar("", PersonID, "", VarID, Value) != NULL);
+}
 
 //==========================================================================
 //
