@@ -1,0 +1,99 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**			##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: template.vc 1199 2007-12-22 01:19:08Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KArenaMageStaffFX2 : KArenaSeekerMissile;
+
+//==========================================================================
+//
+//	GetExplodeParms
+//
+//==========================================================================
+
+void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
+{
+	damage = 20;
+	distance = 192.0;
+	damageSelf = false;
+}
+
+//==========================================================================
+//
+//	SpecialMissileHit
+//
+//==========================================================================
+
+int SpecialMissileHit(EntityEx Other)
+{
+	if (Other != Target)
+	{
+		// Class bosses not flagged boss so they can be blasted
+		if (!Other.bIsPlayer && !Other.bBoss && Other.Class != FighterBoss &&
+			Other.Class != ClericBoss && Other.Class != MageBoss)
+		{
+			Other.Damage(self, Target, 10, DamageType);
+			return 1;
+		}
+	}
+	return -1;
+}
+
+states
+{
+Spawn:
+	MSP2 ABCD 2 Bright A_SeekerMissileTrack
+	Loop
+Death:
+	MSP2 E 4 Bright
+	MSP2 F 5 Bright A_Explode
+	MSP2 GH 5 Bright
+	MSP2 I 4 Bright
+	Stop
+}
+
+defaultproperties
+{
+	BlockSearchDistance = 10;
+
+	Height = 8.0;
+	Speed = 595.0;
+	MissileDamage = 4;
+	DamageType = 'Fire';
+	bNoBlockmap = true;
+	bDropOff = true;
+	bNoGravity = true;
+	bNoTeleport = true;
+	bActivateImpact = true;
+	bActivatePCross = true;
+	bBloodSplatter = true;
+	bExtremeDeath = true;
+	DeathSound = 'MageStaffExplode';
+}
