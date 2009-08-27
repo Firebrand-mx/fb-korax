@@ -210,7 +210,16 @@ bool IsInPlayableState()
 
 int TeamFactor(EntityEx a1, EntityEx a2)
 {
-	return teamfactor_coop;
+	if (a1.bIsPlayer && a2.IsA('MinotaurFriend') ||
+		a2.bIsPlayer && a1.IsA('MinotaurFriend') ||
+		a1.bIsPlayer == a2.bIsPlayer)	// both players or both monsters
+	{
+		return teamfactor_coop;
+	}
+	else
+	{
+		return teamfactor_enemy;
+	}
 }
 
 //==========================================================================

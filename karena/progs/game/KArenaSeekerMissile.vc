@@ -15,6 +15,7 @@ float TraceTurnMax;
 void MissileFindEnemy(optional int blockSearch)
 {
 	Entity Other;
+	int teamfactor;
 
 	if (!specified_blockSearch)
 		blockSearch = BlockSearchDistance;
@@ -39,11 +40,14 @@ void MissileFindEnemy(optional int blockSearch)
 		{
 			continue;
 		}
-		if (MainGameInfo(Level.Game).GameModel && 
-			KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(Target, link))
+
+		teamfactor = KArenaGameModel(MainGameInfo(Level.Game).GameModel).TeamFactor(Target, link);
+		if (MainGameInfo(Level.Game).GameModel &&
+			(teamfactor == KArenaGameModel::teamfactor_coop || teamfactor == KArenaGameModel::teamfactor_neutral))
 		{
 			continue;
 		}
+
 		if (MainGameInfo(Level.Game).GameType >= HexenDefs::NUMGAMESNOTEAM &&
 			link.bIsPlayer && Player(Target.Player).Team == Player(link.Player).Team)
 		{
