@@ -447,6 +447,19 @@ void SetUpWave()
 	CountToSpawnMonsters = (8 + P_Random() % 8) * PlayerCount +
 							(P_Random() % (PlayerCount << 2) + 1) * Wave;
 
+	switch (GetCvar('MonsterAmount'))
+	{
+	case 0: CountToSpawnMonsters /= 4; break;
+	case 1: CountToSpawnMonsters /= 3; break;
+	case 2: CountToSpawnMonsters /= 2; break;
+	case 3: break; // normal
+	case 4: CountToSpawnMonsters = ftoi(itof(CountToSpawnMonsters) * 1.5); break;
+	case 5: CountToSpawnMonsters *= 2; break;
+	case 6: CountToSpawnMonsters *= ftoi(itof(CountToSpawnMonsters) * 2.5); break;
+	case 7: CountToSpawnMonsters *= 3; break;
+	case 8: CountToSpawnMonsters *= 4; break;
+	}
+
 	CountToSpawnBosses = Wave / (16 - PlayerCount);
 
 	// (1 to 2) per spawn start (i.e. at least 8 - 16)
@@ -549,6 +562,19 @@ void WaveSpawn()
 
 				// Recalculate experience based on new starting Health value
 				monster.experience = monster.Health;
+			}
+
+			switch (GetCvar('MonsterHealth'))
+			{
+			case 0: monster.Health /= 4; break;
+			case 1: monster.Health /= 3; break;
+			case 2: monster.Health /= 2; break;
+			case 3: break; // normal
+			case 4: monster.Health *= 2; break;
+			case 5: monster.Health *= 3; break;
+			case 6: monster.Health *= 4; break;
+			case 7: monster.Health *= 6; break;
+			case 8: monster.Health *= 10; break;
 			}
 
 			// monster.TeleportMove(monster.Origin, false);
