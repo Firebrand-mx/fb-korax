@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -236,6 +236,11 @@ void OnPlayerDeath(BasePlayer pl, EntityEx source)
 			}
 			else
 			{
+				if (birthSequencer)
+				{
+					birthSequencer.Destroy();
+				}
+
 				plHeresiarch = none;
 				EndCurrentState(state_deathsequence);
 				
@@ -244,6 +249,30 @@ void OnPlayerDeath(BasePlayer pl, EntityEx source)
 				{
 					deathSequencer.event_id = event_playdeathsequence;
 				}
+			}
+		}
+		break;
+		// following are cases of heresiarch death during birth sequences
+		// (can happen if player commited suicide or simply left the game)
+	case state_birthsequence:
+	case state_rebornsequence:
+		// Handle Heresiarch death
+		if (pl == plHeresiarch)
+		{
+			if (birthSequencer)
+			{
+				birthSequencer.Destroy();
+			}
+
+			if (plHeresiarch)
+			{
+				plHeresiarch.SetControllable(true);
+			}
+			plHeresiarch = none;
+
+			if (!deathSequencer)
+			{
+				HandleEvent(event_allowfreeramble, none, 0,0,0,0);
 			}
 		}
 		break;
