@@ -45,6 +45,8 @@ MenuChoiceEnum		Level;
 
 // Extra options
 MenuChoiceEnum		SurvivalStartingWave;
+MenuChoiceEnum		SurvivalMonsterAmount;
+MenuChoiceEnum		SurvivalMonsterHealth;
 
 
 int					LevelPic;		// level shot thumbnail
@@ -200,13 +202,45 @@ void CreateChoices()
 	SurvivalStartingWave = MenuChoiceEnum(NewChild(MenuChoiceEnum));
 	SurvivalStartingWave.SetOrigin(ChoicesStartX, currentY);
 	SurvivalStartingWave.Text = "Starting Wave";
-	for (i = 0; i < GameSurvival.default.MonsterClasses.Num; i++)
+	for (i = 0; i < /* GameSurvival.default.MonsterClasses.Num */ 50; i++)
 	{
 		SurvivalStartingWave.AddItem(va("%i", i + 1));
 	}
 	SurvivalStartingWave.SetInitialValue(GetCvar('StartingWave'));
 	SurvivalStartingWave.ValueChanging = ChangeSurvivalStartingWave;
 	currentY += SurvivalStartingWave.Height;
+
+	SurvivalMonsterAmount = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	SurvivalMonsterAmount.SetOrigin(ChoicesStartX, currentY);
+	SurvivalMonsterAmount.Text = "Monster Amount";
+	SurvivalMonsterAmount.AddItem("really not so much");
+	SurvivalMonsterAmount.AddItem("not much");
+	SurvivalMonsterAmount.AddItem("less");
+	SurvivalMonsterAmount.AddItem("normal");
+	SurvivalMonsterAmount.AddItem("more");
+	SurvivalMonsterAmount.AddItem("much more");
+	SurvivalMonsterAmount.AddItem("roaring hordes");
+	SurvivalMonsterAmount.AddItem("rolling armies");
+	SurvivalMonsterAmount.AddItem("hellish infestation");
+	SurvivalMonsterAmount.SetInitialValue(GetCvar('MonsterAmount'));
+	SurvivalMonsterAmount.ValueChanging = ChangeSurvivalMonsterAmount;
+	currentY += SurvivalMonsterAmount.Height;
+
+	SurvivalMonsterHealth = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	SurvivalMonsterHealth.SetOrigin(ChoicesStartX, currentY);
+	SurvivalMonsterHealth.Text = "Monster Health";
+	SurvivalMonsterHealth.AddItem("crippled");
+	SurvivalMonsterHealth.AddItem("puny");
+	SurvivalMonsterHealth.AddItem("weaker");
+	SurvivalMonsterHealth.AddItem("normal");
+	SurvivalMonsterHealth.AddItem("stronger");
+	SurvivalMonsterHealth.AddItem("powerfull");
+	SurvivalMonsterHealth.AddItem("tough as rock");
+	SurvivalMonsterHealth.AddItem("robust as a tank");
+	SurvivalMonsterHealth.AddItem("korax'es offspring");
+	SurvivalMonsterHealth.SetInitialValue(GetCvar('MonsterHealth'));
+	SurvivalMonsterHealth.ValueChanging = ChangeSurvivalMonsterHealth;
+	currentY += SurvivalMonsterHealth.Height;
 
 	if (currentY > maxExtraY)
 		maxExtraY = currentY;
@@ -346,11 +380,19 @@ bool ChangeDeathmatch(Object Sender, int newValue)
 	{
 		SurvivalStartingWave.Visible = true;
 		SurvivalStartingWave.Focusable = true;
+		SurvivalMonsterAmount.Visible = true;
+		SurvivalMonsterAmount.Focusable = true;
+		SurvivalMonsterHealth.Visible = true;
+		SurvivalMonsterHealth.Focusable = true;
 	}
 	else
 	{
 		SurvivalStartingWave.Visible = false;
 		SurvivalStartingWave.Focusable = false;
+		SurvivalMonsterAmount.Visible = false;
+		SurvivalMonsterAmount.Focusable = false;
+		SurvivalMonsterHealth.Visible = false;
+		SurvivalMonsterHealth.Focusable = false;
 	}
 	return true;
 }
@@ -410,6 +452,30 @@ bool ChangeLevel(Object Sender, int newValue)
 bool ChangeSurvivalStartingWave(Object Sender, int newValue)
 {
 	SetCvar('StartingWave', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeSurvivalMonsterAmount
+//
+//==========================================================================
+
+bool ChangeSurvivalMonsterAmount(Object Sender, int newValue)
+{
+	SetCvar('MonsterAmount', newValue);
+	return true;
+}
+
+//==========================================================================
+//
+//	ChangeSurvivalMonsterHealth
+//
+//==========================================================================
+
+bool ChangeSurvivalMonsterHealth(Object Sender, int newValue)
+{
+	SetCvar('MonsterHealth', newValue);
 	return true;
 }
 
