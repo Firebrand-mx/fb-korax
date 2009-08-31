@@ -95,6 +95,7 @@ final void A_FirePhoenixPL2() self(KArenaPlayerPawn)
 	Actor A;
 	TVec dir;
 	TVec org;
+	TAVec angles;
 	if (--WeaponClericPhoenixRod(Wpn).FlameCount == 0)
 	{
 		// Out of flame
@@ -107,14 +108,24 @@ final void A_FirePhoenixPL2() self(KArenaPlayerPawn)
 	org.y = Origin.y + (Random() - Random()) * 2.0;
 	org.z = Origin.z + 26.0 - sin(Angles.pitch);
 	org.z -= FloorClip;
+	AngleVector(&Angles, &dir);
+	org += dir * 32.0;
 	A = KArenaPlayerPawn(self).Spawn_2(Wpn, PhoenixFX2, org);
 	if (A)
 	{
 		Wpn.ApplyDamageModifiers(A.MissileDamage);
 		A.Angles.yaw = Angles.yaw;
 		A.Angles.pitch = Angles.pitch;
-		AngleVector(&A.Angles, &dir);
-		A.Velocity = Velocity + A.Speed * dir;
+		//AngleVector(&A.Angles, &dir);
+		//A.Velocity = Velocity + A.Speed * dir;
+		A.Velocity = A.Speed * dir;
+		float vels = (Length(A.Velocity) * Length(Velocity));
+		if (vels)
+		{
+			float dp = DotProduct(A.Velocity, Velocity);
+			float cosA = dp / vels;
+			A.Velocity += Normalise(A.Velocity) * Length(Velocity) * cosA;
+		}
 		if (!Player(Player).Refire || !(XLevel.TicTime % 38))
 		{
 			PlaySound('PhoenixHit2', CHAN_WEAPON);
