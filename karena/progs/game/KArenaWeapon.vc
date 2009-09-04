@@ -223,11 +223,11 @@ final void UseWeaponMana()
 
 //===========================================================================
 //
-//  GunShot1 (Used for the pistol)
+//  KAGunShot (Damage is a variable parameter)
 //
 //===========================================================================
 
-final void GunShot1(EntityEx A, int accurate, TVec dir)
+final void KAGunShot(EntityEx A, int accurate, TVec dir, int dam)
 {
 	int damage;
 
@@ -242,39 +242,7 @@ final void GunShot1(EntityEx A, int accurate, TVec dir)
 		AngleVector(&angles, &dir);
 	}
 
-	// [CW] CHECKME!! -- this method is used by 2 Marine weapons
-	// - Pistol and Shotgun; is this damage value should be
-	// determined as a local constant here?
-	damage = 13; //5 * (P_Random() % 3 + 1);
-	ApplyDamageModifiers(damage);
-
-	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
-	A.LineAttack(dir, MISSILERANGE, damage, BulletPuff);
-}
-
-//===========================================================================
-//
-//  GunShot2 (Used for the chaingun)
-//
-//===========================================================================
-
-final void GunShot2(EntityEx A, int accurate, TVec dir)
-{
-	int damage;
-
-	//  Make a copy of angles because inacurate shoot will modify them
-	if (!accurate)
-	{
-		TAVec angles;
-
-		VectorAngles(&dir, &angles);
-		angles.yaw = AngleMod360(angles.yaw +
-			(Random() - Random()) * 45.0 / 8.0);
-		AngleVector(&angles, &dir);
-	}
-
-	damage = 17; //7 * (P_Random() % 3 + 1);
-
+	damage = dam; //10; //5 * (P_Random() % 3 + 1);
 	ApplyDamageModifiers(damage);
 
 	ShotPosition = Player(Owner.Player).MO.Origin;	// [CW]
