@@ -95,6 +95,31 @@ final void A_WLDeactivateShield() self(KArenaPlayerPawn)
 	WeaponWitchavenLSword(Wpn).bShieldActive = false;
 }
 
+//============================================================================
+//
+//  A_ThrowProjectile
+//
+//============================================================================
+
+final void A_ThrowProjectile() self(Actor)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	KArenaWeapon Wpn = KArenaWeapon(PlayerEx(Player).ReadyWeapon);
+
+	if (!Special1)
+	{
+		return;
+	}
+	// [FB]  Use less mana if shooting a projectile
+	Wpn.AmmoUse1 = 5;
+	Wpn.UseWeaponMana();
+	PlaySound('SorcererSpellCast', CHAN_WEAPON);
+	SpawnPlayerMissile(LongSwordProjectile);
+}
+
 //==========================================================================
 //
 //  A_WLSwordAttack
@@ -127,7 +152,7 @@ final void A_WLSwordAttack() self(KArenaPlayerPawn)
 	if (AimTarget)
 	{
 		VectorAngles(&vforward, &angles);
-		if (LineAttack(vforward, WeaponWitchavenLSword::LongSwordRange, damage, AxePuff))
+		if (LineAttack(vforward, WeaponWitchavenLSword::LongSwordRange, damage, AxePuffGlow))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
@@ -140,11 +165,26 @@ final void A_WLSwordAttack() self(KArenaPlayerPawn)
 	}
 	else
 	{
-		// didn't find any creatures, so try to strike any walls
-		if (LineAttack(vforward, MELEERANGE, damage, HammerPuff))
+		// didn't find any targets in meleerange, so set to throw projectile
+		LineSpecialLevelInfo(Level).bPuffSpawned = false;
+		if (LineAttack(vforward, HammerRange, damage, HammerPuff))
 		{
 			PlaySound('FighterHammerMiss', CHAN_WEAPON);
 		}
+		if (LineSpecialLevelInfo(Level).bPuffSpawned)
+		{
+			Special1 = false;
+		}
+		else
+		{
+			Special1 = true;
+		}
+	}
+
+	if (!Wpn.CheckAmmo(Wpn.FireMode, false, true))
+	{
+		// Don't spawn a hammer if the player doesn't have enough mana
+		Special1 = false;
 	}
 
 	if (useMana == 2)
@@ -242,7 +282,8 @@ Fire:
 	WDHP GG 2
 	WDHP HH 1
 	WDHP I 1 A_WLSwordAttack
-	WDHP IJJKK 1
+	WDHP I 1 A_ThrowProjectile
+	WDHP JJKK 1
 	WDHP L 1 Offset(0, -2)
 	WDHP L 1 Offset(-5, 0)
 	WDHP M 1 Offset(0, 39)
@@ -260,7 +301,7 @@ Fire:
 	WDHP Q 1
 	WDHP Q 1 Offset(-25, 0)
 	WDHP R 1 Offset(0, -2) A_WLSwordAttack
-	WDHP R 1 Offset(-20, -2)
+	WDHP R 1 Offset(-20, -2) A_ThrowProjectile
 	WDHP S 1
 	WDHP S 1 Offset(-15, 0)
 	WDHP T 1 Offset(0, 39)
@@ -290,8 +331,9 @@ defaultproperties
 	dex_mod = true;
 	str_mod = true;
 	bBotMelee = true;
-	bBotProjectileMedium = false;
+	bBotProjectileMedium = true;
 	bBotProjectile = false;
+	bAxeBlood = true;
 	PickupMessage = "LONG SWORD";
 	HitObituary = "$ob_longsword";
 	refire_tics = 48.0;
