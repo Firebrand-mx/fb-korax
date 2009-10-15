@@ -761,6 +761,66 @@ bool DoCanReachPathTraverse(TVec TargetPos,
 	return true;
 }
 
+#ifdef FASTER_SEARCH
+
+//==========================================================================
+//
+//	A_GetNearestEntityFar
+//
+//==========================================================================
+
+final EntityEx A_GetNearestEntityFar(class<EntityEx> EClass)
+{
+	EntityEx EE;
+	EntityEx ee;
+	float dist = -1.0;
+
+	foreach AllThinkers(EClass, ee)
+	{
+		if (dist < 0.0 || Length(ee.Origin - Origin) < dist)
+		{
+			EE = ee;
+			dist = Length(ee.Origin - Origin);
+		}
+	}
+
+	return EE;
+}
+
+//==========================================================================
+//
+//	A_GetNearestEntityNear
+//
+//==========================================================================
+
+final EntityEx A_GetNearestEntityNear(class<EntityEx> EClass, float MaxDistance, optional bool bReachable)
+{
+	EntityEx EE;
+	EntityEx ee;
+	float dist = -1.0;
+
+	//foreach RadiusThings(ee, Origin, MaxDistance)
+	foreach RoughBlockSearch(ee, 20)
+	{
+		if (ee.Class != EClass && !ClassIsChildOf(ee.Class, EClass))
+		{
+			continue;
+		}
+
+		if (dist < 0.0 || Length(ee.Origin - Origin) < dist)
+		{
+			if (bReachable && !CanReach(ee.Origin))
+				continue;
+			EE = ee;
+			dist = Length(ee.Origin - Origin);
+		}
+	}
+
+	return EE;
+}
+
+#else	// !FASTER_SEARCH
+
 //==========================================================================
 //
 //	A_GetNearestEntity
@@ -786,6 +846,8 @@ final EntityEx A_GetNearestEntity(class<EntityEx> EClass, optional bool bReachab
 
 	return EE;
 }
+
+#endif	// FASTER_SEARCH
 
 defaultproperties
 {
