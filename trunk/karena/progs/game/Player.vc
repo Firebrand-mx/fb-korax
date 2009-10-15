@@ -2245,12 +2245,29 @@ final void BlastRadius(optional int Limit)
 	Actor mo;
 	float dist;
 	int blasts = 0;
+#ifdef FASTER_SEARCH
+	EntityEx ee;
+#endif
 
 	MO.PlaySound('BlastRadius', CHAN_ITEM);
 	KArenaLevelInfo(Level).NoiseAlert(MO, MO);
 
+#ifdef FASTER_SEARCH
+	//foreach MO.RadiusThings(ee, MO.Origin, Actor::BLAST_RADIUS_DIST)
+	foreach MO.RoughBlockSearch(ee, 10)
+#else
 	foreach Level.AllThinkers(Actor, mo)
+#endif
 	{
+#ifdef FASTER_SEARCH
+		if (!ClassIsChildOf(ee.Class, Actor))
+		{
+			continue;
+		}
+
+		mo = Actor(ee);
+#endif
+
 		if ((mo == MO) || mo.bBoss)
 		{
 			// Not a valid monster

@@ -1170,6 +1170,9 @@ Actor FindEnemy(optional bool bReachable)
 	float vangle;
 	int i, light;
 	Actor actor;
+#ifdef FASTER_SEARCH
+	EntityEx ee;
+#endif
 
 	// Note: It's hard to ambush a bot who is not alone
 	if (bAllRound || ally)
@@ -1188,8 +1191,22 @@ Actor FindEnemy(optional bool bReachable)
 	if (!GetCvar('NoMonsters'))
 	{
 		// [FB] Search for monster enemies
+#ifdef FASTER_SEARCH
+		//foreach botmo.RadiusThings(ee, botmo.Origin, Inventory::MISSILERANGE)
+		foreach botmo.RoughBlockSearch(ee, 20)
+#else
 		foreach botmo.AllThinkers(Actor, actor)
+#endif
 		{
+#ifdef FASTER_SEARCH
+			if (!ClassIsChildOf(ee.Class, Actor))
+			{
+				continue;
+			}
+
+			actor = Actor(ee);
+#endif
+
 			dist = botmo.DistTo(actor);
 
 			if (!(actor.bMonster))
@@ -1395,9 +1412,25 @@ Actor FindEnemy(optional bool bReachable)
 Actor FindMissile()
 {
 	Actor actor;
+#ifdef FASTER_SEARCH
+	EntityEx ee;
+#endif
 
+#ifdef FASTER_SEARCH
+	//foreach botmo.RadiusThings(ee, botmo.Origin, AVOID_DIST)
+	foreach botmo.RoughBlockSearch(ee, 10)
+#else
 	foreach botmo.AllThinkers(Actor, actor)
+#endif
 	{
+#ifdef FASTER_SEARCH
+		if (!ClassIsChildOf(ee.Class, Actor))
+		{
+			continue;
+		}
+
+		actor = Actor(ee);
+#endif
 		if (actor.bMissile && !FastProjectile(actor) /*too little chance to avoid blaster missile*/
 			&& actor.PInstigator != player && actor.Target != botmo &&
 			(botmo.DistTo(actor) <= AVOID_DIST))
@@ -3733,10 +3766,27 @@ Actor GetFirstPriorityTarget()
 		}
 	}
 
+#ifdef FASTER_SEARCH
+	EntityEx ee2;
+#endif
+
 	// [CW] Look over all acceptable objects, common to every map and game mode
 	// and remember closest candidates for each of the priority type
+#ifdef FASTER_SEARCH
+	//foreach botmo.RadiusThings(ee2, botmo.Origin, Inventory::MISSILERANGE)
+	foreach botmo.RoughBlockSearch(ee2, 20)
+#else
 	foreach botmo.AllThinkers(Actor, ee)
+#endif
 	{
+#ifdef FASTER_SEARCH
+		if (!ClassIsChildOf(ee2.Class, Actor))
+		{
+			continue;
+		}
+
+		ee = Actor(ee2);
+#endif
 		if (ee.bInvisible)
 		{
 			continue;
@@ -4052,7 +4102,11 @@ Actor GetSpecialEnemy(optional bool bReachable)
 
 			if (player.BestWeaponOfDamageType('Fire'))
 			{
+#ifdef FASTER_SEARCH
+				actor = Actor(botmo.A_GetNearestEntityNear(ZXmasHavocTree, Inventory::MISSILERANGE));
+#else
 				actor = Actor(botmo.A_GetNearestEntity(ZXmasHavocTree));
+#endif
 				if (actor)
 					dist = botmo.DistTo(actor);
 			}
@@ -4353,8 +4407,26 @@ Actor GetNearestPathNode(class<Thinker> NodeType, optional bool bFinal)
 		previous = nodes[nodes.Num - 1];
 	}
 
+#ifdef FASTER_SEARCH
+	EntityEx ee;
+#endif
+
+#ifdef FASTER_SEARCH
+	//foreach botmo.RadiusThings(ee, botmo.Origin, Inventory::MISSILERANGE)
+	foreach botmo.RoughBlockSearch(ee, 20)
+#else
 	foreach botmo.AllThinkers(NodeType, pn)
+#endif
 	{
+#ifdef FASTER_SEARCH
+		if (ee.Class != NodeType && !ClassIsChildOf(ee.Class, NodeType))
+		{
+			continue;
+		}
+
+		pn = PathNode(ee);
+#endif
+
 		if (pn == node_current)
 		{
 			continue;
