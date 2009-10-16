@@ -128,7 +128,7 @@ void GiveExperience(int Exp, optional bool bIgnoreExpModifier)
 		experience = 2100000666;
 		next_level = 2100000999;
 	}
-	KRPGPlayerPawn(MO).experience = experience;
+	Actor(MO).experience = experience;
 	while (experience >= next_level && PClass != HexenDefs::PCLASS_PIG)
 	{
 		ActivateLevel(exp_level + 1);
@@ -499,10 +499,10 @@ void UpdateStats(int n_strength, int n_constitution, int n_dexterity, int n_inte
 	{
 		Value = (itof(strength) * 0.5) / 100.0;
 	}
-	KRPGPlayerPawn(MO).ForwardMove1 += Value;
-	KRPGPlayerPawn(MO).ForwardMove2 += Value;
-	KRPGPlayerPawn(MO).SideMove1 += Value;
-	KRPGPlayerPawn(MO).SideMove2 += Value;
+	PlayerPawn(MO).ForwardMove1 += Value;
+	PlayerPawn(MO).ForwardMove2 += Value;
+	PlayerPawn(MO).SideMove1 += Value;
+	PlayerPawn(MO).SideMove2 += Value;
 }
 
 //==========================================================================
@@ -1129,16 +1129,19 @@ void PlayerTick(float deltaTime)
 
 	// KRPG
 	// Duck
-	float oldHeight = MO.Height;
-	if (Buttons & BT_DUCK)
+	if (ClassIsChildOf(MO.Class, KRPGPlayerPawn))
 	{
-		KRPGPlayerPawn(MO).BendDown(deltaTime);
+		float oldHeight = MO.Height;
+		if (Buttons & BT_DUCK)
+		{
+			KRPGPlayerPawn(MO).BendDown(deltaTime);
+		}
+		else
+		{
+			KRPGPlayerPawn(MO).StandUp(deltaTime);
+		}
+		KRPGPlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
 	}
-	else
-	{
-		KRPGPlayerPawn(MO).StandUp(deltaTime);
-	}
-	KRPGPlayerPawn(MO).ViewHeight += (MO.Height - oldHeight);
 
 	//	Move around.
 	//	ReactionTime is used to prevent movement for a bit after a teleport.
@@ -1152,14 +1155,23 @@ void PlayerTick(float deltaTime)
 	}
 	else
 	{
-		if (MO.Height < KRPGPlayerPawn(MO).StandHeight)
+		bool movement_done = false;
+		if (ClassIsChildOf(MO.Class, KRPGPlayerPawn))
 		{
-			ForwardMove /= 4.0;
-			SideMove /= 7.0;
+			if (MO.Height < KRPGPlayerPawn(MO).StandHeight)
+			{
+				ForwardMove /= 4.0;
+				SideMove /= 7.0;
+			}
+			// KRPG
+			if (KRPGPlayerPawn(MO).RidePartner && KRPGPlayerPawn(MO).bIsMountedOn && KRPGPlayerPawn(MO).bRideControl)
+			{
+				PlayerRide(deltaTime);
+				movement_done = true;
+			}
 		}
-		// KRPG
-		if (KRPGPlayerPawn(MO).RidePartner && KRPGPlayerPawn(MO).bIsMountedOn && KRPGPlayerPawn(MO).bRideControl)
-			PlayerRide(deltaTime);
+
+		if (movement_done);
 		else if (MO.WaterLevel > 1)
 			WaterMove(deltaTime);
 		else
@@ -1201,7 +1213,9 @@ void PlayerTick(float deltaTime)
 			//[KoraxRPG]
 			//P_UseLines();
 			if (MO.IsA('KRPGPlayerPawn'))
+			{
 				KRPGPlayerPawn(MO).TryUse(USERANGE, USETHINGRANGE);
+			}
 			bUseDown = true;
 		}
 	}
