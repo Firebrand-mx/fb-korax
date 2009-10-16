@@ -698,21 +698,24 @@ final void BlastRadius(optional int Limit)
 	Actor mo;
 	float dist;
 	int blasts = 0;
-#ifdef FASTER_SEARCH
+#ifdef ALTERNATE_SEARCH
 	EntityEx ee;
 #endif
 
 	PlaySound('BlastRadius', CHAN_ITEM);
 	LineSpecialLevelInfo(Level).NoiseAlert(self, self);
 
-#ifdef FASTER_SEARCH
-	//foreach RadiusThings(ee, Origin, BLAST_RADIUS_DIST)
+#ifdef ALTERNATE_SEARCH
+	#ifdef ALTERNATE_SEARCH2
 	foreach RoughBlockSearch(ee, 10)
+	#else
+	foreach RadiusThings(ee, Origin, BLAST_RADIUS_DIST)
+	#endif
 #else
 	foreach AllThinkers(Actor, mo)
 #endif
 	{
-#ifdef FASTER_SEARCH
+#ifdef ALTERNATE_SEARCH
 		if (!ClassIsChildOf(ee.Class, Actor))
 		{
 			continue;
