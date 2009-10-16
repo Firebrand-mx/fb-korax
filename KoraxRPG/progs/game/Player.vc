@@ -1618,6 +1618,42 @@ void Cheat_Gimme()
 		cprint("ALL WEAPONS");
 		EntityEx(MO).Inventory.Dump();
 	}
+	if (Cmd_CheckParm("armor"))
+	{
+		int i;
+		HexenArmor HArmor = HexenArmor(EntityEx(MO).FindInventory(
+			HexenArmor));
+		for (i = 0; i < 4; i++)
+		{
+			HArmor.Slots[i] = HArmor.SlotsIncrement[i];
+		}
+	}
+	if (Cmd_CheckParm("mana") || Cmd_CheckParm("ammo"))
+	{
+		foreach AllClasses(Ammo, Cls)
+		{
+			//	Only direct descendants.
+			if (GetClassParent(Cls) != Ammo)
+			{
+				continue;
+			}
+			Inventory AmmoItem = EntityEx(MO).FindInventory(Cls);
+			if (!AmmoItem)
+			{
+				Cls = class<Inventory>(GetClassReplacement(Cls));
+				AmmoItem = Level.Spawn(Cls,,,, false);
+				if (!AmmoItem.TryPickup(EntityEx(MO)))
+				{
+					AmmoItem.Destroy();
+					AmmoItem = none;
+				}
+			}
+			if (AmmoItem)
+			{
+				AmmoItem.Amount = AmmoItem.MaxAmount;
+			}
+		}
+	}
 	if (Cmd_CheckParm("health"))
 	{
 		if (MorphTime)
