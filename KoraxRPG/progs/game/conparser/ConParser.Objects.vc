@@ -48,7 +48,8 @@ enum
 	Token_Actor_GiveExperience,
 	Token_Actor_GiveInventory,
 	Token_Actor_RemoveInventory,
-	LAST_ACTOR_METHOD = Token_Actor_RemoveInventory,
+	Token_Actor_TID,
+	LAST_ACTOR_METHOD = Token_Actor_TID,
 	//
 	// Player
 	//
@@ -267,6 +268,13 @@ void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_
 			class<Inventory> ItemType = class<Inventory>(FindClassLowerCase(StrToName(strlwr((*p_Params)[0]))));
 			//print("ItemType = %i", ItemType);
 			Ref.DoTakeInventory(ItemType, (*p_Params).Num > 1 ? atoi((*p_Params)[1]) : 1, Ref);
+		}
+		break;
+	case Token_Actor_TID:
+		if (p_Result)
+		{
+			p_Result->type = exp_type_integer;
+			p_Result->ivalue = Ref.TID;
 		}
 		break;
 	default:
