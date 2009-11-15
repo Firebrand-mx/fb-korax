@@ -1325,8 +1325,10 @@ Actor FindEnemy(optional bool bReachable)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (player.Level.Game.Players[i] && player.Level.Game.Players[i].MO &&
-		    player.Level.Game.Players[i].MO.Health > 0 && !Player(player.Level.Game.Players[i]).bUnControllable && 
-			botmo != player.Level.Game.Players[i].MO)
+			botmo != player.Level.Game.Players[i].MO &&
+		    player.Level.Game.Players[i].MO.Health > 0 &&
+			Player(player.Level.Game.Players[i]).Team &&	// don't target those who didn't entered competition yet
+			!Player(player.Level.Game.Players[i]).bUnControllable)
 		{
 			// [CW] Check if an advanced game mode is active
 			if (MainGameInfo(player.Level.Game).GameModel)
