@@ -914,7 +914,7 @@ void AutoSelectTeam()
 //
 //  ClientTeamSelect
 //
-//	[CW] TODO: pass array here as Cols if this is possible?
+//	[CW] TODO: pass array here as Cols if this is possible? << ?? why
 //
 //==========================================================================
 
@@ -948,6 +948,11 @@ void ServerJoinTeam(int Index)
 	if (!bSpawned)
 	{
 		return;
+	}
+
+	if (TeamSelection == HexenDefs::teamselection_spectate)
+	{
+		TeamSelection = TeamSelection == HexenDefs::teamselection_wait;
 	}
 
 	// [CW] respawn player if team is selected or re-selected
@@ -992,10 +997,11 @@ void ServerJoinTeam(int Index)
 
 void ServerSpectate()
 {
+	TeamSelection = HexenDefs::teamselection_spectate;
+
 	if (Team)
 	{
-		Team.DiscardPlayer(self);
-		TeamSelection = HexenDefs::teamselection_spectate;
+		Team.DiscardPlayer(self);	
 		MO.Destroy();
 		MO = none;
 		SpawnClient();
@@ -1286,6 +1292,7 @@ void SpawnSpectator(mthing_t * mthing, bool AllowRespawn)
 	// ?? need this here?
 	//SetClientModel();
 
+	EntityEx(MO).GiveInventoryType(PowerSpectatorFlight);
 	UpdateRevealedMap();
 
 	bSpectator = true;

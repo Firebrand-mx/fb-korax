@@ -1,4 +1,4 @@
-﻿//**************************************************************************
+//**************************************************************************
 //**
 //**	    ##   ##   ####   ######     ##    ##     ##
 //**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
@@ -14,7 +14,7 @@
 //**	     ##    ## ######  ##      ##  #### ##    ##
 //**	     ##    ## ##  ###  #####  ##   ### ##    ##
 //**
-//**    $Id: MenuChoice_Team.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**    $Id: PowerSpectatorFlight.vc 2100 2009-10-16 13:41:28Z crimsonwizard $
 //**
 //**    Copyright (C) 2004-2006 Korax Heritage Team
 //**
@@ -30,28 +30,58 @@
 //**
 //**************************************************************************
 
-class MenuChoice_Team : MenuSmallTextButton;
+class PowerSpectatorFlight : Powerup;
 
-bool	bAllowed;
-int 	Team;
+PowerFlight PF;
 
 //==========================================================================
 //
-//	ActivateEvent
+//	Tick
 //
 //==========================================================================
 
-void ActivateEvent()
+void Tick(float DeltaTime)
 {
-	if (bAllowed)
+	// Spectator's flight time is infinite
+	EffectTime += DeltaTime;
+	PF.EffectTime += DeltaTime;
+
+	::Tick(DeltaTime);
+}
+
+//==========================================================================
+//
+//	InitEffect
+//
+//==========================================================================
+
+void InitEffect()
+{
+	PF = PowerFlight(Spawn(PowerFlight,,,, false));
+	EntityEx(Owner).AddInventory(PF);
+	PF.InitEffect();
+}
+
+//==========================================================================
+//
+//	EndEffect
+//
+//==========================================================================
+
+void EndEffect()
+{
+	if (!Owner)
 	{
-		MenuScreenTeamSelect(Parent).bIsSelected = true;
-		Player(MenuScreenTeamSelect(Parent).ClGame.cl).ServerJoinTeam(Team);
-		GetClGame().ForceMenuOff();
-		LocalSound('menu/choose');
+		return;
 	}
+
+	PF.EndEffect();
+	EntityEx(Owner).RemoveInventory(PF);
+	PF.Destroy();
 }
 
 defaultproperties
 {
+	EffectTime = 99999.0;
+	bHubPower = false;
 }

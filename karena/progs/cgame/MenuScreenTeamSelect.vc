@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ######  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		##    ######    ##### ###   ##    ##
+//**	        ##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
 //**	     ##    ## ##   ## ##      ##### ## ##    ##
 //**	     ######## #####   #####   ## ##### ########
@@ -119,9 +119,9 @@ void CreateChoices()
 			teams_active[Teams[i]] = true;
 			y += 18;
 		}
-		y += 24;
 	}
 
+#ifdef OBSOLETE
 	// Available Teams
 	if (activeTeams < maxTeams && activeTeams < HexenDefs::MAXTEAMSINGAME)
 	{
@@ -155,13 +155,14 @@ void CreateChoices()
 			y += 18;
 		}
 	}
+#endif
 
 	// SPECTATOR option
 	MenuSmallTextButton Btn = MenuSmallTextButton(NewChild(MenuSmallTextButton));
 	Btn.SetOrigin(ChoicesStartX, y);
 	Btn.Text = "Spectate";
 	Btn.Activated = ActivateSpectate;
-	y += Btn.Height;
+	y += Btn.Height + 24;
 
 	SetHeight(y);
 
@@ -217,8 +218,7 @@ void OnDestroy()
 			Player(ClGame.cl).ServerJoinTeam(curSelection);
 		else
 		{
-			// probably do nothing, or ->
-			//Player(ClGame.cl).ServerSpectate();
+			Player(ClGame.cl).ServerSpectate();
 
 			/*int i;
 			for (i = 0; i < NumItems; i++)
