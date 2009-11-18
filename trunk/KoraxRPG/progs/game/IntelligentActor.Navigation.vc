@@ -158,10 +158,11 @@ void DoRoute()
 	// things (entity objects), but custom map positions as well.
 	// We must remember this all the way 'round here.
 	// Also, important - FTarget should be used here as a final target,
-	// ITarget is to set up next node, Entity::Target is no use here at all.
+	// ITarget is to set up next node, Entity::Target is of no use here
+	// at all.
 	//
 	// If FTarget.Thing is set, FTarget.Pos is used to store the target
-	// thing position at certain moments of time only, this is needed to
+	// thing's position at certain moments of time only, this is needed to
 	// check if target has moved far away from it's previous position.
 	//
 	//
@@ -183,11 +184,11 @@ void DoRoute()
 	}
 	else if (NRoute)
 	{
-		///////// If check target pos timer run out, pawn should reconsider its target position
+		///////// If check target pos timer runs out, pawn should reconsider it's target's position
 		//////////if (FTarget.Thing && Behavior.CheckFTargetPosTime <= 0)
 		{
 			// If enemy moved away too far from his previous stored position,
-			// update that position and force rebuild route
+			// update that position and force to rebuild a route
 			if (Length(LastKnownPosition - FTarget.Pos) > Behavior.FTargetPosChangeLimit)
 			{
 				Behavior.RouteRebuildTime = 0;
@@ -394,8 +395,6 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 		RouteBuild.IterationsLimit = RouteBuildIterationsLimit;
 	}
 
-
-
 	//-----------------------------------------------------------------
 	//
 	// Commence / continue building
@@ -409,24 +408,24 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 		{
 			if (MultiRouteBuild.NFrom || MultiRouteBuild.NTo)
 			{
-				// still have to build one or two nroutes
+				// we still have to build one or two nroutes
 				MultiRouteBuild.PNFrom = none;
 				MultiRouteBuild.PNTo = none;
 				return;
 			}
 			
-			// that should do it; set up the movement along the proute
+			// that should do it; set up the movement along the PRoute
 		}
 		else
 		{
 			if (RouteBuild.bBuilding)
 			{
-				// delayed proute build; shall continue next time
+				// delayed PRoute build; we shall continue on next time...
 				return;
 			}
 			else if (MultiRouteBuild.NFrom && MultiRouteBuild.NTo)
 			{
-				// build proute failed, but there's still chance to build 'heavy' nroute
+				// PRoute build failed, but there's still a chance to build 'heavy' NRoute
 				MultiRouteBuild.PNFrom = none;
 				MultiRouteBuild.PNTo = none;
 				return;
@@ -439,32 +438,32 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 		{
 			if (PRoute)
 			{
-				// build a nroute from NFrom to the first pnode in proute
+				// build a NRoute from NFrom to the first PNode in PRoute
 				if (!KRPGLevelInfo(Level).BuildWaypoints(MultiRouteBuild.NFrom, PRoute.Nodes[0],
 					NRoute, Node, &RouteBuild))
 				{
 					if (RouteBuild.bBuilding)
 					{
-						// delayed nroute build; shall continue next time
+						// delayed NRoute build; we shall continue on next time...
 						return;
 					}
 				}
 			}
 			else if (MultiRouteBuild.NTo)
 			{
-				// this means there is no priority route, so have to build 'heavy'
+				// this means that there is no priority route, so we have to build 'heavy'
 				// normal route from NFrom to NTo
 				if (!KRPGLevelInfo(Level).BuildWaypoints(MultiRouteBuild.NFrom, MultiRouteBuild.NTo,
 					NRoute, Node, &RouteBuild))
 				{
 					if (RouteBuild.bBuilding)
 					{
-						// delayed nroute build; shall continue next time
+						// delayed NRoute build; shall continue on next time...
 						return;
 					}
 				}
 
-				// NTo node already used, no more route building needed
+				// NTo node already used, no more routes need to be built...
 				MultiRouteBuild.NTo = none;
 			}
 
@@ -480,13 +479,13 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 		}
 		else if (MultiRouteBuild.NTo && PRoute)
 		{
-			// build a nroute from last pnode in proute to NTo
+			// build a NRoute from last PNode in PRoute to NTo
 			if (!KRPGLevelInfo(Level).BuildWaypoints(PRoute.Nodes[PRoute.Nodes.Num - 1], MultiRouteBuild.NTo,
 				NPostRoute, Node, &RouteBuild))
 			{
 				if (RouteBuild.bBuilding)
 				{
-					// delayed nroute build; shall continue next time
+					// delayed NRoute build; we shall continue on next time...
 					return;
 				}
 			}
@@ -496,8 +495,6 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 			// We've did everything we could
 		}
 	}
-
-
 
 	//-----------------------------------------------------------------
 	//
@@ -511,7 +508,7 @@ void BuildRoute(TVec AimPos, Actor AimActor)
 	{
 		// The NRoute which was built explicitly is always forward-directed
 		bWalkNRouteBackward = false;
-		NRouteNodeIndex = -1;//CHECKME!!
+		NRouteNodeIndex = -1; //CHECKME!!
 	}
 
 	if (PRoute)

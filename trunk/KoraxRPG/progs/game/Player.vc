@@ -167,59 +167,6 @@ void ActivateLevel(int to_lvl)
 	int i;
 	int skillp_table[5];
 
-	for (i = 0; i < 6; i++)
-	{
-		if (i <= 1)
-		{
-			skillp_table[i] = 12;
-		}
-		else if (i == 2)
-		{
-			skillp_table[i] = 6;
-		}
-		else
-		{
-			skillp_table[i] = 3;
-		}
-	}
-
-	exp_level++;
-	experience -= next_level;
-
-	next_level = 1000 * exp_level;
-	addhealth = Health  / max_health;
-	maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
-	max_health += constitution;
-	sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
-
-	maxsp_power += intelligence;
-	sp_power = maxsp_power;
-
-	Health = max_health + addhealth;
-	MO.Health = Health;
-
-	av_points += skillp_table[Level.World.GameSkill];
-
-	// [FB] For multiplayer??
-/*	switch (PClass)
-	{
-		case HexenDefs::PCLASS_FIGHTER:
-			strength += skillp_table[Level.World.GameSkill];
-			break;
-		case HexenDefs::PCLASS_CLERIC:
-			strength += skillp_table[Level.World.GameSkill] / 2;
-			wisdom += skillp_table[Level.World.GameSkill] -
-					  (skillp_table[Level.World.GameSkill] / 2);
-			break;
-		case HexenDefs::PCLASS_MAGE:
-			wisdom += skillp_table[Level.World.GameSkill];
-			break;
-		}
-	}*/
-
-	cprint("YOU REACHED LEVEL %d", exp_level);
-	MO.PlaySound('misc/chat', CHAN_AUTO);
-
 	// [FB] AutoUpdate logic comes here
 	if (GetCvar('AutoUpdate'))
 	{
@@ -238,10 +185,12 @@ void ActivateLevel(int to_lvl)
 
 		while(av_points > 0)
 		{
-			if (Level.World.GameSkill < 3)
-			{
-				if (!updated[0] && av_points > 0 && KRPGPlayerPawn(MO).MaxStrength == -1 ? true :
-					strength < KRPGPlayerPawn(MO).MaxStrength)
+			// [FB] NOTE: Don't remove the commented lines
+			//		until more testing is done!!
+/*			if (Level.World.GameSkill < 3)
+			{*/
+				if (!updated[0] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxStrength == -1 ? true :
+					strength < KRPGPlayerPawn(MO).MaxStrength*/)
 				{
 					if (av_points > 0)
 					{
@@ -250,8 +199,8 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[0] = true;
 				}
-				if (!updated[1] && av_points > 0 && KRPGPlayerPawn(MO).MaxDexterity == -1 ? true :
-					dexterity < KRPGPlayerPawn(MO).MaxDexterity)
+				if (!updated[1] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxDexterity == -1 ? true :
+					dexterity < KRPGPlayerPawn(MO).MaxDexterity*/)
 				{
 					if (av_points > 0)
 					{
@@ -260,8 +209,8 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[1] = true;
 				}
-				if (!updated[2] && av_points > 0 && KRPGPlayerPawn(MO).MaxConstitution == -1 ? true :
-					constitution < KRPGPlayerPawn(MO).MaxConstitution)
+				if (!updated[2] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxConstitution == -1 ? true :
+					constitution < KRPGPlayerPawn(MO).MaxConstitution*/)
 				{
 					if (av_points > 0)
 					{
@@ -270,8 +219,8 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[2] = true;
 				}
-				if (!updated[3] && av_points > 0 && KRPGPlayerPawn(MO).MaxIntelligence == -1 ? true :
-					intelligence < KRPGPlayerPawn(MO).MaxIntelligence)
+				if (!updated[3] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxIntelligence == -1 ? true :
+					intelligence < KRPGPlayerPawn(MO).MaxIntelligence*/)
 				{
 					if (av_points > 0)
 					{
@@ -280,8 +229,8 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[3] = true;
 				}
-				if (!updated[4] && av_points > 0 && KRPGPlayerPawn(MO).MaxWisdom == -1 ? true :
-					wisdom < KRPGPlayerPawn(MO).MaxWisdom)
+				if (!updated[4] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxWisdom == -1 ? true :
+					wisdom < KRPGPlayerPawn(MO).MaxWisdom*/)
 				{
 					if (av_points > 0)
 					{
@@ -290,8 +239,8 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[4] = true;
 				}
-				if (!updated[5] && av_points > 0 && KRPGPlayerPawn(MO).MaxCharisma == -1 ? true :
-					charisma < KRPGPlayerPawn(MO).MaxCharisma)
+				if (!updated[5] && av_points > 0 /*&& KRPGPlayerPawn(MO).MaxCharisma == -1 ? true :
+					charisma < KRPGPlayerPawn(MO).MaxCharisma*/)
 				{
 					if (av_points > 0)
 					{
@@ -300,7 +249,7 @@ void ActivateLevel(int to_lvl)
 					}
 					updated[5] = true;
 				}
-			}
+/*			}
 			else
 			{
 				if (exp_level % 2 == 0)
@@ -316,7 +265,7 @@ void ActivateLevel(int to_lvl)
 						updated[0] = true;
 					}
 					if (!updated[1] && av_points > 0 && KRPGPlayerPawn(MO).MaxDexterity == -1 ? true :
-						dexterity < KRPGPlayerPawn(MO).MaxDexterity)
+						dexterity < KRPGPlayerPawn(MO).MaxDexterit)
 					{
 						if (av_points > 0)
 						{
@@ -369,7 +318,7 @@ void ActivateLevel(int to_lvl)
 						updated[5] = true;
 					}
 				}
-			}
+			}*/
 
 			for (i = 0; i < 7; i++)
 			{
@@ -381,6 +330,61 @@ void ActivateLevel(int to_lvl)
 		}
 
 		UpdateStats(str_val, dex_val, con_val, int_val,	wis_val, cha_val);
+	}
+	else
+	{
+		for (i = 0; i < 6; i++)
+		{
+/*			if (i <= 1)
+			{
+				skillp_table[i] = 12;
+			}
+			else if (i == 2)
+			{*/
+				skillp_table[i] = 6;
+/*			}
+			else
+			{
+				skillp_table[i] = 3;
+			}*/
+		}
+
+		exp_level++;
+		experience -= next_level;
+
+		next_level = 1000 * exp_level;
+		addhealth = Health  / max_health;
+		maxhealth_old = (maxhealth_old != max_health ? maxhealth_old : max_health);
+		max_health += constitution;
+		sp_power_old = (sp_power_old != sp_power ? sp_power_old : sp_power);
+
+		maxsp_power += intelligence;
+		sp_power = maxsp_power;
+
+		Health = max_health + addhealth;
+		MO.Health = Health;
+
+		av_points += skillp_table[Level.World.GameSkill];
+
+		// [FB] For multiplayer??
+	/*	switch (PClass)
+		{
+			case HexenDefs::PCLASS_FIGHTER:
+				strength += skillp_table[Level.World.GameSkill];
+				break;
+			case HexenDefs::PCLASS_CLERIC:
+				strength += skillp_table[Level.World.GameSkill] / 2;
+				wisdom += skillp_table[Level.World.GameSkill] -
+						  (skillp_table[Level.World.GameSkill] / 2);
+				break;
+			case HexenDefs::PCLASS_MAGE:
+				wisdom += skillp_table[Level.World.GameSkill];
+				break;
+			}
+		}*/
+
+		cprint("YOU REACHED LEVEL %d", exp_level);
+		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 }
 
@@ -2032,7 +2036,7 @@ void PlayerMorphed(EntityEx OldMO)
 //
 //	SpiritsWithin
 //
-//	[FB] Make fallen foes spirits help us out
+//	[FB] Make fallen foe's spirits help us out
 //
 //==========================================================================
 
