@@ -41,6 +41,9 @@ int				MaxValue;
 
 delegate bool ValueChanging(Object Sender, int NewValue, int OldValue);
 
+// [FB] NOTE: Don't remove the commented lines
+//		until more testing is done!!
+
 //==========================================================================
 //
 //  SetOrigin
@@ -81,10 +84,10 @@ bool SetNewValue(int newValue, int oldValue)
 //
 //==========================================================================
 
-void SetInitialValue(int Value, int MaxVal)
+void SetInitialValue(int Value /*, int MaxVal*/)
 {
 	InitialValue = Value;
-	MaxValue = MaxVal;
+//	MaxValue = MaxVal;
 }
 
 //==========================================================================
@@ -144,41 +147,41 @@ bool OnKeyDown(int key)
 
 	switch (key)
 	{
-	case K_LEFTARROW:
-		if (Value > 0 && Value - 1 >= 0)
-		{
-			newValue = Value - 1;
-			if (SetNewValue(newValue, Value))
+		case K_LEFTARROW:
+			if (Value > 0 && Value - 1 >= 0)
 			{
-				Value = newValue;
-				LocalSound('menu/change');
+				newValue = Value - 1;
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+				return true;
 			}
-			return true;
-		}
-	case K_RIGHTARROW:
-		if (MaxValue == -1 || Value + 1 < MaxValue)
-		{
-			newValue = Value + 1;
-			if (SetNewValue(newValue, Value))
-			{
-				Value = newValue;
-				LocalSound('menu/change');
-			}
-			return true;
-		}
-	case K_ENTER:
-	case K_PADENTER:
-	case K_MOUSE1:
-		if (MaxValue == -1 || Value + 1 < MaxValue)
-		{
-			newValue = Value + 1;
-			if (SetNewValue(newValue, Value))
-			{
-				Value = newValue;
-				LocalSound('menu/change');
-			}
-			return true;
-		}
+		case K_RIGHTARROW:
+/*			if (MaxValue == -1 || Value + 1 < MaxValue)
+			{*/
+				newValue = Value + 1;
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+				return true;
+//			}
+		case K_ENTER:
+		case K_PADENTER:
+		case K_MOUSE1:
+/*			if (MaxValue == -1 || Value + 1 < MaxValue)
+			{*/
+				newValue = Value + 1;
+				if (SetNewValue(newValue, Value))
+				{
+					Value = newValue;
+					LocalSound('menu/change');
+				}
+				return true;
+//			}
 	}
 	return false;
 }
@@ -187,15 +190,15 @@ void OnMouseClick(int X, int Y)
 {
 	int newValue;
 
-	if (MaxValue == -1 || Value + 1 < MaxValue)
-	{
+/*	if (MaxValue == -1 || Value + 1 < MaxValue)
+	{*/
 		newValue = Value + 1;
 		if (SetNewValue(newValue, Value))
 		{
 			Value = newValue;
 			LocalSound('menu/change');
 		}
-	}
+//	}
 }
 
 void OnRMouseClick(int X, int Y)
