@@ -714,7 +714,7 @@ void CheckStuff()
 	if (enemy)
 	{
 		if (!enemy.bShootable || enemy.bDormant || enemy.Health <= 0 ||
-			!EntityEx(botmo).CanSee(enemy) ||
+			!botmo.CanSee(enemy) ||
 			// Special cases
 			enemy.IsA('ZXmasHavocTree') &&
 			(KArenaWeapon(player.ReadyWeapon).DamageTypeHint != 'Fire' ||
@@ -1275,7 +1275,7 @@ Actor FindEnemy(optional bool bReachable)
 			 // Here's a strange one, when bot is standing still, the CanSee within Check_LOS almost always
 			 // returns false. tought it should be the same checksight as below but.. (below works) something
 			 // must be fuckin wierd screded up.
-			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && EntityEx(botmo).CanSee(actor))
+			if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && botmo.CanSee(actor))
 			{
 				light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 				if (actor.Sector->floor.LightSourceSector)
@@ -1362,7 +1362,7 @@ Actor FindEnemy(optional bool bReachable)
 			if (dist <= EntityEx::MELEERANGE ||
 				((botmo.Sector->SoundTarget == player.Level.Game.Players[i].MO)
 				  || Check_LOS(EntityEx(player.Level.Game.Players[i].MO), vangle)) &&
-				  EntityEx(botmo).CanSee(player.Level.Game.Players[i].MO))
+				  botmo.CanSee(player.Level.Game.Players[i].MO))
 			{
 				// [FB] Detect the light level
 				light = player.Level.Game.Players[i].MO.Sector->params.lightlevel;
@@ -4126,7 +4126,7 @@ Actor GetSpecialEnemy(optional bool bReachable)
 
 	if (actor)
 	{
-		if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && EntityEx(botmo).CanSee(actor))
+		if (dist <= EntityEx::MELEERANGE || Check_LOS(actor, vangle) && botmo.CanSee(actor))
 		{
 			light = actor.Sector->params.lightlevel; // [FB] Detect the light level
 			if (actor.Sector->floor.LightSourceSector)
