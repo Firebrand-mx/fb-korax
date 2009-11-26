@@ -55,7 +55,6 @@ enum
 class VMain : public wxFrame
 {
 public:
-	wxComboBox*		Game;
 	wxComboBox*		Resolution;
 	wxComboBox*		Colour;
 	wxComboBox*		RendererBox;
@@ -144,18 +143,8 @@ VMain::VMain()
 	nbook->AddPage(page, wxT("Main"));
 	wxFlexGridSizer* gsizer = new wxFlexGridSizer(2);
 
-	gsizer->Add(new wxStaticText(page, -1, wxT("Game:")), 0, wxALL, 4);
-	wxString GameChoices[7];
-	GameChoices[0] = wxT("(Autodetect)");
-	GameChoices[1] = wxT("Doom");
-	GameChoices[2] = wxT("Doom 2: Hell On Earth");
-	GameChoices[3] = wxT("Doom 2: TNT Evilution");
-	GameChoices[4] = wxT("Doom 2: The Plutonia Experiment");
-	GameChoices[5] = wxT("Heretic");
-	GameChoices[6] = wxT("Hexen");
-	Game = new wxComboBox(page, -1, GameChoices[0], wxDefaultPosition, wxDefaultSize, 7, GameChoices, wxCB_READONLY);
-	gsizer->Add(Game, 0, wxALL, 4);
-	Game->Disable();
+	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
 
 	CheckBoxDevGame = new wxCheckBox(page, -1, wxT("Development mode"));
 	gsizer->AddSpacer(1);
@@ -176,6 +165,9 @@ VMain::VMain()
 	page = new wxPanel(nbook);
 	nbook->AddPage(page, wxT("Video"));
 	wxFlexGridSizer* vsizer = new wxFlexGridSizer(2);
+
+	vsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+	vsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
 
 	vsizer->Add(new wxStaticText(page, -1, wxT("Renderer:")), 0, wxALL, 4);
 	wxString RendChoices[3];
@@ -220,6 +212,9 @@ VMain::VMain()
 	page = new wxPanel(nbook);
 	nbook->AddPage(page, wxT("Sound"));
 	wxBoxSizer* bsizer = new wxBoxSizer(wxVERTICAL);
+
+	bsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+
 	CheckBoxNoSound = new wxCheckBox(page, -1, wxT("Disable all sound"));
 	bsizer->Add(CheckBoxNoSound, 0, wxALL, 4);
 	CheckBoxNoSfx = new wxCheckBox(page, -1, wxT("No sounds"));
@@ -239,6 +234,9 @@ VMain::VMain()
 	page = new wxPanel(nbook);
 	nbook->AddPage(page, wxT("Input"));
 	bsizer = new wxBoxSizer(wxVERTICAL);
+
+	bsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+
 	CheckBoxNoMouse = new wxCheckBox(page, -1, wxT("Disable mouse"));
 	bsizer->Add(CheckBoxNoMouse, 0, wxALL, 4);
 	CheckBoxNoJoy = new wxCheckBox(page, -1, wxT("Disable joystick"));
@@ -250,6 +248,10 @@ VMain::VMain()
 	page = new wxPanel(nbook);
 	nbook->AddPage(page, wxT("Network"));
 	gsizer = new wxFlexGridSizer(2);
+
+	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
+
 	CheckBoxNoLan = new wxCheckBox(page, -1, wxT("Disable network driver"));
 	gsizer->AddSpacer(1);
 	gsizer->Add(CheckBoxNoLan, 0, wxALL, 4);
@@ -272,7 +274,6 @@ VMain::VMain()
 	nbook->CentreOnParent(wxHORIZONTAL);
 	//	Load saved settings.
 	wxConfigBase* Conf = wxConfigBase::Get();
-	Game->SetSelection(Conf->Read(wxT("Game"), 0l));
 	Resolution->SetSelection(Conf->Read(wxT("Resolution"), 0l));
 	RendererBox->SetSelection(Conf->Read(wxT("Renderer"), 0l));
 	Colour->SetSelection(Conf->Read(wxT("Colour"), 0l));
@@ -305,7 +306,6 @@ VMain::~VMain()
 {
 	//	Save settings.
 	wxConfigBase* Conf = wxConfigBase::Get();
-	Conf->Write(wxT("Game"), Game->GetSelection());
 	Conf->Write(wxT("Resolution"), Resolution->GetSelection());
 	Conf->Write(wxT("Renderer"), RendererBox->GetSelection());
 	Conf->Write(wxT("Colour"), Colour->GetSelection());
@@ -338,28 +338,6 @@ void VMain::OnRun(wxCommandEvent&)
 {
 	//	Create command line
 	wxString CmdLine = wxT("vavoom");
-
-	switch (Game->GetSelection())
-	{
-	case 1:
-		CmdLine += wxT(" -doom");
-		break;
-	case 2:
-		CmdLine += wxT(" -doom2");
-		break;
-	case 3:
-		CmdLine += wxT(" -tnt");
-		break;
-	case 4:
-		CmdLine += wxT(" -plutonia");
-		break;
-	case 5:
-		CmdLine += wxT(" -heretic");
-		break;
-	case 6:
-		CmdLine += wxT(" -hexen");
-		break;
-	}
 
 	// Sound
 	if (CheckBoxNoSound->IsChecked())
