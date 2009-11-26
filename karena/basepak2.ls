@@ -21,7 +21,6 @@ progs/game.dat								progs/game.dat
 //	Scripts
 animdefs.txt			scripts/animdefs.txt
 sndinfo.txt				scripts/sndinfo.txt
-skyboxes.txt			scripts/skyboxes.txt
 terrain.txt				scripts/terrain.txt
 teaminfo.txt			scripts/teaminfo.txt
 sprite_rename.txt		sprite_rename.txt
