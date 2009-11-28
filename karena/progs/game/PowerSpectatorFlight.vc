@@ -44,7 +44,10 @@ void Tick(float DeltaTime)
 {
 	// Spectator's flight time is infinite
 	EffectTime += DeltaTime;
-	PF.EffectTime += DeltaTime;
+	if (PF)
+	{
+		PF.EffectTime += DeltaTime;
+	}
 
 	::Tick(DeltaTime);
 }
@@ -75,9 +78,12 @@ void EndEffect()
 		return;
 	}
 
-	PF.EndEffect();
-	EntityEx(Owner).RemoveInventory(PF);
-	PF.Destroy();
+	if (PF)
+	{
+		PF.EndEffect();
+		EntityEx(Owner).RemoveInventory(PF);
+		PF.Destroy();
+	}
 }
 
 defaultproperties
