@@ -16,11 +16,9 @@ const int COMMAND_LINE_LENGTH = 1024;
 TCHAR VavoomCommandLine[COMMAND_LINE_LENGTH];
 TCHAR * pVCmdLineCursor;
 bool flagDevCustomGame;
-TCHAR tempCustomGame[256];
 
 enum
 {
-	REG_VALUE_GAME,
 	REG_VALUE_RENDERER,
 	REG_VALUE_RESOLUTION,
 	REG_VALUE_PARTICLES,
@@ -39,7 +37,6 @@ enum
 	REG_VALUE_NOMOUSE,
 	REG_VALUE_NOJOY,
 	REG_VALUE_DEBUG,
-	REG_VALUE_CUSTOM_GAME,
 	REG_VALUE_DEVGAME,
 	REG_VALUE_FILES,
 	REG_VALUE_PROGS,
@@ -49,7 +46,6 @@ enum
 
 TCHAR * RegValues[NUM_REG_VALUES] = 
 {
-	L"Game",
 	L"Renderer",
 	L"Resolution",
 	L"Particles",
@@ -68,7 +64,6 @@ TCHAR * RegValues[NUM_REG_VALUES] =
 	L"NoMouse",
 	L"NoJoy",
 	L"Debug",
-	L"CustomGame",
 	L"DevGame",
 	L"Files",
 	L"Progs",
@@ -80,7 +75,6 @@ void InitVCmdLine()
 	VavoomCommandLine[0] = '\0';
 	pVCmdLineCursor = VavoomCommandLine;
 	flagDevCustomGame = false;
-	tempCustomGame[0] = '\0';
 }
 
 void ParseRegValue(LPTSTR lpValueName, LPBYTE lpData)
@@ -92,9 +86,6 @@ void ParseRegValue(LPTSTR lpValueName, LPBYTE lpData)
 		{
 			switch(i)
 			{
-			case REG_VALUE_GAME:
-				// unusable for karena
-				break;
 			case REG_VALUE_RENDERER:
 				switch ((UINT)*lpData)
 				{
@@ -240,12 +231,6 @@ void ParseRegValue(LPTSTR lpValueName, LPBYTE lpData)
 					pVCmdLineCursor += 7;
 				}
 				break;
-			case REG_VALUE_CUSTOM_GAME:
-				if (*((TCHAR*)lpData))
-				{
-					swprintf(tempCustomGame, 256, L"%s", (TCHAR*)lpData);
-				}
-				break;
 			case REG_VALUE_DEVGAME:
 				flagDevCustomGame = true;
 				break;
@@ -339,15 +324,6 @@ bool ReadSettings()
 				}
 			}
 
-			if (tempCustomGame)
-			{
-				const __w64 int maxchars = (VavoomCommandLine + 1023 - pVCmdLineCursor) >> 1;
-				if (flagDevCustomGame)
-					swprintf(pVCmdLineCursor, maxchars, L" -devgame %s", tempCustomGame);
-				else
-					swprintf(pVCmdLineCursor, maxchars, L" -game %s", tempCustomGame);
-			}
-
 			return true;
 		}
 	}
@@ -383,8 +359,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			return 0;
 		else
 		{
-			swprintf(VavoomCommandLine, 1024, L"-game karena");
+			swprintf(VavoomCommandLine, 1024, L" -game karena");
 		}
+	}
+	else
+	{
+		swprintf(VavoomCommandLine, 1024, L" -game karena");
 	}
 
 	if ((__int64)ShellExecute(NULL,
