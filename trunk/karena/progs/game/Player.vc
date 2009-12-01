@@ -66,11 +66,11 @@ int		altWeapon;
 int		altWeaponMode[HexenDefs::NUM_ALTFIRE];
 
 // [FB] Flash for the Darkness Missile
-int BlindCount;
-float LastBlindTime;
 Actor Blinder;
 Player PlayerBlinder;
-int count;
+float LastBlindTime;
+int BlindFlashCount;
+int BlindDamageCount;
 
 BotPlayer Bot;
 
@@ -82,8 +82,6 @@ CTFBanner Banner;	// this reference is for information only
 int BannerStatus;	// this var is used as a fastest way to tell client player must return his team's flag
 
 bool inited;
-
-int pcount; // [FB] counter
 
 // [Korax]
 // [FB] Scores for the different gameplay modes
@@ -102,6 +100,8 @@ int strength;
 int wisdom;
 int dexterity;
 int constitution;
+
+int ExperienceLostCounter;
 
 bool pi_damage;	// [CW] for faster PI Damage checkup
 
@@ -296,8 +296,8 @@ void ResetPlayerOnSpawn()
 {
 	::ResetPlayerOnSpawn();
 
-	BlindCount = 0; // [FB] Reset the blind count too!
-	pcount = 0; // [FB] Reset counter
+	BlindFlashCount = 0; // [FB] Reset the blind count too!
+	ExperienceLostCounter = 0; // [FB] Reset counter
 	respawn_counter = 2.0;
 
 //[Korax]
@@ -1139,7 +1139,7 @@ void DeathMatchSpawnPlayer()
 void SpawnPlayer(mthing_t * mthing, bool Voodoo)
 {
 #ifdef DEBUG_PLAYER_SPAWN
-	print("Player::SpawnPlayer :");
+	print("Player::SpawnPlayer : %s", PlayerName);
 #endif
 
 	// TODO: Checkme - what about Voodoo flag?
@@ -1390,7 +1390,7 @@ void PlayerExitMap(bool clusterChange)
 {
 	::PlayerExitMap(clusterChange);
 
-	BlindCount = 0; // [FB] Reset the blind count too!
+	BlindFlashCount = 0; // [FB] Reset the blind count too!
 }
 
 //==========================================================================
@@ -1418,7 +1418,7 @@ void SetControllable(bool Mode)
 		if (MO)
 			EntityEx(MO).Deactivate(none);
 		PoisonCount = 0;
-		BlindCount = 0;
+		BlindFlashCount = 0;
 	}
 }
 
@@ -1509,7 +1509,7 @@ void ActivateLevel(int to_lvl, bool message)
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 
-	pcount = 0;	/// reset exps loosing counter
+	ExperienceLostCounter = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1553,7 +1553,7 @@ void DeactivateLevel(int to_lvl, bool message)
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 
-	pcount = 0;	/// reset exps loosing counter
+	ExperienceLostCounter = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1600,7 +1600,7 @@ void LooseExperience()
 
 	limit = 17; // [FB] 0.5 seconds
 
-	if(inited && (pcount >= limit) && (pcount % (1 * 35) == 0) && PlayerState == PST_LIVE)
+	if(inited && (ExperienceLostCounter >= limit) && (ExperienceLostCounter % (1 * 35) == 0) && PlayerState == PST_LIVE)
 	{
 		experience -= (1 * exp_level); // [FB] Depending the player level
 
@@ -1611,9 +1611,9 @@ void LooseExperience()
 
 		KArenaPlayerPawn(MO).experience = experience;
 
-		if(pcount == 525)
+		if(ExperienceLostCounter == 525)
 		{
-			pcount = 105; // [FB] To avoid overflows
+			ExperienceLostCounter = 105; // [FB] To avoid overflows
 		}
 
 		// [FB] But what if the experience we lost has made us lost a level??
@@ -2061,16 +2061,16 @@ void PlayerTick(float deltaTime)
 	}
 
 	// [FB] Darkness blinding effect
-	if (BlindCount && Level.XLevel.Time - LastBlindTime >= 0.5)
+	if (BlindFlashCount && Level.XLevel.Time - LastBlindTime >= 0.5)
 	{
-		BlindCount -= 5;
-		count += 1;
-		if (BlindCount < 0)
+		BlindFlashCount -= 5;
+		BlindDamageCount += 1;
+		if (BlindFlashCount < 0)
 		{
-			BlindCount = 0;
+			BlindFlashCount = 0;
 		}
 		LastBlindTime = Level.XLevel.Time;
-		if(count % 5 == 0) // [FB] Damage the blinded player after some time
+		if(BlindDamageCount % 5 == 0) // [FB] Damage the blinded player after some time
 		{
 /*			if (Blinder && !Blinder.MO)
 				Error("Player::PlayerTick : Blinder.MO reference not set to an instance of an object");*/
@@ -2110,13 +2110,13 @@ void PlayerTick(float deltaTime)
 		// [CW] No need for this processing when player has lost all experience
 		if (experience > 0)
 		{
-			pcount++;
+			ExperienceLostCounter++;
 			LooseExperience();
 		}
 	}
 	else
 	{
-		pcount = 0;
+		ExperienceLostCounter = 0;
 	}
 
 	if (bNoHUD)
@@ -2138,14 +2138,14 @@ void PaletteFlash()
 	::PaletteFlash();
 
 	// [FB] Black palette for blinding effect
-	if (BlindCount)
+	if (BlindFlashCount)
 	{
 		float r = 0.0;
 		float g = 0.0;
 		float b = 0.0;
 		float a = 0.0;
 		AddBlend(r, g, b, a, CShift);
-		AddBlend(r, g, b, a, RGBA(0, 0, 0, BlindCount));
+		AddBlend(r, g, b, a, RGBA(0, 0, 0, BlindFlashCount));
 		CShift = RGBA(ftoi(r * 255.0), ftoi(g * 255.0),
 			ftoi(b * 255.0), ftoi(a * 255.0));
 	}
