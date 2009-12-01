@@ -101,7 +101,8 @@ int wisdom;
 int dexterity;
 int constitution;
 
-int ExperienceLostCounter;
+bool bLockExperience;
+int ExperienceLossCounter;
 
 bool pi_damage;	// [CW] for faster PI Damage checkup
 
@@ -297,7 +298,7 @@ void ResetPlayerOnSpawn()
 	::ResetPlayerOnSpawn();
 
 	BlindFlashCount = 0; // [FB] Reset the blind count too!
-	ExperienceLostCounter = 0; // [FB] Reset counter
+	ExperienceLossCounter = 0; // [FB] Reset counter
 	respawn_counter = 2.0;
 
 //[Korax]
@@ -1509,7 +1510,7 @@ void ActivateLevel(int to_lvl, bool message)
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 
-	ExperienceLostCounter = 0;	/// reset exps loosing counter
+	ExperienceLossCounter = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1553,7 +1554,7 @@ void DeactivateLevel(int to_lvl, bool message)
 		MO.PlaySound('misc/chat', CHAN_AUTO);
 	}
 
-	ExperienceLostCounter = 0;	/// reset exps loosing counter
+	ExperienceLossCounter = 0;	/// reset exps loosing counter
 }
 
 //============================================================================
@@ -1600,7 +1601,7 @@ void LooseExperience()
 
 	limit = 17; // [FB] 0.5 seconds
 
-	if(inited && (ExperienceLostCounter >= limit) && (ExperienceLostCounter % (1 * 35) == 0) && PlayerState == PST_LIVE)
+	if(inited && (ExperienceLossCounter >= limit) && (ExperienceLossCounter % (1 * 35) == 0) && PlayerState == PST_LIVE)
 	{
 		experience -= (1 * exp_level); // [FB] Depending the player level
 
@@ -1611,9 +1612,9 @@ void LooseExperience()
 
 		KArenaPlayerPawn(MO).experience = experience;
 
-		if(ExperienceLostCounter == 525)
+		if(ExperienceLossCounter == 525)
 		{
-			ExperienceLostCounter = 105; // [FB] To avoid overflows
+			ExperienceLossCounter = 105; // [FB] To avoid overflows
 		}
 
 		// [FB] But what if the experience we lost has made us lost a level??
@@ -2105,18 +2106,18 @@ void PlayerTick(float deltaTime)
 		}
 	}
 
-	if(!bSpectator && !bUnControllable)
+	if(!bLockExperience && !bSpectator && !bUnControllable)
 	{
 		// [CW] No need for this processing when player has lost all experience
 		if (experience > 0)
 		{
-			ExperienceLostCounter++;
+			ExperienceLossCounter++;
 			LooseExperience();
 		}
 	}
 	else
 	{
-		ExperienceLostCounter = 0;
+		ExperienceLossCounter = 0;
 	}
 
 	if (bNoHUD)
