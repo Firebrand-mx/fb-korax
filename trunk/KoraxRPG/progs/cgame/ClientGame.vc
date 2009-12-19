@@ -559,12 +559,25 @@ void ShowArsenalScreen()
 {
 	if (!GArsenalScreen)
 	{
-		// [CW] TODO: here should be placed a switch between arsenal
-		//		screen types (F/C/M)
-		GArsenalScreen = ArsenalScreen(SpawnMenu(ArsenalScreenGeneric));
-		GArsenalScreen.cl = Player(cl);
-		GArsenalScreen.UpdatePage();
-		PushMenuScreen(GArsenalScreen);
+		// [CW] Switch between arsenal screen types (F/C/M)
+		switch(Player(cl).PClass)
+		{
+			case HexenDefs::PCLASS_FIGHTER:
+			{
+				GArsenalScreen = ArsenalScreen(SpawnMenu(ArsenalScreenFighter));
+				GArsenalScreen.cl = Player(cl);
+				GArsenalScreen.UpdatePage();
+				PushMenuScreen(GArsenalScreen);
+				break;
+			}
+			default:
+			{
+				GArsenalScreen = ArsenalScreen(SpawnMenu(ArsenalScreenFighter));
+				GArsenalScreen.cl = Player(cl);
+				GArsenalScreen.UpdatePage();
+				PushMenuScreen(GArsenalScreen);
+			}
+		}
 	}
 }
 
