@@ -97,8 +97,6 @@ replication
 		Ammo3;
 }
 
-
-
 //==========================================================================
 //
 //  TryPickup
@@ -344,16 +342,29 @@ bool DepleteAmmoEx(byte Mode, optional bool CheckEnough)
 	{
 		Ammo1.Amount -= AmmoUse1 * 10 / KRPGPlayerBase(Owner.Player).charisma;
 		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse1);
+		// [FB] No negative ammo values!
+		if (Ammo1.Amount < 0)
+		{
+			Ammo1.Amount = 0;
+		}
 	}
 	if (Ammo2)
 	{
 		Ammo2.Amount -= AmmoUse2 * 10 / KRPGPlayerBase(Owner.Player).charisma;
 		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse2);
+		if (Ammo2.Amount < 0)
+		{
+			Ammo2.Amount = 0;
+		}
 	}
 	if (Ammo3)
 	{
 		Ammo3.Amount -= AmmoUse3 * 10 / KRPGPlayerBase(Owner.Player).charisma;
 		Actor(Owner.Player.MO).NotifyConditions(ActorCondition::notify_ManaUsed, none, AmmoUse3);
+		if (Ammo3.Amount < 0)
+		{
+			Ammo3.Amount = 0;
+		}
 	}
 
 	return true;
