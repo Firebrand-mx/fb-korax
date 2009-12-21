@@ -34,6 +34,7 @@ enum
 
 
 int TM_PicMain;
+picinfo_t TM_PicMainInfo;
 int TM_PicArrows[TM_ARROW__COUNT << 1];
 
 
@@ -111,6 +112,10 @@ array<tm_mapentry_t>	tmMapEntries;
 name			NextMap;
 int				NextPosition;
 
+// Global map offsets
+int TM_OffsetX;
+int TM_OffsetY;
+
 
 //==========================================================================
 //
@@ -134,6 +139,8 @@ void TM_Init()
 		else
 			CmdBuf_AddText(va("music loop %n\n", 'ToTheEast'));
 	}
+
+	TM_ScrollMap();
 }
 
 //==========================================================================
@@ -190,6 +197,32 @@ void Tick(float DeltaTime)
 	}
 	else if (TMState == TM_MoveOnPath)
 	{
+		TM_ScrollMap();
+	}
+}
+
+//==========================================================================
+//
+//	TM_ScrollMap
+//
+//==========================================================================
+
+void TM_ScrollMap()
+{
+	TM_OffsetX = -(traveller.x - 320);
+	TM_OffsetY = -(traveller.y - 240);
+
+	if (TM_OffsetX > 0) TM_OffsetX = 0;
+	if (TM_OffsetY > 0) TM_OffsetY = 0;
+
+	if (TM_OffsetX < -(TM_PicMainInfo.width - 640 - 1))
+	{
+		TM_OffsetX = -(TM_PicMainInfo.width - 640 - 1);
+	}
+
+	if (TM_OffsetY < -(TM_PicMainInfo.height - 480 - 1))
+	{
+		TM_OffsetY = -(TM_PicMainInfo.height - 480 - 1);
 	}
 }
 
@@ -230,8 +263,6 @@ void TM_UpdateMapEntries()
 
 void TM_UpdateTraveller()
 {
-	//int i;
-
 	if (TMState == TM_Option ||
 		TMState == TM_OptionConfirm)
 	{
@@ -342,7 +373,7 @@ void TM_UpdateTraveller()
 //
 //	HandleUserCommand
 //
-//	[CW] CHECKME: perhaps can be subtituted by Widget OnKeyDown/Up
+//	[CW] CHECKME: perhaps can be substituted by Widget OnKeyDown/Up
 //
 //==========================================================================
 
@@ -502,7 +533,8 @@ void OnDraw()
 
 	if (TM_PicMain)
 	{
-		DrawFullScreenPic(TM_PicMain);
+		//DrawFullScreenPic(TM_PicMain);
+		R_DrawPic(TM_OffsetX, TM_OffsetY, TM_PicMain);
 	}
 	else
 	{
@@ -520,8 +552,8 @@ void OnDraw()
 		if (!pRoad->visible)
 			continue;
 
-		x = pRoad->x;
-		y = pRoad->y;
+		x = TM_OffsetX + pRoad->x;
+		y = TM_OffsetY + pRoad->y;
 
 		// first road pixel
 		R_FillRect(x - 1, y - 1, 3, 3, pRoad->colour);
@@ -570,13 +602,13 @@ void OnDraw()
 		if (tmMapEntries[i].picId)
 		{
 			R_GetPicInfo(tmMapEntries[i].picId, &info);
-			DrawPic(tmMapEntries[i].x + info.xoffset - (info.width >> 1),
-				tmMapEntries[i].y + info.yoffset - (info.height >> 1),
+			DrawPic(TM_OffsetX + tmMapEntries[i].x + info.xoffset - (info.width >> 1),
+				TM_OffsetY + tmMapEntries[i].y + info.yoffset - (info.height >> 1),
 				tmMapEntries[i].picId);
 		}
 		else
 		{
-			R_FillRect(tmMapEntries[i].x - 2, tmMapEntries[i].y - 2, 5, 5,
+			R_FillRect(TM_OffsetX + tmMapEntries[i].x - 2, TM_OffsetY + tmMapEntries[i].y - 2, 5, 5,
 				tmMapEntries[i].colour);
 		}
 	}
@@ -587,12 +619,12 @@ void OnDraw()
 		if (traveller.picId)
 		{
 			R_GetPicInfo(traveller.picId, &info);
-			DrawPic(traveller.x + info.xoffset - (info.width >> 1),
-				traveller.y + info.yoffset - (info.height >> 1), traveller.picId);
+			DrawPic(TM_OffsetX + traveller.x + info.xoffset - (info.width >> 1),
+				TM_OffsetY + traveller.y + info.yoffset - (info.height >> 1), traveller.picId);
 		}
 		else
 		{
-			R_FillRect(traveller.x - 2, traveller.y - 2, 5, 5, traveller.colour);
+			R_FillRect(TM_OffsetX + traveller.x - 2, TM_OffsetY + traveller.y - 2, 5, 5, traveller.colour);
 		}
 	}
 
@@ -640,8 +672,8 @@ void TM_DrawDirectionArrow(int type, bool flash)
 		return;
 	}
 
-	X = traveller.x;
-	Y = traveller.y;
+	X = TM_OffsetX + traveller.x;
+	Y = TM_OffsetY + traveller.y;
 	if (traveller.picId)
 	{
 		R_GetPicInfo(traveller.picId, &info);
@@ -726,6 +758,7 @@ void TM_LoadPics()
 	int i;
 
 	TM_PicMain = R_RegisterPic('trvlmap');
+	R_GetPicInfo(TM_PicMain, &TM_PicMainInfo);
 
 	TM_PicArrows[TM_ARROW__EAST << 1] = R_RegisterPic('tmar_11');
 	TM_PicArrows[(TM_ARROW__EAST << 1) + 1] = R_RegisterPic('tmar_1');
