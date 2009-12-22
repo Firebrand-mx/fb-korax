@@ -34,6 +34,7 @@ class KRPGWorldInfo : WorldInfoEx;
 
 array<Quest::questvar_t>		GlobalVars;
 array<Quest::personinfo_t>		PersonInfos;
+array<Quest::questinfo_t>		QuestInfos;
 
 
 //==========================================================================
@@ -159,6 +160,117 @@ Quest::questvar_t * SetPersonVar(string personScriptName, int personScriptId, st
 
 	return NULL;
 }
+
+//==========================================================================
+//
+//	AddQuest
+//
+//==========================================================================
+
+Quest::questinfo_t * AddQuest()
+{
+	QuestInfos.Num = QuestInfos.Num + 1;
+	return &QuestInfos[QuestInfos.Num - 1];
+}
+
+//==========================================================================
+//
+//	GetQuest
+//
+//==========================================================================
+
+Quest::questinfo_t * GetQuest(string scriptName, int scriptId)
+{
+	int i;
+
+	if (!scriptName && scriptId < 0)
+		Error("KRPGWorldInfo::GetQuest : no scriptName nor scriptId specified");
+
+	for (i = 0; i < QuestInfos.Num; i++)
+	{
+		if (scriptName && strcmp(QuestInfos[i].scriptName, scriptName))
+			continue;
+		if (scriptId >= 0 && QuestInfos[i].scriptId != scriptId)
+			continue;
+			
+		return &QuestInfos[i];
+	}
+	return NULL;
+}
+
+//==========================================================================
+//
+//	SetQuest
+//
+//==========================================================================
+
+Quest::questinfo_t * SetQuest(string scriptName, int scriptId, int qstate, optional int position)
+{
+	Quest::questinfo_t * p_QInfo = GetQuest(questScriptName, questScriptId);
+
+	if (!p_QInfo)
+	{
+		return NULL;
+	}
+
+	p_QInfo->qstate = qstate;
+	if (specified_position) p_QInfo->position = position;
+
+	return p_QInfo;
+}
+
+//==========================================================================
+//
+//	SetQuestVar
+//
+//==========================================================================
+
+Quest::questvar_t * SetQuestVar(string questScriptName, int questScriptId, string varScriptName, int varScriptId,
+									int Value)
+{
+	int i;
+	Quest::questvar_t * p_var;
+
+	Quest::questinfo_t * p_QInfo = GetQuest(questScriptName, questScriptId);
+
+	if (!p_QInfo)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < p_QInfo->vars.Num; i++)
+	{
+		if (varScriptName && !strcmp(p_QInfo->vars[i].sname, varScriptName))
+		{
+			p_var = &p_PInfo->vars[i];
+			break;
+		}
+
+		if (p_QInfo->vars[i].id == varScriptId)
+		{
+			p_var = &p_QInfo->vars[i];
+			break;
+		}
+	}
+
+	if (p_var)
+	{
+		switch (p_var->type)
+		{
+		case Quest::qvar_type_boolean:
+			p_var->value = Value == 0 ? 0 : 1;
+			break;
+		case Quest::qvar_type_integer:
+			p_var->value = Value;
+			break;
+		}
+		return p_var;
+	}
+
+	return NULL;
+}
+
+
 
 defaultproperties
 {

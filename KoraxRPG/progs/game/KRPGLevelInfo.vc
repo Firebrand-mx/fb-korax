@@ -77,6 +77,9 @@ bool bNodeGraphBuild;
 	// 161 <--> 168
 enum
 {
+	ACTSPEC_SetGlobalVar			= 163,
+	ACTSPEC_SetQuestVar				= 164,
+	ACTSPEC_SetQuest				= 165,	// Sets quest state
 	ACTSPEC_SetActiveConItem		= 166,	// Sets active conversation item for certain person
 	ACTSPEC_SetPersonVar			= 167,
 	LNSPEC_TravelMap				= 168,	// calls travel map
@@ -341,6 +344,16 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_SetPersonVar:
 		buttonSuccess = EV_SetPersonVar(Arg1, Arg2, Arg3);
 		break;
+	case ACTSPEC_SetQuest:
+		buttonSuccess = EV_SetQuest(Arg1, Arg2, Arg3);
+		break;
+	case ACTSPEC_SetQuestVar:
+		buttonSuccess = EV_SetQuestVar(Arg1, Arg2, Arg3);
+		break;
+	case ACTSPEC_SetGlobalVar:
+		buttonSuccess = EV_SetGlobalVar(Arg2, Arg3);
+		break;
+			
 
 	//
 	// Advanced thing manipulation
@@ -712,6 +725,39 @@ bool EV_SetActiveConItem(int PersonID, int ConItemID)
 bool EV_SetPersonVar(int PersonID, int VarID, int Value)
 {
 	return (KRPGWorldInfo(World).SetPersonVar("", PersonID, "", VarID, Value) != NULL);
+}
+
+//==========================================================================
+//
+//	EV_SetQuest
+//
+//==========================================================================
+
+bool EV_SetQuest(int QuestID, int QuestState, int QuestPosition)
+{
+	return (KRPGWorldInfo(World).SetQuest("", QuestID, QuestState, QuestPosition) != NULL);
+}
+
+//==========================================================================
+//
+//	EV_SetQuestVar
+//
+//==========================================================================
+
+bool EV_SetQuestVar(int QuestID, int VarID, int Value)
+{
+	return (KRPGWorldInfo(World).SetQuestVar("", PersonID, "", VarID, Value) != NULL);
+}
+
+//==========================================================================
+//
+//	EV_SetGlobalVar
+//
+//==========================================================================
+
+bool EV_SetGlobalVar(int VarID, int Value)
+{
+	return (KRPGWorldInfo(World).SetGlobalVar("", VarID, Value) != NULL);
 }
 
 //==========================================================================

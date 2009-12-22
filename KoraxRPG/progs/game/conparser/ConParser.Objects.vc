@@ -33,9 +33,6 @@
 // Object Tokens
 enum
 {
-	//----------------------------
-	// Object properties
-	//----------------------------
 	//
 	// Level
 	//
@@ -60,11 +57,29 @@ enum
 	// Person
 	//
 	Token_Person_SetActiveConItem,
+	//
+	// World
+	//
+	Token_World_SetQuest,
+	Token_World_GetQuestState,
+	Token_World_GetQuestPosition,
 
 	NUM_OBJECTTOKENS
 };
 
+// Argument Tokens
+enum
+{
+	Token_World_Quest_Hidden,
+	Token_World_Quest_Active,
+	Token_World_Quest_Complete,
+	Token_World_Quest_Failed,
+
+	NUM_ARGUMENTTOKENS
+};
+
 string ObjectTokens[NUM_OBJECTTOKENS];
+string ArgumentTokens[NUM_ARGUMENTTOKENS];
 
 enum
 {
@@ -106,8 +121,6 @@ int GetObjectToken(string S)
 //	[CW] This method should start a handling of various object-referenced
 //	actions. In most simple case this can be a calling of one of the
 //	allowed object methods.
-//
-//	TODO: return value(s)
 //
 //==========================================================================
 
@@ -215,6 +228,9 @@ void ParseObjectReference(int ReferenceClass, optional expression_t * p_Result,
 		case Token_Player:
 			ParsePlayerMethod(Method, &Params, p_Result);
 			break;
+		case Token_World:
+			ParseWorldMethod(Method, &Params, p_Result);
+			break;
 		}
 	}
 }
@@ -222,8 +238,6 @@ void ParseObjectReference(int ReferenceClass, optional expression_t * p_Result,
 //==========================================================================
 //
 //	ParseActorMethod
-//
-//	TODO: return value
 //
 //==========================================================================
 
@@ -287,8 +301,6 @@ void ParseActorMethod(Actor Ref, int ObjectClass, int Method, array<string> * p_
 //
 //	ParseLevelMethod
 //
-//	TODO: return value
-//
 //==========================================================================
 
 void ParseLevelMethod(int Method, array<string> * p_Params, optional expression_t * p_Result)
@@ -322,8 +334,6 @@ void ParseLevelMethod(int Method, array<string> * p_Params, optional expression_
 //
 //	ParsePlayerMethod
 //
-//	TODO: return value
-//
 //==========================================================================
 
 void ParsePlayerMethod(int Method, array<string> * p_Params, optional expression_t * p_Result)
@@ -356,8 +366,6 @@ void ParsePlayerMethod(int Method, array<string> * p_Params, optional expression
 //==========================================================================
 //
 //	ParsePersonMethod
-//
-//	TODO: return value
 //
 //==========================================================================
 
@@ -410,6 +418,101 @@ void ParsePersonMethod(/*string Ref*/Quest::personinfo_t * p_PInfo, int ObjectCl
 		break;
 	default:
 		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[ObjectClass], ObjectTokens[Method]);
+		break;
+	}
+}
+
+//==========================================================================
+//
+//	ParseWorldMethod
+//
+//==========================================================================
+
+void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_t * p_Result)
+{
+	if (!ConInfo.World)
+	{
+		dprint("ConParser::ParseWorldMethod : WARNING - no world reference, execution skipped");
+		return;
+	}
+
+	switch (Method)
+	{
+	case Token_World_SetQuest:
+		{
+			int qstate;
+			if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Hidden])
+			{
+				qstate = Quest::quest_state_hidden;
+			}
+			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Active])
+			{
+				qstate = Quest::quest_state_active;
+			}
+			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Complete])
+			{
+				qstate = Quest::quest_state_completed;
+			}
+			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Failed])
+			{
+				qstate = Quest::quest_state_failed;
+			}
+			else
+			{
+				qstate = atoi((*p_Params)[1]);
+			}
+
+			Quest::questinfo_t * p_QInfo;
+
+			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			if (!p_QInfo)
+			{
+				return;
+			}
+
+			p_QInfo->qstate = qstate;
+			if (p_Params->Num > 2) p_QInfo->position = atoi((*p_Params)[2]);
+		}
+		break;
+	case Token_World_GetQuestState:
+		{
+			Quest::questinfo_t * p_QInfo;
+
+			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			if (!p_QInfo)
+			{
+				return;
+			}
+
+			if (p_Result)
+			{
+				p_Result->type = exp_type_integer;
+				p_Result->ivalue = p_QInfo.qstate;
+			}
+		}
+		break;
+	case Token_World_GetQuestPosition:
+		{
+			Quest::questinfo_t * p_QInfo;
+
+			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			if (!p_QInfo)
+			{
+				return;
+			}
+
+			if (p_Result)
+			{
+				p_Result->type = exp_type_integer;
+				p_Result->ivalue = p_QInfo.position;
+			}
+		}
+		break;
+	default:
+		ScriptError(ObjectErrors[Error_NoSuchMethod], Tokens[Token_World], ObjectTokens[Method]);
 		break;
 	}
 }
