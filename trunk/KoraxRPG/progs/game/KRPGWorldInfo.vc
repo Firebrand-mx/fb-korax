@@ -206,7 +206,7 @@ Quest::questinfo_t * GetQuest(string scriptName, int scriptId)
 
 Quest::questinfo_t * SetQuest(string scriptName, int scriptId, int qstate, optional int position)
 {
-	Quest::questinfo_t * p_QInfo = GetQuest(questScriptName, questScriptId);
+	Quest::questinfo_t * p_QInfo = GetQuest(scriptName, scriptId);
 
 	if (!p_QInfo)
 	{
@@ -242,7 +242,7 @@ Quest::questvar_t * SetQuestVar(string questScriptName, int questScriptId, strin
 	{
 		if (varScriptName && !strcmp(p_QInfo->vars[i].sname, varScriptName))
 		{
-			p_var = &p_PInfo->vars[i];
+			p_var = &p_QInfo->vars[i];
 			break;
 		}
 
@@ -270,7 +270,53 @@ Quest::questvar_t * SetQuestVar(string questScriptName, int questScriptId, strin
 	return NULL;
 }
 
+//==========================================================================
+//
+//  RegisterQuests
+//
+//==========================================================================
 
+void RegisterQuests()
+{
+	int i;
+	Quest::questinfo_t qinfo;
+	Quest::questinfo_t *p_QInfo;
+	QuestParser sc = QuestParser(SpawnObject(QuestParser));
+
+
+	sc.OpenLumpName('questinfo');
+	if (sc.AtEnd())
+	{
+		sc.Destroy();
+		dprint("QUESTINFO lump missing or empty");
+		return;
+	}
+
+	while(sc.ReadQuest(&qinfo))
+	{
+		QuestInfos.Num = QuestInfos.Num + 1;
+		p_QInfo = &QuestInfos[QuestInfos.Num - 1];
+		p_QInfo->scriptName = qinfo.scriptName;
+		p_QInfo->title = qinfo.title;
+		p_QInfo->texts.Num = qinfo.texts.Num;
+		for (i = 0; i < qinfo.texts.Num; i++)
+		{
+			p_QInfo->texts[i] = qinfo.texts[i];
+		}
+		p_QInfo->vars.Num = qinfo.vars.Num;
+		for (i = 0; i < qinfo.vars.Num; i++)
+		{
+			p_QInfo->vars[i].sname = qinfo.vars[i].sname;
+			p_QInfo->vars[i].id = qinfo.vars[i].id;
+			p_QInfo->vars[i].type = qinfo.vars[i].type;
+			p_QInfo->vars[i].value = qinfo.vars[i].value;
+		}
+		p_QInfo->position = qinfo.position;
+		p_QInfo->qstate = qinfo.qstate;
+	}
+
+	sc.Destroy();
+}
 
 defaultproperties
 {

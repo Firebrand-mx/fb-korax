@@ -441,19 +441,19 @@ void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_
 	case Token_World_SetQuest:
 		{
 			int qstate;
-			if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Hidden])
+			if (!strcmp((*p_Params)[1], ArgumentTokens[Token_World_Quest_Hidden]))
 			{
 				qstate = Quest::quest_state_hidden;
 			}
-			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Active])
+			else if (!strcmp((*p_Params)[1], ArgumentTokens[Token_World_Quest_Active]))
 			{
 				qstate = Quest::quest_state_active;
 			}
-			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Complete])
+			else if (!strcmp((*p_Params)[1],ArgumentTokens[Token_World_Quest_Complete]))
 			{
 				qstate = Quest::quest_state_completed;
 			}
-			else if ((*p_Params)[1] == ArgumentTokens[Token_World_Quest_Failed])
+			else if (!strcmp((*p_Params)[1], ArgumentTokens[Token_World_Quest_Failed]))
 			{
 				qstate = Quest::quest_state_failed;
 			}
@@ -464,23 +464,23 @@ void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_
 
 			Quest::questinfo_t * p_QInfo;
 
-			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
-			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest("", atoi((*p_Params)[0]));
 			if (!p_QInfo)
 			{
 				return;
 			}
 
 			p_QInfo->qstate = qstate;
-			if (p_Params->Num > 2) p_QInfo->position = atoi((*p_Params)[2]);
+			if ((*p_Params).Num > 2) p_QInfo->position = atoi((*p_Params)[2]);
 		}
 		break;
 	case Token_World_GetQuestState:
 		{
 			Quest::questinfo_t * p_QInfo;
 
-			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
-			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest("", atoi((*p_Params)[0]));
 			if (!p_QInfo)
 			{
 				return;
@@ -489,7 +489,7 @@ void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_
 			if (p_Result)
 			{
 				p_Result->type = exp_type_integer;
-				p_Result->ivalue = p_QInfo.qstate;
+				p_Result->ivalue = p_QInfo->qstate;
 			}
 		}
 		break;
@@ -497,8 +497,8 @@ void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_
 		{
 			Quest::questinfo_t * p_QInfo;
 
-			p_QInfo = ConInfo.World.GetQuest((*p_Params)[0], -1);
-			if (!p_QInfo) p_QInfo = ConInfo.World.GetQuest("", atoi((*p_Params)[0]));
+			p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest((*p_Params)[0], -1);
+			if (!p_QInfo) p_QInfo = KRPGWorldInfo(ConInfo.World).GetQuest("", atoi((*p_Params)[0]));
 			if (!p_QInfo)
 			{
 				return;
@@ -507,7 +507,7 @@ void ParseWorldMethod(int Method, array<string> * p_Params, optional expression_
 			if (p_Result)
 			{
 				p_Result->type = exp_type_integer;
-				p_Result->ivalue = p_QInfo.position;
+				p_Result->ivalue = p_QInfo->position;
 			}
 		}
 		break;
