@@ -48,7 +48,7 @@ enum
 
 int TMState;
 
-const int ARROW_FLASH_TIME = 20;
+const int ARROW_FLASH_TIME = 35;
 
 enum
 {
@@ -105,7 +105,7 @@ struct tm_graphic_object_t : tm_object_t
 	int	picId;
 };
 
-const int ENTRY_BLINK_TIME = 20 * 35;
+const int ENTRY_BLINK_TIME = 35;
 
 struct tm_mapentry_t : tm_graphic_object_t
 {
@@ -219,7 +219,7 @@ void Tick(float DeltaTime)
 	{
 		if (traveller.p_mapentry && !traveller.p_mapentry->blink)
 		{
-			traveller.p_mapentry->blinktime = 20 * 35;
+			traveller.p_mapentry->blinktime = ENTRY_BLINK_TIME;
 			traveller.p_mapentry->blink = true;
 		}		
 	}
@@ -274,13 +274,13 @@ void TM_UpdateMapEntries()
 			{
 				tmMapEntries[i].blinktime--;
 				if (!tmMapEntries[i].blinktime)
-					tmMapEntries[i].blinktime = -20 * 35;
+					tmMapEntries[i].blinktime = -ENTRY_BLINK_TIME;
 			}
 			else if (tmMapEntries[i].blinktime < 0)
 			{
 				tmMapEntries[i].blinktime++;
 				if (!tmMapEntries[i].blinktime)
-					tmMapEntries[i].blinktime = 20 * 35;
+					tmMapEntries[i].blinktime = ENTRY_BLINK_TIME;
 			}
 		}
 	}
@@ -331,7 +331,7 @@ void TM_UpdateTraveller()
 
 				if (traveller.flashdir)
 				{
-					traveller.flashtime = 20 * 35;
+					traveller.flashtime = ARROW_FLASH_TIME;
 					traveller.flashdir = playerCmds;
 					TMState = TM_OptionConfirm;
 				}
@@ -388,13 +388,13 @@ void TM_UpdateTraveller()
 			{
 				traveller.flashtime--;
 				if (!traveller.flashtime)
-					traveller.flashtime = -20;
+					traveller.flashtime = -ARROW_FLASH_TIME;
 			}
 			else if (traveller.flashtime < 0)
 			{
 				traveller.flashtime++;
 				if (!traveller.flashtime)
-					traveller.flashtime = 20;
+					traveller.flashtime = ARROW_FLASH_TIME;
 			}
 		}
 	}
@@ -416,27 +416,6 @@ void HandleUserCommand(event_t * event)
 	switch (event->type)
 	{
 	case ev_keydown:
-		{
-			switch (event->data1)
-			{
-			case K_UPARROW:
-				playerCmds |= ROADDIR_JUST_UP;
-				break;
-			case K_LEFTARROW:
-				playerCmds |= ROADDIR_JUST_LEFT;
-				break;
-			case K_RIGHTARROW:
-				playerCmds |= ROADDIR_JUST_RIGHT;
-				break;
-			case K_DOWNARROW:
-				playerCmds |= ROADDIR_JUST_DOWN;
-				break;
-			default:
-				break;
-			}
-		}
-		break;
-	case ev_keyup:
 		{
 			switch (event->data1)
 			{
@@ -464,6 +443,27 @@ void HandleUserCommand(event_t * event)
 					TMState = TM_Option;
 				}
 				break;
+			case K_UPARROW:
+				playerCmds |= ROADDIR_JUST_UP;
+				break;
+			case K_LEFTARROW:
+				playerCmds |= ROADDIR_JUST_LEFT;
+				break;
+			case K_RIGHTARROW:
+				playerCmds |= ROADDIR_JUST_RIGHT;
+				break;
+			case K_DOWNARROW:
+				playerCmds |= ROADDIR_JUST_DOWN;
+				break;
+			default:
+				break;
+			}
+		}
+		break;
+	case ev_keyup:
+		{
+			switch (event->data1)
+			{
 			case K_UPARROW:
 				playerCmds &= ~ROADDIR_JUST_UP;
 				break;
@@ -1089,6 +1089,17 @@ void TM_CheckStayAtMapEntry()
 			for (j = 0; j < traveller.p_mapentry->paths.Num; j++)
 			{
 				traveller.p_mapentry->paths[j]->visible = true;
+			}
+
+			if (TMState == TM_MoveOnPath)
+			{
+				if (TM_AccessObject())
+				{
+					ClGame.messageResult = ClientGame::MBR_Unset;	// FIXME!!
+					ClGame.MessageBoxStartMessage(va("You have arrived to %s, enter (y/n)?", traveller.p_mapentry->title), ClientGame::MB_YesNo, true);
+					TMState = TM_ConfirmAccessWaitResponse;
+					break;
+				}
 			}
 
 			TMState = TM_Option;
