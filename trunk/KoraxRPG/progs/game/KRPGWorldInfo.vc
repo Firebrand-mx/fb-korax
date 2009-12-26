@@ -283,12 +283,17 @@ void RegisterQuests()
 	Quest::questinfo_t *p_QInfo;
 	QuestParser sc = QuestParser(SpawnObject(QuestParser));
 
-
+	if (!WadLumpPresent('questinfo'))
+	{
+		dprint("KRPGWorldInfo::RegisterQuests : QUESTINFO lump not found");
+		return;
+	}
+	
 	sc.OpenLumpName('questinfo');
 	if (sc.AtEnd())
 	{
 		sc.Destroy();
-		dprint("QUESTINFO lump missing or empty");
+		dprint("KRPGWorldInfo::RegisterQuests : QUESTINFO lump is empty");
 		return;
 	}
 
