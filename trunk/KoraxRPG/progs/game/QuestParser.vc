@@ -31,7 +31,7 @@ enum
 bool ReadQuest(Quest::questinfo_t * p_QInfo)
 {
 	bool eof;
-	bool missing;
+	//bool missing;
 	int readstate = readstate_questtoken;
 	
 	p_QInfo->scriptName = "";
@@ -44,8 +44,9 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 
 	while (!AtEnd())
 	{
-		missing = false;
+		//missing = false;
 
+		/*
 		if (//readstate == readstate_scriptid ||
 			readstate == readstate_position ||
 			readstate == readstate_qstate)
@@ -56,24 +57,23 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 		{
 			ExpectString();
 		}
+		*/
 
 		switch (readstate)
 		{
 		case readstate_questtoken:
-			if (strcmp(String, "quest"))
-				missing = true;
-			else
-			{
-				ExpectString();
-				p_QInfo->scriptName = String;
-				ExpectNumber();
-				p_QInfo->scriptId = Number;
+			Expect("quest");
+			ExpectString();
+			p_QInfo->scriptName = String;
+			ExpectNumber();
+			p_QInfo->scriptId = Number;
 
-				Expect("{");
+			dprint("QUEST: %s, %i", p_QInfo->scriptName, p_QInfo->scriptId);
 
-				eof = true;
-				readstate = readstate_questblock; //readstate_openbracket;
-			}
+			Expect("{");
+
+			eof = true;
+			readstate = readstate_questblock; //readstate_openbracket;
 			break;
 		//case readstate_openbracket:
 		//	if (strcmp(String, "{"))
@@ -82,6 +82,7 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 		//		readstate = readstate_questblock;
 		//	break;
 		case readstate_questblock:
+			ExpectString();
 			if (!strcmp(String, "}"))
 				readstate = readstate_questend;
 			else if (!strcmp(String, "title"))
@@ -95,18 +96,21 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 			else if (!strcmp(String, "position"))
 				readstate = readstate_position;
 			else
-				missing = true;
+				ScriptError("unexpected \"%s\"", String);
 			break;
 		case readstate_texts_block:
+			ExpectString();
 			if (!strcmp(String, "}"))
 				readstate = readstate_questblock;
 			else
 			{
 				p_QInfo->texts.Num = p_QInfo->texts.Num + 1;
 				p_QInfo->texts[p_QInfo->texts.Num - 1] = String;
+				dprint("QUEST TEXT: %s", p_QInfo->texts[p_QInfo->texts.Num - 1]);
 			}
 			break;
 		case readstate_vars_block:
+			ExpectString();
 			if (!strcmp(String, "}"))
 				readstate = readstate_questblock;
 			else
@@ -120,15 +124,20 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 				else if (!strcmp(String, "integer")) p_QInfo->vars[p_QInfo->vars.Num - 1].type = Quest::qvar_type_integer;
 				else
 				{
-					missing = true;
+					ScriptError("unexpected \"%s\"", String);
 					break;
 				}
 				ExpectNumber();
 				p_QInfo->vars[p_QInfo->vars.Num - 1].value = Number;
+
+				dprint("QUEST VAR: %s %s,%i = %i", p_QInfo->vars[p_QInfo->vars.Num - 1].type == Quest::qvar_type_boolean ? "boolean" : "integer",
+					p_QInfo->vars[p_QInfo->vars.Num - 1].sname, p_QInfo->vars[p_QInfo->vars.Num - 1].id, p_QInfo->vars[p_QInfo->vars.Num - 1].value);
 			}
 			break;
 		case readstate_title:
+			ExpectString();
 			p_QInfo->title = String;
+			dprint("QUEST TITLE: %s", p_QInfo->title);
 			readstate = readstate_questblock;
 			break;
 		case readstate_texts:
@@ -140,20 +149,26 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 			readstate = readstate_vars_block;
 			break;
 		case readstate_qstate:
+			ExpectNumber();
 			p_QInfo->qstate = Number;
+			dprint("QUEST STATE: %i", p_QInfo->qstate);
 			readstate = readstate_questblock;
 			break;
 		case readstate_position:
+			ExpectNumber();
 			p_QInfo->position = Number;
+			dprint("QUEST POSITION: %i", p_QInfo->position);
 			readstate = readstate_questblock;
 			break;
 		}
 
+		/*
 		if (missing)
 		{
 			ScriptError("unexpected \"%s\"", String);
 			return false;
 		}
+		*/
 
 		if (readstate == readstate_questend)
 		{
@@ -162,7 +177,7 @@ bool ReadQuest(Quest::questinfo_t * p_QInfo)
 		}
 	}
 
-	if (eof && !missing)
+	if (eof /*&& !missing*/)
 	{
 		ScriptError("unexpected end of file");
 		return false;
