@@ -28,6 +28,7 @@ mapinfo.txt						scripts/mapinfo.txt
 sndinfo.txt						scripts/sndinfo.txt
 skyboxes.txt					scripts/skyboxes.txt
 terrain.txt						scripts/terrain.txt
+vfxdefs.txt						SCRIPTS/vfxdefs.txt
 
 //	Decorate definition file
 vavoom_decorate_defs.xml		vavoom_decorate_defs.xml
