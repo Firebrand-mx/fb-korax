@@ -714,7 +714,7 @@ void SB_DrawKeyBar()
 
 void SB_DrawInventoryBar()
 {
-	int i;
+	int i, j;
 
 //	SB_DrawBackground();
 //	DrawPic(BAR_X + 38, BAR_Y + 1, pic_invbar);
@@ -723,17 +723,20 @@ void SB_DrawInventoryBar()
 	Inventory Item = cl.InvFirst;
 	for (i = 0; i < 7; i++)
 	{
-		DrawPic(210 + i * 31, 448, pic_artibox, 0.6);
-		if (Item)
+		for (j = 0; j < 6; j++)
 		{
-			DrawShadowedPic(209 + i * 31, 447,
-				R_RegisterPic(Item.IconName));
-			SB_DrawINumber(229 + i * 31, 468, Item.Amount);
-			if (Item == cl.InvPtr)
+			DrawPic(210 + i * 31, /* 448*/288 + j * 31, pic_artibox, 0.6);
+			if (Item)
 			{
-				DrawPic(210 + i * 31, 447, pic_selectbox, 0.6);
+				DrawShadowedPic(209 + i * 31, /* 447*/287 + j * 31,
+					R_RegisterPic(Item.IconName));
+				SB_DrawINumber(229 + i * 31, /* 468*/298 + j * 31, Item.Amount);
+				if (Item == cl.InvPtr)
+				{
+					DrawPic(210 + i * 31, /* 447*/287 + j * 31, pic_selectbox, 0.6);
+				}
+				Item = Item.NextInv();
 			}
-			Item = Item.NextInv();
 		}
 	}
 	if (cl.InvFirst && cl.InvFirst.PrevInv())
@@ -754,7 +757,7 @@ void SB_DrawInventoryBar()
 
 void SB_DrawFullscreenStats()
 {
-	int i;
+	int i, j;
 	int sb_mana1;
 	int sb_mana2;
 	int sb_mana3;
@@ -820,17 +823,20 @@ void SB_DrawFullscreenStats()
 		Inventory Item = cl.InvFirst;
 		for (i = 0; i < 7; i++)
 		{
-			DrawPic(210 + i * 31, 448, pic_artibox, 0.6);
-			if (Item)
+			for (j = 0; j < 6; j++)
 			{
-				DrawShadowedPic(209 + i * 31, 447,
-					R_RegisterPic(Item.IconName));
-				SB_DrawINumber(229 + i * 31, 468, Item.Amount);
-				if (Item == cl.InvPtr)
+				DrawPic(210 + i * 31, /* 448*/288 + j * 31, pic_artibox, 0.6);
+				if (Item)
 				{
-					DrawPic(210 + i * 31, 447, pic_selectbox, 0.6);
+					DrawShadowedPic(209 + i * 31, /* 447*/287 + j * 31,
+						R_RegisterPic(Item.IconName));
+					SB_DrawINumber(229 + i * 31, /* 468*/298 + j * 31, Item.Amount);
+					if (Item == cl.InvPtr)
+					{
+						DrawPic(210 + i * 31, /* 447*/287 + j * 31, pic_selectbox, 0.6);
+					}
+					Item = Item.NextInv();
 				}
-				Item = Item.NextInv();
 			}
 		}
 		if (cl.InvFirst && cl.InvFirst.PrevInv())
