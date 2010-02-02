@@ -35,6 +35,10 @@ class ArsenalScreenFighter : ArsenalScreen;
 MenuStaticText	StaticText;
 MenuTextButton	SelectedEntry;
 
+array<MenuSpriteAnim>   Anim;
+array<anim_t>			anim_def;
+name list[2];
+
 //==========================================================================
 //
 //	CreateChoices
@@ -48,6 +52,16 @@ void CreateChoices()
 
 	if (cl)
 	{
+		anim_def.Num = 0;
+
+		// [FB] Initialize the sprite defs here
+		for (i = 0; i < 2; i++)
+		{
+			anim_def.Num = anim_def.Num + 1;
+			anim_def[i].Name = list[i];
+			anim_def[i].Index = i;
+		}
+
 		StaticText = MenuStaticText(NewChild(MenuStaticText));
 		StaticText.SetOrigin(ChoicesStartX, YPos);
 		// [CW] TODO: make methods for static to automatically adjust size
@@ -55,6 +69,7 @@ void CreateChoices()
 		StaticText.Height = StaticText.TextHeight(StaticText.Text);
 		YPos += StaticText.Height << 1;
 
+		Anim.Num = 0;
 		CreateWeaponEntries(YPos);
 	}
 }
@@ -67,18 +82,39 @@ void CreateChoices()
 
 void CreateWeaponEntries(int YPos)
 {
-	int i;
+	int i, j;
 	MenuTaggedTextButton Btn, Btn2;
 	Inventory Item = cl.WeaponFirst;
 
-	i = 0;
 	while (Item)
 	{
 		if (HexenWeapon(Item).Slot == SlotCurrent)
 		{
+			for (j = 0; j < 2; j++)
+			{
+				// [FB] Scan sprite definitions here,
+				//		also make sure not to duplicate sprite instances...
+				if (HexenWeapon(Item).IconName == anim_def[j].Name)
+				{
+					if  (!anim_def[j].Installed)
+					{
+						R_InstallSprite(va("%n", HexenWeapon(Item).IconName), 500 + anim_def[j].Index);
+						// [FB] Sprite is installed now
+						anim_def[j].Installed = true;
+					}
+					Anim.Num = Anim.Num + 1;
+					Anim[Anim.Num - 1] = MenuSpriteAnim(NewChild(MenuSpriteAnim));
+					Anim[Anim.Num - 1].SprDef = 500 + anim_def[j].Index;
+					Anim[Anim.Num - 1].NumFrames = 1;
+					Anim[Anim.Num - 1].Speed = 1;
+					Anim[Anim.Num - 1].SetPos(ChoicesStartX + 6, YPos + 4);
+				}
+			}
+
+
 			Btn = MenuTaggedTextButton(NewChild(MenuTaggedTextButton));
 			Btn.Tag = i++;
-			Btn.SetOrigin(ChoicesStartX + 36, YPos + 2);
+			Btn.SetOrigin(ChoicesStartX + 46, YPos + 2);
 			if (StrStartsWith(Item.PickupMessage, "$"))
 			{
 				Btn.Text = GetLangString(StrToName(substr(Item.PickupMessage, 1, strlen(Item.PickupMessage) - 1)));
@@ -101,7 +137,7 @@ void CreateWeaponEntries(int YPos)
 				Btn.TextColourFocus = CR_WHITE;
 			}
 			Btn.Activated = WeaponSelect;
-			YPos += Btn.Height;
+			YPos += Btn.Height + 25;
 		}
 
 		Item = Item.NextWpn();
@@ -226,8 +262,12 @@ void SetPage(int page)
 
 void UpdatePage()
 {
-	int i;
+	int i, j;
 	StaticText.Destroy();
+	for (i = 0; i < Anim.Num; i++)
+	{
+		Anim[i].Destroy();
+	}
 	for (i = 0; i < NumItems; i++)
 	{
 		Items[i].Destroy();
@@ -243,7 +283,7 @@ void UpdatePage()
 	}
 	else
 	{
-		Selector.Destroy();		
+		Selector.Destroy();
 	}
 }
 
@@ -278,6 +318,8 @@ defaultproperties
 	TitleX = 320;
 	ChoicesStartX = 140;
 	ChoicesStartY = 260;
+	list[0] = 'WFAXE';
+	list[1] = 'WFHAMR';
 
 	SelectorType = MenuSelector_SmallLeft;
 	Title = "SELECT YOUR ARSENAL";
