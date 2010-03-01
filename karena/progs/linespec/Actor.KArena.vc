@@ -268,6 +268,7 @@ bool Physics(float DeltaTime)
 {
 	float CummX = 0.0;
 	float CummY = 0.0;
+	float oldfloorz;
 	if (Sector->AffectorData && bColideWithWorld && !bNoSector)
 	{
 		// killough 3/7/98: Carry things on floor
@@ -350,7 +351,7 @@ bool Physics(float DeltaTime)
 
 	// momentum movement
 	// Handle X and Y momentums
-	XYMovement(DeltaTime, CummX, CummY);
+	oldfloorz = XYMovement(DeltaTime, CummX, CummY);
 	if (IsDestroyed())
 	{
 		// mobj was removed
@@ -435,7 +436,7 @@ bool Physics(float DeltaTime)
 			}
 			else
 			{
-				ZMovement(DeltaTime);
+				ZMovement(DeltaTime, oldfloorz);
 				bOnMobj = false;
 			}
 			if (IsDestroyed())
@@ -447,7 +448,7 @@ bool Physics(float DeltaTime)
 		else
 		{
 			// Handle Z momentum and gravity
-			ZMovement(DeltaTime);
+			ZMovement(DeltaTime, oldfloorz);
 			if (IsDestroyed())
 			{
 				// entity was removed
