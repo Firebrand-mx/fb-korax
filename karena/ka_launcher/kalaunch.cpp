@@ -1,11 +1,11 @@
 //**************************************************************************
 //**
-//**	    ##   ##   ####   ######     ##    ##     ##
-//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
-//**	    ## ##   ##    ## ##   ## ##    ##   #####
-//**	    ######  ##    ## #####   ########   #####
-//**	    ## ###   ##  ##  ######  ##    ##  ### ###
-//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**	##   ##    ##    ##   ##   ####     ####   ###     ###
+//**	##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**	 ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**	 ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**	  ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**	   #    ##    ##    #      ####     ####   ##       ##
 //**
 //**			##    ######    ##### ###   ##    ##
 //**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
@@ -60,17 +60,18 @@ public:
 	wxComboBox*		RendererBox;
 	wxCheckBox*		CheckBoxNoSound;
 	wxCheckBox*		CheckBoxNoSfx;
-	wxCheckBox*		CheckBoxNo3DSound;
+	wxCheckBox*		CheckBox3DSound;
 	wxCheckBox*		CheckBoxNoMusic;
 	wxCheckBox*		CheckBoxNoCDAudio;
 	wxCheckBox*		CheckBoxUseOpenAL;
 	wxCheckBox*		CheckBoxNoLan;
+	wxTextCtrl*		EditIPAddress;
+	wxTextCtrl*		EditPort;
 	wxCheckBox*		CheckBoxNoMouse;
 	wxCheckBox*		CheckBoxNoJoy;
 	wxCheckBox*		CheckBoxDebug;
+	wxTextCtrl*		EditIWadDir;
 	wxCheckBox*		CheckBoxDevGame;
-	wxTextCtrl*		EditIPAddress;
-	wxTextCtrl*		EditPort;
 	wxTextCtrl*		EditFiles;
 	wxTextCtrl*		EditMisc;
 	wxTextCtrl*		Particles;
@@ -146,11 +147,14 @@ VMain::VMain()
 	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
 	gsizer->Add(new wxStaticText(page, -1, wxT(" ")), 0, wxALL, 4);
 
+	gsizer->Add(new wxStaticText(page, -1, wxT("Main WAD directory:")), 0, wxALL, 4);
+	EditIWadDir = new wxTextCtrl(page, -1, wxT(""), wxDefaultPosition, wxSize(209, -1));
+	gsizer->Add(EditIWadDir, 0, wxALL, 4);
 	CheckBoxDevGame = new wxCheckBox(page, -1, wxT("Development mode"));
 	gsizer->AddSpacer(1);
 	gsizer->Add(CheckBoxDevGame, 0, wxALL, 4);
 	gsizer->Add(new wxStaticText(page, -1, wxT("Files:")), 0, wxALL, 4);
-	EditFiles = new wxTextCtrl(page, -1, wxT(""), wxDefaultPosition, wxSize(200, -1));
+	EditFiles = new wxTextCtrl(page, -1, wxT(""), wxDefaultPosition, wxSize(209, -1));
 	gsizer->Add(EditFiles, 0, wxALL, 4);
 	CheckBoxDebug = new wxCheckBox(page, -1, wxT("Create debug file"));
 	gsizer->AddSpacer(1);
@@ -219,12 +223,12 @@ VMain::VMain()
 	bsizer->Add(CheckBoxNoSound, 0, wxALL, 4);
 	CheckBoxNoSfx = new wxCheckBox(page, -1, wxT("No sounds"));
 	bsizer->Add(CheckBoxNoSfx, 0, wxALL, 4);
-	CheckBoxNo3DSound = new wxCheckBox(page, -1, wxT("No 3D sound"));
-	bsizer->Add(CheckBoxNo3DSound, 0, wxALL, 4);
 	CheckBoxNoMusic = new wxCheckBox(page, -1, wxT("No music"));
 	bsizer->Add(CheckBoxNoMusic, 0, wxALL, 4);
 	CheckBoxNoCDAudio = new wxCheckBox(page, -1, wxT("No CD audio"));
 	bsizer->Add(CheckBoxNoCDAudio, 0, wxALL, 4);
+	CheckBox3DSound = new wxCheckBox(page, -1, wxT("Use 3D sound"));
+	bsizer->Add(CheckBox3DSound, 0, wxALL, 4);
 	CheckBoxUseOpenAL = new wxCheckBox(page, -1, wxT("Use OpenAL"));
 	bsizer->Add(CheckBoxUseOpenAL, 0, wxALL, 4);
 	page->SetSizer(bsizer);
@@ -279,7 +283,7 @@ VMain::VMain()
 	Colour->SetSelection(Conf->Read(wxT("Colour"), 0l));
 	CheckBoxNoSound->SetValue(!!Conf->Read(wxT("NoSound"), 0l));
 	CheckBoxNoSfx->SetValue(!!Conf->Read(wxT("NoSfx"), 0l));
-	CheckBoxNo3DSound->SetValue(!!Conf->Read(wxT("No3DSound"), 0l));
+	CheckBox3DSound->SetValue(!!Conf->Read(wxT("3DSound"), 0l));
 	CheckBoxNoMusic->SetValue(!!Conf->Read(wxT("NoMusic"), 0l));
 	CheckBoxNoCDAudio->SetValue(!!Conf->Read(wxT("NoCDAudio"), 0l));
 	CheckBoxUseOpenAL->SetValue(!!Conf->Read(wxT("UseOpenAL"), 0l));
@@ -291,6 +295,7 @@ VMain::VMain()
 	CheckBoxNoMouse->SetValue(!!Conf->Read(wxT("NoMouse"), 0l));
 	CheckBoxNoJoy->SetValue(!!Conf->Read(wxT("NoJoy"), 0l));
 	CheckBoxDebug->SetValue(!!Conf->Read(wxT("Debug"), 0l));
+	EditIWadDir->SetValue(Conf->Read(wxT("IWadDir"), wxT("")));
 	CheckBoxDevGame->SetValue(!!Conf->Read(wxT("DevGame"), 0l));
 	EditFiles->SetValue(Conf->Read(wxT("Files"), wxT("")));
 	EditMisc->SetValue(Conf->Read(wxT("Options"), wxT("")));
@@ -311,7 +316,7 @@ VMain::~VMain()
 	Conf->Write(wxT("Colour"), Colour->GetSelection());
 	Conf->Write(wxT("NoSound"), CheckBoxNoSound->IsChecked());
 	Conf->Write(wxT("NoSfx"), CheckBoxNoSfx->IsChecked());
-	Conf->Write(wxT("No3DSound"), CheckBoxNo3DSound->IsChecked());
+	Conf->Write(wxT("3DSound"), CheckBox3DSound->IsChecked());
 	Conf->Write(wxT("NoMusic"), CheckBoxNoMusic->IsChecked());
 	Conf->Write(wxT("NoCDAudio"), CheckBoxNoCDAudio->IsChecked());
 	Conf->Write(wxT("UseOpenAL"), CheckBoxUseOpenAL->IsChecked());
@@ -323,6 +328,7 @@ VMain::~VMain()
 	Conf->Write(wxT("NoMouse"), CheckBoxNoMouse->IsChecked());
 	Conf->Write(wxT("NoJoy"), CheckBoxNoJoy->IsChecked());
 	Conf->Write(wxT("Debug"), CheckBoxDebug->IsChecked());
+	Conf->Write(wxT("IWadDir"), EditIWadDir->GetValue());
 	Conf->Write(wxT("DevGame"), CheckBoxDevGame->IsChecked());
 	Conf->Write(wxT("Files"), EditFiles->GetValue());
 	Conf->Write(wxT("Options"), EditMisc->GetValue());
@@ -344,8 +350,8 @@ void VMain::OnRun(wxCommandEvent&)
 		CmdLine += wxT(" -nosound");
 	if (CheckBoxNoSfx->IsChecked())
 		CmdLine += wxT(" -nosfx");
-	if (CheckBoxNo3DSound->IsChecked())
-		CmdLine += wxT(" -no3dsound");
+	if (CheckBox3DSound->IsChecked())
+		CmdLine += wxT(" -3dsound");
 	if (CheckBoxNoMusic->IsChecked())
 		CmdLine += wxT(" -nomusic");
 	if (CheckBoxNoCDAudio->IsChecked())
@@ -376,6 +382,8 @@ void VMain::OnRun(wxCommandEvent&)
 	else
 		CmdLine += wxT(" -game karena");
 
+	if (EditIWadDir->GetValue().Length())
+		CmdLine += wxT(" -iwaddir ") + EditIWadDir->GetValue();
 	// Load External Files
 	if (EditFiles->GetValue().Length())
 		CmdLine += wxT(" -file ") + EditFiles->GetValue();
