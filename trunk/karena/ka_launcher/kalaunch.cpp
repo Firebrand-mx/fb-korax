@@ -64,6 +64,8 @@ public:
 	wxCheckBox*		CheckBoxNoMusic;
 	wxCheckBox*		CheckBoxNoCDAudio;
 	wxCheckBox*		CheckBoxUseOpenAL;
+	wxCheckBox*		CheckBoxUseTimidity;
+	wxTextCtrl*		PatchFiles;
 	wxCheckBox*		CheckBoxNoLan;
 	wxTextCtrl*		EditIPAddress;
 	wxTextCtrl*		EditPort;
@@ -231,6 +233,11 @@ VMain::VMain()
 	bsizer->Add(CheckBox3DSound, 0, wxALL, 4);
 	CheckBoxUseOpenAL = new wxCheckBox(page, -1, wxT("Use OpenAL"));
 	bsizer->Add(CheckBoxUseOpenAL, 0, wxALL, 4);
+	CheckBoxUseTimidity = new wxCheckBox(page, -1, wxT("Use Timidity"));
+	bsizer->Add(CheckBoxUseTimidity, 0, wxALL, 4);
+	bsizer->Add(new wxStaticText(page, -1, wxT("Timidity Patches Location:")), 0, wxALL, 4);
+	PatchFiles = new wxTextCtrl(page, -1, wxT(""), wxDefaultPosition, wxSize(209, -1));
+	bsizer->Add(PatchFiles, 0, wxALL, 4);
 	page->SetSizer(bsizer);
 	bsizer->Layout();
 
@@ -287,6 +294,7 @@ VMain::VMain()
 	CheckBoxNoMusic->SetValue(!!Conf->Read(wxT("NoMusic"), 0l));
 	CheckBoxNoCDAudio->SetValue(!!Conf->Read(wxT("NoCDAudio"), 0l));
 	CheckBoxUseOpenAL->SetValue(!!Conf->Read(wxT("UseOpenAL"), 0l));
+	CheckBoxUseTimidity->SetValue(!!Conf->Read(wxT("UseTimidity"), 0l));
 	CheckBoxNoLan->SetValue(!!Conf->Read(wxT("NoLAN"), 0l));
 	EditIPAddress->SetValue(Conf->Read(wxT("IPAddress"), wxT("")));
 	EditPort->SetValue(Conf->Read(wxT("Port"), wxT("")));
@@ -299,6 +307,7 @@ VMain::VMain()
 	CheckBoxDevGame->SetValue(!!Conf->Read(wxT("DevGame"), 0l));
 	EditFiles->SetValue(Conf->Read(wxT("Files"), wxT("")));
 	EditMisc->SetValue(Conf->Read(wxT("Options"), wxT("")));
+	PatchFiles->SetValue(Conf->Read(wxT("PatchFiles"), wxT("")));
 }
 
 //==========================================================================
@@ -320,6 +329,7 @@ VMain::~VMain()
 	Conf->Write(wxT("NoMusic"), CheckBoxNoMusic->IsChecked());
 	Conf->Write(wxT("NoCDAudio"), CheckBoxNoCDAudio->IsChecked());
 	Conf->Write(wxT("UseOpenAL"), CheckBoxUseOpenAL->IsChecked());
+	Conf->Write(wxT("UseTimidity"), CheckBoxUseTimidity->IsChecked());
 	Conf->Write(wxT("NoLAN"), CheckBoxNoLan->IsChecked());
 	Conf->Write(wxT("IPAddress"), EditIPAddress->GetValue());
 	Conf->Write(wxT("Port"), EditPort->GetValue());
@@ -332,6 +342,7 @@ VMain::~VMain()
 	Conf->Write(wxT("DevGame"), CheckBoxDevGame->IsChecked());
 	Conf->Write(wxT("Files"), EditFiles->GetValue());
 	Conf->Write(wxT("Options"), EditMisc->GetValue());
+	Conf->Write(wxT("PatchFiles"), PatchFiles->GetValue());
 }
 
 //==========================================================================
@@ -445,6 +456,19 @@ void VMain::OnRun(wxCommandEvent&)
 		CmdLine += wxT(" 32");
 		break;
 	}
+
+	// Timidity option
+	if (CheckBoxUseTimidity->IsChecked())
+	{
+		CmdLine += wxT(" +s_timidity 1");
+	}
+	else
+	{
+		CmdLine += wxT(" +s_timidity 0");
+	}
+
+	if (PatchFiles->GetValue().Length())
+		CmdLine += wxT(" +s_timidity_patches ") + PatchFiles->GetValue();
 
 	//	Run game
 	wxExecute(CmdLine, wxEXEC_SYNC);
