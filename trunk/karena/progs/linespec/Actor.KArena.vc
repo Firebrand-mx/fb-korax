@@ -363,12 +363,18 @@ bool Physics(float DeltaTime)
 		if (bSpecial)
 		{
 			// Floating item bobbing motion (special1 is height)
-			if (Sector->bHasExtrafloors)
+
+			// - JL - Without it floating bob items will try to bob using current FloorZ,
+			//        and if it's above a 3D floor it's wrong because thing's z value
+			//		  is specified against bottom floor.
+			// [FB] Uncommenting these lines of code makes pickups to be respawned inside
+			//		3d floors, so I'll leave this as it is now...
+/*			if (Sector->bHasExtrafloors)
 			{
 				//	Make sure FloorZ is from bottom region.
 				Origin.z = ONFLOORZ;
 				LinkToWorld();
-			}
+			}*/
 			FloatBobPhase += DeltaTime;
 			Origin.z = GetPlanePointZ(&Sector->floor, Origin) + Special1f +
 				Level.Game.FloatBobOffsets[ftoi(FloatBobPhase * 35.0) & 63];
