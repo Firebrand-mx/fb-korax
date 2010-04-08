@@ -46,6 +46,12 @@ enum
 	ACTSPEC_AdvancedGame_SetACSNotifier,
 	ACTSPEC_IsConditionTrue,
 	ACTSPEC_RunACSConditional,
+	ACTSPEC_Objective_Create,
+	ACTSPEC_Objective_Destroy,
+	ACTSPEC_Objective_Enable,
+	ACTSPEC_Objective_Disable,
+	ACTSPEC_Objective_SetPrerequisite,
+	ACTSPEC_Objective_SetCompletion,
 
 	//
 	// Sector Properties
@@ -377,6 +383,24 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 	case ACTSPEC_RunACSConditional:
 		buttonSuccess = EV_RunACSConditional(Arg1, Arg2, Arg3, Arg4, Arg5);
 		break;
+	case ACTSPEC_Objective_Create:
+		buttonSuccess = EV_ObjectiveCreate(Arg1, Arg2, Arg3, Arg4, Arg5);
+		break;
+	case ACTSPEC_Objective_Destroy:
+		buttonSuccess = EV_ObjectiveDestroy(Arg1);
+		break;
+	case ACTSPEC_Objective_Enable:
+		buttonSuccess = EV_ObjectiveEnable(Arg1);
+		break;
+	case ACTSPEC_Objective_Disable:
+		buttonSuccess = EV_ObjectiveDisable(Arg1);
+		break;
+	case ACTSPEC_Objective_SetPrerequisite:
+		buttonSuccess = EV_ObjectiveSetPrerequisite(Arg1, Arg2);
+		break;
+	case ACTSPEC_Objective_SetCompletion:
+		buttonSuccess = EV_ObjectiveSetCompletion(Arg1, Arg2);
+		break;
 
 
 	//
@@ -520,6 +544,149 @@ bool EV_RunACSConditional(int numACS, int mapACS, int Condition, int cParam, int
 		runACS = false;
 
 	return runACS;
+}
+
+//**************************************************************************
+//
+//  Level objectives
+//
+//**************************************************************************
+
+//==========================================================================
+//
+//	EV_ObjectiveCreate
+//
+//==========================================================================
+
+bool EV_ObjectiveCreate(int tag, int team, int action, int target_tid, int dest_tid)
+{
+	if (!MainGameInfo(Game).GameModel)
+	{
+		return false;
+	}
+
+	GameObjective obj = GameObjective(SpawnObject(GameObjective));
+	obj.Tag = tag;
+	obj.Team = team;
+	obj.Action = action;
+
+	if (target_tid)
+	{
+		EntityEx A;
+
+		for (A = EntityEx(FindMobjFromTID(target_tid, none)); A;
+			A = EntityEx(FindMobjFromTID(target_tid, A)))
+		{
+			if (A)
+			{
+				obj.Target = Actor(A);
+				break;
+			}
+		}
+	}
+
+	if (dest_tid)
+	{
+		EntityEx A;
+
+		for (A = EntityEx(FindMobjFromTID(dest_tid, none)); A;
+			A = EntityEx(FindMobjFromTID(dest_tid, A)))
+		{
+			if (A)
+			{
+				obj.Destination = Actor(A);
+				break;
+			}
+		}
+	}
+
+	KArenaGameModel(MainGameInfo(Game).GameModel).AddObjective(obj, true);
+	return true;
+}
+
+//==========================================================================
+//
+//	EV_ObjectiveDestroy
+//
+//==========================================================================
+
+bool EV_ObjectiveDestroy(int tag)
+{
+	if (MainGameInfo(Game).GameModel)
+	{
+		KArenaGameModel(MainGameInfo(Game).GameModel).DestroyObjective(tag);
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_ObjectiveEnable
+//
+//==========================================================================
+
+bool EV_ObjectiveEnable(int tag)
+{
+	if (MainGameInfo(Game).GameModel)
+	{
+		KArenaGameModel(MainGameInfo(Game).GameModel).EnableObjective(tag);
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_ObjectiveDisable
+//
+//==========================================================================
+
+bool EV_ObjectiveDisable(int tag)
+{
+	if (MainGameInfo(Game).GameModel)
+	{
+		KArenaGameModel(MainGameInfo(Game).GameModel).DisableObjective(tag);
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_ObjectiveSetPrerequisite
+//
+//==========================================================================
+
+bool EV_ObjectiveSetPrerequisite(int tag, int prereq_tag)
+{
+	if (MainGameInfo(Game).GameModel)
+	{
+		KArenaGameModel(MainGameInfo(Game).GameModel).SetObjectivePrerequisite(tag, prereq_tag);
+		return true;
+	}
+
+	return false;
+}
+
+//==========================================================================
+//
+//	EV_ObjectiveSetCompletion
+//
+//==========================================================================
+
+bool EV_ObjectiveSetCompletion(int tag, int ignore_prerequisites)
+{
+	if (MainGameInfo(Game).GameModel)
+	{
+		KArenaGameModel(MainGameInfo(Game).GameModel).SetObjectiveCompletion(tag, ignore_prerequisites);
+		return true;
+	}
+
+	return false;
 }
 
 //**************************************************************************

@@ -1,0 +1,136 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ######  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**	        ##    ######    ##### ###   ##    ##
+//**	      ##  ##  ##   ##  #####  ####  ##  ##  ##
+//**	     ##    ## ##   ## ##      ##### ## ##    ##
+//**	     ######## #####   #####   ## ##### ########
+//**	     ##    ## ######  ##      ##  #### ##    ##
+//**	     ##    ## ##  ###  #####  ##   ### ##    ##
+//**
+//**    $Id: GameObjective.vc 508 2006-07-10 19:02:43Z firebrand_kh $
+//**
+//**    Copyright (C) 2004-2006 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class GameObjective : Object;
+
+// TARGET TEAM
+enum
+{
+	objt_NONE,
+	objt_TEAM_BLUE		= PlayerTeam::TEAM2_INDEX_BLUE,
+	objt_TEAM_RED		= PlayerTeam::TEAM2_INDEX_RED,
+	objt_TEAM_ATTACKERS,
+	objt_TEAM_DEFENDERS,
+	objt_TEAM_ALL
+};
+
+// ACTION
+enum
+{
+	obja_NONE,
+	obja_MOVE_TO,	// reach certain location
+	obja_STAY_AT,	// stay at certain location for given amount of time
+	obja_CAPTURE,	// capture certain object by any means possible and keep in posession
+	obja_DESTROY,	// kill/destroy certain object
+	obja_GATHER,	// pickup certain item
+	obja_BRING,		// pickup certain item and bring to certain location
+	obja_USETHING,	// reach certain thing and use it
+	obja_USELINE,	// reach certain location and use line in the direction of target actor facing
+
+	obja_GUARD,		// guard certain location and prevent enemies from reaching it
+	obja_DEFEND,	// defend an object from being captured or destroyed by enemy
+	obja_SECURE		// make sure certain item not be picked up and carried by enemy
+};
+
+int Tag;
+bool bEnabled;
+bool bOpened;				// if all active prerequisites are completed
+bool bConditionCompleted;	// to remember completion for disabled or closed objectives
+bool bCompleted;
+
+int Team;
+int Action;
+
+Actor Target;
+Actor Destination;	// where to bring Target item (if applicable)
+
+int Prerequisite;	// Tag of the prerequisite objective(s)
+
+KArenaGameModel GameModel;
+
+//==========================================================================
+//
+//	ConsiderOpened
+//
+//==========================================================================
+
+bool ConsiderOpened()
+{
+	if (bCompleted)
+	{
+		return true;
+	}
+
+	bOpened = false;
+
+	int i;
+	for (i = 0; i < GameModel.Objectives.Num; i++)
+	{
+		if (GameModel.Objectives[i].Tag == Prerequisite && GameModel.Objectives[i].bEnabled &&
+			!GameModel.Objectives[i].bOpened && !GameModel.Objectives[i].bCompleted)
+		{
+			return false;
+		}
+	}
+
+	bOpened = true;
+
+	if (bConditionCompleted)
+	{
+		ConsiderCompleted(false);
+	}
+
+	return true;
+}
+
+//==========================================================================
+//
+//	ConsiderCompleted
+//
+//==========================================================================
+
+bool ConsiderCompleted(bool bIgnorePrerequisites)
+{
+	if (!bCompleted && (bOpened || bIgnorePrerequisites))
+	{
+		bOpened = true;
+		bCompleted = true;
+
+		GameModel.Game.bcentreprint(va("Objective %i completed", Tag)); // fixme
+	}
+	return bCompleted;
+}
+
+defaultproperties
+{
+	Prerequisite = -1;
+}

@@ -55,6 +55,7 @@ TVec		SpawnOrigin;		// [CW] coordinates of projectile's spawn point;
 								//		accuracy trophy
 
 bool		bGiveExperience;	// [CW] gives experience to players on destruction
+bool		bObjective;			// [CW] Notifies this actor is an Game Objective target
 
 //==========================================================================
 //
@@ -463,6 +464,23 @@ bool Physics(float DeltaTime)
 		}
 	}
 	return true;
+}
+
+//==========================================================================
+//
+//	IsTouched
+//
+//==========================================================================
+
+bool IsTouched(Entity Toucher)
+{
+	if (bObjective)
+	{
+		if (KAGameInfo(Level.Game).GameModel)
+			KAGameInfo(Level.Game).GameModel.OnSpecialActorTouched(self, EntityEx(Toucher));
+	}
+
+	return ::IsTouched(Toucher);
 }
 
 //==========================================================================
