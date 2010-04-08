@@ -49,6 +49,8 @@ enum
 	teamfactor_enemy
 };
 
+array<GameObjective> Objectives;
+
 MainGameInfo		Game;
 
 
@@ -106,6 +108,46 @@ bool ConfirmAddTeam()	//???????? need this?
 int TeamFactor(EntityEx a1, EntityEx a2)
 {
 	return teamfactor_any;
+}
+
+//==========================================================================
+//
+//	OnSpecialActorTouched
+//
+//==========================================================================
+
+void OnSpecialActorTouched(Actor a, EntityEx toucher)
+{
+	// Check for objectives completion
+	if (a.bObjective)
+	{
+		int i;
+		GameObjective Objective;
+		
+		for (i = 0; i < Objectives.Num; i++)
+		{
+			Objective = Objectives[i];
+			if (Objective && !Objective.bCompleted && !Objective.bConditionCompleted && Objective.bEnabled)
+			{
+				if (Objective.Target == a)
+				{
+					// Objectives that require being at position
+					if (Objective.Action == GameObjective::obja_MOVE_TO || Objective.Action == GameObjective::obja_STAY_AT)
+					{
+						if (toucher.Player && Player(toucher.Player).Team &&
+							(Objective.Team == GameObjective::objt_TEAM_ALL || Player(toucher.Player).Team.T2 == Objective.Team))
+						{
+							Objective.ConsiderCompleted(false);
+						}
+					}
+				}
+				else if (Objective.Destination == a)
+				{
+					// TODO
+				}
+			}
+		}
+	}
 }
 
 //==========================================================================
@@ -235,6 +277,164 @@ void SetPlayerExperienceLoss(bool bOn)
 		if (Game.Players[i])
 		{
 			Player(Game.Players[i]).bLockExperience = !bOn;
+		}
+	}
+}
+
+//==========================================================================
+//
+//	AddObjective
+//
+//==========================================================================
+
+void AddObjective(GameObjective Objective, bool Enabled)
+{
+	int i;
+
+	Objective.GameModel = self;
+	Objective.bEnabled = Enabled;
+
+	Objective.ConsiderOpened();
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Prerequisite == Objective.Tag)
+		{
+			Objectives[i].ConsiderOpened();
+		}
+	}
+
+	Objectives.Num = Objectives.Num + 1;
+	Objectives[Objectives.Num - 1] = Objective;
+}
+
+//==========================================================================
+//
+//	DestroyObjective
+//
+//==========================================================================
+
+void DestroyObjective(int Tag)
+{
+	int i;
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Tag == Tag)
+		{
+			Objectives[i].Destroy();
+			Objectives[i] = none;
+		}
+	}
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Prerequisite == Tag)
+		{
+			Objectives[i].ConsiderOpened();
+		}
+	}
+}
+
+//==========================================================================
+//
+//	EnableObjective
+//
+//==========================================================================
+
+void EnableObjective(int Tag)
+{
+	int i;
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Tag == Tag)
+		{
+			Objectives[i].bEnabled = true;
+			Objectives[i].ConsiderOpened();
+		}
+	}
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Prerequisite == Tag)
+		{
+			Objectives[i].ConsiderOpened();
+		}
+	}
+}
+
+//==========================================================================
+//
+//	DisableObjective
+//
+//==========================================================================
+
+void DisableObjective(int Tag)
+{
+	int i;
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Tag == Tag)
+		{
+			Objectives[i].bEnabled = false;
+		}
+	}
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Prerequisite == Tag)
+		{
+			Objectives[i].ConsiderOpened();
+		}
+	}
+}
+
+
+//==========================================================================
+//
+//	SetObjectivePrerequisite
+//
+//==========================================================================
+
+void SetObjectivePrerequisite(int Tag, int PrerequisiteTag)
+{
+	int i;
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Tag == Tag)
+		{
+			Objectives[i].Prerequisite = PrerequisiteTag;
+			Objectives[i].ConsiderOpened();
+		}
+	}
+}
+
+//==========================================================================
+//
+//	SetObjectiveCompletion
+//
+//==========================================================================
+
+void SetObjectiveCompletion(int Tag, bool IgnorePrerequisite)
+{
+	int i;
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Tag == Tag)
+		{
+			Objectives[i].ConsiderCompleted(IgnorePrerequisite);
+		}
+	}
+
+	for (i = 0; i < Objectives.Num; i++)
+	{
+		if (Objectives[i] && Objectives[i].Prerequisite == Tag)
+		{
+			Objectives[i].ConsiderOpened();
 		}
 	}
 }
