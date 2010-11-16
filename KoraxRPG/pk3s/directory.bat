@@ -5,4 +5,5 @@ REM the directory name received as parameter and the subdirectory name for this 
 REM (for details on what runner.bat does, please open that file...)
 echo $destfile %2.pk3>%CD%\%2.ls
 
+ECHO Building %2.ls...
 for /f %%a IN ('dir %1 /B /A-d') do call runner.bat %%~na %%~xa %%~pa %%1 %%2
