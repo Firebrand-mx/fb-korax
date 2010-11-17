@@ -1,9 +1,13 @@
-@ECHO OFF
-REM I don't like this, but it seems it must be done... skip .svn directory...
-if %4 == .svn goto :End else goto :Print
+@ECHO ON
+if %5 == root goto :Root else :Print
 
 :Print
 echo models\objects\%5\%1%2		%4>>%CD%\models.ls
+goto :End
+
+:Root
+echo models\objects\%1%2		%4>>%CD%\models.ls
+goto :End
 
 :End
 
