@@ -1,4 +1,4 @@
-@ECHO ON
+@ECHO OFF
 REM This batch file gets a full directory (e.g. C:\korax\) name and scans all files on it and calls runner.bat sending
 REM 5 parameters, filename (without extension), file extension (separated from filename), path of the file (stripped from drive letter)
 REM the directory name received as parameter and the subdirectory name for this batch file
@@ -14,7 +14,7 @@ for /f %%a IN ('dir %1 /B /A-d') do call lights.bat %%~na %%~xa %%~pa %%1 %%2
 goto :End
 
 :Obj
-for /d %%a IN (%CD%\models\objects\*) do for /f %%b IN ('dir %%a /B /A-d-h-r') do call objects.bat %%~nb %%~xb %%~pb %%b %%~na
+for /d %%a IN (%CD%\models\objects\*) do for /f %%b IN ('dir %%a /B /A-d-h-r') do call objects.bat %%~nb %%~xb %%~pb %%b %%~na %%a
 REM 'dir %4 /B /A-d'
 REM call directory3.bat %%a %%~na
 goto :End
