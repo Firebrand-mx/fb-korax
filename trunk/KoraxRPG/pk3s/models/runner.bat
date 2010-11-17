@@ -16,10 +16,5 @@ goto :End
 echo %1%2          %4\%1%2>>%CD%\models.ls
 goto :End
 
-:Models
-REM Distinguish between directories and files, so that we can build the file properly
-for /d %%a IN (%CD%\models\*) do call directory2.bat %%a %%~na %%~xa %%~pa
-goto :End
-
 :End
 
