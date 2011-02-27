@@ -74,9 +74,11 @@ bool bNodeGraphBuild;
 	// 124
 	// 126
 	// 141 <--> 158
-	// 161 <--> 168
+	// 162 <--> 168
 enum
 {
+    LNSPEC_ActorUseLine             = 141,
+    LNSPEC_ActorUseThing            = 142,
 	ACTSPEC_SetGlobalVar			= 163,
 	ACTSPEC_SetQuestVar				= 164,
 	ACTSPEC_SetQuest				= 165,	// Sets quest state
@@ -89,10 +91,8 @@ enum
 	// Advanced thing manipulation
 
 	ACTSPEC_Thing_Thrust3d			= 256,	// calls combo of Thing_Thrust and Thing_ThrustZ
-	// FIXME: not needed
-	ACTSPEC_Thing_SetPlayerMOTag,			// sets TID to current player MO (using player's Number)
 	// TODO: make more generic, like SetActorPropertyEx, for these two -
-	ACTSPEC_Thing_SetTeam,
+	ACTSPEC_Thing_SetTeam           = 258,
 	ACTSPEC_Thing_SetPersonId,
 
 	//
@@ -139,12 +139,6 @@ enum
 
 	ACTSPEC_Last
 };
-
-// [CW] Conditions for ACTSPEC_IsConditionTrue and ACTSPEC_RunACSConditional
-/*enum
-{
-	CNDT_Unused		// just to be...
-};*/
 
 
 //
@@ -302,9 +296,10 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 
 	if ( ( 
 		Special == LNSPEC_ThingSetGoal ||
+        Special == LNSPEC_ActorUseLine ||
+        Special == LNSPEC_ActorUseThing ||
 		Special >= ACTSPEC_Thing_Thrust3d
-		&& Special < ACTSPEC_Env_WeatherSnow
-		&& Special != ACTSPEC_Thing_SetPlayerMOTag)
+		&& Special < ACTSPEC_Env_WeatherSnow)
 
 		&& (Arg1 > 0 || Arg1 == KRPGDefs::TAG_EVERYBODY))
 	{
@@ -332,6 +327,18 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		}
 		break;
 
+    case LNSPEC_ActorUseLine:
+        if (E && E.IsA('Actor'))
+        {
+            buttonSuccess = EV_ActorUseLine(Actor(E), Arg2);
+        }
+        break;
+    case LNSPEC_ActorUseThing:
+        if (E && E.IsA('Actor'))
+        {
+            buttonSuccess = EV_ActorUseThing(Actor(E), Arg2);
+        }
+        break;
 	case LNSPEC_TravelMap:
 		{
 			buttonSuccess = true;
@@ -361,13 +368,6 @@ int ExecuteActionSpecial(int Special, int Arg1, int Arg2, int Arg3,
 		if (E && E.IsA('Actor'))
 		{
 			A_Thing3dThrust(Actor(E), Arg2, Arg3, Arg4, Arg5);
-			buttonSuccess = true;
-		}
-		break;
-	case ACTSPEC_Thing_SetPlayerMOTag:
-		if (Game.Players[Arg1] && Game.Players[Arg1].MO)
-		{
-			Game.Players[Arg1].MO.SetTID(Arg2);
 			buttonSuccess = true;
 		}
 		break;
@@ -704,6 +704,56 @@ final void StopSpeech2()
 //	[KoraxRPG] New Action Specials
 //
 //**************************************************************************
+
+//==========================================================================
+//
+//	EV_ActorUseLine
+//
+//  Simulates using of tagged line by activator
+//
+//==========================================================================
+
+bool EV_ActorUseLine(Actor Activator, int LineId)
+{
+    bool success = false;
+    int			Searcher;
+	line_t*		Other;
+
+	Searcher = -1;
+	for (Other = XLevel.FindLine(LineId, &Searcher); Other;
+		Other = XLevel.FindLine(LineId, &Searcher))
+	{
+        LineSpecialLevelInfo(Level).ActivateLine(Other, Activator, 0, SPAC_Use);
+        success = true;
+    }
+
+    return success;
+}
+
+//==========================================================================
+//
+//	EV_ActorUseThing
+//
+//  Simulates using of tagged actor by activator
+//
+//==========================================================================
+
+bool EV_ActorUseThing(Actor Activator, int TID)
+{
+    bool success = false;
+    Entity E;
+	for (E = Entity(FindMobjFromTID(TID, none)); E;
+			E = Entity(FindMobjFromTID(TID, E)))
+	{
+		if (E.IsA('Actor'))
+        {
+            Activator.UseThing(Actor(E));
+            success = true;
+        }
+	}
+
+    return success;
+}
 
 //==========================================================================
 //
