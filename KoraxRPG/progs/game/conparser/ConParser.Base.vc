@@ -77,6 +77,8 @@ enum
 	Token_False,
 	Token_Game,
 	Token_Global,
+	Token_Greater,
+	Token_GreaterOrEqual,
 	Token_Hidden,
 	Token_Hello,
 	Token_If,
@@ -85,6 +87,8 @@ enum
 	Token_Integer,
 	Token_Is,
 	Token_Jump,
+	Token_Less,
+	Token_LessOrEqual,
 	Token_Level,
 	Token_Minus,
 	Token_Multiply,
@@ -979,7 +983,7 @@ bool LocateActiveConversation(/*string Person*/Quest::personinfo_t * pinfo)
 	int index;
 
 	if (!GetPersonRegistry)
-		FatalError("ConParser::ParsePersonInfo : GetPersonRegistry delegate is not valid");
+		FatalError("ConParser::LocateActiveConversation : GetPersonRegistry delegate is not valid");
 
 	//Quest::personinfo_t * pinfo = GetPersonRegistry(Person, -1);
 	if (pinfo)
@@ -1774,6 +1778,7 @@ void ParseAndExecuteSpeechContents()
 					{
 						IfElseState.Num = IfElseState.Num - 1;
 					}
+					else continue; // [CW] CHECKME!!
 				}
 			}
 		}
@@ -1783,6 +1788,7 @@ void ParseAndExecuteSpeechContents()
 			switch (Token)
 			{
 			case Token_Choices:
+			case Token_Else: // [CW] CHECKME!!
 			case Token_Skip:
 			case Token_YesNo:
 				bSuspended = false;
@@ -1792,7 +1798,7 @@ void ParseAndExecuteSpeechContents()
 		if (bSuspended)
 		{
 			if (!Suspend)
-				FatalError("ConParser::UpdatePersonProperties : Suspend delegate is not valid");
+				FatalError("ConParser::ParseAndExecuteSpeechContents : Suspend delegate is not valid");
 			//dprint("ConParser::ParseAndExecuteSpeechContents : suspended");
 			UnGet();
 			Suspend();
@@ -1974,7 +1980,7 @@ void ParseComment(optional bool bSkipIfPossible)
 	if (!bSkipIfPossible)
 	{
 		if (!PlayCue)
-			FatalError("ParseSay::ParsePersonInfo : PlayCue delegate is not valid");
+			FatalError("ConParser::ParseComment : PlayCue delegate is not valid");
 		//dprint("CONPARSER : comment: %s : \"%s\"", Text);
 		PlayCue("", "", Text, '');
 		bSuspended = true;
@@ -2265,7 +2271,7 @@ void ParseSay(optional bool bSkipIfPossible)
 	if (!bSkipIfPossible)
 	{
 		if (!PlayCue)
-			FatalError("ParseSay::ParsePersonInfo : PlayCue delegate is not valid");
+			FatalError("ConParser::ParseSay : PlayCue delegate is not valid");
 		//dprint("CONPARSER : %s sais to %s : \"%s\", play voice '%n'", Who, ToWhom, Cue, Voice);
 		PlayCue(Who, ToWhom, Cue, Voice);
 		bSuspended = true;
