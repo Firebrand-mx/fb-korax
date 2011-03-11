@@ -42,6 +42,7 @@ void CreateChoices()
 {
 	MenuTextButton		Btn;
 	int					currentY;
+	bool				found = false;
 
 	currentY = ChoicesStartY;
 
@@ -56,6 +57,37 @@ void CreateChoices()
 	Btn.Text = "Controls 2";
 	Btn.Activated = ActivateControls2;
 	currentY += Btn.Height;
+
+	// Add "Special Controls" for MODs if keyconf lump is present
+	// and it has an "addkeysection" command
+	if (WadLumpPresent('keyconf'))
+	{
+		ScriptsParser kc = ScriptsParser(SpawnObject(ScriptsParser));
+
+		kc.OpenLumpName('keyconf');
+		// Lump is present, scan it until we find a 'addkeysection'
+		while (!kc.AtEnd())
+		{
+			if (kc.Check("addkeysection"))
+			{
+				kc.ExpectString();
+				kc.ExpectString();
+				found = true;
+			}
+			kc.GetString();
+		}
+		kc.Destroy();
+	}
+	if (found)
+	{
+		// Surely a MOD that contains KEYCONF bindings
+		// so we'll show the special controls option
+		Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+		Btn.SetOrigin(ChoicesStartX, currentY);
+		Btn.Text = "Special Controls";
+		Btn.Activated = ActivateSpecialControls;
+		currentY += Btn.Height;
+	}
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
 	Btn.SetOrigin(ChoicesStartX, currentY);
@@ -114,6 +146,17 @@ void ActivateControls(Object Sender)
 void ActivateControls2(Object Sender)
 {
 	ClGame.PushMenuScreen(ClGame.SpawnMenu(MenuScreenControls2));
+}
+
+//==========================================================================
+//
+//	ActivateSpecialControls
+//
+//==========================================================================
+
+void ActivateSpecialControls(Object Sender)
+{
+	ClGame.PushMenuScreen(ClGame.SpawnMenu(MenuScreenSpecialControls));
 }
 
 //==========================================================================
