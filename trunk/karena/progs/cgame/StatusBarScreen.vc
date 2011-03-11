@@ -396,13 +396,13 @@ void SB_DrawMainBar()
 	int Mana4DimBase;
 	int Mana5DimBase;
 
-	SB_DrawBackground();
-	DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
-
-	if (!cl.MO)
+	if (!cl || !cl.MO)
 	{
 		return;
 	}
+
+	SB_DrawBackground();
+	DrawPic(BAR_X + 38, BAR_Y + 1, pic_statbar);
 
 //[Korax]
 /*	SB_DrawNumber9(320, 20, cl.exp_level, 1);
@@ -685,7 +685,7 @@ void SB_DrawFullscreenStats()
 	int sb_mana4;
 	int sb_mana5;
 
-	if (!cl.MO)
+	if (!cl || !cl.MO)
 	{
 		return;
 	}
@@ -1074,6 +1074,11 @@ void SB_Drawer(int sb_view)
 {
 	if (GetCvar('NoHUD'))
 		return;
+
+	if (!cl || !cl.MO)
+	{
+		return;
+	}
 
 	if (cl.bSpectator)
 	{
