@@ -36,6 +36,8 @@ int preberserk_health;
 float preberserk_dexterity;	// [FB] Made this one a float
 int preberserk_strength;
 
+state last_state;	// Last actor's state StateTime decrement was applied to
+
 
 //==========================================================================
 //
@@ -47,7 +49,11 @@ void Do(float deltaTime)
 {
 	if (!ARecepient.Player)
 	{
-		ARecepient.StateTime /= 1.5;
+		if (ARecepient.State != last_state)
+		{
+			last_state = ARecepient.State;
+			ARecepient.StateTime /= 1.5;
+		}
 	}
 }
 
