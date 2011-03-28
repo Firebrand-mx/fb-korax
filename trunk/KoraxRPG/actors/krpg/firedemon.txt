@@ -21,11 +21,10 @@ actor KRPGFireDemon : IntelligentActor replaces FireDemon
 	DeathSound "FireDemonDeath"
 	Obituary "$ob_firedemon"
 
-	+CanEvade
 	+EvadeMelee
-	+RunOnEvade
 	+CanBackpedal
 	+CanSidemove
+	+CanDodge
 	+FireDemonSpecialMove
 
 	action native A_FiredRocks();
@@ -97,9 +96,6 @@ actor FireDemonLeader : KRPGFireDemon 16038
 	PainChance 135
 	
 	-EvadeMelee
-	-RunOnEvade
-	
-	Scale 1.5
 	
 	states
 	{
@@ -153,7 +149,6 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 	PainChance 0
 	
 	-EvadeMelee
-	-RunOnEvade
 	
 	action native A_MartyrFlight();
 	
@@ -177,17 +172,17 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 		FDMN IH 5 Bright
 		FDMN F 7 Bright
 		FDMN E 4 Bright A_SkullAttack
-		FDMN EFGEF 4 Bright A_MartyrFlight() //A_JumpIfCloser(128, "Explode")
+		FDMN EFGEF 4 Bright A_MartyrFlight()
 		FDMN G 6 Bright A_FaceTarget
 		Goto Missile+6
 	MissileDamaged:
-		FDMD E 0 A_JumpIf(Health < default_health, "MissileDamaged")
+		FDMD E 0 A_JumpIf(Health > default_health, "Missile")
 		FDMD K 3 Bright A_FaceTarget
 		FDMD J 5 Bright
 		FDMD IH 5 Bright
-		FDMD F 7 Bright A_AISetInvulnerable
+		FDMD F 7 Bright
 		FDMD E 4 Bright A_SkullAttack
-		FDMD EFGEF 4 Bright A_MartyrFlight() //A_JumpIfCloser(128, "Explode")
+		FDMD EFGEF 4 Bright A_MartyrFlight()
 		FDMD G 6 Bright A_FaceTarget
 		Goto MissileDamaged+6
 	Explode:

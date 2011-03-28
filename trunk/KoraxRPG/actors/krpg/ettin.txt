@@ -5,8 +5,9 @@ actor KRPGEttin : IntelligentActor replaces Ettin
 	Radius 25
 	Height 68
 	Mass 175
-	Speed 13
+	Speed 17 //13
 	Damage 3
+	MeleeRange 72
 	PainChance 60
 	DropItem "SilverBar", 40, 1
 	SeeSound "EttinSight"
@@ -17,20 +18,35 @@ actor KRPGEttin : IntelligentActor replaces Ettin
 	HowlSound "PuppyBeat"
 	Obituary "$ob_ettin"
 	Monster
+
 	+FloorClip
 	+Telestomp
 	+Living
+	
+	+CanJump
+	+CanBackpedal
+	+CanSidemove
 	+CanBerserk
+	
+	AttackRushChance 0.1
+	AttackRushDistance 256
+
 	states
 	{
 	Spawn:
+		ETTN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
 		ETTN AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		ETTN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		ETTN SS 10 A_LookAI
 		Loop
 	See:
 		ETTN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		ETTN ABCD 5 A_ChaseAI
 		Loop
 	SeeDamaged:
+		ETTN S 0 A_JumpIf(Health > default_health / 2, "See")
 		ETTN STUV 5 A_ChaseAI
 		Loop
 	Pain:
@@ -38,6 +54,7 @@ actor KRPGEttin : IntelligentActor replaces Ettin
 		ETTN H 7 A_KRPGPain
 		Goto See
 	PainDamaged:
+		ETTN Z 0 A_JumpIf(Health > default_health / 2, "Pain")
 		ETTN Z 7 A_KRPGPain
 		Goto SeeDamaged
 	Melee:
@@ -46,6 +63,7 @@ actor KRPGEttin : IntelligentActor replaces Ettin
 		ETTN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto See
 	MeleeDamaged:
+		ETTN W 0 A_JumpIf(Health > default_health / 2, "Melee")
 		ETTN WX 6 A_FaceTarget
 		ETTN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto SeeDamaged
@@ -84,6 +102,7 @@ actor KRPGEttinMash : KRPGEttin replaces EttinMash
 	+Blasted
 	+NoIceDeath
 	-Telestomp
+
 	states
 	{
 	Death:
@@ -99,11 +118,18 @@ actor EttinCommander : KRPGEttin 16002
 	Health 700	// Ettin health x 4
 	DropItem "GoldBar", 45, 5
 	DropItem "Mana2", 20, 15
+
 	states
 	{
 	Missile:
+		ETTN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		ETTN EF 6 A_FaceTarget
 		ETTN G 8 A_CustomMissile("EttinMissile", 32, 0)
+		Goto Super::See
+	MissileDamaged:
+		ETTN W 0 A_JumpIf(Health > default_health / 2, "Missile")
+		ETTN WX 6 A_FaceTarget
+		ETTN Y 8 A_CustomMissile("EttinMissile", 32, 0)
 		Goto Super::See
 	}
 }
@@ -119,14 +145,18 @@ actor EttinSlinger : KRPGEttin 16001
 {
 	DropItem "SilverBar", 45, 1
 	DropItem "GoldBar", 25, 5
-	+CanEvade
-	+EvadeMelee
-	+RunOnEvade
+
 	states
 	{
 	Missile:
+		ETTN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		ETTN EF 6 A_FaceTarget
 		ETTN G 8 A_CustomMissile("EttinArrow", 32, 0)
+		Goto Super::See
+	MissileDamaged:
+		ETTN W 0 A_JumpIf(Health > default_health / 2, "Missile")
+		ETTN WX 6 A_FaceTarget
+		ETTN Y 8 A_CustomMissile("EttinArrow", 32, 0)
 		Goto Super::See
 	}
 }
@@ -140,6 +170,7 @@ actor EttinArrow
 	Damage 2
 	SeeSound "EttinAttack"
 	Projectile
+
 	states
 	{
 	Spawn:
@@ -156,20 +187,33 @@ actor EttinFlechetter : KRPGEttin 16028
 {
 	DropItem "SilverBar", 50, 1
 	DropItem "ArtiPoisonBag", 30, 3
-	+CanEvade
+
 	+EvadeMelee
-	+RunOnEvade
 	-CanBerserk
+
 	states
 	{
 	Melee:
+		ETTN A 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
 		ETTN A 6 A_FaceTarget
 		ETTN G 24 A_SpawnItem("FireBomb")
-		Goto See
+		Goto Super::See
+	MeleeDamaged:
+		ETTN S 0 A_JumpIf(Health > default_health / 2, "Melee")
+		ETTN S 6 A_FaceTarget
+		ETTN Y 24 A_SpawnItem("FireBomb")
+		Goto Super::SeeDamaged
 	Missile:
+		ETTN A 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		ETTN A 6 A_AimGrenade("ThrowingBomb", Random(45,60), 24, "KRPGEttin::See")
 		ETTN EF 12 A_FaceTarget
 		ETTN G 24 A_ThrowAimedGrenade("ThrowingBomb", Random(45,60), 24, 68, Random(90, 99))
 		Goto Super::See
+	MissileDamaged:
+		ETTN S 0 A_JumpIf(Health > default_health / 2, "Missile")
+		ETTN S 6 A_AimGrenade("ThrowingBomb", Random(45,60), 24, "KRPGEttin::See")
+		ETTN WX 12 A_FaceTarget
+		ETTN Y 24 A_ThrowAimedGrenade("ThrowingBomb", Random(45,60), 24, 68, Random(90, 99))
+		Goto Super::SeeDamaged
 	}
 }
