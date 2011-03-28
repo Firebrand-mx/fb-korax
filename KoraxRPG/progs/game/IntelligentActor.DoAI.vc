@@ -44,7 +44,7 @@ float			AITime;
 void Tick(float deltaTime)
 {
 	::Tick(deltaTime);
-
+	
 	if (Health > 0)
 	{
 		if (CurrentTask)
@@ -60,7 +60,8 @@ void Tick(float deltaTime)
 			else
 			{
 				DoAI();
-				AITime = StateIsInSequence(State, IdleState) ? AI_ROUTINE_DELAY_IDLE :
+				AITime = (StateIsInSequence(State, IdleState) || StateIsInSequence(State, DamagedIdleState)) ?
+					AI_ROUTINE_DELAY_IDLE :
 					AI_ROUTINE_DELAY_ACTIVE;
 			}
 		}
@@ -236,7 +237,7 @@ void CheckThreat()
 
 	if (bThreatened && !bKeepSilent)
 	{
-		if (SightSound && StateIsInSequence(State, IdleState))
+		if (SightSound && (StateIsInSequence(State, IdleState) || StateIsInSequence(State, DamagedIdleState)))
 		{
 			if (bBoss)
 			{
@@ -265,15 +266,17 @@ void ConsiderChangeState()
 {
 	if (DangerSource.Action && P_Random() < 128)
 	{
-		if (bCanEvade && bEvadeMelee &&
-			(StateIsInSequence(State, IdleState) ||
-			StateIsInSequence(State, SeeState) || WalkState && StateIsInSequence(State, WalkState)))
+		if (bEvadeMelee &&
+			(StateIsInSequence(State, IdleState) || StateIsInSequence(State, DamagedIdleState) ||
+			StateIsInSequence(State, SeeState) || StateIsInSequence(State, DamagedSeeState) ||
+			WalkState && (StateIsInSequence(State, WalkState) || StateIsInSequence(State, DamagedWalkState))))
 		{
 			if (DangerSource.Thing && DistTo(DangerSource.Thing) <= ACCEPTABLE_DANGERMELEE_VICINITY)
 			{
 				state S = FindState('Evade');
 				if (S && SetState(S))
 				{
+					bIsInAttackRush = false;
 					return;
 				}
 			}
@@ -281,7 +284,7 @@ void ConsiderChangeState()
 	}
 
 	// Common state changing
-	if (StateIsInSequence(State, IdleState))
+	if (StateIsInSequence(State, IdleState) || StateIsInSequence(State, DamagedIdleState))
 	{
 		// Actor is in Idle State, check if he needs to start the move
 		if (CurrentTask && CurrentTask.Order >= ActorTask::ORDER__WALKTO)
@@ -296,28 +299,159 @@ void ConsiderChangeState()
 			}
 		}
 	}
-	else if (StateIsInSequence(State, SeeState))
+	else if (StateIsInSequence(State, SeeState) || StateIsInSequence(State, DamagedSeeState))
 	{
-		if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
+		if (!ConsiderAttack())
 		{
-			SetState(IdleState);
-		}
-		else if (!bInCombat && WalkState)
-		{
-			SetState(WalkState);
+			if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
+			{
+				bIsInAttackRush = false;
+				SetState(IdleState);
+			}
+			else if (!bInCombat && WalkState)
+			{
+				bIsInAttackRush = false;
+				SetState(WalkState);
+			}
 		}
 	}
-	else if (WalkState && StateIsInSequence(State, WalkState))
-	{
-		if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
-		{
-			SetState(IdleState);
-		}
-		else if (bInCombat)
-		{
-			SetState(SeeState);
+	else if (WalkState && (StateIsInSequence(State, WalkState) || StateIsInSequence(State, DamagedWalkState)))
+	{	
+		if (!ConsiderAttack())
+		{	
+			if (!CurrentTask || CurrentTask.Order < ActorTask::ORDER__WALKTO)
+			{
+				SetState(IdleState);
+			}
+			else if (bInCombat)
+			{
+				SetState(SeeState);
+			}
 		}
 	}
+}
+
+//==========================================================================
+//
+//	ConsiderAttack
+//
+//==========================================================================
+
+bool ConsiderAttack()
+{
+	return Target && (ConsiderSpecialAttack() || ConsiderMeleeAttack() || ConsiderMissileAttack());
+}
+
+//==========================================================================
+//
+//	ConsiderSpecialAttack
+//
+//	[CW] Override in derived class to implement something special.
+//
+//==========================================================================
+
+bool ConsiderSpecialAttack()
+{
+	return false;
+}
+
+//==========================================================================
+//
+//	ConsiderMeleeAttack
+//
+//	[CW] Started as a copy of corresponding DoMove section;
+//	easy to override for monsters that need it.
+//
+//==========================================================================
+
+bool ConsiderMeleeAttack()
+{
+	if (MeleeState)
+	{
+		if (CheckMeleeRange())
+		{
+			if (AttackSound)
+			{
+				PlaySound(AttackSound, CHAN_WEAPON);
+			}
+			SetState(MeleeState);
+			return true;
+		}
+		
+		// [CW] CHECKME actually calculated many times, check maybe it's worth to make this
+		// a temporarily used variable
+		if (CanReach(Target.Origin, Target))
+		{
+			// [CW] CHECKME actually calculated many times, check maybe it's worth to make this
+			// a temporarily used variable
+			float distToTarget = DistTo(Target);
+			
+			if (AttackLeapChance > 0.0)
+			{
+				if (distToTarget <= AttackLeapDistance &&
+					Random() < AttackLeapChance)
+				{
+					state S = FindState('AttackLeap');
+					if (S && SetState(S))
+					{
+						return true;
+					}
+				}
+			}
+			
+			if (AttackRushChance > 0.0)
+			{
+				if (distToTarget <= AttackRushDistance)
+				{
+					if (bIsInAttackRush)
+					{
+						StateTime /= 1.5;
+					}
+					else if (Random() < AttackRushChance)
+					{
+						state S = FindState('AttackRush');
+						if (S && SetState(S))
+						{
+							return true;
+						}
+						
+						bIsInAttackRush = true;
+					}
+				}
+				else bIsInAttackRush = false;
+			}
+		}
+	}
+	
+	return false;
+}
+
+//==========================================================================
+//
+//	ConsiderMissileAttack
+//
+//	[CW] Started as a copy of corresponding DoMove section;
+//	easy to override for monsters that need it.
+//
+//==========================================================================
+
+bool ConsiderMissileAttack()
+{
+	//	Check for missile attack.
+	if (MissileState)
+	{
+		if (IsFast() || !MoveCount)
+		{
+			if (CheckMissileRange())
+			{
+				SetState(MissileState);
+				bJustAttacked = true;
+				return true;
+			}
+		}
+	}
+		
+	return false;
 }
 
 //==========================================================================
@@ -360,7 +494,8 @@ final void A_LookAI()
 
 final void A_ChaseAI()
 {
-	ConsiderChangeState();
+	// [CW] Moved to the end of the routine
+	//ConsiderChangeState();
 
 	if (!bNeverUseRoutes)
 		DoRoute();
@@ -380,6 +515,8 @@ final void A_ChaseAI()
 	{
 		DoMoveR(false, MeleeState, MissileState, false, true, ReactionTime > XLevel.Time);
 	}
+	
+	ConsiderChangeState();
 }
 
 //==========================================================================

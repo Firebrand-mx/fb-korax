@@ -70,6 +70,7 @@
 
 enum
 {
+	STRAFE_NONE,
 	STRAFE_WALKSTRAIGHT,
 	STRAFE_BACKPEDAL,
 	STRAFE_SIDEMOVE,
@@ -200,7 +201,9 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 	}
 
 	//
-	// Perform attack
+	//// Perform attack
+	// [CW] An experiment to start attack states from IA::ConsiderChangeState instead -----
+	// only do fast strafe here (aka boss-character strafe)
 	//
 	if (Target)
 	{
@@ -235,6 +238,8 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 			}
 		}
 
+		// [CW] An experiment to start attack states from IA::ConsiderChangeState instead
+		/*
 		//	Check for melee attack.
 		if (AMeleeState && CheckMeleeRange())
 		{
@@ -261,10 +266,12 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 				}
 			}
 		}
+		*/
 	}
 
 	if (strafecount)
 	{
+	//print("strafecount = %i", strafecount);
 		strafecount--;
 	}
 
@@ -309,7 +316,7 @@ bool DoMove(bool FastChase, state AMeleeState, state AMissileState,
 //=============================================================================
 
 final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
-{
+{	
 	float deltax;
 	float deltay;
 	float deltaz;
@@ -349,6 +356,8 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 		}
 	}
 
+	// [CW] CHECKME not used for now
+	/*
 	if (bOpDir)
 	{
 		deltax = Origin.x - Destination.x;
@@ -357,49 +366,16 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 	}
 	else
 	{
+	*/
 		deltax = Destination.x - Origin.x;
 		deltay = Destination.y - Origin.y;
 		deltaz = Destination.z - Origin.z;
+	/*
 	}
+	*/
 	
-	//
-	// Perform a tactical move, if needed
-	//
-	if (DangerSource.Action && bCanEvade)
-	{
-		float distToDanger = DistTo2(DangerSource.Thing);
-		if (bEvadeMelee && distToDanger <= ACCEPTABLE_DANGERMELEE_VICINITY)
-		{
-			// Actor should evade enemy who is closing in ASAP; decide how
-			if (bCanBackpedal && MainGameInfo(Level.Game).bMonsterBacking &&
-				(MissileState || P_Random() < 128))
-			{
-				StrafeType = STRAFE_BACKPEDAL;
-			}
-			else
-			{
-				StrafeType = STRAFE_WALKSTRAIGHT;
-			}
-			strafecount = P_Random() & 12 + 3;
-			deltax = Origin.x - DangerSource.Thing.Origin.x;
-			deltay = Origin.y - DangerSource.Thing.Origin.y;
-			if (bFloat && DangerSource.Thing.Origin.z - Origin.z <= MELEERANGE)
-			{
-				deltaz = Origin.z + Height * 0.5 - FloorClip -
-					(DangerSource.Thing.Origin.z + DangerSource.Thing.Height * 0.5 -
-					DangerSource.Thing.FloorClip);
-			}
-			else
-			{
-				deltaz = 0.0;
-			}
-			print("strafecount = %i", strafecount);
-			print("StrafeType = %i", StrafeType);
-			print("deltax = %f", deltax);
-			print("deltay = %f", deltay);
-			print("deltaz = %f", deltaz);
-		}
-	}
+	// Prepare a tactical move, if needed
+	DO_TacticalMove(deltax, deltay, deltaz);	
 
 	DO_NewChaseDirEx(deltax, deltay, deltaz);
 
@@ -413,6 +389,98 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 
 //==========================================================================
 //
+//  DO_TacticalMove
+//
+//	[CW] Customize tactical move before calling DO_NewChaseDirEx
+//
+//==========================================================================
+
+final void DO_TacticalMove(out float deltax, out float deltay, out float deltaz)
+{
+	if (DangerSource.Action /*&& bCanEvade*/)
+	{
+		StrafeType = STRAFE_NONE;
+		float distToDanger = DistTo2(DangerSource.Thing);
+		if (bEvadeMelee && distToDanger <= ACCEPTABLE_DANGERMELEE_VICINITY)
+		{
+			// Actor should evade enemy who is closing in ASAP; decide how
+			if ((bCanBackpedal || MainGameInfo(Level.Game).bMonsterBacking) &&
+				(MissileState || P_Random() < 128))
+			{
+				StrafeType = STRAFE_BACKPEDAL;
+			}
+			else if (bCanSidemove)
+			{
+				StrafeType = STRAFE_SIDEMOVE;
+			}
+			else
+			{
+				StrafeType = STRAFE_WALKSTRAIGHT;
+			}
+		}
+		else if (MissileState)
+		{
+			if (bCanSidemove && P_Random() < 64)
+			{
+				StrafeType = STRAFE_SIDEMOVE;
+			}
+			else if ((bCanBackpedal || MainGameInfo(Level.Game).bMonsterBacking) && P_Random() < 64)
+			{
+				StrafeType = STRAFE_BACKPEDAL;
+			}
+		}
+		else
+		{
+			if (bCanSidemove && P_Random() < 16)
+			{
+				StrafeType = STRAFE_SIDEMOVE;
+			}
+		}
+		
+		if (StrafeType)
+		{
+			switch (StrafeType)
+			{
+			case STRAFE_WALKSTRAIGHT:
+			case STRAFE_BACKPEDAL:
+				strafecount = P_Random() & 7 + 3;
+				deltax = Origin.x - DangerSource.Thing.Origin.x;
+				deltay = Origin.y - DangerSource.Thing.Origin.y;
+				break;
+			case STRAFE_SIDEMOVE:
+				{
+					strafecount = P_Random() & 3 + 3;
+					TVec vec = Origin - DangerSource.Thing.Origin;
+					VectorRotateAroundZ(&vec, Random() < 0.5 ? 90.0 : -90.0);
+					deltax = vec.x;
+					deltay = vec.y;
+				}
+				break;
+			}
+			
+			if (bFloat && DangerSource.Thing.Origin.z - Origin.z <= MELEERANGE)
+			{
+				deltaz = Origin.z + Height * 0.5 - FloorClip -
+					(DangerSource.Thing.Origin.z + DangerSource.Thing.Height * 0.5 -
+					DangerSource.Thing.FloorClip);
+			}
+			else
+			{
+				deltaz = 0.0;
+			}
+			
+			// FIXME - remove later
+			//print("strafecount = %i", strafecount);
+			//print("StrafeType = %i", StrafeType);
+			//print("deltax = %f", deltax);
+			//print("deltay = %f", deltay);
+			//print("deltaz = %f", deltaz);
+		}
+	}
+}
+
+//==========================================================================
+//
 //  DO_NewChaseDirEx
 //
 //	[CW] an attempt to make movement free of MoveDir presets (any angle)
@@ -420,7 +488,7 @@ final void NewChaseDirEx(TVec Destination, optional bool bOpDir)
 //==========================================================================
 
 final void DO_NewChaseDirEx(float deltax, float deltay, float deltaz)
-{
+{	
 	float oldang = MoveDirFree;
 	float oldangz = MoveDirZ;
 	MoveDirFree = atan2(deltay, deltax);
@@ -657,6 +725,7 @@ final bool StepMoveEx()
 
 bool DoSpecialMove()
 {
+	// [CW] TODO: this is compatibility-only section; perhaps should be made in a more generic way
 	if (bFireDemonSpecialMove)
 	{
 		return FireDemonSpecialMove();
