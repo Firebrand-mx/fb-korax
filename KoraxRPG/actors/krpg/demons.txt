@@ -14,20 +14,31 @@ actor KRPGDemon1 : IntelligentActor replaces Demon1
 	DeathSound "DemonDeath"	
 	Obituary "$ob_demon1"
 	Monster
+	
 	+FloorClip
 	+Telestomp
 	+Living
+	
+	+CanBackpedal
+	+CanSidemove
 	+CanBerserk
+	
 	states
 	{
 	Spawn:
+		DEMN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
 		DEMN AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		DEMN R 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		DEMN RR 10 A_LookAI
 		Loop
 	See:
 		DEMN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		DEMN ABCD 4 A_ChaseAI
 		Loop
 	SeeDamaged:
+		DEMN R 0 A_JumpIf(Health > default_health / 2, "See")
 		DEMN RSTU 4 A_ChaseAI
 		Loop
 	Melee:
@@ -37,6 +48,7 @@ actor KRPGDemon1 : IntelligentActor replaces Demon1
 		DEMN G 6 A_CustomMeleeAttack(random(1, 8) * 2)
 		Goto See
 	MeleeDamaged:
+		DEMN V 0 A_JumpIf(Health > default_health / 2, "Melee")
 		DEMN V 6 A_FaceTarget
 		DEMN W 8 A_FaceTarget
 		DEMN X 6 A_CustomMeleeAttack(random(1, 8) * 2)
@@ -48,6 +60,7 @@ actor KRPGDemon1 : IntelligentActor replaces Demon1
 		DEMN G 5 A_CustomMissile("Demon1FX1", 62, 0)	
 		Goto See
 	MissileDamaged:
+		DEMN V 0 A_JumpIf(Health > default_health / 2, "Missile")
 		DEMN V 5 A_FaceTarget
 		DEMN W 6 A_FaceTarget
 		DEMN X 5 A_CustomMissile("Demon1FX1", 62, 0)	
@@ -58,6 +71,7 @@ actor KRPGDemon1 : IntelligentActor replaces Demon1
 		DEMN E 4 A_KRPGPain
 		Goto See
 	PainDamaged:
+		DEMN V 0 A_JumpIf(Health > default_health / 2, "Pain")
 		DEMN V 4
 		DEMN V 4 A_KRPGPain
 		Goto SeeDamaged
@@ -93,16 +107,23 @@ actor KRPGDemon1 : IntelligentActor replaces Demon1
 actor KRPGDemon2 : KRPGDemon1 replaces Demon2
 {
 	Obituary "$ob_demon2"
+	
 	states
 	{
 	Spawn:
+		DEM2 A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
 		DEM2 AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		DEM2 Q 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		DEM2 QQ 10 A_LookAI
 		Loop
 	See:
 		DEM2 A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		DEM2 ABCD 4 A_ChaseAI
 		Loop
 	SeeDamaged:
+		DEM2 Q 0 A_JumpIf(Health > default_health / 2, "See")
 		DEM2 QRST 4 A_ChaseAI
 		Loop
 	Melee:		
@@ -112,6 +133,7 @@ actor KRPGDemon2 : KRPGDemon1 replaces Demon2
 		DEM2 G 6 A_CustomMeleeAttack(random(1, 8) * 2)
 		Goto See
 	MeleeDamaged:
+		DEM2 U 0 A_JumpIf(Health > default_health / 2, "Melee")
 		DEM2 U 6 A_FaceTarget
 		DEM2 V 8 A_FaceTarget
 		DEM2 W 6 A_CustomMeleeAttack(random(1, 8) * 2)
@@ -123,6 +145,7 @@ actor KRPGDemon2 : KRPGDemon1 replaces Demon2
 		DEM2 G 5 A_CustomMissile(KRPGDemon2FX1, 62, 0)
 		Goto See
 	MissileDamaged:
+		DEM2 U 0 A_JumpIf(Health > default_health / 2, "Missile")
 		DEM2 U 5 A_FaceTarget
 		DEM2 V 6 A_FaceTarget
 		DEM2 W 5 A_CustomMissile(KRPGDemon2FX1, 62, 0)
@@ -133,6 +156,7 @@ actor KRPGDemon2 : KRPGDemon1 replaces Demon2
 		DEM2 E 4 A_Pain
 		Goto See
 	PainDamaged:
+		DEM2 U 0 A_JumpIf(Health > default_health / 2, "Pain")
 		DEM2 U 4
 		DEM2 U 4 A_Pain
 		Goto SeeDamaged	
@@ -169,6 +193,7 @@ actor KRPGDemon1Mash : KRPGDemon1 replaces Demon1Mash
 	+Blasted
 	-Telestomp
 	+NoIceDeath
+	
 	states
 	{
 	Death:

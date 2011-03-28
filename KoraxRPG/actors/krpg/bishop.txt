@@ -23,9 +23,10 @@ actor KRPGBishop : IntelligentActor replaces Bishop
 	DeathSound "BishopDeath"
 	Obituary "$ob_bishop"
 
-	+CanEvade
 	+EvadeMelee
-	+RunOnEvade
+	+CanBackpedal
+	+CanSidemove
+	+CanDodge
 
 	action native A_BishopChase();
 	action native A_BishopDecide();
@@ -38,7 +39,12 @@ actor KRPGBishop : IntelligentActor replaces Bishop
 	states
 	{
 	Spawn:
+		BISH A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
 		BISH A 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		BISD A 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		BISD A 10 A_LookAI
 		Loop
 	See:
 		BISH A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
@@ -51,6 +57,7 @@ actor KRPGBishop : IntelligentActor replaces Bishop
 		BISH A 1 A_BishopDecide
 		Loop
 	SeeDamaged:
+		BISD A 0 A_JumpIf(Health > default_health / 2, "See")
 		BISD A 2 A_ChaseAI
 		BISD A 2 A_BishopChase
 		BISD A 2
@@ -67,6 +74,7 @@ actor KRPGBishop : IntelligentActor replaces Bishop
 		Wait
 	BlurDamaged:
 	EvadeDamaged:
+		BISD A 0 A_JumpIf(Health > default_health / 2, "Blur")
 		BISD A 2 A_BishopDoBlur
 		BISD A 4 A_BishopSpawnBlur
 		Wait
@@ -78,18 +86,20 @@ actor KRPGBishop : IntelligentActor replaces Bishop
 		BISH F 5 Bright A_BishopAttack2
 		Wait
 	MissileDamaged:
+		BISD A 0 A_JumpIf(Health > default_health / 2, "Missile")
 		BISD A 3 A_FaceTarget
 		BISD DE 3 Bright A_FaceTarget
 		BISD F 3 Bright A_BishopAttack
 		BISD F 5 Bright A_BishopAttack2
 		Wait
 	Pain:
-		BISH A 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		BISH C 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		BISH C 6 A_KRPGPain
 		BISH CCC 6 A_BishopPainBlur
 		BISH C 0
 		Goto See
 	PainDamaged:
+		BISD C 0 A_JumpIf(Health > default_health / 2, "Pain")
 		BISD C 6 A_KRPGPain
 		BISD CCC 6 A_BishopPainBlur
 		BISD C 0
