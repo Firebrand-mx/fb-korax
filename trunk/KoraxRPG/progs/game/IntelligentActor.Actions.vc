@@ -42,10 +42,10 @@
 void A_KRPGPain()
 {
 	::A_KRPGPain();
-
+	
 	// [FB] Take the chance to get berserk
-	if (bCanBerserk && Health < (default.Health >> 1) &&
-		(1 + (P_Random() & 7)) > 5 && !GetCondition(ACSpellBerserk))
+	if (bCanBerserk && (Health < (default.Health >> 1)) &&
+		((1 + (P_Random() & 7)) > 5) && !GetCondition(ACSpellBerserk))
 	{
 		// [CW] TODO: this should be done by monster using spell item instead
 		CastCondition(
@@ -56,6 +56,24 @@ void A_KRPGPain()
 										// duration
 			(1.0 + itof(P_Random() & 7) * 80.0) / 35.0 // FIXME: Should we determine it somehow else??
 			);
+	}
+}
+
+//==========================================================================
+//
+//	A_AttackLeap
+//
+//	Thrust towards Target.
+//
+//==========================================================================
+
+final void A_AttackLeap(float ForceXY, float ForceZ)
+{
+	if (Target)
+	{
+		A_FaceTarget();
+		Thrust(Angles.yaw, ForceXY);
+		Velocity.z += ForceZ * 35.0;
 	}
 }
 
@@ -354,14 +372,8 @@ defaultproperties
 	Behavior.ThreatReaction			= THREATREACTION__DETECT;
 	Behavior.ThreatVicinity			= DEFAULT_THREAT_VICINITY;
 
-	bNoWanderDuringAttack = false;
-	bEvadeMelee			= false;
-	bRunOnEvade			= false;
-
 	bCanJoinTaskGroup				= true;
-	bCanBeTaskLeader		= true;
-
-	bNeverUseRoutes		= false;
+	bCanBeTaskLeader				= true;
 
 	Behavior.RouteRebuildRate		= 512;
 	Behavior.RouteRebuildRateLow	= 1024;
