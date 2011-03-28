@@ -7,7 +7,7 @@
 //**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
 //**	    ##   ##   ####   ##  ### ##    ## ##     ##
 //**
-//**		     ######  #####   ######
+//**		         ######  #####   ######
 //**	             ##   ## ##  ## ##    ##
 //**	     	     ##   ## ##  ## ##   
 //**	             #####   #####  ##  ####
@@ -39,9 +39,18 @@ point : 1040.4779, -546.85608, 175.33376
 dist: -800.
 normal: -1., -0., 0.
 
+--------------------- DECORATE ISSUES --------------------
+
+1. [FIXED] Log: Unknown state action A_AISetInvulnerable in FireDemonMartyr
+2. Log: No such class KRPGPigPlayer
+
 --------------------- CLASSES ISSUES  --------------------
 
 --------------------- ARTWORK ISSUES  --------------------
+
+1. [Probably fixed] Some ceiling icicles used player sprites; was fixed by
+the changes that had nothing to do nor with icicle nor with sprites; so the
+situation here remains uncertain
 
 ------------------ SOUND / MUSIC ISSUES  -----------------
 
@@ -56,7 +65,7 @@ normal: -1., -0., 0.
 2. [FIXED] Weapons will attack and drain mana regardless of mana level, even below zero.
 3. Weapons still may drain mana below zero, but only once (e.g. drain 30 mana while only 20 left).
 4. Pressing '0' will lower current weapons and crash the game (presumably player tries to select
-   weapon which is not exist).
+   weapon which does not exist).
 
 ---------------------- INVENTORY -------------------------
 
@@ -91,6 +100,51 @@ Log: - VLevel::TickWorld
 Log: - SV_Ticker
 Log: - ServerFrame
 Log: - Host_Frame
+
+2. [FIXED] StateIsInSequence checks do not consider Damaged states.
+3. Spawn states do not have Damaged counterparts.
+
+4. [FIXED] Error after player dies
+Log: - RunFunction
+Log: - (engine.Entity.GetCentre 1)
+Log: - RunFunction
+Log: - (engine.Entity.DistTo 1)
+Log: - RunFunction
+Log: - (game.IntelligentActor.ConsiderMeleeAttack 66)
+Log: - RunFunction
+Log: - (game.IntelligentActor.ConsiderAttack 7)
+Log: - RunFunction
+Log: - (game.IntelligentActor.ConsiderChangeState 219)
+Log: - RunFunction
+Log: - (game.IntelligentActor.A_ChaseAI 164)
+Log: - VObject::ExecuteFunction
+Log: - (game.IntelligentActor.A_ChaseAI)
+Log: - VEntity::SetState
+Log: - VEntity::AdvanceState
+Log: - RunFunction
+Log: - (engine.Entity.AdvanceState 0)
+Log: - RunFunction
+Log: - (linespec.EntityEx.Tick 285)
+Log: - RunFunction
+Log: - (linespec.Actor.Tick 82)
+Log: - RunFunction
+Log: - (linespec.KRPGPawn.Tick 58)
+Log: - RunFunction
+Log: - (game.IntelligentActor.Tick 2)
+Log: - VObject::ExecuteFunction
+Log: - (game.IntelligentActor.Tick)
+Log: - VThinker::Tick
+Log: - VLevel::TickWorld
+Log: - SV_Ticker
+Log: - ServerFrame
+Log: - Host_Frame
+
+5. Dark Advisor sometimes makes the game freeze and crash without any error message;
+supposedly this happens when some of his spells is being cast.
+6. Cardinal and Dark Advisor becomes invisible during attack sometimes.
+7. Dark Advisor stucks in spawn state after death.
+8. [Probably fixed] Afrit Martyr makes game freeze and crash under uncertain conditions.
+9. Stalkers and Bishops are shooting when do not see the target.
 
 
 ---------------------- TRAVEL MAP ------------------------
