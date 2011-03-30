@@ -1,0 +1,83 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: CommonNode.vc 1983 2009-07-04 00:51:38Z crimsonwizard $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+//
+// StatMarks are objects that spawn above the head of an actor who
+// is using a spell in the style of D&D games, this actor doesn't
+// interacts in any way with other actors, it's only function is
+// informative and goes above the head of the Owner that used the
+// spell or item, these could also mark if monsters have a certain
+// Inventory item and are able to use it and how many of such item
+// they hold.
+//
+
+class StatMark : Actor;
+
+Actor	Owner;			// Owner of the StatMark
+float	LifeTime;		// LifeTime of the Condition
+float	LifeDuration;	// Total duration of Condition
+
+//==========================================================================
+//
+//	Tick
+//
+//==========================================================================
+
+void Tick(float deltaTime)
+{
+	// [FB] Follow Owner's head
+	Origin.x = Owner.Origin.x;
+	Origin.y = Owner.Origin.y;
+	Origin.z = ((Owner.Origin.z + Owner.Height + Height + 0.5) - Owner.FloorClip);
+
+	// [FB] Fade out with the duration
+	Alpha = (LifeTime / LifeDuration);
+}
+
+states
+{
+Spawn:
+	NODE A -1 Bright
+	Stop
+}
+
+defaultproperties
+{
+	bColideWithThings = false;
+	bColideWithWorld = false;
+	RenderStyle = STYLE_Translucent;
+
+	Radius = 1.0;
+	Height = 1.0;
+	ScaleX = 0.2;
+	ScaleY = 0.2;
+}
