@@ -70,8 +70,6 @@ int		CShift;					// CShift value to set when active
 bool	bCShiftFadeOverTime;	// decrease cshift amount all the time
 bool	bCShiftFadeBeforeDeath;	// decrease cshift amount just before spell dies
 
-
-
 //==========================================================================
 //
 //	Tick
@@ -86,6 +84,11 @@ void Tick(float deltaTime)
 		//Dispell();
 		bShouldDestroy = true;
 		//return;
+	}
+
+	if (ConditionMark)
+	{
+		StatMark(ConditionMark).LifeTime = LifeTime;
 	}
 
 	::Tick(deltaTime);
@@ -171,6 +174,15 @@ void Activate()
 	{
 		DoDelegate = Do;
 	}
+
+	// [FB] Spawn the StatMark above the actors head, this mark will follow
+	//		the actor for the duration of the spell
+	ConditionMark = Spawn(FindClassLowerCase(StrToName(strlwr(SMark))),
+		vector(AInstigator.Origin.x, AInstigator.Origin.y,
+		((AInstigator.Origin.z + AInstigator.Height + 0.5) - AInstigator.FloorClip)));
+	StatMark(ConditionMark).Owner = ARecepient;
+	StatMark(ConditionMark).LifeTime = LifeTime;
+	StatMark(ConditionMark).LifeDuration = LifeDuration;
 }
 
 /*//==========================================================================

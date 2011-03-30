@@ -33,12 +33,15 @@
 class SpellInstance : Thinker
 	abstract;
 
-Actor	AInstigator;		// the caster object
-bool	bPlayActivation;	// call BirthTick until bActive flag is not set
-bool	bPlayDeactivation;	// call DeathTick until bShouldDestroy flag is set or explicitly destroyed
-bool	bDontCallDo;		// do not call Do method each tick
+Actor	AInstigator;			// the caster object
+Actor	ConditionMark;			// condition mark (above actor's head) to spawn
+
+bool	bPlayActivation;		// call BirthTick until bActive flag is not set
+bool	bPlayDeactivation;		// call DeathTick until bShouldDestroy flag is set or explicitly destroyed
+bool	bDontCallDo;			// do not call Do method each tick
 
 name	CastSound;
+string	SMark;
 
 bool	bIsNegative;
 bool	bIsMagic;
@@ -155,6 +158,11 @@ void Deactivate()
 	else
 	{
 		bShouldDestroy = true;
+		// [FB] Destroy StatMark
+		if (ConditionMark)
+		{
+			ConditionMark.Destroy();
+		}
 	}
 }
 
@@ -237,4 +245,6 @@ void Dispell()
 defaultproperties
 {
 	bIsMagic = true;
+
+	SMark = "StatMark";
 }
