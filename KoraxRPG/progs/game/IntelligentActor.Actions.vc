@@ -204,11 +204,10 @@ final void A_KRPGIceGuyChase()
 //
 //==========================================================================
 
-bool A_SerpentChase(bool FastChase, state AMeleeState, state AMissileState,
+bool A_SerpentChase(bool FastChase, /*state AMeleeState, state AMissileState,*/
 				bool NightmareFast, bool PlayActive, bool DontMove)
 {
-	//DoChase(false, MeleeState, none, true, true);
-	return DoMove(false/*FastChase*/, AMeleeState, none,
+	return DoMove(false/*FastChase*/, /*AMeleeState, none,*/
 		true/*NightmareFast*/, PlayActive, DontMove);
 }
 
@@ -221,7 +220,11 @@ bool A_SerpentChase(bool FastChase, state AMeleeState, state AMissileState,
 final void A_SerpentChaseAI()
 {
 	DoMoveR = A_SerpentChase;
+	MissileState = none;
+	
 	A_ChaseAI();
+	
+	MissileState = FindState('Missile');
 }
 
 //==========================================================================
@@ -232,11 +235,10 @@ final void A_SerpentChaseAI()
 //
 //==========================================================================
 
-bool A_SerpentWalk(bool FastChase, state AMeleeState, state AMissileState,
+bool A_SerpentWalk(bool FastChase, /*state AMeleeState, state AMissileState,*/
 				bool NightmareFast, bool PlayActive, bool DontMove)
 {
-	//DoChase(false, FindState('Attack'), none, true, false);
-	return DoMove(false/*FastChase*/, FindState('Attack'), none,
+	return DoMove(false/*FastChase*/, /*FindState('Attack'), none,*/
 		true/*NightmareFast*/, false/*PlayActive*/, DontMove);
 }
 
@@ -249,7 +251,49 @@ bool A_SerpentWalk(bool FastChase, state AMeleeState, state AMissileState,
 final void A_SerpentWalkAI()
 {
 	DoMoveR = A_SerpentWalk;
+	MeleeState = FindState('Attack');
+	MissileState = none;
+	WalkState = none;
+	
 	A_ChaseAI();
+	
+	MeleeState = FindState('Melee');
+	MissileState = FindState('Missile');
+	WalkState = FindState('Walk');
+}
+
+//==========================================================================
+//
+//  A_SerpentCheckForAttackAI
+//
+//==========================================================================
+
+final void A_SerpentCheckForAttackAI()
+{
+	if (!Target || !CanSense(Target))
+	{
+		return;
+	}
+	if (MissileState && !CheckMeleeRange())
+	{
+		SetState(FindState('Attack'));
+		return;
+	}
+	if (CheckMeleeRange2())
+	{
+		SetState(FindState('Walk'));
+	}
+	else if (CheckMeleeRange())
+	{
+		if (P_Random() < 32)
+		{
+			SetState(FindState('Walk'));
+		}
+		else
+		{
+			SetState(FindState('Attack'));
+		}
+	}
 }
 
 //==========================================================================
