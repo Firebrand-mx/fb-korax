@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: ACSpellManaBurn.vc 1960 2009-03-05 00:22:55Z crimsonwizard $
+//**    $Id: ACSpellBerserk.vc 1638 2008-08-28 19:10:17Z firebrand_kh $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,40 +30,15 @@
 //**
 //**************************************************************************
 
-class ACSpellManaBurn : ACDamageDealer;
+class StatMarkPoison : StatMark;
 
-
-//==========================================================================
-//
-//	Notify
-//
-//==========================================================================
-
-void Notify(int notification, EntityEx E, int param)
+states
 {
-	switch (notification)
-	{
-	case ActorCondition::notify_ManaUsed:
-		bDoDamage = true;
-		AccumulatedDamage += (param * Level) >> 1;
-		break;
-	default:
-		::Notify(notification, E, param);
-	}
+Spawn:
+	COND C -1 Bright
+	Stop
 }
-
-
 
 defaultproperties
 {
-	CastMessage = "mana burn";
-
-	bIsNegative = true;
-
-	bConditional = true;
-	DamageType = 'Fire';
-
-	CShiftOperation = CSHIFT_OP_SET;
-	CShift = RGBA(255, 0, 96, 80);
-	SMark = "StatMarkManaBurn";
 }
