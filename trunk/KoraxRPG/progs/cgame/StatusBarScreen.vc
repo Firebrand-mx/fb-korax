@@ -291,7 +291,7 @@ void SB_DrawBackground()
 	}
 
 	// draw something in the blank spaces
-//	FillRectWithFlat(0, 441, 640, 39, 'f_022');
+	FillRectWithFlat(0, 441, 640, 39, 'f_065');
 
 	DrawPic(0, BAR_Y - 27, pic_bar);
 	if (m_h)
@@ -417,7 +417,9 @@ void SB_DrawMainBar()
 	SB_DrawNumber9(118, BAR_Y + 4, 0 + cl.exp_level, 0);
 /*	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
 	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);*/
-	ShadeRect(91, 462, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0), 3, 0.99);
+	ShadeRect(91 + ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0),
+				462, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0),
+				3, 0.99);
 
 
 	// Frags / health
@@ -619,8 +621,9 @@ void SB_DrawKeyBar()
 	SB_DrawNumber9(118, BAR_Y + 4, 0 + cl.exp_level, 0);
 //	SB_DrawNumber9(460, 19, 0 + cl.experience, 1);
 //	SB_DrawNumber9(580, 19, 0 + cl.next_level, 0);
-	ShadeRect(91, 462, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0), 3, 0.99);
-
+	ShadeRect(91 + ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0),
+				462, 60 - ftoi(itof(cl.next_level) ? 60.0 * (itof(cl.experience) / itof(cl.next_level)) : 0.0),
+				3, 0.99);
 
 	// Frags / health
 	if (ClGame.deathmatch)
@@ -1042,6 +1045,27 @@ void SB_DrawIcons()
 
 //==========================================================================
 //
+//	SB_DrawStatusMarks
+//
+//==========================================================================
+
+void SB_DrawStatusMarks()
+{
+	int i;
+	// [FB] Check this player's coditions, to know which ones
+	//		we'll draw
+	for (i = 0; i < Actor(cl.MO).Conditions.Num; i++)
+	{
+		if (Actor(cl.MO).Conditions[i] && Actor(cl.MO).Conditions[i].ConditionMark)
+		{
+			DrawPic(20 + 42 * i, 49, R_RegisterPic(StrToName(Actor(cl.MO).Conditions[i].SMarkIcon)),
+					Actor(cl.MO).Conditions[i].LifeTime / Actor(cl.MO).Conditions[i].LifeDuration);
+		}
+	}
+}
+
+//==========================================================================
+//
 //	SB_DrawPause
 //
 //==========================================================================
@@ -1091,6 +1115,8 @@ void SB_Drawer(int sb_view)
 	{
 		SB_DrawMainBar();
 	}
+
+	SB_DrawStatusMarks();
 
 	//  Animated icons
 	SB_DrawIcons();
