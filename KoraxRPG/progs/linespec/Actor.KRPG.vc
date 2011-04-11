@@ -30,7 +30,6 @@
 //**
 //**************************************************************************
 
-int experience;
 
 //
 // [KoraxRPG] Advanced behavior
@@ -56,6 +55,12 @@ bool			bLiving;		// has a chance to spawn "dying spirit" on death
 bool			bIgnoreTeams;	// ignore Team factor (attack everyone)
 bool			bHateTarget;	// ignore Team factor for current Target only
 int				Team;			// this actor's Team ID
+
+//
+// [KoraxRPG] RPG Stuff
+//
+
+int				experience;		// How much experience this actor gives when dying
 
 //**************************************************************************
 //
@@ -98,11 +103,11 @@ void BeginPlay()
 void OnMapSpawn(mthing_t* mthing)
 {
 	//[Korax]
-	if (!bMissile && !bPickUp && !IsA('PlayerPig'))
+/*	if (!bMissile && !bPickUp && !IsA('PlayerPig'))
 	{
 		// [FB]  FIXME: I should check this later...
 		experience = default.Health;
-	}
+	}*/
 	::OnMapSpawn(mthing);
 }
 
@@ -160,14 +165,17 @@ void Died(EntityEx source, EntityEx inflictor)
 		if (!source.bIsPlayer)
 		{
 			Actor(source).experience += ftoi((itof(experience) * ((90.0 + 
-				itof(P_Random()) / 255.0 * 21.0) / 100.0)) * mod);  //RPG
+				itof(P_Random()) / 255.0 * 21.0) / 100.0)) * mod); //RPG
+//			Actor(source).experience += ftoi(itof(experience) * mod);
 		}
 		else
 		{
 			KRPGPlayerBase(source.Player).GiveExperience(ftoi((itof(experience) * ((90.0 + 
 				itof(P_Random()) / 255.0 * 21.0) / 100.0) * (Level.World.GameSkill < 2 ? 
 				125.0 : (Level.World.GameSkill < 3 ? 100.0 : 80.0)) / 100.0) * mod));
+//			KRPGPlayerBase(source.Player).GiveExperience(ftoi(itof(experience) * mod));
 		}
+		print(va("XP: %i", experience));
 	}
 
 	NotifyConditions(ActorCondition::notify_RecepientDead, source, 0);

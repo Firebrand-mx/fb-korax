@@ -640,7 +640,7 @@ final bool StepMoveEx()
 			dropoff = true;
 		}
 		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
-					(deltay / itof(steps * i)), Origin.z), dropoff);
+					(deltay / itof(steps * i)), tryz /*Origin.z*/), dropoff);
 		if (!try_ok)
 		{
 			break;
@@ -660,7 +660,7 @@ final bool StepMoveEx()
 		{
 			dropoff = true;
 		}
-		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, Origin.z), dropoff);
+		try_ok = TryMoveEx(&tmtrace, vector(tryx, tryy, tryz /*Origin.z*/), dropoff);
 	}
 
 	if (!try_ok)
@@ -691,34 +691,36 @@ final bool StepMoveEx()
 		if (bCanJump && !bFloat && tmtrace.bFloatOk && 
 			(Origin.z <= FloorZ || bOnMobj) && !JumpTime)
 		{
-			if (tmtrace.FloorZ - Origin.z <= 48.0 && Target &&
-				tmtrace.FloorZ - Target.Origin.z <= 48.0)
+			if ((Target && (Target.FloorZ > (FloorZ + MaxStepHeight) && (Target.FloorZ /*tmtrace.FloorZ*/ - Origin.z <= 48.0)) ||
+				(Target.FloorZ - tmtrace.DropOffZ < (FloorZ + MaxStepHeight) && (Target.FloorZ - tmtrace.DropOffZ <= 48.0) /*tmtrace.FloorZ - Target.Origin.z <= 48.0)*/) ||
+				!Target) && (tmtrace.FloorZ - Origin.z <= 48.0 || tmtrace.FloorZ - tmtrace.DropOffZ <= 48.0))
 			{
 				float DeltaX;
 				float DeltaY;
 				TVec dir;
 				TAVec ang;
 
+				// [FB] Use CheckDropOff method to get line angles to use for jumping
 				CheckDropOff(DeltaX, DeltaY);
 				dir = Target.Origin - Origin;
 				VectorAngles(&dir, &ang);
 
 				if (DeltaX > 0.0)
 				{
-					Velocity.x += 0.6 * 35.0 * cos(ang.yaw);
+					Velocity.x += Speed / 35.0 * cos(-ang.yaw);
 				}
 				else
 				{
-					Velocity.x += 0.6 * 35.0 * cos(-ang.yaw);
+					Velocity.x += Speed / 35.0 * cos(ang.yaw);
 				}
 				
 				if (DeltaY > 0.0)
 				{
-					Velocity.y += 0.6 * 35.0 * sin(ang.yaw);
+					Velocity.y += Speed / 35.0 * sin(-ang.yaw);
 				}
 				else
 				{
-					Velocity.y += 0.6 * 35.0 * sin(-ang.yaw);
+					Velocity.y += Speed / 35.0 * sin(ang.yaw);
 				}
 				Velocity.z = (JumpVelZ * 1.1) * 35.0;
 				bOnMobj = false;
