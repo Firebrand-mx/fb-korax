@@ -152,7 +152,10 @@ void GiveLevels(int levels)
 	{
 		GiveExperience(next_level - experience, true);
 	}
-	experience += exp_bak;
+	// [FB] Reset experience counter to zero, but add any remaining exp
+	// 		points to it...
+	experience = 0;
+	experience += (next_level - exp_bak);
 }
 
 //============================================================================
@@ -1036,11 +1039,16 @@ void PlayerImpulse()
 
 void PlayerExitMap(bool clusterChange)
 {
-	// [FB] Deactivate berserker if we are changing maps
-	if (Actor(MO).GetCondition(ACSpellBerserk))
+	::PlayerExitMap(clusterChange);
+
+	int i;
+	for (i = 0; i < Actor(MO).Conditions.Num; i++)
 	{
-		// FIXME!! This doesn't works fine yet...
-		Actor(MO).PurgeConditions();
+		// [FB] Deactivate berserker if we are changing maps
+		if (Actor(MO).Conditions[i] && Actor(MO).Conditions[i].Class == ACSpellBerserk)
+		{
+			Actor(MO).Conditions[i].Deactivate();
+		}
 	}
 }
 
