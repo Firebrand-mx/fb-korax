@@ -34,6 +34,7 @@ const float		AI_ROUTINE_DELAY_IDLE = 10.0 / 35.0;
 const float		AI_ROUTINE_DELAY_ACTIVE = 35.0 / 35.0;
 
 float			AITime;
+state 			last_state;
 
 //==========================================================================
 //
@@ -339,7 +340,19 @@ void ConsiderChangeState()
 
 bool ConsiderAttack()
 {
-	return Target && (ConsiderSpecialAttack() || CanAttackTarget(Target) && (ConsiderMeleeAttack() || ConsiderMissileAttack()));
+	if (Target)
+	{
+		if (ConsiderSpecialAttack() || CanAttackTarget(Target))
+		{
+			if ((MissileState && ConsiderMissileAttack()) ||
+				(MeleeState && ConsiderMeleeAttack()))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 //==========================================================================
@@ -366,63 +379,73 @@ bool ConsiderSpecialAttack()
 
 bool ConsiderMeleeAttack()
 {
-	if (MeleeState)
+	if (CheckMeleeRange())
 	{
-		if (CheckMeleeRange())
+		if (AttackSound)
 		{
-			if (AttackSound)
-			{
-				PlaySound(AttackSound, CHAN_WEAPON);
-			}
-			SetState(MeleeState);
-			return true;
+			PlaySound(AttackSound, CHAN_WEAPON);
 		}
+		SetState(MeleeState);
+		return true;
+	}
 		
+	// [CW] CHECKME actually calculated many times, check maybe it's worth to make this
+	// a temporarily used variable
+	if (CanReach(Target.Origin, Target))
+	{
 		// [CW] CHECKME actually calculated many times, check maybe it's worth to make this
 		// a temporarily used variable
-		if (CanReach(Target.Origin, Target))
-		{
-			// [CW] CHECKME actually calculated many times, check maybe it's worth to make this
-			// a temporarily used variable
-			float distToTarget = DistTo(Target);
+		float distToTarget = DistTo2(Target);
 			
-			if (AttackLeapChance > 0.0)
+		if (AttackLeapChance > 0.0)
+		{
+			if (distToTarget <= AttackLeapDistance &&
+				Random() < AttackLeapChance)
 			{
-				if (distToTarget <= AttackLeapDistance &&
-					Random() < AttackLeapChance)
+				state S = FindState('AttackLeap');
+				if (S && SetState(S))
 				{
-					state S = FindState('AttackLeap');
+					return true;
+				}
+			}
+		}
+			
+		if (AttackRushChance > 0.0)
+		{
+			if (distToTarget <= AttackRushDistance)
+			{
+				if (bIsInAttackRush)
+				{
+					if (State != last_state)
+					{
+						last_state = State;
+						// [FB] Avoid making enemies in attack rush too fast
+						if (!GetCondition(ACSpellBerserk))
+						{
+							StateTime /= 1.5;
+						}
+						else
+						{
+							StateTime /= 1.15;
+						}
+					}
+				}
+				else if (Random() < AttackRushChance)
+				{
+					state S = FindState('AttackRush');
 					if (S && SetState(S))
 					{
 						return true;
 					}
+					
+					bIsInAttackRush = true;
 				}
 			}
-			
-			if (AttackRushChance > 0.0)
-			{
-				if (distToTarget <= AttackRushDistance)
-				{
-					if (bIsInAttackRush)
-					{
-						StateTime /= 1.5;
-					}
-					else if (Random() < AttackRushChance)
-					{
-						state S = FindState('AttackRush');
-						if (S && SetState(S))
-						{
-							return true;
-						}
-						
-						bIsInAttackRush = true;
-					}
-				}
-				else bIsInAttackRush = false;
-			}
+			else
+				bIsInAttackRush = false;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -438,16 +461,13 @@ bool ConsiderMeleeAttack()
 bool ConsiderMissileAttack()
 {
 	//	Check for missile attack.
-	if (MissileState)
+	if (IsFast() || !MoveCount)
 	{
-		if (IsFast() || !MoveCount)
+		if (CheckMissileRange())
 		{
-			if (CheckMissileRange())
-			{
-				SetState(MissileState);
-				bJustAttacked = true;
-				return true;
-			}
+			SetState(MissileState);
+			bJustAttacked = true;
+			return true;
 		}
 	}
 		
@@ -481,6 +501,12 @@ final void A_LookAI()
 			break;
 		}
 		Special = 0;
+	}
+
+	// [FB] Apply NoTarget property for players...
+	if (Target && Target.bIsPlayer && PlayerEx(Target.Player).bNoTarget)
+	{
+		return;
 	}
 
 	ConsiderChangeState();

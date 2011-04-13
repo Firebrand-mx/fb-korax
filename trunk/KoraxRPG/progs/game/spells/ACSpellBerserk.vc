@@ -51,8 +51,16 @@ void Do(float deltaTime)
 	{
 		if (ARecepient.State != last_state)
 		{
+			 // [FB] Avoid making enemies in attack rush too fast
 			last_state = ARecepient.State;
-			ARecepient.StateTime /= 1.5;
+			if (!IntelligentActor(ARecepient).bIsInAttackRush)
+			{
+				ARecepient.StateTime /= 1.5;
+			}
+			else
+			{
+				ARecepient.StateTime /= 1.15;
+			}
 		}
 	}
 }
