@@ -342,12 +342,18 @@ bool ConsiderAttack()
 {
 	if (Target)
 	{
-		if (ConsiderSpecialAttack() || CanAttackTarget(Target))
+		if (ConsiderSpecialAttack())
 		{
-			if ((MissileState && ConsiderMissileAttack()) ||
-				(MeleeState && ConsiderMeleeAttack()))
+			return true;
+		}
+		else
+		{
+			if (CanAttackTarget(Target))
 			{
-				return true;
+				if (ConsiderMeleeAttack() || ConsiderMissileAttack())
+				{
+					return true;
+				}
 			}
 		}
 	}
@@ -379,6 +385,8 @@ bool ConsiderSpecialAttack()
 
 bool ConsiderMeleeAttack()
 {
+	if (!MeleeState) return false;
+
 	if (CheckMeleeRange())
 	{
 		if (AttackSound)
@@ -460,6 +468,8 @@ bool ConsiderMeleeAttack()
 
 bool ConsiderMissileAttack()
 {
+	if (!MissileState) return false;
+
 	//	Check for missile attack.
 	if (IsFast() || !MoveCount)
 	{
