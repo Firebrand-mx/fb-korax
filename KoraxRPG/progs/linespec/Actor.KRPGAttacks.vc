@@ -51,6 +51,56 @@ final void A_SimpleMissileAttack(class<Actor> MissileType, name SoundName,
 	}
 }
 
+//============================================================================
+//
+//  A_PredictingMissileAttack
+//
+//	A custom missile attack, which predicts target's movement
+//
+//============================================================================
+
+final void A_PredictingMissileAttack(class<Actor> MissileType, float PredictionChance, float MaxAngle, optional float SpawnHeight,
+	optional int SpawnXYOffset, optional float Angle, optional int AimMode,
+	optional float Pitch)
+{
+	if (Target)
+	{
+		A_FaceTarget();
+		
+		float dist = DistTo(Target);
+		
+		if (dist <= 1024.0 && dist > MELEERANGE * 2.0)
+		{		
+			float m = (dist / MissileType.default.Speed);
+			float px = Target.Origin.x + (Target.Velocity.x * m * 2.0);
+			float py = Target.Origin.y + (Target.Velocity.y * m * 2.0);
+			float pz = Target.Origin.z + (Target.Velocity.z * m * 0.25);
+			
+			TVec dir_org, dir_predict;
+			TAVec ang_org, ang_predict;
+			
+			dir_org = Target.Origin - Origin;
+			VectorAngles(&dir_org, &ang_org);
+			
+			dir_predict = vector(px, py, pz) - Origin;
+			VectorAngles(&dir_predict, &ang_predict);
+			
+			Angle = ang_predict.yaw - ang_org.yaw;
+			Angle = Angle > MaxAngle ? MaxAngle : Angle;
+			Angle = Angle < -MaxAngle ? -MaxAngle : Angle;
+			Pitch = ang_predict.pitch - ang_org.pitch;
+			Pitch = Pitch > MaxAngle ? MaxAngle : Pitch;
+			Pitch = Pitch < -MaxAngle ? -MaxAngle : Pitch;
+			
+			float rand = Random();
+			Angle = Angle * (rand < PredictionChance ? PredictionChance : rand);
+			Pitch = Pitch * (rand < PredictionChance ? PredictionChance : rand);
+		}
+	}
+	
+	A_CustomMissile(MissileType, SpawnHeight, SpawnXYOffset, Angle, AimMode, Pitch);
+}
+
 //==========================================================================
 //
 //	A_AimGrenade
