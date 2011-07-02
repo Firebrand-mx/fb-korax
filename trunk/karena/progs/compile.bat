@@ -41,7 +41,7 @@ move basepak.pk3 %CD%\bin\basev\hexen\
 ECHO Building karena progs basepak.pk3...
 cd code
 cd karena
-vlumpy %CD%\basepak.ls
+vlumpy %CD%\basepak2.ls
 cd..
 cd..
 ECHO Copying compiled karena basepak.pk3 file to binary directory...
