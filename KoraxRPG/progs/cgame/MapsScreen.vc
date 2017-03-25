@@ -32,100 +32,11 @@
 
 class MapsScreen : MenuScreen;
 
-const int
-	TABLE_HEAD_Y		= 148,
-	TABLE_STRING_DELTA	= 14;
-
 KRPGPlayerReplicationInfo RepInfo;
 
-bool updated;
-
-int n_strength;
-int n_dexterity;
-int n_constitution;
-int n_intelligence;
-int n_wisdom;
-int n_charisma;
-
-int r_points;
-int ir_points; // [FB] Keep a copy of the initial points value in case we don't update or we leave remaining points after updating
-
-string playerclassnames[HexenDefs::NUMCLASSES];
-
-// [FB] NOTE: Don't remove the commented lines
-//		until more testing is done!!
-
-//==========================================================================
-//
-//	CreateChoices
-//
-//==========================================================================
-
-void CreateChoices()
-{
-	MenuChoiceStat		Stat;
-	MenuTextButton		Btn;
-	int					currentY;
-
-	//	[FB]	display menu only for player who corresponds to current client.
-	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
-	{
-		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
-		{
-			currentY = ChoicesStartY;
-			ir_points = RepInfo.points; // [FB] This comes directly from the player value...
-			r_points = ir_points;
-			
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Strength";
-			Stat.SetInitialValue(RepInfo.strg /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxStrength*/);
-			Stat.ValueChanging = ChangeStrength;
-			currentY += Stat.Height;
-
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Constitution";
-			Stat.SetInitialValue(RepInfo.cons /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxConstitution*/);
-			Stat.ValueChanging = ChangeConstitution;
-			currentY += Stat.Height;
-
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Dexterity";
-			Stat.SetInitialValue(RepInfo.dext /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxDexterity*/);
-			Stat.ValueChanging = ChangeDexterity;
-			currentY += Stat.Height;
-
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Intelligence";
-			Stat.SetInitialValue(RepInfo.intln /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxIntelligence*/);
-			Stat.ValueChanging = ChangeIntelligence;
-			currentY += Stat.Height;
-
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Wisdom";
-			Stat.SetInitialValue(RepInfo.wsdm /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxWisdom*/);
-			Stat.ValueChanging = ChangeWisdom;
-			currentY += Stat.Height;
-
-			Stat = MenuChoiceStat(NewChild(MenuChoiceStat));
-			Stat.SetOrigin(ChoicesStartX, currentY);
-			Stat.Text = "Charisma";
-			Stat.SetInitialValue(RepInfo.char /*, KRPGPlayerPawn(Player(ClientGame(ClGame).cl).MO).MaxCharisma*/);
-			Stat.ValueChanging = ChangeCharisma;
-			currentY += Stat.Height;
-
-			Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-			Btn.SetOrigin(ChoicesStartX, currentY);
-			Btn.Text = "OK";
-			Btn.Activated = UpdateStats;
-			break;
-		}
-	}
-}
+const int
+	TABLE_HEAD_Y		= 68,
+	TABLE_STRING_DELTA	= 14;
 
 //==========================================================================
 //
@@ -140,18 +51,41 @@ void CreateChoices()
 	SetFont('smallfont');
 	SetTextAlign(hleft, vtop);
 	DrawPic(0, 0, R_RegisterPic('journal'));
-	ShadeRect(160, 80, 440, 306, GetCvarF('0.000000'));
+	ShadeRect(12, 78, 113, 289, GetCvarF('0.000000'));
+
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
 	{
 		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
 		{
-			DrawText(280, TABLE_HEAD_Y + (TABLE_STRING_DELTA - 28), va("You're a %s of level: %i", playerclassnames[RepInfo.plclass], RepInfo.level), CR_BRICK);
-			DrawText(280, TABLE_HEAD_Y + (TABLE_STRING_DELTA - 14), va("Experience Points: %i", RepInfo.exp), CR_BLUE);
-			DrawText(280, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("You need %i for level %i", RepInfo.next_lvl, RepInfo.level + 1), CR_ORANGE);
-			DrawText(280, TABLE_HEAD_Y + (TABLE_STRING_DELTA * 2), va("Gold: %i", RepInfo.gold), CR_GOLD);
-			DrawText(280, TABLE_HEAD_Y + (TABLE_STRING_DELTA * 4), va("Remaining Ability Points: %i", r_points));
+		
+			if (RepInfo.plclass == 0)
+			{
+			DrawPic(8, 80, R_RegisterPic('journf'));			
+			}
+			if (RepInfo.plclass == 1)
+			{
+			DrawPic(8, 80, R_RegisterPic('journc'));			
+			}
+			if (RepInfo.plclass == 2)
+			{
+			DrawPic(8, 80, R_RegisterPic('journm'));			
+			}
+
+		DrawText(160, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("Got my hands on" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("a few detailed" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("maps depicting" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 42), va("parts of the" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 56), va("province of" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("Charybdea." ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 98), va("They are just" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 112), va("perfect for" ) );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("annotating." ) );
+
+		DrawPic(300, 82, R_RegisterPic('jmapmain'));
+
 		}
 	}
+	
 }
 
 //==========================================================================
@@ -163,235 +97,104 @@ void CreateChoices()
 void OnDestroy()
 {
 	::OnDestroy();
-
-	// [FB] Update the points value on the player
-	Player(ClientGame(ClGame).cl).SetPoints(ir_points);
-	ClientGame(ClGame).HideUpgradeScreen();
+	
+	ClientGame(ClGame).HideQuestsScreen();
 }
 
 //==========================================================================
 //
-//	ChangeStrength
+//	CreateChoices
 //
 //==========================================================================
 
-bool ChangeStrength(Object Sender, int newValue, int oldValue)
+void CreateChoices()
 {
-	bool update;
+	MenuTextButton		Btn;
+	int					currentY;
+	
+	currentY = ChoicesStartY;
+	
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 20, currentY);
+	Btn.Text = "northern mountains";
+	Btn.Activated = MapsMountains;
+	currentY += 40 + Btn.Height;
 
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_strength = newValue;
-	return true;
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 120, currentY);
+	Btn.Text = "eastern desert";
+	Btn.Activated = MapsDesert;
+	currentY += 80 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX - 50, currentY);
+	Btn.Text ="central forest";
+	Btn.Activated = MapsForest;
+	currentY += 120 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 120, currentY);
+	Btn.Text = "southern badlands";
+	Btn.Activated = MapsBadlands; 
+
 }
 
 //==========================================================================
 //
-//	ChangeConstitution
+//	MapsMountains
 //
 //==========================================================================
 
-bool ChangeConstitution(Object Sender, int newValue, int oldValue)
+void MapsMountains(Object Sender)
 {
-	bool update;
-
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_constitution = newValue;
-	return true;
+	ClientGame(ClGame).ShowMapsMountains();
 }
 
 //==========================================================================
 //
-//	ChangeDexterity
+//	MapsDesert
 //
 //==========================================================================
 
-bool ChangeDexterity(Object Sender, int newValue, int oldValue)
+void MapsDesert(Object Sender)
 {
-	bool update;
-
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_dexterity = newValue;
-	return true;
+	ClientGame(ClGame).ShowMapsDesert();
 }
 
+
 //==========================================================================
 //
-//	ChangeIntelligence
+//	MapsForest
 //
 //==========================================================================
 
-bool ChangeIntelligence(Object Sender, int newValue, int oldValue)
+void MapsForest(Object Sender)
 {
-	bool update;
-
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_intelligence = newValue;
-	return true;
+	ClientGame(ClGame).ShowMapsForest();
 }
 
 //==========================================================================
 //
-//	ChangeWisdom
+//	MapsBadlands
 //
 //==========================================================================
 
-bool ChangeWisdom(Object Sender, int newValue, int oldValue)
+void MapsBadlands(Object Sender)
 {
-	bool update;
-
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_wisdom = newValue;
-	return true;
+	ClientGame(ClGame).ShowMapsBadlands();
 }
 
-//==========================================================================
-//
-//	ChangeCharisma
-//
-//==========================================================================
-
-bool ChangeCharisma(Object Sender, int newValue, int oldValue)
-{
-	bool update;
-
-	if (oldValue < newValue && r_points > 0)
-	{
-		r_points--;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	else if (oldValue > newValue && r_points < ir_points)
-	{
-		r_points++;
-		Player(ClientGame(ClGame).cl).SetPoints(r_points);
-		update = true;
-	}
-	if (!update)
-	{
-		return false;
-	}
-	n_charisma = newValue;
-	return true;
-}
-
-//==========================================================================
-//
-//	UpdateStats
-//
-//==========================================================================
-
-void UpdateStats(Object Sender)
-{
-	Player(ClientGame(ClGame).cl).UpdateStats(n_strength, n_constitution, n_dexterity,
-			n_intelligence, n_wisdom, n_charisma);
-	// [FB] Before destroying the window and only when we really updated the character.
-	//	    Check how many r_points we have...
-	if (r_points > 0)
-	{
-		// [FB] ...we have some remaining points, so just copy them into the initial value...
-		ir_points = r_points;
-	}
-	else
-	{
-		// [FB] ...we have used all of our remaining points, so clear the initial value too...
-		ir_points = 0;
-	}
-
-	// [FB] Force this to turn menu's off if we are updating stats,
-	// since PopMenu makes the game return only one menu screen and
-	// if the game is paused the player stats aren't updated correctly...
-	//ClGame.PopMenu();
-	ClGame.ForceMenuOff();
-}
 
 defaultproperties
 {
 	X = 0;
 	Y = 0;
-	ChoicesStartX = 380;
-	ChoicesStartY = 230;
 	Width = 640;
 	Height = 480;
 	TitleX = 320;
+	ChoicesStartX = 475;
+	ChoicesStartY = 85;
 /*	ScaleX = 2.0;
 	ScaleY = 2.4;*/
-	playerclassnames[0] = "fighter";
-	playerclassnames[1] = "cleric";
-	playerclassnames[2] = "mage";
 	Title = "Maps";
 }
