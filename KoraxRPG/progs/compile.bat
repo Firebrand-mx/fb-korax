@@ -1,4 +1,5 @@
 @ECHO OFF
+cls
 ECHO Compiling progs...
 @ECHO ON
 @vcc -P../../../basev/common/progs ../../../progs/common/engine/classes.vc ../../../basev/common/progs/engine.dat
