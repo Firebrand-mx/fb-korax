@@ -32,6 +32,8 @@
 
 class QuestsLegion : KRPGMenuScreen;
 
+KRPGPlayerReplicationInfo RepInfo;
+
 const int
 	TABLE_HEAD_Y		= 68,
 	TABLE_STRING_DELTA	= 14;
@@ -68,6 +70,26 @@ void CycleNextChoice()
 {
 	DrawPic(0, 0, R_RegisterPic('journal'));
 
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		{
+		
+			if (RepInfo.plclass == 0)
+			{
+			DrawPic(8, 80, R_RegisterPic('journf'));			
+			}
+			if (RepInfo.plclass == 1)
+			{
+			DrawPic(8, 80, R_RegisterPic('journc'));			
+			}
+			if (RepInfo.plclass == 2)
+			{
+			DrawPic(8, 80, R_RegisterPic('journm'));			
+			}
+		}
+	}
+	
 // place for ca. 52 chars per line in the main body
 	
 	DrawText(160, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("Quests from the Legion" ) );

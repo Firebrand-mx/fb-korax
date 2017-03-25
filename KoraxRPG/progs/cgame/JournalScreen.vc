@@ -32,6 +32,13 @@
 
 class JournalScreen : KRPGMenuScreen;
 
+KRPGPlayerReplicationInfo RepInfo;
+
+const int
+	TABLE_HEAD_Y		= 68,
+	TABLE_STRING_DELTA	= 14;
+
+
 //==========================================================================
 //
 //  OnDraw
@@ -46,6 +53,27 @@ class JournalScreen : KRPGMenuScreen;
 	SetTextAlign(hcentre, vtop);
 	DrawPic(0, 0, R_RegisterPic('journal'));
 	ShadeRect(12, 78, 113, 289, GetCvarF('0.000000'));
+	
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		{
+		
+			if (RepInfo.plclass == 0)
+			{
+			DrawPic(8, 80, R_RegisterPic('journf'));			
+			}
+			if (RepInfo.plclass == 1)
+			{
+			DrawPic(8, 80, R_RegisterPic('journc'));			
+			}
+			if (RepInfo.plclass == 2)
+			{
+			DrawPic(8, 80, R_RegisterPic('journm'));			
+			}
+		}
+	}
+	
 }
 
 //==========================================================================
@@ -169,7 +197,7 @@ defaultproperties
 	Width = 640;
 	Height = 480;
 	TitleX = 320;
-	ChoicesStartX = 85;
+	ChoicesStartX = 285;
 	ChoicesStartY = 130;
 /*	ScaleX = 2.0;
 	ScaleY = 2.4;*/
