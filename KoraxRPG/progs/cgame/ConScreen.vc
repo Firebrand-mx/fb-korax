@@ -118,23 +118,26 @@ void OnDraw()
 	{
 		if (Cues[i].SpeakerName)
 		{
-			if (!strcmp(Cues[i].SpeakerName, NPCName) && (!bDontDuplicateNPCName || bDontDrawBigCharacterName))
-			{
-				DrawText(64, y, Cues[i].SpeakerName, CR_GREEN); y += 24;
-			}
+			// if this is enabled, the name of the current speaker is displayed above the text spoken
+			 DrawText(64, y, Cues[i].SpeakerName, CR_RED); y += 24;
+			
+			int color;
+			if (strcmp(Cues[i].SpeakerName, NPCName) == 0)
+				color = CR_GREEN;
+			else
+				color = CR_WHITE;
 
-			//DrawText(64, y, Cues[i].SpeechText); y += 32;
 			for (j = 0; j < Cues[i].SpeechLines.Num; j++)
 			{
-				DrawText(64, y, Cues[i].SpeechLines[j].Text);
+				DrawText(64, y, Cues[i].SpeechLines[j].Text, color);
 				y += fontheight + CueLinesSpacing;
+			
 			}
 			y += 32;
 		}
 		else
 		{
 			// Possibly a narrator's commentary
-			//DrawText(64, y, Cues[i].SpeechText, CR_BRICK); y += 32;
 			for (j = 0; j < Cues[i].SpeechLines.Num; j++)
 			{
 				DrawText(64, y, Cues[i].SpeechLines[j].Text, CR_BRICK);
@@ -234,11 +237,8 @@ void PlayCue(string Who, string ToWhom, string Cue, name Voice)
 	int i;
 
 	SetFont('smallfont');
-	Who = SplitTextWithNewlines(Who, Width - 120 - 40);
-	//Cue = SplitTextWithNewlines(Cue, Width - 120 - 40);
 	Cues.Num = Cues.Num + 1;
 	Cues[Cues.Num - 1].SpeakerName = Who;
-	//Cues[Cues.Num - 1].SpeechText = Cue;
 	SplitText(Cue, Cues[Cues.Num - 1].SpeechLines, Width - 120 - 40);
 
 	if (Cues.Num > 5)
