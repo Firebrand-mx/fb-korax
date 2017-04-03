@@ -1,0 +1,89 @@
+conitem k24501 24501
+{
+	name "Commander Pablo";
+
+	hello
+	{
+		say "Hail, hero!" none;
+	}
+	
+	choice none "What can you tell me about the south?"
+	{
+		say Player myself "What can you tell me about the lands beyond the border?" none;
+		say "To reach The Canyon, you have to traverse the Chasm. The plank bridge is in a bad shape so watch your step." none;
+		say "From The Canyon, you can travel to the hills and mountains to the east and west, or continue south to The Rift. I have no idea what lies beyond The Rift." none;
+		say "Anything else?" none;
+	}
+
+	choice none "Got anything to help me?"
+	{
+		say myself Player "Do you have anything that could help me?" none;
+		say Player myself "Lernal Cave to the east is supposed to hold a rare weapon." none;
+		Player.StartQuestce( 1 );
+	}
+
+
+	choice none "My armor is in tatters."
+	{
+		say Player myself "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
+	}
+	
+	choice none "I'm ready to go."
+	{
+		say "May your axe bathe in blood." none;
+		end;
+	}
+}
+
+conitem k24502 24502
+{
+	name "Soldier";
+
+	hello
+	{
+		say "This close to the border, you need to watch your every step." none;
+	}
+	
+
+	choice none "I'll keep that in mind."
+	{
+		end;
+	}
+}
+
+conitem k24503 24503
+{
+	name "Commander Pablo";
+
+	var MyState 1 integer 0;
+
+	hello
+	{
+		say "Hail, hero!" none;
+	}
+	
+	choice none "I return from Lernal Cave."
+	if (MyState is 0)
+	{
+		say Player myself "I return from Lernal Cave. Behold my new means of destruction!" none;
+		say myself Player "Splendid! I see your power surging." none;
+		Player.FinishQuestce( 1 );
+		Player.GiveLevels( 5 );
+		set MyState 1;
+	}
+
+	choice none "My armor is in tatters."
+	{
+		say Player myself "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
+	}
+	
+	choice none "I'm ready to go."
+	{
+		say "May your axe bathe in blood." none;
+		end;
+	}
+}

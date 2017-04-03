@@ -1,0 +1,54 @@
+//------------------------------------------------------------------------------
+conitem k21601 21601
+{
+	name "Traveling Merchant";
+
+	var MyState 1 integer 0;
+
+	hello
+	{
+		say "SSh! You will wake the camp." none;
+	}
+
+	choice none "Do you have anything for sale?"
+	if (MyState is 0)
+	{
+		say Player myself "Do you have anything for sale?" none;
+		say "A half dozen Quartz Flasks if you are interested." none;
+		choices
+		{
+			ChoiceNum1
+			ChoiceNum2
+		}
+	}
+
+	choice none "Do you have anything for sale?"
+	if (MyState is 1)
+	{
+		say Player myself "Do you have anything for sale?" none;
+		say "Sorry, all out right now." none;
+	}
+
+	
+	choice ChoiceNum1 "I'll take them." hidden
+	{
+		say Player myself "Give me those." none;
+		Player.GiveInventory( ArtiHealth , 6 );
+		say "Pleasure doing business." none;
+		set MyState 1;
+	}
+	
+	choice ChoiceNum2 "I'll pass." hidden
+	{
+		say Player myself "Thanks, but I'll pass." none;
+		say "Suit yourself." none;
+	}
+
+
+	choice none "I will mosey on then."
+	{
+		say "Tread softly." none;
+		end;
+	}
+
+}
