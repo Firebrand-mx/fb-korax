@@ -1,0 +1,54 @@
+//------------------------------------------------------------------------------
+conitem k24701 24701
+{
+	name "Traveling Trader";
+
+	var MyState 1 integer 0;
+
+	hello
+	{
+		say "All potential customers are welcome in the shade." none;
+	}
+
+	choice none "Do you have anything for sale?"
+	if (MyState is 0)
+	{
+		say Player myself "Do you have anything for sale?" none;
+		say "A dozen Flechettes if you are interested." none;
+		choices
+		{
+			ChoiceNum1
+			ChoiceNum2
+		}
+	}
+
+	choice none "Do you have anything for sale?"
+	if (MyState is 1)
+	{
+		say Player myself "Do you have anything for sale?" none;
+		say "Sorry, all out for the moment." none;
+	}
+
+	
+	choice ChoiceNum1 "I'll take them." hidden
+	{
+		say Player myself "Sure, I'll take them." none;
+		Player.GiveInventory( ArtiPoisonBag , 12 );
+		say "Pleasure doing business." none;
+		set MyState 1;
+	}
+	
+	choice ChoiceNum2 "I'll pass." hidden
+	{
+		say Player myself "Thanks, but I'll pass." none;
+		say "Suit yourself." none;
+	}
+
+
+	choice none "I'll be going now."
+	{
+		say "Stay hydrated." none;
+		end;
+	}
+
+}

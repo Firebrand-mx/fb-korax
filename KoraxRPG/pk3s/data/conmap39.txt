@@ -1,0 +1,88 @@
+conitem k23901 23901
+{
+	name "Commander Legzd";
+
+	hello
+	{
+		say "Straighten up maggot!" none;
+		say Player myself "Sir yes sir!" none;
+	}
+	
+	choice none "Orders of the day, sir?"
+	{
+		say Player myself "Orders of the day, sir?" none;
+		say myself Player "Some travelers claim Jodisec Mine is overrun by monsters. Head over there and check it out." none;
+		Player.StartQuestcd( 1 );
+	}
+
+	choice none "My armor is in tatters."
+	{
+		say Player myself "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
+	}
+	
+	choice none "For the Legion!"
+	{
+		say "Dismissed." none;
+		end;
+	}
+}
+
+conitem k23902 23902
+{
+	name "Soldier";
+
+	hello
+	{
+		say "WTF are you doing up here?" none;
+	}
+	
+	choice none "I like to cheat in video games."
+	{
+		end;
+	}
+}
+
+conitem k23903 23903
+{
+	name "Commander Legzd";
+
+	var MyState 1 integer 0;
+
+	hello
+	if (MyState is 0)
+	{
+		say myself Player "Ah, looks like my scout has returned!" none;
+	}
+
+	hello
+	if (MyState is 1)
+	{
+		say myself Player "Straighten up maggot!" none;
+		say Player myself "Sir yes sir!" none;
+	}
+	
+	choice none "I checked out Jodisec Mine."
+	if (MyState is 0)
+	{
+		say Player myself "I checked out Jodisec Mine. It was indeed overrun by monsters, but no more." none;
+		say myself Player "Splendid work! Here is your reward." none;
+		Player.FinishQuestcd( 1 );
+		Player.GiveLevels( 5 );
+		set MyState 1;
+	}
+
+	choice none "My armor is in tatters."
+	{
+		say Player myself "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
+	}
+	
+	choice none "For the Legion!"
+	{
+		say "Dismissed." none;
+		end;
+	}
+}

@@ -1,0 +1,89 @@
+//------------------------------------------------------------------------------
+conitem k24201 24201
+{
+	name "Margaret";
+
+	hello
+	{
+		say "If you are hungry, we have a few ham sandwiches left." none;
+	}
+
+	choice none "I'd like a ham sandwich."
+	{
+		say Player myself "I'd like a ham sandwich." none;
+		Player.GiveInventory( CrystalVial , 1 );
+		say "Enjoy.";
+	}
+
+	choice none "I'll pass."
+	{
+
+		say "Suit yourself." none;
+		end;
+	}
+}
+//------------------------------------------------------------------------------
+conitem k24202 24202
+{
+	name "Peasant";
+
+	hello
+	{
+		say "It's too cold to talk." none;
+	}
+	
+	choice none "Couldn't agree more."
+	{
+		end;
+	}
+}
+//------------------------------------------------------------------------------
+conitem k24203 24203
+{
+	name "Master Trader Scavo";
+
+	hello
+	{
+		say "Time is money so don't waste either." none;
+	}
+
+	choice none "What's new in the area?"
+	{
+		say Player myself "What's new in the area?" none;
+		say myself Player "Usachioi Mine is being invaded by minions of Korax. The right thing to do would be to help the guards and rescue the trapped miners." none;
+		say myself Player "Especially since there should be lots of abandoned gold lying around, waiting to be liberated as well." none;
+		Player.StartQuestea( 1 );
+	}
+
+	choice none "Later."
+	{
+		end;
+	}
+}
+//------------------------------------------------------------------------------
+conitem k24204 24204
+{
+	name "Master Trader Scavo";
+
+	var MyState 1 integer 0;
+
+	hello
+	{
+		say "Time is money so don't waste either." none;
+	}
+	
+	choice none "I'm back from Usachioi Mine."
+	if (MyState is 0)
+	{
+		say Player myself "I'm back from Usachioi Mine and found a few trinkets that might interest you." none;
+		say myself Player "Splendid! Here is a little something in exchange." none;
+		Player.FinishQuestea( 1 );
+		Player.GiveLevels( 5 );
+		set MyState 1;
+	}
+
+	choice none "Later."
+	{
+		end;
+	}
+}
