@@ -1,4 +1,5 @@
 //------------------------------------------------------------------------------
+//SETin warlord
 actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 {
 	Game Hexen
@@ -12,102 +13,165 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 	+FloorClip
 	+Telestomp
 	+DontMorph
-	PainSound "PlayerFighterPain"
-	DeathSound "PlayerFighterCrazyDeath"
-	Obituary "$ob_fboss"
+	DropItem "SilverBar", 40, 1
+	SeeSound "SETinSight"
+	ActiveSound "SETinActive"
+	AttackSound "SETinAttack"
+	PainSound "SETinPain"
+	DeathSound "SETinDeath"
+	HowlSound "PuppyBeat"
+	Obituary "$ob_SETin"
 	
 	+CanJump
 	+CanLeap
 	+CanBackpedal
 	+CanSidemove
 	+CanDodge
-	+CanBerserk
 	+FastMove
+	+CanBerserk
 
 	action native A_FighterAttack();
 
 	states
 	{
 	Spawn:
-		PLAY A 2
-		PLAY A 3 A_ClassBossHealth
-		PLAY A 5 A_LookAI
-		Wait
-	See:
-		PLAY ABCD 4 A_ChaseAI
+		SETN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		SETN A 3 A_ClassBossHealth
+		SETN AA 10 A_LookAI
 		Loop
-	Melee:
-	Missile:
-		PLAY E 8 A_FaceTarget
-		PLAY F 8 A_FighterAttack
-		Goto See
+	SpawnDamaged:
+		SETN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		SETN SS 10 A_LookAI
+		Loop
+	See:
+		SETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		SETN ABCD 5 A_ChaseAI
+		Loop
+	SeeDamaged:
+		SETN S 0 A_JumpIf(Health > default_health / 2, "See")
+		SETN STUV 5 A_ChaseAI
+		Loop
 	Pain:
-		PLAY G 4
-		PLAY G 4 A_Pain
+		SETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		SETN H 7 A_KRPGPain
 		Goto See
+	PainDamaged:
+		SETN Z 0 A_JumpIf(Health > default_health / 2, "Pain")
+		SETN Z 7 A_KRPGPain
+		Goto SeeDamaged
+	Melee:
+		SETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
+		SETN EF 6 A_FaceTarget
+		SETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto See
+	MeleeDamaged:
+		SETN W 0 A_JumpIf(Health > default_health / 2, "Melee")
+		SETN WX 6 A_FaceTarget
+		SETN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto SeeDamaged
+	Missile:
+		SETN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		SETN EF 6 A_FaceTarget
+		SETN F 8 A_FighterAttack
+		Goto See
+//		Goto Super::See
+	MissileDamaged:
+		SETN W 0 A_JumpIf(Health > default_health / 2, "Missile")
+		SETN WX 6 A_FaceTarget
+		SETN F 8 A_FighterAttack
+		Goto See
+//		Goto Super::See
 	Death:
-		PLAY H 6
-		PLAY I 6 A_Scream
-		PLAY JK 6
-		PLAY L 6 A_NoBlocking
-		PLAY M 6
-		PLAY N -1
+		SETN IJ 4
+		SETN K 4 A_Scream
+		SETN L 4 A_NoBlocking
+		SETN M 4 A_QueueCorpse
+		SETN NOP 4
+		SETN Q -1
 		Stop
 	XDeath:
-		PLAY O 5 A_Scream
-		PLAY P 5
-		PLAY R 5 A_NoBlocking
-		PLAY STUV 5
-		PLAY W -1
+		SETB A 4
+		SETB B 4 A_NoBlocking
+		SETB C 4 A_SpawnItemEx(SETinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+			SXF_ABSOLUTEMOMENTUM)
+		SETB D 4 A_Scream
+		SETB E 4 A_QueueCorpse
+		SETB FGHIJK 4
+		SETB L -1
 		Stop
 	Ice:
-		PLAY X 5 A_FreezeDeath
-		PLAY X 1 A_FreezeDeathChunks
+		SETN R 5 A_FreezeDeath
+		SETN R 1 A_FreezeDeathChunks
 		Wait
 	Burn:
-		FDTH A 5 Bright A_PlaySound("PlayerFighterBurnDeath")
-		FDTH B 4 Bright
-		FDTH G 5 Bright
-		FDTH H 4 Bright A_Scream
-		FDTH I 5 Bright
-		FDTH J 4 Bright
-		FDTH K 5 Bright
-		FDTH L 4 Bright
-		FDTH M 5 Bright
-		FDTH N 4 Bright
-		FDTH O 5 Bright
-		FDTH P 4 Bright
-		FDTH Q 5 Bright
-		FDTH R 4 Bright
-		FDTH S 5 Bright A_NoBlocking
-		FDTH T 4 Bright
-		FDTH U 5 Bright
-		FDTH V 4 Bright
-		ACLO E 35 A_CheckPlayerDone
+		SETB A 4
+		SETB B 4 A_NoBlocking
+		SETB C 4 A_SpawnItemEx(SETinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+			SXF_ABSOLUTEMOMENTUM)
+		SETB D 4 A_Scream
+		SETB E 4 A_QueueCorpse
+		SETB FGHIJK 4
+		SETB L -1
 		Wait
 	BurnGone:
 		ACLO E 8
 		Stop
+//	Burn:
+//		FDTH A 5 Bright A_PlaySound("PlayerFighterBurnDeath")
+//		FDTH B 4 Bright
+//		FDTH G 5 Bright
+//		FDTH H 4 Bright A_Scream
+//		FDTH I 5 Bright
+//		FDTH J 4 Bright
+//		FDTH K 5 Bright
+//		FDTH L 4 Bright
+//		FDTH M 5 Bright
+//		FDTH N 4 Bright
+//		FDTH O 5 Bright
+//		FDTH P 4 Bright
+//		FDTH Q 5 Bright
+//		FDTH R 4 Bright
+//		FDTH S 5 Bright A_NoBlocking
+//		FDTH T 4 Bright
+//		FDTH U 5 Bright
+//		FDTH V 4 Bright
+//		ACLO E 35 A_CheckPlayerDone
+//		Wait
+//	BurnGone:
+//		ACLO E 8
+//		Stop
 	}
 }
 
 //------------------------------------------------------------------------------
+//centaur ghostking
 actor KRPGClericBoss : IntelligentActor replaces ClericBoss
 {
 	Game Hexen
-	Health 800
+	Health 801
 	Radius 16
 	Height 64
 	Speed 25
 	PainChance 50
+	RenderStyle Translucent
+	Alpha 0.4
 	Experience 10000
 	Monster
+//	+Shadow
+//	+Ghost
 	+FloorClip
 	+Telestomp
 	+DontMorph
-	PainSound "PlayerClericPain"
-	DeathSound "PlayerClericCrazyDeath"
-	Obituary "$ob_cboss"
+	DropItem "SilverBar", 40, 1
+	SeeSound "CentaurSight"
+	ActiveSound "CentaurActive"
+	AttackSound "CentaurAttack"
+	PainSound "CentaurPain"
+	DeathSound "CentaurDeath"
+	HowlSound "PuppyBeat"
+	Obituary "$ob_centaur"
 	
 	+CanJump
 	+CanLeap
@@ -115,83 +179,162 @@ actor KRPGClericBoss : IntelligentActor replaces ClericBoss
 	+CanSidemove
 	+CanDodge
 	+FastMove
+	+ShieldReflect
+	+CanShield
+	+CanBerserk
 
 	action native A_ClericAttack();
 
 	states
 	{
+
+
+
+
+
 	Spawn:
-		CLER A 2
-		CLER A 3 A_ClassBossHealth
-		CLER A 5 A_LookAI
-		Wait
+		CENT A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		CENT A 3 A_ClassBossHealth
+		CENT AB 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		CEND A 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		CEND AB 10 A_LookAI
+		Loop
 	See:
-		CLER ABCD 4 A_ChaseAI
+		CENT A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		CENT ABCD 4 A_ChaseAI
+		Loop
+	SeeDamaged:
+		CEND A 0 A_JumpIf(Health > default_health / 2, "See")
+		CEND ABCD 4 A_ChaseAI
 		Loop
 	Melee:
+//	Missile:
+//		CENT E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+//		CENT E 10 A_FaceTarget
+//		CENT F 8 Bright A_ClericAttack
+//		CENT E 10 A_FaceTarget
+//		CENT F 8 Bright A_ClericAttack
+//		Goto See
+//	MissileDamaged:
+//		CEND E 0 A_JumpIf(Health > default_health / 2, "Missile")
+//		CEND E 10 A_FaceTarget
+//		CEND F 8 Bright A_ClericAttack
+//		CEND E 10 A_FaceTarget
+//		CEND F 8 Bright A_ClericAttack
+//		Goto SeeDamaged
 	Missile:
-		CLER E 8 A_FaceTarget
-		CLER F 8 A_FaceTarget
-		CLER G 10 A_ClericAttack
+		CENT E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		CENT E 10 A_FaceTarget
+		CENT E 10 A_FaceTarget
+		CENT F 8 A_ClericAttack
 		Goto See
+	MissileDamaged:
+		CEND E 0 A_JumpIf(Health > default_health / 2, "Missile")
+		CEND E 10 A_FaceTarget
+		CEND E 10 A_FaceTarget
+		CEND F 8 A_ClericAttack
+		Goto SeeDamaged
 	Pain:
-		CLER H 4
-		CLER H 4 A_Pain
+		CENT G 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		CENT G 6 A_KRPGPain
+		CENT G 6 A_SetReflectiveInvulnerable
+		CENT EEE 15 A_CentaurDefend
+		CENT E 1 A_UnSetReflectiveInvulnerable
 		Goto See
+	PainDamaged:
+		CEND G 0 A_JumpIf(Health > default_health / 2, "Pain")
+		CEND G 6 A_KRPGPain
+		CEND G 6 A_SetReflectiveInvulnerable
+		CEND EEE 15 A_CentaurDefend
+		CEND E 1 A_UnSetReflectiveInvulnerable
+		Goto SeeDamaged
 	Death:
-		CLER I 6
-		CLER K 6 A_Scream
-		CLER LL 6
-		CLER M 6 A_NoBlocking
-		CLER NOP 6
-		CLER Q -1
+		CENT K 4
+		CENT L 4 A_Scream
+		CENT MN 4
+		CENT O 4 A_NoBlocking
+		CENT PQ 4
+		CENT R 4 A_QueueCorpse
+		CENT S 4
+		CENT T -1
 		Stop
 	XDeath:
-		CLER R 5 A_Scream
-		CLER S 5
-		CLER T 5 A_NoBlocking
-		CLER UVWXYZ 5
-		CLER "[" -1
+		CTXD A 4
+		CTXD B 4 A_NoBlocking
+		CTXD C 0 A_SpawnItemEx("CentaurShield", 0, 0, 45, random(-128, 127) * 0.03125 + 1,
+			random(-128, 127) * 0.03125 + 1, 8 + random(0, 255) * 0.015625, 90)
+		CTXD C 4 A_SpawnItemEx("CentaurSword", 0, 0, 45, random(-128, 127) * 0.03125 + 1,
+			random(-128, 127) * 0.03125 + 1, 8 + random(0, 255) * 0.015625, 270)
+		CTXD D 3 A_Scream
+		CTXD E 4 A_QueueCorpse
+		CTXD F 3
+		CTXD G 4
+		CTXD H 3
+		CTXD I 4
+		CTXD J 3
+		CTXD K -1
 		Stop
 	Ice:
-		CLER "\\" 5 A_FreezeDeath
-		CLER "\\" 1 A_FreezeDeathChunks
+		CENT U 5 A_FreezeDeath
+		CENT U 1 A_FreezeDeathChunks
 		Wait
 	Burn:
-		FDTH C 5 Bright A_PlaySound("PlayerClericBurnDeath")
-		FDTH D 4 Bright
-		FDTH G 5 Bright
-		FDTH H 4 Bright A_Scream
-		FDTH I 5 Bright
-		FDTH J 4 Bright
-		FDTH K 5 Bright
-		FDTH L 4 Bright
-		FDTH M 5 Bright
-		FDTH N 4 Bright
-		FDTH O 5 Bright
-		FDTH P 4 Bright
-		FDTH Q 5 Bright
-		FDTH R 4 Bright
-		FDTH S 5 Bright A_NoBlocking
-		FDTH T 4 Bright
-		FDTH U 5 Bright
-		FDTH V 4 Bright
-		ACLO E 35 A_CheckPlayerDone
+		CTXD A 4
+		CTXD B 4 A_NoBlocking
+		CTXD C 0 A_SpawnItemEx("CentaurShield", 0, 0, 45, random(-128, 127) * 0.03125 + 1,
+			random(-128, 127) * 0.03125 + 1, 8 + random(0, 255) * 0.015625, 90)
+		CTXD C 4 A_SpawnItemEx("CentaurSword", 0, 0, 45, random(-128, 127) * 0.03125 + 1,
+			random(-128, 127) * 0.03125 + 1, 8 + random(0, 255) * 0.015625, 270)
+		CTXD D 3 A_Scream
+		CTXD E 4 A_QueueCorpse
+		CTXD F 3
+		CTXD G 4
+		CTXD H 3
+		CTXD I 4
+		CTXD J 3
+		CTXD K -1
 		Wait
 	BurnGone:
 		ACLO E 8
 		Stop
+//	Burn:
+//		FDTH C 5 Bright A_PlaySound("PlayerClericBurnDeath")
+//		FDTH D 4 Bright
+//		FDTH G 5 Bright
+//		FDTH H 4 Bright A_Scream
+//		FDTH I 5 Bright
+//		FDTH J 4 Bright
+//		FDTH K 5 Bright
+//		FDTH L 4 Bright
+//		FDTH M 5 Bright
+//		FDTH N 4 Bright
+//		FDTH O 5 Bright
+//		FDTH P 4 Bright
+//		FDTH Q 5 Bright
+//		FDTH R 4 Bright
+//		FDTH S 5 Bright A_NoBlocking
+//		FDTH T 4 Bright
+//		FDTH U 5 Bright
+//		FDTH V 4 Bright
+//		ACLO E 35 A_CheckPlayerDone
+//		Wait
+//	BurnGone:
+//		ACLO E 8
+//		Stop
 	}
 }
 
 
 //------------------------------------------------------------------------------
+//magma serpent
 actor KRPGMageBoss : IntelligentActor replaces MageBoss
 {
 	Game Hexen
 	Health 800
 	Radius 16
-	Height 64
+	Height 80
 	Speed 25
 	PainChance 50
 	Experience 10000
@@ -199,9 +342,13 @@ actor KRPGMageBoss : IntelligentActor replaces MageBoss
 	+FloorClip
 	+Telestomp
 	+DontMorph
-	PainSound "PlayerMagePain"
-	DeathSound "PlayerMageCrazyDeath"
-	Obituary "$ob_mboss"
+	DropItem "SilverBar", 40, 1
+	SeeSound "DemonSight"	
+	ActiveSound "DemonActive"
+	AttackSound "DemonAttack"
+	PainSound "DemonPain"
+	DeathSound "DemonDeath"	
+	Obituary "$ob_demon1"
 	
 	+CanJump
 	+CanLeap
@@ -209,70 +356,116 @@ actor KRPGMageBoss : IntelligentActor replaces MageBoss
 	+CanSidemove
 	+CanDodge
 	+FastMove
+	+CanBerserk
 
 	action native A_MageAttack();
 
 	states
 	{
 	Spawn:
-		MAGE A 2
-		MAGE A 3 A_ClassBossHealth
-		MAGE A 5 A_LookAI
-		Wait
+		DEMN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		DEMN A 3 A_ClassBossHealth
+		DEMN AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		DEMN R 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		DEMN RR 10 A_LookAI
+		Loop
 	See:
-		MAGE ABCD 4 A_ChaseAI
+		DEMN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		DEMN ABCD 4 A_ChaseAI
+		Loop
+	SeeDamaged:
+		DEMN R 0 A_JumpIf(Health > default_health / 2, "See")
+		DEMN RSTU 4 A_ChaseAI
 		Loop
 	Melee:
 	Missile:
-		MAGE E 8 A_FaceTarget
-		MAGE F 8 Bright A_MageAttack
+		DEMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		DEMN E 5 A_FaceTarget
+		DEMN F 6 A_FaceTarget
+		DEMN G 5 Bright A_MageAttack
 		Goto See
+	MissileDamaged:
+		DEMN V 0 A_JumpIf(Health > default_health / 2, "Missile")
+		DEMN V 5 A_FaceTarget
+		DEMN W 6 A_FaceTarget
+		DEMN X 5 Bright A_MageAttack
+		Goto SeeDamaged
 	Pain:
-		MAGE G 4
-		MAGE G 4 A_Pain
+		DEMN E 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		DEMN E 4
+		DEMN E 4 A_KRPGPain
 		Goto See
+	PainDamaged:
+		DEMN V 0 A_JumpIf(Health > default_health / 2, "Pain")
+		DEMN V 4
+		DEMN V 4 A_KRPGPain
+		Goto SeeDamaged
 	Death:
-		MAGE H 6
-		MAGE I 6 A_Scream
-		MAGE JK 6
-		MAGE L 6 A_NoBlocking
-		MAGE M 6
-		MAGE N -1
+		DEMN HI 6
+		DEMN J 6 A_Scream
+		DEMN K 6 A_NoBlocking
+		DEMN L 6 A_QueueCorpse
+		DEMN MNO 6
+		DEMN P -1
 		Stop
 	XDeath:
-		MAGE O 5 A_Scream
-		MAGE P 5
-		MAGE R 5 A_NoBlocking
-		MAGE STUVW 5
-		MAGE X -1
+		DEMN H 6
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN J 6 A_Scream
+		DEMN K 6 A_NoBlocking
+		DEMN L 6 A_QueueCorpse
+		DEMN MNO 6
+		DEMN P -1
 		Stop
 	Ice:
-		MAGE Y 5 A_FreezeDeath
-		MAGE Y 1 A_FreezeDeathChunks
+		DEMN Y 5 A_FreezeDeath
+		DEMN Y 1 A_FreezeDeathChunks
 		Wait
 	Burn:
-		FDTH E 5 Bright A_PlaySound("PlayerMageBurnDeath")
-		FDTH F 4 Bright
-		FDTH G 5 Bright
-		FDTH H 4 Bright A_Scream
-		FDTH I 5 Bright
-		FDTH J 4 Bright
-		FDTH K 5 Bright
-		FDTH L 4 Bright
-		FDTH M 5 Bright
-		FDTH N 4 Bright
-		FDTH O 5 Bright
-		FDTH P 4 Bright
-		FDTH Q 5 Bright
-		FDTH R 4 Bright
-		FDTH S 5 Bright A_NoBlocking
-		FDTH T 4 Bright
-		FDTH U 5 Bright
-		FDTH V 4 Bright
-		ACLO E 35 A_CheckPlayerDone
+		DEMN H 6
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		DEMN J 6 A_Scream
+		DEMN K 6 A_NoBlocking
+		DEMN L 6 A_QueueCorpse
+		DEMN MNO 6
+		DEMN P -1
 		Wait
 	BurnGone:
 		ACLO E 8
 		Stop
+//	Burn:
+//		FDTH E 5 Bright A_PlaySound("PlayerMageBurnDeath")
+//		FDTH F 4 Bright
+//		FDTH G 5 Bright
+//		FDTH H 4 Bright A_Scream
+//		FDTH I 5 Bright
+//		FDTH J 4 Bright
+//		FDTH K 5 Bright
+//		FDTH L 4 Bright
+//		FDTH M 5 Bright
+//		FDTH N 4 Bright
+//		FDTH O 5 Bright
+//		FDTH P 4 Bright
+//		FDTH Q 5 Bright
+//		FDTH R 4 Bright
+//		FDTH S 5 Bright A_NoBlocking
+//		FDTH T 4 Bright
+//		FDTH U 5 Bright
+//		FDTH V 4 Bright
+//		ACLO E 35 A_CheckPlayerDone
+//		Wait
+//	BurnGone:
+//		ACLO E 8
+//		Stop
 	}
 }
