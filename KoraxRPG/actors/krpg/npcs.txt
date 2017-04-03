@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
-actor NPCCityBarbarian : TownFellow
+//barbarian
+actor k118sprite : TownFellow
 {
 	states
 	{
@@ -7,7 +8,8 @@ actor NPCCityBarbarian : TownFellow
 		BARB A 10 A_Look2
 		Loop
 	See:
-		BARB AABBCCDDEEFF 5 A_Wander
+//		BARB AABBCCDDEEFF 5 A_Wander
+		BARB AABBCCDD 5 A_Wander
 		Goto Spawn
 	Melee:
 		BARB G 10 A_FaceTarget
@@ -40,7 +42,89 @@ actor NPCCityBarbarian : TownFellow
 }
 
 //------------------------------------------------------------------------------
-actor NPCCityCleric : TownFellow
+//original fighter
+actor k122sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		PLAY A 10 A_Look2
+		Loop
+	See:
+		PLAY AABBCCDD 5 A_Wander
+		Goto Spawn
+	Melee:
+		PLAY G 10 A_FaceTarget
+		PLAY HI 8 A_FaceTarget
+		PLAY J 8  A_CustomMeleeAttack(random(1, 5) * 2 + 2)
+		PLAY K 8
+		Goto See
+	Pain:
+		PLAY L 3
+		PLAY L 3 A_KRPGPain
+		Goto Melee
+	Death:
+		PLAY M 5
+		PLAY N 5 A_Scream
+		PLAY O 6
+		PLAY P 5 A_NoBlocking
+		PLAY Q 5
+		PLAY R -1
+		Stop
+	XDeath:
+		GIBS M 5 A_TossGib
+		GIBS N 5 A_XScream
+		GIBS O 5 A_NoBlocking
+		GIBS PQRS 4 A_TossGib
+		GIBS T 4
+		GIBS U 5
+		GIBS V -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+//original cleric
+actor k121sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		CLER A 10 A_Look2
+		Loop
+	See:
+		CLER AABBCCDD 5 A_Wander
+		Goto Spawn
+	Melee:
+		CLER E 6 A_FaceTarget
+		CLER F 6  A_CustomMeleeAttack(random(1, 5) * 2 + 2)
+		CLER G 6
+		Goto See
+	Pain:
+		CLER H 3
+		CLER H 3 A_KRPGPain
+		Goto Melee
+	Death:
+		CLER I 6
+		CLER K 6 A_Scream
+		CLER LL 6
+		CLER M 6 A_NoBlocking
+		CLER NOP 5
+		CLER Q -1
+		Stop
+	XDeath:
+		CLER R 5
+		CLER S 5 A_XScream
+		CLER T 5 A_NoBlocking
+		CLER UVWXYZ 5
+		CLER [ -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+//bearded cleric
+actor k117sprite : TownFellow
 {
 	states
 	{
@@ -78,7 +162,48 @@ actor NPCCityCleric : TownFellow
 }
 
 //------------------------------------------------------------------------------
-actor NPCCityMage : TownFellow
+//original mage
+actor k123sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		MAGE A 10 A_Look2
+		Loop
+	See:
+		MAGE AABBCCDD 5 A_Wander
+		Goto Spawn
+	Melee:
+		MAGE E 6 A_FaceTarget
+		MAGE F 6 Bright A_CustomMeleeAttack(random(1, 5) * 2 + 2)
+		Goto See
+	Pain:
+		MAGE G 3
+		MAGE G 3 A_KRPGPain
+		Goto Melee
+	Death:
+		MAGE H 6
+		MAGE I 6 A_Scream
+		MAGE JK 6
+		MAGE L 6 A_NoBlocking
+		MAGE M 6
+		MAGE N -1
+		Stop
+	XDeath:
+		MAGE O 5 A_XScream
+		MAGE P 5
+		MAGE R 5 A_NoBlocking
+		MAGE STUVW 5
+		MAGE X -1
+		Stop
+	}	
+}
+
+
+
+//------------------------------------------------------------------------------
+//old mage
+actor k116sprite : TownFellow
 {
 	states
 	{
@@ -114,37 +239,532 @@ actor NPCCityMage : TownFellow
 	}	
 }
 
+
+
 //------------------------------------------------------------------------------
-actor NPCShopAttendant : TownFellow
+//peasant
+actor k119sprite : TownFellow
 {
 	states
 	{
 	Spawn:
-		SHO1 A -1
+		PEAS A 10 A_Look2
+		Loop
+	See:
+		PEAS AABBCCDD 5 A_Wander
+		Goto Spawn
+	Melee:
+		PEAS E 10 A_FaceTarget
+		PEAS F 8 A_CustomMeleeAttack(random(1, 5) * 2 + 2)
+		PEAS E 8
+		Goto See
+	Pain:
+		PEAS O 3
+		PEAS O 3 A_KRPGPain
+		Goto Melee
+	Wound:
+		PEAS G 5
+		PEAS H 10 A_GetHurt
+		PEAS I 6
+		Goto Wound+1
+	Death:
+		PEAS G 5
+		PEAS H 5 A_Scream
+		PEAS I 6
+		PEAS J 5 A_NoBlocking
+		PEAS K 5
+		PEAS L 6
+		PEAS M 8
+		PEAS N -1
+		Stop
+//	XDeath:
+//		PEAS O 5 A_TossGib
+//		PEAS P 5 A_XScream
+//		PEAS Q 5 A_NoBlocking
+//		PEAS RSTU 4 A_TossGib
+//		PEAS V 4
+//		PEAS W 5
+//		PEAS X -1
+//		Stop
+	}	
+}
+
+
+
+
+
+
+//immobile sprite definitions
+
+
+//------------------------------------------------------------------------------
+actor k101sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k101 A -1
 		Stop
 	}	
 }
 
 //------------------------------------------------------------------------------
-actor NPCBarbarianWalking1 : NPCCityBarbarian 19004
+actor k102sprite : TownFellow
 {
-	ConversationID 3
+	states
+	{
+	Spawn:
+		k102 A -1
+		Stop
+	}	
 }
 
 //------------------------------------------------------------------------------
-actor NPCClericWalking1 : NPCCityCleric 19005
+actor k103sprite : TownFellow
 {
-	ConversationID 3
+	states
+	{
+	Spawn:
+		k103 A -1
+		Stop
+	}	
 }
 
 //------------------------------------------------------------------------------
-actor NPCMageWalking1 : NPCCityMage 19006
+actor k104sprite : TownFellow
 {
-	ConversationID 3
+	states
+	{
+	Spawn:
+		k104 A -1
+		Stop
+	}	
 }
 
 //------------------------------------------------------------------------------
-actor NPCShopper1 : NPCShopAttendant 19007
+actor k105sprite : TownFellow
 {
-	ConversationID 3
+	states
+	{
+	Spawn:
+		k105 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k106sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k106 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k107sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k107 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k108sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k108 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k109sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k109 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k110sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k110 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k111sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k111 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k112sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k112 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k113sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k113 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k114sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k114 A -1
+		Stop
+	}	
+}
+
+
+//------------------------------------------------------------------------------
+actor k115sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k115 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k120sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		MAGE A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k124sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k124 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k125sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k125 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k126sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k126 A -1
+		Stop
+	}	
+}
+
+
+//------------------------------------------------------------------------------
+actor k903sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k903 A -1
+		Stop
+	}	
+}
+
+//------------------------------------------------------------------------------
+actor k904sprite : TownFellow
+{
+	states
+	{
+	Spawn:
+		k904 A -1
+		Stop
+	}	
+}
+
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+
+
+//samples for walkers
+
+
+//------------------------------------------------------------------------------
+//barbarian
+actor k118 : k118sprite 19118
+{
+	ConversationID 4
+}
+
+//------------------------------------------------------------------------------
+//original fighter
+actor k122 : k122sprite 19122
+{
+	ConversationID 4
+}
+
+//------------------------------------------------------------------------------
+//original cleric
+actor k121 : k121sprite 19121
+{
+	ConversationID 4
+}
+
+
+//------------------------------------------------------------------------------
+//bearded cleric
+actor k117 : k117sprite 19117
+{
+	ConversationID 4
+}
+
+//------------------------------------------------------------------------------
+//original mage
+actor k123 : k123sprite 19123
+{
+	ConversationID 4
+}
+
+//------------------------------------------------------------------------------
+//old mage
+actor k116 : k116sprite 19116
+{
+	ConversationID 4
+}
+
+//------------------------------------------------------------------------------
+//peasant
+actor k119 : k119sprite 19119
+{
+	ConversationID 4
+	Scale 0.75
+}
+
+
+
+
+
+
+//samples for sizes
+
+
+//------------------------------------------------------------------------------
+//shopkeeper
+actor k101 : k101sprite 19101
+{
+	ConversationID 4
+	Scale 0.8
+}
+
+//------------------------------------------------------------------------------
+//acolyte
+actor k102 : k102sprite 19102
+{
+	ConversationID 4
+	Scale 0.9
+}
+
+//------------------------------------------------------------------------------
+//merchant
+actor k103 : k103sprite 19103
+{
+	ConversationID 4
+	Scale 0.9
+}
+
+//------------------------------------------------------------------------------
+//peasant woman
+actor k104 : k104sprite 19104
+{
+	ConversationID 4
+	Scale 0.8
+}
+
+//------------------------------------------------------------------------------
+//church honcho
+actor k105 : k105sprite 19105
+{
+	ConversationID 4
+	Scale 0.21
+}
+
+//------------------------------------------------------------------------------
+//blacksmith
+actor k106 : k106sprite 19106
+{
+	ConversationID 4
+	Scale 0.16
+}
+
+//------------------------------------------------------------------------------
+//legion honcho
+actor k107 : k107sprite 19107
+{
+	ConversationID 4
+	Scale 0.19
+}
+
+//------------------------------------------------------------------------------
+//arcanum honcho
+actor k108 : k108sprite 19108
+{
+	ConversationID 4
+	Scale 0.2
+}
+
+//------------------------------------------------------------------------------
+//barkeep
+actor k109 : k109sprite 19109
+{
+	ConversationID 4
+	Scale 0.185
+}
+
+//------------------------------------------------------------------------------
+//peasant
+actor k110 : k110sprite 19110
+{
+	ConversationID 4
+	Scale 0.175
+}
+
+//------------------------------------------------------------------------------
+//barmaid
+actor k111 : k111sprite 19111
+{
+	ConversationID 4
+	Scale 0.2
+}
+
+//------------------------------------------------------------------------------
+//townswoman green dress
+actor k112 : k112sprite 19112
+{
+	ConversationID 4
+	Scale 0.225
+}
+
+//------------------------------------------------------------------------------
+//townswoman brown dress
+actor k113 : k113sprite 19113
+{
+	ConversationID 4
+	Scale 0.2
+}
+
+//------------------------------------------------------------------------------
+//townswoman white blouse
+actor k114 : k114sprite 19114
+{
+	ConversationID 4
+	Scale 0.215
+}
+
+//------------------------------------------------------------------------------
+//innkeeper
+actor k115 : k115sprite 19115
+{
+	ConversationID 4
+	Scale 0.75
+}
+
+//------------------------------------------------------------------------------
+//hooded mage
+actor k120 : k120sprite 19120
+{
+	ConversationID 4
+	Scale 0.75
+}
+
+//------------------------------------------------------------------------------
+//bald tavernkeeper
+actor k124 : k124sprite 19124
+{
+	ConversationID 4
+	Scale 0.65
+}
+
+//------------------------------------------------------------------------------
+//legionnaire
+actor k125 : k125sprite 19125
+{
+	ConversationID 4
+	Scale 0.65
+}
+
+//------------------------------------------------------------------------------
+//golden guard
+actor k126 : k126sprite 19126
+{
+	ConversationID 4
+	Scale 1.0
+}
+
+//------------------------------------------------------------------------------
+//green bull
+actor k903 : k903sprite 19903
+{
+	ConversationID 4
+	Scale 0.75
+}
+
+//------------------------------------------------------------------------------
+//brown bull
+actor k904 : k904sprite 19904
+{
+	ConversationID 21194
+	Scale 0.75
 }
