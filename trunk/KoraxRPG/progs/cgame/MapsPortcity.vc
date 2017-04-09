@@ -1,0 +1,125 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: MapsPortcity.vc 2236 2017-03-19 13:58:27Z ramborc $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class MapsPortcity : KRPGMenuScreen;
+
+KRPGPlayerReplicationInfo RepInfo;
+
+const int
+	TABLE_HEAD_Y		= 68,
+	TABLE_STRING_DELTA	= 14;
+
+
+//==========================================================================
+//
+//	CyclePrevChoice
+//
+//==========================================================================
+
+void CyclePrevChoice()
+{
+}
+
+//==========================================================================
+//
+//	CycleNextChoice
+//
+//==========================================================================
+
+void CycleNextChoice()
+{
+}
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+	DrawPic(0, 0, R_RegisterPic('journal'));
+
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		{
+		
+			if (RepInfo.plclass == 0)
+			{
+			DrawPic(8, 80, R_RegisterPic('journf'));			
+			}
+			if (RepInfo.plclass == 1)
+			{
+			DrawPic(8, 80, R_RegisterPic('journc'));			
+			}
+			if (RepInfo.plclass == 2)
+			{
+			DrawPic(8, 80, R_RegisterPic('journm'));			
+			}
+			
+			DrawPic(160, 82, R_RegisterPic('jmapga'));
+	}
+}
+
+
+	
+}
+
+//==========================================================================
+//
+//  OnDestroy
+//
+//==========================================================================
+
+void OnDestroy()
+{
+	::OnDestroy();
+
+	ClientGame(ClGame).HideMapsPortcity();
+
+}
+
+
+defaultproperties
+{
+	X = 0;
+	Y = 0;
+	Width = 640;
+	Height = 480;
+	TitleX = 320;
+	ChoicesStartX = 85;
+	ChoicesStartY = 130;
+/*	ScaleX = 2.0;
+	ScaleY = 2.4;*/
+	Title = "map of the port city";
+}
