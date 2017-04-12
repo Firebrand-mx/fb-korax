@@ -68,6 +68,11 @@ void OnDraw()
 
 	::OnDraw();
 
+	//DrawPic(0, 0, R_RegisterPic('bgplanks'));
+	DrawPic(0, 0, R_RegisterPic('bgmarble'));
+	DrawPic(0, 0, R_RegisterPic('weblb'));
+	DrawPic(290, 0, R_RegisterPic('webra'));
+	
 	SetFont('bigfont');
 	DrawText(ChoicesStartX, currentY, va("%s", sp_wording[Class]));
 	DrawText(ChoicesStartX * 3, currentY, va("%i", i_spiritpower ? i_spiritpower : init_spiritualpower[Class]));
@@ -204,9 +209,9 @@ void CreateChoices()
 	MenuTextButton		Btn;
 	MenuChoiceEnum		Enum;
 	MenuChoice_OnOff	OnOff;
-	int YPos = ChoicesStartY + (17 * 8);
+	int YPos = ChoicesStartY + (17 * 9 + 7);
 
-	SetFont('BigFont');
+	//SetFont('BigFont');
 	RerollStats(self);
 
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
@@ -214,15 +219,17 @@ void CreateChoices()
 	Btn.Text = "Default Build";
 	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = DefaultRollStats;
-	YPos += Btn.Height;
+	YPos += (Btn.Height + 0);
 	
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "Reroll";
 	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = RerollStats;
-	YPos += Btn.Height;
+	YPos += (Btn.Height + 0);
 
+
+/*
 	Enum = MenuChoiceEnumBig(NewChild(MenuChoiceEnumBig));
 	Enum.SetOrigin(ChoicesStartX, YPos);
 	Enum.Text = "Experience Modifier";
@@ -235,13 +242,14 @@ void CreateChoices()
 	Enum.SetInitialValue(GetCvar('ExpModifier'));
 	Enum.ValueChanging = UpdateModifier;
 	YPos += Enum.Height;
-
+*/
+/*
 	OnOff = MenuChoice_OnOffBig(NewChild(MenuChoice_OnOffBig));
 	OnOff.SetOrigin(ChoicesStartX, YPos);
 	OnOff.Text = "Auto Update:";
 	OnOff.ValueChanging = EnableAutoUpdate;
 	YPos += OnOff.Height;
-
+*/
 	Btn = MenuTextButton(NewChild(MenuBigTextButton));
 	Btn.SetOrigin(ChoicesStartX, YPos);
 	Btn.Text = "OK";
@@ -293,17 +301,19 @@ void PClassItemActivate(Object Sender)
 void SetDefaultChoice()
 {
 	CursorPrev = -1;
-	CursorPos = 4;
+	//CursorPos = 4;
+	CursorPos = 2;
 	CursorMoved();
 }
 
 defaultproperties
 {
-	ChoicesStartX = 66;
-	ChoicesStartY = 30;
-	Height = 310;
+	ChoicesStartX = 74;
+	//ChoicesStartX = 66;
+	ChoicesStartY = 40;
+	Height = 274;
 	SelectorType = MenuSelector_Big;
-	Title = "GENERATE YOUR CHARACTER:";
+	Title = "Starting Ability Scores";
 
 	sp_wording[0] = "BATTLE RAGE";
 	sp_wording[1] = "FAITH";
