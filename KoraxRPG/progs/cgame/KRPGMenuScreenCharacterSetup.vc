@@ -39,6 +39,7 @@ MenuChoiceSlider	ColG;
 MenuChoiceSlider	ColB;
 MenuTextButton		Btn;
 int					PClass;
+MenuChoiceEnum		Enum;
 
 //==========================================================================
 //
@@ -62,10 +63,10 @@ void CreateChoices()
 	PName.Text = "Name";
 	PName.Value = GetCvarS('Name');
 	PName.ValueChanged = ChangeName;
-	currentY += PName.Height;
+	currentY += PName.Height + 10;
 
 	int Col = ParseColour(GetCvarS('colour'));
-
+/*
 	ColR = NewChild(MenuChoiceSlider);
 	ColR.SetOrigin(ChoicesStartX, currentY);
 	ColR.Text = "Red";
@@ -89,17 +90,35 @@ void CreateChoices()
 	ColB.SetInitialValue(itof(Col & 0xff) / 255.0);
 	ColB.ValueChanging = ChangeColour;
 	currentY += ColB.Height;
+*/
 
+	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	Enum.SetOrigin(ChoicesStartX, currentY);
+	//Enum.CursorXOffs = +50;
+	Enum.Text = "Ethical Alignment";
+	Enum.AddItem("Lawful");
+	Enum.AddItem("Neutral");
+	Enum.AddItem("Chaotic");
+	currentY += Enum.Height;
+
+	Enum = MenuChoiceEnum(NewChild(MenuChoiceEnum));
+	Enum.SetOrigin(ChoicesStartX, currentY);
+	Enum.Text = "Moral Alignment";
+	Enum.AddItem("Good");
+	Enum.AddItem("Neutral");
+	Enum.AddItem("Evil");
+	currentY += Enum.Height + 30;
+	
 	Anim = MenuSpriteAnim(NewChild(MenuSpriteAnim));
-	Anim.SetPos(260, 140);
+	Anim.SetPos(1260, 140);
 	Anim.SprDef = 500;
 	Anim.Speed = 8;
 	Anim.NumFrames = 4;
 	Anim.Colour = Col;
 
-	Btn = MenuTextButton(NewChild(MenuBigTextButton));
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
 	Btn.SetOrigin(ChoicesStartX, currentY);
-	Btn.Text = "OK";
+	Btn.Text = "accept values";
 	Btn.TextColourFocus = CR_YELLOW;
 	Btn.Activated = PClassItemActivate;
 }
@@ -174,6 +193,24 @@ void PClassItemActivate(Object Sender)
 
 //==========================================================================
 //
+//	OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+
+	::OnDraw();
+
+	//DrawPic(0, 0, R_RegisterPic('bgplanks'));
+	DrawPic(0, 0, R_RegisterPic('bgmarble'));
+	DrawPic(0, 0, R_RegisterPic('weblb'));
+	DrawPic(290, 0, R_RegisterPic('webra'));
+
+}
+
+//==========================================================================
+//
 //	SetDefaultChoice
 //
 //==========================================================================
@@ -181,14 +218,18 @@ void PClassItemActivate(Object Sender)
 void SetDefaultChoice()
 {
 	CursorPrev = -1;
-	CursorPos = 4;
+	CursorPos = 3;
 	CursorMoved();
 }
 
 defaultproperties
 {
-	ChoicesStartX = 66;
-	ChoicesStartY = 40;
-	SelectorType = MenuSelector_Big;
-	Title = "INITIAL CHARACTER SETUP";
+	ChoicesStartX = 140;
+	ChoicesStartY = 26;
+	//ChoicesStartX = 66;
+	//ChoicesStartY = 40;
+	Height = 136;
+	SelectorType = MenuSelector_SmallRight;
+	//SelectorType = MenuSelector_Big;
+	Title = "Character Information";
 }
