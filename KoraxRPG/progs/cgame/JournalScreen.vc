@@ -38,6 +38,7 @@ const int
 	TABLE_HEAD_Y		= 68,
 	TABLE_STRING_DELTA	= 14;
 
+string playerclassnames[HexenDefs::NUMCLASSES];
 
 //==========================================================================
 //
@@ -50,8 +51,8 @@ const int
 	::OnDraw();
 
 	SetFont('smallfont');
-	SetTextAlign(hcentre, vtop);
-	DrawPic(0, 0, R_RegisterPic('journal'));
+	SetTextAlign(hleft, vtop);
+	DrawPic(0, 0, R_RegisterPic('journmai'));
 	ShadeRect(12, 78, 113, 289, GetCvarF('0.000000'));
 	
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
@@ -71,6 +72,17 @@ const int
 			{
 			DrawPic(8, 80, R_RegisterPic('journm'));			
 			}
+
+			DrawText(160, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("My name is %s.", GetCvarS('Name')), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("I am a level %i %s.", RepInfo.level, playerclassnames[RepInfo.plclass]), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 42), va("I recently accumulated %i", RepInfo.exp), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 56), va("experience and need another"), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("%i to reach level %i.", RepInfo.next_lvl, RepInfo.level+1), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 98), va("I have %i gold to my name.", RepInfo.gold), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("I added a few bookmarks to"), CR_TAN );
+			DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 140), va("facilitate quicker access:"), CR_TAN );
+			
+			
 		}
 	}
 	
@@ -103,39 +115,46 @@ void CreateChoices()
 	currentY = ChoicesStartY;
 	
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 14, currentY);
+	Btn.SetOrigin(ChoicesStartX + 3, currentY);
 	Btn.Text = "Abilities";
 	Btn.Activated = StatsOverview;
-	currentY += 28 + Btn.Height;
-/*
+	currentY += 10 + Btn.Height;
+
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 11, currentY);
+	Btn.SetOrigin(ChoicesStartX + 0, currentY);
 	Btn.Text = "Arsenal";
 	Btn.Activated = ModifyArsenal;
-	currentY += 28 + Btn.Height;
-*/
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 7, currentY);
-	Btn.Text ="Quests";
-	Btn.Activated = ShowQuests;
-	currentY += 28 + Btn.Height;
+	currentY += 10 + Btn.Height;
 
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX - 1, currentY);
-	Btn.Text = "Maps";
-	Btn.Activated = ShowMap;
-	currentY += 28 + Btn.Height;
-
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 3, currentY);
-	Btn.Text = "Codex";
-	Btn.Activated = ShowCodex;
-	currentY += 28 + Btn.Height;
+	Btn.SetOrigin(ChoicesStartX + 8, currentY);
+	Btn.Text = "Spellbook";
+	Btn.Activated = ModifyArsenal;
+	currentY += 10 + Btn.Height;
 	
 	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 3, currentY);
+	Btn.SetOrigin(ChoicesStartX - 3, currentY);
+	Btn.Text ="Quests";
+	Btn.Activated = ShowQuests;
+	currentY += 10 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX - 11, currentY);
+	Btn.Text = "Maps";
+	Btn.Activated = ShowMap;
+	currentY += 10 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 5, currentY);
 	Btn.Text = "Bestiary";
 	Btn.Activated = ShowBestiary;
+	currentY += 10 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX - 5, currentY);
+	Btn.Text = "Codex";
+	Btn.Activated = ShowCodex;	
+
 }
 
 //==========================================================================
@@ -215,9 +234,12 @@ defaultproperties
 	Height = 480;
 	TitleX = 320;
 	ChoicesStartX = 285;
-	ChoicesStartY = 130;
+	ChoicesStartY = 246;
 /*	ScaleX = 2.0;
 	ScaleY = 2.4;*/
+	playerclassnames[0] = "fighter";
+	playerclassnames[1] = "cleric";
+	playerclassnames[2] = "mage";
 	Title = "JOURNAL";
 }
 
