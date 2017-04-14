@@ -67,13 +67,20 @@ void CycleNextChoice()
 
  void OnDraw()
 {
-	DrawPic(0, 0, R_RegisterPic('journai'));
 
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
 	{
 		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
 		{
 		
+			if (RepInfo.codexai == 1)
+			{
+				DrawPic(0, 0, R_RegisterPic('journai'));
+			}
+			else
+			{
+				DrawPic(0, 0, R_RegisterPic('journal'));
+			}
 			if (RepInfo.plclass == 0)
 			{
 			DrawPic(8, 80, R_RegisterPic('journf'));			
@@ -87,12 +94,12 @@ void CycleNextChoice()
 			DrawPic(8, 80, R_RegisterPic('journm'));			
 			}
 
-			if ((RepInfo.codexai == 1)&&(GetCvar('JournalHints') == 1))
+			if ((RepInfo.codexai == 0)&&(GetCvar('JournalHints') == 1))
 			{
 				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("Maybe a bard in Neusus knows what I seek."), CR_DARKGRAY );
 			}
 			
-			if (RepInfo.codexai == 0)
+			if (RepInfo.codexai == 1)
 			{
 				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("Marin the bard taught me this ballad to impress ladies."), GetCvar('JournalFontColor') );
 				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va(""), GetCvar('JournalFontColor') );
