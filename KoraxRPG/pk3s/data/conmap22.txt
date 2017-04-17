@@ -19,6 +19,20 @@ conitem k22201 22201
 		set MyState 1;
 	}
 
+	choice none "You summoned me and I am here."
+	if (MyState is 1)
+	{
+		say Player "You summoned me and I am here." none;
+		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
+	}
+
+	choice none "You summoned me and I am here."
+	if (MyState is 2)
+	{
+		say Player "You summoned me and I am here." none;
+		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
+	}
+
 	choice none "How do I stave off this threat?"
 	if (MyState is 1)
 	{
@@ -27,7 +41,15 @@ conitem k22201 22201
 		Player.StartQuestaa( 1 );
 		Player.SetMapTrackbb( 1 );
 		Player.GiveConstitution( 5 );
+		executems 22 3;
 		set MyState 2;
+	}
+
+	choice none "How do I stave off this threat?"
+	if (MyState is 2)
+	{
+		say Player "How can I help?" none;
+		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders." none;
 	}
 
 	choice none "What's with all the portals?"
@@ -74,7 +96,6 @@ conitem k22202 22202
 		say "You seem to have what it takes. Give me a few moments to decipher this." none;
 		Player.FinishQuestaa( 1 );
 		Player.GiveLevels( 10 );
-		Player.GiveConstitution( 5 );
 		set MyState 1;
 		terminate;
 	}
@@ -107,13 +128,23 @@ conitem k22202 22202
 		"Korax' Heritage." none;
 	}
 
+	choice none "What does the tablet say?"
+	if (MyState is 4)
+	{
+		say Player "What does the tablet say?" none;
+		say "Bad news... it seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
+		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
+		"Korax' Heritage." none;
+	}
+
 	choice none "So what's the next step?"
 	if (MyState is 2)
 	{
 		say Player "So what's the next step?" none;
-		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",
+		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
 		"I can teleport you there any time, let me know whenever you are ready." none;
 		Player.StartQuestab( 1 );
+		Player.GiveConstitution( 5 );
 		set MyState 3;
 	}
 
@@ -121,12 +152,30 @@ conitem k22202 22202
 	if (MyState is 3)
 	{
 		say Player "So what's the next step?" none;
-		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",
+		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
+		"I can teleport you there any time, let me know whenever you are ready." none;
+	}
+
+
+	choice none "So what's the next step?"
+	if (MyState is 4)
+	{
+		say Player "So what's the next step?" none;
+		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
 		"I can teleport you there any time, let me know whenever you are ready." none;
 	}
 
 	choice none "Heresiarch's Seminary"
 	if (MyState is 3)
+	{
+		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
+		say "Hang on to your skivvies, this might hurt a bit." none;
+		Player.TeleportToMap(68);
+		terminate;
+	}
+
+	choice none "Heresiarch's Seminary"
+	if (MyState is 4)
 	{
 		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
 		say "Hang on to your skivvies, this might hurt a bit." none;
@@ -150,6 +199,33 @@ conitem k22202 22202
 	}
 
 	choice none "I need a minute."
+	if (MyState is 0)
+	{
+		end;
+	}
+
+	choice none "I need a minute."
+	if (MyState is 1)
+	{
+		end;
+	}
+
+	choice none "I need a minute."
+	if (MyState is 2)
+	{
+		end;
+	}
+
+	choice none "I need a minute."
+	if (MyState is 3)
+	{
+		executems 22 3;
+		set MyState 4;
+		end;
+	}
+
+	choice none "I need a minute."
+	if (MyState is 4)
 	{
 		end;
 	}
@@ -183,8 +259,8 @@ conitem k22203 22203
 	if (MyState is 1)
 	{
 		say Player "So where is the cult located? Where am I heading now?" none;
-		say "It seems they are in the 'Dark Conclave', an underground structure connecting the overworld and the underworld.",
-		"To get there, you need to cross The Chasm south of The Border Post and explore The Canyon until you find the entrance to the rift.",
+		say "It seems they are in the 'Dark Conclave', an underground structure connecting the overworld and the underworld.",,
+		"To get there, you need to cross The Chasm south of The Border Post and explore The Canyon until you find the entrance to the rift.",,
 		"Descend into the rift to enter the Dark Conclave." none;
 		Player.StartQuestac( 1 );
 		Player.SetMapTrackdb( 1 );
@@ -192,6 +268,7 @@ conitem k22203 22203
 		Player.SetMapTrackdi( 1 );
 		Player.SetMapTrackdm( 1 );
 		Player.GiveConstitution( 5 );
+		executems 22 3;
 	}
 
 	choice none "What's with all the portals?"
