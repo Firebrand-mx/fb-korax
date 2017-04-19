@@ -71,8 +71,6 @@ conitem k22302 22302
 	choice ChoiceNum1 "Magical Merlot" hidden
 	{
 		say Player "A goblet of Magical Merlot." none;
-		Player.GiveInventory( KRPGMana1 , 1 );
-		Player.GiveInventory( KRPGMana2 , 1 );
 		Player.GiveInventory( RedMana , 1 );
 		say "Bottoms up!" none;
 	}
@@ -88,7 +86,7 @@ conitem k22302 22302
 	choice ChoiceNum3 "Savant Sauvignon" hidden
 	{
 		say Player "A goblet of Savant Sauvignon." none;
-		Player.GiveLevels( 1 );
+		Player.GiveInventory( KRPGMana1 , 1 );
 		say "Bottoms up!" none;
 	}
 	
@@ -102,9 +100,9 @@ conitem k22302 22302
 //------------------------------------------------------------------------------
 conitem k22303 22303
 {
-	var chiclife integer 1;
 	name "Agnes";
 
+	var MyState 1 integer 0;
 
 	hello
 	{
@@ -119,14 +117,39 @@ conitem k22303 22303
 	}
 
 
-	choice none "Fry me up some chicken!"
+	choice none "A drumstick please."
+	if (MyState is 1)
 	{
-		say Player "Fry me up some chicken, woman!" none;
-		Player.GiveInventory( CrystalVial , 20 );
-		comment "That hits the spot.";
+		say Player "A drumstick please." none;
+		Player.GiveStrength( 1 );
+		say "Enjoy." none;
+		set MyState 2;
+
 	}
 
+
+	choice none "A drumstick please."
+	if (MyState is 2)
+	{
+		say Player "A drumstick please." none;
+		Player.GiveStrength( 1 );
+		say "Enjoy." none;
+		set MyState 3;
+
+	}
+
+
+	choice none "A drumstick please."
+	if (MyState is 3)
+	{
+		say Player "A drumstick please." none;
+		say "You already ate both legs off a freshly slaughtered chicken, you glutton!" none;
+		terminate;
+	}
+
+
 	choice none "What's with the dancing chicken?"
+	if (MyState is 0)
 	{
 		say Player "What's with the dancing chicken?" none;
 		say "Drunk like everybody else in this town.";
@@ -152,7 +175,9 @@ conitem k22303 22303
 	{
 		say Player "Go ahead and slice it up, I feel like some white meat!" none;
 		say "One second... stop flapping! ...there, all done." none;
-		set chiclife 0;
+		executems 23 3;
+		set MyState 1;
+		end;
 	}
 
 	choice ChoiceNum7 "I rather you wouldn't." hidden
