@@ -31,23 +31,6 @@ conitem k22802 22802
 		say "You should talk to Georg, he is at his farmhouse." none;
 	}
 
-	choice none "start quest aa"
-	{
-		say "quest aa started." none;
-		Player.StartQuestaa( 1 );
-	}
-
-	choice none "finish quest ab"
-	{
-		say "quest ab finished." none;
-		Player.FinishQuestab( 1 );
-	}
-
-	choice none "start quest ac"
-	{
-		say "quest ac started." none;
-		Player.StartQuestac( 1 );
-	}
 
 	choice none "Roger."
 	{
@@ -60,6 +43,8 @@ conitem k22803 22803
 {
 	name "Foreman Bomta";
 
+	var MyState 1 integer 0;
+
 	hello
 	{
 		say "Behold the future chapel and bell tower of Viona!" none;
@@ -67,14 +52,20 @@ conitem k22803 22803
 	}
 
 	choice none "Where's the crew?"
+	if (MyState is 0)
 	{
 		say "They are on a lunch break." none;
+		set MyState 1;
 	}
 
 	choice none "Got anything to eat?"
+	if (MyState is 1)
 	{
+		say Player "Got anything to eat?" none;
 		say "You can have half my sandwich." none;
-		Player.GiveInventory( CrystalVial , 1 );
+		Player.GiveConstitution( 1 );
+		say Player "Thanks, appreciated." none;
+		set MyState 2;
 	}
 
 	choice none "I'll let you get back to work."
