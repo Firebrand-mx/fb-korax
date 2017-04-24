@@ -121,20 +121,85 @@ actor EttinCommander : KRPGEttin 16002
 	DropItem "GoldBar", 45, 5
 	DropItem "Mana2", 20, 15
 
+
 	states
 	{
+	Spawn:
+		AETN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		AETN AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		AETN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		AETN AA 10 A_LookAI
+		Loop
+	See:
+		AETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		AETN ABCD 5 A_ChaseAI
+		Loop
+	SeeDamaged:
+		AETN A 0 A_JumpIf(Health > default_health / 2, "See")
+		AETN ABCD 5 A_ChaseAI
+		Loop
+	Pain:
+		AETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		AETN H 7 A_KRPGPain
+		Goto See
+	PainDamaged:
+		AETN H 0 A_JumpIf(Health > default_health / 2, "Pain")
+		AETN H 7 A_KRPGPain
+		Goto SeeDamaged
+	Melee:
+		AETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
+		AETN EF 6 A_FaceTarget
+		AETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto See
+	MeleeDamaged:
+		AETN E 0 A_JumpIf(Health > default_health / 2, "Melee")
+		AETN EF 6 A_FaceTarget
+		AETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto SeeDamaged
 	Missile:
-		ETTN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
-		ETTN EF 6 A_FaceTarget
-		//ETTN G 8 A_CustomMissile("EttinMissile", 32, 0)
-		ETTN G 8 A_PredictingMissileAttack("EttinMissile", 0.5, 35, 32, 0)
-		Goto Super::See
+		AETN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		AETN EF 6 A_FaceTarget
+		//AETN G 8 A_CustomMissile("EttinMissile", 32, 0)
+		AETN G 8 A_PredictingMissileAttack("EttinMissile", 0.5, 35, 32, 0)
+		Goto See
 	MissileDamaged:
-		ETTN W 0 A_JumpIf(Health > default_health / 2, "Missile")
-		ETTN WX 6 A_FaceTarget
-		//ETTN Y 8 A_CustomMissile("EttinMissile", 32, 0)
-		ETTN Y 8 A_PredictingMissileAttack("EttinMissile", 0.5, 35, 32, 0)
-		Goto Super::See
+		ATTN E 0 A_JumpIf(Health > default_health / 2, "Missile")
+		AETN EF 6 A_FaceTarget
+		//AETN G 8 A_CustomMissile("EttinMissile", 32, 0)
+		AETN G 8 A_PredictingMissileAttack("EttinMissile", 0.5, 35, 32, 0)
+		Goto SeeDamaged
+	Death:
+		AETN IJ 4
+		AETN K 4 A_Scream
+		AETN L 4 A_NoBlocking
+		AETN M 4 A_QueueCorpse
+		AETN NOP 4
+		AETN Q -1
+		Stop
+	XDeath:
+		AETN S 0
+		AETN S 0 A_NoBlocking
+		AETN S 0 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+			SXF_ABSOLUTEMOMENTUM)
+		AETN S 4 A_Scream
+		AETN S 0 A_QueueCorpse
+		AETN T 4
+		AETN Q -1
+		Stop
+	Ice:
+		AETN R 5 A_FreezeDeath
+		AETN R 1 A_FreezeDeathChunks
+		Wait
+	}
+
+
+
+	states
+	{
+
 	}
 }
 
@@ -226,9 +291,106 @@ actor EttinFlechetter : KRPGEttin 16028
 	}
 }
 //------------------------------------------------------------------------------
-actor ArmoredEttin : KRPGEttin 16098
+actor StoneEttin : KRPGEttin 16099
 {
 	Health 1750
+	Radius 25
+	Height 102
+	Mass 175
+	Radius 35
+	Speed 6
+	Damage 30
+	MeleeRange 72
+	PainChance 60
+	Experience 400
+	DropItem "SilverBar", 40, 1
+	SeeSound "EttinSight"
+	ActiveSound "EttinActive"
+	AttackSound "EttinAttack"
+	PainSound "EttinPain"
+	DeathSound "EttinDeath"
+	HowlSound "PuppyBeat"
+	Obituary "$ob_ettin"
+	scale 1.5
+	Monster
+
+	+FloorClip
+	+Telestomp
+	+Living
+	
+	//+CanJump
+	+CanBackpedal
+	+CanSidemove
+	+CanBerserk
+	
+	AttackRushChance 0.1
+	AttackRushDistance 256
+
+	states
+	{
+	Spawn:
+		BETN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		BETN AA 10 A_LookAI
+		Loop
+	SpawnDamaged:
+		BETN A 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		BETN AA 10 A_LookAI
+		Loop
+	See:
+		BETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		BETN ABCD 7 A_ChaseAI
+		Loop
+	SeeDamaged:
+		BETN A 0 A_JumpIf(Health > default_health / 2, "See")
+		BETN ABCD 7 A_ChaseAI
+		Loop
+	Pain:
+		BETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		BETN H 7 A_KRPGPain
+		Goto See
+	PainDamaged:
+		BETN H 0 A_JumpIf(Health > default_health / 2, "Pain")
+		BETN H 7 A_KRPGPain
+		Goto SeeDamaged
+	Melee:
+		BETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
+		BETN EF 6 A_FaceTarget
+		BETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto See
+	MeleeDamaged:
+		BETN E 0 A_JumpIf(Health > default_health / 2, "Melee")
+		BETN EF 6 A_FaceTarget
+		BETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		Goto SeeDamaged
+	Death:
+		BETN IJ 4
+		BETN K 4 A_Scream
+		BETN L 4 A_NoBlocking
+		BETN M 4 A_QueueCorpse
+		BETN NOPQRS 4
+		BETN T -1
+		Stop
+	XDeath:
+		BETN IJ 4
+		BETN K 4 A_NoBlocking
+		BETN L 4 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+			SXF_ABSOLUTEMOMENTUM)
+		BETN M 4 A_Scream
+		BETN N 4 A_QueueCorpse
+		BETN OPQRS 4
+		BETN T -1
+		Stop
+	Ice:
+		ETTN R 5 A_FreezeDeath
+		ETTN R 1 A_FreezeDeathChunks
+		Wait
+	}
+}
+//------------------------------------------------------------------------------
+actor ArmoredEttin : KRPGEttin 16098
+{
+	Health 17
 	Radius 25
 	Height 68
 	Mass 175
@@ -267,23 +429,23 @@ actor ArmoredEttin : KRPGEttin 16098
 		Loop
 	SpawnDamaged:
 		AETN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
-		AETN SS 10 A_LookAI
+		AETN AA 10 A_LookAI
 		Loop
 	See:
 		AETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		AETN ABCD 5 A_ChaseAI
 		Loop
 	SeeDamaged:
-		AETN S 0 A_JumpIf(Health > default_health / 2, "See")
-		AETN STUV 5 A_ChaseAI
+		AETN A 0 A_JumpIf(Health > default_health / 2, "See")
+		AETN ABCD 5 A_ChaseAI
 		Loop
 	Pain:
 		AETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		AETN H 7 A_KRPGPain
 		Goto See
 	PainDamaged:
-		AETN Z 0 A_JumpIf(Health > default_health / 2, "Pain")
-		AETN Z 7 A_KRPGPain
+		AETN H 0 A_JumpIf(Health > default_health / 2, "Pain")
+		AETN H 7 A_KRPGPain
 		Goto SeeDamaged
 	Melee:
 		AETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
@@ -291,9 +453,9 @@ actor ArmoredEttin : KRPGEttin 16098
 		AETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto See
 	MeleeDamaged:
-		AETN W 0 A_JumpIf(Health > default_health / 2, "Melee")
-		AETN WX 6 A_FaceTarget
-		AETN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		AETN E 0 A_JumpIf(Health > default_health / 2, "Melee")
+		AETN EF 6 A_FaceTarget
+		AETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto SeeDamaged
 	Death:
 		AETN IJ 4
@@ -304,111 +466,15 @@ actor ArmoredEttin : KRPGEttin 16098
 		AETN Q -1
 		Stop
 	XDeath:
-		AETN A 4
-		AETN B 4 A_NoBlocking
-		AETN C 4 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+		AETN S 0
+		AETN S 0 A_NoBlocking
+		AETN S 0 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
 			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
 			SXF_ABSOLUTEMOMENTUM)
-		AETN D 4 A_Scream
-		AETN E 4 A_QueueCorpse
-		AETN FGHIJK 4
-		AETN L -1
-		Stop
-	Ice:
-		ETTN R 5 A_FreezeDeath
-		ETTN R 1 A_FreezeDeathChunks
-		Wait
-	}
-}
-//------------------------------------------------------------------------------
-actor StoneEttin : KRPGEttin 16099
-{
-	Health 1750
-	Radius 25
-	Height 68
-	Mass 175
-	Speed 6 //13
-	Damage 30
-	MeleeRange 72
-	PainChance 60
-	Experience 100
-	DropItem "SilverBar", 40, 1
-	SeeSound "EttinSight"
-	ActiveSound "EttinActive"
-	AttackSound "EttinAttack"
-	PainSound "EttinPain"
-	DeathSound "EttinDeath"
-	HowlSound "PuppyBeat"
-	Obituary "$ob_ettin"
-	scale 1.5
-	Monster
-
-	+FloorClip
-	+Telestomp
-	+Living
-	
-	//+CanJump
-	+CanBackpedal
-	+CanSidemove
-	+CanBerserk
-	
-	AttackRushChance 0.1
-	AttackRushDistance 256
-
-	states
-	{
-	Spawn:
-		BETN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
-		BETN AA 10 A_LookAI
-		Loop
-	SpawnDamaged:
-		BETN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
-		BETN SS 10 A_LookAI
-		Loop
-	See:
-		BETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
-		BETN ABCD 5 A_ChaseAI
-		Loop
-	SeeDamaged:
-		BETN S 0 A_JumpIf(Health > default_health / 2, "See")
-		BETN STUV 5 A_ChaseAI
-		Loop
-	Pain:
-		BETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
-		BETN H 7 A_KRPGPain
-		Goto See
-	PainDamaged:
-		BETN Z 0 A_JumpIf(Health > default_health / 2, "Pain")
-		BETN Z 7 A_KRPGPain
-		Goto SeeDamaged
-	Melee:
-		BETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
-		BETN EF 6 A_FaceTarget
-		BETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
-		Goto See
-	MeleeDamaged:
-		BETN W 0 A_JumpIf(Health > default_health / 2, "Melee")
-		BETN WX 6 A_FaceTarget
-		BETN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
-		Goto SeeDamaged
-	Death:
-		BETN IJ 4
-		BETN K 4 A_Scream
-		BETN L 4 A_NoBlocking
-		BETN M 4 A_QueueCorpse
-		BETN NOP 4
-		BETN Q -1
-		Stop
-	XDeath:
-		BETN A 4
-		BETN B 4 A_NoBlocking
-		BETN C 4 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
-			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
-			SXF_ABSOLUTEMOMENTUM)
-		BETN D 4 A_Scream
-		BETN E 4 A_QueueCorpse
-		BETN FGHIJK 4
-		BETN L -1
+		AETN S 4 A_Scream
+		AETN S 0 A_QueueCorpse
+		AETN T 4
+		AETN Q -1
 		Stop
 	Ice:
 		ETTN R 5 A_FreezeDeath
