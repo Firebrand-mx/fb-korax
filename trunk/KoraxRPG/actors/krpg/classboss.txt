@@ -14,11 +14,11 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 	+Telestomp
 	+DontMorph
 	DropItem "SilverBar", 40, 1
-	SeeSound "SETinSight"
-	ActiveSound "SETinActive"
-	AttackSound "SETinAttack"
-	PainSound "SETinPain"
-	DeathSound "SETinDeath"
+	SeeSound "EttinSight"
+	ActiveSound "EttinActive"
+	AttackSound "EttinAttack"
+	PainSound "EttinPain"
+	DeathSound "EttinDeath"
 	HowlSound "PuppyBeat"
 	Obituary "$ob_SETin"
 	
@@ -40,24 +40,24 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 		SETN AA 10 A_LookAI
 		Loop
 	SpawnDamaged:
-		SETN S 0 A_JumpIf(Health > default_health / 2, "Spawn")
-		SETN SS 10 A_LookAI
+		SETN A 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		SETN AA 10 A_LookAI
 		Loop
 	See:
 		SETN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		SETN ABCD 5 A_ChaseAI
 		Loop
 	SeeDamaged:
-		SETN S 0 A_JumpIf(Health > default_health / 2, "See")
-		SETN STUV 5 A_ChaseAI
+		SETN A 0 A_JumpIf(Health > default_health / 2, "See")
+		SETN ABCD 5 A_ChaseAI
 		Loop
 	Pain:
 		SETN H 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		SETN H 7 A_KRPGPain
 		Goto See
 	PainDamaged:
-		SETN Z 0 A_JumpIf(Health > default_health / 2, "Pain")
-		SETN Z 7 A_KRPGPain
+		SETN H 0 A_JumpIf(Health > default_health / 2, "Pain")
+		SETN H 7 A_KRPGPain
 		Goto SeeDamaged
 	Melee:
 		SETN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
@@ -65,9 +65,9 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 		SETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto See
 	MeleeDamaged:
-		SETN W 0 A_JumpIf(Health > default_health / 2, "Melee")
-		SETN WX 6 A_FaceTarget
-		SETN Y 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
+		SETN E 0 A_JumpIf(Health > default_health / 2, "Melee")
+		SETN EF 6 A_FaceTarget
+		SETN G 8 A_CustomMeleeAttack(random(1, 8) * ((default_health - 175) / 175 + 2))
 		Goto SeeDamaged
 	Missile:
 		SETN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
@@ -76,8 +76,8 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 		Goto See
 //		Goto Super::See
 	MissileDamaged:
-		SETN W 0 A_JumpIf(Health > default_health / 2, "Missile")
-		SETN WX 6 A_FaceTarget
+		SETN E 0 A_JumpIf(Health > default_health / 2, "Missile")
+		SETN EF 6 A_FaceTarget
 		SETN F 8 A_FighterAttack
 		Goto See
 //		Goto Super::See
@@ -90,34 +90,35 @@ actor KRPGFighterBoss : IntelligentActor replaces FighterBoss
 		SETN Q -1
 		Stop
 	XDeath:
-		SETB A 4
-		SETB B 4 A_NoBlocking
-		SETB C 4 A_SpawnItemEx(SETinMace, 0, 0, 34, random(-128, 127) * 0.03125,
-			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
-			SXF_ABSOLUTEMOMENTUM)
-		SETB D 4 A_Scream
-		SETB E 4 A_QueueCorpse
-		SETB FGHIJK 4
-		SETB L -1
+		SETB AB 4
+		SETB C 4 A_NoBlocking
+//		SETB D 4 A_SpawnItemEx(EttinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+//			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+//			SXF_ABSOLUTEMOMENTUM)
+		SETB D 4 
+		SETB E 4 A_Scream
+		SETB F 4 A_QueueCorpse
+		SETB GHIJ 4
+		SETB K -1
 		Stop
 	Ice:
 		SETN R 5 A_FreezeDeath
 		SETN R 1 A_FreezeDeathChunks
 		Wait
-	Burn:
-		SETB A 4
-		SETB B 4 A_NoBlocking
-		SETB C 4 A_SpawnItemEx(SETinMace, 0, 0, 34, random(-128, 127) * 0.03125,
-			random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
-			SXF_ABSOLUTEMOMENTUM)
-		SETB D 4 A_Scream
-		SETB E 4 A_QueueCorpse
-		SETB FGHIJK 4
-		SETB L -1
-		Wait
-	BurnGone:
-		ACLO E 8
-		Stop
+	//Burn:
+	//	SETB A 4
+	//	SETB B 4 A_NoBlocking
+	//	SETB C 4 A_SpawnItemEx(SETinMace, 0, 0, 34, random(-128, 127) * 0.03125,
+	//		random(-128, 127) * 0.03125, 10 + random(0, 255) * 0.015625, 0,
+	//		SXF_ABSOLUTEMOMENTUM)
+	//	SETB D 4 A_Scream
+	//	SETB E 4 A_QueueCorpse
+	//	SETB FGHIJK 4
+	//	SETB L -1
+	//	Wait
+//	BurnGone:
+//		ACLO E 8
+//		Stop
 //	Burn:
 //		FDTH A 5 Bright A_PlaySound("PlayerFighterBurnDeath")
 //		FDTH B 4 Bright
