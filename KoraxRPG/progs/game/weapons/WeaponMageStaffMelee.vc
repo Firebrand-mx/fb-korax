@@ -33,7 +33,113 @@
 class WeaponMageStaffMelee : MageWeapon
 	abstract;
 
+	KRPGPlayerReplicationInfo RepInfo;
+
+	
+
+float			fire_tics;
+float			refire_tics;
+
+
+// RepInfo.level
+
+	
+//===========================================================================
+//
+//  A_KArenaStaffAttackPL1
+//
+//===========================================================================
+
+final void A_KArenaStaffAttackPL1() self(PlayerPawn)
+{
+	TAVec		angles;
+	int			damage;
+	TVec		vforward;
+	EntityEx	AimTarget;
+
+		
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	
+	MageWeapon Wpn = MageWeapon(PlayerEx(Player).ReadyWeapon);
+
+	damage = 90 + (KRPGPlayerBase(Player).strength);
+	
+	angles = Angles;
+	angles.yaw = AngleMod360(angles.yaw +
+		(Random() - Random()) * 45.0 / 8.0);
+	AimTarget = AimLineAttack(vforward, angles, 1.5 * MELEERANGE);
+	if (AimTarget)
+	{
+		LineAttack(vforward, 1.5 * MELEERANGE, damage, StaffPuff2);
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, 2.0);
+		}
+		Player(Player).AdjustPlayerAngle(AimTarget);
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		angles = Angles;
+		AimLineAttack(vforward, angles, MELEERANGE);
+		if (LineAttack(vforward, MELEERANGE, damage, StaffPuff2))
+		{
+			PlaySound('Staffcrackle', CHAN_WEAPON);
+		}
+	}
+}
+
+states
+{
+Ready:
+	CSTF DEF 4 DoReadyWeapon
+	//CSTF F 4 PlayWeaponSound("Staffcrack")
+	Loop
+Deselect:
+	CSTF D 1 A_Lower
+	Loop
+Select:
+	CSTF D 1 A_Raise
+	Loop
+Fire:
+	CSTF G 6
+	CSTF H 8 A_KArenaStaffAttackPL1
+	CSTF G 8 A_ReFire
+	Goto Ready
+}
+
+
+/*
+states
+{
+Ready:
+	CSTF A 1 DoReadyWeapon
+	Loop
+Deselect:
+	CSTF A 1 A_Lower
+	Loop
+Select:
+	CSTF A 1 A_Raise
+	Loop
+Fire:
+	CSTF B 6
+	CSTF C 8 A_KArenaStaffAttackPL1
+	CSTF B 8 A_ReFire
+	Goto Ready
+}
+*/
+
+/* FIRST */
 defaultproperties
 {
 	Slot = 1;
+	SelectionOrder = 7300;
+	PSpriteSY = 0.0;
+	bWimpyWeapon = true;
+	HitObituary = "$ob_mstaff1";
+	refire_tics = 22.0;
+	fire_tics = 6.0;
 }
