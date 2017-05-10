@@ -38,8 +38,151 @@ float			fire_tics;
 float			refire_tics;
 
 	
+//==========================================================================
+//
+//  A_MWandAttack
+//
+//==========================================================================
+
+final void A_MWandAttack(int when) self(KRPGPlayerPawn)
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	MageWeapon Wpn = MageWeapon(PlayerEx(Player).ReadyWeapon);
+/*
+	EntityEx mo;
+	mo = KRPGPlayerPawn(self).SpawnPlayerMissile_2(Wpn, MageWandRedMissile);
+	if (mo)
+		// Wpn.ApplyDamageModifiers(mo.MissileDamage);
+	PlaySound('MageWandFire', CHAN_WEAPON);
+	if (when == 1)
+	{
+		Wpn.UseWeaponMana();
+	}
+*/	
+}
+
+states
+{
+Ready:
+	MWN3 A 1 DoReadyWeapon
+	Loop
+Deselect:
+	MWN3 A 1 A_Lower
+	Loop
+Select:
+	MWN3 A 1 A_Raise
+	Loop
+Fire:
+	MWN3 A 6
+	MWN3 B 4 Bright Offset(0, 48) WA_MStaffAttack
+	//MWN3 B 4 Bright Offset(0, 48) { A_MWandAttack(1); }
+	MWN3 A 5
+	MWN3 B 4 Bright Offset(0, 48) WA_MStaffAttack
+	//MWN3 B 4 Bright Offset(0, 48) { A_MWandAttack(2); }
+	MWN3 A 5
+	MWN3 B 4 Bright Offset(0, 48) WA_MStaffAttack
+	//MWN3 B 4 Bright Offset(0, 48) { A_MWandAttack(3); }
+	MWN3 A 4 Offset(0, 40)
+	MWN3 A 8 Offset(0, 36) A_ReFire
+	Goto Ready
+}
 
 defaultproperties
 {
 	Slot = 3;
+	SelectionOrder = 5300;
+	AmmoType1 = Mana2;
+	AmmoUse1 = 9;
+	PSpriteSY = 9.0;
+	PickupMessage = "FIRE WAND";
+	Obituary = "$ob_redwand";
+	refire_tics = 40.0;
+	fire_tics = 10.0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MageWandRedMissile : FastProjectile;
+
+//===========================================================================
+//
+//	SpawnBlasterEffects
+//
+//===========================================================================
+
+void SpawnBlasterEffects()
+{
+	float z;
+
+	if (P_Random() < 128)
+	{
+		z = Origin.z - 8.0;
+		if (z < FloorZ)
+		{
+			z = FloorZ;
+		}
+		Spawn(MageWandRedSmoke, vector(Origin.x, Origin.y, z));
+	}
+}
+
+states
+{
+Spawn:
+	MWN3 CD 4 Bright
+	Loop
+Death:
+	MWN3 E 4 Bright
+	MWN3 F 3 Bright
+	MWN3 G 4 Bright
+	MWN3 H 3 Bright
+	MWN3 I 4 Bright
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 12.0;
+	Height = 8.0;
+	Speed = 6440.0;
+	MissileDamage = 1;
+	RenderStyle = STYLE_Add;
+	bRip = true;
+	bCannotPush = true;
+	bNoDamageThrust = true;
+	DamageType = 'Fire';
+//	Obituary = "$ob_redwand";
+}
+
+class MageWandRedSmoke : Actor;
+
+states
+{
+Spawn:
+	MWN3 CDCD 4
+	Stop
+}
+
+defaultproperties
+{
+	RenderStyle = STYLE_Translucent;
+	Alpha = 0.333;
+	bNoBlockmap = true;
+	bNoGravity = true;
+	bNoTeleport = true;
+	bCannotPush = true;
+	bNoDamageThrust = true;
 }
