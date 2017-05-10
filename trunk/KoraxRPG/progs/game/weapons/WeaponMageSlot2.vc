@@ -37,9 +37,39 @@ KRPGPlayerReplicationInfo RepInfo;
 float			fire_tics;
 float			refire_tics;
 
+	//Weapon.Explosive = true;
+	//Weapon.MagicMissile = 1;
+
+	//HexenWeapon.MissileType = "MageWandMissile";
+	
+	states
+	{
+	Ready:
+		MWND A 1 DoReadyWeapon
+		Loop
+	Deselect:
+		MWND A 1 A_Lower
+		Loop
+	Select:
+		MWND A 1 A_Raise
+		Loop
+	Fire:
+		MWND A 6
+		//MWND B 6 Bright Offset(0, 48) { A_FireCustomMissile("MageWandMissile"); }
+		//MWND B 6 Bright Offset(0, 48) WA_MissileAttack
+		//MWND B 6 Bright Offset(0, 48) WA_MStaffAttack
+		MWND B 6 Bright Offset(0, 48) WA_MWandAttack
+		MWND A 3 Offset(0, 40)
+		MWND A 3 Offset(0, 36) A_ReFire
+		Goto Ready
+	}
 	
 
 defaultproperties
 {
+	SelectionOrder = 6300;
 	Slot = 2;
+	AmmoType1 = Mana1;
+	AmmoUse1 = 10;
+	AmmoGive1 = 20;
 }

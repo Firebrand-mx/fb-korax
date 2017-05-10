@@ -37,9 +37,221 @@ KRPGPlayerReplicationInfo RepInfo;
 float			fire_tics;
 float			refire_tics;
 
+//==========================================================================
+//
+//  SpawnPlayerMissileAngle_2
+//
+//==========================================================================
+
+Actor SpawnPlayerMissileAngle_2(Thinker shooter, class<EntityEx> type, float angle)
+{
+	Actor A = Actor(SpawnPlayerMissileAngle(type, angle));
+	//if (A)
+		//A.SpawnCombatAttributes(self, shooter);
+	return A;
+}
+
 	
+//==========================================================================
+//
+//	WMissileSpawn
+//
+//==========================================================================
+
+final void WMissileSpawn(float angle)
+{
+	EntityEx mo;
+
+	//mo = KRPGPlayerPawn(Owner).SpawnPlayerMissileAngle_2(self, MagicMissile, angle);
+
+	if (mo)
+	{
+		MagicMissile(mo).MissileFindEnemy();
+		//ApplyDamageModifiers(mo.MissileDamage);
+	}
+}
+
+//==========================================================================
+//
+//  A_WMMissilesAttack
+//
+//==========================================================================
+
+final void A_WMMissilesAttack() self(KRPGPlayerPawn)
+{
+	float angle;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	WeaponMageSlot8 Wpn = WeaponMageSlot8(PlayerEx(Player).ReadyWeapon);
+
+	//Wpn.UseWeaponMana();
+	angle = Angles.yaw;
+
+	Wpn.WMissileSpawn(angle - 2.5);
+	Wpn.WMissileSpawn(angle - 5.0);
+	Wpn.WMissileSpawn(angle + 2.5);
+	Wpn.WMissileSpawn(angle + 5.0);
+	PlaySound('MageStaffFire', CHAN_WEAPON);
+}
+
+states
+{
+Ready:
+	WENC A 1 DoReadyWeapon
+	Loop
+Deselect:
+	WENC A 1 A_Lower
+	Loop
+Select:
+	WENC A 1 A_Raise
+	Loop
+Fire:
+	WENC BCDEFGHI 2
+	//WENC J 2 Bright A_WMMissilesAttack
+	WENC J 2 Bright WA_MStaffAttack
+	WENC KLMNO 2 Bright
+	WENC PQ 2
+	Goto Ready
+}
+
+
+
+
+
+
 
 defaultproperties
 {
 	Slot = 8;
+	SelectionOrder = 4600;
+	AmmoType1 = RedMana;
+	AmmoUse1 = 20;
+	PSpriteSY = 20.0;
+	PickupMessage = "MAGIC MISSILES";
+	Obituary = "$ob_magicmissile";
+	refire_tics = 20.0;
+	fire_tics = 16.0;
 }
+
+
+
+
+class KArenaSeekerMissile : Actor
+		abstract;
+
+int BlockSearchDistance;
+float TraceThreshold;
+float TraceTurnMax;
+
+//===========================================================================
+//
+//  MissileFindEnemy
+//
+//===========================================================================
+
+void MissileFindEnemy(optional int blockSearch)
+{
+	Entity Other;
+	int teamfactor;
+
+	if (!specified_blockSearch)
+		blockSearch = BlockSearchDistance;
+
+	foreach RoughBlockSearch(Other, blockSearch)
+	{
+		EntityEx link = EntityEx(Other);
+
+		if (!link)
+			continue;
+
+		if (!(link.bMonster || link.bIsPlayer) || link == Target ||
+			link.bDormant )
+		{
+			continue;
+		}
+		if (!link.bShootable)
+		{
+			continue;
+		}
+		
+		if (CanSee(link))
+		{
+			float angle = AngleMod360(atan2(link.Origin.y - Target.Origin.y,
+				link.Origin.x - Target.Origin.x) - Target.Angles.yaw);
+			if (angle > 226.0 * 360.0 / 256.0 || angle < 30.0 * 360.0 / 256.0)
+			{
+				Tracer = link;
+				return;
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+//  A_SeekerMissileTrack
+//
+//==========================================================================
+
+final void A_SeekerMissileTrack()
+{
+	if (!Tracer && (P_Random() < 50))
+	{
+		MissileFindEnemy();
+	}
+	SeekerMissile(TraceThreshold, TraceTurnMax);
+}
+
+defaultproperties
+{
+	bMissile = true;
+	bSeekerMissile = true;
+
+	BlockSearchDistance = 2;
+	TraceThreshold = 2.0;
+	TraceTurnMax = 10.0;
+
+//	bNoAccuracy = true;
+}
+
+
+
+
+class MagicMissile : KArenaSeekerMissile;
+
+states
+{
+Spawn:
+	WENE AB 2 Bright A_SeekerMissileTrack
+	Wait
+Death:
+	WENE B 4 Bright
+	WENE CDEF 5 Bright
+	WENE G 4 Bright
+	Stop
+}
+
+defaultproperties
+{
+	Radius = 8.0;
+	Height = 8.0;
+	Speed = 600.0;
+	MissileDamage = 1;
+	RenderStyle = STYLE_Add;
+	bNoBlockmap = true;
+	bDropOff = true;
+	bNoGravity = true;
+	bNoTeleport = true;
+	bActivateImpact = true;
+	bActivatePCross = true;
+	bBloodSplatter = true;
+	bThruGhost = true;
+	DeathSound = 'MageStaffExplode';
+}
+
+
+
+
