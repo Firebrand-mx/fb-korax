@@ -101,6 +101,57 @@ actor WeaponFighterHammerOfRetribution : WeaponFighterSlot3 replaces FWeapHammer
 	}
 }
 
+
+//------------------------------------------------------------------------------
+actor WeaponFighterHammerOfRetribution : WeaponFighterSlot3 replaces FWeapHammer
+{
+	Game Hexen
+	SpawnID 28
+	+BloodSplatter
+	Inventory.PickupMessage "$txt_weapon_f3"
+	Weapon.SelectionOrder 900
+	Weapon.AmmoType1 "Mana2"
+	Weapon.AmmoUse1 3
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust -10
+	Weapon.BotCombatDist 192
+	+Weapon.Ammo_Optional
+	+Weapon.MeleeWeapon
+
+	//action native A_FHammerAttack();
+	//action native A_FHammerThrow();
+
+	states
+	{
+	Ready:
+		FHMR A 1 A_WeaponReady
+		Loop
+	Deselect:
+		FHMR A 1 A_Lower
+		Loop
+	Select:
+		FHMR A 1 A_Raise
+		Loop
+	Fire:
+		FHMR B 6 Offset(5, 0)
+		FHMR C 3 Offset(5, 0) WA_FHammerAttack
+		FHMR D 3 Offset(5, 0)
+		FHMR E 2 Offset(5, 0)
+		FHMR E 10 Offset(5, 150) WA_FHammerThrow
+		FHMR A 1 Offset(0, 60)
+		FHMR A 1 Offset(0, 55)
+		FHMR A 1 Offset(0, 50)
+		FHMR A 1 Offset(0, 45)
+		FHMR A 1 Offset(0, 40)
+		FHMR A 1 Offset(0, 35)
+		FHMR A 1
+		Goto Ready
+	Spawn:
+		WFHM A -1
+		Stop
+	}
+}
+
 //------------------------------------------------------------------------------
 actor WeaponFighterHammer_DebugOnly1 : WeaponFighterHammerOfRetribution
 {
@@ -181,6 +232,8 @@ actor WeaponFighterQuietus : WeaponFighterSlot4 replaces FWeapQuietus
 	Weapon.BotCombatDist 256
 	+Weapon.Explosive
 	+Weapon.Primary_Uses_Both
+	+Weapon.Ammo_Optional
+	+Weapon.MeleeWeapon
 
 	//action native A_FSwordAttack();
 
@@ -209,5 +262,65 @@ actor WeaponFighterQuietus : WeaponFighterSlot4 replaces FWeapQuietus
 		FSRD A 1 Bright Offset(5, 45)
 		FSRD B 1 Bright Offset(5, 40)
 		Goto Ready
+	}
+}
+
+
+
+//------------------------------------------------------------------------------
+actor WeaponFighterInfernoHammer : WeaponFighterSlot5
+{
+	Game Hexen
+	SpawnID 28
+	+BloodSplatter
+	Inventory.PickupMessage "INFERNO HAMMER"
+	Weapon.SelectionOrder 900
+	Weapon.AmmoType1 "Mana2"
+	Weapon.AmmoUse1 70
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust -10
+	Weapon.BotCombatDist 192
+
+	//action native A_FHammerAttack();
+	//action native A_FHammerThrow();
+
+	states
+	{
+	Ready:
+		FPHM AAABBBCCC 1 A_WeaponReady
+		Loop
+	Deselect:
+		FHM2 CBA 1 A_Lower
+		FHMR AAAAAAAAAAAAAA 1 A_Lower
+		Loop
+	Select:
+		FHMR A 1 A_Raise
+		FHM2 ABCCCCCCCCCCCC 1 A_Raise
+		Loop
+	Fire:
+		FPHM D 6 Offset(5, 0)
+		FPHM E 3 Offset(5, 0)
+		FPHM F 3 Offset(5, 0)
+		FPHM G 1 Offset (5, 150) A_PlaySound("FighterHammerHitWall")
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 0, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 45, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 90, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 135, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 180, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 225, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 270, 0, 0, 0)
+		FPHM G 1 Offset(5, 150) Bright A_FireCustomMissile("FlameCentaurFF1", 315, 0, 15, 0)
+		FPHM G 10 Offset (5, 150)
+		FHM2 G 1 Offset(0, 60)
+		FHM2 H 1 Offset(0, 55)
+		FHM2 H 1 Offset(0, 50)
+		FHM2 H 1 Offset(0, 45)
+		FHM2 I 1 Offset(0, 40)
+		FHM2 I 1 Offset(0, 35)
+		FHM2 J 1
+		Goto Ready
+	Spawn:
+		WFHM A -1
+		Stop
 	}
 }
