@@ -1,0 +1,170 @@
+//**************************************************************************
+//**
+//**	    ##   ##   ####   ######     ##    ##     ##
+//**	    ##  ##   ##  ##  ##   ##  ##  ##   ### ###
+//**	    ## ##   ##    ## ##   ## ##    ##   #####
+//**	    ######  ##    ## #####   ########   #####
+//**	    ## ###   ##  ##  ## ###  ##    ##  ### ###
+//**	    ##   ##   ####   ##  ### ##    ## ##     ##
+//**
+//**				   ######  #####   ######
+//**	               ##   ## ##  ## ##    ##
+//**	     		   ##   ## ##  ## ##   
+//**	               #####   #####  ##  ####
+//**	     		   ## ###  ##     ###   ##
+//**	     		   ##  ### ##      ######
+//**
+//**    $Id: ArsenalScreen.vc 2236 2017-03-19 13:58:27Z ramborc $
+//**
+//**    Copyright (C) 2004-2008 Korax Heritage Team
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ArsenalScreen : KRPGMenuScreen;
+
+KRPGPlayerReplicationInfo RepInfo;
+
+const int
+	TABLE_HEAD_Y		= 68,
+	TABLE_STRING_DELTA	= 14;
+
+//==========================================================================
+//
+//  OnDraw
+//
+//==========================================================================
+
+ void OnDraw()
+{
+	::OnDraw();
+
+	SetFont('smallfont');
+	SetTextAlign(hleft, vtop);
+	DrawPic(0, 0, R_RegisterPic('journque'));
+	ShadeRect(12, 78, 113, 289, GetCvarF('0.000000'));
+
+	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	{
+		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
+		{
+		
+			if (RepInfo.plclass == 0)
+			{
+			DrawPic(8, 80, R_RegisterPic('journf'));			
+			}
+			if (RepInfo.plclass == 1)
+			{
+			DrawPic(8, 80, R_RegisterPic('journc'));			
+			}
+			if (RepInfo.plclass == 2)
+			{
+			DrawPic(8, 80, R_RegisterPic('journm'));			
+			}
+
+		DrawText(160, TABLE_HEAD_Y + TABLE_STRING_DELTA, va("It seems my services are in great demand and so I get" ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("asked to do a lot of things. I guess I better jot it all"), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("down so I don't forget anything of importance." ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("The most important of all is to finish" ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 140), va("I also have a long list of additional" ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 154), va("requests, sorted by organization:" ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 280), va("using a red ink that fades fast" ), GetCvar('JournalFontColor') );
+		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 294), va("so active quests will stand out." ), GetCvar('JournalFontColor') );
+
+		}
+	}
+	
+}
+
+//==========================================================================
+//
+//  OnDestroy
+//
+//==========================================================================
+
+void OnDestroy()
+{
+	::OnDestroy();
+	
+	ClientGame(ClGame).HideArsenalScreen();
+}
+/*
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+	MenuTextButton		Btn;
+	int					currentY;
+	
+	currentY = ChoicesStartY;
+	
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX , currentY);
+	Btn.Text = "My Main Quest";
+	Btn.Activated = MainQuests;
+	currentY += 77 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 8, currentY);
+	Btn.Text = "Church Quests";
+	Btn.Activated = ChurchQuests;
+	currentY += 8 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 2, currentY);
+	Btn.Text ="Legion Quests";
+	Btn.Activated = LegionQuests;
+	currentY += 8 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 17, currentY);
+	Btn.Text = "Arcanum Quests";
+	Btn.Activated = ArcanumQuests; 
+	currentY += 8 + Btn.Height;
+
+	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
+	Btn.SetOrigin(ChoicesStartX + 69, currentY);
+	Btn.Text = "Merchant Guild Quests";
+	Btn.Activated = MerchantQuests;
+}
+*/
+/*
+//==========================================================================
+//
+//	MainQuests
+//
+//==========================================================================
+
+void MainQuests(Object Sender)
+{
+	ClientGame(ClGame).ShowQuestsMain();
+}
+*/
+
+
+defaultproperties
+{
+	X = 0;
+	Y = 0;
+	Width = 640;
+	Height = 480;
+	TitleX = 320;
+	ChoicesStartX = 265;
+	ChoicesStartY = 169;
+/*	ScaleX = 2.0;
+	ScaleY = 2.4;*/
+	Title = "Arsenal";
+}
