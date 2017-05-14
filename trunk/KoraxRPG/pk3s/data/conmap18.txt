@@ -35,11 +35,39 @@ conitem k21806 21806
 conitem k21807 21807
 {
 	name "Acolyte Cyril";
+	
+	var MyState 1 integer 0;
 
 	hello
 	{
 		say "Welcome to our humble abode." none;
 	}
+
+	choice none "I need a decent weapon."
+	if (MyState is 0)
+	{
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		Player.GiveInventory( WeaponClericSerpentStaff ); // replace with morning star once implemented
+		say "I have this Morning Star lying around, it's yours. Use it well." none;
+		set MyState 1;
+		executems 18 11;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		say "Try Conjurer Yamael in the mage tower." none;
+		set MyState 1;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		say "Try Guardsman Sectus in the keep." none;
+		set MyState 1;
+		terminate;
+		}
+	}
+
 
 	choice none "Can you heal some of my wounds?"
 	{
@@ -91,6 +119,7 @@ conitem k21808 21808
 		if (Player.HasInventory( Coin, 1 ))
 		{
 		Player.GiveInventory( ArtiHealth , 1 );
+		Player.GiveInventory( WeaponFighterInfernoHammer , 1 );
 		say "There you go. Anything else?" none;
 		}
 		else
@@ -98,7 +127,7 @@ conitem k21808 21808
 			say "Come back when you have enough money." none;
 		}
 	}
-	
+
 	choice none "A Flechette for 1 gold."
 	{
 		if (Player.HasInventory( Coin, 1 ))
@@ -252,12 +281,38 @@ conitem k21808 21808
 conitem k21809 21809
 {
 	name "Guardsman Sectus";
+	
+	var MyState 1 integer 0;
 
 	hello
 	{
 		say "I wanted to be a family man but then I took a crossbow bolt to the nads." none;
 	}
 
+	choice none "I need a decent weapon."
+	if (MyState is 0)
+	{
+		if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		Player.GiveInventory( WeaponFighterSlot2 );
+		say "I have Timon's Axe lying around, it's yours. Use it well." none;
+		set MyState 1;
+		executems 18 11;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		say "Try Conjurer Yamael in the mage tower." none;
+		set MyState 1;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		say "Try Acolyte Cyril in the chapel." none;
+		set MyState 1;
+		terminate;
+		}
+	}
 
 	choice none "My armor is in tatters."
 	{
@@ -268,8 +323,17 @@ conitem k21809 21809
 
 
 	choice none "My axe thirsts for blood."
+	if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
 	{
 		say "Then go and find something to kill." none;
+		Player.SetMapTrackaf( 1 );
+		end;
+	}
+	
+	choice none "I guess I'll take my leave."
+	if (not Player.HasInventory( WeaponFighterSpikedGauntlets ))
+	{
+		say "Sounds good to me." none;
 		Player.SetMapTrackaf( 1 );
 		end;
 	}
@@ -278,6 +342,8 @@ conitem k21809 21809
 conitem k21810 21810
 {
 	name "Conjurer Yamael";
+	
+	var MyState 1 integer 0;
 
 	hello
 	{
@@ -291,6 +357,30 @@ conitem k21810 21810
 		Player.SetMapTrackag( 1 );
 	}
 
+	choice none "I need a decent weapon."
+	if (MyState is 0)
+	{
+		if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		Player.GiveInventory( WeaponMageWandBlue );
+		say "I have a Sapphire Wand lying around, it's yours. Use it well." none;
+		set MyState 1;
+		executems 18 11;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		say "Try Acolyte Cyril in the chapel." none;
+		set MyState 1;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		say "Try Guardsman Sectus in the keep." none;
+		set MyState 1;
+		terminate;
+		}
+	}
 
 	choice none "I am in dire need of mana."
 	{
