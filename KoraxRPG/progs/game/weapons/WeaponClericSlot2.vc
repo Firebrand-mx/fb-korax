@@ -30,6 +30,7 @@
 //**
 //**************************************************************************
 
+
 class WeaponClericSlot2 : ClericWeapon;
 
 KRPGPlayerReplicationInfo RepInfo;
@@ -37,9 +38,254 @@ KRPGPlayerReplicationInfo RepInfo;
 float			fire_tics;
 float			refire_tics;
 
-	
+//==========================================================================
+//
+//	GetUpState
+//
+//==========================================================================
+
+state GetUpState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowSelect') : ::GetUpState();
+}
+
+//==========================================================================
+//
+//	GetDownState
+//
+//==========================================================================
+
+state GetDownState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowDeselect') : ::GetDownState();
+}
+
+//==========================================================================
+//
+//	GetReadyState
+//
+//==========================================================================
+
+state GetReadyState()
+{
+	return Ammo1.Amount > 0 ? FindState('GlowReady') : ::GetReadyState();
+}
+
+//==========================================================================
+//
+//	GetAttackState
+//
+//==========================================================================
+
+state GetAttackState(bool Hold)
+{
+	return Ammo1.Amount > 0 ? FindState('GlowFire') :	// Glowing axe
+		::GetAttackState(Hold);
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckReady
+//
+//==========================================================================
+
+final void A_FAxeCheckReady()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount > 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('GlowReady'));
+	}
+	else
+	{
+		A_WeaponReady();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckReadyG
+//
+//==========================================================================
+
+final void A_FAxeCheckReadyG()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount <= 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('Ready'));
+	}
+	else
+	{
+		A_WeaponReady();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckUp
+//
+//==========================================================================
+
+final void A_FAxeCheckUp()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount > 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('GlowSelect'));
+	}
+	else
+	{
+		A_Raise();
+	}
+}
+
+//==========================================================================
+//
+//  A_FAxeCheckUpG
+//
+//==========================================================================
+
+final void A_FAxeCheckUpG()
+{
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (Wpn.Ammo1.Amount <= 0)
+	{
+		Player.SetViewState(ps_weapon, Wpn.FindState('Select'));
+	}
+	else
+	{
+		A_Raise();
+	}
+}
+
+states
+{
+Ready:
+	WMST A 1 A_FAxeCheckReady
+	//WMST A 1 A_WeaponReady
+	Loop
+Deselect:
+	WMST A 1 A_Lower
+	Loop
+Select:
+	WMSB A 1 A_FAxeCheckUp
+	//WMSB A 1 A_Raise
+	Loop
+Fire:
+	WMST B 6
+	WMST C 3
+	WMST D 3
+	WMST E 2
+	WMST E 3 Offset(-25, 0)
+	WMST F 2 A_CMSAttack
+	WMST G 3
+	WMSB A 1 Offset(0, 60) A_ReFire
+	WMST A 1 Offset(0, 52)
+	WMSB A 1 Offset(0, 44)
+	WMST A 1 Offset(0, 36)
+	Goto Ready
+/*
+	WMST B 4 Offset(15, 32)
+	WMST C 3 Offset(15, 32)
+	WMST D 2 Offset(15, 32)
+	WMST D 1 Offset(-5, 70) A_FAxeAttack
+	*/
+NoMoreMana:
+/*
+	WMST D 2 Offset(-25, 90)
+	WMST E 1 Offset(15, 32)
+	WMST E 2 Offset(10, 54)
+	WMST E 7 Offset(10, 150)
+	WMST A 1 Offset(0, 60) A_ReFire
+	WMST A 1 Offset(0, 52)
+	WMST A 1 Offset(0, 44)
+	WMST A 1 Offset(0, 36)
+	WMST A 1
+*/
+	WMST A 1
+	Goto Ready
+
+GlowReady:
+	//WMST LLLMMM 1 A_FAxeCheckReadyG
+	WMST A 1 A_FAxeCheckReadyG
+	Loop
+GlowDeselect:
+	//WMST L 1 A_Lower
+	WMST A 1 A_Lower
+	Loop
+GlowSelect:
+	//WMST L 1 A_FAxeCheckUpG
+	WMST A 1 A_FAxeCheckUpG
+	Loop
+GlowFire:
+	WMST B 6
+	WMST C 3
+	WMST D 3
+	WMST E 2
+	WMST E 3 Offset(-25, 0)
+	WMST F 2 WA_CMSAttack
+	WMST G 3
+	WMSB A 1 Offset(0, 60) A_ReFire
+	WMST A 1 Offset(0, 52)
+	WMSB A 1 Offset(0, 44)
+	WMST A 1 Offset(0, 36)
+	Goto Ready
+/*
+	WMST N 4 Offset(15, 32)
+	WMST O 3 Offset(15, 32)
+	WMST P 2 Offset(15, 32)
+	WMST P 1 Offset(-5, 70) WA_FAxeAttack
+	WMST P 2 Offset(-25, 90)
+	WMST Q 1 Offset(15, 32)
+	WMST Q 2 Offset(10, 54)
+	WMST Q 7 Offset(10, 150)
+	WMST A 1 Offset(0, 60) A_ReFire
+	WMST A 1 Offset(0, 52)
+	WMST A 1 Offset(0, 44)
+	WMST A 1 Offset(0, 36)
+	WMST A 1
+	Goto Ready
+*/
+/*
+Spawn:
+	WFAX A -1
+	Stop
+*/
+}
+
 
 defaultproperties
 {
 	Slot = 2;
+	SelectionOrder = 1500;
+	AmmoType1 = Mana1;
+	AmmoUse1 = 2;
+	AmmoGive1 = 25;
+	PSpriteSY = -12.0;
+	bAmmoOptional = true;
+	bAxeBlood = true;
+	PickupMessage = "MORNING STAR";
+	BotCombatDist = 48.0;
+	bBotMelee = true;
 }
