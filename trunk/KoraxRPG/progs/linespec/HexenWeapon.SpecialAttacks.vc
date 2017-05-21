@@ -246,6 +246,147 @@ final void WA_FAxeAttack() self(Actor)
 	}
 }
 
+//==========================================================================
+//
+//  WA_CMSAttack
+//
+//==========================================================================
+
+final void WA_CMSAttack() self(Actor)
+{
+	float			power;
+	int				damage;
+	int				useMana;
+	TAVec			angles;
+	TVec			vforward;
+	class<Actor>	PuffType;
+	EntityEx		AimTarget;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+
+	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+
+	damage = (40 + (P_Random() & 15) + (P_Random() & 7)) * KRPGPlayerBase(Player).strength / 10;
+	power = 0.0;
+	if (FindInventory(Mana1).Amount > 0)
+	{
+		damage <<= 1;
+		power = 6.0;
+		PuffType = MSPuffGlow;
+		useMana = 1;
+	}
+	else
+	{
+		PuffType = MSPuff;
+		useMana = 0;
+	}
+	AimTarget = AimEx(vforward, HexenWeapon::AxeRange, 45.0 / 16.0, 16, MELEERANGE);
+	if (AimTarget)
+	{
+		VectorAngles(&vforward, &angles);
+		if (LineAttack(vforward, HexenWeapon::AxeRange, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, power);
+		}
+		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
+		useMana++;
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+	}
+
+	if (useMana == 2)
+	{
+		HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode, false);
+		if (!Wpn.CheckAmmo(Wpn.FireMode, false, true))
+		{
+			Player.SetViewState(ps_weapon, Wpn.FindState('NoMoreMana'));
+		}
+	}
+}
+
+//==========================================================================
+//
+//  A_CMSAttack
+//
+//==========================================================================
+
+final void A_CMSAttack() self(Actor)
+{
+	float			power;
+	int				damage;
+	int				useMana;
+	TAVec			angles;
+	TVec			vforward;
+	class<Actor>	PuffType;
+	EntityEx		AimTarget;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	damage = 40 + (P_Random() & 15) + (P_Random() & 7);
+	power = 0.0;
+	if (FindInventory(Mana1).Amount > 0)
+	{
+		damage <<= 1;
+		power = 6.0;
+		PuffType = MSPuffGlow;
+		useMana = 1;
+	}
+	else
+	{
+		PuffType = MSPuff;
+		useMana = 0;
+	}
+	AimTarget = AimEx(vforward, AxeRange, 45.0 / 16.0, 16, MELEERANGE);
+	if (AimTarget)
+	{
+		VectorAngles(&vforward, &angles);
+		if (LineAttack(vforward, AxeRange, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+		if (AimTarget.bMonster || AimTarget.bIsPlayer)
+		{
+			AimTarget.Thrust(angles.yaw, power);
+		}
+		PlayerEx(Player).AdjustPlayerAngle(AimTarget);
+		useMana++;
+	}
+	else
+	{
+		// didn't find any creatures, so try to strike any walls
+		if (LineAttack(vforward, MELEERANGE, damage, PuffType))
+		{
+			PlaySound(PuffType.default.ActiveSound, CHAN_WEAPON);
+		}
+	}
+
+	if (useMana == 2)
+	{
+		Wpn.DepleteAmmo(Wpn.FireMode, false);
+		if (!Wpn.CheckAmmo(Wpn.FireMode, false, true))
+		{
+			Player.SetViewState(ps_weapon, Wpn.FindState('NoMoreMana'));
+		}
+	}
+}
+
 //============================================================================
 //
 //  WA_FHammerAttack
