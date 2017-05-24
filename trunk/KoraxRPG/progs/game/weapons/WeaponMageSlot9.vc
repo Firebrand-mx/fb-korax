@@ -36,10 +36,100 @@ KRPGPlayerReplicationInfo RepInfo;
 
 float			fire_tics;
 float			refire_tics;
+TVec			ShotPosition;
+bool			bInstantRanged;
 
-	
+//==========================================================================
+//
+//	A_Disintegrate
+//
+//==========================================================================
+
+final void A_Disintegrate() self(KRPGPlayerPawn)
+{
+	int i;
+	int damage;
+	TAVec rot;
+	TVec aimDir;
+	TVec dir;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	MageWeapon Wpn = MageWeapon(PlayerEx(Player).ReadyWeapon);
+
+	PlaySound('FighterSwordFire', CHAN_WEAPON);
+
+	//Wpn.UseWeaponMana();
+
+	Aim(aimDir, MISSILERANGE);
+	for (i = 0; i < 20; i++)
+	{
+		rot.pitch = (Random() - Random()) * 45.0 / 8.0;
+		rot.yaw = (Random() - Random()) * 45.0 / 4.0;
+		rot.roll = 0.0;
+		dir = RotateDirectionVector(aimDir, rot);
+		damage = 300; //90 * (P_Random() % 3 + 1);
+		//Wpn.ApplyDamageModifiers(damage);
+		//Wpn.ShotPosition = Origin;	// [CW]
+		LineAttack(dir, MISSILERANGE, damage, DisintegrationPuff);
+	}	
+}
+
+states
+{
+Ready:
+	CONE  A 1 Bright DoReadyWeapon
+	Loop
+Deselect:
+	CONE  A 1 Bright A_Lower
+	Loop
+Select:
+	CONE  A 1 Bright A_Raise
+	Loop
+Fire:
+	CONE  BBBBBB 2 Bright
+	CONE  F 2 Bright A_Disintegrate
+	CONE  FF 2 Bright
+	CONE  F 2 Bright A_ReFire
+	CONE  FF 2 Bright
+	Goto Ready
+}
 
 defaultproperties
 {
 	Slot = 9;
+	SelectionOrder = 600;
+	AmmoType1 = Mana1;
+	AmmoType2 = Mana2;
+	//AmmoType3 = ItemManaRed;
+	AmmoUse1 = 100;
+	AmmoUse2 = 100;
+	AmmoUse3 = 100;
+	PSpriteSY = 20.0;
+	bInstantRanged = true;
+	PickupMessage = "DISINTEGRATION SPELL";
+	Obituary = "$ob_disintegrationspell";
+	refire_tics = 20.0;
+	fire_tics = 12.0;
+}
+
+class DisintegrationPuff : Actor;
+
+states
+{
+Spawn:
+	DSPF A 4 Bright
+	DSPF BCD 4
+	Stop
+}
+
+defaultproperties
+{
+	RenderStyle = STYLE_Add;
+	Alpha = 0.666;
+	bNoBlockmap = true;
+	bNoGravity = true;
+	bPuffOnActors = true;
 }
