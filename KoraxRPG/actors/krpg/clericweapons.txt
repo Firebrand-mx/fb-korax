@@ -14,7 +14,7 @@ actor WeaponClericMaceCommon : WeaponClericSlot1 replaces CWeapMace
 	HexenWeapon.MeleeHitDice 2
 	HexenWeapon.MeleeFarRange 128
 	HexenWeapon.MeleePuffType HammerPuff
-	HexenWeapon.MeleeAttackSound 'FighterHammerMiss'
+//	HexenWeapon.MeleeAttackSound 'FighterHammerMiss'
 
 	//action native A_CMaceAttack();
 
@@ -222,3 +222,34 @@ Fire:
 }
 }
 */
+
+//------------------------------------------------------------------------------
+actor WeaponClericEveningStar : WeaponClericFirestorm
+{
+
+//	HexenWeapon.MeleeAttackSound 'FighterHammerMiss'
+
+	states
+	{
+	Ready:
+		WMSR ACBC 5 A_WeaponReady
+		Loop
+	Deselect:
+		WMSR A 1 A_Lower
+		Loop
+	Select:
+		WMSR A 1 A_Raise
+		Loop
+	Fire:
+		WMSR D 6
+		WMSR EF 3
+		WMSR G 2
+		WMSR H 3 WA_FHammerAttack
+		WMSR I 2 A_FireCustomMissile("DragonFireball", 0, 0, 0, 0)
+		WMSR JKLM 3
+		WMSR M 3 Offset(25, 0) 
+		WMSR N 2
+		WMSR N 3 Offset(35, 0)
+		Goto Ready
+	}
+}
