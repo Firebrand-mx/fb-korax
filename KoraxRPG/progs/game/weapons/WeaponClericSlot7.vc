@@ -37,9 +37,140 @@ KRPGPlayerReplicationInfo RepInfo;
 float			fire_tics;
 float			refire_tics;
 
+
+//==========================================================================
+//
+//	A_PoisonCloudAttack
+//
+//==========================================================================
+
+final void A_PoisonCloudAttack() self(Actor)
+{
+	float angle;
+	Actor bomb;
+
+	angle = Owner.Angles.yaw;
+		bomb = Spawn(PoisonBag, Owner.Origin + vector(16.0 * cos(angle),
+			24.0 * sin(angle), 8.0 - Owner.FloorClip));
+		if (bomb)
+		{
+			bomb.Target = EntityEx(Owner);
+		}
+}
+
+
+
+//============================================================================
+//
+//  A_PoisonBreathFire
+//
+//============================================================================
+
+final void A_PoisonBreathFire(bool use_mana, int Children) self(PlayerPawn)
+{
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+	Actor		pmo = Actor(Owner);
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	ClericWeapon Wpn = ClericWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Aim(vforward, 16.0 * 64.0);
+	VectorAngles(&vforward, &angles);
+	org = Origin;
+	org.z = Origin.z + 4.0 * 8.0 - tan(Angles.pitch);
+	org.z -= FloorClip;
 	
+	Actor mo = Spawn(PoisonCloud, org);
+
+	if (mo)
+	{
+		mo.Target = pmo;
+		//mo.PInstigator = Player(Owner.Player);
+		mo.Angles = angles;
+
+		mo.Speed = 320.0; //90.0;
+		mo.bMissile = true;
+		mo.bRip = true;
+
+		mo.Velocity = vforward * mo.Speed;
+		mo.Origin += mo.Velocity;
+
+		if (!mo.TryMove(mo.Origin, false))
+		{
+			mo.SetState(GetStatePlus(mo.FindState('Death'), 1));
+		}
+		else
+		{
+			// [CW] CHECKME: do PCs need applying damage modifiers?
+			PoisonCloud pc = PoisonCloud(mo);
+			pc.InitCloud(self);
+			pc.Obituary = Wpn.Obituary;
+			pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
+			//pc.bCheckFriendlyFire = true;
+			pc.A_SpawnChildren();
+			pc.LifeCount = 1;
+		}
+	}
+
+	//if (use_mana)	
+		//Wpn.UseWeaponMana();
+}
+
+states
+{
+Ready:
+	CPOI A 1 DoReadyWeapon
+	Loop
+Deselect:
+	CPOI A 1 A_Lower
+	Loop
+Select:
+	CPOI A 1 A_Raise
+	Loop
+Fire:
+	CPOI A 2 Offset(0, 40)
+	CPOI B 1 Offset(0, 50)
+	CPOI B 1 Offset(0, 36)
+	CPOI C 4 Bright
+	CPOI C 4 Bright { A_PoisonBreathFire(true, 3); }
+	CPOI C 4 Bright { A_PoisonBreathFire(false, 2); }
+	CPOI C 4 Bright { A_PoisonBreathFire(false, 1); }
+	CPOI C 4 Bright { A_PoisonBreathFire(false, 0); }
+	CPOI C 4 Bright { A_PoisonBreathFire(false, 0); }
+	CPOI D 4 Bright
+	CPOI D 1 Offset(0, 40)
+	CPOI D 1 Offset(0, 55)
+	CPOI D 1 Offset(0, 60)
+	CPOI D 1 Offset(0, 75)
+	CPOI D 1 Offset(0, 80)
+	CPOI D 1 Offset(0, 95)
+	CPOI D 1 Offset(0, 100)
+	CPOI D 1 Offset(0, 115)
+	CPOI D 1 Offset(0, 120)
+	CPOI D 1 Offset(0, 135)
+	CPOI D 1 Offset(0, 140)
+	CPOI D 1 Offset(0, 155)
+	CPOI D 1 Offset(0, 160)
+	CPOI D 1 Offset(0, 175)
+	CPOI D 1 Offset(0, 180)
+	Goto Ready
+}
 
 defaultproperties
 {
 	Slot = 7;
+	SelectionOrder = 2200;
+	AmmoType1 = Mana2;
+	AmmoUse1 = 15;
+	PSpriteSY = 10.0;
+	//DamageTypeHint = 'Poison';
+	PickupMessage = "POISON BREATH";
+	Obituary = "$ob_poisonbreathcloud";
+	refire_tics = 47.0;
+	fire_tics = 12.0;
 }
