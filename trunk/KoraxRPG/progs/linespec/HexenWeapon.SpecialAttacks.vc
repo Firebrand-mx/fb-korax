@@ -148,6 +148,34 @@ final void WA_CFlameAttack() self(Actor)
 
 //============================================================================
 //
+//  WA_CPoisonAttack
+//
+//============================================================================
+
+final void WA_CPoisonAttack() self(Actor)
+{
+	EntityEx mo;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	mo = SpawnPlayerMissile(CPoisonMissile);
+	if (mo)
+	{
+		Actor(mo).Special1 = 2;
+		mo.MissileDamage = mo.MissileDamage * KRPGPlayerBase(Player).intelligence / 10;
+	}
+
+	PlaySound('ClericFlameFire', CHAN_WEAPON);
+	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode);
+}
+
+//============================================================================
+//
 //  WA_CHolyAttack
 //
 //============================================================================

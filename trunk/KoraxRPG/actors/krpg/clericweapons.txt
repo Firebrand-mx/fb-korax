@@ -253,3 +253,104 @@ actor WeaponClericEveningStar : WeaponClericFirestorm
 		Goto Ready
 	}
 }
+//------------------------------------------------------------------------------
+actor WeaponClericPoisonCloud : WeaponClericSlot7
+{
+
+	states
+	{
+	Ready:
+		CPOI A 1 A_WeaponReady
+		Loop
+	Deselect:
+		CPOI A 1 A_Lower
+		Loop
+	Select:
+		CPOI A 1 A_Raise
+		Loop
+	Fire:
+		CPOI A 2 Offset(0, 40)
+		CPOI B 1 Offset(0, 50)
+		CPOI B 1 Offset(0, 36)
+		CPOI C 4 Bright
+		CPOI C 4 Bright A_PoisonBreathFire(true, 3)
+		CPOI C 4 Bright A_PoisonBreathFire(false, 2)
+		CPOI C 4 Bright A_PoisonBreathFire(false, 1)
+		CPOI C 4 Bright A_PoisonBreathFire(false, 0)
+		CPOI C 4 Bright A_PoisonBreathFire(false, 0)
+		CPOI D 4 Bright
+		CPOI D 1 Offset(0, 40)
+		CPOI D 1 Offset(0, 55)
+		CPOI D 1 Offset(0, 60)
+		CPOI D 1 Offset(0, 75)
+		CPOI D 1 Offset(0, 80)
+		CPOI D 1 Offset(0, 95)
+		CPOI D 1 Offset(0, 100)
+		CPOI D 1 Offset(0, 115)
+		CPOI D 1 Offset(0, 120)
+		CPOI D 1 Offset(0, 135)
+		CPOI D 1 Offset(0, 140)
+		CPOI D 1 Offset(0, 155)
+		CPOI D 1 Offset(0, 160)
+		CPOI D 1 Offset(0, 175)
+		CPOI D 1 Offset(0, 180)
+		Goto Ready
+	}
+}
+//------------------------------------------------------------------------------
+actor CPoisonFloor
+{
+	RenderStyle Add
+	+NoBlockmap
+	+NoGravity
+	states
+	{
+	Spawn:
+		CFFX N 5 Bright
+		CFFX O 4 Bright
+		CFFX P 3 Bright
+		Stop
+	}
+}
+
+//------------------------------------------------------------------------------
+actor CirclePoison
+{
+	Radius 6
+	Damage 2
+	RenderStyle Add
+	DamageType "Fire"
+	Projectile
+	-ActivateImpact
+	-ActivatePCross
+	DeathSound "ClericFlameCircle"
+
+	action native A_CFlameRotate();
+
+	states
+	{
+	Spawn:
+		CFCF A 4 Bright
+		CFCF B 2 Bright A_CFlameRotate
+		CFCF C 2 Bright
+		CFCF D 1 Bright
+		CFCF E 2 Bright
+		CFCF F 2 Bright A_CFlameRotate
+		CFCF G 1 Bright
+		CFCF H 2 Bright
+		CFCF I 2 Bright
+		CFCF J 1 Bright A_CFlameRotate
+		CFCF K 2 Bright
+		CFCF L 3 Bright
+		CFCF M 3 Bright
+		CFCF N 2 Bright A_CFlameRotate
+		CFCF O 3 Bright
+		CFCF P 2 Bright
+		Stop
+	Death:
+		CFCF QR 3 Bright
+		CFCF S 3 Bright A_Explode(20, 128, 0)
+		CFCF TUVWXYZ 3 Bright
+		Stop
+	}
+}
