@@ -34,6 +34,7 @@ class SpellItemRepulsion : SpellItem;
 
 const float BLAST_RADIUS_DIST	= 255.0;
 const float BLAST_FULLSTRENGTH	= 0.0038909912;
+//const float BLAST_FULLSTRENGTH	= 1.0038909912;
 const float BLAST_SPEED			= 20.0;
 
 //==========================================================================
@@ -56,6 +57,8 @@ bool ActivateSpell(bool Pickup, int level)
 	{
 		Owner.PlaySound('BlastRadius', CHAN_ITEM);
 		HexenLevelInfo(Owner.Level).NoiseAlert(EntityEx(Owner), EntityEx(Owner));
+		
+		/*
 		// [FB] Calculate level depending the Wisdom value of the owner (if it's a player)
 		if(Player(Owner.Player).wisdom < 7)
 		{
@@ -77,7 +80,11 @@ bool ActivateSpell(bool Pickup, int level)
 		{
 			Level = 5;
 		}
-
+		*/
+		// [RO] lower levels are too weak for a starting mage
+		
+		Level = 5;
+		
 		foreach AllThinkers(Actor, mo)
 		{
 			if (mo == Owner || mo.bBoss)
@@ -234,5 +241,6 @@ defaultproperties
 	bFloatBob = true;
 	PickupFlashType = PickupFlash;
 	bSpellBar = true;
-	Level = 1;
+	//Level = 1;
+	Level = 5; // [RO] lower levels are too weak for a starting mage
 }
