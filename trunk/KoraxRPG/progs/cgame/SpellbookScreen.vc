@@ -38,6 +38,27 @@ const int
 	TABLE_HEAD_Y		= 68,
 	TABLE_STRING_DELTA	= 14;
 
+
+//==========================================================================
+//
+//	CyclePrevChoice
+//
+//==========================================================================
+
+void CyclePrevChoice()
+{
+}
+
+//==========================================================================
+//
+//	CycleNextChoice
+//
+//==========================================================================
+
+void CycleNextChoice()
+{
+}
+	
 //==========================================================================
 //
 //  OnDraw
@@ -50,7 +71,7 @@ const int
 
 	SetFont('smallfont');
 	SetTextAlign(hleft, vtop);
-	DrawPic(0, 0, R_RegisterPic('journque'));
+	DrawPic(0, 0, R_RegisterPic('journal'));
 	ShadeRect(12, 78, 113, 289, GetCvarF('0.000000'));
 
 	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
@@ -60,29 +81,105 @@ const int
 		
 			if (RepInfo.plclass == 0)
 			{
-			DrawPic(8, 80, R_RegisterPic('journf'));			
+				DrawPic(8, 80, R_RegisterPic('journf'));
+
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("Berserking"), CR_DARKGREEN );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("Whenever I get really angry, I consume all my rage to"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("enter a berserking state, during which I am faster,"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 42), va("stronger and more resilient than usually. The more rage"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 56), va("I had going in, the stronger the effect and the longer"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("the duration."), GetCvar('JournalFontColor') );
 			}
+
 			if (RepInfo.plclass == 1)
 			{
-			DrawPic(8, 80, R_RegisterPic('journc'));			
+			DrawPic(8, 80, R_RegisterPic('journc'));
+
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("Healing"), CR_DARKGREEN );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("Summoning the spirit of fire, I can send a blast towards"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("my enemies, creating a circle of flames around them that"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 42), va("looks a lot like those barbecues back at the monastery."), GetCvar('JournalFontColor') );
+
+				if ((RepInfo.qsda == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("I should talk to the archmage in Thystes Academy."), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 84), va("He might be able to help me learn a new spell."), CR_DARKGRAY);
+				}				
+				if (RepInfo.qsda == 3)
+				{
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("Spirits Within"), CR_DARKGREEN );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 84), va("With a wave of my hand, I can send forth poisonous clouds"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 98), va("to deny my enemies the path they seek."), GetCvar('JournalFontColor') );
+				}
+				if ((RepInfo.qsba == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 112), va("I should talk to the cardinal in Thystes Cathedral."), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("He might be able to help me learn a new spell."), CR_DARKGRAY);
+				}
+				if (RepInfo.qsba == 3)
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 112), va("Banishment"), CR_DARKGREEN );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("Elegant in its simplicity: a ball of fire sent flying from"), GetCvar('JournalFontColor') );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 140), va("my hands at high velocity."), GetCvar('JournalFontColor') );
+				}
 			}
 			if (RepInfo.plclass == 2)
 			{
-			DrawPic(8, 80, R_RegisterPic('journm'));			
+			DrawPic(8, 80, R_RegisterPic('journm'));	
+
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("Repulsion"), CR_DARKGREEN );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("When I target an enemy and cast it, the foe will be thrown"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("back several paces and take a small amount of damage."), GetCvar('JournalFontColor') );
+
+				if ((RepInfo.qsdb == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 56), va("Spellmaster Sallazar in Thystes Academy will teach me"), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("this spell once I help out Senior Wizard Ianabec."), CR_DARKGRAY);
+				}				
+				if (RepInfo.qsdb == 3)
+				{
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 56), va("Create Mana"), CR_DARKGREEN );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("Whenever I am low on mana but have some magic to spare,"), GetCvar('JournalFontColor') );
+				DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 84), va("I can use this spell to summon up a small amount of mana."), GetCvar('JournalFontColor') );
+				}
+				if ((RepInfo.qsda == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 112), va("Spellmaster Sallazar in Thystes Academy will teach me"), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("this spell once I finish Archmage Ivan's quest."), CR_DARKGRAY);
+				}
+				if (RepInfo.qsda == 3)
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 112), va("Speed"), CR_DARKGREEN );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 126), va("Casting this will let me move at a much faster speed than"), GetCvar('JournalFontColor') );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 140), va("my frail body usually allows me to."), GetCvar('JournalFontColor') );
+				}
+				if ((RepInfo.qsdc == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 166), va("Spellmaster Sallazar in Thystes Academy will teach me"), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 182), va("this spell once I help out Senior Wizard Zetelar."), CR_DARKGRAY);
+				}
+				if (RepInfo.qsdc == 3)
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 166), va("Shrink"), CR_DARKGREEN );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 182), va("Using this spell I can shrink any monster to a minuscule"), GetCvar('JournalFontColor') );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 196), va("size for a few moments. Sadly, their voices don't get all"), GetCvar('JournalFontColor') );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 210), va("squeaky during transformation."), GetCvar('JournalFontColor') );
+				}
+				if ((RepInfo.qsac == 0)&&(GetCvar('JournalHints') == 1))
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 238), va("Spellmaster Sallazar in Thystes Academy will teach me"), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 252), va("this spell after I help Daedalon uncover the unknown"), CR_DARKGRAY);
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 266), va("threat."), CR_DARKGRAY);
+				}
+				if (RepInfo.qsac == 3)
+				{
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 238), va("Defensive Spell"), CR_DARKGREEN );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 252), va("Casting this not only makes me invulnerable; as long as"), GetCvar('JournalFontColor') );
+					DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 266), va("the spell is active, I also reflect missiles aimed at me."), GetCvar('JournalFontColor') );
+				}
 			}
-
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 0), va("asked to do a lot of things. I guess I better jot it all"), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 14), va("asked to do a lot of things. I guess I better jot it all"), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 28), va("down so I don't forget anything of importance." ), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 70), va("The most important of all is to finish" ), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 140), va("I also have a long list of additional" ), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 154), va("requests, sorted by organization:" ), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 280), va("using a red ink that fades fast" ), GetCvar('JournalFontColor') );
-		DrawText(160, TABLE_HEAD_Y + (TABLE_STRING_DELTA + 294), va("so active quests will stand out." ), GetCvar('JournalFontColor') );
-
 		}
 	}
-	
 }
 
 //==========================================================================
@@ -97,62 +194,6 @@ void OnDestroy()
 	
 	ClientGame(ClGame).HideSpellbookScreen();
 }
-/*
-//==========================================================================
-//
-//	CreateChoices
-//
-//==========================================================================
-
-void CreateChoices()
-{
-	MenuTextButton		Btn;
-	int					currentY;
-	
-	currentY = ChoicesStartY;
-	
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX , currentY);
-	Btn.Text = "My Main Quest";
-	Btn.Activated = MainQuests;
-	currentY += 77 + Btn.Height;
-
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 8, currentY);
-	Btn.Text = "Church Quests";
-	Btn.Activated = ChurchQuests;
-	currentY += 8 + Btn.Height;
-
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 2, currentY);
-	Btn.Text ="Legion Quests";
-	Btn.Activated = LegionQuests;
-	currentY += 8 + Btn.Height;
-
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 17, currentY);
-	Btn.Text = "Arcanum Quests";
-	Btn.Activated = ArcanumQuests; 
-	currentY += 8 + Btn.Height;
-
-	Btn = MenuTextButton(NewChild(MenuSmallTextButton));
-	Btn.SetOrigin(ChoicesStartX + 69, currentY);
-	Btn.Text = "Merchant Guild Quests";
-	Btn.Activated = MerchantQuests;
-}
-*/
-/*
-//==========================================================================
-//
-//	MainQuests
-//
-//==========================================================================
-
-void MainQuests(Object Sender)
-{
-	ClientGame(ClGame).ShowQuestsMain();
-}
-*/
 
 
 defaultproperties
