@@ -1,3 +1,4 @@
+//------------------------------------------------------------------------------
 conitem k22101 22101
 {
 	name "Commander Orteg";
@@ -15,9 +16,9 @@ conitem k22101 22101
 	if (MyState is 0)
 	{
 		say Player "Orders of the day, sir?" none;
-		say "There is a cave full of two-headed vermin near Pham. Fumigate the place and come back to me for your reward." none;
-		say "You can write this down into your what did you call it? Journal. What a sissy pastime for a grown man, keeping a diary." none;
-		say "Oh well I guess once you are done with your makeup, you could just mosey along and find that cave. Try not to stumble over roots or pebbles." none;
+		say "There is a cave full of two-headed vermin near Pham. Fumigate the place and come back to me for your reward.",,
+		"You can write this down into your what did you call it? Journal. What a sissy pastime for a grown man, keeping a diary.",,
+		"Oh well I guess once you are done with your makeup, you could just mosey along and find that cave. Try not to stumble over roots or pebbles." none;
 		Player.StartQuestcb( 1 );
 		Player.SetMapTrackad( 1 );
 		Player.GiveConstitution( 2 );
@@ -39,7 +40,7 @@ conitem k22101 22101
 		end;
 	}
 }
-
+//------------------------------------------------------------------------------
 conitem k22102 22102
 {
 	name "Soldier";
@@ -55,7 +56,7 @@ conitem k22102 22102
 		end;
 	}
 }
-
+//------------------------------------------------------------------------------
 conitem k22103 22103
 {
 	name "Commander Orteg";
@@ -80,10 +81,25 @@ conitem k22103 22103
 	if (MyState is 0)
 	{
 		say Player "I cleaned out that cave and the sprawling dungeons beneath it." none;
-		say "What do you want, a medal? Oh well here is a little something." none;
+		say "What do you want, a medal? Oh well here is a weapon you probably don't yet have. Now how about you stop annoying me?" none;
 		Player.FinishQuestcb( 1 );
-		Player.GiveLevels( 5 );
 		set MyState 1;
+		executems 21 4;
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		Player.GiveInventory( WeaponClericSerpentStaff );
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		Player.GiveInventory( WeaponMageWandRed );
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		Player.GiveInventory( WeaponFighterHammerOfRetribution );
+		terminate;
+		}
 	}
 
 	choice none "My armor is in tatters."
