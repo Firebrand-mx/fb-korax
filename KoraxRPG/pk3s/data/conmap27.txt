@@ -15,7 +15,9 @@ conitem k22701 22701
 	if (MyState is 0)
 	{
 		say Player "Do you have a task for me?" none;
-		say "Donas Monument to the south has been overrun by monsters. Cleanse the place and your reward will be access to trials that will make your mind and body stronger." none;
+		say "Donas Monument to the south has been overrun by monsters.",
+		"Cleanse the place and find the portal to the Frozen Court, which in turn leads to the Octagon, where a great evil resides.",,
+		"Your trials will be worth it, I promise." none;
 		Player.StartQuestbc( 1 );
 		Player.GiveConstitution( 2 );
 		executems 27 6;
@@ -1064,7 +1066,7 @@ conitem k22740 22740
 	pic con22706;
 
 	var MyState 1 integer 0;
-
+	
 	hello
 	{
 		say "At ease, soldier." none;
@@ -1075,9 +1077,9 @@ conitem k22740 22740
 	if (MyState is 0)
 	{
 		say Player "I am back from Iarmusc. The commander threw people into the monster-infested dungeons and spectated them for sport." none;
-		say "Good job rooting out the evil among our ranks. Here is your reward." none;
+		say "Good job rooting out the evil among our ranks. Accept this sack of gold as my thanks." none;
 		Player.FinishQuestcc( 1 );
-		Player.GiveLevels( 5 );
+		Player.GiveInventory( Coin, 500 );
 		set MyState 1;
 	}
 
@@ -1113,12 +1115,29 @@ conitem k22741 22741
 	if (MyState is 0)
 	{
 		say Player "I return from the trials." none;
-		say "Yes, I can feel the power growing inside you. I'll help you harness and shape it." none;
 		Player.FinishQuestbc( 1 );
-		Player.GiveLevels( 5 );
 		set MyState 1;
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		say "You reflect well on the Church. Let me reward you with this Evening Star." none;
+		Player.GiveInventory( WeaponClericEveningStar );
+		executems 27 10;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		say "Yes, I can feel the power growing inside you. I'll help you harness and shape it." none;
+		Player.GiveLevels( 5 );
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		say "Yes, I can feel the power growing inside you. I'll help you harness and shape it." none;
+		Player.GiveLevels( 5 );
+		terminate;
+		}
 	}
-
+	
 	choice none "Can you heal some of my wounds?"
 	{
 		say Player "Can you ease my pain?" none;
