@@ -149,3 +149,68 @@ conitem k20705 20705
 		end;
 	}
 }
+//------------------------------------------------------------------------------
+conitem k20706 20706
+{
+	name "Instructor Daniel";
+
+	var SpiritsSpell 1 integer 0;
+	var BanishmentSpell 1 integer 0;
+
+	hello
+	{
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		say "Welcome pupil." none;
+		}
+		else
+		{
+		say "Sorry, I only have time for clerics." none;
+		terminate;
+		}
+	}
+
+
+	choice none "Can you teach me \"Spirits Within\"?"
+	if (SpiritsSpell is 0)
+	{
+		say Player "Can you teach me \"Spirits Within\"?" none;
+		if (Player.HasInventory( WeaponClericMaceCommon )) // replace with quest inventory item
+		{
+			say "Listen closely and repeat my words... there, that wasn't too complicated, was it?" none;
+			Player.GiveInventory( SpellItemSpirits );
+			set SpiritsSpell 1;
+			executems 7 6;
+			terminate;
+		}
+		else
+		{
+			say "I will, once you prove your worth by completing Bishop Leamaner's task." none;
+			terminate;
+		}
+	}
+
+	choice none "Can you teach me \"Banishment\"?"
+	if (BanishmentSpell is 0)
+	{
+		say Player "Can you teach me \"Banishment\"?" none;
+		if (Player.HasInventory( WeaponClericMaceCommon )) // replace with quest inventory item
+		{
+			say "Listen closely and repeat my words... there, that wasn't too complicated, was it?" none;
+			Player.GiveInventory( SpellItemBanishment );
+			set BanishmentSpell 1;
+			executems 7 6;
+			terminate;
+		}
+		else
+		{
+			say "I will, once you prove your worth by completing Abbot Lucas' task." none;
+			terminate;
+		}
+	}
+		
+	choice none "Farewell, Instructor."
+	{
+		end;
+	}
+}
