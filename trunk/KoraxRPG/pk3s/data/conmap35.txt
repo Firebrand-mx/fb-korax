@@ -15,19 +15,13 @@ conitem k23501 23501
 	if (MyState is 0)
 	{
 		say Player "I seek enlightenment." none;
-		say "There is a long-lost place of higher learning called Gnosis that might still hold some valuable secrets. It is said that Yerdel Cave still has a working portal leading to Gnosis." none;
+		say "There is a long-lost place of higher learning called Gnosis that holds a valuable artifact. Bring it to me and I will expand your horizons.",,
+		"It is said that Yerdel Cave still has a working portal leading to Gnosis." none;
 		Player.StartQuestbd( 1 );
 		Player.SetMapTrackcc( 1 );
 		Player.GiveConstitution( 2 );
 		executems 35 3;
 		set MyState 1;
-	}
-
-	choice none "Can you heal some of my wounds?"
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 2 );
-		comment "As the abbot chants, you feel your wounds closing.";
 	}
 
 	choice none "I'll be going now."
@@ -61,10 +55,10 @@ conitem k23502 23502
 		set MyState 1;
 	}
 
-	choice none "Can you heal some of my wounds?"
+	choice none "Can you heal my wounds?"
 	{
 		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 1 );
+		Player.GiveInventory( CrystalVial , 10 );
 		comment "As the monk chants, you feel your wounds closing.";
 	}
 
@@ -99,10 +93,10 @@ conitem k23503 23503
 		set MyState 1;
 	}
 
-	choice none "Can you heal some of my wounds?"
+	choice none "Can you heal my wounds?"
 	{
 		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 1 );
+		Player.GiveInventory( CrystalVial , 10 );
 		comment "As the monk chants, you feel your wounds closing.";
 	}
 
@@ -155,25 +149,35 @@ conitem k23506 23506
 
 	hello
 	{
-		say "Welcome traveler." none;
+		say "Welcome back." none;
 	}
 
 
 	choice none "I am back from Gnosis."
 	if (MyState is 0)
 	{
-		say Player "I am back from Gnosis, having studied its secrets." none;
+		say Player "I am back from Gnosis and bring the artifact for you." none;
 		say "Wonderful! Do you feel your mind expanding?" none;
 		Player.FinishQuestbd( 1 );
-		Player.GiveLevels( 5 );
 		set MyState 1;
-	}
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		Player.GiveInventory( WeaponClericSlot8 );
+		executems 35 5;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		Player.GiveInventory( WeaponMageArmageddon );
+		executems 35 5;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		Player.GiveLevels( 5 );
+		terminate;
+		}
 
-	choice none "Can you heal some of my wounds?"
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 2 );
-		comment "As the abbot chants, you feel your wounds closing.";
 	}
 
 	choice none "I'll be going now."

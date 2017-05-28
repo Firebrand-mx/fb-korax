@@ -13,11 +13,11 @@ conitem k20901 20901
 	}
 	
 	
-	choice none "I need better weapons."
+	choice none "I want a challenge."
 	if (MyState is 0)
 	{
-		say Player "Commander, I need better weapons to face the foes standing in my way." none;
-		say "Far away, in the canyon, there is a portal to another dimension called 'chuxen'. it is rumored to hold arcane weaponry not seen on chronos." none;
+		say Player "Commander, I want a real challenge - as the saying goes, the greater the challenge, the greater the reward." none;
+		say "Far away, in the canyon, there is a portal to another dimension called 'chuxen'. It is rumored to hold arcane knowledge not seen on chronos." none;
 		Player.StartQuestca( 1 );
 		Player.SetMapTrackdb( 1 );
 		Player.SetMapTrackde( 1 );
@@ -26,15 +26,9 @@ conitem k20901 20901
 		set MyState 1;
 	}
 
-	choice none "My armor is in tatters."
+	choice none "Stepping out!"
 	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 1 );
-		say "Here some scraps salvaged off a corpse. Anything else?" none;
-	}
-
-	choice none "bye"
-	{
+		say "Dismissed." none;
 		end;
 	}
 }
@@ -73,22 +67,34 @@ conitem k20903 20903
 	choice none "I return from Chuxen."
 	if (MyState is 0)
 	{
-		say Player "Commander, I am back from Chuxen brandishing some shiny new toys." none;
-		say "Good for you. And here is a little extra." none;
+		say Player "Commander, I return from Chuxen." none;
 		Player.FinishQuestca( 1 );
-		Player.GiveLevels( 5 );
 		set MyState 1;
+		say "Let me unlock some latent powers you might not realize you acquired." none;
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		Player.GiveInventory( WeaponClericGoldenRain );
+		Player.GiveLevels( 5 );
+		executems 9 10;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		Player.GiveInventory( WeaponMageWyvernsBreath );
+		Player.GiveLevels( 5 );
+		executems 9 10;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		Player.GiveLevels( 10 );
+		terminate;
+		}
 	}
 
-	choice none "My armor is in tatters."
+	choice none "Stepping out!"
 	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 1 );
-		say "Here some scraps salvaged off a corpse. Anything else?" none;
-	}
-
-	choice none "bye"
-	{
+		say "Dismissed." none;
 		end;
 	}
 }
@@ -114,6 +120,13 @@ conitem k20904 20904
 		Player.GiveDexterity( 1 );
 		executems 9 9;
 		set MyState 1;
+	}
+
+	choice none "My armor is in tatters."
+	{
+		say Player "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
 	}
 	
 	choice none "Time for more bloodshed."
@@ -143,6 +156,13 @@ conitem k20905 20905
 		Player.GiveDexterity( 1 );
 		executems 9 9;
 		set MyState 1;
+	}
+
+	choice none "My armor is in tatters."
+	{
+		say Player "My armor is in tatters." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		say "Here some scraps salvaged off a corpse. Anything else?" none;
 	}
 	
 	choice none "Time for more bloodshed."
@@ -182,7 +202,7 @@ conitem k20907 20907
 		say "What's this Korax's Heretage shit and why am I not getting all the advertizing revenue from it?" none;
 	}
 
-	choice none "I guess I really should punch you."
+	choice none "I guess I really should hit you."
 	{
 		end;
 	}
