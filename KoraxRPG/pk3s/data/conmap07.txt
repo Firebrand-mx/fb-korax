@@ -12,29 +12,20 @@ conitem k20701 20701
 	}
 	
 	
-	choice none "Can you help me reach enlightenment?"
+	choice none "I am looking to learn a new spell."
 	if (MyState is 0)
 	{
-		say Player "Can you help me reach enlightenment?" none;
-		say "Far away Gonos Fortress holds an artifact of immense power. Return it to me and I'll give you my blessing." none;
+		say Player "I am looking to learn a new spell." none;
+		say "Far away Gonos Fortress holds an artifact of immense power. Return it to me and I'll teach you how to send forth fire to purify your enemies." none;
 		Player.StartQuestba( 1 );
 		Player.SetMapTrackdd( 1 );
 		Player.GiveConstitution( 2 );
 		executems 7 4;
 		set MyState 1;
 	}
-
-
-	choice none "Can you heal some of my wounds?"
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 10 );
-		comment "As the cardinal chants, you feel your wounds closing.";
-	}
 	
-	choice none "I have to go."
+	choice none "Thank you for your time."
 	{
-
 		say "The Light be with you, child." none;
 		end;
 	}
@@ -64,10 +55,10 @@ conitem k20702 20702
 	}
 
 
-	choice none "Can you heal some of my wounds?"
+	choice none "Can you heal my wounds?"
 	{
 		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 2 );
+		Player.GiveInventory( CrystalVial , 10 );
 		comment "As the acolyte chants, you feel your wounds closing.";
 	}
 
@@ -128,23 +119,32 @@ conitem k20705 20705
 	if (MyState is 0)
 	{
 		say Player "I bring you the fabled artifact of Gonos." none;
-		say "Amazing work! Prepare yourself to receive my blessing." none;
+		say "Amazing work! Let me show you how this spell works..." none;
 		Player.FinishQuestba( 1 );
-		Player.GiveLevels( 10 );
 		set MyState 1;
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		Player.GiveInventory( WeaponClericFirestorm );
+		executems 7 5;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		Player.GiveInventory( WeaponMageFireball );
+		executems 7 5;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		Player.GiveInventory( WeaponFighterInfernoHammer );
+		executems 7 5;
+		terminate;
+		}
+
 	}
 
-
-	choice none "Can you heal some of my wounds?"
+	choice none "Thank you for your time."
 	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 10 );
-		comment "As the cardinal chants, you feel your wounds closing.";
-	}
-	
-	choice none "I have to go."
-	{
-
 		say "The Light be with you, child." none;
 		end;
 	}

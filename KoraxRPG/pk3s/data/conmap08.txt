@@ -7,16 +7,29 @@ conitem k20801 20801
 	var MyState 1 integer 0;
 
 	hello
+	if (Player.HasInventory( WeaponMageSlot1 ))
 	{
 		say "Ah, our young prodigy." none;
 	}
+
+	hello
+	if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+	{
+		say "Ah, the young legionnaire." none;
+	}
+
+	hello
+	if (Player.HasInventory( WeaponClericMaceCommon ))
+	{
+		say "Ah, the young cleric." none;
+	}
 	
 	
-	choice none "Archmage, can you teach me?"
+	choice none "Archmage, I seek more power."
 	if (MyState is 0)
 	{
-		say Player "Archmage, can you teach me?" none;
-		say "I have a better idea. The Pyramid of Krylu far to the east is supposed to hold dark secrets that could increase both our powers." none;
+		say Player "Archmage, I seek more power." none;
+		say "The Pyramid of Krylu far to the east is supposed to hold a scroll with dark secrets. Bring it to me and I'll increase your powers." none;
 		Player.StartQuestda( 1 );
 		Player.SetMapTrackbc( 1 );
 		Player.GiveConstitution( 2 );
@@ -24,17 +37,7 @@ conitem k20801 20801
 		set MyState 1;
 	}
 
-	choice none "I am in dire need of mana."
-	{
-		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 100 );
-		Player.GiveInventory( KRPGMana2 , 100 );
-		Player.GiveInventory( RedMana , 100 );
-		say "There you go. Anything else?" none;
-	}
-
-	
-	choice none "My quest awaits!"
+	choice none "Farewell, archmage."
 	{
 		say "May Magic always be with you." none;
 		end;
@@ -82,31 +85,53 @@ conitem k20804 20804
 	var MyState 1 integer 0;
 
 	hello
+	if (Player.HasInventory( WeaponMageSlot1 ))
 	{
-		say "Ah, our young prodigy." none;
+		say "Ah, our young prodigy returns." none;
 	}
 	
+	hello
+	if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+	{
+		say "Ah, the young legionnaire returns." none;
+	}
+
+	hello
+	if (Player.HasInventory( WeaponClericMaceCommon ))
+	{
+		say "Ah, the young cleric returns." none;
+	}
 	
-	choice none "I bear the riches of Krylu."
+	choice none "I bring you the scroll of Krylu."
 	if (MyState is 0)
 	{
-		say Player "I bear the riches of Krylu." none;
-		say "Receive a fraction of my power as a reward." none;
+		say Player "I bring you the scroll of Krylu." none;
 		Player.FinishQuestda( 1 );
-		Player.GiveLevels( 10 );
 		set MyState 1;
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+		say "Marvelous! Let me check the scroll... aha! Here is a spell I can teach you." none;
+		Player.GiveInventory( WeaponClericSlot7 );
+		executems 8 4;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponMageSlot1 ))
+		{
+		say "Marvelous! Let me check the scroll... aha! Here is a spell I can teach you." none;
+		Player.GiveInventory( WeaponMageArcOfLightning );
+		executems 8 4;
+		terminate;
+		}
+		else if (Player.HasInventory( WeaponFighterSpikedGauntlets ))
+		{
+		say "Receive a fraction of my own power as a reward." none;
+		Player.GiveLevels( 5 );
+		terminate;
+		}
+
 	}
 
-	choice none "I am in dire need of mana."
-	{
-		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 100 );
-		Player.GiveInventory( KRPGMana2 , 100 );
-		say "There you go. Anything else?" none;
-	}
-
-	
-	choice none "My quest awaits!"
+	choice none "Farewell, archmage."
 	{
 		say "May Magic always be with you." none;
 		end;
@@ -136,7 +161,16 @@ conitem k20805 20805
 		executems 8 3;
 		set MyState 1;
 	}
-	
+
+	choice none "I am in dire need of mana."
+	{
+		say Player "I am in dire need of mana." none;
+		Player.GiveInventory( KRPGMana1 , 200 );
+		Player.GiveInventory( KRPGMana2 , 200 );
+		Player.GiveInventory( RedMana , 200 );
+		say "There you go. Anything else?" none;
+	}
+
 	choice none "It was an honor talking to you."
 	{
 		end;
