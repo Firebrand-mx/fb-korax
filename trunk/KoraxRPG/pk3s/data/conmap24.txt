@@ -23,13 +23,6 @@ conitem k22401 22401
 		set MyState 1;
 	}
 
-	choice none "Can you heal some of my wounds?"
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 3 );
-		comment "As the bishop chants, you feel your wounds closing.";
-	}
-
 	choice none "I'll be going now."
 	{
 
@@ -48,10 +41,10 @@ conitem k22402 22402
 		say "Welcome to our humble abode." none;
 	}
 
-	choice none "Can you heal some of my wounds?"
+	choice none "Can you heal my wounds?"
 	{
 		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 1 );
+		Player.GiveInventory( CrystalVial , 10 );
 		comment "As the acolyte chants, you feel your wounds closing.";
 	}
 
@@ -114,17 +107,20 @@ conitem k22405 22405
 	if (MyState is 0)
 	{
 		say Player "I return from Thryas, having cleansed it of evil." none;
-		say "Splendid! Take my blessing as a token of my gratitude." none;
 		Player.FinishQuestbb( 1 );
-		Player.GiveLevels( 5 );
 		set MyState 1;
-	}
-
-	choice none "Can you heal some of my wounds?"
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 3 );
-		comment "As the bishop chants, you feel your wounds closing.";
+		if (Player.HasInventory( WeaponClericMaceCommon ))
+		{
+			say "Splendid! I'll send word to Instructor Daniel in Thystes Cathedral. Next time you visit him, he'll teach you a new spell." none;
+			Player.GiveInventory( CSpell2Voucher );
+			terminate;
+		}
+		else
+		{
+			say "Splendid! Take these coins as an expression of my gratitude." none;
+			Player.GiveInventory( Coin, 250 );
+			terminate;
+		}
 	}
 
 	choice none "I'll be going now."
