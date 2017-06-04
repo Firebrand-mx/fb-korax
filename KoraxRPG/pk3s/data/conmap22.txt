@@ -40,7 +40,7 @@ conitem k22201 22201
 		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders." none;
 		Player.StartQuestaa( 1 );
 		Player.SetMapTrackbb( 1 );
-		Player.GiveConstitution( 5 );
+		Player.GiveConstitution( 3 );
 		executems 22 3;
 		set MyState 2;
 	}
@@ -57,7 +57,6 @@ conitem k22201 22201
 		say Player "What's with all the portals?" none;
 		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
 	}
-
 
 	choice none "I need more mana."
 	{
@@ -95,7 +94,7 @@ conitem k22202 22202
 		say Player "I transcribed the tablet I found in Nisisil Crucible." none;
 		say "You seem to have what it takes. Give me a few moments to decipher this." none;
 		Player.FinishQuestaa( 1 );
-		Player.GiveLevels( 10 );
+		Player.GiveLevels( 2 );
 		set MyState 1;
 		terminate;
 	}
@@ -144,7 +143,7 @@ conitem k22202 22202
 		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
 		"I can teleport you there any time, let me know whenever you are ready." none;
 		Player.StartQuestab( 1 );
-		Player.GiveConstitution( 5 );
+		Player.GiveConstitution( 1 );
 		set MyState 3;
 	}
 
@@ -183,7 +182,6 @@ conitem k22202 22202
 		terminate;
 	}
 
-
 	choice none "What's with all the portals?"
 	{
 		say Player "What's with all the portals?" none;
@@ -193,8 +191,9 @@ conitem k22202 22202
 	choice none "I need more mana."
 	{
 		say Player "I need more mana." none;
-		Player.GiveInventory( KRPGMana1 , 300 );
-		Player.GiveInventory( KRPGMana2 , 300 );
+		Player.GiveInventory( KRPGMana1 , 200 );
+		Player.GiveInventory( KRPGMana2 , 200 );
+		Player.GiveInventory( RedMana , 200 );
 		say "There you go." none;
 	}
 
@@ -229,7 +228,6 @@ conitem k22202 22202
 	{
 		end;
 	}
-
 }
 //------------------------------------------------------------------------------
 conitem k22203 22203
@@ -247,12 +245,26 @@ conitem k22203 22203
 	choice none "I found this book."
 	if (MyState is 0)
 	{
+		if (Player.HasInventory( WeaponMageSlot1 ))
+		{
 		say Player "I found this book in the Heresiarch's Seminary." none;
-		say "The Daemon Codex! Give me a few moments to study it." none;
+		say "The Daemon Codex! Give me some time to study it.",,
+		"In the meantime, you should visit Spellmaster Sallazar in Thystes Academy, he'll teach you a powerful new auxiliary spell." none;
 		Player.FinishQuestab( 1 );
-		Player.GiveLevels( 10 );
+		Player.GiveInventory( MSpell5Voucher );
 		set MyState 1;
 		terminate;
+		}
+		else
+		{
+		say Player "I found this book in the Heresiarch's Seminary." none;
+		say "The Daemon Codex! Give me a few moments to study it.",,
+		"Take this gold and replenish your supplies in the meantime." none;
+		Player.FinishQuestab( 1 );
+		Player.GiveInventory( Coin, 250 );
+		set MyState 1;
+		terminate;
+		}
 	}
 
 	choice none "So where am I heading now?"
@@ -277,15 +289,14 @@ conitem k22203 22203
 		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
 	}
 
-
 	choice none "I need more mana."
 	{
 		say Player "I need more mana." none;
-		Player.GiveInventory( KRPGMana1 , 300 );
-		Player.GiveInventory( KRPGMana2 , 300 );
+		Player.GiveInventory( KRPGMana1 , 200 );
+		Player.GiveInventory( KRPGMana2 , 200 );
+		Player.GiveInventory( RedMana , 200 );
 		say "There you go." none;
 	}
-
 
 	choice none "Time to descend to hell."
 	{
