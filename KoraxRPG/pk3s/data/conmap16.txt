@@ -14,11 +14,12 @@ conitem k21601 21601
 	if (MyState is 0)
 	{
 		say Player "Do you have anything for sale?" none;
-		say "A half dozen Quartz Flasks if you are interested." none;
+		say "A half dozen Quartz Flasks for 8 gold if you are interested." none;
 		choices
 		{
 			ChoiceNum1
 			ChoiceNum2
+			ChoiceNum3
 		}
 	}
 
@@ -31,14 +32,23 @@ conitem k21601 21601
 
 	
 	choice ChoiceNum1 "I'll take them." hidden
+	if (Player.HasInventory( Coin, 8 ))
 	{
 		say Player "Give me those." none;
-		Player.GiveInventory( ArtiHealth , 6 );
+		Player.RemoveInventory( Coin , 8 );
+		Player.GiveInventory( KRPGArtiHealth , 6 );
 		say "Pleasure doing business." none;
 		set MyState 1;
 	}
 	
-	choice ChoiceNum2 "I'll pass." hidden
+	choice ChoiceNum2 "Sorry, don't have that much money." hidden
+	if (not Player.HasInventory( Coin, 8 ))
+	{
+		say Player "Sorry, don't have that much money on me." none;
+		say "Come back when you do." none;
+	}
+
+	choice ChoiceNum3 "I'll pass." hidden
 	{
 		say Player "Thanks, but I'll pass." none;
 		say "Suit yourself." none;

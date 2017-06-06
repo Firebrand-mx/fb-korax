@@ -212,7 +212,7 @@ conitem k21109 21109
 		if (Player.HasInventory( Coin, 4 ))
 		{
 			Player.RemoveInventory( Coin , 4 );
-			Player.GiveInventory( ArtiHealth , 1 );
+			Player.GiveInventory( KRPGArtiHealth , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -332,7 +332,7 @@ conitem k21113 21113
 		if (Player.HasInventory( Coin, 3 ))
 		{
 			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( ArtiPoisonBag , 1 );
+			Player.GiveInventory( KRPGArtiPoisonBag , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -453,7 +453,7 @@ conitem k21117 21117
 		if (Player.HasInventory( Coin, 60 ))
 		{
 			Player.RemoveInventory( Coin , 60 );
-			Player.GiveInventory( ArtiPork , 1 );
+			Player.GiveInventory( KRPGArtiPork , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -515,7 +515,7 @@ conitem k21119 21119
 		if (Player.HasInventory( Coin, 100 ))
 		{
 			Player.RemoveInventory( Coin , 100 );
-			Player.GiveInventory( ArtiInvulnerability2 , 1 );
+			Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -577,7 +577,7 @@ conitem k21121 21121
 		if (Player.HasInventory( Coin, 5 ))
 		{
 			Player.RemoveInventory( Coin , 5 );
-			Player.GiveInventory( ArtiTorch , 1 );
+			Player.GiveInventory( KRPGArtiTorch , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -818,7 +818,7 @@ conitem k21129 21129
 		if (Player.HasInventory( Coin, 100 ))
 		{
 			Player.RemoveInventory( Coin , 100 );
-			Player.GiveInventory( ArtiInvulnerability2 , 1 );
+			Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -878,7 +878,7 @@ conitem k21131 21131
 		if (Player.HasInventory( Coin, 3 ))
 		{
 			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( ArtiPoisonBag , 1 );
+			Player.GiveInventory( KRPGArtiPoisonBag , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -908,7 +908,7 @@ conitem k21132 21132
 		if (Player.HasInventory( Coin, 4 ))
 		{
 			Player.RemoveInventory( Coin , 4 );
-			Player.GiveInventory( ArtiHealth , 1 );
+			Player.GiveInventory( KRPGArtiHealth , 1 );
 			say "There you go. Would you like to buy another?" none;
 		}
 		else
@@ -1011,10 +1011,18 @@ conitem k21136 21136
 	choice none "A map of the area please."
 	if (MyState is 0)
 	{
-		say "There you go." none;
-		Player.SetMapTrackga( 1 );
-		executems 11 5;
-		set MyState 1;		
+		if (Player.HasInventory( Coin, 1 ))
+		{
+			Player.RemoveInventory( Coin , 1 );
+			Player.SetMapTrackga( 1 );
+			executems 11 5;
+			set MyState 1;
+			say "There you go. Anything else?" none;
+		}
+		else
+		{
+			say "The price is 1 gold, my friend. Come back when you have the coin." none;
+		}
 	}
 
 	choice none "Gotta explore the city."
@@ -1031,9 +1039,23 @@ conitem k21137 21137
 	hello
 	{
 		say "Armed with a heart of steel..." none;
+		say Player "...their blood is upon my steel!" none;
 	}
 	
-	choice none "...their blood is upon my steel!"
+	choice none "Can you repair my armor for 50 gold?"
+	if (Player.HasInventory( Coin, 50 ))
+	{
+		say Player "Can you repair my armor 50 gold?" none;
+		comment "clink clink clink";
+		Player.RemoveInventory( Coin , 50 );
+		Player.GiveInventory( MeshArmor , 1 );
+		Player.GiveInventory( FalconShield , 1 );
+		Player.GiveInventory( PlatinumHelm , 1 );
+		Player.GiveInventory( AmuletOfWarding , 1 );
+		say "There you go, good as new." none;
+	}
+
+	choice none "Farewell."
 	{
 		end;
 	}
@@ -1046,45 +1068,57 @@ conitem k21138 21138
 
 	hello
 	{
-		say "Ahoy landlubber! Let me know when you are ready to depart by sea." none;
+		say "Ahoy landlubber! Let me know when you are ready to depart by sea. Just 5 gold for a trip." none;
 	}
 
 	choice none "Take me to Joral."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		say "Setting sail!" none;
+		Player.RemoveInventory( Coin , 5 );
 		executems 98 2;
 		Player.TeleportToMap(98);
 		terminate;
 	}
 
 	choice none "Take me to Neusus."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		say "Setting sail!" none;
+		Player.RemoveInventory( Coin , 5 );
 		executems 98 4;
 		Player.TeleportToMap(98);
 		terminate;
 	}
 
-
 	choice none "Take me to Rophesiscar."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		say "Setting sail!" none;
+		Player.RemoveInventory( Coin , 5 );
 		executems 98 3;
 		Player.TeleportToMap(98);
 		terminate;
 	}
 
-
 	choice none "Take me to Melaer."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		say "Setting sail!" none;
+		Player.RemoveInventory( Coin , 5 );
 		executems 98 5;
 		Player.TeleportToMap(98);
 		terminate;
 	}
 
+	choice none "Don't have that much coin."
+	if (not Player.HasInventory( Coin, 5 ))
+	{
+		end;
+	}
 
 	choice none "Staying on land for the moment."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		end;
 	}
@@ -1096,18 +1130,27 @@ conitem k21139 21139
 
 	hello
 	{
-		say "The coach is ready to depart for Ocadia." none;
+		say "The coach is ready to depart for Ocadia. Just 15 gold for a ride!" none;
 	}
 
 	choice none "Let me fart one last time, then off we go!"
+	if (Player.HasInventory( Coin, 15 ))
 	{
 		say "Giddy-up!" none;
+		Player.RemoveInventory( Coin , 15 );
 		executems 99 2;
 		Player.TeleportToMap(99);
 		terminate;
 	}
 
+	choice none "Don't have that much coin."
+	if (not Player.HasInventory( Coin, 15 ))
+	{
+		end;
+	}
+
 	choice none "No thanks, staying here for a while."
+	if (Player.HasInventory( Coin, 15 ))
 	{
 		end;
 	}
