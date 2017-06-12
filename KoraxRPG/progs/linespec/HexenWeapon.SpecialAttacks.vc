@@ -766,3 +766,64 @@ final void WA_SnoutAttack()
 		}
 	}
 }
+
+//============================================================================
+//
+//  A_PoisonBreathFire
+//
+//============================================================================
+
+final void A_PoisonBreathFire(bool use_mana, int Children) self(Actor)
+{
+	TAVec angles;
+	TVec vforward;
+	TVec org;
+	Actor		pmo = Actor(Owner);
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+
+	Aim(vforward, 16.0 * 64.0);
+	VectorAngles(&vforward, &angles);
+	org = Origin;
+	org.z = Origin.z + 4.0 * 8.0 - tan(Angles.pitch);
+	org.z -= FloorClip;
+	
+	Actor mo = Spawn(PoisonCloud, org);
+
+	if (mo)
+	{
+		mo.Target = pmo;
+		//mo.PInstigator = Player(Owner.Player);
+		mo.Angles = angles;
+
+		mo.Speed = 320.0; //90.0;
+		mo.bMissile = true;
+		mo.bRip = true;
+
+		mo.Velocity = vforward * mo.Speed;
+		mo.Origin += mo.Velocity;
+
+		if (!mo.TryMove(mo.Origin, false))
+		{
+			mo.SetState(GetStatePlus(mo.FindState('Death'), 1));
+		}
+		else
+		{
+			// [CW] CHECKME: do PCs need applying damage modifiers?
+			PoisonCloud pc = PoisonCloud(mo);
+			pc.InitCloud(self);
+			pc.Obituary = Wpn.Obituary;
+			pc.SpawnChildren = Children;	// [CW] advanced feature for Cleric weapon
+			//pc.bCheckFriendlyFire = true;
+			pc.A_SpawnChildren();
+			pc.LifeCount = 1;
+		}
+	}
+
+	//if (use_mana)	
+		//Wpn.UseWeaponMana();
+}
