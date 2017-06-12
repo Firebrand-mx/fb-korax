@@ -79,6 +79,7 @@ void GetExplodeParms(out int damage, out float distance, out byte damageSelf)
 
 final void A_RedBishopDoBlur()
 {
+	TVec Org = Origin;
 	bShootable = false;
 	bInvisible = true;
 
@@ -86,6 +87,35 @@ final void A_RedBishopDoBlur()
 	Actor blur = Spawn(BishopBlurType, Origin);
 	if (blur)
 		blur.Angles = Angles;
+
+	Special1 = bInvisible ? ((P_Random() & 3) + 3) : ((P_Random() & 7) + 4);	// P_Random number of blurs
+	if (P_Random() < 120)
+	{
+		Thrust(AngleMod360(Angles.yaw + 90.0), 11.0);
+	}
+	else if (P_Random() > 125)
+	{
+		Thrust(AngleMod360(Angles.yaw - 90.0), 11.0);
+	}
+	else
+	{
+		// Thrust forward
+		Thrust(Angles.yaw, 11.0);
+	}
+	PlaySound('BishopBlur', CHAN_VOICE);
+}
+
+//==========================================================================
+//
+//  A_RedBishopDoBlur2
+//
+//==========================================================================
+
+final void A_RedBishopDoBlur2()
+{
+	TVec Org = Origin;
+	bShootable = false;
+	bInvisible = true;
 
 	Special1 = bInvisible ? ((P_Random() & 3) + 3) : ((P_Random() & 7) + 4);	// P_Random number of blurs
 	if (P_Random() < 120)
@@ -114,7 +144,7 @@ final void A_RedBishopSpawnBlur()
 {
 	Actor blur;
 
-	if (!--Special1)
+	if (!--Special1 || Special1 < 0)
 	{
 		Velocity.x = 0.0;
 		Velocity.y = 0.0;
@@ -263,6 +293,10 @@ See:
 Blur:
 Evade:
 	BISR A 2 A_RedBishopDoBlur
+	BISR A 4 A_RedBishopSpawnBlur
+	Wait
+Blur2:
+	BISR A 2 A_RedBishopDoBlur2
 	BISR A 4 A_RedBishopSpawnBlur
 	Wait
 Missile:

@@ -15,14 +15,14 @@ pause
 cd..
 cd..
 ECHO Building common progs basepak.pk3...
-vlumpy C:\korax\vavoom\source\basev\common\basepak.ls
+vlumpy E:\korax\vavoom\source\basev\common\basepak.ls
 ECHO Copying compiled  common basepak.pk3 file to binary directory...
-move basepak.pk3 "C:\Korax\KoraxRPG\basev\common\"
+move basepak.pk3 "E:\Korax\KoraxRPG\basev\common\"
 cd koraxrpg
 ECHO Building koraxrpg progs basepak.pk3...
 vlumpy basepak.ls
 ECHO Copying compiled koraxrpg basepak.pk3 file to binary directory...
-move basepak.pk3 "C:\Korax\KoraxRPG\koraxrpg\"
+move basepak.pk3 "E:\Korax\KoraxRPG\koraxrpg\"
 ECHO Done building progs.
 pause
 cls
@@ -36,6 +36,6 @@ cd..
 ECHO Beginning process to build resource file PK3s...
 for /f %%a IN ('dir %CD%\pk3s\*.ls /B /A-d') do vlumpy %CD%\pk3s\%%a
 ECHO Copying resource files to binary directory...
-for /f %%a IN ('dir %CD%\*.pk3 /B /A-d') do move %%a C:\Korax\KoraxRPG\koraxrpg
+for /f %%a IN ('dir %CD%\*.pk3 /B /A-d') do move %%a E:\Korax\KoraxRPG\koraxrpg
 ECHO Finished, bye.
 pause

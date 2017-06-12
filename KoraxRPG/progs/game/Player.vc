@@ -210,24 +210,6 @@ void CreateBot()
 
 //==========================================================================
 //
-//  ResetPlayerOnSpawn
-//
-//==========================================================================
-
-void ResetPlayerOnSpawn()
-{
-	::ResetPlayerOnSpawn();
-
-//[Korax]
-	if (!inited)
-	{
-		InitiateLevel();
-		inited = true;
-	}
-}
-
-//==========================================================================
-//
 //  GiveExperience
 //
 //==========================================================================
@@ -1316,54 +1298,6 @@ void SetPoints(int value)
 
 //==========================================================================
 //
-//  OnNetReborn
-//
-//==========================================================================
-
-void OnNetReborn(EntityEx OldMO)
-{
-	Weapon bestWeapon;
-	Inventory Item;
-
-	bestWeapon = none;
-	if (OldMO)
-	{
-		// Restore keys and weapons when reborn in co-op
-		for (Item = OldMO.Inventory; Item; )
-		{
-			Inventory Next = Item.Inventory;
-			if (Weapon(Item))
-			{
-				if (!bestWeapon || bestWeapon.SelectionOrder >
-					Weapon(Item).SelectionOrder)
-				{
-					bestWeapon = Weapon(Item);
-				}
-				Item.AttachToOwner(EntityEx(MO));
-			}
-			else if (FourthWeaponHolder(Item) || Key(Item))
-			{
-				Item.AttachToOwner(EntityEx(MO));
-			}
-			Item = Next;
-		}
-		OldMO.DestroyAllInventory();
-	}
-	GiveAmmo(Mana1, 0);
-	GiveAmmo(Mana2, 0);
-	GiveAmmo(RedMana, 0);
-	EntityEx(MO).FindInventory(Mana1).Amount = 25;
-	EntityEx(MO).FindInventory(Mana2).Amount = 25;
-	EntityEx(MO).FindInventory(RedMana).Amount = 25;
-	if (bestWeapon)
-	{
-		// Bring up the best weapon
-		PendingWeapon = bestWeapon;
-	}
-}
-
-//==========================================================================
-//
 //  NetGameReborn
 //
 //	Respawn at the start
@@ -1449,6 +1383,54 @@ void MovePsprites(float deltaTime)
 
 //==========================================================================
 //
+//  OnNetReborn
+//
+//==========================================================================
+
+void OnNetReborn(EntityEx OldMO)
+{
+	Weapon bestWeapon;
+	Inventory Item;
+
+	// Restore keys and weapons when reborn in co-op
+	bestWeapon = none;
+	if (OldMO)
+	{
+		for (Item = OldMO.Inventory; Item; )
+		{
+			Inventory Next = Item.Inventory;
+			if (Weapon(Item))
+			{
+				if (!bestWeapon || bestWeapon.SelectionOrder >
+					Weapon(Item).SelectionOrder)
+				{
+					bestWeapon = Weapon(Item);
+				}
+				Item.AttachToOwner(EntityEx(MO));
+			}
+			else if (FourthWeaponHolder(Item) || Key(Item))
+			{
+				Item.AttachToOwner(EntityEx(MO));
+			}
+			Item = Next;
+		}
+		OldMO.DestroyAllInventory();
+	}
+	GiveAmmo(Mana1, 0);
+	GiveAmmo(Mana2, 0);
+	GiveAmmo(RedMana, 0);
+	EntityEx(MO).FindInventory(Mana1).Amount = 25;
+	EntityEx(MO).FindInventory(Mana2).Amount = 25;
+	EntityEx(MO).FindInventory(RedMana).Amount = 25;
+	if (bestWeapon)
+	{
+		// Bring up the best weapon
+		PendingWeapon = bestWeapon;
+	}
+}
+
+//==========================================================================
+//
 //  DestroyBot
 //
 //==========================================================================
@@ -1459,6 +1441,24 @@ void DestroyBot()
 	{
 		Bot.Destroy();
 		Bot = none;
+	}
+}
+
+//==========================================================================
+//
+//  ResetPlayerOnSpawn
+//
+//==========================================================================
+
+void ResetPlayerOnSpawn()
+{
+	::ResetPlayerOnSpawn();
+
+//[Korax]
+	if (!inited)
+	{
+		InitiateLevel();
+		inited = true;
 	}
 }
 
@@ -1484,19 +1484,9 @@ void DoClearPlayer()
 	BotPlayer b;
 
 	b = Bot;
+	//::DoClearPlayer();
 	ClearPlayer();
 	Bot = b;
-}
-
-//==========================================================================
-//
-//  GetRebornHealth
-//
-//==========================================================================
-
-int GetRebornHealth()
-{
-	return max_health;
 }
 
 //==========================================================================
@@ -1511,6 +1501,17 @@ int GetMaxHealth()
 	{
 		return MAXMORPHHEALTH;
 	}
+	return max_health;
+}
+
+//==========================================================================
+//
+//  GetRebornHealth
+//
+//==========================================================================
+
+int GetRebornHealth()
+{
 	return max_health;
 }
 
@@ -2081,63 +2082,6 @@ void PlayerTick(float deltaTime)
 
 //==========================================================================
 //
-//  BotTick
-//
-//==========================================================================
-
-void BotTick(float deltaTime)
-{
-	Bot.BotTick(deltaTime);
-}
-
-//==========================================================================
-//
-//  SpawnSpeedEffect
-//
-//==========================================================================
-
-void SpawnSpeedEffect()
-{
-	Actor speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
-	if (speedA)
-	{
-		speedA.Angles.yaw = MO.Angles.yaw;
-		speedA.Translation = MO.Translation;
-		speedA.Target = Actor(MO);
-		speedA.Special1 = PClass;
-		if (speedA.Special1 > 2)
-		{
-			speedA.Special1 = 0;
-		}
-		int Idx;
-		switch (PClass)
-		{
-		case HexenDefs::PCLASS_FIGHTER:
-			Idx = 0;
-			break;
-		case HexenDefs::PCLASS_CLERIC:
-			Idx = 2;
-			break;
-		case HexenDefs::PCLASS_MAGE:
-			Idx = 4;
-			break;
-		case HexenDefs::PCLASS_PIG:
-			Idx = 6;
-			break;
-		}
-		speedA.SetState(GetStatePlus(speedA.IdleState, Idx, true));
-		speedA.FloorClip = MO.FloorClip;
-#ifdef FIXME
-		if (self == GPlayers[consoleplayer])
-		{
-			speedA.bHidden = true;
-		}
-#endif
-	}
-}
-
-//==========================================================================
-//
 //  PlayerRide
 //
 //==========================================================================
@@ -2315,6 +2259,17 @@ void PaletteFlash()
 
 //==========================================================================
 //
+//  BotTick
+//
+//==========================================================================
+
+void BotTick(float deltaTime)
+{
+	Bot.BotTick(deltaTime);
+}
+
+//==========================================================================
+//
 //  ParticleEffectEx
 //
 //==========================================================================
@@ -2325,6 +2280,52 @@ void ParticleEffectEx(int count, int type1, int type2, TVec origin, TVec ornd,
 {
 	KRPGLevelInfo(Level).ParticleEffectEx(count, type1, type2, origin, ornd, velocity, vrnd, acceleration,
 				grav, colour, duration, ramp, Pattern);
+}
+
+//==========================================================================
+//
+//  SpawnSpeedEffect
+//
+//==========================================================================
+
+void SpawnSpeedEffect()
+{
+	Actor speedA = HexenLevelInfo(Level).Spawn(PlayerSpeed, MO.Origin);
+	if (speedA)
+	{
+		speedA.Angles.yaw = MO.Angles.yaw;
+		speedA.Translation = MO.Translation;
+		speedA.Target = Actor(MO);
+		speedA.Special1 = PClass;
+		if (speedA.Special1 > 2)
+		{
+			speedA.Special1 = 0;
+		}
+		int Idx;
+		switch (PClass)
+		{
+		case HexenDefs::PCLASS_FIGHTER:
+			Idx = 0;
+			break;
+		case HexenDefs::PCLASS_CLERIC:
+			Idx = 2;
+			break;
+		case HexenDefs::PCLASS_MAGE:
+			Idx = 4;
+			break;
+		case HexenDefs::PCLASS_PIG:
+			Idx = 6;
+			break;
+		}
+		speedA.SetState(GetStatePlus(speedA.IdleState, Idx, true));
+		speedA.FloorClip = MO.FloorClip;
+#ifdef FIXME
+		if (self == GPlayers[consoleplayer])
+		{
+			speedA.bHidden = true;
+		}
+#endif
+	}
 }
 
 //==========================================================================
@@ -2358,17 +2359,24 @@ void Cheat_Gimme()
 				continue;
 			}
 			WpnCls = class<HexenWeapon>(GetClassReplacement(WpnCls));
-			HexenWeapon Wpn = HexenWeapon(Level.Spawn(WpnCls,,,, false));
-			Wpn.AmmoGive1 = 0;
-			Wpn.AmmoGive2 = 0;
-			Wpn.AmmoGive3 = 0;
-			if (!Wpn.TryPickup(EntityEx(MO)))
+			if (WpnCls)
 			{
-				Wpn.Destroy();
+				HexenWeapon Wpn = HexenWeapon(Level.Spawn(WpnCls,,,, false));
+				Wpn.AmmoGive1 = 0;
+				Wpn.AmmoGive2 = 0;
+				Wpn.AmmoGive3 = 0;
+				if (!Wpn.TryPickup(EntityEx(MO)))
+				{
+					Wpn.Destroy();
+				}
+				else
+				{
+					dprint("Weapon given: %n", GetClassName(Wpn.Class));
+				}
 			}
 			else
 			{
-				dprint("Weapon given: %n", GetClassName(Wpn.Class));
+				continue;
 			}
 		}
 		foreach AllClasses(Ammo, Cls)
@@ -2577,7 +2585,7 @@ void Cheat_Morph()
 	}
 	else
 	{
-		Actor(MO).MorphPlayer(PorkFX.default.PlayerClass, 0.0,
+		Actor(MO).MorphPlayer(PorkFX.default.PlayerClass, 40.0,
 			PorkFX.default.MorphStyle, none, none, Actor(MO));
 	}
 	cprint("SQUEAL!!");
@@ -2593,18 +2601,26 @@ void Cheat_Class()
 {
 	int i;
 	int pclass;
+	Inventory Item;
 
 	if (MorphTime)
 	{
 		// don't change class if the player is morphed
+		cprint("CAN'T CHANGE CLASS WHILE MORPHED");
 		return;
 	}
 	if (Cmd_CheckParm("fighter"))
+	{
 		pclass = HexenDefs::PCLASS_FIGHTER;
+	}
 	else if (Cmd_CheckParm("cleric"))
+	{
 		pclass = HexenDefs::PCLASS_CLERIC;
+	}
 	else if (Cmd_CheckParm("mage"))
+	{
 		pclass = HexenDefs::PCLASS_MAGE;
+	}
 	else
 	{
 		cprint("INVALID PLAYER CLASS");
@@ -2617,8 +2633,19 @@ void Cheat_Class()
 	{
 		HArmor.Slots[i] = 0.0;
 	}
+
+	// Remove all weapons
+	for (Item = EntityEx(MO).Inventory; Item; Item = Item.Inventory)
+	{
+		if (Weapon(Item) || FourthWeaponHolder(Item))
+		{
+			Item.Destroy();
+		}
+	}
 	BaseClass = pclass;
-	//PostMorphWeapon(HexenDefs::WP_FIRST);
+//	PostMorphWeapon(HexenDefs::WP_FIRST);
+	Actor(MO).MorphPlayer(class<PlayerPawn>(Level.Game.PlayerClasses[PClass]), 0.0,
+		PorkFX.default.MorphStyle, none, none, Actor(MO));
 	SetCvar('class', pclass);
 	SB_Start();
 }
@@ -2897,4 +2924,5 @@ final bool A_SpiritsWithin(float limit)
 defaultproperties
 {
 	SpellSize = 6;
+	InvSize = 56;
 }
