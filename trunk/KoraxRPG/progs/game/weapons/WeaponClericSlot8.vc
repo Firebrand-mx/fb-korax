@@ -46,23 +46,31 @@ float			refire_tics;
 
 final void A_WhirlwindAttack()
 {
+	EntityEx 	A;
+	EntityEx	AimTarget;
 
-	EntityEx A;
-
-		// Whirlwind
-		A = SpawnMissile(Target, Whirlwind);
-		if (A != none)
-		{
-			A.Origin.z -= 32.0;
-			A.Tracer = Target;
-			A.Health = 400 * TICRATE;	// Duration
-			A.bSeekerMissile = true;
-			PlaySound('ironlich/attack3', CHAN_WEAPON);
-		}
-}
-
-
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
 	
+	// Whirlwind
+	A = SpawnPlayerMissileEx(Whirlwind, false, AimTarget);
+
+	if (A)
+	{
+		A.Origin.z -= 32.0;
+		if (AimTarget)
+		{
+			A.Tracer = AimTarget;
+		}
+		A.Health = 400 * TICRATE;	// Duration
+		A.bSeekerMissile = true;
+		A.PlaySound('ironlich/attack3', CHAN_WEAPON);
+	}
+	Wpn.DepleteAmmoEx(Wpn.FireMode);
+}
 	
 states
 {
@@ -97,10 +105,11 @@ Fire:
 	CPOI D 1 Offset(0, 180)
 	Goto Ready
 }
-	
 
 defaultproperties
 {
 	Slot = 8;
 	PickupMessage = "Tornado";
+	AmmoType1 = Mana1;
+	AmmoUse1 = 10;
 }
