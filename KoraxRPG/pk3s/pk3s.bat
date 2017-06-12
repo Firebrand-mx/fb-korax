@@ -26,3 +26,24 @@ call pk3s.bat
 cd..
 del skyboxespack.ls
 move %CD%\skyboxespack\skyboxespack.ls %CD%
+
+ECHO Building texpak.ls...
+cd texpak
+call pk3s.bat
+cd..
+del texpak.ls
+move %CD%\texpak\texpak.ls %CD%
+
+ECHO Building texpak2.ls...
+cd texpak2
+call pk3s.bat
+cd..
+del texpak2.ls
+move %CD%\texpak2\texpak2.ls %CD%
+
+ECHO Building texpak3.ls...
+cd texpak3
+call pk3s.bat
+cd..
+del texpak3.ls
+move %CD%\texpak3\texpak3.ls %CD%

@@ -12,6 +12,9 @@ if %5 == music goto :Music
 if %5 == skyboxespack goto :Skyboxes
 if %5 == sounds goto :Sounds
 if %5 == sprites goto :Sprites
+if %5 == texpak goto :TexPak
+if %5 == texpak2 goto :TexPak2
+if %5 == texpak3 goto :TexPak3
 if %5 == textures goto :Textures
 
 :Data
@@ -47,6 +50,18 @@ goto :End
 
 :Sprites
 echo sprites\%1%2          %4\%1%2>>%CD%\%5.ls
+goto :End
+
+:TexPak
+REM echo textures\%1%2          %4\%1%2>>%CD%\%5.ls
+goto :End
+
+:TexPak2
+REM echo textures\%1%2          %4\%1%2>>%CD%\%5.ls
+goto :End
+
+:TexPak3
+REM echo textures\%1%2          %4\%1%2>>%CD%\%5.ls
 goto :End
 
 :Textures
