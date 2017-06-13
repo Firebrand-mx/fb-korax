@@ -46,7 +46,7 @@ float			refire_tics;
 
 final void A_WhirlwindAttack()
 {
-	EntityEx 	A;
+	Actor	 	A;
 	EntityEx	AimTarget;
 
 	if (!bIsPlayer)
@@ -56,7 +56,7 @@ final void A_WhirlwindAttack()
 	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
 	
 	// Whirlwind
-	A = SpawnPlayerMissileEx(Whirlwind, false, AimTarget);
+	A = Actor(SpawnPlayerMissileEx(Whirlwind, false, AimTarget));
 
 	if (A)
 	{
@@ -65,6 +65,7 @@ final void A_WhirlwindAttack()
 		{
 			A.Tracer = AimTarget;
 		}
+		A.MissileDamage = Wpn.MissileHitDice * KRPGPlayerBase(Player).intelligence / 10;
 		A.Health = 400 * TICRATE;	// Duration
 		A.bSeekerMissile = true;
 		A.PlaySound('ironlich/attack3', CHAN_WEAPON);
@@ -110,6 +111,7 @@ defaultproperties
 {
 	Slot = 8;
 	PickupMessage = "Tornado";
+	MissileHitDice = 5;
 	AmmoType1 = Mana1;
 	AmmoUse1 = 10;
 }

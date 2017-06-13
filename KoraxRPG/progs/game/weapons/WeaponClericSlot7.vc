@@ -49,13 +49,21 @@ final void A_PoisonCloudAttack() self(Actor)
 	float angle;
 	Actor bomb;
 
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+
 	angle = Owner.Angles.yaw;
-		bomb = Spawn(PoisonBag, Owner.Origin + vector(16.0 * cos(angle),
-			24.0 * sin(angle), 8.0 - Owner.FloorClip));
-		if (bomb)
-		{
-			bomb.Target = EntityEx(Owner);
-		}
+	bomb = Spawn(PoisonBag, Owner.Origin + vector(16.0 * cos(angle),
+		24.0 * sin(angle), 8.0 - Owner.FloorClip));
+	if (bomb)
+	{
+		bomb.MissileDamage = bomb.MissileDamage * KRPGPlayerBase(Owner.Player).intelligence / 10;
+		bomb.Target = EntityEx(Owner);
+	}
+	Wpn.DepleteAmmoEx(Wpn.FireMode);
 }
 
 defaultproperties

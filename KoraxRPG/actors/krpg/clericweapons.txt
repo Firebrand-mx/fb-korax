@@ -231,6 +231,8 @@ actor WeaponClericEveningStar : WeaponClericFirestorm
 	Weapon.AmmoType1 "RedMana"
 	Weapon.AmmoUse1 5
 	Weapon.AmmoGive1 15
+	+Weapon.Ammo_Optional
+	+Weapon.MeleeWeapon
 
 	states
 	{
@@ -248,8 +250,7 @@ actor WeaponClericEveningStar : WeaponClericFirestorm
 		WMSR EF 3
 		WMSR G 2
 		WMSR H 3 WA_FHammerAttack
-		WMSR I 0 A_TakeInventory("RedMana", 5)
-		WMSR I 2 A_FireCustomMissile("DragonFireball", 0, 0, 0, 0)
+		WMSR I 2 WA_CEveStarProjectile
 		WMSR JKLM 3
 		WMSR M 3 Offset(25, 0) 
 		WMSR N 2
@@ -260,6 +261,15 @@ actor WeaponClericEveningStar : WeaponClericFirestorm
 //------------------------------------------------------------------------------
 actor WeaponClericPoisonCloud : WeaponClericSlot7
 {
+	Game Hexen
+	+NoGravity
+	Inventory.PickupMessage "POISON BREATH"
+	Weapon.SelectionOrder 2200
+	Weapon.AmmoType1 "Mana2"
+	Weapon.AmmoUse1 15
+	Weapon.AmmoGive1 25
+	Weapon.YAdjust 10
+	//Weapon.BotCombatDist 256
 
 	states
 	{
@@ -301,6 +311,7 @@ actor WeaponClericPoisonCloud : WeaponClericSlot7
 		Goto Ready
 	}
 }
+
 //------------------------------------------------------------------------------
 actor CPoisonFloor
 {
@@ -361,13 +372,15 @@ actor CirclePoison
 
 
 //------------------------------------------------------------------------------
-actor WeaponClericGoldenRain : WeaponClericFirestorm
+actor WeaponClericGoldenRain : WeaponClericSlot9
 {
-
 	Inventory.PickupMessage "Tears of the Gods"
 	Weapon.AmmoType1 "RedMana"
 	Weapon.AmmoUse1 25
 	Weapon.AmmoGive1 50
+        HexenWeapon.MissileType "GoldenStormFX1"
+        HexenWeapon.MissileHitDice 5
+        +MagicMissile
 
 	states
 	{
@@ -384,8 +397,7 @@ actor WeaponClericGoldenRain : WeaponClericFirestorm
 		CPOI A 2 Offset(0, 40)
 		CPOI B 1 Offset(0, 50)
 		CPOI B 1 Offset(0, 36)
-		CPOI C 0 A_TakeInventory("RedMana", 25)
-		CPOI C 4 A_FireCustomMissile("GoldenStormFX1", 0, 0, 0, 0)
+		CPOI C 4 A_GoldenRain
 		CPOI D 1 Offset(0, 40)
 		CPOI D 1 Offset(0, 55)
 		CPOI D 1 Offset(0, 60)
