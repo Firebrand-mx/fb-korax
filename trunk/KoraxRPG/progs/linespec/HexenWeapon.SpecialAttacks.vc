@@ -511,6 +511,35 @@ final void WA_FHammerThrow() self(Actor)
 
 //============================================================================
 //
+//  WA_CEveStarProjectile
+//
+//============================================================================
+
+final void WA_CEveStarProjectile() self(Actor)
+{
+	EntityEx mo;
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+
+	if (!Special1)
+	{
+		return;
+	}
+	
+	// [FB] Dexterity modifies the damage done by ranged physical attacks
+	mo = SpawnPlayerMissile(DragonFireball);
+	if (mo)
+	{
+		mo.MissileDamage = mo.MissileDamage * KRPGPlayerBase(Player).dexterity / 10;
+	}
+	HexenWeapon(Wpn).DepleteAmmoEx(Wpn.FireMode, false);
+}
+
+//============================================================================
+//
 //  WA_FSwordAttack
 //
 //============================================================================
@@ -632,7 +661,7 @@ final void WA_MLightningAttack() self(Actor)
 	{
 		return;
 	}
-	Weapon Wpn = PlayerEx(Player).ReadyWeapon;
+	Weapon Wpn = KRPGPlayerBase(Player).ReadyWeapon;
 
 	fmo = Lightning(SpawnPlayerMissile(LightningFloor));
 	cmo = Lightning(SpawnPlayerMissile(LightningCeiling));
@@ -688,7 +717,7 @@ final void WA_MStaffAttack() self(Actor)
 		return;
 	}
 
-	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
 
 	angle = Angles.yaw;
 
@@ -717,7 +746,7 @@ final void WA_MWandAttack() self(Actor)
 		return;
 	}
 
-	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
 
 	angle = Angles.yaw;
 
@@ -778,13 +807,13 @@ final void A_PoisonBreathFire(bool use_mana, int Children) self(Actor)
 	TAVec angles;
 	TVec vforward;
 	TVec org;
-	Actor		pmo = Actor(Owner);
+	Actor pmo = Actor(Owner);
 
 	if (!bIsPlayer)
 	{
 		return;
 	}
-	HexenWeapon Wpn = HexenWeapon(PlayerEx(Player).ReadyWeapon);
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
 
 	Aim(vforward, 16.0 * 64.0);
 	VectorAngles(&vforward, &angles);
@@ -824,6 +853,41 @@ final void A_PoisonBreathFire(bool use_mana, int Children) self(Actor)
 		}
 	}
 
-	//if (use_mana)	
-		//Wpn.UseWeaponMana();
+	if (use_mana)
+	{
+		Wpn.DepleteAmmoEx(Wpn.FireMode);
+	}
+}
+
+//==========================================================================
+//
+//  A_GoldenRain
+//
+//==========================================================================
+
+final void A_GoldenRain() self(Actor)
+{
+	Actor mo;
+	EntityEx AimTarget;
+
+	if (!bIsPlayer)
+	{
+		return;
+	}
+	HexenWeapon Wpn = HexenWeapon(KRPGPlayerBase(Player).ReadyWeapon);
+
+	mo = Actor(SpawnPlayerMissileEx(Wpn.MissileType, false, AimTarget));
+	if (mo)
+	{
+		mo.MissileDamage = Wpn.MissileHitDice * KRPGPlayerBase(Player).intelligence / 10;
+		
+		 // [FB] We should set the projectile's level somehow, but we can't reference GoldenStormFX1 from here...
+		mo.level = 2;
+		
+		if (AimTarget)
+		{
+			mo.Tracer = AimTarget;
+		}
+	}
+	Wpn.DepleteAmmoEx(Wpn.FireMode);
 }
