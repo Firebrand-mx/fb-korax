@@ -44,15 +44,13 @@ conitem k24203 24203
 	name "Master Trader Scavo";
 	pic con24203;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Time is money so don't waste either." none;
 	}
 
 	choice none "What's new in the area?"
-	if (MyState is 0)
+	if (Player.HasInventory( Questeastate0 ))
 	{
 		say Player "What's new in the area?" none;
 		say "Usachioi Mine is being invaded by minions of Korax. The right thing to do would be to help the guards and rescue the trapped miners.",,
@@ -61,42 +59,23 @@ conitem k24203 24203
 		Player.GiveInventory( Questeastate1 );
 		Player.SetMapTrackce( 1 );
 		Player.GiveConstitution( 2 );
-		executems 42 4;
-		set MyState 1;
+		executems 42 3;
+		executems 51 3;
 	}
 
-	choice none "Later."
-	{
-		Player.SetMapTrackcg( 1 );
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k24204 24204
-{
-	name "Master Trader Scavo";
-	pic con24203;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Time is money so don't waste either." none;
-	}
-	
 	choice none "I'm back from Usachioi Mine."
-	if (MyState is 0)
+	if (Player.HasInventory( Questeastate2 ))
 	{
 		say Player "I'm back from Usachioi Mine and found a few trinkets that might interest you." none;
 		say "Splendid! Here is a little something in exchange." none;
 		Player.RemoveInventory( Questeastate2 );
 		Player.GiveInventory( Questeastate3 );
 		Player.GiveInventory( Coin, 1000 );
-		set MyState 1;
 	}
 
 	choice none "Later."
 	{
+		Player.SetMapTrackcg( 1 );
 		end;
 	}
 }
