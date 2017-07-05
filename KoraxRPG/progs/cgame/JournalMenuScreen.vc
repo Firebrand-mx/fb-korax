@@ -14,7 +14,7 @@
 //**	     		   ## ###  ##     ###   ##
 //**	     		   ##  ### ##      ######
 //**
-//**    $Id: MapsPlainscity.vc 2236 2017-03-19 13:58:27Z ramborc $
+//**    $Id: template.vc 1305 2008-03-01 09:20:29Z dj_jl $
 //**
 //**    Copyright (C) 2004-2008 Korax Heritage Team
 //**
@@ -30,98 +30,75 @@
 //**
 //**************************************************************************
 
-class MapsPlainscity : JournalMenuScreen;
+class JournalMenuScreen : KRPGMenuScreen;
+
+const int
+	TABLE_HEAD_Y		= 68,
+	TABLE_STRING_DELTA	= 14;
+
+name ActivateSound;
+
+KRPGPlayerReplicationInfo RepInfo;
+
+string playerclassnames[HexenDefs::NUMCLASSES];
 
 //==========================================================================
 //
-//	CyclePrevChoice
+//	OnKeyDown
 //
 //==========================================================================
 
-void CyclePrevChoice()
+bool OnKeyDown(int key)
 {
-}
-
-//==========================================================================
-//
-//	CycleNextChoice
-//
-//==========================================================================
-
-void CycleNextChoice()
-{
-}
-
-//==========================================================================
-//
-//  OnDraw
-//
-//==========================================================================
-
-void OnDraw()
-{
-	DrawPic(0, 0, R_RegisterPic('journal'));
-
-	foreach ClGame.GLevel.LevelInfo.AllThinkers(KRPGPlayerReplicationInfo, RepInfo)
+	switch (key)
 	{
-		if (ClGame.cl.ClientNum == RepInfo.PlayerNum)
-		{
-		
-			if (RepInfo.plclass == 0)
-			{
-			DrawPic(8, 80, R_RegisterPic('journf'));			
-			}
-			if (RepInfo.plclass == 1)
-			{
-			DrawPic(8, 80, R_RegisterPic('journc'));			
-			}
-			if (RepInfo.plclass == 2)
-			{
-			DrawPic(8, 80, R_RegisterPic('journm'));			
-			}
+	case K_DOWNARROW:
+	case K_MWHEELDOWN:
+		CycleNextChoice();
+		LocalSound('journalforward');
+		return true;
 
-		if (RepInfo.maptrackha == 1)
-		{
-			DrawPic(160, 82, R_RegisterPic('jmapha'));
-		}	
+	case K_UPARROW:
+	case K_MWHEELUP:
+		CyclePrevChoice();
+		LocalSound('journalback');
+		return true;
 
-		else if (GetCvar('JournalHints') == 1)
-		{
-			DrawText(160, 82, va("I should look for someone in Ocadia City Hall."), CR_DARKGRAY);
-		}
-			
+	case K_ESCAPE:
+	case K_MOUSE2:
+		ClGame.PopMenu();
+		return true;
 	}
-}
 
-
-	
+	return false;
 }
 
 //==========================================================================
 //
-//  OnDestroy
+//	OnMouseEnter
 //
 //==========================================================================
 
-void OnDestroy()
+void OnMouseEnter()
 {
-	::OnDestroy();
-
-	ClientGame(ClGame).HideMapsPlainscity();
-
+	SetFocus();
+	LocalSound('journalforward');
 }
-
 
 defaultproperties
 {
+	ActivateSound = 'journalback';
 	X = 0;
 	Y = 0;
 	Width = 640;
 	Height = 480;
 	TitleX = 320;
-	ChoicesStartX = 85;
-	ChoicesStartY = 130;
+	ChoicesStartX = 285;
+	ChoicesStartY = 242;
 /*	ScaleX = 2.0;
 	ScaleY = 2.4;*/
-	Title = "map of the Plains City";
+	playerclassnames[0] = "fighter";
+	playerclassnames[1] = "cleric";
+	playerclassnames[2] = "mage";
+	Title = "JOURNAL";
 }
