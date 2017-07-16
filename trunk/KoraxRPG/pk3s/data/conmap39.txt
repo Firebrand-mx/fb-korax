@@ -4,8 +4,6 @@ conitem k23901 23901
 	name "Commander Legzd";
 	pic con23901;
 
-	var MyState 1 integer 0;
-
 	hello
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
@@ -27,28 +25,37 @@ conitem k23901 23901
 		comment "You snicker.";
 	}
 	
-	choice none "Orders of the day, sir?"
-	if (MyState is 0)
+	choice none "I am looking for some wet work."
+	if (Player.HasInventory( TrackerQuestCD0 ))
 	{
-		say Player "Orders of the day, sir?" none;
+		say Player "I am looking for some wet work." none;
 		say "Some travelers claim Jodisec Mine is overrun by monsters. Head over there and check it out." none;
 		Player.RemoveInventory( TrackerQuestCD0 );
 		Player.GiveInventory( TrackerQuestCD1 );
 		Player.GiveInventory( TrackerMapCD );
 		Player.GiveConstitution( 2 );
 		executems 39 3;
-		set MyState 1;
+		executems 52 2;
 	}
 
 	choice none "My armor is in tatters."
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
 		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 1 );
-		Player.GiveInventory( FalconShield , 1 );
-		Player.GiveInventory( PlatinumHelm , 1 );
-		Player.GiveInventory( AmuletOfWarding , 1 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
+		if (Player.HasInventory( MeshArmor ))
+		{
+			say "That armor looks good as new, it'd be a waste to replace it." none;
+			terminate;
+		}
+		else
+		{
+			Player.GiveInventory( MeshArmor , 1 );
+			Player.GiveInventory( FalconShield , 1 );
+			Player.GiveInventory( PlatinumHelm , 1 );
+			Player.GiveInventory( AmuletOfWarding , 1 );
+			say "Here is a new set of armor. Try and make it last longer this time." none;
+			terminate;
+		}
 	}
 	
 	choice none "For the Legion!"
