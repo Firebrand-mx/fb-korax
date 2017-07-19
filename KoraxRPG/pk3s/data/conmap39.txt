@@ -36,6 +36,25 @@ conitem k23901 23901
 		Player.GiveConstitution( 2 );
 		executems 39 3;
 		executems 52 2;
+		terminate;
+	}
+
+	choice none "What was the wet work again?"
+	if (Player.HasInventory( TrackerQuestCD1 ))
+	{
+		say Player "What was the wet work again?" none;
+		say "Some travelers claim Jodisec Mine is overrun by monsters. Head over there and check it out." none;
+	}
+
+	choice none "I'm back from Jodisec Mine."
+	if (Player.HasInventory( TrackerQuestCD2 ))
+	{
+		say Player "I checked out Jodisec Mine. It was indeed overrun by monsters, but no more." none;
+		say "Splendid work! Here is your reward." moneybag;
+		Player.RemoveInventory( TrackerQuestCD2 );
+		Player.GiveInventory( TrackerQuestCD3 );
+		Player.GiveInventory( Coin, 200 );
+		terminate;
 	}
 
 	choice none "My armor is in tatters."
@@ -50,8 +69,23 @@ conitem k23901 23901
 	}
 	
 	choice none "For the Legion!"
+	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
 		say "Dismissed." none;
+		end;
+	}
+
+	choice none "Buh-bye muscle mountain!"
+	if (Player.HasInventory( ClassIdentifierMage ))
+	{
+		say "I hate mages." none;
+		end;
+	}
+
+	choice none "God be with you."
+	if (Player.HasInventory( ClassIdentifierCleric ))
+	{
+		say "Go and proselytize somewhere else, maggot!" none;
 		end;
 	}
 }
@@ -67,55 +101,6 @@ conitem k23902 23902
 	
 	choice none "I like to cheat in video games."
 	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k23903 23903
-{
-	name "Commander Legzd";
-	pic con23901;
-
-	var MyState 1 integer 0;
-
-	hello
-	if (MyState is 0)
-	{
-		say "Ah, looks like my scout has returned!" none;
-	}
-
-	hello
-	if (MyState is 1)
-	{
-		say "Greetings, worm." none;
-		say Player "That's my cue to leave." none;
-	}
-	
-	choice none "I checked out Jodisec Mine."
-	if (MyState is 0)
-	{
-		say Player "I checked out Jodisec Mine. It was indeed overrun by monsters, but no more." none;
-		say "Splendid work! Here is your reward." none;
-		Player.RemoveInventory( TrackerQuestCD2 );
-		Player.GiveInventory( TrackerQuestCD3 );
-		Player.GiveInventory( Coin, 200 );
-		set MyState 1;
-	}
-
-	choice none "My armor is in tatters."
-	if (Player.HasInventory( ClassIdentifierFighter ))
-	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 1 );
-		Player.GiveInventory( FalconShield , 1 );
-		Player.GiveInventory( PlatinumHelm , 1 );
-		Player.GiveInventory( AmuletOfWarding , 1 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
-	}
-	
-	choice none "For the Legion!"
-	{
-		say "Dismissed." none;
 		end;
 	}
 }
