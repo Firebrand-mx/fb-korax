@@ -4,15 +4,13 @@ conitem k21701 21701
 	name "Senior Wizard Ianabec";
 	pic con21701;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Of all the towers in the province, mine has the best view." none;
 	}
 
 	choice none "Need any help?"
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestDB0 ))
 	{
 		say Player "Need any help?" none;
 		say "Indeed I do. Aldir's Cave to the southeast spews forth marauding bands of ettins and centaurs every now and then. I'd appreciate if you sealed it for good." none;
@@ -21,13 +19,43 @@ conitem k21701 21701
 		Player.GiveInventory( TrackerMapEB );
 		Player.GiveConstitution( 2 );
 		executems 17 2;
-		set MyState 1;
+		executems 53 2;
+		terminate;
+	}
+
+	choice none "What was it again you needed help with?"
+	if (Player.HasInventory( TrackerQuestDB1 ))
+	{
+		say Player "What was it again you needed help with?" none;
+		say "Aldir's Cave to the southeast spews forth marauding bands of ettins and centaurs every now and then. I'd appreciate if you stopped the flow for good." none;
+	}
+
+	choice none "I took care of Aldir's Cave."
+	if (Player.HasInventory( TrackerQuestDB2 ))
+	{
+		say Player "I traveled through Aldir's Cave and found a huge demesne on the other side.",,
+		"I mopped its floors with the blood of its denizens, so there probably won't be any raids originating from there anytime soon." none;
+		say "I don't remember asking for your life story. Now go away." none;
+		Player.RemoveInventory( TrackerQuestDB2 );
+		Player.GiveInventory( TrackerQuestDB3 );
+		if (Player.HasInventory( ClassIdentifierMage ))
+		{
+			say "Oh yeah I nearly forgot, Spellmaster Sallazar in Thystes Academy sent word that he's ready to teach you a new spell." none;
+			Player.GiveInventory( MSpell2Voucher );
+			terminate;
+		}
+		else
+		{
+			say "On second thought, take this bag of gold to decrease the likelihood you'd want to bother me again." moneybag;
+			Player.GiveInventory( Coin, 250 );
+			terminate;
+		}
 	}
 
 	choice none "I met a grumpy old fellow downstairs."
 	{
 		say Player "I met a grumpy old fellow downstairs." none;
-		say "We call him 'Old Sour Grapes'. Just ignore him." none;
+		say "We call him \"Old Sour Grapes\". Just ignore him." none;
 	}
 
 	choice none "I am in dire need of mana."
@@ -81,71 +109,6 @@ conitem k21703 21703
 	
 	choice none "Whatever you say."
 	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k21704 21704
-{
-	name "Senior Wizard Ianabec";
-	pic con21701;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Of all the towers in the province, mine has the best view." none;
-	}
-
-	choice none "I took care of Aldir's Cave."
-	if (MyState is 0)
-	{
-		say Player "I traveled through Aldir's Cave and found a huge demesne on the other side.",,
-		"I mopped its floors with the blood of its denizens, so there probably won't be any raids originating from there anytime soon." none;
-		say "I don't remember asking for your life story. Now go away." none;
-		Player.RemoveInventory( TrackerQuestDB2 );
-		Player.GiveInventory( TrackerQuestDB3 );
-		set MyState 1;
-		if (Player.HasInventory( ClassIdentifierMage ))
-		{
-			say "Oh yeah I nearly forgot, Spellmaster Sallazar in Thystes Academy sent word that he's ready to teach you a new spell." none;
-			Player.GiveInventory( MSpell2Voucher );
-			terminate;
-		}
-		else
-		{
-			say "On second thought, take this bag of gold to decrease the likelihood you'd want to bother me again." none;
-			Player.GiveInventory( Coin, 250 );
-			terminate;
-		}
-	}
-
-	choice none "I met a grumpy old fellow downstairs."
-	{
-		say Player "I met a grumpy old fellow downstairs." none;
-		say "We call him \"Old Sour Grapes\". Just ignore him." none;
-	}
-
-	choice none "I am in dire need of mana."
-	if (Player.HasInventory( ClassIdentifierMage ))
-	{
-		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 200 );
-		Player.GiveInventory( KRPGMana2 , 200 );
-		Player.GiveInventory( RedMana , 200 );
-		say "There you go. Anything else?" none;
-	}
-
-	choice none "What's with all the portals?"
-	{
-		say Player "What's with all the portals?" none;
-		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
-	}
-
-	choice none "I'll be going now."
-	{
-
-		say "And I think I'll go down to the beach." none;
 		end;
 	}
 }
