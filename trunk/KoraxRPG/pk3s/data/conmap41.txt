@@ -4,15 +4,13 @@ conitem k24101 24101
 	name "Senior Wizard Zetelar";
 	pic con24101;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Can't you see I am busy?" none;
 	}
 
 	choice none "Anything I should know?"
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestDC0 ))
 	{
 		say Player "Anything I should know about the environs?" none;
 		say "There is a mysterious structure nearby and something foul beneath it. I would appreciate it if you got to the bottom of this enigma." none;
@@ -20,8 +18,36 @@ conitem k24101 24101
 		Player.GiveInventory( TrackerQuestDC1 );
 		Player.GiveInventory( TrackerMapDG );
 		Player.GiveConstitution( 2 );
+		executems 41 1;
 		executems 41 2;
-		set MyState 1;
+		terminate;
+	}
+
+	choice none "Sorry wasn't listening. What did you say?"
+	if (Player.HasInventory( TrackerQuestDC1 ))
+	{
+		say Player "What was it again about the environs?" none;
+		say "There is a mysterious structure nearby and something foul beneath it. I would appreciate it if you got to the bottom of this enigma." none;
+	}
+
+	choice none "I solved the Enigma."
+	if (Player.HasInventory( TrackerQuestDC2 ))
+	{
+		say Player "I solved the Enigma." none;
+		Player.RemoveInventory( TrackerQuestDC2 );
+		Player.GiveInventory( TrackerQuestDC3 );
+		if (Player.HasInventory( ClassIdentifierMage ))
+		{
+			say "Marvelous! I'll send word to Spellmaster Sallazar in Thystes Academy. Next time you are there, he'll teach you a new spell." none;
+			Player.GiveInventory( MSpell4Voucher );
+			terminate;
+		}
+		else
+		{
+			say "Marvelous! Here's a little something so you'll stop bothering me." moneybag;
+			Player.GiveInventory( Coin, 250 );
+			terminate;
+		}
 	}
 
 	choice none "I am in dire need of mana."
@@ -59,63 +85,6 @@ conitem k24102 24102
 	
 	choice none "Will do."
 	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k24103 24103
-{
-	name "Senior Wizard Zetelar";
-	pic con24101;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Can't you see I am busy?" none;
-	}
-
-	choice none "I solved the Enigma."
-	if (MyState is 0)
-	{
-		say Player "I solved the Enigma." none;
-		Player.RemoveInventory( TrackerQuestDC2 );
-		Player.GiveInventory( TrackerQuestDC3 );
-		set MyState 1;
-		if (Player.HasInventory( ClassIdentifierMage ))
-		{
-			say "Marvelous! I'll send word to Spellmaster Sallazar in Thystes Academy. Next time you are there, he'll teach you a new spell." none;
-			Player.GiveInventory( MSpell4Voucher );
-			terminate;
-		}
-		else
-		{
-			say "Marvelous! Here's a little something so you'll stop bothering me." none;
-			Player.GiveInventory( Coin, 250 );
-			terminate;
-		}
-	}
-
-	choice none "I am in dire need of mana."
-	if (Player.HasInventory( ClassIdentifierMage ))
-	{
-		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 200 );
-		Player.GiveInventory( KRPGMana2 , 200 );
-		Player.GiveInventory( RedMana , 200 );
-		say "There you go. Anything else?" none;
-	}
-
-	choice none "What's with all the portals?"
-	{
-		say Player "What's with all the portals?" none;
-		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
-	}
-
-	choice none "I'll be going now."
-	{
-
-		comment "Zetelar seems to have forgotten you exist.";
 		end;
 	}
 }
