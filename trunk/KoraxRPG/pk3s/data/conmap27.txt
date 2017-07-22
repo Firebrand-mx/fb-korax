@@ -4,15 +4,13 @@ conitem k22701 22701
 	name "Bishop Carlos";
 	pic con22701;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Welcome child." none;
 	}
 	
 	choice none "Do you have a task for me?"
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestBC0 ))
 	{
 		say Player "Do you have a task for me?" none;
 		say "Donas Monument to the south has been overrun by monsters.",
@@ -22,7 +20,44 @@ conitem k22701 22701
 		Player.GiveInventory( TrackerQuestBC1 );
 		Player.GiveConstitution( 2 );
 		executems 27 6;
-		set MyState 1;
+		terminate;
+	}
+
+	choice none "What was your task again?"
+	if (Player.HasInventory( TrackerQuestBC1 ))
+	{
+		say Player "What was your task again?" none;
+		say "Donas Monument to the south has been overrun by monsters.",
+		"Cleanse the place and find the portal to the Frozen Court, which in turn leads to the Octagon, where a great evil resides.",,
+		"Your trials will be worth it, I promise." none;
+	}
+
+	choice none "I return from the trials."
+	if (Player.HasInventory( TrackerQuestBC2 ))
+	{
+		say Player "I return from the trials." none;
+		Player.RemoveInventory( TrackerQuestBC2 );
+		Player.GiveInventory( TrackerQuestBC3 );
+		if (Player.HasInventory( ClassIdentifierCleric ))
+		{
+		say "You reflect well on the Church. Let me reward you with this Evening Star." none;
+		Player.GiveInventory( WeaponClericEveningStar );
+		executems 27 10;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierMage ))
+		{
+		say "Let me show you the Church's gratitude with this spell scroll." none;
+		Player.GiveInventory( WeaponMageFrostCone );
+		executems 27 11;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierFighter ))
+		{
+		say "Yes, I can feel the power growing inside you. I'll help you harness and shape it." none;
+		Player.GiveLevels( 5 );
+		terminate;
+		}
 	}
 
 	choice none "Can you heal my wounds?"
@@ -149,8 +184,6 @@ conitem k22706 22706
 	name "Garrison Commander Janis";
 	pic con22706;
 
-	var MyState 1 integer 0;
-
 	hello
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
@@ -170,14 +203,32 @@ conitem k22706 22706
 	}
 
 	choice none "Do you have a task for me?"
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestCC0 ))
 	{
+		say Player "Do you have a task for me?" none;
 		say "Yes, check in on the Iarmusc garrison for me. I heard whispers of abuse by the commander and of townfolk that disappeared." none;
 		Player.RemoveInventory( TrackerQuestCC0 );
 		Player.GiveInventory( TrackerQuestCC1 );
 		Player.GiveConstitution( 2 );
 		executems 27 6;
-		set MyState 1;
+		terminate;
+	}
+
+	choice none "What was your task again?"
+	if (Player.HasInventory( TrackerQuestCC1 ))
+	{
+		say Player "What was your task again?" none;
+		say "Check in on the Iarmusc garrison for me. I heard whispers of abuse by the commander and of townfolk that disappeared." none;
+	}
+
+	choice none "I am back."
+	if (Player.HasInventory( TrackerQuestCC2 ))
+	{
+		say Player "I am back from Iarmusc. The commander threw people into the monster-infested dungeons and spectated them for sport." none;
+		say "Good job rooting out the evil among our ranks. Accept this sack of gold as my thanks." moneybag;
+		Player.RemoveInventory( TrackerQuestCC2 );
+		Player.GiveInventory( TrackerQuestCC3 );
+		Player.GiveInventory( Coin, 500 );
 	}
 
 	choice none "My armor is in tatters."
@@ -1080,118 +1131,6 @@ conitem k22739 22739
 
 	choice none "Sounds about right."
 	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k22740 22740
-{
-	name "Garrison Commander Janis";
-	pic con22706;
-
-	var MyState 1 integer 0;
-	
-	hello
-	if (Player.HasInventory( ClassIdentifierFighter ))
-	{
-		say "At ease, soldier." none;
-	}
-
-	hello
-	if (Player.HasInventory( ClassIdentifierMage ))
-	{
-		say "At ease, mage." none;
-	}
-
-	hello
-	if (Player.HasInventory( ClassIdentifierCleric ))
-	{
-		say "At ease, cleric." none;
-	}
-
-	choice none "I am back."
-	if (MyState is 0)
-	{
-		say Player "I am back from Iarmusc. The commander threw people into the monster-infested dungeons and spectated them for sport." none;
-		say "Good job rooting out the evil among our ranks. Accept this sack of gold as my thanks." moneybag;
-		Player.RemoveInventory( TrackerQuestCC2 );
-		Player.GiveInventory( TrackerQuestCC3 );
-		Player.GiveInventory( Coin, 500 );
-		set MyState 1;
-	}
-
-	choice none "My armor is in tatters."
-	if (Player.HasInventory( ClassIdentifierFighter ))
-	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 4 );
-		Player.GiveInventory( FalconShield , 4 );
-		Player.GiveInventory( PlatinumHelm , 4 );
-		Player.GiveInventory( AmuletOfWarding , 4 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
-	}
-
-	choice none "I have to go."
-	{
-
-		say "A quitter, huh?" none;
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k22741 22741
-{
-	name "Bishop Carlos";
-	pic con22701;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Welcome child." none;
-	}
-	
-	choice none "I return from the trials."
-	if (MyState is 0)
-	{
-		say Player "I return from the trials." none;
-		Player.RemoveInventory( TrackerQuestBC2 );
-		Player.GiveInventory( TrackerQuestBC3 );
-		set MyState 1;
-		if (Player.HasInventory( ClassIdentifierCleric ))
-		{
-		say "You reflect well on the Church. Let me reward you with this Evening Star." none;
-		Player.GiveInventory( WeaponClericEveningStar );
-		executems 27 10;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierMage ))
-		{
-		say "Let me show you the Church's gratitude with this spell scroll." none;
-		Player.GiveInventory( WeaponMageFrostCone );
-		executems 27 11;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierFighter ))
-		{
-		say "Yes, I can feel the power growing inside you. I'll help you harness and shape it." none;
-		Player.GiveLevels( 5 );
-		terminate;
-		}
-	}
-
-	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 100 );
-		comment "As the bishop chants, you feel your wounds closing.";
-	}
-
-	choice none "I have to go."
-	{
-
-		say "The Light be with you, child." none;
 		end;
 	}
 }
