@@ -3,22 +3,19 @@ conitem k23101 23101
 {
 	name "Shopkeeper Brefas";
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Would you like to buy something?" none;
 	}
 	
 	choice none "A map of the area for 1 gold."
-	if (MyState is 0)
+	if (not Player.HasInventory( TrackerMapDA ))
 	{
 		if (Player.HasInventory( Coin, 1 ))
 		{
 			Player.RemoveInventory( Coin , 1 );
 			Player.GiveInventory( TrackerMapDA );
 			executems 31 3;
-			set MyState 1;
 			say "There you go. Anything else?" coingive;
 		}
 		else
@@ -126,15 +123,13 @@ conitem k23104 23104
 {
 	name "Mage Eckhardt";
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "When I start casting, there is carnage galore." none;
 	}
 
 	choice none "I seek knowledge about magic."
-	if (MyState is 0)
+	if (not Player.HasInventory( TrackerCodexAE ))
 	{
 		say Player "I seek knowledge about the theory of magic and heard you have a lot to share." none;
 		say "I studied the magical arts for years. What I know, I am happy to share with you." none;
@@ -142,7 +137,6 @@ conitem k23104 23104
 		Player.GiveIntelligence( 1 );
 		Player.GiveWisdom( 1 );
 		executems 31 4;
-		set MyState 1;
 	}
 	
 	choice none "Until the next chapter."
