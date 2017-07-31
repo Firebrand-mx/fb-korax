@@ -45,6 +45,7 @@ conitem k22201 22201
 		executems 22 3;
 		executems 48 35;
 		set MyState 2;
+		terminate;
 	}
 
 	choice none "How do I stave off this threat?"
@@ -85,10 +86,22 @@ conitem k22202 22202
 	var MyState 1 integer 0;
 
 	hello
+	if (Player.HasInventory( TrackerQuestAA2 ))
 	{
 		say "You are tracking sand all over my floors. Hope you have something to show for it." none;
 	}
 
+	hello
+	if (Player.HasInventory( TrackerQuestAC1 ))
+	{
+		say "Evil is drawing closer every moment you delay." none;
+	}
+
+	hello
+	if ((not Player.HasInventory( TrackerQuestAC1 )) and (not Player.HasInventory( TrackerQuestAA2 )))
+	{
+		say "In my nightmares, I still see Korax in the Dark Crucible." none;
+	}
 
 	choice none "I transcribed the tablet I found."
 	if (MyState is 0)
@@ -130,17 +143,8 @@ conitem k22202 22202
 		"Korax' Heritage." none;
 	}
 
-	choice none "What does the tablet say?"
-	if (MyState is 4)
-	{
-		say Player "What does the tablet say?" none;
-		say "Bad news... it seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
-		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
-		"Korax' Heritage." none;
-	}
-
 	choice none "So what's the next step?"
-	if (MyState is 2)
+	if (Player.HasInventory( TrackerQuestAB0 ))
 	{
 		say Player "So what's the next step?" none;
 		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
@@ -149,106 +153,30 @@ conitem k22202 22202
 		Player.GiveInventory( TrackerQuestAB1 );
 		Player.GiveConstitution( 1 );
 		set MyState 3;
-	}
-
-	choice none "So what's the next step?"
-	if (MyState is 3)
-	{
-		say Player "So what's the next step?" none;
-		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
-		"I can teleport you there any time, let me know whenever you are ready." none;
-	}
-
-
-	choice none "So what's the next step?"
-	if (MyState is 4)
-	{
-		say Player "So what's the next step?" none;
-		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
-		"I can teleport you there any time, let me know whenever you are ready." none;
-	}
-
-	choice none "Heresiarch's Seminary"
-	if (MyState is 3)
-	{
-		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
-		say "Hang on to your skivvies, this might hurt a bit." none;
-		Player.TeleportToMap(68);
-		terminate;
-	}
-
-	choice none "Heresiarch's Seminary"
-	if (MyState is 4)
-	{
-		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
-		say "Hang on to your skivvies, this might hurt a bit." none;
-		Player.TeleportToMap(68);
-		terminate;
-	}
-
-	choice none "What's with all the portals?"
-	{
-		say Player "What's with all the portals?" none;
-		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
-	}
-
-	choice none "I need more mana."
-	if (Player.HasInventory( ClassIdentifierMage ))
-	{
-		say Player "I need more mana." none;
-		Player.GiveInventory( KRPGMana1 , 200 );
-		Player.GiveInventory( KRPGMana2 , 200 );
-		Player.GiveInventory( RedMana , 200 );
-		say "There you go." none;
-	}
-
-	choice none "I need a minute."
-	if (MyState is 0)
-	{
-		end;
-	}
-
-	choice none "I need a minute."
-	if (MyState is 1)
-	{
-		end;
-	}
-
-	choice none "I need a minute."
-	if (MyState is 2)
-	{
-		end;
-	}
-
-	choice none "I need a minute."
-	if (MyState is 3)
-	{
 		executems 22 3;
+		terminate;
+	}
+
+	choice none "So what's the next step?"
+	if (Player.HasInventory( TrackerQuestAB1 ))
+	{
+		say Player "So what's the next step?" none;
+		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
+		"I can teleport you there any time, let me know whenever you are ready." none;
+	}
+
+	choice none "Ready for the Heresiarch's Seminary!"
+	if (Player.HasInventory( TrackerQuestAB1 ))
+	{
+		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
+		say "Hang on to your skivvies, this might hurt a bit." none;
 		set MyState 4;
-		end;
-	}
-
-	choice none "I need a minute."
-	if (MyState is 4)
-	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k22203 22203
-{
-	name "Daedalon";
-	pic con22201;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Evil is drawing closer every moment you delay." none;
+		Player.TeleportToMap(68);
+		terminate;
 	}
 
 	choice none "I found this book."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestAB2 ))
 	{
 		if (Player.HasInventory( ClassIdentifierMage ))
 		{
@@ -258,24 +186,23 @@ conitem k22203 22203
 		Player.RemoveInventory( TrackerQuestAB2 );
 		Player.GiveInventory( TrackerQuestAB3 );
 		Player.GiveInventory( MSpell5Voucher );
-		set MyState 1;
 		terminate;
 		}
 		else
 		{
 		say Player "I found this book in the Heresiarch's Seminary." none;
 		say "The Daemon Codex! Give me a few moments to study it.",,
-		"Take this gold and replenish your supplies in the meantime." none;
+		Player.RemoveInventory( DaemonCodex );
+		"Take this gold and replenish your supplies in the meantime." moneybag;
 		Player.RemoveInventory( TrackerQuestAB2 );
 		Player.GiveInventory( TrackerQuestAB3 );
 		Player.GiveInventory( Coin, 250 );
-		set MyState 1;
 		terminate;
 		}
 	}
 
 	choice none "So where am I heading now?"
-	if (MyState is 1)
+	if (Player.HasInventory( TrackerQuestAB3 ))
 	{
 		say Player "So where is the cult located? Where am I heading now?" none;
 		say "It seems they are in the 'Dark Conclave', an underground structure connecting the overworld and the underworld.",,
@@ -289,6 +216,8 @@ conitem k22203 22203
 		Player.GiveInventory( TrackerMapDM );
 		Player.GiveConstitution( 5 );
 		executems 22 3;
+		executems 57 2;
+		terminate;
 	}
 
 	choice none "What's with all the portals?"
@@ -307,9 +236,15 @@ conitem k22203 22203
 		say "There you go." none;
 	}
 
-	choice none "Time to descend to hell."
+	choice none "Give me a minute."
+	if (not Player.HasInventory( TrackerQuestAB3 ))
 	{
 		end;
 	}
 
+	choice none "Time to descend to hell."
+	if (Player.HasInventory( TrackerQuestAB3 ))
+	{
+		end;
+	}
 }

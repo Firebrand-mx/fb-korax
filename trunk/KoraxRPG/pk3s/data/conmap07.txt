@@ -4,16 +4,14 @@ conitem k20701 20701
 	name "Cardinal Francisco";
 	pic con20701;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
-		say "Welcome child." none;
+		say "Welcome child." voicemale1hello;
 	}
 	
 	
 	choice none "I am looking to learn a new spell."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestBA0 ))
 	{
 		say Player "I am looking to learn a new spell that will help me vanquish my foes." none;
 		say "Far away Gonos Fortress holds an artifact of immense power. Return it to me and I'll teach you how to send forth fire to purify your enemies." none;
@@ -22,8 +20,44 @@ conitem k20701 20701
 		Player.GiveInventory( TrackerMapDD );
 		Player.GiveConstitution( 2 );
 		executems 7 4;
-		set MyState 1;
+		executems 57 3;
+		terminate;
 	}
+
+	choice none "Errm Gonos what?"
+	if (Player.HasInventory( TrackerQuestBA1 ))
+	{
+		say Player "I am looking to learn a new spell that will help me vanquish my foes." none;
+		say "Far away Gonos Fortress holds an artifact of immense power. Return it to me and I'll teach you how to send forth fire to purify your enemies." none;
+	}
+
+	choice none "I'm back with the artifact."
+	if (Player.HasInventory( TrackerQuestBA2 ))
+	{
+		say Player "I bring you the fabled artifact of Gonos." none;
+		say "Amazing work! Let me show you how this spell works..." voicemale1nicework;
+		Player.RemoveInventory( TrackerQuestBA2 );
+		Player.GiveInventory( TrackerQuestBA3 );
+		if (Player.HasInventory( ClassIdentifierCleric ))
+		{
+		Player.GiveInventory( WeaponClericFirestorm );
+		executems 7 5;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierMage ))
+		{
+		Player.GiveInventory( WeaponMageFireball );
+		executems 7 5;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierFighter ))
+		{
+		Player.GiveInventory( WeaponFighterInfernoHammer );
+		executems 7 5;
+		terminate;
+		}
+	}
+
 
 	choice none "Can you heal my wounds?"
 	if (Player.HasInventory( ClassIdentifierCleric ))
@@ -35,7 +69,7 @@ conitem k20701 20701
 	
 	choice none "Thank you for your time."
 	{
-		say "The Light be with you, child." none;
+		say "The Light be with you, child." voicemale1bye;
 		end;
 	}
 }
@@ -46,7 +80,7 @@ conitem k20702 20702
 
 	hello
 	{
-		say "Welcome to our humble abode." none;
+		say "Welcome to our humble abode." voicemale1hello;
 	}
 
 	choice none "I seek knowledge about my foes."
@@ -72,7 +106,7 @@ conitem k20702 20702
 
 	choice none "May I speak to the cardinal?"
 	{
-		say "Yes, go on right ahead." none;
+		say "Yes, go on right ahead." voicemale1bye;
 		end;
 	}
 }
@@ -84,19 +118,19 @@ conitem k20703 20703
 	hello
 	if (Player.HasInventory( ClassIdentifierCleric ))
 	{
-		say "Welcome to Thystes Cathedral, brother!" none;
+		say "Welcome to Thystes Cathedral, brother!" voicemale1uhhello;
 	}
 
 	hello
 	if (Player.HasInventory( ClassIdentifierMage ))
 	{
-		say "Make sure your visit is a short one, pervert." none;
+		say "Make sure your visit is a short one, pervert." voicemale1uhhello;
 	}
 
 	hello
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
-		say "Make sure your visit is a short one, meathead." none;
+		say "Make sure your visit is a short one, meathead." voicemale1uhhello;
 	}
 	
 	choice none "It's good to be here."
@@ -125,19 +159,19 @@ conitem k20704 20704
 	hello
 	if (Player.HasInventory( ClassIdentifierCleric ))
 	{
-		say "Isn't this the most marvelous work of architecture you've ever seen, brother?" none;
+		say "Isn't this the most marvelous work of architecture you've ever seen, brother?" voicemale1uhhello;
 	}
 
 	hello
 	if (Player.HasInventory( ClassIdentifierMage ))
 	{
-		say "Isn't this the most marvelous work of architecture you've ever seen, pervert?" none;
+		say "Isn't this the most marvelous work of architecture you've ever seen, pervert?" voicemale1uhhello;
 	}
 
 	hello
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
-		say "Isn't this the most marvelous work of architecture you've ever seen, meathead?" none;
+		say "Isn't this the most marvelous work of architecture you've ever seen, meathead?" voicemale1uhhello;
 	}
 	
 	choice none "Indeed it is, brother."
@@ -159,62 +193,6 @@ conitem k20704 20704
 	}
 }
 //------------------------------------------------------------------------------
-conitem k20705 20705
-{
-	name "Cardinal Francisco";
-	pic con20701;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Welcome child." none;
-	}
-	
-	
-	choice none "I'm back with the artifact."
-	if (MyState is 0)
-	{
-		say Player "I bring you the fabled artifact of Gonos." none;
-		say "Amazing work! Let me show you how this spell works..." none;
-		Player.RemoveInventory( TrackerQuestBA2 );
-		Player.GiveInventory( TrackerQuestBA3 );
-		set MyState 1;
-		if (Player.HasInventory( ClassIdentifierCleric ))
-		{
-		Player.GiveInventory( WeaponClericFirestorm );
-		executems 7 5;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierMage ))
-		{
-		Player.GiveInventory( WeaponMageFireball );
-		executems 7 5;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierFighter ))
-		{
-		Player.GiveInventory( WeaponFighterInfernoHammer );
-		executems 7 5;
-		terminate;
-		}
-	}
-
-	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 100 );
-		comment "As the cardinal chants, you feel your wounds closing.";
-	}
-
-	choice none "Thank you for your time."
-	{
-		say "The Light be with you, child." none;
-		end;
-	}
-}
-//------------------------------------------------------------------------------
 conitem k20706 20706
 {
 	name "Instructor Daniel";
@@ -227,7 +205,7 @@ conitem k20706 20706
 	{
 		if (Player.HasInventory( ClassIdentifierCleric ))
 		{
-		say "Welcome pupil." none;
+		say "Welcome pupil." voicemale1hello;
 		}
 		else
 		{
