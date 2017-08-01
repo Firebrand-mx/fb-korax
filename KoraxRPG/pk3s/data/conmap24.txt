@@ -4,15 +4,13 @@ conitem k22401 22401
 	name "Bishop Leamaner";
 	pic con22401;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Welcome child." voicemale1hello;
 	}
 
 	choice none "Are you in need of my services?"
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestBB0 ))
 	{
 		say Player "Are you in need of my services?" none;
 		say "Thryas, some way into the Unusian Marshes, has been abandoned years ago. Now, shadows lurk among the rubble and who knows what will crawl forward if the place is left alone much longer." none;
@@ -21,7 +19,36 @@ conitem k22401 22401
 		Player.GiveInventory( TrackerMapFB );
 		Player.GiveConstitution( 2 );
 		executems 24 2;
-		set MyState 1;
+		executems 60 2;
+		terminate;
+	}
+
+	choice none "What was it you required of me?"
+	if (Player.HasInventory( TrackerQuestBB1 ))
+	{
+		say Player "What was it you required of me?" none;
+		say "Thryas, some way into the Unusian Marshes, has been abandoned years ago. Now, shadows lurk among the rubble and who knows what will crawl forward if the place is left alone much longer." none;
+	}
+
+	choice none "I return from Thryas."
+	if (Player.HasInventory( TrackerQuestBB2 ))
+	{
+		say Player "I return from Thryas, having cleansed it of evil." none;
+		Player.RemoveInventory( TrackerQuestBB2 );
+		Player.GiveInventory( TrackerQuestBB3 );
+		say "Splendid!" voicemale1nicework;
+		if (Player.HasInventory( ClassIdentifierCleric ))
+		{
+			say "I'll send word to Instructor Daniel in Thystes Cathedral. Next time you visit him, he'll teach you a new spell." none;
+			Player.GiveInventory( CSpell2Voucher );
+			terminate;
+		}
+		else
+		{
+			say "Take these coins as an expression of my gratitude." moneybag;
+			Player.GiveInventory( Coin, 250 );
+			terminate;
+		}
 	}
 
 	choice none "Can you heal my wounds?"
@@ -60,7 +87,7 @@ conitem k22402 22402
 	choice none "Is the bishop in?"
 	{
 
-		say "Yes, go right in." none;
+		say "Yes, go right in." voicemale1bye;
 		end;
 	}
 }
@@ -119,56 +146,6 @@ conitem k22404 22404
 	choice none "Fanatic much?"
 	if (not Player.HasInventory( ClassIdentifierCleric ))
 	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k22405 22405
-{
-	name "Bishop Leamaner";
-	pic con22401;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Welcome child." voicemale1hello;
-	}
-
-	choice none "I return from Thryas."
-	if (MyState is 0)
-	{
-		say Player "I return from Thryas, having cleansed it of evil." none;
-		Player.RemoveInventory( TrackerQuestBB2 );
-		Player.GiveInventory( TrackerQuestBB3 );
-		set MyState 1;
-		say "Splendid!" voicemale1nicework;
-		if (Player.HasInventory( ClassIdentifierCleric ))
-		{
-			say "I'll send word to Instructor Daniel in Thystes Cathedral. Next time you visit him, he'll teach you a new spell." none;
-			Player.GiveInventory( CSpell2Voucher );
-			terminate;
-		}
-		else
-		{
-			say "Take these coins as an expression of my gratitude." moneybag;
-			Player.GiveInventory( Coin, 250 );
-			terminate;
-		}
-	}
-
-	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
-	{
-		say Player "Can you ease my pain?" none;
-		Player.GiveInventory( CrystalVial , 100 );
-		comment "As the bishop chants, you feel your wounds closing.";
-	}
-
-	choice none "I'll be going now."
-	{
-
-		say "The Light be with you." voicemale1bye;
 		end;
 	}
 }
