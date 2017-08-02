@@ -4,8 +4,6 @@ conitem k24501 24501
 	name "Commander Pablo";
 	pic con24501;
 
-	var MyState 1 integer 0;
-
 	hello
 	{
 		say "Hail, hero!" voicemale1hello;
@@ -22,7 +20,7 @@ conitem k24501 24501
 	}
 
 	choice none "I seek a powerful weapon."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestCE0 ))
 	{
 		say Player "I seek a powerful weapon." none;
 		say "Lernal Cave to the east is supposed to hold pieces of a rare weapon. Find and deliver them to me and I'll help you assemble it." none;
@@ -31,7 +29,50 @@ conitem k24501 24501
 		Player.GiveInventory( TrackerMapDH );
 		Player.GiveConstitution( 2 );
 		executems 45 2;
-		set MyState 1;
+		executems 50 1;
+		terminate;
+	}
+
+	choice none "Where was this weapon again?"
+	if (Player.HasInventory( TrackerQuestCE1 ))
+	{
+		say Player "Where was this weapon again?" none;
+		say "Lernal Cave to the east is supposed to hold pieces of a rare weapon. Find and deliver them to me and I'll help you assemble it." none;
+	}
+
+	choice none "I return from Lernal Cave."
+	if (Player.HasInventory( TrackerQuestCE2 ))
+	{
+		if (Player.HasInventory( ClassIdentifierCleric ))
+		{
+		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
+		say "By the gods, this is a Wraithverge! Let me show you how to assemble and fire it." none;
+		Player.GiveInventory( WeaponClericSlot5 );
+		Player.RemoveInventory( TrackerQuestCE2 );
+		Player.GiveInventory( TrackerQuestCE3 );
+		executems 45 3;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierMage ))
+		{
+		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
+		say "By the gods, this is a Bloodscourge! Let me show you how to assemble and fire it." none;
+		Player.GiveInventory( WeaponMageSlot4 );
+		Player.RemoveInventory( TrackerQuestCE2 );
+		Player.GiveInventory( TrackerQuestCE3 );
+		executems 45 3;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierFighter ))
+		{
+		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
+		say "By the gods, this is a Quietus! Let me show you how to assemble and fire it." none;
+		Player.GiveInventory( WeaponFighterQuietus );
+		Player.RemoveInventory( TrackerQuestCE2 );
+		Player.GiveInventory( TrackerQuestCE3 );
+		executems 45 3;
+		terminate;
+		}
 	}
 
 	choice none "My armor is in tatters."
@@ -78,86 +119,5 @@ conitem k24502 24502
 	choice none "I'll keep that in mind."
 	{
 		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k24503 24503
-{
-	name "Commander Pablo";
-	pic con24501;
-
-	var MyState 1 integer 0;
-
-	hello
-	{
-		say "Hail, hero!" voicemale1hello;
-	}
-	
-	choice none "I return from Lernal Cave."
-	if (MyState is 0)
-	{
-		if (Player.HasInventory( ClassIdentifierCleric ))
-		{
-		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
-		say "By the gods, this is a Wraithverge! Let me show you how to assemble and fire it." none;
-		Player.GiveInventory( WeaponClericSlot5 );
-		Player.RemoveInventory( TrackerQuestCE2 );
-		Player.GiveInventory( TrackerQuestCE3 );
-		set MyState 1;
-		executems 45 3;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierMage ))
-		{
-		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
-		say "By the gods, this is a Bloodscourge! Let me show you how to assemble and fire it." none;
-		Player.GiveInventory( WeaponMageSlot4 );
-		Player.RemoveInventory( TrackerQuestCE2 );
-		Player.GiveInventory( TrackerQuestCE3 );
-		set MyState 1;
-		executems 45 3;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierFighter ))
-		{
-		say Player "I return from Lernal Cave with pieces of a mysterious weapon." none;
-		say "By the gods, this is a Quietus! Let me show you how to assemble and fire it." none;
-		Player.GiveInventory( WeaponFighterQuietus );
-		Player.RemoveInventory( TrackerQuestCE2 );
-		Player.GiveInventory( TrackerQuestCE3 );
-		set MyState 1;
-		executems 45 3;
-		terminate;
-		}
-	}
-
-	choice none "My armor is in tatters."
-	if (Player.HasInventory( ClassIdentifierFighter ))
-	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 4 );
-		Player.GiveInventory( FalconShield , 4 );
-		Player.GiveInventory( PlatinumHelm , 4 );
-		Player.GiveInventory( AmuletOfWarding , 4 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
-	}
-	
-	choice none "I'm ready to go."
-	{
-		if (Player.HasInventory( ClassIdentifierCleric ))
-		{
-		say "May your mace bathe in blood." voicemale1okbye;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierMage ))
-		{
-		say "May your staff bathe in blood." voicemale1okbye;
-		terminate;
-		}
-		else if (Player.HasInventory( ClassIdentifierFighter ))
-		{
-		say "May your axe bathe in blood." voicemale1okbye;
-		terminate;
-		}
 	}
 }
