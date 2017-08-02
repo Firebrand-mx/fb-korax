@@ -4,8 +4,6 @@ conitem k20901 20901
 	name "Supreme Commander Magno";
 	pic con20901;
 
-	var MyState 1 integer 0;
-
 	hello
 	if (Player.HasInventory( ClassIdentifierFighter ))
 	{
@@ -28,89 +26,33 @@ conitem k20901 20901
 	}
 	
 	choice none "I want a challenge."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestCA0 ))
 	{
 		say Player "Commander, I want a real challenge - as the saying goes, the greater the challenge, the greater the reward." none;
-		say "Far away, in the canyon, there is a portal to another dimension called 'chuxen'. It is rumored to hold arcane knowledge not seen on chronos." none;
+		say "Far away, in the canyon, there is a portal to another dimension called \"Chuxen\". It is rumored to hold arcane knowledge not seen on chronos." none;
 		Player.RemoveInventory( TrackerQuestCA0 );
 		Player.GiveInventory( TrackerQuestCA1 );
 		Player.GiveInventory( TrackerMapDB );
 		Player.GiveInventory( TrackerMapDE );
 		Player.GiveConstitution( 2 );
 		executems 9 8;
-		set MyState 1;
+		executems 57 5;
+		terminate;
 	}
 
-	choice none "My armor is in tatters."
-	if (Player.HasInventory( ClassIdentifierFighter ))
+	choice none "Tell me about this challenge again."
+	if (Player.HasInventory( TrackerQuestCA1 ))
 	{
-		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 4 );
-		Player.GiveInventory( FalconShield , 4 );
-		Player.GiveInventory( PlatinumHelm , 4 );
-		Player.GiveInventory( AmuletOfWarding , 4 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
+		say Player "Commander, I want a real challenge - as the saying goes, the greater the challenge, the greater the reward." none;
+		say "Far away, in the canyon, there is a portal to another dimension called \"Chuxen\". It is rumored to hold arcane knowledge not seen on chronos." none;
 	}
 
-	choice none "Stepping out!"
-	{
-		say "Dismissed." voicemale1okbye;
-		end;
-	}
-}
-
-//------------------------------------------------------------------------------
-conitem k20902 20902
-{
-	name "Soldier";
-
-	hello
-	{
-		say "We must be vigilant at all times." voicemale1uhhello;
-	}
-	
-	choice none "You speak truth."
-	{
-		end;
-	}
-}
-
-//------------------------------------------------------------------------------
-conitem k20903 20903
-{
-	name "Supreme Commander Magno";
-	pic con20901;
-
-	var MyState 1 integer 0;
-
-	hello
-	if (Player.HasInventory( ClassIdentifierFighter ))
-	{
-		say "Straighten up maggot!" voicemale1hello;
-		say Player "Sir yes sir!" none;
-	}
-	
-	hello
-	if (Player.HasInventory( ClassIdentifierMage ))
-	{
-		say "Straighten up maggot!" voicemale1hello;
-		comment "You shrug.";
-	}
-
-	hello
-	if (Player.HasInventory( ClassIdentifierCleric ))
-	{
-		say "Straighten up maggot!" voicemale1hello;
-		comment "You snicker.";
-	}
-	
 	choice none "I return from Chuxen."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestCA2 ))
 	{
 		say Player "Commander, I return from Chuxen." none;
 		Player.RemoveInventory( TrackerQuestCA2 );
 		Player.GiveInventory( TrackerQuestCA3 );
-		set MyState 1;
 		say "Let me unlock some latent powers you might not realize you acquired." none;
 		if (Player.HasInventory( ClassIdentifierCleric ))
 		{
@@ -147,6 +89,21 @@ conitem k20903 20903
 	choice none "Stepping out!"
 	{
 		say "Dismissed." voicemale1okbye;
+		end;
+	}
+}
+//------------------------------------------------------------------------------
+conitem k20902 20902
+{
+	name "Soldier";
+
+	hello
+	{
+		say "We must be vigilant at all times." voicemale1uhhello;
+	}
+	
+	choice none "You speak truth."
+	{
 		end;
 	}
 }
