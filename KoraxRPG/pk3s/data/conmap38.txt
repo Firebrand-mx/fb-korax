@@ -8,36 +8,39 @@ conitem k23801 23801
 		say "Welcome to Maxine's Replenishments! Can I offer you something?" voicefemalehowcanihelpyou;
 	}
 	
-	
+	choice none "A Quartz Flask for 4 gold."
+	if (Player.HasInventory( Coin, 4 ))
+		{
+			Player.RemoveInventory( Coin , 4 );
+			Player.GiveInventory( KRPGArtiHealth , 1 );
+			say "There you go. Anything else?" coingive;
+		}
+
 	choice none "A Mystic Urn for 15 gold."
-	{
-		if (Player.HasInventory( Coin, 15 ))
+	if (Player.HasInventory( Coin, 15 ))
 		{
 			Player.RemoveInventory( Coin , 15 );
 			Player.GiveInventory( KRPGArtiSuperHealth , 1 );
 			say "There you go. Anything else?" coingive;
 		}
-		else
-		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
-		}
-	}
 	
 	choice none "A Krater of Might for 20 gold."
-	{
-		if (Player.HasInventory( Coin, 20 ))
+	if (Player.HasInventory( Coin, 20 ))
 		{
 			Player.RemoveInventory( Coin , 20 );
 			Player.GiveInventory( ArtiBoostMana , 1 );
 			say "There you go. Anything else?" coingive;
 		}
-		else
-		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
-		}
+
+	choice none "Sorry, can't afford any of your wares."
+	if (not Player.HasInventory( Coin, 4 ))
+	{
+		say "Come back when you do, dear." voicefemalehaveaniceday;
+		end;
 	}
 
 	choice none "I feel quite replenished, thank you."
+	if (Player.HasInventory( Coin, 4 ))
 	{
 		say "Drop by any time, dear." voicefemalehaveaniceday;
 		end;

@@ -4,11 +4,12 @@ conitem k20701 20701
 	name "Cardinal Francisco";
 	pic con20701;
 
+	var ServicesRendered 1 integer 0;
+
 	hello
 	{
 		say "Welcome child." voicemale1hello;
 	}
-	
 	
 	choice none "I am looking to learn a new spell."
 	if (Player.HasInventory( TrackerQuestBA0 ))
@@ -58,13 +59,13 @@ conitem k20701 20701
 		}
 	}
 
-
 	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
+	if ServicesRendered is 0)
 	{
 		say Player "Can you ease my pain?" none;
 		Player.GiveInventory( CrystalVial , 100 );
 		comment "As the cardinal chants, you feel your wounds closing.";
+		set ServicesRendered 1;
 	}
 	
 	choice none "Thank you for your time."
@@ -77,6 +78,8 @@ conitem k20701 20701
 conitem k20702 20702
 {
 	name "Acolyte Firebrand";
+
+	var ServicesRendered 1 integer 0;
 
 	hello
 	{
@@ -94,15 +97,14 @@ conitem k20702 20702
 		executems 7 3;
 	}
 
-
 	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
+	if ServicesRendered is 0)
 	{
 		say Player "Can you ease my pain?" none;
 		Player.GiveInventory( CrystalVial , 100 );
 		comment "As the acolyte chants, you feel your wounds closing.";
+		set ServicesRendered 1;
 	}
-
 
 	choice none "May I speak to the cardinal?"
 	{
@@ -213,7 +215,6 @@ conitem k20706 20706
 		terminate;
 		}
 	}
-
 
 	choice none "Can you teach me \"Spirits Within\"?"
 	if (SpiritsSpell is 0)
