@@ -4,6 +4,8 @@ conitem k20801 20801
 	name "Archmage Ivan";
 	pic con20801;
 
+	var ServicesRendered 1 integer 0;
+
 	hello
 	if (Player.HasInventory( ClassIdentifierMage ))
 	{
@@ -21,7 +23,6 @@ conitem k20801 20801
 	{
 		say "Ah, the young cleric." voicemale1hello;
 	}
-	
 	
 	choice none "Archmage, I seek more power."
 	if (Player.HasInventory( TrackerQuestDA0 ))
@@ -76,6 +77,16 @@ conitem k20801 20801
 		terminate;
 		}
 
+	}
+
+	choice none "I am in dire need of mana."
+	if ServicesRendered is 0)
+	{
+		say Player "I am in dire need of mana." none;
+		Player.GiveInventory( KRPGMana1 , 200 );
+		Player.GiveInventory( KRPGMana2 , 200 );
+		say "You're welcome to the little mana I can spare right now." none;
+		set ServicesRendered 1;
 	}
 
 	choice none "Farewell, archmage."
@@ -147,6 +158,8 @@ conitem k20805 20805
 {
 	name "Crimson Wizard";
 
+	var ServicesRendered 1 integer 0;
+
 	hello
 	{
 		say "My name is Wizard. Crimson Wizard." voicemale1hello;
@@ -164,13 +177,12 @@ conitem k20805 20805
 	}
 
 	choice none "I am in dire need of mana."
-	if (Player.HasInventory( ClassIdentifierMage ))
+	if ServicesRendered is 0)
 	{
 		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 200 );
-		Player.GiveInventory( KRPGMana2 , 200 );
 		Player.GiveInventory( RedMana , 200 );
-		say "There you go. Anything else?" none;
+		say "You're welcome to the little mana I can spare right now." none;
+		set ServicesRendered 1;
 	}
 
 	choice none "It was an honor talking to you."

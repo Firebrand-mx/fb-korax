@@ -3,6 +3,8 @@ conitem k24001 24001
 {
 	name "Acolyte Chris";
 
+	var ServicesRendered 1 integer 0;
+
 	hello
 	{
 		say "Welcome to the most beautifully situated church in the province." voicemale1hello;
@@ -20,12 +22,13 @@ conitem k24001 24001
 		terminate;
 	}
 
-	choice none "Can you heal some of my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
+	choice none "Can you heal my wounds?"
+	if ServicesRendered is 0)
 	{
 		say Player "Can you ease my pain?" none;
 		Player.GiveInventory( CrystalVial , 100 );
 		comment "As the acolyte chants, you feel your wounds closing.";
+		set ServicesRendered 1;
 	}
 
 	choice none "Ooh, shiny tomatoes! Bye."

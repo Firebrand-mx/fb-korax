@@ -62,6 +62,7 @@ conitem k21807 21807
 	name "Acolyte Cyril";
 	
 	var MyState 1 integer 0;
+	var ServicesRendered 1 integer 0;
 
 	hello
 	{
@@ -93,13 +94,13 @@ conitem k21807 21807
 		}
 	}
 
-
 	choice none "Can you heal my wounds?"
-	if (Player.HasInventory( ClassIdentifierCleric ))
+	if ServicesRendered is 0)
 	{
 		say Player "Can you ease my pain?" none;
 		Player.GiveInventory( CrystalVial , 100 );
 		comment "As the acolyte chants, you feel your wounds closing.";
+		set ServicesRendered 1;
 	}
 
 	choice none "I'll be going now."
@@ -326,6 +327,7 @@ conitem k21809 21809
 	name "Guardsman Sectus";
 	
 	var MyState 1 integer 0;
+	var ServicesRendered 1 integer 0;
 
 	hello
 	{
@@ -365,14 +367,15 @@ conitem k21809 21809
 	}
 
 	choice none "My armor is in tatters."
-	if (Player.HasInventory( ClassIdentifierFighter ))
+	if ServicesRendered is 0)
 	{
 		say Player "My armor is in tatters." none;
-		Player.GiveInventory( MeshArmor , 4 );
-		Player.GiveInventory( FalconShield , 4 );
-		Player.GiveInventory( PlatinumHelm , 4 );
-		Player.GiveInventory( AmuletOfWarding , 4 );
-		say "Here is a new set of armor. Try and make it last longer this time." none;
+		Player.GiveInventory( MeshArmor , 1 );
+		Player.GiveInventory( FalconShield , 1 );
+		Player.GiveInventory( PlatinumHelm , 1 );
+		Player.GiveInventory( AmuletOfWarding , 1 );
+		say "Here is a new set of armor. Try and make it last as crafting one is quite expensive." none;
+		set ServicesRendered 1;
 	}
 
 	choice none "My axe thirsts for blood."
@@ -395,6 +398,7 @@ conitem k21810 21810
 	name "Conjurer Yamael";
 	
 	var MyState 1 integer 0;
+	var ServicesRendered 1 integer 0;
 
 	hello
 	if (Player.HasInventory( TrackerQuestAA0 ))
@@ -442,13 +446,13 @@ conitem k21810 21810
 	}
 
 	choice none "I am in dire need of mana."
-	if (Player.HasInventory( ClassIdentifierMage ))
+	if ServicesRendered is 0)
 	{
 		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 200 );
-		Player.GiveInventory( KRPGMana2 , 200 );
-		Player.GiveInventory( RedMana , 200 );
-		say "There you go. Anything else?" none;
+		Player.GiveInventory( KRPGMana1 , 100 );
+		Player.GiveInventory( KRPGMana2 , 50 );
+		say "You're welcome to the little mana I can spare right now." none;
+		set ServicesRendered 1;
 	}
 
 	choice none "The adventure awaits!"
