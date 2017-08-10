@@ -111,7 +111,6 @@ conitem k22703 22703
 {
 	name "Cleric";
 
-
 	hello
 	{
 		say "Bishop Carlos is the greatest person in this town! You must visit him and our beautiful church!" voicemale1uhhello;
@@ -174,15 +173,13 @@ conitem k22705 22705
 {
 	name "Old Mage";
 
-
 	hello
 	{
-		say "I've been walking around here since 2002, getting mighty tired." voicemale1uhhello;
+		say "I've been walking around here for the last 15 years. Fifteen years!" voicemale1uhhello;
 	}
 	
-	choice none "How about sitting down?"
+	choice none "Your wait is finally over."
 	{
-	say Player "There are some new benches and chairs in the latest beta, you could sit down for a bit. I won't tell the developers." none;
 		end;
 	}
 }
@@ -297,28 +294,63 @@ conitem k22709 22709
 
 	hello
 	{
-		say "Would you like to buy a Quartz Flask for 4 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Quartz Flask for 4 gold?" voicefemalehello;
 	}
 	
-	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 4 ))
 	{
-		if (Player.HasInventory( Coin, 4 ))
+		if (Player.HasInventory( KRPGArtiHealth, 100 ))
 		{
-			Player.RemoveInventory( Coin , 4 );
-			Player.GiveInventory( KRPGArtiHealth , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 4 );
+		Player.GiveInventory( KRPGArtiHealth , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 4 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 20 gold?"
+	if (Player.HasInventory( Coin, 20 ))
+	{
+		if (Player.HasInventory( KRPGArtiHealth, 100 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 20 );
+		Player.GiveInventory( KRPGArtiHealth , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtihealth, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiHealth , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Quartz Flask for 4 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 4 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -328,27 +360,63 @@ conitem k22710 22710
 
 	hello
 	{
-		say "Would you like to buy a Krater of Might for 20 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Krater of Might for 20 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 20 ))
 	{
-		if (Player.HasInventory( Coin, 20 ))
+		if (Player.HasInventory( ArtiBoostMana, 25 ))
 		{
-			Player.RemoveInventory( Coin , 20 );
-			Player.GiveInventory( ArtiBoostMana , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 20 );
+		Player.GiveInventory( ArtiBoostMana , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 20 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 100 gold?"
+	if (Player.HasInventory( Coin, 100 ))
+	{
+		if (Player.HasInventory( ArtiBoostMana, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 100 );
+		Player.GiveInventory( ArtiBoostMana , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 10 gold."
+	if (Player.HasInventory( ArtiBoostMana, 1 ))
+	{
+		Player.RemoveInventory( ArtiBoostMana , 1 );
+		Player.GiveInventory( Coin , 10 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Krater of Might for 20 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 20 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -358,27 +426,63 @@ conitem k22711 22711
 
 	hello
 	{
-		say "Would you like to buy a Mystic Ambit Incant for 6 gold?" voicemale1hello;
+		say "Hello! Would you like to buy a Mystic Ambit Incant for 8 gold?" voicemale1uhhello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 8 ))
 	{
-		if (Player.HasInventory( Coin, 6 ))
+		if (Player.HasInventory( KRPGArtiHealingRadius, 50 ))
 		{
-			Player.RemoveInventory( Coin , 6 );
-			Player.GiveInventory( KRPGArtiHealingRadius , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 8 );
+		Player.GiveInventory( KRPGArtiHealingRadius , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 8 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 40 gold?"
+	if (Player.HasInventory( Coin, 40 ))
+	{
+		if (Player.HasInventory( KRPGArtiHealingRadius, 50 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 40 );
+		Player.GiveInventory( KRPGArtiHealingRadius , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 4 gold."
+	if (Player.HasInventory( KRPGArtiHealingRadius, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiHealingRadius , 1 );
+		Player.GiveInventory( Coin , 4 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Mystic Ambit Incant for 8 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 8 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -388,27 +492,63 @@ conitem k22712 22712
 
 	hello
 	{
-		say "Would you like to buy a Disc of Repulsion for 2 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Disc of Repulsion for 2 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 2 ))
 	{
-		if (Player.HasInventory( Coin, 2 ))
+		if (Player.HasInventory( ArtiBlastRadius, 25 ))
 		{
-			Player.RemoveInventory( Coin , 2 );
-			Player.GiveInventory( ArtiBlastRadius , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 2 );
+		Player.GiveInventory( ArtiBlastRadius , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 2 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 10 gold?"
+	if (Player.HasInventory( Coin, 10 ))
+	{
+		if (Player.HasInventory( ArtiBlastRadius, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 10 );
+		Player.GiveInventory( ArtiBlastRadius , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 1 gold."
+	if (Player.HasInventory( ArtiBlastRadius, 1 ))
+	{
+		Player.RemoveInventory( ArtiBlastRadius , 1 );
+		Player.GiveInventory( Coin , 1 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Disc of Repulsion for 2 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 2 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -418,27 +558,63 @@ conitem k22713 22713
 
 	hello
 	{
-		say "Would you like to buy a Flechette for 3 gold?" voicemale1uhhello;
+		say "Hello! Would you like to buy a Flechette for 3 gold?" voicemale1uhhello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 3 ))
 	{
-		if (Player.HasInventory( Coin, 3 ))
+		if (Player.HasInventory( KRPGArtiPoisonBag, 200 ))
 		{
-			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( KRPGArtiPoisonBag , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 3 );
+		Player.GiveInventory( KRPGArtiPoisonBag , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 3 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 15 gold?"
+	if (Player.HasInventory( Coin, 15 ))
+	{
+		if (Player.HasInventory( KRPGArtiPoisonBag, 200 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiPoisonBag , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtiPoisonBag, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiPoisonBag , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Flechette for 3 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 3 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -448,27 +624,63 @@ conitem k22714 22714
 
 	hello
 	{
-		say "Would you like to buy a Time Bomb for 3 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Time Bomb for 3 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 3 ))
 	{
-		if (Player.HasInventory( Coin, 3 ))
+		if (Player.HasInventory( KRPGArtiTimeBomb, 200 ))
 		{
-			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( KRPGArtiTimeBomb , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 3 );
+		Player.GiveInventory( KRPGArtiTimeBomb , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 3 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 15 gold?"
+	if (Player.HasInventory( Coin, 15 ))
+	{
+		if (Player.HasInventory( KRPGArtiTimeBomb, 200 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiTimeBomb , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtiTimeBomb, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiTimeBomb , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Time Bomb for 3 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 3 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -478,27 +690,63 @@ conitem k22715 22715
 
 	hello
 	{
-		say "Would you like to buy a pair of Boots of Speed for 25 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a pair of Boots of Speed for 25 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 25 ))
 	{
-		if (Player.HasInventory( Coin, 25 ))
+		if (Player.HasInventory( ArtiSpeedBoots, 25 ))
 		{
-			Player.RemoveInventory( Coin , 25 );
-			Player.GiveInventory( ArtiSpeedBoots , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 25 );
+		Player.GiveInventory( ArtiSpeedBoots , 1 );
+		say "There you go. Would you like to buy another pair?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 25 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen pairs for 125 gold?"
+	if (Player.HasInventory( Coin, 125 ))
+	{
+		if (Player.HasInventory( ArtiSpeedBoots, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 125 );
+		Player.GiveInventory( ArtiSpeedBoots , 6 );
+		say "There you go. Would you like to buy another pair?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you a pair of mine for 13 gold."
+	if (Player.HasInventory( ArtiSpeedBoots, 1 ))
+	{
+		Player.RemoveInventory( ArtiSpeedBoots , 1 );
+		Player.GiveInventory( Coin , 13 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a pair of Boots of Speed for 25 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 25 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -508,29 +756,64 @@ conitem k22716 22716
 
 	hello
 	{
-		say "Would you like to buy a Mystic Urn for 15 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Mystic Urn for 15 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 15 ))
 	{
-		if (Player.HasInventory( Coin, 15 ))
+		if (Player.HasInventory( KRPGArtiSuperHealth, 50 ))
 		{
-			Player.RemoveInventory( Coin , 15 );
-			Player.GiveInventory( KRPGArtiSuperHealth , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiSuperHealth , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 15 ))
 	{
-		say "Maybe next time." voicemale1maybenexttime;
+		say "Next time, then." voicefemalegoodbye;
 		end;
 	}
+	
+	choice none "How about a half dozen for 75 gold?"
+	if (Player.HasInventory( Coin, 75 ))
+	{
+		if (Player.HasInventory( KRPGArtiSuperHealth, 50 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 75 );
+		Player.GiveInventory( KRPGArtiSuperHealth , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
 
+	choice none "I'd rather sell you one of mine for 8 gold."
+	if (Player.HasInventory( KRPGArtiSuperHealth, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiSuperHealth , 1 );
+		Player.GiveInventory( Coin , 8 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Mystic Urn for 15 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 15 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22717 22717
@@ -539,29 +822,64 @@ conitem k22717 22717
 
 	hello
 	{
-		say "Would you like to buy a Porkelator for 60 gold?" voicemale1hello;
+		say "Hello! Would you like to buy a Porkelator for 60 gold?" voicemale1hello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 60 ))
 	{
-		if (Player.HasInventory( Coin, 60 ))
+		if (Player.HasInventory( KRPGArtiPork, 20 ))
 		{
-			Player.RemoveInventory( Coin , 60 );
-			Player.GiveInventory( KRPGArtiPork , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 60 );
+		Player.GiveInventory( KRPGArtiPork , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 60 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
 	}
+	
+	choice none "How about a half dozen for 300 gold?"
+	if (Player.HasInventory( Coin, 300 ))
+	{
+		if (Player.HasInventory( KRPGArtiPork, 20 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 300 );
+		Player.GiveInventory( KRPGArtiPork , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
 
+	choice none "I'd rather sell you one of mine for 30 gold."
+	if (Player.HasInventory( KRPGArtiPork, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiPork , 1 );
+		Player.GiveInventory( Coin , 30 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Porkelator for 60 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 60 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22718 22718
@@ -570,29 +888,64 @@ conitem k22718 22718
 
 	hello
 	{
-		say "Would you like to buy a Dark Servant for 40 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Dark Servant for 40 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 40 ))
 	{
-		if (Player.HasInventory( Coin, 40 ))
+		if (Player.HasInventory( ArtiDarkServant, 25 ))
 		{
-			Player.RemoveInventory( Coin , 40 );
-			Player.GiveInventory( ArtiDarkServant , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 40 );
+		Player.GiveInventory( ArtiDarkServant , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 40 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
 	}
+	
+	choice none "How about a half dozen for 200 gold?"
+	if (Player.HasInventory( Coin, 200 ))
+	{
+		if (Player.HasInventory( ArtiDarkServant, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 200 );
+		Player.GiveInventory( ArtiDarkServant , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
 
+	choice none "I'd rather sell you one of mine for 20 gold."
+	if (Player.HasInventory( ArtiDarkServant, 1 ))
+	{
+		Player.RemoveInventory( ArtiDarkServant , 1 );
+		Player.GiveInventory( Coin , 20 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Dark Servant for 40 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 40 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22719 22719
@@ -601,29 +954,64 @@ conitem k22719 22719
 
 	hello
 	{
-		say "Would you like to buy an Icon of the Defender for 100 gold?" voicemale1uhhello;
+		say "Hello! Would you like to buy an Icon of the Defender for 100 gold?" voicemale1uhhello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 100 ))
 	{
-		if (Player.HasInventory( Coin, 100 ))
+		if (Player.HasInventory( KRPGArtiInvulnerability2, 12 ))
 		{
-			Player.RemoveInventory( Coin , 100 );
-			Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 100 );
+		Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 100 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
 	}
+	
+	choice none "How about a half dozen for 500 gold?"
+	if (Player.HasInventory( Coin, 500 ))
+	{
+		if (Player.HasInventory( KRPGArtiInvulnerability2, 12 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 500 );
+		Player.GiveInventory( KRPGArtiInvulnerability2 , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
 
+	choice none "I'd rather sell you one of mine for 50 gold."
+	if (Player.HasInventory( KRPGArtiInvulnerability2, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiInvulnerability2 , 1 );
+		Player.GiveInventory( Coin , 50 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy an Icon of the Defender for 100 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 100 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22720 22720
@@ -632,29 +1020,64 @@ conitem k22720 22720
 
 	hello
 	{
-		say "Would you like to buy a Chaos Device for 30 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Chaos Device for 30 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 30 ))
 	{
-		if (Player.HasInventory( Coin, 30 ))
+		if (Player.HasInventory( ArtiTeleport, 25 ))
 		{
-			Player.RemoveInventory( Coin , 30 );
-			Player.GiveInventory( ArtiTeleport , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 30 );
+		Player.GiveInventory( ArtiTeleport , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 30 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
 	}
+	
+	choice none "How about a half dozen for 150 gold?"
+	if (Player.HasInventory( Coin, 150 ))
+	{
+		if (Player.HasInventory( ArtiTeleport, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 150 );
+		Player.GiveInventory( ArtiTeleport , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
 
+	choice none "I'd rather sell you one of mine for 15 gold."
+	if (Player.HasInventory( ArtiTeleport, 1 ))
+	{
+		Player.RemoveInventory( ArtiTeleport , 1 );
+		Player.GiveInventory( Coin , 15 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Chaos Device for 30 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 30 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22721 22721
@@ -663,29 +1086,48 @@ conitem k22721 22721
 
 	hello
 	{
-		say "Would you like to buy a Torch for 5 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Torch for 5 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 5 ))
 	{
-		if (Player.HasInventory( Coin, 5 ))
+		if (Player.HasInventory( KRPGArtiTorch, 5 ))
 		{
-			Player.RemoveInventory( Coin , 5 );
-			Player.GiveInventory( KRPGArtiTorch , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 5 );
+		Player.GiveInventory( KRPGArtiTorch , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 5 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
 	}
 
+	choice none "I'd rather sell you one of mine for 3 gold."
+	if (Player.HasInventory( KRPGArtiTorch, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiTorch , 1 );
+		Player.GiveInventory( Coin , 3 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Torch for 5 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 5 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
+	}
 }
 //------------------------------------------------------------------------------
 conitem k22722 22722
@@ -694,27 +1136,63 @@ conitem k22722 22722
 
 	hello
 	{
-		say "Would you like to buy a Banishment Device for 35 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Banishment Device for 35 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 35 ))
 	{
-		if (Player.HasInventory( Coin, 35 ))
+		if (Player.HasInventory( ArtiTeleportOther, 25 ))
 		{
-			Player.RemoveInventory( Coin , 35 );
-			Player.GiveInventory( ArtiTeleportOther , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 35 );
+		Player.GiveInventory( ArtiTeleportOther , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 35 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 175 gold?"
+	if (Player.HasInventory( Coin, 175 ))
+	{
+		if (Player.HasInventory( ArtiTeleportOther, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 175 );
+		Player.GiveInventory( ArtiTeleportOther , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 18 gold."
+	if (Player.HasInventory( ArtiTeleportOther, 1 ))
+	{
+		Player.RemoveInventory( ArtiTeleportOther , 1 );
+		Player.GiveInventory( Coin , 18 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Banishment Device for 35 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 35 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -724,27 +1202,63 @@ conitem k22723 22723
 
 	hello
 	{
-		say "Would you like to buy a Time Bomb for 3 gold?" voicemale1hello;
+		say "Hello! Would you like to buy a Time Bomb for 3 gold?" voicemale1hello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 3 ))
 	{
-		if (Player.HasInventory( Coin, 3 ))
+		if (Player.HasInventory( KRPGArtiTimeBomb, 200 ))
 		{
-			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( KRPGArtiTimeBomb , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 3 );
+		Player.GiveInventory( KRPGArtiTimeBomb , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 3 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 15 gold?"
+	if (Player.HasInventory( Coin, 15 ))
+	{
+		if (Player.HasInventory( KRPGArtiTimeBomb, 200 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiTimeBomb , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtiTimeBomb, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiTimeBomb , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Time Bomb for 3 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 3 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -754,57 +1268,129 @@ conitem k22724 22724
 
 	hello
 	{
-		say "Would you like to buy a Krater of Might for 20 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Krater of Might for 20 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 20 ))
 	{
-		if (Player.HasInventory( Coin, 20 ))
+		if (Player.HasInventory( ArtiBoostMana, 25 ))
 		{
-			Player.RemoveInventory( Coin , 20 );
-			Player.GiveInventory( ArtiBoostMana , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 20 );
+		Player.GiveInventory( ArtiBoostMana , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 20 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 100 gold?"
+	if (Player.HasInventory( Coin, 100 ))
+	{
+		if (Player.HasInventory( ArtiBoostMana, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 100 );
+		Player.GiveInventory( ArtiBoostMana , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 10 gold."
+	if (Player.HasInventory( ArtiBoostMana, 1 ))
+	{
+		Player.RemoveInventory( ArtiBoostMana , 1 );
+		Player.GiveInventory( Coin , 10 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Krater of Might for 20 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 20 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
 conitem k22725 22725
 {
 	name "Antonio";
-
+	
 	hello
 	{
-		say "Would you like to buy a Mystic Ambit Incant for 8 gold?" voicemale1uhhello;
+		say "Hello! Would you like to buy a Mystic Ambit Incant for 8 gold?" voicemale1uhhello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 8 ))
 	{
-		if (Player.HasInventory( Coin, 8 ))
+		if (Player.HasInventory( KRPGArtiHealingRadius, 50 ))
 		{
-			Player.RemoveInventory( Coin , 8 );
-			Player.GiveInventory( KRPGArtiHealingRadius , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 8 );
+		Player.GiveInventory( KRPGArtiHealingRadius , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 8 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 40 gold?"
+	if (Player.HasInventory( Coin, 40 ))
+	{
+		Player.RemoveInventory( Coin , 40 );
+		Player.GiveInventory( KRPGArtiHealingRadius , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+	}
+
+	choice none "I'd rather sell you one of mine for 4 gold."
+	if (Player.HasInventory( KRPGArtiHealingRadius, 1 ))
+	{
+		if (Player.HasInventory( KRPGArtiHealingRadius, 50 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( KRPGArtiHealingRadius , 1 );
+		Player.GiveInventory( Coin , 4 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Mystic Ambit Incant for 8 gold?" none;
+		}
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 8 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -814,27 +1400,63 @@ conitem k22726 22726
 
 	hello
 	{
-		say "Would you like to buy a Disc of Repulsion for 2 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Disc of Repulsion for 2 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 2 ))
 	{
-		if (Player.HasInventory( Coin, 2 ))
+		if (Player.HasInventory( ArtiBlastRadius, 25 ))
 		{
-			Player.RemoveInventory( Coin , 2 );
-			Player.GiveInventory( ArtiBlastRadius , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 2 );
+		Player.GiveInventory( ArtiBlastRadius , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 2 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 10 gold?"
+	if (Player.HasInventory( Coin, 10 ))
+	{
+		if (Player.HasInventory( ArtiBlastRadius, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 10 );
+		Player.GiveInventory( ArtiBlastRadius , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 1 gold."
+	if (Player.HasInventory( ArtiBlastRadius, 1 ))
+	{
+		Player.RemoveInventory( ArtiBlastRadius , 1 );
+		Player.GiveInventory( Coin , 1 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Disc of Repulsion for 2 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 2 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -844,27 +1466,63 @@ conitem k22727 22727
 
 	hello
 	{
-		say "Would you like to buy a pair of Boots of Speed for 25 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a pair of Boots of Speed for 25 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 25 ))
 	{
-		if (Player.HasInventory( Coin, 25 ))
+		if (Player.HasInventory( ArtiSpeedBoots, 25 ))
 		{
-			Player.RemoveInventory( Coin , 25 );
-			Player.GiveInventory( ArtiSpeedBoots , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 25 );
+		Player.GiveInventory( ArtiSpeedBoots , 1 );
+		say "There you go. Would you like to buy another pair?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 25 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen pairs for 125 gold?"
+	if (Player.HasInventory( Coin, 125 ))
+	{
+		if (Player.HasInventory( ArtiSpeedBoots, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 125 );
+		Player.GiveInventory( ArtiSpeedBoots , 6 );
+		say "There you go. Would you like to buy another pair?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you a pair of mine for 13 gold."
+	if (Player.HasInventory( ArtiSpeedBoots, 1 ))
+	{
+		Player.RemoveInventory( ArtiSpeedBoots , 1 );
+		Player.GiveInventory( Coin , 13 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a pair of Boots of Speed for 25 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 25 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -874,27 +1532,63 @@ conitem k22728 22728
 
 	hello
 	{
-		say "Would you like to buy a Chaos Device for 30 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Chaos Device for 30 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 30 ))
 	{
-		if (Player.HasInventory( Coin, 30 ))
+		if (Player.HasInventory( ArtiTeleport, 25 ))
 		{
-			Player.RemoveInventory( Coin , 30 );
-			Player.GiveInventory( ArtiTeleport , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 30 );
+		Player.GiveInventory( ArtiTeleport , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 30 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 150 gold?"
+	if (Player.HasInventory( Coin, 150 ))
+	{
+		if (Player.HasInventory( ArtiTeleport, 25 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 150 );
+		Player.GiveInventory( ArtiTeleport , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 15 gold."
+	if (Player.HasInventory( ArtiTeleport, 1 ))
+	{
+		Player.RemoveInventory( ArtiTeleport , 1 );
+		Player.GiveInventory( Coin , 15 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Chaos Device for 30 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 30 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -904,27 +1598,63 @@ conitem k22729 22729
 
 	hello
 	{
-		say "Would you like to buy an Icon of the Defender for 120 gold?" voicemale1hello;
+		say "Hello! Would you like to buy an Icon of the Defender for 100 gold?" voicemale1hello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 100 ))
 	{
-		if (Player.HasInventory( Coin, 20 ))
+		if (Player.HasInventory( KRPGArtiInvulnerability2, 12 ))
 		{
-			Player.RemoveInventory( Coin , 20 );
-			Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 100 );
+		Player.GiveInventory( KRPGArtiInvulnerability2 , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 100 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 500 gold?"
+	if (Player.HasInventory( Coin, 500 ))
+	{
+		if (Player.HasInventory( KRPGArtiInvulnerability2, 12 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 500 );
+		Player.GiveInventory( KRPGArtiInvulnerability2 , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 50 gold."
+	if (Player.HasInventory( KRPGArtiInvulnerability2, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiInvulnerability2 , 1 );
+		Player.GiveInventory( Coin , 50 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy an Icon of the Defender for 100 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 100 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -934,27 +1664,63 @@ conitem k22730 22730
 
 	hello
 	{
-		say "Would you like to buy a Mystic Urn for 15 gold?" voicefemalehello;
+		say "Hello! Would you like to buy a Mystic Urn for 15 gold?" voicefemalehello;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 15 ))
 	{
-		if (Player.HasInventory( Coin, 15 ))
+		if (Player.HasInventory( KRPGArtiSuperHealth, 50 ))
 		{
-			Player.RemoveInventory( Coin , 15 );
-			Player.GiveInventory( KRPGArtiSuperHealth , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiSuperHealth , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 15 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 75 gold?"
+	if (Player.HasInventory( Coin, 75 ))
+	{
+		if (Player.HasInventory( KRPGArtiSuperHealth, 50 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 75 );
+		Player.GiveInventory( KRPGArtiSuperHealth , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 8 gold."
+	if (Player.HasInventory( KRPGArtiSuperHealth, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiSuperHealth , 1 );
+		Player.GiveInventory( Coin , 8 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Mystic Urn for 15 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 15 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -964,27 +1730,63 @@ conitem k22731 22731
 
 	hello
 	{
-		say "Would you like to buy a Flechette for 3 gold?" voicemale1uhhello;
+		say "Hello! Would you like to buy a Flechette for 3 gold?" voicemale1uhhello;
 	}
 
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 3 ))
 	{
-		if (Player.HasInventory( Coin, 3 ))
+		if (Player.HasInventory( KRPGArtiPoisonBag, 200 ))
 		{
-			Player.RemoveInventory( Coin , 3 );
-			Player.GiveInventory( KRPGArtiPoisonBag , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 3 );
+		Player.GiveInventory( KRPGArtiPoisonBag , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 3 ))
 	{
 		say "Maybe next time." voicemale1maybenexttime;
 		end;
+	}
+	
+	choice none "How about a half dozen for 15 gold?"
+	if (Player.HasInventory( Coin, 15 ))
+	{
+		if (Player.HasInventory( KRPGArtiPoisonBag, 200 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 15 );
+		Player.GiveInventory( KRPGArtiPoisonBag , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtiPoisonBag, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiPoisonBag , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Flechette for 3 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 3 ))
+	{
+		say "Maybe next time." voicemale1maybenexttime;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
@@ -994,27 +1796,63 @@ conitem k22732 22732
 
 	hello
 	{
-		say "Would you like to buy a Quartz Flask for 4 gold?" voicefemalehello2;
+		say "Hello! Would you like to buy a Quartz Flask for 4 gold?" voicefemalehello2;
 	}
-
+	
 	choice none "Yes please."
+	if (Player.HasInventory( Coin, 4 ))
 	{
-		if (Player.HasInventory( Coin, 4 ))
+		if (Player.HasInventory( KRPGArtiHealth, 100 ))
 		{
-			Player.RemoveInventory( Coin , 4 );
-			Player.GiveInventory( KRPGArtiHealth , 1 );
-			say "There you go. Would you like to buy another?" coingive;
+		say "You can't carry any more of that item." none;
+		terminate;
 		}
 		else
 		{
-			say "Are you trying to cheat me? That's not enough money you have in your hand!" none;
+		Player.RemoveInventory( Coin , 4 );
+		Player.GiveInventory( KRPGArtiHealth , 1 );
+		say "There you go. Would you like to buy another?" coingive;
 		}
 	}
-	
+
 	choice none "No thank you."
+	if (Player.HasInventory( Coin, 4 ))
 	{
 		say "Next time, then." voicefemalegoodbye;
 		end;
+	}
+	
+	choice none "How about a half dozen for 20 gold?"
+	if (Player.HasInventory( Coin, 20 ))
+	{
+		if (Player.HasInventory( KRPGArtiHealth, 100 ))
+		{
+		say "You can't carry any more of that item." none;
+		terminate;
+		}
+		else
+		{
+		Player.RemoveInventory( Coin , 20 );
+		Player.GiveInventory( KRPGArtiHealth , 6 );
+		say "There you go. Would you like to buy another?" coingive;
+		}
+	}
+
+	choice none "I'd rather sell you one of mine for 2 gold."
+	if (Player.HasInventory( KRPGArtihealth, 1 ))
+	{
+		Player.RemoveInventory( KRPGArtiHealth , 1 );
+		Player.GiveInventory( Coin , 2 );
+		say "Pleasure doing business." cointake;
+		cls;
+		say "Would you like to buy a Quartz Flask for 4 gold?" none;
+	}
+
+	choice none "Don't have that much money right now."
+	if (not Player.HasInventory( Coin, 4 ))
+	{
+		say "Next time, then." voicefemalegoodbye;
+		end;		
 	}
 }
 //------------------------------------------------------------------------------
