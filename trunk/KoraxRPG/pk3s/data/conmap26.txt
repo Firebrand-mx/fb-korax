@@ -3,22 +3,33 @@ conitem k22601 22601
 {
 	name "Burda";
 
+	var Annoyed 1 integer 0;
+
 	hello
+	if (Annoyed is 0)
 	{
 		say "May I interest you in our local delicacy, breaded frogs? All ingredients fished or grown right here in Euthal." voicefemalehello;
 	}
 	
+	hello
+	if (Annoyed is 1)
+	{
+		say "I don't want to talk to you any more!" voicefemalegoodbye;
+		terminate;
+	}
 	
 	choice none "I feel adventurous today."
 	{
 		Player.GiveInventory( CrystalVial , 1 );
-		say "Enjoy! Would you like another?" none;
+		say "Enjoy! Hope to see you again soon!" voicefemalehaveaniceday;
+		terminate;
 	}
 
 	choice none "ew?"
 	{
 		say "I have feelings, you know!" voicefemalegoodbye;
-		end;
+		set Annoyed 1;
+		terminate;
 	}
 
 }
@@ -56,6 +67,7 @@ conitem k22603 22603
 		Player.GiveIntelligence( 1 );
 		Player.GiveWisdom( 1 );
 		executems 26 2;
+		terminate;
 	}
 	
 	choice none "I'll let you get back to your spoon."
