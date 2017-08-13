@@ -546,6 +546,58 @@ void DrawViewBorder(int x, int y, int w, int h)
 	DrawBorder(x, y, w, h);
 }
 
+//--------------------------------------------------------------------------
+//
+//	Skill Screen
+//  [FB] Stuff to be able to spawn our own game skill screen
+//
+//--------------------------------------------------------------------------
+
+//==========================================================================
+//
+//	KRPGSetPClass
+//
+//==========================================================================
+
+final void KRPGSetPClass(int PClass)
+{
+	MenuPClass = PClass;
+	SkillClassName = va("%n", class<PlayerPawn>(Game.PlayerClasses[
+		PClass]).default.SpawnClass);
+	if (P_GetNumEpisodes() > 1)
+	{
+		PushMenuScreen(SpawnMenu(MenuScreenEpisode));
+	}
+	else
+	{
+		KRPGSetEpisode(P_GetEpisodeDef(0));
+	}
+}
+
+//==========================================================================
+//
+//  KRPGSetEpisode
+//
+//==========================================================================
+
+final void KRPGSetEpisode(EpisodeDef* EDef)
+{
+	MenuStartMap = EDef->Name;
+	if (EDef->TeaserName && !IsMapPresent(EDef->Name))
+	{
+		MenuStartMap = EDef->TeaserName;
+	}
+
+	if (EDef->bNoSkillMenu)
+	{
+		NewGame(2);
+	}
+	else
+	{
+		PushMenuScreen(SpawnMenu(KRPGMenuScreenSkill));
+	}
+}
+
 //**************************************************************************
 //
 //	[KoraxRPG]
@@ -1644,10 +1696,6 @@ void HideSpellbookScreen()
 
 
 
-
-
-
-
 //--------------------------------------------------------------------------
 //
 //	Journal Screen
@@ -1679,6 +1727,8 @@ void HideJournalScreen()
 {
 	GJournalScreen = none;
 }
+
+
 
 //--------------------------------------------------------------------------
 //

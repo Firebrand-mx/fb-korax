@@ -1,0 +1,211 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id: MenuScreenSkill.vc 3660 2008-05-20 22:06:46Z dj_jl $
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class KRPGMenuScreenSkill : KRPGMenuScreen;
+
+/*
+MenuSpriteAnim		Anim;
+MenuInputLine		PName;
+MenuChoiceSlider	ColR;
+MenuChoiceSlider	ColG;
+MenuChoiceSlider	ColB;
+MenuTextButton		Btn;
+int					PClass;
+*/
+
+//==========================================================================
+//
+//	CreateChoices
+//
+//==========================================================================
+
+void CreateChoices()
+{
+/*	int			currentY;
+	
+	PName = MenuInputLine(NewChild(MenuInputLine));
+	PName.SetOrigin(ChoicesStartX + 10, ChoicesStartY);
+	PName.CursorXOffs = -10;
+	PName.Text = "Name";
+	PName.Value = GetCvarS('Name');
+	PName.ValueChanged = ChangeName;
+	currentY += PName.Height;
+*/	
+	int i;
+	int j;
+	int CurY = ChoicesStartY;
+	//int CurY = ChoicesStartY + 40;
+/*	
+	R_InstallSprite("PLAY", 500);
+	R_InstallSprite("CLER", 501);
+	R_InstallSprite("MAGE", 502);
+	
+	int Col = ParseColour(GetCvarS('colour'));
+*/	
+	for (i = 0; i < P_GetNumSkills(); i++)
+	{
+		MenuChoiceSkill Btn = MenuChoiceSkill(NewChild(MenuChoiceSkill));
+		SkillDef* SDef = P_GetSkillDef(i);
+		Btn.SetPos(ChoicesStartX, CurY);
+		if (SDef->bMenuNameIsPic)
+		{
+			Btn.PicHandle = R_RegisterPic(StrToName(SDef->MenuName));
+		}
+		else
+		{
+			Btn.SetText(SDef->MenuName);
+		}
+		for (j = 0; j < SDef->PlayerClassNames.Num; j++)
+		{
+			if (!stricmp(SDef->PlayerClassNames[j].ClassName,
+				ClGame.SkillClassName))
+			{
+				Btn.SetText(SDef->PlayerClassNames[j].MenuName);
+				Btn.PicHandle = 0;
+			}
+		}
+		if (strlen(SDef->TextColour) > 0)
+		{
+			Btn.Text = strcat(strcat("\c[", SDef->TextColour),
+				strcat("]", Btn.Text));
+		}
+		Btn.SkillIndex = i;
+		Btn.bMustConfirm = SDef->bMustConfirm;
+		Btn.ConfirmationText = SDef->ConfirmationText;
+		Btn.Activated = ActivateSkill;
+		CurY += Btn.Height;
+	}
+/*	
+	Anim = MenuSpriteAnim(NewChild(MenuSpriteAnim));
+	Anim.SetPos(260, 140);
+	Anim.SprDef = 500;
+	Anim.Speed = 8;
+	Anim.NumFrames = 4;
+	Anim.Colour = Col;
+*/	
+}
+
+//==========================================================================
+//
+//	ChangeName
+//
+//==========================================================================
+/*
+void ChangeName(Object Sender)
+{
+	SetCvarS('Name', PName.Value);
+}
+*/
+//==========================================================================
+//
+//	SetDefaultChoice
+//
+//==========================================================================
+
+void SetDefaultChoice()
+{
+	::SetDefaultChoice();
+	CycleNextChoice();
+	CycleNextChoice();
+}
+
+//==========================================================================
+//
+//	ActivateSkill
+//
+//==========================================================================
+
+void ActivateSkill(Object Sender)
+{
+	MenuChoiceSkill Btn = MenuChoiceSkill(Sender);
+	if (Btn.bMustConfirm)
+	{
+		ClGame.SkillToConfirm = Btn.SkillIndex;
+		ClGame.MessageBoxStartMessage(
+			strlen(Btn.ConfirmationText) > 0 ? Btn.ConfirmationText :
+			"are you sure? this skill level\nisn\'t even remotely fair.\n\npress y or n.",
+			ClientGameShared::MB_Nightmare, true);
+	}
+	else
+	{
+		ClGame.NewGame(Btn.SkillIndex);
+	}
+}
+
+//==========================================================================
+//
+//	OnDraw
+//
+//==========================================================================
+
+void OnDraw()
+{
+
+	int Col = ParseColour(GetCvarS('colour'));
+
+	::OnDraw();
+
+	//DrawPic(0, 0, R_RegisterPic('bgplanks'));
+	DrawPic(0, 0, R_RegisterPic('bgmarble'));
+	DrawPic(0, 0, R_RegisterPic('weblb'));
+	DrawPic(290, 0, R_RegisterPic('webra'));
+	
+
+
+}
+
+//==========================================================================
+//
+//	SetPClass
+//
+//==========================================================================
+/*
+void SetPClass(int value)
+{
+	PClass = value;
+	Anim.SprDef = 500 + PClass;
+	if (PClass == HexenDefs::PCLASS_FIGHTER)
+	{
+		Anim.TranslStart = 246;
+		Anim.TranslEnd = 254;
+	}
+	else
+	{
+		Anim.TranslStart = 146;
+		Anim.TranslEnd = 163;
+	}
+}
+*/
+
+defaultproperties
+{
+	ChoicesStartX = 88;
+	//ChoicesStartX = 38;
+	ChoicesStartY = 40;
+	Height = 160;
+	//Height = 200;
+	SelectorType = MenuSelector_Big;
+	Title = "Difficulty Selection";
+}
