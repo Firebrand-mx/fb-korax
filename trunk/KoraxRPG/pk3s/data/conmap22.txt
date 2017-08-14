@@ -4,86 +4,7 @@ conitem k22201 22201
 	name "Daedalon";
 	pic con22201;
 
-	var MyState 1 integer 0;
 	var ServicesRendered 1 integer 0;
-
-	hello
-	{
-		say "In my nightmares, I still see Korax in the Dark Crucible." voicemale1hello;
-	}
-
-	choice none "You summoned me and I am here."
-	if (MyState is 0)
-	{
-		say Player "You summoned me and I am here." none;
-		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
-		set MyState 1;
-	}
-
-	choice none "You summoned me and I am here."
-	if (MyState is 1)
-	{
-		say Player "You summoned me and I am here." none;
-		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
-	}
-
-	choice none "You summoned me and I am here."
-	if (MyState is 2)
-	{
-		say Player "You summoned me and I am here." none;
-		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
-	}
-
-	choice none "How do I stave off this threat?"
-	if (MyState is 1)
-	{
-		say Player "How can I help?" none;
-		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders." none;
-		Player.RemoveInventory( TrackerQuestAA0 );
-		Player.GiveInventory( TrackerQuestAA1 );
-		Player.GiveInventory( TrackerMapBB );
-		Player.GiveConstitution( 3 );
-		executems 22 3;
-		executems 48 35;
-		set MyState 2;
-		terminate;
-	}
-
-	choice none "How do I stave off this threat?"
-	if (MyState is 2)
-	{
-		say Player "How can I help?" none;
-		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders." none;
-	}
-
-	choice none "What's with all the portals?"
-	{
-		say Player "What's with all the portals?" none;
-		say "To facilitate faster travel, the three mage towers in the wilds of Charybdea are linked to each other with portals. Feel free to use them as necessary." none;
-	}
-
-	choice none "I am in dire need of mana."
-	if (ServicesRendered is 0)
-	{
-		say Player "I am in dire need of mana." none;
-		Player.GiveInventory( KRPGMana1 , 150 );
-		Player.GiveInventory( KRPGMana2 , 100 );
-		say "You're welcome to the little mana I can spare right now." none;
-		set ServicesRendered 1;
-	}
-
-	choice none "Time to go."
-	{
-		end;
-	}
-}
-//------------------------------------------------------------------------------
-conitem k22202 22202
-{
-	name "Daedalon";
-	pic con22201;
-
-	var MyState 1 integer 0;
 
 	hello
 	if (Player.HasInventory( TrackerQuestAA2 ))
@@ -103,63 +24,68 @@ conitem k22202 22202
 		say "In my nightmares, I still see Korax in the Dark Crucible." voicemale1hello;
 	}
 
+	choice none "You summoned me and I am here."
+	if (Player.HasInventory( TrackerQuestAA0 ))
+	{
+		say Player "You summoned me and I am here." none;
+		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more." none;
+		say Player "How can I help?" none;
+		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders.",,
+		"Transcribe it for me and I'll be able to tell you more." none;
+		Player.RemoveInventory( TrackerQuestAA0 );
+		Player.GiveInventory( TrackerQuestAA1 );
+		Player.GiveInventory( TrackerMapBB );
+		Player.GiveConstitution( 10 );
+		executems 22 3;
+		executems 48 35;
+		terminate;
+	}
+
+	choice none "Can you repeat that?"
+	if (Player.HasInventory( TrackerQuestAA1 ))
+	{
+		say Player "Can you repeat that?" none;
+		say "There is a grave danger arising. I heard whispers that the scattered remnants of Korax' forces are being reorganized to march upon us once more.",,
+		say "Far to the east, there is a ruined city in the desert. Somewhere in that city, there is supposed to be a tablet telling the legend of the Serpent Riders.",,
+		"Transcribe it for me and I'll be able to tell you more." none;
+	}
+
 	choice none "I transcribed the tablet I found."
-	if (MyState is 0)
+	if (Player.HasInventory( TrackerQuestAA2 ))
 	{
 		say Player "I transcribed the tablet I found in Nisisil Crucible." none;
 		say "You seem to have what it takes. Give me a few moments to decipher this." none;
 		Player.RemoveInventory( TrackerQuestAA2 );
 		Player.GiveInventory( TrackerQuestAA3 );
-		Player.GiveLevels( 1 );
-		set MyState 1;
+		Player.GiveCharisma( 1 );
 		terminate;
 	}
 
 	choice none "What does the tablet say?"
-	if (MyState is 1)
+	if ((Player.HasInventory( TrackerQuestAA3 )) and (Player.HasInventory( TrackerQuestAB0)))
 	{
 		say Player "What does the tablet say?" none;
 		say "Bad news... it seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
 		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
 		"Korax' Heritage." none;
-		set MyState 2;
-	}
-
-	choice none "What does the tablet say?"
-	if (MyState is 2)
-	{
-		say Player "What does the tablet say?" none;
-		say "Bad news... it seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
-		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
-		"Korax' Heritage." none;
-	}
-
-	choice none "What does the tablet say?"
-	if (MyState is 3)
-	{
-		say Player "What does the tablet say?" none;
-		say "Bad news... it seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
-		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
-		"Korax' Heritage." none;
-	}
-
-	choice none "So what's the next step?"
-	if (Player.HasInventory( TrackerQuestAB0 ))
-	{
+		cls;
 		say Player "So what's the next step?" none;
 		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
 		"I can teleport you there any time, let me know whenever you are ready." none;
 		Player.RemoveInventory( TrackerQuestAB0 );
 		Player.GiveInventory( TrackerQuestAB1 );
-		Player.GiveConstitution( 1 );
-		set MyState 3;
 		executems 22 3;
 		terminate;
 	}
 
-	choice none "So what's the next step?"
+	choice none "What does the tablet say again?"
 	if (Player.HasInventory( TrackerQuestAB1 ))
 	{
+		say Player "What does the tablet say again?" none;
+		say "It seems that not only was the coming of Korax foretold, but also that killing him in the Dark Crucible only destroyed his body, not his soul.",,
+		"The tablet also foretells that after Korax' death a cult will emerge to recall his soul into this world. The name of this cult: ",,
+		"Korax' Heritage." none;
+		cls;
 		say Player "So what's the next step?" none;
 		say "To eliminate the cult's leaders, we have to find out where they are hiding. There is a good chance you can find this information in the Heresiarch's Seminary.",,
 		"I can teleport you there any time, let me know whenever you are ready." none;
@@ -170,7 +96,6 @@ conitem k22202 22202
 	{
 		say Player "I'm ready for you to teleport me to the Heresiarch's Seminary." none;
 		say "Hang on to your skivvies, this might hurt a bit." none;
-		set MyState 4;
 		Player.TeleportToMap(68);
 		terminate;
 	}
@@ -185,6 +110,7 @@ conitem k22202 22202
 		"In the meantime, you should visit Spellmaster Sallazar in Thystes Academy, he'll teach you a powerful new auxiliary spell." none;
 		Player.RemoveInventory( TrackerQuestAB2 );
 		Player.GiveInventory( TrackerQuestAB3 );
+		Player.GiveCharisma( 1 );
 		Player.GiveInventory( MSpell5Voucher );
 		terminate;
 		}
@@ -196,16 +122,17 @@ conitem k22202 22202
 		"Take this gold and replenish your supplies in the meantime." moneybag;
 		Player.RemoveInventory( TrackerQuestAB2 );
 		Player.GiveInventory( TrackerQuestAB3 );
+		Player.GiveCharisma( 1 );
 		Player.GiveInventory( Coin, 250 );
 		terminate;
 		}
 	}
 
 	choice none "So where am I heading now?"
-	if (Player.HasInventory( TrackerQuestAB3 ))
+	if ((Player.HasInventory( TrackerQuestAB3 )) and (Player.HasInventory( TrackerQuestAC0 )))
 	{
 		say Player "So where is the cult located? Where am I heading now?" none;
-		say "It seems they are in the 'Dark Conclave', an underground structure connecting the overworld and the underworld.",,
+		say "It seems they are in the \"Dark Conclave\", an underground structure connecting the overworld and the underworld.",,
 		"To get there, you need to cross The Chasm south of The Border Post and explore The Canyon until you find the entrance to the rift.",,
 		"Descend into the rift to enter the Dark Conclave." none;
 		Player.RemoveInventory( TrackerQuestAC0 );
@@ -214,10 +141,19 @@ conitem k22202 22202
 		Player.GiveInventory( TrackerMapDC );
 		Player.GiveInventory( TrackerMapDI );
 		Player.GiveInventory( TrackerMapDM );
-		Player.GiveConstitution( 5 );
+		Player.GiveConstitution( 20 );
 		executems 22 3;
 		executems 57 2;
 		terminate;
+	}
+
+	choice none "So where am I heading now?"
+	if (Player.HasInventory( TrackerQuestAC1 ))
+	{
+		say Player "So where is the cult located? Where am I heading now?" none;
+		say "It seems they are in the \"Dark Conclave"\, an underground structure connecting the overworld and the underworld.",,
+		"To get there, you need to cross The Chasm south of The Border Post and explore The Canyon until you find the entrance to the rift.",,
+		"Descend into the rift to enter the Dark Conclave." none;
 	}
 
 	choice none "What's with all the portals?"
@@ -237,7 +173,7 @@ conitem k22202 22202
 		set ServicesRendered 1;
 	}
 
-	choice none "Give me a minute."
+	choice none "I'll be back soon."
 	if (not Player.HasInventory( TrackerQuestAB3 ))
 	{
 		end;
