@@ -76,13 +76,11 @@ actors/krpg/npcmap26.txt        actors/krpg/npcmap26.txt
 actors/krpg/npcmap27.txt        actors/krpg/npcmap27.txt
 actors/krpg/npcmap28.txt        actors/krpg/npcmap28.txt
 actors/krpg/npcmap29.txt        actors/krpg/npcmap29.txt
-actors/krpg/npcmap30.txt        actors/krpg/npcmap30.txt
 actors/krpg/npcmap31.txt        actors/krpg/npcmap31.txt
 actors/krpg/npcmap32.txt        actors/krpg/npcmap32.txt
 actors/krpg/npcmap33.txt        actors/krpg/npcmap33.txt
 actors/krpg/npcmap34.txt        actors/krpg/npcmap34.txt
 actors/krpg/npcmap35.txt        actors/krpg/npcmap35.txt
-actors/krpg/npcmap36.txt        actors/krpg/npcmap36.txt
 actors/krpg/npcmap37.txt        actors/krpg/npcmap37.txt
 actors/krpg/npcmap38.txt        actors/krpg/npcmap38.txt
 actors/krpg/npcmap39.txt        actors/krpg/npcmap39.txt
@@ -94,6 +92,9 @@ actors/krpg/npcmap44.txt        actors/krpg/npcmap44.txt
 actors/krpg/npcmap45.txt        actors/krpg/npcmap45.txt
 actors/krpg/npcmap46.txt        actors/krpg/npcmap46.txt
 actors/krpg/npcmap47.txt        actors/krpg/npcmap47.txt
+actors/krpg/npcmap51.txt        actors/krpg/npcmap51.txt
+actors/krpg/npcmap70.txt        actors/krpg/npcmap70.txt
+actors/krpg/npcmap84.txt        actors/krpg/npcmap84.txt
 actors/krpg/npcs.txt			actors/krpg/npcs.txt
 actors/krpg/players.txt			actors/krpg/players.txt
 actors/krpg/serpent.txt			actors/krpg/serpent.txt
