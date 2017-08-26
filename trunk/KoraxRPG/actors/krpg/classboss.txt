@@ -388,82 +388,101 @@ actor KRPGMageBoss : IntelligentActor replaces MageBoss
 	states
 	{
 	Spawn:
-		DEMN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
-		DEMN A 3 A_ClassBossHealth
-		DEMN AA 10 A_LookAI
+		RDMN A 0 A_JumpIf(Health < default_health / 2, "SpawnDamaged")
+		RDMN A 3 A_ClassBossHealth
+		RDMN AA 10 A_LookAI
 		Loop
 	SpawnDamaged:
-		DEMN R 0 A_JumpIf(Health > default_health / 2, "Spawn")
-		DEMN RR 10 A_LookAI
+		RDMN A 0 A_JumpIf(Health > default_health / 2, "Spawn")
+		RDMN AA 10 A_LookAI
 		Loop
+//	SpawnDamaged:
+//		DEMN R 0 A_JumpIf(Health > default_health / 2, "Spawn")
+//		DEMN RR 10 A_LookAI
+//		Loop
 	See:
-		DEMN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
-		DEMN ABCD 4 A_ChaseAI
+		RDMN A 0 A_JumpIf(Health < default_health / 2, "SeeDamaged")
+		RDMN ABCD 4 A_ChaseAI
 		Loop
 	SeeDamaged:
-		DEMN R 0 A_JumpIf(Health > default_health / 2, "See")
-		DEMN RSTU 4 A_ChaseAI
+		RDMN A 0 A_JumpIf(Health > default_health / 2, "See")
+		RDMN ABCD 4 A_ChaseAI
 		Loop
+//	SeeDamaged:
+//		DEMN R 0 A_JumpIf(Health > default_health / 2, "See")
+//		DEMN RSTU 4 A_ChaseAI
+//		Loop
 	Melee:
 	Missile:
-		DEMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
-		DEMN E 5 A_FaceTarget
-		DEMN F 6 A_FaceTarget
-		DEMN G 5 Bright A_MageAttack
+		RDMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
+		RDMN E 5 A_FaceTarget
+		RDMN F 6 A_FaceTarget
+		RDMN G 5 Bright A_MageAttack
 		Goto See
 	MissileDamaged:
-		DEMN V 0 A_JumpIf(Health > default_health / 2, "Missile")
-		DEMN V 5 A_FaceTarget
-		DEMN W 6 A_FaceTarget
-		DEMN X 5 Bright A_MageAttack
+		RDMN E 0 A_JumpIf(Health > default_health / 2, "Missile")
+		RDMN E 5 A_FaceTarget
+		RDMN F 6 A_FaceTarget
+		RDMN G 5 Bright A_MageAttack
 		Goto SeeDamaged
+//	MissileDamaged:
+//		DEMN V 0 A_JumpIf(Health > default_health / 2, "Missile")
+//		DEMN V 5 A_FaceTarget
+//		DEMN W 6 A_FaceTarget
+//		DEMN X 5 Bright A_MageAttack
+//		Goto SeeDamaged
 	Pain:
-		DEMN E 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
-		DEMN E 4
-		DEMN E 4 A_KRPGPain
+		RDMN E 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
+		RDMN E 4
+		RDMN E 4 A_KRPGPain
 		Goto See
 	PainDamaged:
-		DEMN V 0 A_JumpIf(Health > default_health / 2, "Pain")
-		DEMN V 4
-		DEMN V 4 A_KRPGPain
+		RDMN E 0 A_JumpIf(Health > default_health / 2, "Pain")
+		RDMN E 4
+		RDMN E 4 A_KRPGPain
 		Goto SeeDamaged
+//	PainDamaged:
+//		DEMN V 0 A_JumpIf(Health > default_health / 2, "Pain")
+//		DEMN V 4
+//		DEMN V 4 A_KRPGPain
+//		Goto SeeDamaged
 	Death:
-		DEMN HI 6
-		DEMN J 6 A_Scream
-		DEMN K 6 A_NoBlocking
-		DEMN L 6 A_QueueCorpse
-		DEMN MNO 6
-		DEMN P -1
+		RDMN HI 6
+		RDMN J 6 A_Scream
+		RDMN K 6 A_NoBlocking
+		RDMN L 6 A_QueueCorpse
+		RDMN MNO 6
+		RDMN P -1
 		Stop
 	XDeath:
-		DEMN H 6
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN J 6 A_Scream
-		DEMN K 6 A_NoBlocking
-		DEMN L 6 A_QueueCorpse
-		DEMN MNO 6
-		DEMN P -1
+		RDMN H 6
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN J 6 A_Scream
+		RDMN K 6 A_NoBlocking
+		RDMN L 6 A_QueueCorpse
+		RDMN MNO 6
+		RDMN P -1
 		Stop
 	Ice:
 		DEMN Y 5 A_FreezeDeath
 		DEMN Y 1 A_FreezeDeathChunks
 		Wait
 	Burn:
-		DEMN H 6
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
-		DEMN J 6 A_Scream
-		DEMN K 6 A_NoBlocking
-		DEMN L 6 A_QueueCorpse
-		DEMN MNO 6
-		DEMN P -1
+		RDMN H 6
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk1", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0,255) * 0.015625 + 1, 8, 90, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk2", 0, 0, 45, random(0, 255) * 0.015625 + 1, random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk3", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 0 A_SpawnItemEx("Demon1Chunk4", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN I 6 A_SpawnItemEx("Demon1Chunk5", 0, 0, 45, random(0, 255) * 0.015625 + 1,	random(0, 255) * 0.015625 + 1, 8, 270, SXF_TRANSFERTRANSLATION)
+		RDMN J 6 A_Scream
+		RDMN K 6 A_NoBlocking
+		RDMN L 6 A_QueueCorpse
+		RDMN MNO 6
+		RDMN P -1
 		Wait
 	BurnGone:
 		ACLO E 8
