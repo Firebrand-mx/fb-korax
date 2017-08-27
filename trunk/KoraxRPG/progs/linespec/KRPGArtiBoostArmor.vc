@@ -1,0 +1,75 @@
+//**************************************************************************
+//**
+//**    ##   ##    ##    ##   ##   ####     ####   ###     ###
+//**    ##   ##  ##  ##  ##   ##  ##  ##   ##  ##  ####   ####
+//**     ## ##  ##    ##  ## ##  ##    ## ##    ## ## ## ## ##
+//**     ## ##  ########  ## ##  ##    ## ##    ## ##  ###  ##
+//**      ###   ##    ##   ###    ##  ##   ##  ##  ##       ##
+//**       #    ##    ##    #      ####     ####   ##       ##
+//**
+//**    $Id$
+//**
+//**    Copyright (C) 1999-2006 Jānis Legzdiņš
+//**
+//**    This program is free software; you can redistribute it and/or
+//**  modify it under the terms of the GNU General Public License
+//**  as published by the Free Software Foundation; either version 2
+//**  of the License, or (at your option) any later version.
+//**
+//**    This program is distributed in the hope that it will be useful,
+//**  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//**  GNU General Public License for more details.
+//**
+//**************************************************************************
+
+class ArtiBoostArmor : Inventory
+	game(GAME_Hexen)
+	//__mobjinfo__(8041)
+	__scriptid__(22);
+
+//==========================================================================
+//
+//	Use
+//
+//==========================================================================
+
+bool Use(bool Pickup)
+{
+	int i;
+	bool good = false;
+	for (i = 0; i < 4; i++)
+	{
+		// 1 point per armor type
+		HexenArmor Armor = Spawn(HexenArmor,,,, false);
+		Armor.Health = i;
+		Armor.Amount = 1;
+		if (Armor.TryPickup(EntityEx(Owner)))
+		{
+			good = true;
+		}
+		else
+		{
+			Armor.Destroy();
+		}
+	}
+	return good;
+}
+
+states
+{
+Spawn:
+	BRAC ABCDEFGH 4 Bright
+	Loop
+}
+
+defaultproperties
+{
+	MaxAmount = DefMaxAmount;
+	PickupSound = 'PickupArtifact';
+	PickupMessage = "$txt_artiboostarmor";
+	IconName = 'artibrac';
+	bFloatBob = true;
+	PickupFlashType = PickupFlash;
+	bInvBar = true;
+}
