@@ -134,6 +134,58 @@ conitem k22704 22704
 		say "The arcane winds brought you here, I see." voicemale1hello;
 	}
 	
+	choice none "Do you have a task for me?"
+	if (Player.HasInventory( TrackerQuestDD0 ))
+	{
+		say Player "Do you have a task for me?" none;
+		say "During my studies, I came upon mentions of an ancient scroll in Nisisil Dreadworks, far to the east in some desert ruins.",,
+		"If you find and return it to me, I should be able to glean knowledge from it, valuable to the both of us." none;
+		Player.RemoveInventory( TrackerQuestDD0 );
+		Player.GiveInventory( TrackerQuestDD1 );
+		Player.GiveConstitution( 2 );
+		executems 27 6;
+		executems 48 36;
+		terminate;
+	}
+
+	choice none "What was your task again?"
+	if (Player.HasInventory( TrackerQuestDD1 ))
+	{
+		say Player "What was your task again?" none;
+		say "During my studies, I came upon mentions of an ancient scroll in Nisisil Dreadworks, far to the east in some desert ruins.",,
+		"If you find and return it to me, I should be able to glean knowledge from it, valuable to the both of us." none;
+	}
+
+	choice none "I found an ancient scroll."
+	if (Player.HasInventory( TrackerQuestDD2 ))
+	{
+		say Player "I found an ancient scroll. Hope it's not just a long-dead Dark Cardinal's shopping list." none;
+		Player.RemoveInventory( TrackerQuestDD2 );
+		Player.GiveInventory( TrackerQuestDD3 );
+		say "No worries on that front - this scroll is packed with powerful knowledge." voicemale1nicework;
+		Player.GiveCharisma( 1 );
+		if (Player.HasInventory( ClassIdentifierCleric ))
+		{
+		say "Let me check the scroll... aha! Here is a spell I can teach you."
+		Player.GiveInventory( WeaponClericGoldenRain );
+		executems 27 11;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierMage ))
+		{
+		say "Let me check the scroll... aha! Here is a spell I can teach you."
+		Player.GiveInventory( WeaponMageWyvernsBreath );
+		executems 27 11;
+		terminate;
+		}
+		else if (Player.HasInventory( ClassIdentifierFighter ))
+		{
+		say "Let me check the scroll... aha! Listen to my words as I read this section aloud and you'll become more powerful than before."
+		Player.GiveLevels( 5 );
+		terminate;
+		}
+	}
+
 	choice none "Why do I smell ichor?"
 	{
 		say "It's my cologne, 'carnage of galore'." none;
