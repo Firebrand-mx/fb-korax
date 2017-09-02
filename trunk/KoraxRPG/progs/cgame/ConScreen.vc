@@ -69,6 +69,7 @@ void Init()
 {
 	ClGame.GRoot.SetMouse(false);
 	ChoiceContinue = ConScrContinue(NewChild(ConScrContinue));
+	ChoiceContinue.ActivateSound = '';
 	ChoiceContinue.SetPos(100, 440 - 1 * 18 + 0 * 18);
 }
 
@@ -84,19 +85,20 @@ void OnDraw()
 
 	fontheight = TextHeight("SAMPLE STRING");
 
-	if (Flat)
-	{
-		FillRectWithFlat(0, 0, 640, 480, Flat);
-	}
 	if (hBackPic != -1)
 	{
 		DrawFullScreenPic(hBackPic);
 	}
+	if (Flat)
+	{
+		FillRectWithFlat(0, 0, 640, 480, Flat);
+	}
 	else if (!Flat)
 	{
-		ShadeRect(60, 46, 515,
+		ShadeRect(60, 45, 515,
 			// 96,
-			MaximalCueLines * (fontheight + CueLinesSpacing) + ((64 - 46) << 1),
+			MaximalCueLines * ((Cues.Num > 1 ? Cues.Num - 1 : 1) * (fontheight + CueLinesSpacing)) + ((64 - 46) << 1) + 
+				(Cues.Num > 1 ? GetCvar('ShowSpeakerName') == 1 ? 76 : 46 : 0),
 			0.6);
 	}
 
@@ -109,7 +111,7 @@ void OnDraw()
 	if (!bDontDrawBigCharacterName)
 	{
 		SetFont('bigfont');
-		DrawText(72, 32, NPCName);
+		DrawText(64, 23, NPCName);
 	}
 	SetFont('smallfont');
 
@@ -122,7 +124,9 @@ void OnDraw()
 			
 			if (GetCvar('ShowSpeakerName') == 1)
 			{
-				DrawText(64, y, Cues[i].SpeakerName, CR_RED); y += 24;
+				DrawText(64, y - 12, Cues[i].SpeakerName, CR_RED);
+				/*y += 24;*/
+				y += fontheight + CueLinesSpacing;
 			}
 						
 			int color;
@@ -135,7 +139,6 @@ void OnDraw()
 			{
 				DrawText(64, y, Cues[i].SpeechLines[j].Text, color);
 				y += fontheight + CueLinesSpacing;
-			
 			}
 			y += 32;
 		}
@@ -217,6 +220,7 @@ void AddChoice(string Text, string Name, int Index)
 	Choices[Choices.Num - 1].Index = Index;
 	Choices[Choices.Num - 1].TextColour = CR_TAN;
 	Choices[Choices.Num - 1].TextColourFocus = CR_GOLD;
+	Choices[Choices.Num - 1].ActivateSound = '';
 	
 	/*
 	for (i = Choices.Num - 1, y = 438; i >= 0; i--, y -= 22)
@@ -253,8 +257,17 @@ void PlayCue(string Who, string ToWhom, string Cue, name Voice)
 	MaximalCueLines = 0;
 	for (i = 0; i < Cues.Num; i++)
 	{
-		if (MaximalCueLines < Cues[i].SpeechLines.Num)
-			MaximalCueLines = Cues[i].SpeechLines.Num;
+		int j;
+		for (j = 0; j < Cues[i].SpeechLines.Num; j++)
+		{
+			if (strlen(Cues[i].SpeechLines[j].Text) > 0)
+			{
+				if (MaximalCueLines < Cues[i].SpeechLines.Num)
+					MaximalCueLines += 1;
+			}
+		}
+		/*if (MaximalCueLines < Cues[i].SpeechLines.Num)
+			MaximalCueLines = Cues[i].SpeechLines.Num;*/
 	}
 	
 	if  (GetCvar('PlayConSounds') == 1)
@@ -276,6 +289,18 @@ bool OnKeyDown(int key)
 {
 	switch (key)
 	{
+	case K_DOWNARROW:
+	case K_MWHEELDOWN:
+		CycleNextChoice();
+		LocalSound('');
+		return true;
+
+	case K_UPARROW:
+	case K_MWHEELUP:
+		CyclePrevChoice();
+		LocalSound('');
+		return true;
+
 	case K_ESCAPE:
 	case K_MOUSE2:
 		if (!ChoiceContinue.IsVisible() && !Choices.Num)
@@ -286,6 +311,18 @@ bool OnKeyDown(int key)
 		return true;
 	}
 	return ::OnKeyDown(key);
+}
+
+//==========================================================================
+//
+//	OnMouseEnter
+//
+//==========================================================================
+
+void OnMouseEnter()
+{
+	SetFocus();
+	LocalSound('');
 }
 
 defaultproperties
@@ -299,4 +336,7 @@ defaultproperties
 	NPCName = "Person";
 	hBackPic = -1;
 	Flat = '';
+	ActivateSound = '';
+	DeactivateSound = '';
+	ClearMenusSound = '';
 }
