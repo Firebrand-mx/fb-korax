@@ -47,21 +47,21 @@ actor KRPGFireDemon : IntelligentActor replaces FireDemon
 		FDMN F 7 Bright A_FiredRocks
 		FDMN HI 5 Bright
 		FDMN J 5 Bright A_UnSetInvulnerable
-		FDMN A 0 Bright A_JumpIf(Health < default_health, "SeeDamaged")
+		FDMN A 0 Bright A_JumpIf(Health < default_health / 2, "SeeDamaged")
 		FDMN ABC 5 Bright A_ChaseAI
 		Goto See+10
 	SeeDamaged:
 		FDMD ABC 5 Bright A_ChaseAI
 		Loop
 	Pain:
-		FDMN E 0 A_JumpIf(Health < default_health, "PainDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		FDMN D 6 Bright A_KRPGPain
 		Goto See+10
 	PainDamaged:
 		FDMD D 6 Bright A_KRPGPain
 		Goto SeeDamaged
 	Missile:
-		FDMN E 0 A_JumpIf(Health < default_health, "MissileDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		FDMN K 3 Bright A_FaceTarget
 		FDMN KKK 5 Bright A_FiredAttack
 		Goto See+10
@@ -96,12 +96,13 @@ actor FireDemonLeader : KRPGFireDemon 16038
 	Height 96
 	PainChance 135
 	Experience 200
+	Translation "0:32=164:185","33:50=164:185","51:66=164:185","203:210=224:230"
 	-EvadeMelee
 	
 	states
 	{
 	Pain:
-		FDMN E 0 A_JumpIf(Health < default_health, "PainDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "PainDamaged")
 		FDMN D 6 Bright A_KRPGPain
 		FDMN J 5 Bright
 		FDMN IH 5 Bright
@@ -122,7 +123,7 @@ actor FireDemonLeader : KRPGFireDemon 16038
 		FDMD J 5 Bright A_UnSetInvulnerable
 		Goto SeeDamaged
 	Missile:
-		FDMN E 0 A_JumpIf(Health < default_health, "MissileDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		FDMN K 3 Bright A_FaceTarget
 		FDMN KKKKK 5 Bright A_SimpleMissileAttack("FireDemonLeaderMissile", "FireDemonAttack")
 		Goto See+10
@@ -141,6 +142,7 @@ actor FireDemonLeaderMissile : FireDemonMissile
 	Height 9
 	Mass 30
 	Scale 1.5
+	Translation "0:32=164:185","33:50=164:185","51:66=164:185","203:210=224:230"
 }
 
 //------------------------------------------------------------------------------
@@ -149,7 +151,7 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 	Health 60
 	PainChance 0
 	Experience 300
-	
+	Translation "0:32=51:63","33:50=51:63","51:66=51:63"
 	-EvadeMelee
 	
 	action native A_MartyrFlight();
@@ -157,7 +159,7 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 	states
 	{
 	Melee:
-		FDMN E 0 A_JumpIf(Health < default_health, "MeleeDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "MeleeDamaged")
 		FDMN D 6 Bright
 		FDMN K 3 Bright A_FaceTarget
 		FDMN K 2 Bright A_MartyrDetonate(Random(40, 125), 128, "FireDemonMartyrFX", Random(4, 12), 128, 32)
@@ -168,7 +170,7 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 		FDMD K 2 Bright A_MartyrDetonate(Random(40, 125), 128, "FireDemonMartyrFX", Random(4, 12), 128, 32)
 		Stop
 	Missile:
-		FDMN E 0 A_JumpIf(Health < default_health, "MissileDamaged")
+		FDMN E 0 A_JumpIf(Health < default_health / 2, "MissileDamaged")
 		FDMN K 3 Bright A_FaceTarget
 		FDMN J 5 Bright
 		FDMN IH 5 Bright
@@ -178,7 +180,7 @@ actor FireDemonMartyr : KRPGFireDemon 16039
 		FDMN G 6 Bright A_FaceTarget
 		Goto Missile+6
 	MissileDamaged:
-		FDMD E 0 A_JumpIf(Health > default_health, "Missile")
+		FDMD E 0 A_JumpIf(Health > default_health / 2, "Missile")
 		FDMD K 3 Bright A_FaceTarget
 		FDMD J 5 Bright
 		FDMD IH 5 Bright
