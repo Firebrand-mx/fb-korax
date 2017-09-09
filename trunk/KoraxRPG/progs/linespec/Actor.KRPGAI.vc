@@ -117,6 +117,7 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	float		an;
 	float		dist;
 	float		min_dist;
+	int			count = 0;
 
 	if (!specified_nearest)
 		nearest = true;
@@ -138,27 +139,30 @@ bool LookForEnemy(bool allaround, optional bool nearest,
 	//
 	// TODO: should check Korax Arena new BotAI code for Search Near and Search Far routines;
 	// what if they will be useful here as well? check later.
-	
+
 	foreach AllThinkers(Actor, mo)
 	{
+		if (count++ > MONS_LOOK_LIMIT * 8)
+			return false;
+
 		if (mo == self)
 			continue;	// self
 
 		if (mo == ExcludeActor)
 			continue;
 
-		if (!IsOkayToTarget(mo))
+		if (P_Random() > 200)
+			continue;	// sometimes skip
+
+		if (Length(mo.GetCentre() - At) > maxdist)
 			continue;
 
 		if (!CanSense(mo))
 			continue;	// out of senses
 
-		if (Length(mo.GetCentre() - At) > maxdist)
+		if (!IsOkayToTarget(mo))
 			continue;
-
-		if (P_Random() > 200)
-			continue;	// sometimes skip
-
+		
 		if (!bSenseAlways && !allaround && At == Origin)
 		{
 			dist = DistTo(mo);
