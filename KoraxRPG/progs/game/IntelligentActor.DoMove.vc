@@ -632,15 +632,17 @@ final bool StepMoveEx()
 		// killough 10/98: allow actors to drop off of taller ledges sometimes.
 		// dropoff == 1 means only up to 128 high, and only if the target is
 		// immediately on the other side of the line.
+
 		if (bJumpDown && Target && !Target.IsFriend(self) &&
 			DistTo(Target) < 144.0 && P_Random() < 235 &&
 			!(tmtrace.FloorZ - tmtrace.DropOffZ > 128.0 ||
-			  !Target || Target.Origin.z > tmtrace.DropOffZ))
+			  !Target || Target && Target.Origin.z > tmtrace.DropOffZ))
 		{
 			dropoff = true;
 		}
 		try_ok = TryMoveEx(&tmtrace, vector(origx + (deltax / itof(steps * i)), origy +
 					(deltay / itof(steps * i)), tryz /*Origin.z*/), dropoff);
+
 		if (!try_ok)
 		{
 			break;
@@ -656,7 +658,7 @@ final bool StepMoveEx()
 		if (bJumpDown && Target && !Target.IsFriend(self) &&
 			DistTo(Target) < 144.0 && P_Random() < 235 &&
 			!(tmtrace.FloorZ - tmtrace.DropOffZ > 128.0 ||
-			  !Target || Target.Origin.z > tmtrace.DropOffZ))
+			  !Target || Target && Target.Origin.z > tmtrace.DropOffZ))
 		{
 			dropoff = true;
 		}
@@ -692,8 +694,8 @@ final bool StepMoveEx()
 			(Origin.z <= FloorZ || bOnMobj) && !JumpTime)
 		{
 			if ((Target && (Target.FloorZ > (FloorZ + MaxStepHeight) && (Target.FloorZ /*tmtrace.FloorZ*/ - Origin.z <= 48.0)) ||
-				(Target.FloorZ - tmtrace.DropOffZ < (FloorZ + MaxStepHeight) && (Target.FloorZ - tmtrace.DropOffZ <= 48.0) /*tmtrace.FloorZ - Target.Origin.z <= 48.0)*/) ||
-				!Target) && (tmtrace.FloorZ - Origin.z <= 48.0 || tmtrace.FloorZ - tmtrace.DropOffZ <= 48.0))
+				Target && (Target.FloorZ - tmtrace.DropOffZ < (FloorZ + MaxStepHeight) && (Target.FloorZ - tmtrace.DropOffZ <= 48.0) /*tmtrace.FloorZ - Target.Origin.z <= 48.0)*/) /*||
+				!Target*/) && (tmtrace.FloorZ - Origin.z <= 48.0 || tmtrace.FloorZ - tmtrace.DropOffZ <= 48.0))
 			{
 				float DeltaX;
 				float DeltaY;
