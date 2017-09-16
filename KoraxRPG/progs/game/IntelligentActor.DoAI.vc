@@ -179,8 +179,28 @@ void CheckThreat()
 				//if (Behavior.ThreatReaction == THREATREACTION__AMBUSH)
 				if (bAmbush)
 				{
-					// Do not target enemy yet, only become alerted by his presence
-					Alertness = HIGH_ALERTNESS;
+					float dist;
+					
+					dist = Behavior.ThreatVicinity;
+
+					if (DistTo(targ) <= dist)
+					{
+						// Do not target enemy yet, only become alerted by his presence
+						Alertness = HIGH_ALERTNESS;
+
+						// [FB] Order thing to attack it's target if it can be seen...
+						if (CanSense(targ))
+						{
+							bThreatened = true;
+							Target = targ;
+							bHateTarget = false;
+							SetDangerSource(Actor(Target));
+							bInCombat = true;
+							Threshold = BASETHRESHOLD;
+
+							OrderAttackThing(true, TASK_PRIORITY_THREAT_BASE + THREATREACTION__SEE, 0.0, Actor(Target));
+						}
+					}
 				}
 				else
 				{
